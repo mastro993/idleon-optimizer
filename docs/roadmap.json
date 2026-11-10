@@ -1,0 +1,1351 @@
+{
+  "version": 1,
+  "product": "Idleon Optimizer",
+  "source": "https://github.com/Corgan/idleon-research-optimizer",
+  "repo": "mastro993/idleon-optimizer",
+  "groups": [
+    { "id": "core", "label": "Core", "badge": "General" },
+    { "id": "general", "label": "General", "badge": "General" },
+    { "id": "w2", "label": "World 2", "badge": "W2" },
+    { "id": "w3", "label": "World 3", "badge": "W3" },
+    { "id": "w4", "label": "World 4", "badge": "W4" },
+    { "id": "w5", "label": "World 5", "badge": "W5" },
+    { "id": "w6", "label": "World 6", "badge": "W6" },
+    { "id": "w7", "label": "World 7", "badge": "W7" },
+    { "id": "tools", "label": "Tools", "badge": "Hidden" }
+  ],
+  "milestones": [
+    {
+      "id": "M0",
+      "key": "foundation",
+      "title": "Foundation: dashboard, navigation, JSON import, assets",
+      "group": "core",
+      "status": "in-progress",
+      "summary": "Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the upstream asset pipeline and the per-section verification harness.",
+      "upstream": ["index.html", "js/ui/site-nav.js", "js/ui/save-loader.js", "js/ui/state-io.js", "js/state.js"],
+      "ui": [
+        "Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with the same titles, icons, world badges and one-line descriptions as upstream index.html.",
+        "Each card opens a section route with a shared header: back to dashboard, section title, world badge, save status and an import button.",
+        "Section pages keep their upstream tab strip; the app shell only owns the window chrome and status bar.",
+        "Import dialog accepts a file, a paste or drag-and-drop; it previews the detected format before applying."
+      ],
+      "inputs": ["Raw decoded save (it.json or save.json)", "Optimizer state string (ROv2: gzip+base64)", "App project JSON", "Section JSON config"],
+      "outputs": ["Loaded account and simulation state", "Section configuration", "Import warnings and errors", "Persisted last session"],
+      "assets": "assets/upstream is generated from a local upstream checkout; nothing is committed until permission is confirmed.",
+      "features": [
+        {
+          "id": "FND-01",
+          "title": "Dashboard card grid",
+          "description": "Landing dashboard with a searchable, grouped card grid mirroring upstream index.html: icon, title, world badge, description and stable card ids.",
+          "acceptance": [
+            "All 25 upstream dashboard cards are present and grouped exactly like index.html.",
+            "Search filters by title, description and world; Escape clears it.",
+            "Every card exposes a stable id (card-<section>) and opens its section."
+          ]
+        },
+        {
+          "id": "FND-02",
+          "title": "Section registry and routing",
+          "description": "A single registry declares every section: id, title, group, icon, spec link, status and factory. The shell routes to a section, keeps per-section state alive and restores the last opened section.",
+          "acceptance": [
+            "Adding a section touches one registry entry and one module.",
+            "Unknown or disabled sections render a clear empty state, not a panic.",
+            "Back navigation and keyboard shortcuts work from every section."
+          ]
+        },
+        {
+          "id": "FND-03",
+          "title": "Shared save JSON import",
+          "description": "One import path for raw decoded saves used by every section, replacing the research-only paste panel. Supports file, paste and drag-and-drop.",
+          "acceptance": [
+            "Raw it.json, save.json and the existing fixture import with the same values as today.",
+            "Validation reports the detected format, research level, character count and warnings before applying.",
+            "A failed import leaves the current state untouched."
+          ]
+        },
+        {
+          "id": "FND-04",
+          "title": "Project and section JSON import/export",
+          "description": "Export the whole app state as versioned JSON and import it back. Also accept the upstream ROv2 state string and per-section config JSON.",
+          "acceptance": [
+            "Round-trip export then import reproduces every section's visible state.",
+            "ROv2 state strings are decompressed and migrated.",
+            "Version and section ids are validated; unknown fields warn, not fail."
+          ]
+        },
+        {
+          "id": "FND-05",
+          "title": "Import preview, migration and errors",
+          "description": "A single import pipeline: detect format, parse, migrate to the current schema, show a preview, apply atomically, and keep a warning list.",
+          "acceptance": [
+            "Malformed JSON, wrong format and unsupported versions each get a specific message.",
+            "Warnings name the field and the fallback used.",
+            "Applying is atomic and logs what changed."
+          ]
+        },
+        {
+          "id": "FND-06",
+          "title": "Upstream asset pipeline",
+          "description": "Script that copies the upstream assets tree from a local checkout into gitignored assets/upstream, writes a manifest and verifies referenced files. Requires explicit permission before any asset is committed or distributed.",
+          "acceptance": [
+            "script/import-upstream-assets.mjs --from <checkout> --dry-run lists every file and total size.",
+            "Applying writes assets/upstream plus manifest with hashes; the app resolves images through the manifest.",
+            "Missing assets render a labelled placeholder, never a broken layout."
+          ]
+        },
+        {
+          "id": "FND-07",
+          "title": "Session persistence and recent imports",
+          "description": "Persist the active section, imported save metadata and section configs across launches in a local app-data file.",
+          "acceptance": [
+            "Relaunch restores the last section and imported state.",
+            "Recent imports are listed with time and format.",
+            "A corrupt state file is backed up and the app starts clean."
+          ]
+        },
+        {
+          "id": "FND-08",
+          "title": "Shared layout, theme and responsive rules",
+          "description": "Ely-based shell, cards, tabs, tables and form controls shared by all sections; dark palette and spacing match upstream.",
+          "acceptance": [
+            "All sections use the shared page header, tab strip, card and table primitives.",
+            "Minimum window size keeps tables scrollable and cards readable.",
+            "No section reimplements a component that exists in Ely."
+          ]
+        },
+        {
+          "id": "FND-09",
+          "title": "Empty, loading, error and stale states",
+          "description": "Consistent states for no save, partial save, missing data, long-running work, cancelled work and stale results.",
+          "acceptance": [
+            "Every section renders a helpful no-save state.",
+            "Long tasks expose progress and cancel; cancelling restores the previous result.",
+            "Stale results are visibly marked after inputs change."
+          ]
+        },
+        {
+          "id": "FND-10",
+          "title": "Per-section verification harness",
+          "description": "Extend the gpui-mcp harness so each section has a smoke path, stable ids and a screenshot baseline.",
+          "acceptance": [
+            "script/mcp-sections.mjs opens every dashboard card and asserts its root node.",
+            "Each section has at least one interaction check and one screenshot.",
+            "Lane isolation still works when sections run in parallel."
+          ]
+        }
+      ],
+      "verification": [
+        "cargo test, clippy and fmt stay clean.",
+        "Dashboard opens all 30 sections in the harness.",
+        "Import round-trip covers raw save, ROv2 state and project JSON."
+      ]
+    },
+    {
+      "id": "M1",
+      "key": "research",
+      "title": "Research Optimizer: full upstream parity",
+      "group": "w7",
+      "status": "partial",
+      "summary": "Finish the Research section so all eight upstream tabs and the shared save/supplement tools are present, including the Decision Tree, Insight ROI, Observation Unlocks and full save-derived multipliers.",
+      "upstream": ["research-optimizer-v2.html", "js/app.js", "js/ui/optimizer-ui.js", "js/ui/dashboard.js", "js/ui/state-io.js", "js/dt/decision-tree.js", "js/stats/systems/w7/research-math.js", "js/optimizers/shapes.js", "js/optimizers/mags.js", "js/optimizers/grid-spend.js", "js/workers/worker-pool.js", "js/sim-engine.js"],
+      "ui": [
+        "Tabs: Dashboard, Optimizer, Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station.",
+        "Dashboard: summary, research grid, observations, EXP rate breakdown, AFK rate, insight multiplier.",
+        "Optimizer: target level/hours, assume observations, extended insight lookahead, tournament +12h, strategy comparison, timeline, EXP/hr chart, step actions and Open in Decision Tree.",
+        "Decision Tree: pan/zoom tree, branch/save/delete nodes, upgrade and shape modes, observation editor, auto insight, compare branches."
+      ],
+      "inputs": ["Research rows from the save", "Grid levels", "Shape placements", "Magnifier pool", "Observation found/insight state", "Supplements and account multipliers"],
+      "outputs": ["EXP/hour breakdown", "Projection and strategy timeline", "Optimized layout", "Insight ROI and unlock priorities", "Decision-tree branches"],
+      "assets": "Research sprites under assets/combat-sim/ui/research (ResShape*, ResSq*, ResearchBG, magnifier and observation icons).",
+      "features": [
+        {
+          "id": "RES-01",
+          "title": "Research dashboard tab",
+          "description": "Port the upstream dashboard: summary, research grid preview, observation board, EXP rate breakdown, AFK rate and insight multiplier.",
+          "acceptance": [
+            "All six dashboard blocks render from the loaded save.",
+            "Values match the Optimizer tab and the Rust simulation.",
+            "Grid and observation previews link to the editors."
+          ]
+        },
+        {
+          "id": "RES-02",
+          "title": "Optimizer target and options",
+          "description": "Target level or hours plus the three upstream toggles: assume observations unlocked, extended insight lookahead and tournament +12h.",
+          "acceptance": [
+            "Each toggle changes the simulated projection in a testable way.",
+            "Targets are validated and remembered per session.",
+            "The run can be cancelled without losing the previous result."
+          ]
+        },
+        {
+          "id": "RES-03",
+          "title": "Target-aware optimizer engine",
+          "description": "Simulate to the target, spend grid points earned on the way and re-optimize shapes and magnifiers on research and insight level-ups, matching upstream sim-engine and worker-pool behavior.",
+          "acceptance": [
+            "A level target optimizes time-to-level, not only immediate EXP/hr.",
+            "Future grid points and observation unlocks are applied at the correct level-ups.",
+            "Results are deterministic for the same save and options."
+          ]
+        },
+        {
+          "id": "RES-04",
+          "title": "Strategy comparison, timeline and actions",
+          "description": "Port the upstream result view: best/worst strategy comparison, interactive timeline, EXP/hr chart and expandable step-by-step actions.",
+          "acceptance": [
+            "The comparison reports best and worst tested strategies.",
+            "Timeline and chart agree with the projection samples.",
+            "Actions expand to their detail and highlight the timeline phase."
+          ]
+        },
+        {
+          "id": "RES-05",
+          "title": "Insight ROI tab",
+          "description": "Per-observation insight levelling analysis: time to level, research EXP lost during the grind, permanent rate gain and break-even time.",
+          "acceptance": [
+            "Table covers every usable observation with the upstream columns.",
+            "Sorting and summary totals work.",
+            "Values match the simulation's insight formulas."
+          ]
+        },
+        {
+          "id": "RES-06",
+          "title": "Observation Unlocks tab",
+          "description": "Rank undiscovered observations by expected EXP/hr gain weighted by unlock probability per day.",
+          "acceptance": [
+            "Priority table matches upstream ordering for the fixture save.",
+            "Filters and summary are present.",
+            "Missing roll data is reported, not guessed."
+          ]
+        },
+        {
+          "id": "RES-07",
+          "title": "Shape Optimization tab",
+          "description": "Standalone shape workspace: priority tiers above/below the Res EXP divider, drag to reorder, built-in and custom presets, optimized placement preview and coverage breakdown.",
+          "acceptance": [
+            "Tier editing detaches a built-in preset without mutating it.",
+            "Custom presets persist in the project state.",
+            "Placement preview and breakdown use the real optimizer."
+          ]
+        },
+        {
+          "id": "RES-08",
+          "title": "Decision Tree sandbox",
+          "description": "Interactive tree of research events: branch, save, delete, compare, zoom, level-ups-only, upgrade/shape modes and observation editing.",
+          "acceptance": [
+            "A run can be imported from the Optimizer tab.",
+            "Branch comparison shows deltas for rate, level and time.",
+            "Auto Insight and shape/magnifier optimize actions work per node."
+          ]
+        },
+        {
+          "id": "RES-09",
+          "title": "Minehead tab",
+          "description": "Port the research page's Minehead tab and its save-derived inputs.",
+          "acceptance": [
+            "All upstream Minehead controls and results are present.",
+            "Values update with the loaded save.",
+            "Formula tests match upstream fixtures."
+          ]
+        },
+        {
+          "id": "RES-10",
+          "title": "Sushi Station tab",
+          "description": "Port the research page's Sushi Station tab and its account bonuses.",
+          "acceptance": [
+            "All upstream Sushi controls and results are present.",
+            "RoG bonuses feed research grid points and multipliers.",
+            "Formula tests match upstream fixtures."
+          ]
+        },
+        {
+          "id": "RES-11",
+          "title": "Full save-derived multiplier tree",
+          "description": "Decode every account term the upstream derives: sticker tree, arcade 63, Clam Works 9, Menagerie B3, equipment, Button, royal research, jelly, RoG, mastery, event shop and minehead.",
+          "acceptance": [
+            "Imported save rate matches upstream for the fixture and a full-account save.",
+            "Every omitted term is warned with its field name.",
+            "No term is guessed."
+          ]
+        },
+        {
+          "id": "RES-12",
+          "title": "State export/import and supplements",
+          "description": "Copy/Paste State string plus the full supplements panel, matching upstream state-io and supplement behavior.",
+          "acceptance": [
+            "Exported ROv2 string imports back to the same state.",
+            "Supplements apply to the simulation and persist.",
+            "Invalid state strings leave the run untouched."
+          ]
+        },
+        {
+          "id": "RES-13",
+          "title": "Grid, shape and magnifier editors",
+          "description": "Complete the manual editing surface: grid levels, shape drag/rotate/add/remove, magnifier assignment, undo/redo and canvas rotation handle.",
+          "acceptance": [
+            "Every edit is undoable and redoable.",
+            "Shapes can be rotated on the canvas.",
+            "Keyboard and pointer edits agree."
+          ]
+        }
+      ],
+      "verification": [
+        "Every research tab opens in the harness.",
+        "Formula tests compare against upstream Node fixtures.",
+        "Full save fixture matches upstream EXP/hr within tolerance."
+      ]
+    },
+    {
+      "id": "M2",
+      "key": "combat-sim",
+      "title": "Combat Simulator",
+      "group": "general",
+      "status": "planned",
+      "summary": "Port the active combat simulator: loadout editor, mechanics overrides, component terms, encounter simulation, comparisons, Killroy, obols, cards, kills-over-time and replays.",
+      "upstream": ["combat-sim-calc.html", "js/stats/systems/common/combat-sim-*.js", "js/ui/combat-sim-*.js", "assets/combat-sim"],
+      "ui": ["Loadout editor and mechanics overrides", "Component terms and simulator options", "Encounter simulation workspace", "Results tabs: comparison, Killroy, obols, kills by monster, cards, kills over time, The Den, combat-driven progress, smelting"],
+      "inputs": ["Character save data", "Loadout and equipment", "Mechanics overrides", "Encounter and map selection", "Simulator options"],
+      "outputs": ["DPS/TTK and kill outcomes", "Comparison tables", "Killroy and card progress", "Replay data", "Warnings for unsupported mechanics"],
+      "assets": "assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB, local-only until licensed.",
+      "features": [
+        {
+          "id": "CS-01",
+          "title": "Loadout editor",
+          "description": "Edit character, equipment, talents and loadout presets with save-backed defaults.",
+          "acceptance": ["Loadout changes update the simulation immediately.", "Invalid or missing items are flagged.", "Presets save in project JSON."]
+        },
+        {
+          "id": "CS-02",
+          "title": "Mechanics overrides",
+          "description": "Override combat mechanics and component terms with searchable groups and reset-to-save behavior.",
+          "acceptance": ["Every upstream override is present.", "Overrides are visible as active chips.", "Reset restores save values."]
+        },
+        {
+          "id": "CS-03",
+          "title": "Encounter simulator",
+          "description": "Run active combat against the selected encounter with the upstream options and progress reporting.",
+          "acceptance": ["Runs can be cancelled.", "Results match upstream fixture outcomes.", "Unsupported mechanics are listed, not silently ignored."]
+        },
+        {
+          "id": "CS-04",
+          "title": "Character, loadout and map comparison",
+          "description": "Side-by-side comparison across characters, loadouts and maps.",
+          "acceptance": ["Comparison selects two or more setups.", "Deltas are shown per metric.", "Export copies the comparison as JSON."]
+        },
+        {
+          "id": "CS-05",
+          "title": "Killroy, obols, cards and kills",
+          "description": "Killroy encounter results, obol fragments, kills by monster, card drops and kills-over-time chart.",
+          "acceptance": ["Each result tab renders from the same run.", "Charts match the simulated timeline.", "Empty runs show a clear state."]
+        },
+        {
+          "id": "CS-06",
+          "title": "The Den, progress and smelting",
+          "description": "Combat-driven progress, The Den outcomes and smelting output panels.",
+          "acceptance": ["Panels match upstream outputs.", "Missing inputs are warned.", "Values feed the comparison export."]
+        },
+        {
+          "id": "CS-07",
+          "title": "Replays and combat assets",
+          "description": "Play, scrub and speed-control combat replays using the upstream sprites and maps.",
+          "acceptance": ["Replay loads from a run or Killroy replay.", "Scrub, speed and wave controls work.", "Assets resolve through the manifest with placeholders."]
+        }
+      ],
+      "verification": ["Combat fixtures match upstream damage and kill counts.", "Replay harness takes a screenshot.", "Asset manifest covers every referenced file."]
+    },
+    {
+      "id": "M3",
+      "key": "stats-all",
+      "title": "All Stats Dashboard",
+      "group": "general",
+      "status": "planned",
+      "summary": "Port the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.",
+      "upstream": ["stats-all.html", "js/ui/dash-breakdowns.js", "js/stats/tree-builder.js", "js/stats/stat-context.js"],
+      "ui": ["Calculation context selectors", "Breakdowns grouped by category", "System formula explorer with formula ledger", "Input change list"],
+      "inputs": ["Character and map selection", "Skill and construction mode", "Save data"],
+      "outputs": ["Stat breakdowns", "Formula explanations", "Affected-formula list"],
+      "assets": "None beyond icons.",
+      "features": [
+        {
+          "id": "SA-01",
+          "title": "Calculation context",
+          "description": "Character, map, visibility, skill and construction-mode selectors with save defaults.",
+          "acceptance": ["Every upstream selector exists.", "Context changes refresh all breakdowns.", "Context is restorable from project JSON."]
+        },
+        {
+          "id": "SA-02",
+          "title": "Category breakdowns",
+          "description": "Map-aware character/account breakdowns for combat, skills, carry capacity and account totals.",
+          "acceptance": ["All upstream categories render.", "Totals agree with the formula ledger.", "Unknown systems show a warning."]
+        },
+        {
+          "id": "SA-03",
+          "title": "System formula explorer",
+          "description": "Per-system formula cards with inputs, saved values, computed values and explanations.",
+          "acceptance": ["Search and filtering work.", "Each formula links to its upstream source.", "Values match the breakdowns."]
+        },
+        {
+          "id": "SA-04",
+          "title": "Input change ledger",
+          "description": "Show which inputs changed and which formulas they affect.",
+          "acceptance": ["Changed inputs are highlighted.", "Affected formulas update live.", "Reset restores save values."]
+        }
+      ],
+      "verification": ["Fixture totals match upstream stats page.", "Explorer values match breakdowns.", "Harness covers every category."]
+    },
+    {
+      "id": "M4",
+      "key": "damage",
+      "title": "Damage Breakdown",
+      "group": "tools",
+      "status": "planned",
+      "summary": "Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.",
+      "upstream": ["damage-calc.html", "js/stats/stat-context.js", "js/stats/systems/w2/dungeon.js", "js/ui/dash-breakdowns.js"],
+      "ui": ["Context selectors", "Damage summary and mastery bars", "Layer tabs", "Formula breakdown tree"],
+      "inputs": ["Character and map", "Save data", "Dungeon context"],
+      "outputs": ["Min/max damage", "Mastery value", "Damage layers", "Formula tree"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "DMG-01",
+          "title": "Damage context and summary",
+          "description": "Character/map selectors plus game, minimum, maximum and exact damage cards.",
+          "acceptance": ["Values match upstream.", "Missing inputs are flagged.", "Context persists."]
+        },
+        {
+          "id": "DMG-02",
+          "title": "Damage layers and mastery",
+          "description": "Layer tabs with per-layer values and notes, plus the mastery bar and breakdown.",
+          "acceptance": ["Every upstream layer is present.", "Layer sum matches the summary.", "Mastery matches the formula tree."]
+        },
+        {
+          "id": "DMG-03",
+          "title": "Formula tree",
+          "description": "Expandable formula tree for damage and mastery.",
+          "acceptance": ["Nodes show input, multiplier and source.", "Search highlights nodes.", "Values match the summary."]
+        }
+      ],
+      "verification": ["Damage fixture matches upstream.", "Layer sum test.", "Harness screenshot."]
+    },
+    {
+      "id": "M5",
+      "key": "drop-rate",
+      "title": "Drop Rate Calculator",
+      "group": "tools",
+      "status": "planned",
+      "summary": "Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.",
+      "upstream": ["drop-rate-calc.html", "js/stats/systems/w2/dungeon.js", "js/stats/tree-builder.js"],
+      "ui": ["Context selectors", "Dungeon inputs", "Total card", "Formula tree"],
+      "inputs": ["Character and map", "Dungeon runtime, luck and drop rate"],
+      "outputs": ["Total drop rate", "Formula breakdown"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "DR-01",
+          "title": "Drop-rate inputs and total",
+          "description": "Character/map selectors, dungeon runtime/luck/DR fields and the total drop-rate card.",
+          "acceptance": ["Total matches upstream.", "Inputs validate ranges.", "Save values prefill."]
+        },
+        {
+          "id": "DR-02",
+          "title": "Drop-rate formula tree",
+          "description": "Expandable breakdown of every drop-rate term.",
+          "acceptance": ["Tree sums to the total.", "Each term names its source.", "Search works."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Tree-sum test."]
+    },
+    {
+      "id": "M6",
+      "key": "coin-multi",
+      "title": "Coin Multiplier Calculator",
+      "group": "tools",
+      "status": "planned",
+      "summary": "Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.",
+      "upstream": ["coin-multi-calc.html", "js/stats/systems/common/overkill.js", "js/stats/tree-builder.js"],
+      "ui": ["Context selectors", "Current calculation cards", "Formula breakdown tree"],
+      "inputs": ["Character", "Map value", "Target, HP, damage and overkill values"],
+      "outputs": ["Total coin multiplier", "Partial-badge state", "Formula tree"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "CM-01",
+          "title": "Coin multiplier inputs and total",
+          "description": "Character/map and combat inputs with the total multiplier card and partial badge.",
+          "acceptance": ["Total matches upstream.", "Partial state is explained.", "Inputs validate."]
+        },
+        {
+          "id": "CM-02",
+          "title": "Coin multiplier formula tree",
+          "description": "Expandable breakdown of every coin multiplier term.",
+          "acceptance": ["Tree sums to the total.", "Sources are named.", "Search works."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Tree-sum test."]
+    },
+    {
+      "id": "M7",
+      "key": "shadow",
+      "title": "Shadow Ban Check",
+      "group": "general",
+      "status": "planned",
+      "summary": "Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].",
+      "upstream": ["shadow.html", "js/save/loader.js"],
+      "ui": ["Large verdict", "Load/save status"],
+      "inputs": ["OptLacc[26] from the save"],
+      "outputs": ["YES, NO or UNKNOWN"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "SH-01",
+          "title": "Shadow-ban verdict",
+          "description": "Show YES for nonzero, NO for zero and UNKNOWN before a valid save or when the flag is missing.",
+          "acceptance": ["All three states are reachable in tests.", "Verdict never guesses.", "Save status is visible."]
+        }
+      ],
+      "verification": ["Three-state fixture test.", "Harness screenshot."]
+    },
+    {
+      "id": "M8",
+      "key": "endgame",
+      "title": "Endgame Check",
+      "group": "general",
+      "status": "planned",
+      "summary": "Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.",
+      "upstream": ["endgame.html", "js/endgamers.js", "js/endgame-stats.js"],
+      "ui": ["Large verdict", "Stats table"],
+      "inputs": ["Optional save"],
+      "outputs": ["NO verdict", "Stats summary"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "EG-01",
+          "title": "Endgame verdict and stats",
+          "description": "Always display NO before and after loading, with the stats and error panels.",
+          "acceptance": ["Verdict is NO with and without a save.", "Stats render or fail with a clear error.", "Matches upstream copy."]
+        }
+      ],
+      "verification": ["Verdict test.", "Harness screenshot."]
+    },
+    {
+      "id": "M9",
+      "key": "statue",
+      "title": "Statue Calculator",
+      "group": "general",
+      "status": "planned",
+      "summary": "Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.",
+      "upstream": ["statue-calc.html", "js/stats/systems/w1/stamp.js", "js/stats/systems/w1/statue.js"],
+      "ui": ["Character selector", "Statue table with search/sort", "Next-level and availability columns", "Farming rate and breakdown"],
+      "inputs": ["Character save", "Statue levels", "Farming method/rate"],
+      "outputs": ["Statues needed per level", "Time estimates", "Batch apply"],
+      "assets": "Statue icons if present in upstream assets.",
+      "features": [
+        {
+          "id": "ST-01",
+          "title": "Statue table and requirements",
+          "description": "Per-statue current level, next-level requirement and availability with search and sort.",
+          "acceptance": ["All statues render.", "Search/sort work.", "Requirements match upstream."]
+        },
+        {
+          "id": "ST-02",
+          "title": "STARTUE bubble and time estimates",
+          "description": "Apply the STARTUE EXP bubble and estimate time from the selected farming rate.",
+          "acceptance": ["Bubble changes estimates.", "Rate source is shown.", "Estimates match upstream."]
+        },
+        {
+          "id": "ST-03",
+          "title": "Set all, apply all and farming",
+          "description": "Batch set/apply controls and the statue-farming breakdown.",
+          "acceptance": ["Batch actions are undoable.", "Farming breakdown matches upstream.", "Invalid values are rejected."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Batch undo test."]
+    },
+    {
+      "id": "M10",
+      "key": "fishing",
+      "title": "Fishing Calculator",
+      "group": "w2",
+      "status": "planned",
+      "summary": "Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.",
+      "upstream": ["fishing-calc.html", "js/stats/systems/w2/fishing.js", "js/stats/data/w2/fishing.js", "js/stats/tree-builder.js"],
+      "ui": ["Toolbar and character context", "Depth projection", "Pool cards with best lure/line", "All-combination table", "Other characters"],
+      "inputs": ["Character save", "Fishing level/toolkit", "Pool/depth selection"],
+      "outputs": ["AFK catches", "Fish split", "Real vs panel EXP", "Best lure and line", "Depth projection"],
+      "assets": "Fishing icons if present.",
+      "features": [
+        {
+          "id": "FI-01",
+          "title": "AFK catches and fish split",
+          "description": "Catch rate, fish distribution and real-versus-panel EXP per pool.",
+          "acceptance": ["Values match upstream.", "Pool switching updates results.", "Missing toolkit is flagged."]
+        },
+        {
+          "id": "FI-02",
+          "title": "Best lure and line per pool",
+          "description": "Rank every lure/line combination for the selected pool and depth.",
+          "acceptance": ["All 225 combinations are evaluated.", "Best combination is highlighted.", "Ties are explained."]
+        },
+        {
+          "id": "FI-03",
+          "title": "Depth projection and other characters",
+          "description": "Project fishing depth and show other characters fishing the Trench.",
+          "acceptance": ["Projection matches upstream.", "Character contributions sum correctly.", "Empty roster shows a state."]
+        }
+      ],
+      "verification": ["225-combination fixture.", "Depth projection test.", "Harness."]
+    },
+    {
+      "id": "M11",
+      "key": "prisma",
+      "title": "Prisma Calculator",
+      "group": "w2",
+      "status": "planned",
+      "summary": "Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.",
+      "upstream": ["prisma-calc.html", "js/ui/prisma.js"],
+      "ui": ["Character and AFK-hours controls", "Metric/search filters", "Progress and cancel", "Result rows", "Coverage table"],
+      "inputs": ["Character save", "AFK hours", "Metric filter", "Search"],
+      "outputs": ["Bubble impact rows", "Coverage", "Stale/summary state"],
+      "assets": "Bubble icons if present.",
+      "features": [
+        {
+          "id": "PR-01",
+          "title": "Prisma search and run",
+          "description": "Run the bubble impact search with metric filters, progress and cancel.",
+          "acceptance": ["Cancel restores the previous result.", "Progress is accurate.", "Stale results are marked."]
+        },
+        {
+          "id": "PR-02",
+          "title": "Result rows and coverage",
+          "description": "Ranked bubble impacts with per-metric deltas and a coverage table.",
+          "acceptance": ["Rows sort by the selected metric.", "Coverage lists missing systems.", "Values match upstream."]
+        }
+      ],
+      "verification": ["Fixture ranking test.", "Cancel test.", "Harness."]
+    },
+    {
+      "id": "M12",
+      "key": "killroy",
+      "title": "Killroy Calculator",
+      "group": "w2",
+      "status": "planned",
+      "summary": "Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.",
+      "upstream": ["killroy-calc.html", "js/ui/killroy.js", "js/stats/systems/w2/killroy.js"],
+      "ui": ["Settings and forecast weeks", "Baseline and upgrades tabs", "Upgrade list and selection preview", "Trials and progress", "Results and saved buffs"],
+      "inputs": ["Character save", "Forecast weeks", "Upgrade selection", "Trials"],
+      "outputs": ["Weekly forecast", "Monster/class records", "Skull outcomes", "+1 comparisons"],
+      "assets": "Killroy icons if present.",
+      "features": [
+        {
+          "id": "KL-01",
+          "title": "Weekly forecast",
+          "description": "Forecast encounters, kills, skulls and records over the selected weeks.",
+          "acceptance": ["Forecast matches upstream.", "Week range validates.", "Results explain assumptions."]
+        },
+        {
+          "id": "KL-02",
+          "title": "+1 upgrade comparison",
+          "description": "Compare the next upgrade per option with selection preview and trials.",
+          "acceptance": ["Every upgrade is comparable.", "Trials are deterministic.", "Best option is highlighted."]
+        },
+        {
+          "id": "KL-03",
+          "title": "Saved buffs and results",
+          "description": "Render saved buffs, unlimited mode, progress/cancel and the results table.",
+          "acceptance": ["Cancel works.", "Saved buffs match the save.", "Results export as JSON."]
+        }
+      ],
+      "verification": ["Forecast fixture.", "Trial determinism test.", "Harness."]
+    },
+    {
+      "id": "M13",
+      "key": "cog",
+      "title": "Cog Board Optimizer",
+      "group": "w3",
+      "status": "planned",
+      "summary": "Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.",
+      "upstream": ["cog-optimizer.html", "js/cogs/cog-board.js", "js/cogs/cog-judge.js", "js/cogs/cog-optimizer.js"],
+      "ui": ["Summary stats", "Weighted objective inputs", "Optimize/perfect/reset", "Swap list and steps", "Board insights, shelf and roll ranges"],
+      "inputs": ["Cog board and inventory", "Construction level", "Objective weights"],
+      "outputs": ["Optimized placement", "Swap steps", "Board grade", "Roll targets"],
+      "assets": "Cog icons if present.",
+      "features": [
+        {
+          "id": "CG-01",
+          "title": "Cog board optimizer",
+          "description": "Optimize cog placement for build, construction EXP and Flaggy rate objectives.",
+          "acceptance": ["Optimizer respects board rules.", "Result is never worse than input.", "Reset restores the save board."]
+        },
+        {
+          "id": "CG-02",
+          "title": "Weighted objectives and perfect board",
+          "description": "Weighted objective inputs plus perfect-board and reset actions.",
+          "acceptance": ["Weights change the result.", "Perfect board is explainable.", "Invalid weights are rejected."]
+        },
+        {
+          "id": "CG-03",
+          "title": "Insights, shelf and roll targets",
+          "description": "Board insights, shelf contents, roll ranges and what to roll for.",
+          "acceptance": ["Insights match the optimizer.", "Roll ranges use the construction level.", "Shelf is read-only."]
+        },
+        {
+          "id": "CG-04",
+          "title": "Swap walkthrough",
+          "description": "Step-by-step swap list with previous/next/done controls.",
+          "acceptance": ["Steps apply in order.", "Previous restores the prior board.", "Done persists the final board."]
+        }
+      ],
+      "verification": ["Optimizer invariant tests.", "Swap undo test.", "Harness."]
+    },
+    {
+      "id": "M14",
+      "key": "worship-td",
+      "title": "Worship Tower Defense",
+      "group": "w3",
+      "status": "planned",
+      "summary": "Port tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.",
+      "upstream": ["worship-td-calc.html", "js/stats/systems/w3/worship-td.js", "js/ui/worship-td*.js", "assets/worship-td"],
+      "ui": ["Trial selector", "Live simulator with wave/ranges/HUD", "Replay with scrub/speed", "Plan and model assumptions", "Optimizer and recommended plan"],
+      "inputs": ["Character and trial", "Tower layout", "Wave and phase config", "Optimizer seeds/mode"],
+      "outputs": ["Wave outcomes", "Final towers", "Recommended plan", "Replay timeline"],
+      "assets": "assets/worship-td towers, projectiles and map art.",
+      "features": [
+        {
+          "id": "WT-01",
+          "title": "Live tower-defense simulator",
+          "description": "Run waves with tower placement, ranges, HUD and restart controls.",
+          "acceptance": ["Waves resolve deterministically.", "Ranges and HUD match state.", "Restart resets cleanly."]
+        },
+        {
+          "id": "WT-02",
+          "title": "Replay and scrubbing",
+          "description": "Play, scrub, change speed and inspect waves from a recorded run.",
+          "acceptance": ["Scrub matches timeline.", "Speed controls work.", "Replay loads from a run."]
+        },
+        {
+          "id": "WT-03",
+          "title": "Plan and model assumptions",
+          "description": "Phase plan, final towers and model-assumption panels.",
+          "acceptance": ["Plan matches the simulator.", "Assumptions are listed.", "Missing data is warned."]
+        },
+        {
+          "id": "WT-04",
+          "title": "Strategy optimizer",
+          "description": "Search tower strategies with seeds, mode and recommended plan output.",
+          "acceptance": ["Optimizer is cancellable.", "Recommended plan beats baseline.", "Results are reproducible by seed."]
+        }
+      ],
+      "verification": ["Wave fixture.", "Replay determinism.", "Optimizer invariant.", "Harness."]
+    },
+    {
+      "id": "M15",
+      "key": "ladle",
+      "title": "Ladle Optimizer",
+      "group": "w4",
+      "status": "planned",
+      "summary": "Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.",
+      "upstream": ["ladle-calc.html", "js/stats/systems/w4/cooking-ladle.js", "js/stats/tree-builder.js"],
+      "ui": ["Summary and character selectors", "Breakdowns", "Kitchens and Jellyfish reset layout", "Ladle farmers", "Forecast comparison", "Meal outcomes", "NMLB planner"],
+      "inputs": ["Character save", "Ladle ownership", "Days/resets", "Balloon target", "Kitchen objective/policy"],
+      "outputs": ["Ladles/day", "Cooking EXP", "Meal costs", "Reset instructions", "NMLB targets"],
+      "assets": "Cooking icons if present.",
+      "features": [
+        {
+          "id": "LD-01",
+          "title": "Ladle summary and breakdowns",
+          "description": "Per-character ladle uses, rates and Cooking EXP balloon breakdown.",
+          "acceptance": ["Values match upstream.", "Character switching works.", "Balloon overflow is handled."]
+        },
+        {
+          "id": "LD-02",
+          "title": "Kitchens and Jellyfish reset",
+          "description": "Daily kitchen layout, reset investment and expandable reset instructions.",
+          "acceptance": ["Reset plan matches inputs.", "Instructions are copyable.", "Days range validates."]
+        },
+        {
+          "id": "LD-03",
+          "title": "Forecast comparison and meal outcomes",
+          "description": "Compare objectives across reset days and show meal targets/outcomes.",
+          "acceptance": ["Objective switch changes ranking.", "Meal costs use the discount.", "Results match upstream."]
+        },
+        {
+          "id": "LD-04",
+          "title": "NMLB donation planner",
+          "description": "Blue Jellyfish planner for kitchen speed after N resets, including predicted rotation.",
+          "acceptance": ["Planner finds the best target.", "Rotation is shown.", "Cancel restores state."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Planner determinism.", "Harness."]
+    },
+    {
+      "id": "M16",
+      "key": "cooking-mastery",
+      "title": "Cooking Mastery",
+      "group": "w4",
+      "status": "planned",
+      "summary": "Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.",
+      "upstream": ["cooking-mastery-calc.html", "js/stats/systems/w4/cooking.js", "js/stats/systems/common/meal-impact.js"],
+      "ui": ["Mastery EXP tab", "Upgrade comparison", "Optimal distribution", "EXP rate breakdown", "Yellow point allocator"],
+      "inputs": ["Character save", "Meal levels and upgrades", "Yellow point budget", "Goal"],
+      "outputs": ["EXP/hr", "Upgrade ranking", "Point allocation", "Breakdown tree"],
+      "assets": "Meal icons if present.",
+      "features": [
+        {
+          "id": "CK-01",
+          "title": "Mastery EXP and upgrade comparison",
+          "description": "Current Mastery EXP/hr, upgrade comparison and EXP rate breakdown.",
+          "acceptance": ["Values match upstream.", "Upgrade ranking is stable.", "Breakdown sums to the total."]
+        },
+        {
+          "id": "CK-02",
+          "title": "Optimal daily distribution",
+          "description": "Allocate the daily reset budget across upgrades for the selected goal.",
+          "acceptance": ["Allocation respects the budget.", "Goal switch changes the plan.", "Plan is copyable."]
+        },
+        {
+          "id": "CK-03",
+          "title": "Yellow point allocator",
+          "description": "Spend yellow points across characters/meals with a goal selector.",
+          "acceptance": ["Budget is respected.", "Per-goal results are shown.", "Invalid budgets are rejected."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Allocator invariant.", "Harness."]
+    },
+    {
+      "id": "M17",
+      "key": "fountain",
+      "title": "Fountain Calculator",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.",
+      "upstream": ["fountain-calc.html", "js/stats/systems/w5/fountain.js"],
+      "ui": ["Overview and income rates", "Currency and multipliers", "Upgrades and cost curve", "Planner/optimizer", "Marble planner", "Simulation"],
+      "inputs": ["Save fountain state", "Water/currency selection", "Planner goal and budget"],
+      "outputs": ["Income rates", "Currency values", "Upgrade plan", "Marble plan", "Simulation results"],
+      "assets": "Fountain icons if present.",
+      "features": [
+        {
+          "id": "FN-01",
+          "title": "Overview and income rates",
+          "description": "Fountain summary, income rates, lucky coins/ducks, coin stacks and cross-system bonuses.",
+          "acceptance": ["Values match upstream.", "Missing bonuses are warned.", "Rates update with the save."]
+        },
+        {
+          "id": "FN-02",
+          "title": "Currency values and upgrades",
+          "description": "Per-water multipliers, currency values, upgrade list and cost curve.",
+          "acceptance": ["Currency switching works.", "Cost curve matches upgrades.", "Max-level state is clear."]
+        },
+        {
+          "id": "FN-03",
+          "title": "Planner and optimizer",
+          "description": "Plan upgrades for a goal with affordability and per-hour normalization.",
+          "acceptance": ["Plan respects budget.", "Goal switch changes ranking.", "Steps are listed."]
+        },
+        {
+          "id": "FN-04",
+          "title": "Marble planner and simulation",
+          "description": "Marble upgrade planner and the fountain simulation tab.",
+          "acceptance": ["Marble plan is explainable.", "Simulation is deterministic.", "Cancel restores state."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Planner invariant.", "Harness."]
+    },
+    {
+      "id": "M18",
+      "key": "jar",
+      "title": "Jar Calculator",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.",
+      "upstream": ["jar-calc.html", "js/stats/systems/w5/jar.js"],
+      "ui": ["Overview", "Production", "Rupie value", "Chances", "Collectibles", "Upgrades", "Next tier", "Enchant simulator", "Enchant history"],
+      "inputs": ["Save jar state", "Jar type/tier", "Enchant target/count/strategy"],
+      "outputs": ["Production rates", "Rupie income", "Break chances", "Upgrade plan", "Enchant outcomes"],
+      "assets": "Jar icons if present.",
+      "features": [
+        {
+          "id": "JR-01",
+          "title": "Overview and production",
+          "description": "Jar summary, rupie balances, production slots and multipliers.",
+          "acceptance": ["Values match upstream.", "Slot details render.", "Missing jars are flagged."]
+        },
+        {
+          "id": "JR-02",
+          "title": "Rupie value and chances",
+          "description": "Rupie value breakdown, extra chance, break chances and chance-by-tier.",
+          "acceptance": ["Values match upstream.", "Tier switching works.", "Breakdown sums to the total."]
+        },
+        {
+          "id": "JR-03",
+          "title": "Collectibles, upgrades and next tier",
+          "description": "Collectible list, upgrade costs and next-tier requirements.",
+          "acceptance": ["Upgrade plan respects budget.", "Next tier is actionable.", "Max tier is clear."]
+        },
+        {
+          "id": "JR-04",
+          "title": "Enchant simulator and history",
+          "description": "Simulate enchants with target, count, strategy and focus, and keep a history.",
+          "acceptance": ["Simulation is seeded/reproducible.", "History persists in project JSON.", "Clear history works."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Enchant determinism.", "Harness."]
+    },
+    {
+      "id": "M19",
+      "key": "sailing",
+      "title": "Sailing Calculator",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.",
+      "upstream": ["sailing-calc.html", "js/stats/systems/w5/sailing.js"],
+      "ui": ["Fleet assignment", "Ship upgrade breakpoints", "Captain quality/leveling", "Replacement matrix", "Chest outcomes", "Artifacts", "Formula breakdowns", "Fleet simulation"],
+      "inputs": ["Save fleet and captains", "Island/route selection", "Assignment mode"],
+      "outputs": ["Trip time", "Loot value", "Chest tier chances", "Artifact odds", "Simulation results"],
+      "assets": "Sailing icons if present.",
+      "features": [
+        {
+          "id": "SL-01",
+          "title": "Fleet assignment",
+          "description": "Current versus optimized fleet assignment across routes.",
+          "acceptance": ["Optimized assignment beats current.", "Route switching works.", "Constraints are respected."]
+        },
+        {
+          "id": "SL-02",
+          "title": "Ships, captains and replacements",
+          "description": "Ship upgrade breakpoints, captain quality/leveling and strongest-source replacement matrix.",
+          "acceptance": ["Breakpoints match upstream.", "Replacement ranking is stable.", "Missing captains are flagged."]
+        },
+        {
+          "id": "SL-03",
+          "title": "Chest, artifact and loot outcomes",
+          "description": "Chest outcomes, per-boat tier chances, near-full pile and selected island artifacts.",
+          "acceptance": ["Chances sum to one.", "Loot value matches upstream.", "Artifact odds are explained."]
+        },
+        {
+          "id": "SL-04",
+          "title": "Fleet pile simulation",
+          "description": "Simulate the fleet pile with progress and results.",
+          "acceptance": ["Simulation is cancellable.", "Results are reproducible.", "Matches upstream fixture."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Chance-sum test.", "Harness."]
+    },
+    {
+      "id": "M20",
+      "key": "cglunko",
+      "title": "Cglunko Calculator",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.",
+      "upstream": ["cglunko-calc.html", "js/stats/systems/w5/cglunko.js", "js/ui/cglunko-combat.js"],
+      "ui": ["Overview and DR formula", "Upgrades", "Optimizer", "Stones with page tabs", "Recommended focus"],
+      "inputs": ["Save Cglunko state", "Color/page", "Upgrade levels", "Stone digits"],
+      "outputs": ["DR formula", "Upgrade priority", "Stone focus", "Recommended target"],
+      "assets": "Cglunko icons if present.",
+      "features": [
+        {
+          "id": "CL-01",
+          "title": "Overview and DR breakdown",
+          "description": "Summary, drop-rate formula breakdown and combat context.",
+          "acceptance": ["Values match upstream.", "Formula tree sums to the total.", "Missing data is warned."]
+        },
+        {
+          "id": "CL-02",
+          "title": "Upgrades and optimizer",
+          "description": "Upgrade list, priority and optimizer for the selected color.",
+          "acceptance": ["Optimizer respects costs.", "Priority updates with color.", "Result is never worse."]
+        },
+        {
+          "id": "CL-03",
+          "title": "Stone focus",
+          "description": "Blue/purple stone pages, digit impact and recommended focus target.",
+          "acceptance": ["Both pages render.", "Digit impact matches upstream.", "Focus target is explained."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness."]
+    },
+    {
+      "id": "M21",
+      "key": "coral-god-rank",
+      "title": "Coral God Rank Planner",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port the coral kid upgrade and god-rank offering planner with beam search and projection.",
+      "upstream": ["coral-god-rank-calc.html", "js/stats/systems/w5/coral-god-rank.js"],
+      "ui": ["Planner controls", "Summary", "Projected coral state", "Plan actions", "Offering fit", "Current levels"],
+      "inputs": ["Goal, budget, max levels, beam size", "God rank, Y4, div cost, reef, mine floor, vault, tier", "Assume unlocked"],
+      "outputs": ["Best plan", "Projected state", "Offering fit", "Action list"],
+      "assets": "Coral icons if present.",
+      "features": [
+        {
+          "id": "CR-01",
+          "title": "Planner controls and summary",
+          "description": "All upstream planner inputs with validation and a summary of the current state.",
+          "acceptance": ["Every input is present.", "Validation prevents impossible plans.", "Summary matches save."]
+        },
+        {
+          "id": "CR-02",
+          "title": "Beam-search plan and projection",
+          "description": "Run the beam planner and show projected coral state and action list.",
+          "acceptance": ["Plan respects budget and max levels.", "Beam size changes search depth.", "Results are reproducible."]
+        },
+        {
+          "id": "CR-03",
+          "title": "Offering fit and current levels",
+          "description": "Show offering fit and current coral kid levels.",
+          "acceptance": ["Fit explanation is clear.", "Current levels match save.", "Missing data is warned."]
+        }
+      ],
+      "verification": ["Planner invariant.", "Fixture matches upstream.", "Harness."]
+    },
+    {
+      "id": "M22",
+      "key": "monument",
+      "title": "Monument Calculator",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.",
+      "upstream": ["monument-calc.html", "js/ui/monument.js", "js/stats/systems/w5/monument.js"],
+      "ui": ["Bravery tab", "Justice tab with response advisor", "Wisdom tab", "Bonus sources", "Permanent and charge summaries"],
+      "inputs": ["Character save", "Monument levels/boosts", "Justice case/effects"],
+      "outputs": ["Wave/HP/odds", "Milestones", "Permanent rewards", "Response advice"],
+      "assets": "Monument icons if present.",
+      "features": [
+        {
+          "id": "MN-01",
+          "title": "Bravery calculator",
+          "description": "Bravery stats, wave, boosts, rerolls, HP, odds, milestones and bonuses.",
+          "acceptance": ["Values match upstream.", "Boost changes update odds.", "Invalid inputs are rejected."]
+        },
+        {
+          "id": "MN-02",
+          "title": "Justice calculator and advisor",
+          "description": "Justice stats, reset/undo, effects editor, search, case and response advisor.",
+          "acceptance": ["Effects editor is undoable.", "Advisor explains its choice.", "Search works."]
+        },
+        {
+          "id": "MN-03",
+          "title": "Wisdom calculator",
+          "description": "Wisdom stats and training/reward-charge effects.",
+          "acceptance": ["Values match upstream.", "Charges update rewards.", "Missing data is warned."]
+        },
+        {
+          "id": "MN-04",
+          "title": "Permanent rewards and bonus sources",
+          "description": "Permanent summary, next-run charge and training/reward-charge source list.",
+          "acceptance": ["Sources sum to the summary.", "Each source is named.", "State persists."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Justice undo test.", "Harness."]
+    },
+    {
+      "id": "M23",
+      "key": "opal",
+      "title": "Opal Optimizer",
+      "group": "w5",
+      "status": "planned",
+      "summary": "Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.",
+      "upstream": ["opal-calc.html", "js/stats/systems/w5/opal.js"],
+      "ui": ["Overview and villagers", "Current state", "Optimizer", "Manual simulator", "Formula breakdown"],
+      "inputs": ["Villager levels/EXP", "Opal totals/target", "Manual distribution"],
+      "outputs": ["EXP rates", "Optimal distribution", "Manual simulation", "Bonus terms"],
+      "assets": "Villager icons if present.",
+      "features": [
+        {
+          "id": "OP-01",
+          "title": "Villagers and current state",
+          "description": "Villager EXP rates, current opal state and formula breakdown.",
+          "acceptance": ["Values match upstream.", "Villager switching works.", "Breakdown sums."]
+        },
+        {
+          "id": "OP-02",
+          "title": "Opal optimizer",
+          "description": "Optimize opal distribution for the selected target and total.",
+          "acceptance": ["Distribution respects totals.", "Result is never worse.", "Plan is copyable."]
+        },
+        {
+          "id": "OP-03",
+          "title": "Manual opal simulator",
+          "description": "Manual distribution inputs with simulated results.",
+          "acceptance": ["Manual result matches optimizer when equal.", "Inputs validate.", "Reset works."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness."]
+    },
+    {
+      "id": "M24",
+      "key": "sneaking",
+      "title": "Sneaking Optimizer",
+      "group": "w6",
+      "status": "planned",
+      "summary": "Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.",
+      "upstream": ["sneaking-calc.html", "js/ui/sneaking-*.js", "js/stats/systems/w6/sneaking.js", "assets/sneaking"],
+      "ui": ["Loadout and inventory workspaces", "Formula breakdown tabs", "Optimizer", "Floor mastery", "Saved floor assignments", "Active door and next captive"],
+      "inputs": ["Character save", "Charms and ninja kit", "Floor/objective", "Item batch hours"],
+      "outputs": ["Stealth/detection", "Jade and EXP rates", "Recommended placement", "Door ETA"],
+      "assets": "assets/sneaking charms, items, scenes and borders.",
+      "features": [
+        {
+          "id": "SN-01",
+          "title": "Loadout and inventory workspaces",
+          "description": "Loadout/inventory editors backed by the save with saved placement output.",
+          "acceptance": ["Edits update formulas.", "Invalid charms are flagged.", "Workspace persists."]
+        },
+        {
+          "id": "SN-02",
+          "title": "Formula breakdowns",
+          "description": "Stealth, jade, EXP, door and runtime breakdown trees.",
+          "acceptance": ["Every tab renders.", "Trees sum to totals.", "Search works."]
+        },
+        {
+          "id": "SN-03",
+          "title": "Sneaking optimizer",
+          "description": "Optimize charm placement for the selected objective with progress and cancel.",
+          "acceptance": ["Result beats baseline.", "Cancel restores state.", "Objective switch works."]
+        },
+        {
+          "id": "SN-04",
+          "title": "Floor mastery and door ETA",
+          "description": "Floor-by-mastery table, active door, next captive and untie ETA.",
+          "acceptance": ["Mastery values match upstream.", "ETA updates with loadout.", "Empty floor shows a state."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness with assets."]
+    },
+    {
+      "id": "M25",
+      "key": "farming",
+      "title": "Farming Planner",
+      "group": "w6",
+      "status": "planned",
+      "summary": "Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.",
+      "upstream": ["farming-calc.html", "js/stats/data/w5/farming.js", "js/stats/systems/w6/farming.js", "js/stats/systems/w6/farming-planner.js"],
+      "ui": ["Priority signals", "Account multipliers", "GMO thresholds", "Crop Scientist bonuses", "Growth breakpoints", "Full field and plot detail", "Allocation and presets", "Evolution chain", "Overgrowth", "All plots curves"],
+      "inputs": ["Save farming state", "Crop/plot selection", "Objective", "Land Rank allocation"],
+      "outputs": ["Plot assignment", "Recommended allocation", "Preset comparison", "Evolution chain", "Growth curves"],
+      "assets": "Crop icons if present.",
+      "features": [
+        {
+          "id": "FM-01",
+          "title": "Field and plot detail",
+          "description": "Full 9x4 field, per-plot detail and crop selection.",
+          "acceptance": ["Every plot renders.", "Plot detail matches save.", "Selection persists."]
+        },
+        {
+          "id": "FM-02",
+          "title": "Plot assignment and Land Rank",
+          "description": "Assign crops to plots and allocate Land Rank for the selected objective.",
+          "acceptance": ["Assignment respects plot rules.", "Allocation respects points.", "Result beats baseline."]
+        },
+        {
+          "id": "FM-03",
+          "title": "Presets and comparison",
+          "description": "Preset objectives, recommended allocation and preset comparison.",
+          "acceptance": ["Every upstream preset exists.", "Comparison is per objective.", "Custom preset persists."]
+        },
+        {
+          "id": "FM-04",
+          "title": "Evolution and overgrowth",
+          "description": "Evolution chain to a target crop, hardest remaining steps and overgrowth stopping.",
+          "acceptance": ["Chain is complete.", "Steps are actionable.", "Overgrowth advice matches inputs."]
+        },
+        {
+          "id": "FM-05",
+          "title": "Signals, thresholds and curves",
+          "description": "Priority signals, account multipliers, GMO thresholds, Crop Scientist bonuses, growth breakpoints and all-plot curves.",
+          "acceptance": ["Signals update with state.", "Thresholds match upstream.", "Curves render for every plot."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Allocator invariant.", "Harness."]
+    },
+    {
+      "id": "M26",
+      "key": "clamworks",
+      "title": "Clamworks Calculator",
+      "group": "w7",
+      "status": "planned",
+      "summary": "Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.",
+      "upstream": ["clamworks-calc.html", "js/stats/systems/w7/clamworks*.js", "js/ui/clamworks-*.js"],
+      "ui": ["Overview and pearl value", "Upgrades and priority", "AFK claim and compare", "Optimizer", "Promotion", "Worker class rewards", "Scurge combat"],
+      "inputs": ["Save Clamworks state", "Character and multikill", "AFK hours", "Upgrade levels"],
+      "outputs": ["Pearl value", "Upgrade plan", "AFK claim", "Promotion progress", "Combat outcomes"],
+      "assets": "Clamworks icons if present.",
+      "features": [
+        {
+          "id": "CW-01",
+          "title": "Overview and upgrades",
+          "description": "Summary, pearl value breakdown, all upgrades and upgrade priority.",
+          "acceptance": ["Values match upstream.", "Priority updates with save.", "Breakdown sums."]
+        },
+        {
+          "id": "CW-02",
+          "title": "AFK claim and compare",
+          "description": "AFK claim calculator with character, multikill and compare panel.",
+          "acceptance": ["Claim matches upstream.", "Compare is per character.", "Invalid hours rejected."]
+        },
+        {
+          "id": "CW-03",
+          "title": "Optimizer and promotion",
+          "description": "Upgrade optimizer plus promotion tracker and worker class rewards.",
+          "acceptance": ["Optimizer respects costs.", "Promotion progress matches save.", "Rewards list is complete."]
+        },
+        {
+          "id": "CW-04",
+          "title": "Scurge combat",
+          "description": "Scurge combat and upgrade panels.",
+          "acceptance": ["Combat values match upstream.", "Upgrades affect outcomes.", "Missing data warned."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness."]
+    },
+    {
+      "id": "M27",
+      "key": "royal-guardian",
+      "title": "Royal Guardian Calculator",
+      "group": "w7",
+      "status": "planned",
+      "summary": "Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.",
+      "upstream": ["royal-guardian-calc.html", "js/stats/systems/w7/royal-guardian*.js", "assets/royal-guardian"],
+      "ui": ["Overview with counters", "Outposts and resource nodes", "Currencies", "Upgrades", "Breakdowns", "Forecast", "Optimizer", "Unit EXP and shelf"],
+      "inputs": ["Save royal state", "Outpost/resource selection", "Drain staffing", "Forecast days"],
+      "outputs": ["Clearing values", "Resource/currency rates", "Upgrade plan", "Forecast", "Unit EXP moves"],
+      "assets": "assets/royal-guardian maps, resources, units and lines.",
+      "features": [
+        {
+          "id": "RG-01",
+          "title": "Overview and counters",
+          "description": "Raw clearing values, range targets, world progress and counters.",
+          "acceptance": ["Counters match save.", "Range target is actionable.", "World progress renders."]
+        },
+        {
+          "id": "RG-02",
+          "title": "Outposts, resources and currencies",
+          "description": "Outpost map, resource nodes, currencies, drain staffing and banked hours.",
+          "acceptance": ["Every outpost renders.", "Drain projection works.", "Resource totals match upstream."]
+        },
+        {
+          "id": "RG-03",
+          "title": "Upgrades, breakdowns and forecast",
+          "description": "Upgrade list, global breakdown tree and forecast tab.",
+          "acceptance": ["Breakdown sums.", "Forecast matches upstream.", "Upgrade plan respects costs."]
+        },
+        {
+          "id": "RG-04",
+          "title": "Optimizer, unit EXP and shelf",
+          "description": "Outpost/unit optimizer, unit EXP moves and shelf layout steps.",
+          "acceptance": ["Optimizer is cancellable.", "Unit EXP moves are legal.", "Shelf steps apply in order."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness with assets."]
+    },
+    {
+      "id": "M28",
+      "key": "spelunking",
+      "title": "Spelunking Simulator",
+      "group": "w7",
+      "status": "planned",
+      "summary": "Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.",
+      "upstream": ["spelunking-calc.html", "js/ui/spelunking.js", "js/stats/systems/w7/spelunk*.js", "assets/spelunking"],
+      "ui": ["Party and elixir belt", "Depth estimates", "Character/cave/mode/policy controls", "Amber policy", "Cave choices and simulator", "Optimizer"],
+      "inputs": ["Character save", "Cave/mode/policy", "Party stamina", "Elixirs and amber settings"],
+      "outputs": ["Depth estimates", "Run outcomes", "Elixir effects", "Optimizer plan"],
+      "assets": "assets/spelunking cave tiles, rocks, doors, bosses, class icons and elixirs.",
+      "features": [
+        {
+          "id": "SP-01",
+          "title": "Controls, party and elixirs",
+          "description": "Character, cave, mode, policy, full-clear, speed, party stamina and elixir belt.",
+          "acceptance": ["Every control is present.", "Party and elixirs affect estimates.", "Invalid parties are rejected."]
+        },
+        {
+          "id": "SP-02",
+          "title": "Run simulator",
+          "description": "Cave choices, stamina, entry, tool and reaction simulation with memory.",
+          "acceptance": ["Runs are deterministic by seed.", "Memory and choices persist.", "Cancel works."]
+        },
+        {
+          "id": "SP-03",
+          "title": "Amber policies",
+          "description": "Amber dump depth, finishers, reserve, harvest and rope reserve policies.",
+          "acceptance": ["Policies change outcomes.", "All fields validate.", "Results explain the policy."]
+        },
+        {
+          "id": "SP-04",
+          "title": "Depth optimizer",
+          "description": "Optimize depth limits and policies for the selected cave and party.",
+          "acceptance": ["Optimizer beats baseline.", "Result is reproducible.", "Plan is copyable."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Simulator determinism.", "Harness with assets."]
+    },
+    {
+      "id": "M29",
+      "key": "jelly-operator",
+      "title": "Jelly Operator Optimizer",
+      "group": "w7",
+      "status": "planned",
+      "summary": "Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.",
+      "upstream": ["jelly-operator-calc.html", "js/stats/systems/w7/jelly-operator.js", "js/optimizers/jelly-coordinator.js", "assets/jelly-operator"],
+      "ui": ["Overview", "Layout editor", "Simulator", "Upgrades", "Bonuses", "Breakdowns", "Sections planner", "Optimizer"],
+      "inputs": ["Save jelly state", "Cell palette/layout", "Section strategy/objective", "Tokens/quality/beam"],
+      "outputs": ["Operation estimate", "Cell contribution", "Critical timeline", "Section plan", "Optimizer result"],
+      "assets": "assets/jelly-operator cells and board art.",
+      "features": [
+        {
+          "id": "JO-01",
+          "title": "Layout editor and overview",
+          "description": "Cell palette, board sections, saved layout and operation estimate.",
+          "acceptance": ["Every cell type is placeable.", "Saved layout loads.", "Estimate matches upstream."]
+        },
+        {
+          "id": "JO-02",
+          "title": "Operation simulator",
+          "description": "Run the interactive simulator with fever, roid, revive, run and remove mode.",
+          "acceptance": ["Simulation is deterministic.", "Timeline renders.", "Clear board works."]
+        },
+        {
+          "id": "JO-03",
+          "title": "Upgrades, bonuses and breakdowns",
+          "description": "Upgrade list, account snapshot, bonuses and per-cell breakdowns.",
+          "acceptance": ["Values match upstream.", "Breakdowns sum.", "Missing data warned."]
+        },
+        {
+          "id": "JO-04",
+          "title": "Sections planner",
+          "description": "Plan board sections with strategy, objective, cell type, tokens, quality and beam size.",
+          "acceptance": ["Planner respects section rules.", "Beam size changes search.", "Plan is reproducible."]
+        },
+        {
+          "id": "JO-05",
+          "title": "Coordinator optimizer",
+          "description": "Optimize the full board with the coordinator and show critical target timeline.",
+          "acceptance": ["Optimizer beats baseline.", "Cancel works.", "Result applies to layout."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Optimizer invariant.", "Harness with assets."]
+    },
+    {
+      "id": "M30",
+      "key": "pickle",
+      "title": "BoneJoePickle Calculator",
+      "group": "tools",
+      "status": "planned",
+      "summary": "Port the hidden DPS/TTK calculator.",
+      "upstream": ["pickle-calc.html"],
+      "ui": ["Inputs", "DPS and TTK results"],
+      "inputs": ["Pickle combat values"],
+      "outputs": ["DPS", "TTK"],
+      "assets": "None.",
+      "features": [
+        {
+          "id": "PK-01",
+          "title": "DPS and TTK",
+          "description": "Compute DPS and time-to-kill from the upstream inputs.",
+          "acceptance": ["Values match upstream.", "Inputs validate.", "Empty state is clear."]
+        }
+      ],
+      "verification": ["Fixture matches upstream.", "Harness."]
+    }
+  ]
+}

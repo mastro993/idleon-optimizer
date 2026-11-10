@@ -1,174 +1,264 @@
-# Plan: Idleon Research Optimizer, Rust + GPUI desktop app
+# Plan: Idleon Optimizer, a native desktop suite
 
-Reimplementation of [Corgan/idleon-research-optimizer](https://github.com/Corgan/idleon-research-optimizer) as a
-native desktop application. The upstream is a static-site suite of calculators that runs its
-optimizers in web workers; this app keeps the same maths and moves the simulations and optimizers
-into a local Rust core, so a run costs milliseconds of CPU instead of minutes of tab time.
+Status: **foundation in progress, research partial, 29 sections planned.** The live breakdown is
+[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
+each section's full specification is under [`docs/sections/`](sections/).
 
-## 1. Scope
+## 1. Product goal
 
-**In scope (v1)**
+Rebuild [Corgan/idleon-research-optimizer](https://github.com/Corgan/idleon-research-optimizer) as a
+native Rust + GPUI desktop application with full functional parity, not just the research grid.
 
-1. **Research grid workspace** — the 20×12 grid of upgradeable squares with their level, name, goal
-   and bonus, the ten research shapes drawn as polygons over it, and drag/rotate placement.
-2. **Simulation** — research EXP/hour, the additive/multiplicative breakdown, insight levelling,
-   magnifier caps, grid points earned, shapes and magnifiers owned, and a forward projection to a
-   target level or hour budget (event-driven: research level-ups and insight level-ups cascade).
-3. **Optimizers**, all local and parallel:
-   - shape placement: greedy over the preset's target priorities, then hill-climbing on the real
-     EXP rate (rotations unlock at research level 90, as in game);
-   - magnifier assignment: kaleidoscopes → monocles → magnifying glasses, respecting per-observation
-     caps and the observation grid's adjacency;
-   - grid point spending: marginal-value climb over unlocked squares, with a refine pass that moves
-     points one at a time;
-   - one `Optimize` run that chains them and projects the result.
-4. **Presets** — the sixteen upstream activity presets (Res EXP, Minehead, DR, Insight, Lumi/hr, …)
-   as placement priorities.
-5. **Save import** — paste a decoded save and read the grid, shapes, magnifiers, insight, research
-   level/EXP and the account multipliers that can be decoded from it; warn about the rest.
-6. **Agent-drivable UI** — every control carries a stable id, label, role and disabled state for the
-   gpui-mcp bridge, so an agent can read and drive the window.
+- **Dashboard first.** The app opens on a searchable card grid, grouped by General and Worlds 2-7,
+  mirroring the upstream index. Every card opens one section.
+- **All upstream sections.** The 25 cards in `index.html` plus the five hidden tools (`damage`,
+  `drop-rate`, `coin-multi`, `pickle`, `stats-all`) are in scope.
+- **All functionality per section.** Every tab, input, table, simulator, optimizer, replay and
+  breakdown in the upstream page is specified as a feature issue under that section's milestone.
+- **Similar UI, same assets.** Reuse the upstream layout, palette, typography scale, icons and
+  sprites where legally permitted; otherwise use a labelled placeholder.
+- **Local only.** No accounts, cloud sync, telemetry or network calls. Saves and exports stay on
+  disk.
 
-**Out of scope (v1)** — explicitly deferred, not forgotten:
+Definition of done for a section: every feature issue closed, formula fixtures match upstream,
+the section opens from the dashboard, the harness drives its main flow, assets resolve, and no
+unexplained import warning remains.
 
-- The other calculators in the upstream repo (combat sim, sailing, cooking, royal guardian, …).
-- Cloud sync, multi-account, mobile.
+## 2. Licensing and asset blocker
 
-## 2. Stack and the compatibility matrix
+The upstream repository's `LICENSE` says: **Copyright 2026 Jonathan Rock. All rights reserved. This
+repository is provided solely for educational review. No usage, modification, distribution, or
+reproduction of this code is allowed for any purpose without explicit written permission.**
 
-The three libraries have to agree on exactly one GPUI snapshot, and the newest of each do not:
+That blocks redistributing upstream code or images. This plan therefore separates implementation
+from asset distribution:
 
-| Piece | Pin | Why |
-| --- | --- | --- |
-| GPUI | `gpui-pre = 0.3.9` (crates.io), patched to the bridge's vendored tree | the snapshot Ely and the bridge both build on |
-| `gpui_platform` | `gpui-pre-platform = 0.3.9`, features `font-kit`, `wayland`, `x11` | opens windows and rasterises text |
-| Ely components | `ely-gpui-component`, rev `28e5690` | newest rev pinning `gpui-pre = 0.3.9`, MSRV 1.95 |
-| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.9`, commit `ac15850` | vendors the accessibility additions the bridge reads |
+- Formulas and data tables stay ports with upstream source references; the existing extraction
+  script documents provenance.
+- Upstream images are **not committed**. `script/import-upstream-assets.mjs` copies them from a
+  local checkout into gitignored `assets/upstream/` and writes a manifest with hashes.
+- The app resolves images through the manifest and falls back to a labelled placeholder.
+- Public release, binary distribution or committing assets requires **written permission** from the
+  upstream author. Until then the app is for local/educational use only.
+- If permission is refused, the fallback is original artwork and layouts with the same information
+  architecture; functionality is unaffected.
 
-Newer Ely pins `0.3.10`/`0.3.11` and the bridge's branch only patches up to `0.3.9`, so the pins
-above are the intersection, not a preference. `[patch.crates-io] gpui-pre` points at
-`vendor/gpui-mcp/vendor/gpui-pre`, so the app, the platform crate and the bridge compile against one
-GPUI. `vendor/gpui-mcp` is excluded from this workspace so it keeps its own package metadata.
+This is a release blocker, not a nice-to-have. Do not publish a build containing upstream assets or
+code without written permission.
 
-Bumping GPUI later means moving all three together; the smoke script is the check.
+## 3. Dashboard and navigation
 
-## 3. Architecture
+Landing page:
+
+- Header: product title, search field, import button, save status.
+- Card grid grouped General, W2, W3, W4, W5, W6, W7, Tools; same titles, emoji/icons, world badges
+  and descriptions as upstream `index.html`.
+- Each card has `id="card-<section>"`, title, badge and description as accessible text.
+- Search matches title, description and group; Escape clears; Enter opens the first match.
+- Last opened section is remembered; Back returns to the dashboard.
+- Import accepts a raw save, an ROv2 state string, a project JSON or a section config; it previews
+  the detected format and warnings before applying.
+
+Section shell:
+
+- Back to dashboard, section title, world badge, save status, import/export actions.
+- The section owns its upstream tab strip and content; the shell owns only window chrome, status
+  bar and global import.
+- Per-section state survives tab switches and dashboard visits for the session, and persists when
+  the project is saved.
+
+Section registry: one entry per section with id, title, group, icon, spec link, status and factory.
+The dashboard, router, harness and roadmap generator all read the same registry.
+
+## 4. Sections and milestones
+
+One milestone per section, one issue per feature. The full feature lists, inputs, outputs, assets
+and acceptance criteria are generated into [`docs/sections/`](sections/).
+
+| Milestone | Section | Group | Issues |
+| --- | --- | --- | --- |
+| M0 | Foundation: dashboard, navigation, JSON import, assets | Core | 10 |
+| M1 | Research Optimizer: full upstream parity | W7 | 13 |
+| M2 | Combat Simulator | General | 7 |
+| M3 | All Stats Dashboard | General | 4 |
+| M4 | Damage Breakdown | Tools | 3 |
+| M5 | Drop Rate Calculator | Tools | 2 |
+| M6 | Coin Multiplier Calculator | Tools | 2 |
+| M7 | Shadow Ban Check | General | 1 |
+| M8 | Endgame Check | General | 1 |
+| M9 | Statue Calculator | General | 3 |
+| M10 | Fishing Calculator | W2 | 3 |
+| M11 | Prisma Calculator | W2 | 2 |
+| M12 | Killroy Calculator | W2 | 3 |
+| M13 | Cog Board Optimizer | W3 | 4 |
+| M14 | Worship Tower Defense | W3 | 4 |
+| M15 | Ladle Optimizer | W4 | 4 |
+| M16 | Cooking Mastery | W4 | 3 |
+| M17 | Fountain Calculator | W5 | 4 |
+| M18 | Jar Calculator | W5 | 4 |
+| M19 | Sailing Calculator | W5 | 4 |
+| M20 | Cglunko Calculator | W5 | 3 |
+| M21 | Coral God Rank Planner | W5 | 3 |
+| M22 | Monument Calculator | W5 | 4 |
+| M23 | Opal Optimizer | W5 | 3 |
+| M24 | Sneaking Optimizer | W6 | 4 |
+| M25 | Farming Planner | W6 | 5 |
+| M26 | Clamworks Calculator | W7 | 4 |
+| M27 | Royal Guardian Calculator | W7 | 4 |
+| M28 | Spelunking Simulator | W7 | 4 |
+| M29 | Jelly Operator Optimizer | W7 | 5 |
+| M30 | BoneJoePickle Calculator | Tools | 1 |
+
+Sequencing: M0 first, then M1 (finish research), then the general tools and worlds in milestone
+order. Sections that share combat or save systems (M2, M26, M27) can reuse the combat core; sections
+that share a tree renderer reuse the formula-tree component.
+
+## 5. Shared data and JSON import
+
+### 5.1 Models
+
+- `SaveData`: the decoded game save. One parser produces it; every section reads it read-only.
+- `Account`: account multipliers, companions, currencies and cross-system bonuses derived from the
+  save, with provenance for every field.
+- `ProjectState`: versioned app state: active section, per-section config, imported save metadata,
+  recent imports and UI preferences.
+- `SectionState`: serializable state owned by one section (targets, filters, custom presets, replay
+  seeds, plans).
+
+### 5.2 Accepted JSON formats
+
+1. **Raw decoded save** — `it.json` (`{ data, serverVars, companion }`) or flat `save.json`. This is
+   the primary user-data import and the format the game writes.
+2. **Optimizer state string** — upstream `ROv2:` + gzip + base64, exported by the research page.
+3. **Project JSON** — `{ "format": "idleon-optimizer", "version": 1, "save": {...}, "sections": {...} }`.
+4. **Section config JSON** — `{ "format": "idleon-optimizer-section", "section": "farming", "version": 1, ... }`.
+
+Detection order: project JSON, section config, ROv2 string, raw save. A raw save is detected by
+`Research`/`Lv0_*`/`gridLevels` fields; an unknown object is rejected with a field list.
+
+### 5.3 Import pipeline
+
+1. Read from file picker, paste box or drag-and-drop.
+2. Parse and detect the format; never mutate state before validation passes.
+3. Migrate older versions; unknown fields become warnings, not failures.
+4. Build a preview: format, save name if present, characters, research level, detected sections and
+   warnings.
+5. Apply atomically: either the whole import succeeds or the previous state stays intact.
+6. Persist the imported save metadata and add it to recent imports.
+
+Errors name the failing field and the expected shape. Examples: `not valid JSON: expected value at
+line 1 column 2`, `no save fields found: expected Research, Lv0_*, gridLevels`, `unsupported project
+version 3 (this build reads 1)`.
+
+### 5.4 Export
+
+- Export project JSON with a schema version and per-section blocks.
+- Copy the current save-derived state as an ROv2-compatible string for research.
+- Exports contain no telemetry, paths or machine identifiers.
+
+### 5.5 Privacy
+
+Everything is local. No import is uploaded, no filename is sent anywhere, and logs contain only
+counts and field names, not save values.
+
+## 6. UI and assets
+
+- Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
+- Match the upstream information architecture: same tab names and order, same panels, same column
+  order in tables, same defaults.
+- Palette and spacing follow the existing dark theme; world badges use the upstream colours.
+- Images come from `assets/upstream/` through a manifest. Every image reference has a placeholder
+  and alt text. The manifest records source path, hash and size.
+- Every interactive control gets a stable id, accessible label, role and disabled state for the
+  gpui-mcp bridge. Section roots use `section-<key>`.
+
+## 7. Architecture
 
 ```
-crates/core                      no UI, no GPUI, fast to test
-  data.rs                        game data (serde), parsed once
-  model.rs                       GridState, Placement, Mag, Simulation, SimContext, requests
-  shape.rs                       polygon geometry, 30 px coverage lattice, overlays
-  sim.rs                         EXP rate, curves, insight, grid points, projection, cell values
-  save/{mod,research,account}.rs decoded save → simulation, research rows, account multipliers
-  optimize/{shapes,mags,grid}.rs placement, assignment, point spending
-  optimize/mod.rs                the run that chains them
-
-crates/app                       GPUI + Ely
-  main.rs                        application, window, theme
-  state.rs                       AppState entity: simulation, context, run task, selection
-  ui/shell.rs                    title bar, tab strip, status bar, pane layout
-  ui/grid_view.rs                the 20×12 canvas, shapes, hit testing, dragging, keyboard
-  ui/inspector.rs                selected square, shape list, rotation
-  ui/dashboard.rs                rate breakdown, observation board
-  ui/optimizer.rs                target, effort, run, results, projection chart
-  ui/bridge.rs                   gpui-mcp installation
-
-script/
-  extract-research-data.mjs      upstream JS → crates/core/data/research.json
-  mcp-smoke.mjs                  stdio MCP client: list apps, read the tree, screenshot
+crates/core                         no GPUI, testable
+  save/                             raw save, account and research decoding
+  sections/                         one module per domain: research, combat, farming, ...
+    <section>/{mod,model,sim,optimize}.rs
+  shared/                           formulas, trees, number formatting, game data
+crates/app                          GPUI + Ely
+  shell/                            window, dashboard, router, import dialog, status bar
+  sections/<section>/               one UI module per section
+  state/                            ProjectState, SaveData handle, per-section state
+assets/upstream                     generated, gitignored, manifest-backed
+docs/plan.md                        this document
+docs/roadmap.json                   milestones and feature issues (source of truth)
+docs/roadmap.md                     generated progress table
+docs/sections/<section>.md          generated full specification per section
+script/roadmap.mjs                  validate, render and sync GitHub milestones/issues
+script/import-upstream-assets.mjs   copy upstream assets from a local checkout
 ```
 
-Rules: core never depends on GPUI, so it stays unit-testable and can be driven from a test harness;
-UI files stay under ~500 lines and read state only through `AppState` methods.
+Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
+stay under about 500 lines and split by feature; one section cannot reach into another section's
+private state.
 
-## 4. Domain maths (ports, with sources)
+## 8. Stack pins
 
-From `js/stats/systems/w7/research-math.js`:
+The app, Ely and the automation bridge must share one GPUI build.
 
-- observation base EXP: `(4 + t/2 + ⌊t/4⌋)·(1 + t^(1+0.4t/15)/10) + t^1.5 + 1.5t`
-- insight requirement: `(2 + 0.7t)·(1.75 + t/200)^level·(1 + t²/100) + level`
-- research requirement: `10·max(0,lv−1) + 10·(1 + lv^(1+0.4lv/10)/10)·1.1^lv·svrxp^max(0,lv−20)`
-- grid bonus: `bonusPerLv · level · (1 + shapeBonus/100) · allBonusMulti`
-- EXP/hour: `Σ observations (counts · base · (1 + gd93·insight/100) · kaleidoMulti) × (1 + additive/100) × (1 + takinNotes/100) × account multipliers`
-- insight/hour: `3 · monocles · (1 + (gb91+gb92)/100) · kaleidoMulti`
-- caps: magnifiers `min(4, round(1 + ⌊lv/40⌋₁ + ⌊lv/70⌋₁ + ⌊lv/120⌋₁))`, observations found
-  `5⌊(lv+10)/10⌋ − ⌊lv/20⌋ − ⌊lv/30⌋ − ⌊lv/50⌋`, shapes: one per 20 levels.
+| Piece | Pin |
+| --- | --- |
+| GPUI | `gpui-pre = 0.3.9`, patched to the bridge's vendored tree |
+| `gpui_platform` | `gpui-pre-platform = 0.3.9`, features `font-kit`, `wayland`, `x11` |
+| Ely | `ely-gpui-component`, rev `28e5690` |
+| gpui-mcp | submodule `vendor/gpui-mcp`, branch `gpui-pre-0.3.9`, commit `ac15850` |
 
-From `js/optimizers/shapes-geo.js`: coverage is a point-in-polygon test on the four corners of each
-30×30 cell, so it is periodic in `(x mod 30, y mod 30)`. The Rust port precomputes the same lattice
-at a 5 px phase step (36 phases per shape/rotation instead of 900): the optimizer only proposes
-lattice-aligned placements, and a test pins LUT coverage against exact geometry.
+Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
+bump moves all three together and the smoke harness is the check.
 
-Deliberate simplifications, documented in code: account multipliers (companions, ribbons, event
-shop) collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`, entered by hand.
-Preset priorities use the presets' static target lists, not the save-dependent `build` functions.
+## 9. Research status
 
-## 5. UI
+The research section is the only implemented one and is still partial. Done: grid, shapes,
+magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
+chart, keyboard and canvas dragging. Missing: the five extra tabs (Insight ROI, Observation
+Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation,
+strategy comparison/timeline, complete save-derived multipliers, state export/import and undo.
+Details: [`docs/sections/research.md`](sections/research.md).
 
-Window: Ely `TitleBar`, a tab strip (Grid / Rates / Optimize), the active pane, and a `StatusBar`
-carrying EXP/hour, grid points, shape and magnifier counts.
+## 10. Verification
 
-- **Grid** — the canvas plus a right rail: the selected square (name, goal, description, level
-  stepper, max level), and the shape list with bonus, covered cells and rotation nudge. Shapes draw
-  as translucent polygons over a goal-coloured grid, with level badges.
-- **Rates** — KPI cards (EXP/hour, multiplier, observation EXP, grid points, shapes, magnifiers),
-  the observation board with insight level and insight/hour per slot, the magnifier pool, the
-  supplements editor and the save-import panel.
-- **Optimize** — target (level or hours), effort (quick / balanced / thorough), preset, run button
-  with progress, before/after comparison, projection summary, EXP/hour chart and the step list,
-  apply/dismiss.
+- **Formula parity:** Rust unit tests against fixtures evaluated from the upstream JS for each
+  section; tolerance documented per formula.
+- **Optimizer invariants:** never worse than input, respects caps/budgets, deterministic for a
+  seed, cancellable.
+- **UI parity:** harness opens every section from the dashboard, asserts the root and main controls,
+  drives one core flow and saves a screenshot.
+- **Import parity:** raw save, ROv2 string, project JSON and section config round-trip; malformed
+  input leaves state untouched.
+- **Gates:** `cargo test`, `cargo clippy --workspace --all-targets -- -D warnings`,
+  `cargo fmt --all -- --check`, `node script/roadmap.mjs`, `node script/mcp-drive.mjs`.
 
-Every element that an agent might touch gets `.id(...)`; icon-only buttons get `.aria_label(...)`;
-disabled controls get `.aria_disabled(true)`; read-only fields get `.aria_read_only(true)`.
+## 11. Milestones and progress tracking
 
-## 6. Verification
+`docs/roadmap.json` is the source of truth. It defines one milestone per section and one issue per
+feature, with acceptance criteria.
 
-1. `cargo test` — curves, geometry/LUT agreement, optimizer invariants (never worse than the input,
-   respects caps and unlock rules, deterministic) and a timing guard on the thorough run.
-2. `cargo build` then launch: `./target/debug/idleon-optimizer`.
-3. `node script/mcp-smoke.mjs --shot /tmp/ui.png` — lists the running app through gpui-mcp, reads
-   the semantic tree and saves a screenshot.
-4. `node script/mcp-drive.mjs` — clicks the grid, a square, adds a shape, opens the optimize pane,
-   runs it, asserts the gain is not negative, applies the result and screenshots the layout.
+```console
+node script/roadmap.mjs                 # validate and print the summary
+node script/roadmap.mjs --write         # regenerate docs/roadmap.md and docs/sections/*.md
+node script/roadmap.mjs --apply --repo owner/name --dry-run
+node script/roadmap.mjs --apply --repo owner/name
+```
 
-## 7. Work plan
+The GitHub sync is idempotent: milestones match by title, issues by their feature-id prefix. Each
+issue carries `area:<section>`, `type:feature` and `roadmap` labels, and its milestone. Close an
+issue to track progress; when all issues in a section are closed, mark the milestone `done` in
+`roadmap.json` and regenerate the docs.
 
-1. **Scaffold and pin** — workspace, submodule, patches, minimal window, bridge. Done.
-2. **Core model** — data extraction, geometry, simulation maths, baseline optimizers, tests. Done.
-3. **UI** — three panes on Ely components, agent-ready ids, grid canvas with shape polygons. Done.
-4. **Integration** — magnifier legality, apply/dismiss, status bar, optimizer gains proven
-   non-negative by test. Done.
-5. **Verification** — `cargo test`, `clippy`, gpui-mcp smoke and drive harness, screenshots. Done.
+## 12. Risks
 
-Landed after the first pass: beam search over grid spending with grant-aware pricing, magnifier
-repair moves, a wider shape search gated on the rotation unlock, the supplements editor, save
-import, the projection chart, shape dragging on the canvas, keyboard control of the grid, and the
-split of the save importer by feature.
-
-Still open, in priority order:
-
-1. Save-derived multipliers: `allBonusMulti`, `extra_pct`, `extra_multiplier` and the flat grid
-   points still lean on fields the upstream derives through dozens of game systems (sticker tree,
-   arcade, Clam Works, equipment, Menagerie, Button, Jelly, RoG outpost, …). The import warns
-   instead of guessing, so some saves under-report the rate.
-2. Target-aware optimization: the run maximizes the current EXP/hour and projects afterwards;
-   upstream simulates to the target, spends points earned on the way and re-optimizes on level-ups
-   and insight level-ups. The same applies to the optional assume-observations, extended insight
-   lookahead and tournament (+12 h) toggles.
-3. Optimizer depth: two-shape joint moves, and a projection-aware secondary objective for monocles.
-4. Editing comfort: no undo/redo for grid, shape or magnifier edits.
-
-Not ported from the upstream research page (outside v1, listed so the gap is explicit): the Insight
-ROI and Observation Unlock analyses, the Decision Tree sandbox, custom preset priority editing, the
-state export/import string, Google sign-in/auto save refresh, and the Minehead and Sushi tabs.
-
-## 8. Risks
-
-- **GPUI churn**: the pins are fragile by design; a bump touches three repos. Mitigated by exact
-  pins and a smoke test that fails loudly.
-- **Ely API drift**: components are early; the agent-facing ids and the compile check are the guard.
-- **Formula drift from upstream**: extracted data is committed, and the cross-check tests evaluate
-  the same formulas in Node.
-- **Optimizer scope creep**: v1 optimises the research grid only; the rest of the upstream suite is
-  explicitly out.
+- **Licensing:** the upstream licence forbids reuse and redistribution; assets and code need written
+  permission. Mitigated by local-only asset import and placeholders, but release remains blocked.
+- **Scope:** 30 sections is a large surface. Mitigated by one milestone per section, shared
+  primitives and a strict definition of done.
+- **Formula drift:** upstream JS changes; mitigated by committed fixtures, source references and
+  parity tests.
+- **GPUI churn:** three pinned projects; mitigated by exact pins and the smoke harness.
+- **Asset weight:** 42 MB, mostly combat-sim; local-only manifest keeps the repo small.
+- **Performance:** large simulations (combat, tower defense, decision tree) must run off the UI
+  thread and stay cancellable.

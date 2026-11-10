@@ -1,4 +1,4 @@
-# Idleon Research Optimizer
+# Idleon Optimizer
 
 A native desktop rebuild of
 [Corgan/idleon-research-optimizer](https://github.com/Corgan/idleon-research-optimizer) in Rust with
@@ -6,6 +6,10 @@ A native desktop rebuild of
 [Ely](https://elygpui.com) components. The upstream runs its simulations in browser workers; this app
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
+
+The current build implements the research section. The plan covers the full upstream suite: a
+dashboard that opens every calculator, with one milestone per section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -40,6 +44,25 @@ afford a real search instead of a heuristic.
   warnings instead of guessed; unreadable saves leave the run untouched.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
+
+## Roadmap
+
+The product target is a dashboard-first desktop suite with all 30 upstream pages, the same
+information architecture and the same images where licensing allows. Progress is tracked as one
+GitHub milestone per section and one issue per feature: 31 milestones and 121 feature issues.
+
+- [`docs/plan.md`](docs/plan.md) — product, dashboard, JSON import, architecture and verification.
+- [`docs/roadmap.md`](docs/roadmap.md) — generated milestone table and status.
+- [`docs/roadmap.json`](docs/roadmap.json) — source of truth for milestones and issues.
+- [`docs/sections/`](docs/sections/) — full specification per section.
+
+```console
+node script/roadmap.mjs --write   # regenerate the roadmap and section specs
+node script/roadmap.mjs --apply --repo owner/name --dry-run
+node script/roadmap.mjs --apply --repo owner/name
+```
+
+The sync is idempotent: milestones match by title, issues by feature-id prefix.
 
 ## Run
 
@@ -103,8 +126,11 @@ against this app. Every control in the UI carries a stable id for that purpose (
 crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
   data/research.json  extracted from the upstream repo
 crates/app         GPUI + Ely window: grid canvas, inspector, rates, optimize pane
-script/            data extraction, MCP smoke and drive harnesses
-docs/plan.md       scope, architecture, maths and work plan
+script/            data extraction, roadmap sync, MCP smoke and drive harnesses
+docs/plan.md       product plan, dashboard, JSON import, architecture, verification
+docs/roadmap.json  milestones and feature issues (source of truth)
+docs/sections/     generated full specification per section
+fixtures/data.json synthetic account save for import tests
 vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 ```
 
@@ -120,11 +146,17 @@ manual debugging (paste it into the Save import panel). It is test input only: g
 decoding stay ports of the upstream repo, never inferred from the fixture. See
 [`fixtures/README.md`](fixtures/README.md).
 
+Upstream images are not committed. The upstream licence reserves all rights, so
+`script/import-upstream-assets.mjs --from <checkout>` copies them into gitignored `assets/upstream/`
+with a manifest and the app falls back to labelled placeholders. Distributing a build with upstream
+assets or code needs written permission from the upstream author.
+
 ## Scope
 
-v1 covers the research grid, its optimizers and save import. Not included: the other calculators in
-the upstream repo (combat sim, sailing, cooking, royal guardian, …).
+The current build covers the research grid, its optimizers and save import. The roadmap covers all
+remaining upstream sections (combat sim, sailing, cooking, royal guardian, …) and the dashboard that
+opens them.
 
-The formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers collapse
-into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
-lists rather than the save-dependent `build` functions.
+The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
+collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their
+static target lists rather than the save-dependent `build` functions.
