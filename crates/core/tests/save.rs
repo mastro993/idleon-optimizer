@@ -1,7 +1,7 @@
 //! Save import: the decoded game save maps onto a simulation and its multipliers.
 
 use idleon_core::model::{GridState, Mag, MagKind, Observations, Placement, Simulation};
-use idleon_core::save::{ImportError, import};
+use idleon_core::save::{Format, ImportError, import};
 use idleon_core::sim;
 use serde_json::{Value, json};
 
@@ -230,6 +230,95 @@ fn garbage_and_a_json_array_are_rejected() {
         import(r#"{"hello": "world"}"#),
         Err(ImportError::NoSaveFields(_))
     ));
+    assert!(matches!(
+        import(r#"{"data": {}}"#),
+        Err(ImportError::NoSaveFields(_))
+    ));
+}
+
+/// The same fields without the `data` wrapper, as a plain `save.json` writes them.
+fn save_json(wrapped: &Value) -> Value {
+    let mut flat = wrapped
+        .get("data")
+        .and_then(Value::as_object)
+        .expect("the it.json save sits under data")
+        .clone();
+    for key in ["companion", "serverVars"] {
+        if let Some(value) = wrapped.get(key) {
+            flat.insert(key.to_string(), value.clone());
+        }
+    }
+    Value::Object(flat)
+}
+
+#[test]
+fn it_json_and_save_json_import_the_same_values() {
+    let wrapped = full_save();
+    let it_json = import(&wrapped.to_string()).expect("it.json imports");
+    let save_json = import(&save_json(&wrapped).to_string()).expect("save.json imports");
+
+    assert_eq!(it_json.format, Format::ItJson);
+    assert_eq!(save_json.format, Format::SaveJson);
+    assert_eq!(it_json.characters, 2);
+    assert_eq!(save_json.characters, it_json.characters);
+    assert_eq!(save_json.warnings, it_json.warnings);
+
+    let it_rate = sim::exp_rate(&it_json.simulation, &it_json.context);
+    let save_rate = sim::exp_rate(&save_json.simulation, &save_json.context);
+    assert_eq!(save_rate.total, it_rate.total);
+    assert_eq!(save_rate.multi, it_rate.multi);
+    assert_eq!(save_json.simulation.grid, it_json.simulation.grid);
+    assert_eq!(
+        save_json.simulation.placements,
+        it_json.simulation.placements
+    );
+    assert_eq!(
+        (save_json.context.bonus_grid_points),
+        it_json.context.bonus_grid_points
+    );
+    assert!((save_json.context.extra_multiplier - it_json.context.extra_multiplier).abs() < 1e-9);
+}
+
+#[test]
+fn a_state_export_imports_under_its_decoded_names() {
+    let mut grid = vec![0.0; 240];
+    grid[50] = 4.0;
+    let text = json!({
+        "researchLevel": 7,
+        "researchExp": 12.5,
+        "gridLevels": array(grid),
+        "occFound": array([1.0, 0.0]),
+    });
+
+    let imported = import(&text.to_string()).expect("a decoded state imports");
+    assert_eq!(imported.format, Format::ResearchState);
+    assert_eq!(imported.simulation.research_level, 7);
+    assert_eq!(imported.simulation.grid.level(50), 4);
+    assert!(imported.simulation.observations.found[0]);
+    assert_eq!(imported.characters, 0);
+    assert!(
+        imported
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("characters")),
+        "warnings say no character rows were found: {:?}",
+        imported.warnings
+    );
+}
+
+#[test]
+fn the_character_count_counts_rows_not_their_indices() {
+    let save = json!({
+        "data": {
+            "Research": stringified(&Value::Array(research_rows())),
+            "Lv0_3": stringified(&character_row(40.0, 0.0)),
+        },
+        "serverVars": { "A_ResXP": 1.01 },
+    });
+
+    let imported = import(&save.to_string()).expect("a sparse roster imports");
+    assert_eq!(imported.characters, 1);
+    assert_eq!(imported.simulation.research_level, 40);
 }
 
 #[test]

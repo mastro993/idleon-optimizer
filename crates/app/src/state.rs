@@ -3,6 +3,7 @@
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
+use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
 use gpui_mcp::BridgeHandle;
@@ -97,14 +98,8 @@ pub struct AppState {
     pub status: String,
     /// Whether the save-derived supplements card is expanded.
     pub supplements_open: bool,
-    /// Whether the save import card is expanded.
-    pub save_open: bool,
-    /// The pasted save object.
-    pub save_input: Entity<TextInput>,
-    /// What the last import attempt said.
-    pub save_message: String,
-    /// Whether the last import succeeded, for the status tone.
-    pub save_ok: bool,
+    /// The shared import dialog every section's header opens.
+    pub import: Import,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
     pub focus: FocusHandle,
@@ -112,6 +107,7 @@ pub struct AppState {
     bridge: BridgeHandle,
     run_task: Option<Task<()>>,
     _search_subscription: Subscription,
+    _import_subscription: Subscription,
 }
 
 impl AppState {
@@ -142,12 +138,7 @@ impl AppState {
             .take(2)
             .map(|slot| Mag::new(MagKind::Regular, Some(slot)))
             .collect();
-        let save_input = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .multi_line(3, 8)
-                .placeholder("Paste the decoded game save (JSON)")
-                .label("Game save JSON")
-        });
+        let import = Import::new(window, cx);
         let search = cx.new(|cx| {
             TextInput::new(window, cx)
                 .placeholder("Search calculators…")
@@ -157,6 +148,15 @@ impl AppState {
             cx.subscribe(&search, |_state, _search, event: &InputEvent, cx| {
                 if *event == InputEvent::Changed {
                     cx.notify();
+                }
+            });
+        // Every edit of the paste box re-checks the text, so the preview and the
+        // Apply button always describe what is on screen.
+        let import_input = import.input.clone();
+        let import_subscription =
+            cx.subscribe(&import_input, |state, _input, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    state.check_paste(cx);
                 }
             });
         let focus = cx.focus_handle();
@@ -174,15 +174,13 @@ impl AppState {
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
-            save_open: false,
-            save_input,
-            save_message: "Nothing imported yet.".into(),
-            save_ok: true,
+            import,
             save_loaded: false,
             focus,
             bridge,
             run_task: None,
             _search_subscription: search_subscription,
+            _import_subscription: import_subscription,
         };
         if let Some(id) = section {
             state.open_section(&id, window, cx);
@@ -237,18 +235,80 @@ impl AppState {
         self.open_section(id, window, cx);
     }
 
-    /// The shared header's save status.
+    /// The shared header's save status. While the dialog is open it owns the
+    /// verdict: a half-typed paste must not relabel the loaded run.
     pub fn save_status(&self) -> SaveStatus {
-        SaveStatus::of(self.save_loaded, self.save_ok)
+        SaveStatus::of(self.save_loaded, self.import.ok || self.import.open)
     }
 
-    /// Show the save import panel, where every section's header import opens.
+    /// Open the shared import dialog, where every section's header import goes.
     pub fn open_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.open_section("research", window, cx);
-        self.research.tab = Tab::Rates;
-        self.save_open = true;
-        self.status = "Import a decoded save from the save panel.".into();
+        self.import.open = true;
+        let focus = self.import.input.read(cx).focus().clone();
+        window.focus(&focus, cx);
+        self.status = "Importing a save: drop a file, browse, or paste the JSON.".into();
         cx.notify();
+    }
+
+    /// Close the dialog without applying; the loaded run stays as it was.
+    pub fn close_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.import.open = false;
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Re-check the paste box. Runs on every edit, so the preview always describes
+    /// what is on screen.
+    pub fn check_paste(&mut self, cx: &mut Context<Self>) {
+        let text = self.import.input.read(cx).text().to_string();
+        self.check_import(&text, "pasted text", cx);
+    }
+
+    /// Parse `text` into a pending import and describe it. Nothing is applied
+    /// here: a failed parse only replaces the message and the preview.
+    pub fn check_import(&mut self, text: &str, source: &str, cx: &mut Context<Self>) {
+        self.import.source = source.to_string();
+        if text.trim().is_empty() {
+            self.import.pending = None;
+            self.import.ok = true;
+            self.import.message = "Paste a decoded save, or drop a JSON file.".into();
+            return cx.notify();
+        }
+        match save::import(text) {
+            Ok(imported) => {
+                self.import.message = import::summary(&imported);
+                self.import.pending = Some(imported);
+                self.import.ok = true;
+            }
+            Err(error) => self.fail_import(source, &error.to_string(), cx),
+        }
+        cx.notify();
+    }
+
+    /// Record a dropped file that could not even be read.
+    pub fn fail_import(&mut self, source: &str, reason: &str, cx: &mut Context<Self>) {
+        self.import.source = source.to_string();
+        self.import.pending = None;
+        self.import.ok = false;
+        self.import.message = format!("Could not read {source}: {reason}");
+        cx.notify();
+    }
+
+    /// Apply the previewed save; a dialog with nothing pending changes nothing.
+    pub fn apply_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(imported) = self.import.pending.take() else {
+            return;
+        };
+        let message = import::applied(&imported);
+        self.simulation = imported.simulation;
+        self.context = imported.context;
+        self.result = None;
+        self.research.selected_cell = None;
+        self.save_loaded = true;
+        self.import.ok = true;
+        self.import.message = message.clone();
+        self.status = message;
+        self.close_import(window, cx);
     }
 
     /// Empty the dashboard search; Escape calls this.
@@ -564,11 +624,6 @@ impl AppState {
         cx.notify();
     }
 
-    pub fn set_save_open(&mut self, open: bool, cx: &mut Context<Self>) {
-        self.save_open = open;
-        cx.notify();
-    }
-
     /// The save-derived supplements the account carries outside the grid.
     pub fn set_server_var_res_xp(&mut self, value: f64, cx: &mut Context<Self>) {
         self.context.server_var_res_xp = value.clamp(1.0, 10.0);
@@ -614,28 +669,6 @@ impl AppState {
 
     fn context_changed(&mut self, cx: &mut Context<Self>) {
         self.result = None;
-        cx.notify();
-    }
-
-    /// Read the pasted save and, if it parses, replace the run with it.
-    pub fn import_save(&mut self, cx: &mut Context<Self>) {
-        let text = self.save_input.read(cx).text().to_string();
-        match save::import(&text) {
-            Ok(imported) => {
-                self.simulation = imported.simulation;
-                self.context = imported.context;
-                self.result = None;
-                self.research.selected_cell = None;
-                self.save_ok = true;
-                self.save_loaded = true;
-                self.save_message = imported_summary(&imported.warnings);
-                self.status = "Imported a save.".into();
-            }
-            Err(error) => {
-                self.save_ok = false;
-                self.save_message = error.to_string();
-            }
-        }
         cx.notify();
     }
 
@@ -719,18 +752,6 @@ fn step_cell(current: Option<usize>, dx: i32, dy: i32) -> usize {
     (row * cols + col) as usize
 }
 
-/// What an import left out, in one line for the panel.
-fn imported_summary(warnings: &[String]) -> String {
-    if warnings.is_empty() {
-        return "Imported: the save had every field this app reads.".into();
-    }
-    format!(
-        "Imported with {} warning(s): {}",
-        warnings.len(),
-        warnings.join("; ")
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -775,13 +796,5 @@ mod tests {
         assert_eq!(SaveStatus::of(true, true), SaveStatus::Loaded);
         assert_eq!(SaveStatus::of(true, false), SaveStatus::Loaded);
         assert_eq!(SaveStatus::Loaded.label(), "Save imported");
-    }
-
-    #[test]
-    fn import_summary_names_the_warnings() {
-        assert!(imported_summary(&[]).contains("Imported"));
-        let summary = imported_summary(&["crowns".into(), "sailing".into()]);
-        assert!(summary.contains("2 warning"));
-        assert!(summary.contains("crowns"));
     }
 }

@@ -5,7 +5,7 @@ use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::buttons::{Button, IconButton};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::forms::{Input, Stepper};
+use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::tables::Table;
@@ -102,8 +102,7 @@ pub fn rates_pane(
                 .flex_col()
                 .min_h_0()
                 .gap_3()
-                .child(supplements_card(state, cx))
-                .child(save_card(state, cx)),
+                .child(supplements_card(state, cx)),
             px(340.0),
         ))
 }
@@ -243,70 +242,6 @@ fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl In
                 AppState::set_extra_magnifiers,
                 cx,
             )),
-    )
-}
-
-fn save_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
-    let open = state.save_open;
-    let message = state.save_message.clone();
-    let ok = state.save_ok;
-    let entity = cx.entity();
-    let toggle = entity.clone();
-    let import = entity.clone();
-    let header = CardHeader::new("Save import")
-        .description("Paste a decoded save (JSON)")
-        .action(
-            Button::new("save-toggle", if open { "Hide" } else { "Show" })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    toggle.update(cx, |state, cx| state.set_save_open(!open, cx));
-                }),
-        );
-    let card = Card::new().header(header);
-    if !open {
-        return card.child(
-            div().px_3().pb_2().child(
-                Caption::new("Hidden. Nothing is imported until you paste a save.")
-                    .text_color(colors.fg_muted),
-            ),
-        );
-    }
-    card.child(
-        div()
-            .id("save-panel")
-            .flex()
-            .flex_col()
-            .gap_2()
-            .px_3()
-            .pb_3()
-            .child({
-                let input_focus = state.save_input.read(cx).focus().clone();
-                div()
-                    .id("save-input")
-                    .aria_label("Game save JSON")
-                    .w_full()
-                    .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
-                    .child(Input::new(&state.save_input).size(ControlSize::Sm))
-            })
-            .child(
-                Button::new("save-import", "Import save")
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        import.update(cx, |state, cx| state.import_save(cx));
-                    }),
-            )
-            .child(
-                div()
-                    .id("save-status")
-                    .role(gpui::Role::Label)
-                    .aria_label(message.clone())
-                    .w_full()
-                    .line_clamp(4)
-                    .text_size(px(11.0))
-                    .text_color(if ok { colors.fg_muted } else { colors.danger })
-                    .child(message),
-            ),
     )
 }
 

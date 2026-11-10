@@ -7,8 +7,8 @@ It exists for testing and debugging only. The game formulas, save decoding and o
 come from the upstream [`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer)
 repo; do not reverse-engineer logic from this file or tune behaviour to match it.
 
-Used by `crates/core/tests/fixture.rs`. To exercise the app by hand, paste the file's contents into
-the Rates pane's Save import panel.
+Used by `crates/core/tests/fixture.rs`. To exercise the app by hand, open the header's Import dialog
+and paste the file's contents, or drop the file on it.
 
 Treat it as frozen. Add small purpose-built saves to `crates/core/tests/save.rs` for edge cases
 instead of editing this one; regenerating it means updating the fixture test on purpose.
