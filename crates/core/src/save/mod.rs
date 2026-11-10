@@ -25,9 +25,10 @@
 //! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
 
 mod account;
-mod json;
+pub(crate) mod json;
 mod research;
 
+use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
 
@@ -60,6 +61,8 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The Jar Cavern state, when the save carries its `Holes` rows.
+    pub jar: Option<Jar>,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -163,10 +166,15 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let jar = Jar::from_save(save);
+    if jar.is_none() {
+        warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
+    }
 
     Ok(Imported {
         simulation,
         context,
+        jar,
         format,
         characters: roster,
         warnings,

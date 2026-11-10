@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::sections::jar::Tab as JarTab;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -11,7 +12,7 @@ use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
 };
-use idleon_core::{game, optimize, save, shape, sim};
+use idleon_core::{Jar, game, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -93,6 +94,10 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The jar section's active tab, kept across dashboard visits.
+    pub jar_tab: JarTab,
+    /// The Jar Cavern the loaded save carries, if it has one.
+    pub jar: Option<Jar>,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -112,11 +117,13 @@ pub struct AppState {
 
 impl AppState {
     /// Build the window state. `section` opens that registry id at launch, so a
-    /// lane or a harness can start on any section, including hidden tools.
+    /// lane or a harness can start on any section, including hidden tools;
+    /// `save` imports a decoded save first, for the sections that need one.
     pub fn new(
         window: &mut Window,
         endpoint_dir: Option<std::path::PathBuf>,
         section: Option<String>,
+        save: Option<std::path::PathBuf>,
         cx: &mut Context<Self>,
     ) -> Self {
         let bridge = ui::bridge::install(window, cx, endpoint_dir);
@@ -171,6 +178,8 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            jar_tab: JarTab::default(),
+            jar: None,
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -182,10 +191,29 @@ impl AppState {
             _search_subscription: search_subscription,
             _import_subscription: import_subscription,
         };
+        if let Some(path) = save {
+            state.load_save(&path, window, cx);
+        }
         if let Some(id) = section {
             state.open_section(&id, window, cx);
         }
         state
+    }
+
+    /// Import a save from disk at launch; a file that will not parse only
+    /// replaces the import message, exactly as a bad paste does.
+    fn load_save(&mut self, path: &std::path::Path, window: &mut Window, cx: &mut Context<Self>) {
+        let source = path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| path.display().to_string());
+        match std::fs::read_to_string(path) {
+            Ok(text) => {
+                self.check_import(&text, &source, cx);
+                self.apply_import(window, cx);
+            }
+            Err(error) => self.fail_import(&source, &error.to_string(), cx),
+        }
     }
 
     /// The open section's registry entry, or `None` on the dashboard.
@@ -302,6 +330,7 @@ impl AppState {
         let message = import::applied(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.jar = imported.jar;
         self.result = None;
         self.research.selected_cell = None;
         self.save_loaded = true;
@@ -465,6 +494,11 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
+        self.jar_tab = tab;
         cx.notify();
     }
 

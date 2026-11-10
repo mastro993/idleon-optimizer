@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod jar;
 pub mod research;
 
 use crate::state::AppState;
@@ -323,9 +324,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Production rates, rupie value, chances, collectibles",
         spec: "docs/sections/jar.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: jar::view,
         keys: no_keys,
     },
     Section {

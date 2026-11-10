@@ -100,6 +100,13 @@ node script/mcp-smoke.mjs --spawn --section damage   # a hidden tool: planned em
 node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-section empty state
 ```
 
+`--save <path>` imports a decoded save at launch, for the sections that have nothing to show without
+one (the jar calculator reads the cavern from `Holes`):
+
+```console
+./target/debug/idleon-optimizer --section jar --save fixtures/data.json
+```
+
 ## Per-section verification
 
 `script/mcp-sections.mjs` is the section gate. It reads the registry from
@@ -107,7 +114,8 @@ node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-secti
 dashboard card through the search field, opens each hidden tool through its own `--section` lane,
 asserts the section root and shared header ids, drives one interaction and writes
 `target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
-fails loudly; add one to `INTERACTIONS` in the script.
+fails loudly; add one to `INTERACTIONS` in the script. A section whose content needs a save is listed
+in `SAVED`, and its lane starts with `--save fixtures/data.json`.
 
 ```console
 node script/mcp-sections.mjs                      # all 30 sections

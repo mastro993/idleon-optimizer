@@ -51,9 +51,22 @@ const [shardIndex, shardCount] = (() => {
   return [index, count];
 })();
 
+/// The documented test account, for the sections that have nothing to show
+/// without one. `--save` imports it at launch.
+const FIXTURE = join(process.cwd(), 'fixtures/data.json');
+
+/// Sections whose content needs a save; each gets its own lane with the fixture.
+const SAVED = new Set(['jar']);
+
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
+  jar: async (lane) => {
+    await lane.call('click_element', { id: 'production' });
+    await waitForNode(lane, 'jar-production', 'jar: the production tab opens');
+    await lane.call('click_element', { id: 'overview' });
+    await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');
@@ -202,7 +215,12 @@ async function capture(lane, unit) {
 async function visitHidden(unit) {
   let lane = null;
   try {
-    lane = await McpLane.start({ appBin, keep, section: unit.id });
+    lane = await McpLane.start({
+      appBin,
+      keep,
+      section: unit.id,
+      save: SAVED.has(unit.id) ? FIXTURE : null,
+    });
     await waitForNode(lane, `section-${unit.id}`, `${unit.id}: --section opens its root`);
     await visitSection(lane, unit);
   } catch (error) {
@@ -214,13 +232,22 @@ async function visitHidden(unit) {
 
 async function visitCards(units) {
   let lane = null;
-  const ensureLane = async () => {
-    lane ??= await McpLane.start({ appBin, keep });
+  let loaded = null;
+  // A card that needs a save gets a lane of its own: swapping the save under a
+  // shared window would leave the previous card's state behind it.
+  const ensureLane = async (save) => {
+    if (lane && loaded !== save) {
+      lane.close();
+      lane = null;
+    }
+    lane ??= await McpLane.start({ appBin, keep, save });
+    loaded = save;
     return lane;
   };
   for (const unit of units) {
+    const save = SAVED.has(unit.id) ? FIXTURE : null;
     try {
-      await visitCard(await ensureLane(), unit);
+      await visitCard(await ensureLane(save), unit);
     } catch (error) {
       fail(`${unit.id}: card`, error);
       // A failed route can leave the window anywhere; start a clean lane.

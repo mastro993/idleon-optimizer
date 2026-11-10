@@ -44,6 +44,9 @@ fn main() -> Result<()> {
     // `--section <id>` opens that registry entry at launch: the harness uses it
     // to reach hidden tools, and an unknown id proves the missing-section state.
     let initial = argument("--section");
+    // `--save <path>` imports a decoded save at launch, so a lane can open a
+    // section that has nothing to show without one (the jar calculator).
+    let save = argument("--save").map(PathBuf::from);
     gpui_platform::application()
         .with_assets(ely_gpui_component::Assets)
         .run(move |cx: &mut App| {
@@ -58,7 +61,7 @@ fn main() -> Result<()> {
                 cx,
             );
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
-            if let Err(error) = open_window(cx, endpoint, initial) {
+            if let Err(error) = open_window(cx, endpoint, initial, save) {
                 eprintln!("idleon-optimizer: {error:#}");
                 cx.quit();
             }
@@ -66,7 +69,12 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn open_window(cx: &mut App, endpoint: Option<PathBuf>, initial: Option<String>) -> Result<()> {
+fn open_window(
+    cx: &mut App,
+    endpoint: Option<PathBuf>,
+    initial: Option<String>,
+    save: Option<PathBuf>,
+) -> Result<()> {
     let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(bounds)),
@@ -79,7 +87,7 @@ fn open_window(cx: &mut App, endpoint: Option<PathBuf>, initial: Option<String>)
         ..Default::default()
     };
     cx.open_window(options, move |window, cx| {
-        cx.new(move |cx| AppState::new(window, endpoint, initial, cx))
+        cx.new(move |cx| AppState::new(window, endpoint, initial, save, cx))
     })
     .context("window failed to open")?;
     cx.activate(true);
