@@ -301,6 +301,7 @@ try {
     await call('click_element', { id: 'run' });
   }
   await waitFor((current) => has(current, 'run-optimize'), 'optimize pane opens');
+
   await call('click_element', { id: 'run-optimize' });
   await waitFor((current) => has(current, 'apply-result'), 'optimizing produces a result', 60000);
 
@@ -309,6 +310,19 @@ try {
   check('result reports a gain', gain.includes('%'), gain);
   check('the optimizer never loses EXP', !gain.trim().startsWith('-'), gain);
   check('result reports the after rate', has(nodes, 'result-after'));
+
+  // Changing an input keeps the result visible and marks it stale.
+  await call('click_element', { id: 'target-value-more' });
+  await waitFor(
+    (current) => has(current, 'result-stale'),
+    'changing the target marks the result stale',
+  );
+  check('a stale result keeps its numbers', has(await tree(), 'result-after'));
+  await call('click_element', { id: 'target-value-less' });
+  await waitFor(
+    (current) => !has(current, 'result-stale'),
+    'restoring the input clears the stale mark',
+  );
 
   await call('click_element', { id: 'apply-result' });
   await waitFor(

@@ -7,10 +7,13 @@ use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::model::{
-    Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
-    Target,
+    Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
+    SimContext, Simulation, Target,
 };
 use idleon_core::{game, optimize, save, shape, sim};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -52,14 +55,18 @@ pub enum SaveStatus {
     Empty,
     /// A save is loaded; later failed imports leave it intact.
     Loaded,
+    /// A save is loaded, but the import left fields out and reported warnings.
+    Partial,
     /// The last import failed and there is still no save.
     Error,
 }
 
 impl SaveStatus {
-    /// The status for the current loaded/failed flags.
-    pub fn of(loaded: bool, last_ok: bool) -> Self {
-        if loaded {
+    /// The status for the current loaded/partial/failed flags.
+    pub fn of(loaded: bool, last_ok: bool, partial: bool) -> Self {
+        if loaded && partial {
+            Self::Partial
+        } else if loaded {
             Self::Loaded
         } else if last_ok {
             Self::Empty
@@ -73,9 +80,41 @@ impl SaveStatus {
         match self {
             Self::Empty => "No save",
             Self::Loaded => "Save imported",
+            Self::Partial => "Save imported with warnings",
             Self::Error => "Import failed",
         }
     }
+}
+
+/// The inputs a stored optimizer result was produced from.
+#[derive(Clone, Debug, PartialEq)]
+struct RunInputs {
+    simulation: Simulation,
+    context: SimContext,
+    target: Target,
+    effort: Effort,
+}
+
+impl RunInputs {
+    /// Whether these inputs still match the simulation the window shows.
+    fn matches(
+        &self,
+        simulation: &Simulation,
+        context: &SimContext,
+        target: Target,
+        effort: Effort,
+    ) -> bool {
+        self.simulation == *simulation
+            && self.context == *context
+            && self.target == target
+            && self.effort == effort
+    }
+}
+
+/// What a background run reports: its latest line and whether it has finished.
+struct RunProgress {
+    progress: Progress,
+    done: bool,
 }
 
 /// Everything the window renders and mutates.
@@ -105,12 +144,23 @@ pub struct AppState {
     pub save_message: String,
     /// Whether the last import succeeded, for the status tone.
     pub save_ok: bool,
+    /// Whether the loaded save left fields out and reported warnings.
+    pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// The latest progress line while a run is in flight.
+    pub run_progress: Option<Progress>,
+    /// Whether the last run was cancelled; cleared by the next run or result action.
+    pub run_cancelled: bool,
+    /// The inputs the stored result came from; `None` when there is no result.
+    result_inputs: Option<RunInputs>,
+    /// Set to stop the background run at its next progress report.
+    cancel: Option<Arc<AtomicBool>>,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
     run_task: Option<Task<()>>,
+    progress_task: Option<Task<()>>,
     _search_subscription: Subscription,
 }
 
@@ -178,10 +228,16 @@ impl AppState {
             save_input,
             save_message: "Nothing imported yet.".into(),
             save_ok: true,
+            save_partial: false,
             save_loaded: false,
+            run_progress: None,
+            run_cancelled: false,
+            result_inputs: None,
+            cancel: None,
             focus,
             bridge,
             run_task: None,
+            progress_task: None,
             _search_subscription: search_subscription,
         };
         if let Some(id) = section {
@@ -239,7 +295,14 @@ impl AppState {
 
     /// The shared header's save status.
     pub fn save_status(&self) -> SaveStatus {
-        SaveStatus::of(self.save_loaded, self.save_ok)
+        SaveStatus::of(self.save_loaded, self.save_ok, self.save_partial)
+    }
+
+    /// Whether the stored result no longer matches the visible simulation.
+    pub fn result_stale(&self) -> bool {
+        self.result_inputs.as_ref().is_some_and(|inputs| {
+            !inputs.matches(&self.simulation, &self.context, self.target, self.effort)
+        })
     }
 
     /// Show the save import panel, where every section's header import opens.
@@ -613,7 +676,8 @@ impl AppState {
     }
 
     fn context_changed(&mut self, cx: &mut Context<Self>) {
-        self.result = None;
+        // The stored result stays visible and `result_stale` marks it: a change
+        // to the inputs must not silently throw away what the last run found.
         cx.notify();
     }
 
@@ -624,12 +688,16 @@ impl AppState {
             Ok(imported) => {
                 self.simulation = imported.simulation;
                 self.context = imported.context;
-                self.result = None;
                 self.research.selected_cell = None;
                 self.save_ok = true;
                 self.save_loaded = true;
+                self.save_partial = !imported.warnings.is_empty();
                 self.save_message = imported_summary(&imported.warnings);
-                self.status = "Imported a save.".into();
+                self.status = if self.save_partial {
+                    "Imported a save with warnings.".into()
+                } else {
+                    "Imported a save.".into()
+                };
             }
             Err(error) => {
                 self.save_ok = false;
@@ -642,8 +710,7 @@ impl AppState {
     pub fn reset_layout(&mut self, cx: &mut Context<Self>) {
         self.simulation.placements.clear();
         self.simulation.mags.clear();
-        self.result = None;
-        self.status = "Cleared shapes, magnifiers and the last result.".into();
+        self.status = "Cleared shapes and magnifiers.".into();
         cx.notify();
     }
 
@@ -653,48 +720,157 @@ impl AppState {
             self.simulation = result.after;
             self.status = format!("Applied the optimized layout ({gain:+.1}%).");
         }
+        self.result_inputs = None;
+        self.run_cancelled = false;
         cx.notify();
     }
 
     pub fn dismiss_result(&mut self, cx: &mut Context<Self>) {
         self.result = None;
+        self.result_inputs = None;
+        self.run_cancelled = false;
         cx.notify();
     }
 
-    /// Run the optimizers off the UI thread and store the result.
+    /// Stop the run in flight at its next progress report; the previous result stays.
+    pub fn cancel_optimize(&mut self, cx: &mut Context<Self>) {
+        if !self.running {
+            return;
+        }
+        if let Some(cancel) = &self.cancel {
+            cancel.store(true, Ordering::Relaxed);
+        }
+        if let Some(progress) = &mut self.run_progress {
+            progress.message = "Cancelling…".into();
+        }
+        self.status = "Cancelling the run…".into();
+        cx.notify();
+    }
+
+    /// Run the optimizers off the UI thread, reporting progress and honouring cancel.
     pub fn optimize(&mut self, cx: &mut Context<Self>) {
         if self.running {
             return;
         }
         self.running = true;
+        self.run_cancelled = false;
+        let starting = Progress {
+            fraction: 0.0,
+            message: "Starting…".into(),
+        };
+        self.run_progress = Some(starting.clone());
         self.status = "Optimizing…".into();
-        let request = OptimizeRequest {
+        let inputs = RunInputs {
+            simulation: self.simulation.clone(),
+            context: self.context.clone(),
             target: self.target,
             effort: self.effort,
-            respec_grid: matches!(self.effort, Effort::Thorough),
+        };
+        let request = OptimizeRequest {
+            target: inputs.target,
+            effort: inputs.effort,
+            respec_grid: matches!(inputs.effort, Effort::Thorough),
             grid_points: None,
         };
-        let simulation = self.simulation.clone();
-        let context = self.context.clone();
+        let simulation = inputs.simulation.clone();
+        let context = inputs.context.clone();
+        let cancel = Arc::new(AtomicBool::new(false));
+        self.cancel = Some(cancel.clone());
+        let shared = Arc::new(Mutex::new(RunProgress {
+            progress: starting,
+            done: false,
+        }));
         cx.notify();
 
+        // The run reports from a background thread, so a foreground pump copies
+        // its latest line into the entity while the work is in flight.
+        let pump_shared = shared.clone();
+        self.progress_task = Some(cx.spawn(async move |this, cx| {
+            loop {
+                let (progress, done) = {
+                    let shared = pump_shared.lock().expect("run progress");
+                    (shared.progress.clone(), shared.done)
+                };
+                let percent = progress.fraction * 100.0;
+                this.update(cx, |state, cx| {
+                    if state.running {
+                        state.run_progress = Some(progress);
+                        state.status = format!("Optimizing… {percent:.0}%");
+                        cx.notify();
+                    }
+                })
+                .ok();
+                if done {
+                    break;
+                }
+                cx.background_executor()
+                    .timer(Duration::from_millis(40))
+                    .await;
+            }
+        }));
+
         self.run_task = Some(cx.spawn(async move |this, cx| {
+            let report_shared = shared.clone();
             let outcome = cx
                 .background_executor()
-                .spawn(async move { optimize::run(&simulation, &context, &request, &mut |_| {}) })
+                .spawn(async move {
+                    let result = optimize::run(&simulation, &context, &request, &mut |progress| {
+                        if cancel.load(Ordering::Relaxed) {
+                            return Control::Stop;
+                        }
+                        report_shared.lock().expect("run progress").progress = progress;
+                        Control::Continue
+                    });
+                    report_shared.lock().expect("run progress").done = true;
+                    result
+                })
                 .await;
-            this.update(cx, |state, cx| {
-                state.running = false;
-                state.status = format!(
-                    "{} steps in {} ms.",
-                    outcome.steps.len(),
-                    outcome.elapsed_ms
-                );
-                state.result = Some(outcome);
-                cx.notify();
-            })
-            .ok();
+            this.update(cx, |state, cx| state.finish_run(outcome, inputs, cx))
+                .ok();
         }));
+    }
+
+    /// Store a finished run, or keep the previous result when it was cancelled.
+    fn finish_run(
+        &mut self,
+        outcome: Option<OptimizeResult>,
+        inputs: RunInputs,
+        cx: &mut Context<Self>,
+    ) {
+        self.running = false;
+        self.run_progress = None;
+        self.cancel = None;
+        if settle_run(&mut self.result, &mut self.result_inputs, outcome, inputs) {
+            self.run_cancelled = true;
+            self.status = if self.result.is_some() {
+                "Run cancelled; the previous result is unchanged.".into()
+            } else {
+                "Run cancelled; nothing was applied.".into()
+            };
+        } else if let Some(result) = &self.result {
+            self.status = format!("{} steps in {} ms.", result.steps.len(), result.elapsed_ms);
+        }
+        cx.notify();
+    }
+}
+
+/// Apply a finished run to the stored result; `true` when it was cancelled.
+///
+/// A cancelled run stores nothing, so the result the window already shows stays
+/// exactly as it was.
+fn settle_run(
+    result: &mut Option<OptimizeResult>,
+    result_inputs: &mut Option<RunInputs>,
+    outcome: Option<OptimizeResult>,
+    inputs: RunInputs,
+) -> bool {
+    match outcome {
+        Some(outcome) => {
+            *result = Some(outcome);
+            *result_inputs = Some(inputs);
+            false
+        }
+        None => true,
     }
 }
 
@@ -770,11 +946,118 @@ mod tests {
 
     #[test]
     fn save_status_prefers_a_loaded_save_over_a_later_failure() {
-        assert_eq!(SaveStatus::of(false, true), SaveStatus::Empty);
-        assert_eq!(SaveStatus::of(false, false), SaveStatus::Error);
-        assert_eq!(SaveStatus::of(true, true), SaveStatus::Loaded);
-        assert_eq!(SaveStatus::of(true, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(false, true, false), SaveStatus::Empty);
+        assert_eq!(SaveStatus::of(false, false, false), SaveStatus::Error);
+        assert_eq!(SaveStatus::of(true, true, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(true, false, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(true, true, true), SaveStatus::Partial);
         assert_eq!(SaveStatus::Loaded.label(), "Save imported");
+        assert_eq!(SaveStatus::Partial.label(), "Save imported with warnings");
+    }
+
+    #[test]
+    fn stored_result_inputs_match_only_the_simulation_they_ran_on() {
+        let inputs = RunInputs {
+            simulation: Simulation::default(),
+            context: SimContext::default(),
+            target: Target::Hours(24.0),
+            effort: Effort::Balanced,
+        };
+        assert!(inputs.matches(
+            &Simulation::default(),
+            &SimContext::default(),
+            Target::Hours(24.0),
+            Effort::Balanced,
+        ));
+        let changed = Simulation {
+            research_level: 2,
+            ..Simulation::default()
+        };
+        assert!(!inputs.matches(
+            &changed,
+            &SimContext::default(),
+            Target::Hours(24.0),
+            Effort::Balanced,
+        ));
+        let context = SimContext {
+            extra_shapes: 1,
+            ..SimContext::default()
+        };
+        assert!(!inputs.matches(
+            &Simulation::default(),
+            &context,
+            Target::Hours(24.0),
+            Effort::Balanced,
+        ));
+        assert!(!inputs.matches(
+            &Simulation::default(),
+            &SimContext::default(),
+            Target::Level(120),
+            Effort::Balanced,
+        ));
+        assert!(!inputs.matches(
+            &Simulation::default(),
+            &SimContext::default(),
+            Target::Hours(24.0),
+            Effort::Thorough,
+        ));
+    }
+
+    fn dummy_result() -> OptimizeResult {
+        OptimizeResult {
+            before: Simulation::default(),
+            after: Simulation::default(),
+            before_rate: 10.0,
+            after_rate: 12.0,
+            projection: Default::default(),
+            steps: vec!["Ran.".into()],
+            elapsed_ms: 3,
+        }
+    }
+
+    #[test]
+    fn a_cancelled_run_keeps_the_previous_result() {
+        let inputs = RunInputs {
+            simulation: Simulation::default(),
+            context: SimContext::default(),
+            target: Target::Hours(24.0),
+            effort: Effort::Balanced,
+        };
+        let previous = dummy_result();
+        let mut result = Some(previous.clone());
+        let mut result_inputs = Some(inputs.clone());
+        assert!(settle_run(
+            &mut result,
+            &mut result_inputs,
+            None,
+            inputs.clone()
+        ));
+        assert_eq!(
+            result.as_ref().map(|result| result.after_rate),
+            Some(previous.after_rate),
+            "cancelling replaced the result the window was showing"
+        );
+        assert_eq!(result_inputs, Some(inputs));
+    }
+
+    #[test]
+    fn a_finished_run_replaces_the_result_and_its_inputs() {
+        let inputs = RunInputs {
+            simulation: Simulation::default(),
+            context: SimContext::default(),
+            target: Target::Hours(24.0),
+            effort: Effort::Balanced,
+        };
+        let mut result = Some(dummy_result());
+        let mut result_inputs = None;
+        assert!(!settle_run(
+            &mut result,
+            &mut result_inputs,
+            Some(dummy_result()),
+            inputs.clone()
+        ));
+        assert_eq!(result.as_ref().map(|result| result.after_rate), Some(12.0));
+        assert_eq!(result_inputs, Some(inputs));
     }
 
     #[test]
