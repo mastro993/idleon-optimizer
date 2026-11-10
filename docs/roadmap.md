@@ -42,7 +42,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M27 | Royal Guardian Calculator | World 7 | 4 | planned | foundation | [royal-guardian](sections/royal-guardian.md) |
 | M28 | Spelunking Simulator | World 7 | 4 | planned | foundation | [spelunking](sections/spelunking.md) |
 | M29 | Jelly Operator Optimizer | World 7 | 5 | planned | foundation | [jelly-operator](sections/jelly-operator.md) |
-| M30 | BoneJoePickle Calculator | Tools | 1 | planned | foundation | [pickle](sections/pickle.md) |
+| M30 | BoneJoePickle Calculator | Tools | 1 | done | foundation | [pickle](sections/pickle.md) |
 
 ## Tracking
 
