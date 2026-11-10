@@ -1,6 +1,6 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, 29 sections planned.** The live breakdown is
+Status: **foundation in progress, research partial, Monument Bravery built, 29 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -229,14 +229,20 @@ The app, Ely and the automation bridge must share one GPUI build.
 Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
 bump moves all three together and the smoke harness is the check.
 
-## 9. Research status
+## 9. Implementation status
 
-The research section is the only implemented one and is still partial. Done: grid, shapes,
-magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
-chart, keyboard and canvas dragging. Missing: the five extra tabs (Insight ROI, Observation
-Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation,
-strategy comparison/timeline, complete save-derived multipliers, state export/import and undo.
+The research section is implemented and still partial. Done: grid, shapes, magnifiers, local sim,
+shape/mag/grid optimizers, 16 presets, supplements, save import, projection chart, keyboard and
+canvas dragging. Missing: the five extra tabs (Insight ROI, Observation Unlocks, Shape
+Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy
+comparison/timeline, complete save-derived multipliers, state export/import and undo.
 Details: [`docs/sections/research.md`](sections/research.md).
+
+The Monument section's Bravery tab is built (MN-01): Paying Respect training and sources, saved
+Bravery stats, sword odds for the entered run state, milestones and permanent reward levels. The
+Justice and Wisdom tabs and the full permanent/charge summaries stay on the roadmap as MN-02 to
+MN-04. Formulas are tested against the committed fixture; `script/extract-monument-data.mjs`
+extracts the tables the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
 
 ## 10. Verification
 

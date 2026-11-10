@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod monument;
 pub mod research;
 
 use crate::state::AppState;
@@ -371,9 +372,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Bravery, Justice, Wisdom — reward multipliers, permanent bonuses, time scaling",
         spec: "docs/sections/monument.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: monument::view,
         keys: no_keys,
     },
     Section {

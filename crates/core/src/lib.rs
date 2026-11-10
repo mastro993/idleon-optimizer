@@ -7,6 +7,7 @@
 
 pub mod data;
 pub mod model;
+pub mod monument;
 pub mod optimize;
 pub mod save;
 pub mod shape;

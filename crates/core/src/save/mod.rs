@@ -60,12 +60,35 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The decoded save object, kept raw for sections beyond research.
+    pub data: SaveData,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
     pub characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
+}
+
+/// The decoded save object every section reads.
+///
+/// The research importer decodes the rows it needs; sections with their own
+/// systems read the same object through [`SaveData::parsed`] instead of asking
+/// for a second import. The `it.json` wrapper's companion roster stays beside
+/// the save, exactly as the upstream loader reads it.
+#[derive(Clone, Debug)]
+pub struct SaveData {
+    /// The save object: `data` when the text wraps it, the root otherwise.
+    pub fields: Map<String, Value>,
+    /// The `it.json` wrapper's `companion` roster, when present.
+    pub companion: Option<Value>,
+}
+
+impl SaveData {
+    /// A field that may be a JSON value or a string holding one.
+    pub fn parsed(&self, key: &str) -> Option<Value> {
+        json::parsed_field(&self.fields, key)
+    }
 }
 
 /// Why an import could not be read.
@@ -163,10 +186,15 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let data = SaveData {
+        fields: save.clone(),
+        companion: root.get("companion").cloned(),
+    };
 
     Ok(Imported {
         simulation,
         context,
+        data,
         format,
         characters: roster,
         warnings,
