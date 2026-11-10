@@ -45,6 +45,39 @@ impl Route {
     }
 }
 
+/// What the shared page header says about the loaded save.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SaveStatus {
+    /// No save has been imported yet.
+    Empty,
+    /// A save is loaded; later failed imports leave it intact.
+    Loaded,
+    /// The last import failed and there is still no save.
+    Error,
+}
+
+impl SaveStatus {
+    /// The status for the current loaded/failed flags.
+    pub fn of(loaded: bool, last_ok: bool) -> Self {
+        if loaded {
+            Self::Loaded
+        } else if last_ok {
+            Self::Empty
+        } else {
+            Self::Error
+        }
+    }
+
+    /// The line the header shows.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Empty => "No save",
+            Self::Loaded => "Save imported",
+            Self::Error => "Import failed",
+        }
+    }
+}
+
 /// Everything the window renders and mutates.
 pub struct AppState {
     pub simulation: Simulation,
@@ -72,6 +105,8 @@ pub struct AppState {
     pub save_message: String,
     /// Whether the last import succeeded, for the status tone.
     pub save_ok: bool,
+    /// Whether a save is loaded, for the shared page header.
+    pub save_loaded: bool,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
@@ -143,6 +178,7 @@ impl AppState {
             save_input,
             save_message: "Nothing imported yet.".into(),
             save_ok: true,
+            save_loaded: false,
             focus,
             bridge,
             run_task: None,
@@ -199,6 +235,20 @@ impl AppState {
             return cx.notify();
         };
         self.open_section(id, window, cx);
+    }
+
+    /// The shared header's save status.
+    pub fn save_status(&self) -> SaveStatus {
+        SaveStatus::of(self.save_loaded, self.save_ok)
+    }
+
+    /// Show the save import panel, where every section's header import opens.
+    pub fn open_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.open_section("research", window, cx);
+        self.research.tab = Tab::Rates;
+        self.save_open = true;
+        self.status = "Import a decoded save from the save panel.".into();
+        cx.notify();
     }
 
     /// Empty the dashboard search; Escape calls this.
@@ -577,6 +627,7 @@ impl AppState {
                 self.result = None;
                 self.research.selected_cell = None;
                 self.save_ok = true;
+                self.save_loaded = true;
                 self.save_message = imported_summary(&imported.warnings);
                 self.status = "Imported a save.".into();
             }
@@ -715,6 +766,15 @@ mod tests {
         assert_eq!(step_cell(Some(19), 1, 0), 19);
         assert_eq!(step_cell(Some(0), -1, -1), 0);
         assert_eq!(step_cell(None, 1, 0), 0);
+    }
+
+    #[test]
+    fn save_status_prefers_a_loaded_save_over_a_later_failure() {
+        assert_eq!(SaveStatus::of(false, true), SaveStatus::Empty);
+        assert_eq!(SaveStatus::of(false, false), SaveStatus::Error);
+        assert_eq!(SaveStatus::of(true, true), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(true, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::Loaded.label(), "Save imported");
     }
 
     #[test]

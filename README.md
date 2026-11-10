@@ -29,6 +29,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   ids land on a named empty state instead of a panic. The five hidden upstream tools (All Stats,
   Damage, Drop Rate, Coin Multiplier, BoneJoePickle) are registered without cards and open with
   `--section <id>`.
+- **One shell for every section** — the shared page header (back, title, world badge, save status,
+  import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
+  1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.

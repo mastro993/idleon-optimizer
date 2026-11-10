@@ -39,6 +39,11 @@ fn main() -> Result<()> {
             for section in sections::SECTIONS {
                 (section.keys)(cx);
             }
+            Theme::set_palette(
+                ely_gpui_component::theme::Mode::Dark,
+                Some(ui::theme::palette()),
+                cx,
+            );
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
             if let Err(error) = open_window(cx, endpoint, initial) {
                 eprintln!("idleon-optimizer: {error:#}");
@@ -57,7 +62,7 @@ fn open_window(cx: &mut App, endpoint: Option<PathBuf>, initial: Option<String>)
             appears_transparent: true,
             traffic_light_position: Some(point(px(16.0), px(18.0))),
         }),
-        window_min_size: Some(size(px(1080.0), px(680.0))),
+        window_min_size: Some(size(px(ui::layout::MIN_WIDTH), px(ui::layout::MIN_HEIGHT))),
         ..Default::default()
     };
     cx.open_window(options, move |window, cx| {

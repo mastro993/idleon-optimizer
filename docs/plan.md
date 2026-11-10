@@ -177,7 +177,12 @@ counts and field names, not save values.
 - Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
 - Match the upstream information architecture: same tab names and order, same panels, same column
   order in tables, same defaults.
-- Palette and spacing follow the existing dark theme; world badges use the upstream colours.
+- One shared page header (back, section title, world badge, save status, import) and one tab strip;
+  a section owns its tab strip and the shell owns only the window chrome and status bar.
+- Palette and spacing follow the upstream dark theme: `#1a1a2e` ground, `#16213e` surfaces,
+  `#0f3460` borders, `#00d4ff` accent; world badges use the upstream per-world colours.
+- Below 1360 px the fixed side rails stack under their main pane; data tables scroll inside a
+  height that shrinks with the window, so the 1080×680 minimum stays usable.
 - Images come from `assets/upstream/` through a manifest. Every image reference has a placeholder
   and alt text. The manifest records source path, hash and size.
 - Every interactive control gets a stable id, accessible label, role and disabled state for the

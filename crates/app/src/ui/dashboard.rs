@@ -2,8 +2,9 @@
 
 use crate::sections::{self, Group, Section};
 use crate::state::AppState;
+use crate::ui::layout::Breakpoint;
+use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::SearchInput;
 use ely_gpui_component::layout::{Card, ScrollArea, SimpleGrid};
@@ -17,9 +18,10 @@ use gpui::{
 /// The searchable dashboard, grouped General, World 2-7.
 pub fn dashboard_pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
+    let breakpoint = Breakpoint::of(window);
     let query = state.search.read(cx).text().trim().to_string();
     let entity = cx.entity();
     let search_focus = state.search.read(cx).focus().clone();
@@ -38,7 +40,11 @@ pub fn dashboard_pane(
         }
         matches += cards.len();
         let id = group.id();
-        let mut grid = SimpleGrid::new(format!("dashboard-grid-{id}"), px(300.0), px(12.0));
+        let mut grid = SimpleGrid::new(
+            format!("dashboard-grid-{id}"),
+            breakpoint.card_min(),
+            px(16.0),
+        );
         for section in cards {
             grid = grid.child(section_card(section, &entity, muted));
         }
@@ -226,7 +232,7 @@ fn section_card(
                                             .font_weight(FontWeight::SEMIBOLD)
                                             .child(section.title),
                                     )
-                                    .child(Badge::new(section.badge()).tone(tone(section.group))),
+                                    .child(WorldBadge::new(section.group)),
                             )
                             .child(
                                 div()
@@ -238,18 +244,4 @@ fn section_card(
                     ),
             ),
         )
-}
-
-/// The upstream palette's nearest Ely tone for each world badge.
-fn tone(group: Group) -> Tone {
-    match group {
-        Group::General => Tone::Neutral,
-        Group::W2 | Group::W5 => Tone::Info,
-        Group::W3 => Tone::Success,
-        Group::W4 => Tone::Accent,
-        Group::W6 => Tone::Danger,
-        Group::W7 => Tone::Warning,
-        // Hidden tools never render a dashboard card; keep the palette total.
-        Group::Tools => Tone::Neutral,
-    }
 }
