@@ -38,7 +38,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M23 | Opal Optimizer | World 5 | 3 | planned | foundation | [opal](sections/opal.md) |
 | M24 | Sneaking Optimizer | World 6 | 4 | planned | foundation | [sneaking](sections/sneaking.md) |
 | M25 | Farming Planner | World 6 | 5 | planned | foundation | [farming](sections/farming.md) |
-| M26 | Clamworks Calculator | World 7 | 4 | planned | foundation, combat-sim | [clamworks](sections/clamworks.md) |
+| M26 | Clamworks Calculator | World 7 | 4 | partial | foundation, combat-sim | [clamworks](sections/clamworks.md) |
 | M27 | Royal Guardian Calculator | World 7 | 4 | planned | foundation | [royal-guardian](sections/royal-guardian.md) |
 | M28 | Spelunking Simulator | World 7 | 4 | planned | foundation | [spelunking](sections/spelunking.md) |
 | M29 | Jelly Operator Optimizer | World 7 | 5 | planned | foundation | [jelly-operator](sections/jelly-operator.md) |
