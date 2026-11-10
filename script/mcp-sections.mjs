@@ -51,9 +51,46 @@ const [shardIndex, shardCount] = (() => {
   return [index, count];
 })();
 
+/// A small flat `save.json` carrying `OptLacc[26] = 1`, so the shadow page
+/// answers YES from a real import rather than starting state.
+const shadowSave = () => {
+  const sparse = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  return JSON.stringify({
+    Research: JSON.stringify([
+      sparse(240, { 50: 3, 52: 4 }),
+      sparse(240, {}),
+      sparse(80, { 0: 1 }),
+      sparse(80, {}),
+      sparse(80, {}),
+      [],
+      [],
+    ]),
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+    OptLacc: JSON.stringify(sparse(30, { 26: 1 })),
+  });
+};
+
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
+  shadow: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'shadow: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('type_text', { text: shadowSave() });
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'shadow-verdict') === 'Shadow ban verdict: YES',
+      'shadow: a nonzero OptLacc[26] answers YES',
+    );
+    const detail = labelOf(await lane.tree(), 'shadow-detail') ?? '';
+    check(
+      'shadow: the save status and the flag are visible',
+      detail.includes('Save imported') && detail.includes('OptLacc[26] = 1'),
+      detail,
+    );
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');
