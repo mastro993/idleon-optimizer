@@ -5,16 +5,12 @@
 
 use crate::sections;
 use crate::state::{AppState, Route};
-use crate::ui::{dashboard, section};
-use ely_gpui_component::buttons::IconButton;
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::primitives::IconName;
+use crate::ui::{dashboard, layout, section};
 use ely_gpui_component::shell::{StatusBar, StatusBarItem};
 use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Heading;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Role, Styled, Window, div, px,
+    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Styled, Window, div, px,
 };
 
 gpui::actions!(idleon_shell, [BackToDashboard]);
@@ -33,89 +29,18 @@ pub fn bind_keys(cx: &mut App) {
     ]);
 }
 
-/// The shared header's way back to the dashboard.
-fn back_button(entity: &gpui::Entity<AppState>) -> IconButton {
-    let back = entity.clone();
-    IconButton::new("back-to-dashboard", IconName::ArrowLeft)
-        .tooltip("Back to dashboard")
-        .on_click(move |_event, window, cx| {
-            back.update(cx, |state, cx| state.back_to_dashboard(window, cx));
-        })
-}
-
 /// Window chrome and the active view.
 pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    let (bg, fg, border, muted) = {
+    let (bg, fg) = {
         let colors = &cx.theme().colors;
-        (colors.bg, colors.fg, colors.border, colors.fg_muted)
+        (colors.bg, colors.fg)
     };
     let route = state.route.clone();
-    let entity = cx.entity();
-
-    let mut header = div()
-        .id("app-header")
-        .flex()
-        .flex_none()
-        .items_center()
-        .gap_3()
-        // Leaves room for the macOS traffic lights in the transparent title bar.
-        .pl(px(84.0))
-        .pr_4()
-        .h(px(48.0))
-        .border_b_1()
-        .border_color(border);
-
-    match &route {
-        Route::Dashboard => {
-            header = header
-                .child(Heading::new(3, "Idleon Optimizer"))
-                .child(
-                    div()
-                        .id("header-subtitle")
-                        .role(Role::Label)
-                        .aria_label("Dashboard")
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child("Dashboard"),
-                )
-                .child(div().flex_1())
-                .child(
-                    div()
-                        .id("header-cards")
-                        .role(Role::Label)
-                        .aria_label(format!("{} calculators", sections::card_count()))
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(format!("{} calculators", sections::card_count())),
-                );
-        }
-        Route::Section(section) => {
-            header = header
-                .child(back_button(&entity))
-                .child(div().text_size(px(18.0)).child(section.icon))
-                .child(
-                    div()
-                        .id("section-title")
-                        .role(Role::Heading)
-                        .aria_label(section.title)
-                        .child(Heading::new(3, section.title)),
-                )
-                .child(Badge::new(section.badge()))
-                .child(div().flex_1());
-        }
-        Route::Missing(_) => {
-            header = header
-                .child(back_button(&entity))
-                .child(
-                    div()
-                        .id("section-title")
-                        .role(Role::Heading)
-                        .aria_label("Unknown section")
-                        .child(Heading::new(3, "Unknown section")),
-                )
-                .child(div().flex_1());
-        }
-    }
+    let header = match &route {
+        Route::Dashboard => layout::dashboard_header(state, cx),
+        Route::Section(_) => layout::page_header(state, cx),
+        Route::Missing(id) => layout::missing_header(id, state, cx),
+    };
 
     let body = match &route {
         Route::Dashboard => div()

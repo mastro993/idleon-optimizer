@@ -4,8 +4,8 @@
 //! resolves every id against the registry before the shell picks a renderer.
 
 use crate::state::AppState;
+use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::IconName;
@@ -20,8 +20,7 @@ pub fn planned(
     let Some(section) = state.current_section() else {
         return div().into_any_element();
     };
-    let entity = cx.entity();
-    let back = entity.clone();
+    let back = cx.entity();
     div()
         .flex()
         .flex_col()
@@ -33,7 +32,7 @@ pub fn planned(
                 .header(
                     CardHeader::new(section.title)
                         .description(section.description)
-                        .action(Badge::new(section.badge())),
+                        .action(WorldBadge::new(section.group)),
                 )
                 .child(
                     EmptyState::new(

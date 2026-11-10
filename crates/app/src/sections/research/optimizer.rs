@@ -2,6 +2,7 @@
 
 use crate::state::AppState;
 use crate::ui::format;
+use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
@@ -19,34 +20,27 @@ use idleon_core::sim::Sample;
 
 pub fn optimizer_pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    div()
-        .id("optimizer")
-        .flex()
-        .size_full()
-        .gap_3()
-        .min_h_0()
-        .child(
-            div()
-                .id("optimizer-controls")
-                .flex()
-                .flex_col()
-                .flex_none()
-                .w(px(380.0))
-                .gap_3()
-                .min_h_0()
-                .child(controls(state, cx)),
-        )
-        .child(
-            div()
-                .id("optimizer-result")
-                .flex_1()
-                .min_w_0()
-                .min_h_0()
-                .child(result(state, cx)),
-        )
+    layout::split_pane_reversed(
+        "optimizer",
+        Breakpoint::of(window),
+        div()
+            .id("optimizer-result")
+            .flex_1()
+            .min_w_0()
+            .min_h_0()
+            .child(result(state, cx)),
+        div()
+            .id("optimizer-controls")
+            .flex()
+            .flex_col()
+            .gap_3()
+            .min_h_0()
+            .child(controls(state, cx)),
+        px(380.0),
+    )
 }
 
 fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
@@ -232,6 +226,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                 .child(
                     div()
                         .flex()
+                        .flex_wrap()
                         .gap_4()
                         .child(metric(
                             "result-before",

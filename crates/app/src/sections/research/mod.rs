@@ -7,13 +7,11 @@ mod rates;
 
 use crate::state::AppState;
 use crate::ui::format;
-use ely_gpui_component::shell::{TabBar, WindowTab};
+use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, Window, div,
-};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, Window, div, px};
 
 /// The research page's three upstream tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -97,7 +95,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .flex_none()
         .items_center()
         .gap_3()
-        .child(tabs(state, cx))
+        .child(layout::app_tabs(state, cx))
         .child(div().flex_1())
         .child(
             div()
@@ -140,59 +138,32 @@ fn pane(
     tab: Tab,
 ) -> AnyElement {
     match tab {
-        Tab::Grid => div()
-            .id("pane-grid")
-            .flex()
-            .size_full()
-            .gap_3()
-            .min_h_0()
-            .child(
-                div()
-                    .id("grid-column")
-                    .flex()
-                    .flex_col()
-                    .flex_1()
-                    .min_w_0()
-                    .min_h_0()
-                    .child(grid::grid_pane(state, window, cx)),
+        Tab::Grid => {
+            let grid = grid::grid_pane(state, window, cx).into_any_element();
+            let inspector = inspector::inspector_pane(state, window, cx).into_any_element();
+            layout::split_pane(
+                "pane-grid",
+                Breakpoint::of(window),
+                grid,
+                inspector,
+                px(360.0),
             )
-            .child(
-                div()
-                    .id("inspector-column")
-                    .flex()
-                    .flex_col()
-                    .flex_none()
-                    .w(gpui::px(360.0))
-                    .min_h_0()
-                    .child(inspector::inspector_pane(state, window, cx)),
-            )
-            .into_any_element(),
+        }
         Tab::Rates => div()
             .id("pane-rates")
-            .size_full()
+            .flex()
+            .flex_col()
+            .flex_1()
             .min_h_0()
             .child(rates::rates_pane(state, window, cx))
             .into_any_element(),
         Tab::Run => div()
             .id("pane-run")
-            .size_full()
+            .flex()
+            .flex_col()
+            .flex_1()
             .min_h_0()
             .child(optimizer::optimizer_pane(state, window, cx))
             .into_any_element(),
     }
-}
-
-/// The research section's upstream tab strip.
-fn tabs(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let entity = cx.entity();
-    let mut tabs = TabBar::new("app-tabs").selected(SharedString::from(state.research.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    let picker = entity.clone();
-    tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            picker.update(cx, |state, cx| state.set_tab(tab, cx));
-        }
-    })
 }

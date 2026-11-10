@@ -1,10 +1,12 @@
-//! The window: shell, panes and the automation bridge.
+//! The window: shell, dashboard, shared section chrome and the automation bridge.
 
 pub mod bridge;
 pub mod dashboard;
 pub mod format;
+pub mod layout;
 pub mod section;
 pub mod shell;
+pub mod theme;
 
 use crate::state::AppState;
 use gpui::{Context, IntoElement, Render, Window};
