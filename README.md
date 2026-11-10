@@ -62,12 +62,14 @@ node script/roadmap.mjs --apply --repo owner/name --dry-run
 node script/roadmap.mjs --apply --repo owner/name
 ```
 
-The sync is idempotent: milestones match by title, issues by feature-id prefix.
+The sync is idempotent: milestones match by title, issues by feature-id prefix. The live tracker is
+[milestones](https://github.com/mastro993/idleon-optimizer/milestones) and
+[issues](https://github.com/mastro993/idleon-optimizer/issues).
 
 ## Run
 
 ```console
-git clone --recurse-submodules https://github.com/<you>/idleon-optimizer
+git clone --recurse-submodules https://github.com/mastro993/idleon-optimizer
 cd idleon-optimizer
 cargo run --release
 ```
