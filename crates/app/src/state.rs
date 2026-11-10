@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::assets::Manifest;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -127,6 +128,8 @@ pub struct AppState {
     pub running: bool,
     pub effort: Effort,
     pub target: Target,
+    /// Upstream artwork resolved through `assets/upstream/manifest.json`.
+    pub assets: Manifest,
     /// Where the window is: the dashboard or one section.
     pub route: Route,
     /// The last section opened; the dashboard offers to resume it.
@@ -221,6 +224,7 @@ impl AppState {
             running: false,
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),

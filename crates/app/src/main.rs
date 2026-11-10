@@ -1,5 +1,6 @@
 //! Desktop calculator suite for Legends of Idleon.
 
+mod assets;
 mod sections;
 mod state;
 mod ui;
