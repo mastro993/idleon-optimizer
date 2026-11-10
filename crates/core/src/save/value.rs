@@ -17,6 +17,19 @@ pub struct Save {
     root: Value,
 }
 
+impl std::ops::Deref for Save {
+    type Target = Value;
+
+    /// The save's own object, without the `it.json` wrapper, for the readers
+    /// that expect the decoded field map.
+    fn deref(&self) -> &Value {
+        match self.root.as_object().and_then(|root| root.get("data")) {
+            Some(fields @ Value::Object(_)) => fields,
+            _ => &self.root,
+        }
+    }
+}
+
 impl Save {
     /// Wrap the parsed text's top-level value.
     pub fn new(root: Value) -> Self {
