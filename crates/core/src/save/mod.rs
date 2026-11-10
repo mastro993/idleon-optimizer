@@ -1,4 +1,4 @@
-//! Import a game save into a simulation and its multipliers.
+//! Import a game save into a simulation, its multipliers and the Clamworks state.
 //!
 //! The upstream calculators read the game's save through Google sign-in and a
 //! decode step; this app takes the decoded object as text. The layout follows
@@ -34,6 +34,7 @@ mod statue;
 
 pub use shadow::{Shadow, ShadowVerdict};
 
+use crate::clamworks::Clamworks;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
 
@@ -66,6 +67,8 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The Clamworks state the save carries, or the zero state when it has none.
+    pub clamworks: Clamworks,
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
@@ -183,10 +186,12 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
     let statues = statue::read(save, root, &mut warnings);
+    let clamworks = Clamworks::from_save(save, &mut warnings);
 
     Ok(Imported {
         simulation,
         context,
+        clamworks,
         save: Value::Object(save.clone()),
         statues,
         format,

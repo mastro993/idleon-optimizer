@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod clamworks;
 pub mod endgame;
 pub mod pickle;
 pub mod research;
@@ -423,9 +424,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W7,
         description: "Pearl upgrades, optimizer, promotion tracker",
         spec: "docs/sections/clamworks.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: clamworks::view,
         keys: no_keys,
     },
     Section {

@@ -197,6 +197,13 @@ const INTERACTIONS = {
       'statue: sort returns to game order',
     );
   },
+  clamworks: async (lane) => {
+    await lane.call('click_element', { id: 'clamworks-multikill-more' });
+    await lane.call('click_element', { id: 'upgrades' });
+    await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
+    await lane.call('click_element', { id: 'overview' });
+    await waitForNode(lane, 'clamworks-overview', 'clamworks: the overview tab reopens');
+  },
 };
 
 const prefix = shardCount > 1 ? `[${shardIndex + 1}/${shardCount}] ` : '';
