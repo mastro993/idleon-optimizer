@@ -1,4 +1,4 @@
-//! Import a game save into a simulation and its multipliers.
+//! Import a game save into a simulation, its multipliers and the farming field.
 //!
 //! The upstream calculators read the game's save through Google sign-in and a
 //! decode step; this app takes the decoded object as text. The layout follows
@@ -12,6 +12,9 @@
 //!   groups of four numbers.
 //! - The research level is the highest `Lv0_<char>[20]` across characters, and
 //!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
+//! - The farming side reads `FarmPlot`, `FarmRank`, `FarmUpg`, `FarmCrop`,
+//!   `Spelunk[50]` and `GemItemsPurchased`; the active character's Farming level
+//!   is `Lv0_<char>[16]`. A research-only save stays silent about farming.
 //!
 //! The app's own state exports use the decoded names (`gridLevels`, `magData`,
 //! …) at the top level, so the importer accepts either shape. [`import`] reports
@@ -25,9 +28,11 @@
 //! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
 
 mod account;
+mod farming;
 mod json;
 mod research;
 
+use crate::farming::Farm;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
 
@@ -42,6 +47,8 @@ pub enum Format {
     SaveJson,
     /// The decoded research fields of an app state export, at the top level.
     ResearchState,
+    /// The decoded farming fields of an app state export, at the top level.
+    FarmingState,
 }
 
 impl Format {
@@ -51,6 +58,7 @@ impl Format {
             Format::ItJson => "it.json",
             Format::SaveJson => "save.json",
             Format::ResearchState => "research state",
+            Format::FarmingState => "farming state",
         }
     }
 }
@@ -60,6 +68,8 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The farming field, ranks, crops and market levels the save carries.
+    pub farming: Farm,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -112,6 +122,7 @@ struct Character {
     research_level: Option<u32>,
     research_exp: Option<f64>,
     divinity: Option<u32>,
+    farming: Option<u32>,
 }
 
 /// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
@@ -133,10 +144,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let carries_research = RESEARCH_FIELDS
         .iter()
         .any(|field| save.contains_key(*field));
-    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research) else {
+    let carries_farming = farming::has_farming(save);
+    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research || carries_farming)
+    else {
         return Err(ImportError::NoSaveFields(format!(
-            "expected one of {} at the top level or in the Research rows",
-            RESEARCH_FIELDS.join(", ")
+            "expected a research seed field ({}) or a farming field ({}) at the top level or in the Research rows",
+            RESEARCH_FIELDS.join(", "),
+            farming::FARMING_FIELDS.join(", ")
         )));
     };
 
@@ -163,10 +177,16 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let farm_level = characters
+        .first()
+        .and_then(|character| character.farming)
+        .unwrap_or(0);
+    let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
 
     Ok(Imported {
         simulation,
         context,
+        farming,
         format,
         characters: roster,
         warnings,
@@ -180,16 +200,25 @@ fn detect(root: &Map<String, Value>, save: &Map<String, Value>) -> Option<Format
         return Some(Format::ItJson);
     }
     let raw = save.contains_key("Research")
+        || farming::RAW_FARMING_FIELDS
+            .iter()
+            .any(|field| save.contains_key(*field))
         || save
             .keys()
             .any(|key| key.starts_with("Lv0_") || key.starts_with("Exp0_"));
     if raw {
         return Some(Format::SaveJson);
     }
-    RESEARCH_FIELDS
+    if RESEARCH_FIELDS
         .iter()
         .any(|field| save.contains_key(*field))
-        .then_some(Format::ResearchState)
+    {
+        return Some(Format::ResearchState);
+    }
+    farming::FARMING_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field))
+        .then_some(Format::FarmingState)
 }
 
 /// How many characters the save carries: one per `Lv0_<n>` row.
@@ -229,6 +258,10 @@ fn characters(save: &Map<String, Value>) -> Vec<Character> {
             .and_then(Value::as_array)
             .and_then(|cells| cells.get(20))
             .and_then(json::number);
+        characters[index].farming = cells
+            .and_then(|cells| cells.get(16))
+            .and_then(json::number)
+            .map(|level| level.max(0.0).round() as u32);
     }
     characters
 }

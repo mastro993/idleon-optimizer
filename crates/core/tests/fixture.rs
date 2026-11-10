@@ -78,3 +78,55 @@ fn importing_the_fixture_twice_gives_the_same_rate() {
     assert_eq!(first.total, second.total);
     assert_eq!(first.multi, second.multi);
 }
+
+#[test]
+fn the_fixture_farming_state_imports_into_the_field() {
+    let imported = import(&fixture()).expect("the fixture imports");
+    let farm = &imported.farming;
+
+    assert_eq!(farm.plots.len(), 36);
+    assert_eq!(farm.farm_level, 486);
+    assert_eq!(farm.crop_count, 238);
+    assert_eq!(farm.crop_quantities.len(), 238);
+    assert_eq!(farm.market_levels.len(), 100);
+    assert_eq!(farm.rank_ranks[0], 300);
+    assert_eq!(farm.rank_levels[0], 250);
+    assert_eq!(farm.total_land_rank(), 10_812);
+    assert!(farm.organic_exotics.is_empty());
+
+    for plot in &farm.plots {
+        assert_eq!(plot.seed_family, 6);
+    }
+    assert!(
+        imported
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("farming multipliers")),
+        "the fixture names the multisystems this port does not read: {:?}",
+        imported.warnings
+    );
+    assert!(
+        !imported
+            .warnings
+            .iter()
+            .any(|warning| warning.starts_with("Farm")),
+        "the fixture carries every farm field: {:?}",
+        imported.warnings
+    );
+
+    let snapshot = farm.snapshot();
+    let first = farm.plot_metrics_with(0, &snapshot);
+    assert_eq!(first.crop_id, 231);
+    assert_eq!(first.evolution, 1);
+    assert_eq!(first.rank, 300);
+    assert_eq!(
+        first.rank_requirement,
+        idleon_core::farming::land_rank_requirement(300)
+    );
+    assert_eq!(first.growth_requirement, 25_200.0 * snapshot.growth_rate);
+    assert_eq!(first.growth_seconds, 0.0);
+    assert!(first.crop_value.capped);
+    assert!(first.next_crop_chance > 0.0);
+    assert!(first.next_overgrowth_chance > 0.0);
+    assert!(first.farming_exp > 0.0);
+}

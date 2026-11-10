@@ -54,6 +54,22 @@ const [shardIndex, shardCount] = (() => {
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
+  farming: async (lane) => {
+    await lane.call('click_element', { id: 'plot-1' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
+      'farming: clicking a plot moves the detail'
+    );
+    await lane.call('click_element', { id: 'back-to-dashboard' });
+    await waitForNode(lane, 'dashboard', 'farming: back returns to the dashboard');
+    await lane.call('click_element', { id: 'dashboard-resume' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
+      'farming: the plot selection survives the dashboard round-trip'
+    );
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');

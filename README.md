@@ -7,9 +7,9 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section. The plan covers the
-full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
-issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research and farming sections. The plan
+covers the full upstream suite: a dashboard that opens every calculator, with one milestone per
+section and one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -32,6 +32,11 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
+- **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
+  overgrowth, plot rank, evolution chance and growth time. Clicking a plot opens its saved row: crop
+  and evolution depth, growth progress and remaining time, the next evolution and overgrowth rolls,
+  expected harvest, Rank XP and Farming EXP per harvest. The selected plot and the target crop
+  persist across dashboard visits.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -53,11 +58,11 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   magnifiers), editable in the Rates pane; the displayed rate follows each change.
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
-  format, research level, character count and warnings before Apply; the grid levels, shape
-  positions, magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid
-  points and the decodable true multipliers are read from it. Fields the app cannot model are
-  reported as warnings instead of guessed; a save that cannot be read only replaces the message and
-  leaves the run untouched.
+  format, research level, farm plots, character count and warnings before Apply; the grid levels,
+  shape positions, magnifiers, insight, research level/EXP, farm plots, ranks, crops, market levels,
+  server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are read
+  from it. Fields the app cannot model are reported as warnings instead of guessed; a save that
+  cannot be read only replaces the message and leaves the run untouched.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 
@@ -160,8 +165,9 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ```
 crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
   data/research.json  extracted from the upstream repo
+  data/farming.json   seed, market, exotic and rank tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`)
+  src/sections/      the registry plus one module per section (`research/`, `farming/`)
   src/ui/            window chrome, dashboard, shared section states, bridge
   src/state.rs       AppState, the route and each section's state
 script/            data extraction, roadmap sync, MCP lane, smoke, drive and section harnesses
@@ -179,6 +185,13 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
 the upstream tables move.
 
+`crates/core/data/farming.json` comes from `node script/extract-farming-data.mjs
+<path-to-upstream-repo>`: the seven seed families, both market pages, the 80 exotic rows, the twenty
+Land Rank names and unlock ranks, the Ninja Rank bases and the five GMO thresholds. Farming chances
+and values apply only the multipliers the save carries (market levels, Land Rank, exotics, crop
+counts, gem items and Spelunk organic labels); other account systems are named in an import warning
+rather than guessed.
+
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). It is test input only: game formulas and save
 decoding stay ports of the upstream repo, never inferred from the fixture. See
@@ -191,9 +204,9 @@ assets or code needs written permission from the upstream author.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers and save import. The
-roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …);
-their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid with its optimizers, the farming field and
+save import. The roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal
+guardian, …); their cards open planned-section placeholders until those milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their

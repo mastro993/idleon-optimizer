@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod farming;
 pub mod research;
 
 use crate::state::AppState;
@@ -407,9 +408,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W6,
         description: "Full plot grid, Land Rank allocation, evolution, overgrowth, beans, markets, and stickers",
         spec: "docs/sections/farming.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: farming::view,
         keys: no_keys,
     },
     Section {

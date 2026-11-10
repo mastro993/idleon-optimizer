@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::sections::farming::State as FarmingState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -7,6 +8,7 @@ use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::farming::Farm;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
@@ -93,6 +95,10 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The farming field the last import carried.
+    pub farm: Farm,
+    /// The farming section's selection and crop target, kept alive too.
+    pub farming: FarmingState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -171,6 +177,8 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            farm: Farm::default(),
+            farming: FarmingState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -302,6 +310,7 @@ impl AppState {
         let message = import::applied(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.farm = imported.farming;
         self.result = None;
         self.research.selected_cell = None;
         self.save_loaded = true;
@@ -314,6 +323,20 @@ impl AppState {
     /// Empty the dashboard search; Escape calls this.
     pub fn clear_search(&mut self, cx: &mut Context<Self>) {
         self.search.update(cx, |search, cx| search.set_text("", cx));
+        cx.notify();
+    }
+
+    /// Select a plot; the farming section keeps it across dashboard visits.
+    pub fn select_plot(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.farming.select(index);
+        self.status = format!("Plot {} selected.", self.farming.selected_plot + 1);
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Aim the later evolution features at a crop id, clamped to the families.
+    pub fn set_target_crop(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.farming.set_target_crop(value);
         cx.notify();
     }
 

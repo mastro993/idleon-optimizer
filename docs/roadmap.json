@@ -2478,7 +2478,7 @@
       "key": "farming",
       "title": "Farming Planner",
       "group": "w6",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.",
       "upstream": [
         "farming-calc.html",
