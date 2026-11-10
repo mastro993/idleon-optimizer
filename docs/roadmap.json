@@ -952,7 +952,7 @@
       "key": "shadow",
       "title": "Shadow Ban Check",
       "group": "general",
-      "status": "planned",
+      "status": "done",
       "summary": "Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].",
       "upstream": [
         "shadow.html",

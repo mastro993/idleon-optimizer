@@ -12,6 +12,7 @@
 
 pub mod endgame;
 pub mod research;
+pub mod shadow;
 
 use crate::state::AppState;
 use crate::ui::section;
@@ -192,9 +193,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::General,
         description: "Sign in or load a save for a simple yes or no",
         spec: "docs/sections/shadow.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: shadow::view,
         keys: no_keys,
     },
     Section {
