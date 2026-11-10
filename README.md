@@ -7,9 +7,11 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section. The plan covers the
-full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
-issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section, the Clamworks overview
+and upgrades, the shadow-ban and endgame checks and the hidden BoneJoePickle calculator. The plan
+covers the full upstream suite: a dashboard that opens every calculator, with one milestone per
+section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -32,12 +34,20 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
+- **Consistent states** — every section shows the shared no-save banner with its import action, the
+  header names a partial import, and every long job goes through one shared task runner: it runs off
+  the UI thread, reports progress, cancels without losing the previous result, and marks a result
+  stale when its inputs change.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
 - **Local simulation** — research EXP/hour with its additive and multiplicative breakdown, insight
   levelling per observation, magnifier caps, grid points earned and spent, shapes and magnifiers
   owned, and an event-driven projection to a research level or an hour budget.
+- **Shared formula tree** — the Rates pane's EXP formula is one reusable, searchable breakdown:
+  every node shows its inputs, multiplier, source and result, branches expand and collapse, search
+  highlights matches and one copy button exports the whole tree. Every later calculator renders its
+  breakdown through the same component.
 - **Three optimizers, all in-process and parallel**
   - shape placement: greedy over the preset's target priorities, then a lattice search on the real
     EXP rate (moves, rotation sweeps once level 90 unlocks them, shape-order swaps);
@@ -58,8 +68,24 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   points and the decodable true multipliers are read from it. Fields the app cannot model are
   reported as warnings instead of guessed; a save that cannot be read only replaces the message and
   leaves the run untouched.
+- **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
+  any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
+  page shows the save status and the flag it read under the verdict, so it never guesses.
+- **The endgame check** — the upstream joke page: a huge `NO` before and after a save loads, with the
+  leaderboard audit beneath it. The audit lists all 177 upstream metrics in their categories and reads
+  the 156 the save tables carry; the 21 that need the account stats engine say so instead of guessing,
+  a field the save lacks reads `Unavailable`, and incomplete research rows show a clear error panel.
+  `fixtures/endgame-stats.json` pins the ported values against the upstream JS.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
+- **The Clamworks overview** — pearl balance, pearl value and its searchable four-factor formula
+  tree, the 10x chance, drop rates, pearls per kill, promotion level and cost reduction, read from
+  the save. The Upgrades tab lists every pearl upgrade with its bonus and next cost, ranked by
+  marginal pearls-per-kill gain per unit cost. Multi-Scalping takes a multikill total as input until
+  the combat simulator lands.
+- **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
+  max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
+  with effective HP and kill time.
 
 ## Roadmap
 
@@ -158,17 +184,20 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ## Layout
 
 ```
-crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
+crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  extracted from the upstream repo
+  data/clamworks.json Clamworks upgrade, Scurge and promotion tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`)
-  src/ui/            window chrome, dashboard, shared section states, bridge
+  src/sections/      the registry plus one module per section (`research/`, `clamworks/`)
+  src/ui/            window chrome, dashboard, shared section states, assets, bridge
+  src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
 script/            data extraction, roadmap sync, MCP lane, smoke, drive and section harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
 docs/roadmap.json  milestones and feature issues (source of truth)
 docs/sections/     generated full specification per section
 fixtures/data.json synthetic account save for import tests
+fixtures/endgame-stats.json upstream leaderboard audit for the endgame check
 vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 ```
 
@@ -176,25 +205,42 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 
 `crates/core/data/research.json` is generated from the upstream JS by
 `node script/extract-research-data.mjs <path-to-upstream-repo>`: 62 grid squares, 10 shapes with
-vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
-the upstream tables move.
+vertices and dimensions, 43 observations, and the sixteen presets' target squares. The same run
+writes `crates/core/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
+the twelve promotion rewards. Re-run it when the upstream tables move.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
-manual debugging (open Import in the header and paste it). It is test input only: game formulas and save
-decoding stay ports of the upstream repo, never inferred from the fixture. See
-[`fixtures/README.md`](fixtures/README.md).
+manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
+upstream `js/endgame-stats.js` audit of that save, regenerated with
+`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/core/tests/endgame.rs` compares
+the Rust port against it. Both are test input only: game formulas and save decoding stay ports of the
+upstream repo, never inferred from the fixtures. See [`fixtures/README.md`](fixtures/README.md).
 
-Upstream images are not committed. The upstream licence reserves all rights, so
-`script/import-upstream-assets.mjs --from <checkout>` copies them into gitignored `assets/upstream/`
-with a manifest and the app falls back to labelled placeholders. Distributing a build with upstream
-assets or code needs written permission from the upstream author.
+Upstream artwork is committed in `assets/upstream/`. The images are game assets from Legends of
+Idleon, not original work of the upstream repository; credit sits in `assets/upstream/README.md`.
+`script/import-upstream-assets.mjs --from <checkout> --force` regenerates the folder with a hashed
+manifest:
+
+```console
+node script/import-upstream-assets.mjs --from <checkout> --dry-run  # every file and total size
+node script/import-upstream-assets.mjs --from <checkout> --force    # copy, manifest, verify
+node script/import-upstream-assets.mjs --verify                     # re-check hashes on disk
+```
+
+The app reads `assets/upstream/manifest.json` and resolves every image reference through it. A
+missing install or a deleted file draws a labelled placeholder in the same box; sections never
+assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The game
+artwork is free to use; the upstream code is still all-rights-reserved, so ports stay rewrites with
+source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers and save import. The
-roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …);
-their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid and its optimizers, the Clamworks
+overview and upgrades, save import and the shadow-ban and endgame checks. The roadmap covers all
+remaining upstream sections (combat sim, sailing, cooking, royal guardian, …); their cards open
+planned-section placeholders until those milestones land.
 
-The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
-collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their
-static target lists rather than the save-dependent `build` functions.
+The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
+are ports of `js/stats/systems/w7/clamworks.js`. Save-specific multipliers collapse into
+`SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
+lists rather than the save-dependent `build` functions.

@@ -1,18 +1,25 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::assets::Manifest;
+use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::endgame;
 use crate::sections::jar::Tab as JarTab;
+use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
+use crate::task::{TaskEvent, TaskRunner, TaskState};
 use crate::ui;
 use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
+use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
 };
-use idleon_core::{Jar, game, optimize, save, shape, sim};
+use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
+use idleon_core::save::Shadow;
+use idleon_core::{Clamworks, Jar, game, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -54,14 +61,18 @@ pub enum SaveStatus {
     Empty,
     /// A save is loaded; later failed imports leave it intact.
     Loaded,
+    /// A save is loaded, but the import left fields out and reported warnings.
+    Partial,
     /// The last import failed and there is still no save.
     Error,
 }
 
 impl SaveStatus {
-    /// The status for the current loaded/failed flags.
-    pub fn of(loaded: bool, last_ok: bool) -> Self {
-        if loaded {
+    /// The status for the current loaded/partial/failed flags.
+    pub fn of(loaded: bool, last_ok: bool, partial: bool) -> Self {
+        if loaded && partial {
+            Self::Partial
+        } else if loaded {
             Self::Loaded
         } else if last_ok {
             Self::Empty
@@ -75,29 +86,49 @@ impl SaveStatus {
         match self {
             Self::Empty => "No save",
             Self::Loaded => "Save imported",
+            Self::Partial => "Save imported with warnings",
             Self::Error => "Import failed",
         }
     }
+}
+
+/// The inputs a stored optimizer result was produced from.
+#[derive(Clone, Debug, PartialEq)]
+struct RunInputs {
+    simulation: Simulation,
+    context: SimContext,
+    target: Target,
+    effort: Effort,
 }
 
 /// Everything the window renders and mutates.
 pub struct AppState {
     pub simulation: Simulation,
     pub context: SimContext,
-    pub result: Option<OptimizeResult>,
-    pub running: bool,
     pub effort: Effort,
     pub target: Target,
+    /// Upstream artwork resolved through `assets/upstream/manifest.json`.
+    pub assets: Manifest,
     /// Where the window is: the dashboard or one section.
     pub route: Route,
     /// The last section opened; the dashboard offers to resume it.
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The Clamworks state the last imported save carried.
+    pub clamworks: Clamworks,
+    /// The Clamworks tab the section was left on.
+    pub clamworks_tab: ClamworksTab,
+    /// The multikill total Multi-Scalping reads, until the combat sim lands.
+    pub clamworks_multikill: f64,
+    /// The endgame section's audit of the last applied save.
+    pub endgame: endgame::State,
     /// The jar section's active tab, kept across dashboard visits.
     pub jar_tab: JarTab,
     /// The Jar Cavern the loaded save carries, if it has one.
     pub jar: Option<Jar>,
+    /// The BoneJoePickle section's inputs, kept alive the same way.
+    pub pickle: PickleState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -105,25 +136,33 @@ pub struct AppState {
     pub supplements_open: bool,
     /// The shared import dialog every section's header opens.
     pub import: Import,
+    /// Whether the loaded save left fields out and reported warnings.
+    pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// The shared background runner for the research optimizer.
+    optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shared EXP formula tree on the research Rates pane.
+    pub breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared formula tree on the Clamworks overview.
+    pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
+    pub shadow: Shadow,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
-    run_task: Option<Task<()>>,
     _search_subscription: Subscription,
     _import_subscription: Subscription,
+    _optimizer_subscription: Subscription,
 }
 
 impl AppState {
     /// Build the window state. `section` opens that registry id at launch, so a
-    /// lane or a harness can start on any section, including hidden tools;
-    /// `save` imports a decoded save first, for the sections that need one.
+    /// lane or a harness can start on any section, including hidden tools.
     pub fn new(
         window: &mut Window,
         endpoint_dir: Option<std::path::PathBuf>,
         section: Option<String>,
-        save: Option<std::path::PathBuf>,
         cx: &mut Context<Self>,
     ) -> Self {
         let bridge = ui::bridge::install(window, cx, endpoint_dir);
@@ -166,54 +205,75 @@ impl AppState {
                     state.check_paste(cx);
                 }
             });
+        // The runner owns the off-thread work; the window only mirrors its status
+        // line, so every section's run reports the same way in the status bar.
+        let optimizer = cx.new(|_| TaskRunner::<OptimizeResult, RunInputs>::new());
+        let optimizer_subscription =
+            cx.subscribe(&optimizer, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Optimizing… {:.0}%", progress.fraction * 100.0);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Run cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Run cancelled; nothing was applied.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "{} steps in {} ms.",
+                                result.steps.len(),
+                                result.elapsed_ms
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
+        let clamworks_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let mut state = Self {
             simulation,
             context: SimContext::default(),
-            result: None,
-            running: false,
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            clamworks: Clamworks::default(),
+            clamworks_tab: ClamworksTab::default(),
+            clamworks_multikill: 0.0,
+            endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar: None,
+            pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             import,
+            save_partial: false,
             save_loaded: false,
+            optimizer,
+            breakdown,
+            clamworks_breakdown,
+            shadow: Shadow::default(),
             focus,
             bridge,
-            run_task: None,
             _search_subscription: search_subscription,
             _import_subscription: import_subscription,
+            _optimizer_subscription: optimizer_subscription,
         };
-        if let Some(path) = save {
-            state.load_save(&path, window, cx);
-        }
         if let Some(id) = section {
             state.open_section(&id, window, cx);
         }
         state
-    }
-
-    /// Import a save from disk at launch; a file that will not parse only
-    /// replaces the import message, exactly as a bad paste does.
-    fn load_save(&mut self, path: &std::path::Path, window: &mut Window, cx: &mut Context<Self>) {
-        let source = path
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_else(|| path.display().to_string());
-        match std::fs::read_to_string(path) {
-            Ok(text) => {
-                self.check_import(&text, &source, cx);
-                self.apply_import(window, cx);
-            }
-            Err(error) => self.fail_import(&source, &error.to_string(), cx),
-        }
     }
 
     /// The open section's registry entry, or `None` on the dashboard.
@@ -266,7 +326,31 @@ impl AppState {
     /// The shared header's save status. While the dialog is open it owns the
     /// verdict: a half-typed paste must not relabel the loaded run.
     pub fn save_status(&self) -> SaveStatus {
-        SaveStatus::of(self.save_loaded, self.import.ok || self.import.open)
+        SaveStatus::of(
+            self.save_loaded,
+            self.import.ok || self.import.open,
+            self.save_partial,
+        )
+    }
+
+    /// The optimizer run: running, progress, result and staleness.
+    pub fn optimize_state(&self, cx: &App) -> TaskState<OptimizeResult> {
+        self.optimizer.read(cx).state(&self.run_inputs())
+    }
+
+    /// Whether the research optimizer has a run in flight.
+    pub fn optimize_running(&self, cx: &App) -> bool {
+        self.optimizer.read(cx).running()
+    }
+
+    /// The inputs a run started now would use.
+    fn run_inputs(&self) -> RunInputs {
+        RunInputs {
+            simulation: self.simulation.clone(),
+            context: self.context.clone(),
+            target: self.target,
+            effort: self.effort,
+        }
     }
 
     /// Open the shared import dialog, where every section's header import goes.
@@ -328,12 +412,15 @@ impl AppState {
             return;
         };
         let message = import::applied(&imported);
+        self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.clamworks = imported.clamworks;
         self.jar = imported.jar;
-        self.result = None;
         self.research.selected_cell = None;
         self.save_loaded = true;
+        self.save_partial = !imported.warnings.is_empty();
+        self.shadow = imported.shadow;
         self.import.ok = true;
         self.import.message = message.clone();
         self.status = message;
@@ -499,6 +586,36 @@ impl AppState {
 
     pub fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
         self.jar_tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_clamworks_tab(&mut self, tab: ClamworksTab, cx: &mut Context<Self>) {
+        self.clamworks_tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_clamworks_multikill(&mut self, multikill: f64, cx: &mut Context<Self>) {
+        self.clamworks_multikill = multikill.max(0.0);
+        cx.notify();
+    }
+
+    /// The damage per second the pickle table solves for.
+    pub fn set_pickle_dps(&mut self, dps: f64, cx: &mut Context<Self>) {
+        self.pickle.dps = if dps.is_finite() {
+            dps.clamp(0.0, MAX_DPS)
+        } else {
+            0.0
+        };
+        cx.notify();
+    }
+
+    /// The kill-time budget the pickle table solves inside.
+    pub fn set_pickle_ttk(&mut self, seconds: f64, cx: &mut Context<Self>) {
+        self.pickle.max_ttk = if seconds.is_finite() {
+            seconds.clamp(MIN_TTK, MAX_TTK)
+        } else {
+            DEFAULT_TTK
+        };
         cx.notify();
     }
 
@@ -694,7 +811,7 @@ impl AppState {
         self.context_changed(cx);
     }
 
-    /// Put every supplement back to its default and drop the stale result.
+    /// Put every supplement back to its default; the stored result turns stale.
     pub fn reset_supplements(&mut self, cx: &mut Context<Self>) {
         self.context = SimContext::default();
         self.status = "Supplements reset to their defaults.".into();
@@ -702,20 +819,20 @@ impl AppState {
     }
 
     fn context_changed(&mut self, cx: &mut Context<Self>) {
-        self.result = None;
+        // The stored result stays visible and the runner marks it stale: a change
+        // to the inputs must not silently throw away what the last run found.
         cx.notify();
     }
 
     pub fn reset_layout(&mut self, cx: &mut Context<Self>) {
         self.simulation.placements.clear();
         self.simulation.mags.clear();
-        self.result = None;
-        self.status = "Cleared shapes, magnifiers and the last result.".into();
+        self.status = "Cleared shapes and magnifiers.".into();
         cx.notify();
     }
 
     pub fn apply_result(&mut self, cx: &mut Context<Self>) {
-        if let Some(result) = self.result.take() {
+        if let Some(result) = self.optimizer.update(cx, |runner, _| runner.take_result()) {
             let gain = result.gain_pct();
             self.simulation = result.after;
             self.status = format!("Applied the optimized layout ({gain:+.1}%).");
@@ -724,44 +841,36 @@ impl AppState {
     }
 
     pub fn dismiss_result(&mut self, cx: &mut Context<Self>) {
-        self.result = None;
+        self.optimizer.update(cx, |runner, _| runner.clear());
         cx.notify();
     }
 
-    /// Run the optimizers off the UI thread and store the result.
-    pub fn optimize(&mut self, cx: &mut Context<Self>) {
-        if self.running {
-            return;
+    /// Stop the run in flight at its next progress report; the previous result stays.
+    pub fn cancel_optimize(&mut self, cx: &mut Context<Self>) {
+        if self.optimizer.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the run…".into();
+            cx.notify();
         }
-        self.running = true;
-        self.status = "Optimizing…".into();
+    }
+
+    /// Run the optimizers off the UI thread through the shared task runner.
+    pub fn optimize(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.run_inputs();
         let request = OptimizeRequest {
-            target: self.target,
-            effort: self.effort,
-            respec_grid: matches!(self.effort, Effort::Thorough),
+            target: inputs.target,
+            effort: inputs.effort,
+            respec_grid: matches!(inputs.effort, Effort::Thorough),
             grid_points: None,
         };
-        let simulation = self.simulation.clone();
-        let context = self.context.clone();
-        cx.notify();
-
-        self.run_task = Some(cx.spawn(async move |this, cx| {
-            let outcome = cx
-                .background_executor()
-                .spawn(async move { optimize::run(&simulation, &context, &request, &mut |_| {}) })
-                .await;
-            this.update(cx, |state, cx| {
-                state.running = false;
-                state.status = format!(
-                    "{} steps in {} ms.",
-                    outcome.steps.len(),
-                    outcome.elapsed_ms
-                );
-                state.result = Some(outcome);
-                cx.notify();
+        let started = self.optimizer.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                optimize::run(&inputs.simulation, &inputs.context, &request, report)
             })
-            .ok();
-        }));
+        });
+        if started {
+            self.status = "Optimizing…".into();
+            cx.notify();
+        }
     }
 }
 
@@ -825,10 +934,12 @@ mod tests {
 
     #[test]
     fn save_status_prefers_a_loaded_save_over_a_later_failure() {
-        assert_eq!(SaveStatus::of(false, true), SaveStatus::Empty);
-        assert_eq!(SaveStatus::of(false, false), SaveStatus::Error);
-        assert_eq!(SaveStatus::of(true, true), SaveStatus::Loaded);
-        assert_eq!(SaveStatus::of(true, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(false, true, false), SaveStatus::Empty);
+        assert_eq!(SaveStatus::of(false, false, false), SaveStatus::Error);
+        assert_eq!(SaveStatus::of(true, true, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(true, false, false), SaveStatus::Loaded);
+        assert_eq!(SaveStatus::of(true, true, true), SaveStatus::Partial);
         assert_eq!(SaveStatus::Loaded.label(), "Save imported");
+        assert_eq!(SaveStatus::Partial.label(), "Save imported with warnings");
     }
 }

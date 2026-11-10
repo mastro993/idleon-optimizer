@@ -1,4 +1,4 @@
-//! Import a game save into a simulation and its multipliers.
+//! Import a game save into a simulation, its multipliers and the Clamworks state.
 //!
 //! The upstream calculators read the game's save through Google sign-in and a
 //! decode step; this app takes the decoded object as text. The layout follows
@@ -27,7 +27,11 @@
 mod account;
 pub(crate) mod json;
 mod research;
+mod shadow;
 
+pub use shadow::{Shadow, ShadowVerdict};
+
+use crate::clamworks::Clamworks;
 use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
@@ -61,14 +65,23 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The Clamworks state the save carries, or the zero state when it has none.
+    pub clamworks: Clamworks,
     /// The Jar Cavern state, when the save carries its `Holes` rows.
     pub jar: Option<Jar>,
+    /// The decoded save object (`data` in an `it.json`, the object itself in a
+    /// flat save), kept whole so read-only sections can audit it.
+    pub save: Value,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
     pub characters: usize,
+    /// How many names the `charNames` roster beside the save carries.
+    pub named_characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
+    /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
+    pub shadow: Shadow,
 }
 
 /// Why an import could not be read.
@@ -145,6 +158,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let characters = characters(save);
     let roster = character_count(save);
+    let named_characters = root
+        .get("charNames")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
     if roster == 0 {
         warnings
             .push("characters: no Lv0_<n> rows in the save; only the account fields import".into());
@@ -166,6 +183,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let clamworks = Clamworks::from_save(save, &mut warnings);
     let jar = Jar::from_save(save);
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
@@ -174,10 +192,14 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     Ok(Imported {
         simulation,
         context,
+        clamworks,
         jar,
+        save: Value::Object(save.clone()),
         format,
         characters: roster,
+        named_characters,
         warnings,
+        shadow: Shadow::read(save),
     })
 }
 

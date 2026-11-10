@@ -4,7 +4,7 @@
 //! `idleon-research-optimizer` repo, not from this file. The assertions below
 //! pin the fixture so a change to either side is noticed deliberately.
 
-use idleon_core::save::import;
+use idleon_core::save::{ShadowVerdict, import};
 use idleon_core::sim;
 
 fn fixture() -> String {
@@ -37,6 +37,8 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     // are warned about rather than guessed.
     assert!((context.extra_multiplier - 5.771_131_034_482_759).abs() < 1e-9);
     assert_eq!(context.bonus_grid_points, 16);
+    // `OptLacc[26]` is zero in the fixture, so the upstream page answers NO.
+    assert_eq!(imported.shadow.verdict(), ShadowVerdict::No);
     for field in ["serverVarResXP", "allBonusMulti", "extra_pct"] {
         assert!(
             imported
@@ -67,6 +69,16 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     let rate = sim::exp_rate(simulation, context);
     assert!(rate.total.is_finite() && rate.total > 0.0);
     assert!(rate.multi > 1.0);
+
+    // The Clamworks fields the save carries decode as the upstream module reads them.
+    let clamworks = &imported.clamworks;
+    assert_eq!(clamworks.pearl_balance, 2_960_058_875.172_09);
+    assert_eq!(clamworks.promotion_level, 6);
+    assert_eq!(clamworks.upgrades, [123, 12, 30, 43, 79, 33, 9, 0, 0]);
+    assert_eq!(clamworks.scurge_level, 122);
+    assert_eq!(clamworks.scurge_upgrades, [18, 2, 3, 18, 27, 54, 0, 0, 0]);
+    let pearl_value = clamworks.pearl_value(1234.5);
+    assert!((pearl_value - 379.647_08).abs() < 1e-3);
 }
 
 #[test]

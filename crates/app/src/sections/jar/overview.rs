@@ -37,8 +37,17 @@ pub fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
 /// The four figures the upstream overview leads with.
 fn summary(jar: &Jar) -> AnyElement {
+    let label = format!(
+        "{} / {} jar types · {} production slots · {} opals",
+        jar.types_available(),
+        TYPE_NAMES.len(),
+        jar.production_slots(),
+        format::whole(jar.opals())
+    );
     div()
-        .id("jar-summary")
+        .id("jar-summary-line")
+        .role(Role::Label)
+        .aria_label(label)
         .flex()
         .flex_wrap()
         .gap_3()
@@ -141,7 +150,7 @@ fn balances(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
 fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
     let colors = &cx.theme().colors;
     let name = RUPIE_NAMES[index];
-    let shown = format::value(balance);
+    let shown = format::fmt_val(balance);
     div()
         .id(("jar-rupie", index))
         .role(Role::Label)

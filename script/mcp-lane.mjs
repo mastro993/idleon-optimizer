@@ -47,7 +47,6 @@ export class McpLane {
     attach = false,
     keep = false,
     section = null,
-    save = null,
     serverBin = 'gpui-mcp',
   } = {}) {
     let endpointDir = null;
@@ -59,7 +58,6 @@ export class McpLane {
       endpointDir = mkdtempSync(join(tmpdir(), 'idleon-lane-'));
       const appArgs = ['--endpoint-dir', endpointDir];
       if (section) appArgs.push('--section', section);
-      if (save) appArgs.push('--save', save);
       appProcess = spawn(appBin, appArgs, { stdio: 'ignore' });
       const deadline = Date.now() + 30000;
       let published = false;

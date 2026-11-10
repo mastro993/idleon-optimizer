@@ -6,7 +6,7 @@
 //! feeds a multiplier already covered, is worth less than its bonus suggests.
 
 use crate::data::game;
-use crate::model::{Effort, GridState, Mag, MagKind, Progress, SimContext, Simulation};
+use crate::model::{Control, Effort, GridState, Mag, MagKind, Progress, SimContext, Simulation};
 use crate::sim;
 
 /// A grid layout plus what it spends.
@@ -39,7 +39,7 @@ pub fn respec(
     ctx: &SimContext,
     effort: Effort,
     budget: Option<u32>,
-    report: &mut dyn FnMut(Progress),
+    report: &mut dyn FnMut(Progress) -> Control,
 ) -> GridOutcome {
     let (width, depth, limit) = search_profile(effort);
     let points = sim::grid_points(sim, ctx);
@@ -59,18 +59,33 @@ pub fn respec(
     let mut search = Spender::new(sim, ctx, limit);
 
     // The marginal climb is the incumbent every wider search has to beat.
-    report(Progress {
+    // A stopped run hands back the best layout it reached; `run` discards it.
+    fn cancelled(best: GridState) -> GridOutcome {
+        let spent = best.spent();
+        GridOutcome {
+            grid: best,
+            spent,
+            steps: Vec::new(),
+        }
+    }
+    if report(Progress {
         fraction: 0.05,
         message: format!("Climbing the {free} free points one at a time…"),
-    });
+    }) == Control::Stop
+    {
+        return cancelled(start.clone());
+    }
     let mut ledger = Ledger::new();
     let mut best = search.climb(&start, free, &mut ledger);
 
     if limit > 0 {
-        report(Progress {
+        if report(Progress {
             fraction: 0.4,
             message: format!("Planning {depth} points ahead over a beam of {width}…"),
-        });
+        }) == Control::Stop
+        {
+            return cancelled(best);
+        }
         let mut beamed_ledger = Ledger::new();
         let beamed = search.beam(&start, free, width, depth, &mut beamed_ledger);
         if search.rate(&beamed) > search.rate(&best) {
@@ -80,10 +95,13 @@ pub fn respec(
 
         let passes = if effort == Effort::Thorough { 3 } else { 1 };
         for pass in 0..passes {
-            report(Progress {
+            if report(Progress {
                 fraction: 0.75 + 0.2 * pass as f32 / passes as f32,
                 message: "Moving points between squares…".into(),
-            });
+            }) == Control::Stop
+            {
+                return cancelled(best);
+            }
             if search.exhausted() || !search.refine(&mut best, &mut ledger) {
                 break;
             }

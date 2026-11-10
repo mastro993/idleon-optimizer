@@ -51,27 +51,158 @@ const [shardIndex, shardCount] = (() => {
   return [index, count];
 })();
 
-/// The documented test account, for the sections that have nothing to show
-/// without one. `--save` imports it at launch.
-const FIXTURE = join(process.cwd(), 'fixtures/data.json');
+/// A small flat `save.json` the endgame check imports: two characters and the
+/// nine research rows its audit validates, so the stats table has values.
+const endgameSave = () => {
+  const sparse = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const research = JSON.stringify(Array.from({ length: 9 }, () => sparse(240, {})));
+  const character = (level) => JSON.stringify(sparse(30, { 0: level, 20: 42 }));
+  return JSON.stringify({
+    Research: research,
+    Lv0_0: character(100),
+    Lv0_1: character(60),
+    MoneyBANK: 100,
+    Money_0: 5,
+  });
+};
 
-/// Sections whose content needs a save; each gets its own lane with the fixture.
-const SAVED = new Set(['jar']);
+/// A small flat `save.json` carrying `OptLacc[26] = 1`, so the shadow page
+/// answers YES from a real import rather than starting state.
+const shadowSave = () => {
+  const sparse = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  return JSON.stringify({
+    Research: JSON.stringify([
+      sparse(240, { 50: 3, 52: 4 }),
+      sparse(240, {}),
+      sparse(80, { 0: 1 }),
+      sparse(80, {}),
+      sparse(80, {}),
+      [],
+      [],
+    ]),
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+    OptLacc: JSON.stringify(sparse(30, { 26: 1 })),
+  });
+};
+
+/// A small flat `save.json` carrying a cavern: three jar types bought and one
+/// slot filling an Opal jar, so the jar calculator has something to read. Rows
+/// stay as short as the cells the jar reads.
+const jarSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const holes = Array.from({ length: 35 }, () => []);
+  holes[9] = row(21, { 20: 500 });
+  holes[11] = row(38, { 37: 2 });
+  holes[25] = [1, 0, 0, 250];
+  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+};
 
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
   jar: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'jar: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    // The paste box keeps whatever the last import typed into it.
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: jarSave() });
+    await waitForNode(lane, 'import-format', 'jar: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'jar-overview', 'jar: the cavern opens after Apply');
+    const summary = labelOf(await lane.tree(), 'jar-summary-line') ?? '';
+    if (!summary.includes('3 / 10')) throw new Error(`jar: the summary reads ${summary}`);
+    await waitForNode(lane, 'jar-missing', 'jar: the unbought types are flagged');
     await lane.call('click_element', { id: 'production' });
     await waitForNode(lane, 'jar-production', 'jar: the production tab opens');
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },
+  endgame: async (lane) => {
+    await waitForNode(lane, 'endgame-verdict', 'endgame: the verdict is there before a save');
+    const before = labelOf(await lane.tree(), 'endgame-verdict');
+    if (before !== 'NO') throw new Error(`endgame: expected NO before a save, got ${before}`);
+    const importSave = async (text, ready) => {
+      await lane.call('click_element', { id: 'header-import' });
+      await waitForNode(lane, 'import-input', 'endgame: the import dialog opens');
+      await lane.call('click_element', { id: 'import-input' });
+      await lane.call('keyboard', { keystroke: 'secondary-a' });
+      await lane.call('type_text', { text });
+      await waitForNode(lane, 'import-format', 'endgame: the save previews');
+      await lane.call('click_element', { id: 'import-apply' });
+      await waitForNode(lane, ready, `endgame: ${ready} after Apply`);
+    };
+    // A save whose research rows are incomplete imports, and the audit says why.
+    await importSave('{"Research":[]}', 'endgame-stats-error');
+    const failed = labelOf(await lane.tree(), 'endgame-stats-error') ?? '';
+    if (!failed.includes('Unable to calculate account statistics')) {
+      throw new Error(`endgame: the error panel reads ${failed}`);
+    }
+    await importSave(endgameSave(), 'endgame-stat-totalLevels');
+    const nodes = await lane.tree();
+    const levels = labelOf(nodes, 'endgame-stat-totalLevels') ?? '';
+    if (!levels.includes('160')) throw new Error(`endgame: totalLevels reads ${levels}`);
+    const after = labelOf(nodes, 'endgame-verdict');
+    if (after !== 'NO') throw new Error(`endgame: expected NO after a save, got ${after}`);
+  },
+  shadow: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'shadow: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('type_text', { text: shadowSave() });
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'shadow-verdict') === 'Shadow ban verdict: YES',
+      'shadow: a nonzero OptLacc[26] answers YES',
+    );
+    const detail = labelOf(await lane.tree(), 'shadow-detail') ?? '';
+    check(
+      'shadow: the save status and the flag are visible',
+      detail.includes('Save imported') && detail.includes('OptLacc[26] = 1'),
+      detail,
+    );
+  },
+  pickle: async (lane) => {
+    await lane.call('focus_element', { id: 'ely-text-input' });
+    await lane.call('type_text', { text: '50000000' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        !has(nodes, 'pickle-empty') &&
+        (labelOf(nodes, 'pickle-row-slimeB') ?? '').includes('max pickles 125'),
+      'pickle: DPS updates the table',
+    );
+    await lane.call('set_value', { id: 'thumb-0', value: '120' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'pickle-row-slimeB') ?? '').includes('max pickles 139'),
+      'pickle: the kill-time budget updates the table',
+    );
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');
+    await lane.call('click_element', { id: 'rates' });
+    await waitForNode(lane, 'formula-tree', 'research: the shared formula tree opens');
+    await lane.call('click_element', { id: 'formula-search' });
+    await lane.call('type_text', { text: 'takin' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'formula-match-count') ?? '').includes('matching'),
+      'research: searching the formula tree highlights nodes',
+    );
+    await lane.call('click_element', { id: 'formula-collapse' });
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
+  },
+  clamworks: async (lane) => {
+    await lane.call('click_element', { id: 'clamworks-multikill-more' });
+    await lane.call('click_element', { id: 'upgrades' });
+    await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
+    await lane.call('click_element', { id: 'overview' });
+    await waitForNode(lane, 'clamworks-overview', 'clamworks: the overview tab reopens');
   },
 };
 
@@ -215,12 +346,7 @@ async function capture(lane, unit) {
 async function visitHidden(unit) {
   let lane = null;
   try {
-    lane = await McpLane.start({
-      appBin,
-      keep,
-      section: unit.id,
-      save: SAVED.has(unit.id) ? FIXTURE : null,
-    });
+    lane = await McpLane.start({ appBin, keep, section: unit.id });
     await waitForNode(lane, `section-${unit.id}`, `${unit.id}: --section opens its root`);
     await visitSection(lane, unit);
   } catch (error) {
@@ -232,22 +358,13 @@ async function visitHidden(unit) {
 
 async function visitCards(units) {
   let lane = null;
-  let loaded = null;
-  // A card that needs a save gets a lane of its own: swapping the save under a
-  // shared window would leave the previous card's state behind it.
-  const ensureLane = async (save) => {
-    if (lane && loaded !== save) {
-      lane.close();
-      lane = null;
-    }
-    lane ??= await McpLane.start({ appBin, keep, save });
-    loaded = save;
+  const ensureLane = async () => {
+    lane ??= await McpLane.start({ appBin, keep });
     return lane;
   };
   for (const unit of units) {
-    const save = SAVED.has(unit.id) ? FIXTURE : null;
     try {
-      await visitCard(await ensureLane(save), unit);
+      await visitCard(await ensureLane(), unit);
     } catch (error) {
       fail(`${unit.id}: card`, error);
       // A failed route can leave the window anywhere; start a clean lane.
