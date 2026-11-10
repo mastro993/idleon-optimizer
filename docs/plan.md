@@ -217,6 +217,7 @@ crates/app                          GPUI + Ely
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
     research/                       the research section's state, tab strip and panes
+    clamworks/                      the Clamworks overview, upgrades and priority
   ui/                               shell (window, router, shortcuts), dashboard, section states
   ui/task.rs                        shared progress card, cancelled notice and stale marker
   task.rs                           TaskRunner: off-thread job, progress, cancel, stale inputs
@@ -248,7 +249,7 @@ The app, Ely and the automation bridge must share one GPUI build.
 Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
 bump moves all three together and the smoke harness is the check.
 
-## 9. Implemented calculators
+## 9. Section status
 
 Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: grid,
 shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import,
@@ -256,6 +257,12 @@ projection chart, keyboard, canvas dragging and the shared searchable EXP formul
 five extra tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead,
 Sushi Station), target-aware simulation, strategy comparison, complete save-derived multipliers,
 state export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
+
+The Clamworks section implements CW-01: the overview with the pearl-value breakdown, every pearl
+upgrade and the upstream priority ranking, plus save decoding for pearl balance, upgrade levels,
+promotion and Scurge. Multi-Scalping takes a manual multikill total until the combat simulator
+lands. Missing: AFK claim and compare, the upgrade optimizer, promotion tracking, worker-class
+rewards and Scurge combat. Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
