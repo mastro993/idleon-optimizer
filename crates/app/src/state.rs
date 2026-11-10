@@ -147,6 +147,8 @@ pub struct AppState {
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// The shared EXP formula tree on the research Rates pane.
+    pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     /// The latest progress line while a run is in flight.
@@ -215,6 +217,7 @@ impl AppState {
                     state.check_paste(cx);
                 }
             });
+        let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let mut state = Self {
@@ -234,6 +237,7 @@ impl AppState {
             import,
             save_partial: false,
             save_loaded: false,
+            breakdown,
             shadow: Shadow::default(),
             run_progress: None,
             run_cancelled: false,
