@@ -167,6 +167,17 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
   },
+  'coral-god-rank': async (lane) => {
+    // Turning the assumption off makes the save-derived unlock state (or its
+    // absence) visible, so the controls prove they are wired to the planner.
+    await lane.call('click_element', { id: 'coral-assume-unlocked' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'coral-validation') ?? '').includes('unlock state'),
+      'coral: the unlock state follows the assumption checkbox',
+    );
+    await lane.call('click_element', { id: 'coral-assume-unlocked' });
+  },
 };
 
 const prefix = shardCount > 1 ? `[${shardIndex + 1}/${shardCount}] ` : '';

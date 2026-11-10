@@ -33,7 +33,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M18 | Jar Calculator | World 5 | 4 | planned | foundation | [jar](sections/jar.md) |
 | M19 | Sailing Calculator | World 5 | 4 | planned | foundation | [sailing](sections/sailing.md) |
 | M20 | Cglunko Calculator | World 5 | 3 | planned | foundation | [cglunko](sections/cglunko.md) |
-| M21 | Coral God Rank Planner | World 5 | 3 | planned | foundation | [coral-god-rank](sections/coral-god-rank.md) |
+| M21 | Coral God Rank Planner | World 5 | 3 | partial | foundation | [coral-god-rank](sections/coral-god-rank.md) |
 | M22 | Monument Calculator | World 5 | 4 | planned | foundation | [monument](sections/monument.md) |
 | M23 | Opal Optimizer | World 5 | 3 | planned | foundation | [opal](sections/opal.md) |
 | M24 | Sneaking Optimizer | World 6 | 4 | planned | foundation | [sneaking](sections/sneaking.md) |

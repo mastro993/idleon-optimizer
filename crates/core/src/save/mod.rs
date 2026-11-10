@@ -23,8 +23,13 @@
 //! from `cachedExtPctExSticker` when the object has it) and the true
 //! multipliers from The Button, the arcade, Clam Works, equipment, Menagerie,
 //! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
+//!
+//! The coral god rank planner reads its own slice of the same object (`Divinity`,
+//! `OptLacc`, the Minehead row and `UpgVault`); [`Imported::coral`] carries it so
+//! the section never parses the save a second time.
 
 mod account;
+mod coral;
 pub(crate) mod json;
 mod research;
 mod shadow;
@@ -66,6 +71,8 @@ pub struct Imported {
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
+    /// The coral god rank planner's save-derived inputs.
+    pub coral: crate::coral::SaveInputs,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -177,11 +184,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let coral = coral::inputs(save, root, &characters, &rows);
 
     Ok(Imported {
         simulation,
         context,
         save: Value::Object(save.clone()),
+        coral,
         format,
         characters: roster,
         named_characters,

@@ -2119,7 +2119,7 @@
       "key": "coral-god-rank",
       "title": "Coral God Rank Planner",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port the coral kid upgrade and god-rank offering planner with beam search and projection.",
       "upstream": [
         "coral-god-rank-calc.html",

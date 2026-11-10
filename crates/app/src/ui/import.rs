@@ -315,6 +315,7 @@ mod tests {
             },
             context: Default::default(),
             save: serde_json::Value::Null,
+            coral: Default::default(),
             format,
             characters,
             named_characters: characters,

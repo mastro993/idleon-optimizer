@@ -181,7 +181,7 @@ against this app. Every control in the UI carries a stable id for that purpose (
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`)
+  src/sections/      the registry plus one module per section (`research/`, `coral_god_rank/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -227,10 +227,13 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers, save import and the
-endgame check. The roadmap covers all remaining upstream sections (combat sim, sailing, cooking,
-royal guardian, …); their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid, its optimizers, save import, the
+endgame check and the Coral God Rank planner's inputs and current-state summary. The roadmap covers
+all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …); their cards open
+planned-section placeholders until those milestones land.
 
-The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
+The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Coral God Rank data
+and formulas follow `js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit
+are the remaining features of that milestone. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their
 static target lists rather than the save-dependent `build` functions.

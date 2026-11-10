@@ -6,6 +6,7 @@
 //! follow `js/stats/systems/w7/research-math.js`.
 
 pub mod breakdown;
+pub mod coral;
 pub mod data;
 pub mod endgame;
 pub mod formula;

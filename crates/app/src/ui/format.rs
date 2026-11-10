@@ -41,36 +41,14 @@ pub fn stat_value(value: Option<f64>) -> String {
     fmt_val(value)
 }
 
-/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or an exponent.
+/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
 pub fn fmt_val(value: f64) -> String {
     let magnitude = value.abs();
-    let (divisor, suffix) = if magnitude >= 1e24 {
-        // `toExponential(2)` prints a signed exponent.
-        let exponent = magnitude.log10().floor() as i32;
-        let mantissa = value / 10_f64.powi(exponent);
-        return format!(
-            "{mantissa:.2}e{}{exponent}",
-            if exponent < 0 { "-" } else { "+" }
-        );
-    } else if magnitude >= 1e21 {
-        (1e21, "QQQ")
-    } else if magnitude >= 1e18 {
-        (1e18, "QQ")
-    } else if magnitude >= 1e15 {
-        (1e15, "Q")
-    } else if magnitude >= 1e12 {
-        (1e12, "T")
-    } else if magnitude >= 1e9 {
-        (1e9, "B")
-    } else if magnitude >= 1e6 {
-        (1e6, "M")
-    } else {
-        (1e3, "K")
-    };
+    let (scaled, suffix) = scaled(value);
     if magnitude >= 1e6 {
-        format!("{:.2}{suffix}", value / divisor)
+        format!("{scaled:.2}{suffix}")
     } else {
-        format!("{:.1}{suffix}", value / divisor)
+        format!("{scaled:.1}{suffix}")
     }
 }
 
@@ -89,6 +67,45 @@ fn group(whole: &str) -> String {
         out.push(digit);
     }
     out
+}
+
+/// A value and its suffix, in the upstream `fmtVal` shorthand.
+pub fn scaled(value: f64) -> (f64, String) {
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        // `toExponential(2)` prints a signed exponent.
+        let exponent = magnitude.log10().floor() as i32;
+        let mantissa = value / 10_f64.powi(exponent);
+        (
+            mantissa,
+            format!("e{}{exponent}", if exponent < 0 { "-" } else { "+" }),
+        )
+    } else if magnitude >= 1e21 {
+        (value / 1e21, "QQQ".into())
+    } else if magnitude >= 1e18 {
+        (value / 1e18, "QQ".into())
+    } else if magnitude >= 1e15 {
+        (value / 1e15, "Q".into())
+    } else if magnitude >= 1e12 {
+        (value / 1e12, "T".into())
+    } else if magnitude >= 1e9 {
+        (value / 1e9, "B".into())
+    } else if magnitude >= 1e6 {
+        (value / 1e6, "M".into())
+    } else if magnitude >= 1e3 {
+        (value / 1e3, "K".into())
+    } else {
+        (value, String::new())
+    }
+}
+
+/// A value as `1.23M` or `845.0`, matching the upstream `fmtVal`.
+pub fn value(value: f64) -> String {
+    if value.abs() >= 1e3 {
+        fmt_val(value)
+    } else {
+        format!("{value:.1}")
+    }
 }
 
 /// Hours as `3d 4h`, or minutes when short; absurd projections read as a dash.
@@ -159,5 +176,14 @@ mod tests {
         assert_eq!(stat_value(Some(14_754_186_378_368_600_000.0)), "14.75QQ");
         assert_eq!(count(1_234_567), "1,234,567");
         assert_eq!(group("-1234"), "-1,234");
+    }
+
+    #[test]
+    fn values_use_the_upstream_shorthand() {
+        assert_eq!(value(845.0), "845.0");
+        assert_eq!(value(1_540.0), "1.5K");
+        assert_eq!(value(5_350_000.0), "5.35M");
+        assert_eq!(value(-1_500.0), "-1.5K");
+        assert_eq!(value(2_909_587_276_919_980_000.0), "2.91QQ");
     }
 }
