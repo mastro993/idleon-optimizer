@@ -997,7 +997,7 @@
       "key": "endgame",
       "title": "Endgame Check",
       "group": "general",
-      "status": "planned",
+      "status": "done",
       "summary": "Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.",
       "upstream": [
         "endgame.html",

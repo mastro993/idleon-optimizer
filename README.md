@@ -7,9 +7,9 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the shadow-ban check
-and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a dashboard that
-opens every calculator, with one milestone per section and one issue per feature
+The current build opens on the dashboard and implements the research section, the shadow-ban check,
+the endgame check and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a
+dashboard that opens every calculator, with one milestone per section and one issue per feature
 ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
@@ -70,6 +70,11 @@ opens every calculator, with one milestone per section and one issue per feature
 - **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
   any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
   page shows the save status and the flag it read under the verdict, so it never guesses.
+- **The endgame check** — the upstream joke page: a huge `NO` before and after a save loads, with the
+  leaderboard audit beneath it. The audit lists all 177 upstream metrics in their categories and reads
+  the 156 the save tables carry; the 21 that need the account stats engine say so instead of guessing,
+  a field the save lacks reads `Unavailable`, and incomplete research rows show a clear error panel.
+  `fixtures/endgame-stats.json` pins the ported values against the upstream JS.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 - **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
@@ -173,7 +178,7 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ## Layout
 
 ```
-crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
+crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
   src/sections/      the registry plus one module per section (`research/`)
@@ -185,6 +190,7 @@ docs/plan.md       product plan, dashboard, JSON import, architecture, verificat
 docs/roadmap.json  milestones and feature issues (source of truth)
 docs/sections/     generated full specification per section
 fixtures/data.json synthetic account save for import tests
+fixtures/endgame-stats.json upstream leaderboard audit for the endgame check
 vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 ```
 
@@ -196,9 +202,11 @@ vertices and dimensions, 43 observations, and the sixteen presets' target square
 the upstream tables move.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
-manual debugging (open Import in the header and paste it). It is test input only: game formulas and save
-decoding stay ports of the upstream repo, never inferred from the fixture. See
-[`fixtures/README.md`](fixtures/README.md).
+manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
+upstream `js/endgame-stats.js` audit of that save, regenerated with
+`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/core/tests/endgame.rs` compares
+the Rust port against it. Both are test input only: game formulas and save decoding stay ports of the
+upstream repo, never inferred from the fixtures. See [`fixtures/README.md`](fixtures/README.md).
 
 Upstream artwork is committed in `assets/upstream/`. The images are game assets from Legends of
 Idleon, not original work of the upstream repository; credit sits in `assets/upstream/README.md`.
@@ -219,9 +227,9 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers and save import. The
-roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …);
-their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid, its optimizers, save import and the
+endgame check. The roadmap covers all remaining upstream sections (combat sim, sailing, cooking,
+royal guardian, …); their cards open planned-section placeholders until those milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their

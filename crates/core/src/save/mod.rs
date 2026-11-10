@@ -25,7 +25,7 @@
 //! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
 
 mod account;
-mod json;
+pub(crate) mod json;
 mod research;
 mod shadow;
 
@@ -63,10 +63,15 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The decoded save object (`data` in an `it.json`, the object itself in a
+    /// flat save), kept whole so read-only sections can audit it.
+    pub save: Value,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
     pub characters: usize,
+    /// How many names the `charNames` roster beside the save carries.
+    pub named_characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
     /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
@@ -147,6 +152,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let characters = characters(save);
     let roster = character_count(save);
+    let named_characters = root
+        .get("charNames")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
     if roster == 0 {
         warnings
             .push("characters: no Lv0_<n> rows in the save; only the account fields import".into());
@@ -172,8 +181,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     Ok(Imported {
         simulation,
         context,
+        save: Value::Object(save.clone()),
         format,
         characters: roster,
+        named_characters,
         warnings,
         shadow: Shadow::read(save),
     })

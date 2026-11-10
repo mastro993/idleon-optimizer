@@ -7,6 +7,7 @@
 
 pub mod breakdown;
 pub mod data;
+pub mod endgame;
 pub mod formula;
 pub mod model;
 pub mod optimize;

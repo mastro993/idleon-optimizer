@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod endgame;
 pub mod pickle;
 pub mod research;
 pub mod shadow;
@@ -205,9 +206,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::General,
         description: "Find out if you have reached endgame",
         spec: "docs/sections/endgame.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: endgame::view,
         keys: no_keys,
     },
     Section {

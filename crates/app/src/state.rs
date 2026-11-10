@@ -1,6 +1,7 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
 use crate::assets::Manifest;
+use crate::sections::endgame;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
@@ -112,6 +113,8 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The endgame section's audit of the last applied save.
+    pub endgame: endgame::State,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The dashboard search field.
@@ -228,6 +231,7 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            endgame: endgame::State::default(),
             pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
@@ -386,6 +390,7 @@ impl AppState {
             return;
         };
         let message = import::applied(&imported);
+        self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.research.selected_cell = None;

@@ -250,12 +250,12 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Research and BoneJoePickle status
 
-The research section is still partial. Done: grid, shapes, magnifiers, local sim,
-shape/mag/grid optimizers, 16 presets, supplements, save import, projection chart, keyboard, canvas
-dragging and the shared searchable EXP formula tree. Missing: the five extra tabs (Insight ROI,
-Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware
-simulation, strategy comparison, complete save-derived multipliers, state export/import and undo.
-Details: [`docs/sections/research.md`](sections/research.md).
+Research, shadow and endgame are implemented; research is still partial. Done: grid, shapes,
+magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
+chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the five extra
+tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi
+Station), target-aware simulation, strategy comparison, complete save-derived multipliers, state
+export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
 
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
