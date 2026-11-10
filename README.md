@@ -7,9 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the shadow-ban check,
-the endgame check and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a
-dashboard that opens every calculator, with one milestone per section and one issue per feature
+The current build opens on the dashboard and implements the research section, the Clamworks overview
+and upgrades, the shadow-ban and endgame checks and the hidden BoneJoePickle calculator. The plan
+covers the full upstream suite: a dashboard that opens every calculator, with one milestone per
+section and one issue per feature
 ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
@@ -77,6 +78,11 @@ dashboard that opens every calculator, with one milestone per section and one is
   `fixtures/endgame-stats.json` pins the ported values against the upstream JS.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
+- **The Clamworks overview** — pearl balance, pearl value and its searchable four-factor formula
+  tree, the 10x chance, drop rates, pearls per kill, promotion level and cost reduction, read from
+  the save. The Upgrades tab lists every pearl upgrade with its bonus and next cost, ranked by
+  marginal pearls-per-kill gain per unit cost. Multi-Scalping takes a multikill total as input until
+  the combat simulator lands.
 - **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
   max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
   with effective HP and kill time.
@@ -180,8 +186,10 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ```
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  extracted from the upstream repo
+  data/clamworks.json Clamworks upgrade, Scurge and promotion tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`, `coral_god_rank/`)
+  src/sections/      the registry plus one module per section (`research/`, `clamworks/`,
+                     `coral_god_rank/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -198,8 +206,9 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 
 `crates/core/data/research.json` is generated from the upstream JS by
 `node script/extract-research-data.mjs <path-to-upstream-repo>`: 62 grid squares, 10 shapes with
-vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
-the upstream tables move.
+vertices and dimensions, 43 observations, and the sixteen presets' target squares. The same run
+writes `crates/core/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
+the twelve promotion rewards. Re-run it when the upstream tables move.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
@@ -227,13 +236,15 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers, save import, the
-endgame check and the Coral God Rank planner's inputs and current-state summary. The roadmap covers
-all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …); their cards open
-planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid and its optimizers, the Clamworks
+overview and upgrades, save import, the shadow-ban and endgame checks, and the Coral God Rank
+planner's inputs and current-state summary. The roadmap covers all remaining upstream sections
+(combat sim, sailing, cooking, royal guardian, …); their cards open planned-section placeholders
+until those milestones land.
 
-The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Coral God Rank data
-and formulas follow `js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit
-are the remaining features of that milestone. Save-specific multipliers
-collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their
-static target lists rather than the save-dependent `build` functions.
+The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
+are ports of `js/stats/systems/w7/clamworks.js`. The Coral God Rank data and formulas follow
+`js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit are the remaining
+features of that milestone. Save-specific multipliers collapse into
+`SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
+lists rather than the save-dependent `build` functions.
