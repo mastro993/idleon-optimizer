@@ -426,8 +426,13 @@ function apply() {
   for (const milestone of roadmap.milestones) {
     labels.set(`area:${milestone.key}`, ['0e8a16', `Section ${milestone.key}`]);
   }
+  const existingLabels = new Set();
+  if (!dryRun || repoExists(repo)) {
+    for (const label of apiAll(`repos/${repo}/labels`)) existingLabels.add(label.name);
+  }
   for (const [name, [color, description]] of labels) {
-    if (dryRun) console.log(`would ensure label ${name}`);
+    if (existingLabels.has(name)) continue;
+    if (dryRun) console.log(`would create label ${name}`);
     else ensureLabel(repo, name, color, description);
   }
 
@@ -535,29 +540,35 @@ function apply() {
     }
   }
 
+  const blockedBy = new Map();
+  if (!dryRun || repoExists(repo)) {
+    for (const issue of JSON.parse(
+      gh(['issue', 'list', '--repo', repo, '--limit', '200', '--json', 'number,blockedBy']),
+    )) {
+      blockedBy.set(issue.number, new Set((issue.blockedBy?.nodes || []).map((node) => node.number)));
+    }
+  }
   for (const milestone of roadmap.milestones) {
     for (const feature of milestone.features) {
       if (!feature.dependsOn || feature.dependsOn.length === 0) continue;
       const issue = existingIssues.get(`${feature.id} ${feature.title}`);
       const dependencies = feature.dependsOn.map((id) => numbers.get(id)).filter(Boolean);
       if (!issue || dependencies.length === 0) continue;
+      const missing = dependencies.filter((number) => !blockedBy.get(issue.number)?.has(number));
+      if (missing.length === 0) continue;
       if (dryRun) {
-        console.log(`would link ${feature.id} blocked by ${dependencies.map((n) => `#${n}`).join(', ')}`);
+        console.log(`would link ${feature.id} blocked by ${missing.map((n) => `#${n}`).join(', ')}`);
         continue;
       }
-      try {
-        gh([
-          'issue',
-          'edit',
-          String(issue.number),
-          '--repo',
-          repo,
-          '--add-blocked-by',
-          dependencies.join(','),
-        ]);
-      } catch (error) {
-        if (!String(error.stderr || '').includes('already been taken')) throw error;
-      }
+      gh([
+        'issue',
+        'edit',
+        String(issue.number),
+        '--repo',
+        repo,
+        '--add-blocked-by',
+        missing.join(','),
+      ]);
     }
   }
 
