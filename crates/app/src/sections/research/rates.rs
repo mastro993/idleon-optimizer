@@ -26,6 +26,9 @@ pub fn rates_pane(
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
     let rate = state.rate();
     let points = state.grid_points();
+    let tree = state.breakdown.clone();
+    let root = idleon_core::breakdown::exp(&state.simulation, &state.context);
+    tree.update(cx, |tree, cx| tree.set_root(root, cx));
     let cards = div()
         .id("kpi-row")
         .role(gpui::Role::Label)
@@ -102,9 +105,26 @@ pub fn rates_pane(
                 .flex_col()
                 .min_h_0()
                 .gap_3()
+                .child(formula_card(tree))
                 .child(supplements_card(state, cx)),
             px(340.0),
         ))
+}
+
+/// The shared formula tree, collapsed to a fixed height inside the side rail.
+fn formula_card(tree: gpui::Entity<crate::ui::formula::FormulaTree>) -> impl IntoElement {
+    Card::new()
+        .header(
+            CardHeader::new("EXP formula")
+                .description("Search every factor and copy the full tree"),
+        )
+        .child(
+            div()
+                .id("formula-card-body")
+                .h(px(220.0))
+                .min_h_0()
+                .child(tree),
+        )
 }
 
 /// One supplement row: its name, its value, and a stepper that edits it.

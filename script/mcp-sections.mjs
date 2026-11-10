@@ -94,6 +94,16 @@ const INTERACTIONS = {
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');
+    await lane.call('click_element', { id: 'rates' });
+    await waitForNode(lane, 'formula-tree', 'research: the shared formula tree opens');
+    await lane.call('click_element', { id: 'formula-search' });
+    await lane.call('type_text', { text: 'takin' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'formula-match-count') ?? '').includes('matching'),
+      'research: searching the formula tree highlights nodes',
+    );
+    await lane.call('click_element', { id: 'formula-collapse' });
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
   },

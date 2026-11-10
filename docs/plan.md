@@ -183,6 +183,9 @@ counts and field names, not save values.
 ## 6. UI and assets
 
 - Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
+- Every calculator's breakdown renders through the shared formula tree: expandable nodes with label,
+  inputs, multiplier, source and result, plus search highlights and a copy action. The research
+  Rates pane is the first consumer.
 - Match the upstream information architecture: same tab names and order, same panels, same column
   order in tables, same defaults.
 - One shared page header (back, section title, world badge, save status, import) and one tab strip;
@@ -251,10 +254,10 @@ bump moves all three together and the smoke harness is the check.
 
 The research section is still partial. Done: grid, shapes,
 magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
-chart, keyboard and canvas dragging. Missing: the five extra tabs (Insight ROI, Observation
-Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation,
-strategy comparison/timeline, complete save-derived multipliers, state export/import and undo.
-Details: [`docs/sections/research.md`](sections/research.md).
+chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the five extra
+tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi
+Station), target-aware simulation, strategy comparison, complete save-derived multipliers, state
+export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).

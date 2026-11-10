@@ -43,6 +43,10 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **Local simulation** — research EXP/hour with its additive and multiplicative breakdown, insight
   levelling per observation, magnifier caps, grid points earned and spent, shapes and magnifiers
   owned, and an event-driven projection to a research level or an hour budget.
+- **Shared formula tree** — the Rates pane's EXP formula is one reusable, searchable breakdown:
+  every node shows its inputs, multiplier, source and result, branches expand and collapse, search
+  highlights matches and one copy button exports the whole tree. Every later calculator renders its
+  breakdown through the same component.
 - **Three optimizers, all in-process and parallel**
   - shape placement: greedy over the preset's target priorities, then a lattice search on the real
     EXP rate (moves, rotation sweeps once level 90 unlocks them, shape-order swaps);
