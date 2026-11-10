@@ -34,8 +34,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
 - **Consistent states** — every section shows the shared no-save banner with its import action, the
-  header names a partial import, long runs show a progress bar and Cancel, cancelling keeps the
-  previous result, and results are marked stale instead of disappearing when an input changes.
+  header names a partial import, and every long job goes through one shared task runner: it runs off
+  the UI thread, reports progress, cancels without losing the previous result, and marks a result
+  stale when its inputs change.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.

@@ -9,6 +9,7 @@ pub mod import;
 pub mod layout;
 pub mod section;
 pub mod shell;
+pub mod task;
 pub mod theme;
 
 use crate::state::AppState;
