@@ -82,10 +82,12 @@ as the research grid does for Escape. An unknown id renders the missing-section 
 planned section renders the shared "On the roadmap" empty state — neither can panic.
 
 Section states are shared: every section page renders a `no-save-state` banner with the import
-action until a save loads; the header distinguishes a full save from a partial one with warnings;
-long optimizer runs show a progress bar and `run-cancel`; a cancelled run keeps the result already
-on screen; and a stored result whose inputs changed is marked stale (badge, banner, disabled Apply)
-instead of being dropped.
+action until a save loads; the header distinguishes a full save from a partial one with warnings.
+Long work goes through one shared `TaskRunner` (`src/task.rs`): the job runs on the background
+executor, a foreground pump copies progress into the entity, `run-cancel` stops the job at its next
+report, a cancelled run keeps the result already on screen, and a stored result whose inputs changed
+is marked stale (badge, banner, disabled Apply) instead of being dropped. `ui/task.rs` renders the
+progress card, the cancelled notice and the stale marker for every section.
 
 ## 4. Sections and milestones
 
@@ -207,6 +209,8 @@ crates/app                          GPUI + Ely
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
     research/                       the research section's state, tab strip and panes
   ui/                               shell (window, router, shortcuts), dashboard, section states
+  ui/task.rs                        shared progress card, cancelled notice and stale marker
+  task.rs                           TaskRunner: off-thread job, progress, cancel, stale inputs
   state.rs                          AppState, Route (`Dashboard`/`Section`/`Missing`) and state
 assets/upstream                     generated, gitignored, manifest-backed
 docs/plan.md                        this document
