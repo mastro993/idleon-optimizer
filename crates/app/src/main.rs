@@ -12,32 +12,35 @@ use gpui::{
 use state::AppState;
 use std::path::PathBuf;
 
-/// Where this instance publishes itself for gpui-mcp.
-///
-/// A private directory lets several instances (one per agent lane) run at once
-/// without any of them seeing or driving the others.
-fn endpoint_dir() -> Option<PathBuf> {
+/// The value of a `--flag value` or `--flag=value` argument.
+fn argument(name: &str) -> Option<String> {
     let mut arguments = std::env::args().skip(1);
     while let Some(argument) = arguments.next() {
-        if argument == "--endpoint-dir" {
-            return arguments.next().map(PathBuf::from);
+        if argument == name {
+            return arguments.next();
         }
-        if let Some(value) = argument.strip_prefix("--endpoint-dir=") {
-            return Some(PathBuf::from(value));
+        if let Some(value) = argument.strip_prefix(&format!("{name}=")) {
+            return Some(value.to_string());
         }
     }
     None
 }
 
 fn main() -> Result<()> {
-    let endpoint = endpoint_dir();
+    let endpoint = argument("--endpoint-dir").map(PathBuf::from);
+    // `--section <id>` opens that registry entry at launch: the harness uses it
+    // to reach hidden tools, and an unknown id proves the missing-section state.
+    let initial = argument("--section");
     gpui_platform::application()
         .with_assets(ely_gpui_component::Assets)
         .run(move |cx: &mut App| {
             ely_gpui_component::init(cx).expect("Ely failed to start");
-            ui::grid_view::bind_keys(cx);
+            ui::shell::bind_keys(cx);
+            for section in sections::SECTIONS {
+                (section.keys)(cx);
+            }
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
-            if let Err(error) = open_window(cx, endpoint) {
+            if let Err(error) = open_window(cx, endpoint, initial) {
                 eprintln!("idleon-optimizer: {error:#}");
                 cx.quit();
             }
@@ -45,7 +48,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn open_window(cx: &mut App, endpoint: Option<PathBuf>) -> Result<()> {
+fn open_window(cx: &mut App, endpoint: Option<PathBuf>, initial: Option<String>) -> Result<()> {
     let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(bounds)),
@@ -57,8 +60,8 @@ fn open_window(cx: &mut App, endpoint: Option<PathBuf>) -> Result<()> {
         window_min_size: Some(size(px(1080.0), px(680.0))),
         ..Default::default()
     };
-    cx.open_window(options, |window, cx| {
-        cx.new(|cx| AppState::new(window, endpoint, cx))
+    cx.open_window(options, move |window, cx| {
+        cx.new(move |cx| AppState::new(window, endpoint, initial, cx))
     })
     .context("window failed to open")?;
     cx.activate(true);

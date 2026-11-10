@@ -1,14 +1,14 @@
 //! Landing dashboard: the searchable card grid ported from upstream `index.html`.
 
-use crate::sections::{Group, SECTIONS, Section};
+use crate::sections::{self, Group, Section};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
+use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::SearchInput;
 use ely_gpui_component::layout::{Card, ScrollArea, SimpleGrid};
 use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use gpui::prelude::*;
 use gpui::{
     Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
@@ -24,22 +24,22 @@ pub fn dashboard_pane(
     let entity = cx.entity();
     let search_focus = state.search.read(cx).focus().clone();
     let clear = entity.clone();
+    let resume = state.last_section.and_then(sections::find);
     let muted = cx.theme().colors.fg_muted;
 
     let mut groups = div().flex().flex_col().gap_6();
     let mut matches = 0;
     for group in Group::ALL {
-        let sections: Vec<&'static Section> = SECTIONS
-            .iter()
+        let cards: Vec<&'static Section> = sections::cards()
             .filter(|section| section.group == group && section.matches(&query))
             .collect();
-        if sections.is_empty() {
+        if cards.is_empty() {
             continue;
         }
-        matches += sections.len();
+        matches += cards.len();
         let id = group.id();
         let mut grid = SimpleGrid::new(format!("dashboard-grid-{id}"), px(300.0), px(12.0));
-        for section in sections {
+        for section in cards {
             grid = grid.child(section_card(section, &entity, muted));
         }
         groups = groups.child(
@@ -101,7 +101,7 @@ pub fn dashboard_pane(
                                 .text_color(muted)
                                 .child(format!(
                                     "{} calculators and optimizers for Legends of Idleon.",
-                                    SECTIONS.len()
+                                    sections::card_count()
                                 )),
                         ),
                 )
@@ -128,6 +128,25 @@ pub fn dashboard_pane(
                         .flex_col()
                         .gap_6()
                         .pb_4()
+                        .when_some(resume, |body, resume| {
+                            let entity = entity.clone();
+                            body.child(
+                                div().id("dashboard-resume-row").flex().justify_end().child(
+                                    Button::new(
+                                        "dashboard-resume",
+                                        format!("Resume {}", resume.title),
+                                    )
+                                    .icon(IconName::ArrowRight)
+                                    .size(ControlSize::Sm)
+                                    .variant(ButtonVariant::Subtle)
+                                    .on_click(move |_event, window, cx| {
+                                        entity.update(cx, |state, cx| {
+                                            state.resume_last_section(window, cx);
+                                        });
+                                    }),
+                                ),
+                            )
+                        })
                         .when(matches == 0, |body| {
                             body.child(
                                 EmptyState::new(
@@ -169,8 +188,8 @@ fn section_card(
         .role(Role::Button)
         .aria_label(label)
         .cursor_pointer()
-        .on_click(move |_event, _window, cx| {
-            entity.update(cx, |state, cx| state.open_section(section.id, cx));
+        .on_click(move |_event, window, cx| {
+            entity.update(cx, |state, cx| state.open_section(section.id, window, cx));
         })
         .child(
             Card::new().child(
@@ -230,5 +249,7 @@ fn tone(group: Group) -> Tone {
         Group::W4 => Tone::Accent,
         Group::W6 => Tone::Danger,
         Group::W7 => Tone::Warning,
+        // Hidden tools never render a dashboard card; keep the palette total.
+        Group::Tools => Tone::Neutral,
     }
 }

@@ -32,7 +32,7 @@ pub fn inspector_pane(
 
 fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let colors = &cx.theme().colors;
-    let selected = state.selected_cell;
+    let selected = state.research.selected_cell;
     let node = state.selected_node();
     let card = Card::new().header(CardHeader::new("Selected square"));
 
@@ -218,7 +218,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
         let up = entity.clone();
         let down = entity.clone();
         let pick = entity.clone();
-        let picked = state.selected_shape == Some(index);
+        let picked = state.research.selected_shape == Some(index);
         list = list.child(
             div()
                 .id(("shape-row", index))

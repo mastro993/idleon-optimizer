@@ -91,3 +91,11 @@ pkill -f target/debug/idleon-optimizer
 
 `mcp-drive.mjs` exits non-zero when a check fails, which makes it usable as a gate for a lane that
 touches the UI.
+
+The app also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
+it and asserts the section root:
+
+```console
+node script/mcp-smoke.mjs --spawn --section damage   # a hidden tool: planned empty state
+node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-section empty state
+```

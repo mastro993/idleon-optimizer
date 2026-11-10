@@ -16,3 +16,6 @@ gpui = { workspace = true }
 gpui_platform = { workspace = true }
 gpui-mcp = { workspace = true }
 anyhow = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
