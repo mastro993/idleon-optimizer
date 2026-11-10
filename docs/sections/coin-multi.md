@@ -6,6 +6,7 @@
 - Section key: `coin-multi`
 - Group: `tools`
 - Status: `planned`
+- Depends on: `foundation`, `stats-all`
 
 Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.
 
@@ -43,6 +44,8 @@ None.
 
 Character/map and combat inputs with the total multiplier card and partial badge.
 
+Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, SA-01 Calculation context
+
 Acceptance:
 
 - Total matches upstream.
@@ -52,6 +55,8 @@ Acceptance:
 ### CM-02 — Coin multiplier formula tree
 
 Expandable breakdown of every coin multiplier term.
+
+Depends on: CM-01 Coin multiplier inputs and total, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

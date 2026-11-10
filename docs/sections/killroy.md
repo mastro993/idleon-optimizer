@@ -6,6 +6,7 @@
 - Section key: `killroy`
 - Group: `w2`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.
 
@@ -47,6 +48,8 @@ Killroy icons if present.
 
 Forecast encounters, kills, skulls and records over the selected weeks.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Forecast matches upstream.
@@ -57,6 +60,8 @@ Acceptance:
 
 Compare the next upgrade per option with selection preview and trials.
 
+Depends on: KL-01 Weekly forecast, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Every upgrade is comparable.
@@ -66,6 +71,8 @@ Acceptance:
 ### KL-03 — Saved buffs and results
 
 Render saved buffs, unlimited mode, progress/cancel and the results table.
+
+Depends on: KL-02 +1 upgrade comparison, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

@@ -77,7 +77,7 @@ and acceptance criteria are generated into [`docs/sections/`](sections/).
 
 | Milestone | Section | Group | Issues |
 | --- | --- | --- | --- |
-| M0 | Foundation: dashboard, navigation, JSON import, assets | Core | 10 |
+| M0 | Foundation: dashboard, navigation, JSON import, assets | Core | 12 |
 | M1 | Research Optimizer: full upstream parity | W7 | 13 |
 | M2 | Combat Simulator | General | 7 |
 | M3 | All Stats Dashboard | General | 4 |
@@ -236,17 +236,32 @@ Details: [`docs/sections/research.md`](sections/research.md).
 ## 11. Milestones and progress tracking
 
 `docs/roadmap.json` is the source of truth. It defines one milestone per section and one issue per
-feature, with acceptance criteria.
+feature, with acceptance criteria and explicit `dependsOn` edges.
+
+Every feature issue contains:
+
+- the feature description and its section contract (UI, inputs, outputs, assets);
+- **Blocked by** and **Blocks** links resolved to issue numbers;
+- upstream source files and the generated section spec;
+- acceptance checklist and section verification steps;
+- agent notes: port from upstream, keep core GPUI-free, reuse M0 components, close only when green.
+
+The pinned [tracker issue](https://github.com/mastro993/idleon-optimizer/issues/124) is the entry
+point: it lists every milestone, its dependencies and its status. Work starts at M0, then follows
+each issue's blocked-by list. GitHub's native blocked-by relationships are set from the same graph,
+so the issue UI shows the same dependencies as the body. A milestone can only be marked `done` when
+all its feature issues are closed and its verification passes.
 
 ```console
-node script/roadmap.mjs                 # validate and print the summary
+node script/roadmap.mjs                 # validate the dependency graph and print the summary
 node script/roadmap.mjs --write         # regenerate docs/roadmap.md and docs/sections/*.md
 node script/roadmap.mjs --apply --repo owner/name --dry-run
 node script/roadmap.mjs --apply --repo owner/name
 ```
 
-The GitHub sync is idempotent: milestones match by title, issues by their feature-id prefix. Each
-issue carries `area:<section>`, `type:feature` and `roadmap` labels, and its milestone. Close an
+The GitHub sync is idempotent: milestones match by title, issues by their feature-id prefix. Existing
+issues are updated in place, so dependency links, contracts and acceptance criteria stay current.
+Each issue carries `area:<section>`, `type:feature` and `roadmap` labels, and its milestone. Close an
 issue to track progress; when all issues in a section are closed, mark the milestone `done` in
 `roadmap.json` and regenerate the docs.
 

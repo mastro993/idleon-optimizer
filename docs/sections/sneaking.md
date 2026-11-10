@@ -6,6 +6,7 @@
 - Section key: `sneaking`
 - Group: `w6`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.
 
@@ -49,6 +50,8 @@ assets/sneaking charms, items, scenes and borders.
 
 Loadout/inventory editors backed by the save with saved placement output.
 
+Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+
 Acceptance:
 
 - Edits update formulas.
@@ -58,6 +61,8 @@ Acceptance:
 ### SN-02 — Formula breakdowns
 
 Stealth, jade, EXP, door and runtime breakdown trees.
+
+Depends on: SN-01 Loadout and inventory workspaces, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 
@@ -69,6 +74,8 @@ Acceptance:
 
 Optimize charm placement for the selected objective with progress and cancel.
 
+Depends on: SN-02 Formula breakdowns, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Result beats baseline.
@@ -78,6 +85,8 @@ Acceptance:
 ### SN-04 — Floor mastery and door ETA
 
 Floor-by-mastery table, active door, next captive and untie ETA.
+
+Depends on: SN-01 Loadout and inventory workspaces
 
 Acceptance:
 

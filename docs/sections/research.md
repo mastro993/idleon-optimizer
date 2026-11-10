@@ -6,6 +6,7 @@
 - Section key: `research`
 - Group: `w7`
 - Status: `partial`
+- Depends on: `foundation`
 
 Finish the Research section so all eight upstream tabs and the shared save/supplement tools are present, including the Decision Tree, Insight ROI, Observation Unlocks and full save-derived multipliers.
 
@@ -58,6 +59,8 @@ Research sprites under assets/combat-sim/ui/research (ResShape*, ResSq*, Researc
 
 Port the upstream dashboard: summary, research grid preview, observation board, EXP rate breakdown, AFK rate and insight multiplier.
 
+Depends on: FND-01 Dashboard card grid, FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, FND-09 Empty, loading, error and stale states
+
 Acceptance:
 
 - All six dashboard blocks render from the loaded save.
@@ -67,6 +70,8 @@ Acceptance:
 ### RES-02 — Optimizer target and options
 
 Target level or hours plus the three upstream toggles: assume observations unlocked, extended insight lookahead and tournament +12h.
+
+Depends on: RES-01 Research dashboard tab
 
 Acceptance:
 
@@ -78,6 +83,8 @@ Acceptance:
 
 Simulate to the target, spend grid points earned on the way and re-optimize shapes and magnifiers on research and insight level-ups, matching upstream sim-engine and worker-pool behavior.
 
+Depends on: RES-02 Optimizer target and options, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - A level target optimizes time-to-level, not only immediate EXP/hr.
@@ -87,6 +94,8 @@ Acceptance:
 ### RES-04 — Strategy comparison, timeline and actions
 
 Port the upstream result view: best/worst strategy comparison, interactive timeline, EXP/hr chart and expandable step-by-step actions.
+
+Depends on: RES-03 Target-aware optimizer engine, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 
@@ -98,6 +107,8 @@ Acceptance:
 
 Per-observation insight levelling analysis: time to level, research EXP lost during the grind, permanent rate gain and break-even time.
 
+Depends on: RES-01 Research dashboard tab, RES-03 Target-aware optimizer engine, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Table covers every usable observation with the upstream columns.
@@ -107,6 +118,8 @@ Acceptance:
 ### RES-06 — Observation Unlocks tab
 
 Rank undiscovered observations by expected EXP/hr gain weighted by unlock probability per day.
+
+Depends on: RES-01 Research dashboard tab, RES-03 Target-aware optimizer engine, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 
@@ -118,6 +131,8 @@ Acceptance:
 
 Standalone shape workspace: priority tiers above/below the Res EXP divider, drag to reorder, built-in and custom presets, optimized placement preview and coverage breakdown.
 
+Depends on: RES-01 Research dashboard tab, FND-08 Shared layout, theme and responsive rules
+
 Acceptance:
 
 - Tier editing detaches a built-in preset without mutating it.
@@ -127,6 +142,8 @@ Acceptance:
 ### RES-08 — Decision Tree sandbox
 
 Interactive tree of research events: branch, save, delete, compare, zoom, level-ups-only, upgrade/shape modes and observation editing.
+
+Depends on: RES-04 Strategy comparison, timeline and actions, RES-07 Shape Optimization tab, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 
@@ -138,6 +155,8 @@ Acceptance:
 
 Port the research page's Minehead tab and its save-derived inputs.
 
+Depends on: RES-01 Research dashboard tab, FND-03 Shared save JSON import
+
 Acceptance:
 
 - All upstream Minehead controls and results are present.
@@ -147,6 +166,8 @@ Acceptance:
 ### RES-10 — Sushi Station tab
 
 Port the research page's Sushi Station tab and its account bonuses.
+
+Depends on: RES-01 Research dashboard tab, FND-03 Shared save JSON import
 
 Acceptance:
 
@@ -158,6 +179,8 @@ Acceptance:
 
 Decode every account term the upstream derives: sticker tree, arcade 63, Clam Works 9, Menagerie B3, equipment, Button, royal research, jelly, RoG, mastery, event shop and minehead.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Imported save rate matches upstream for the fixture and a full-account save.
@@ -168,6 +191,8 @@ Acceptance:
 
 Copy/Paste State string plus the full supplements panel, matching upstream state-io and supplement behavior.
 
+Depends on: FND-04 Project and section JSON import/export, RES-11 Full save-derived multiplier tree
+
 Acceptance:
 
 - Exported ROv2 string imports back to the same state.
@@ -177,6 +202,8 @@ Acceptance:
 ### RES-13 — Grid, shape and magnifier editors
 
 Complete the manual editing surface: grid levels, shape drag/rotate/add/remove, magnifier assignment, undo/redo and canvas rotation handle.
+
+Depends on: FND-08 Shared layout, theme and responsive rules, RES-01 Research dashboard tab
 
 Acceptance:
 

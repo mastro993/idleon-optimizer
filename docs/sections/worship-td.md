@@ -6,6 +6,7 @@
 - Section key: `worship-td`
 - Group: `w3`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.
 
@@ -48,6 +49,8 @@ assets/worship-td towers, projectiles and map art.
 
 Run waves with tower placement, ranges, HUD and restart controls.
 
+Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Waves resolve deterministically.
@@ -57,6 +60,8 @@ Acceptance:
 ### WT-02 — Replay and scrubbing
 
 Play, scrub, change speed and inspect waves from a recorded run.
+
+Depends on: WT-01 Live tower-defense simulator
 
 Acceptance:
 
@@ -68,6 +73,8 @@ Acceptance:
 
 Phase plan, final towers and model-assumption panels.
 
+Depends on: WT-01 Live tower-defense simulator
+
 Acceptance:
 
 - Plan matches the simulator.
@@ -77,6 +84,8 @@ Acceptance:
 ### WT-04 — Strategy optimizer
 
 Search tower strategies with seeds, mode and recommended plan output.
+
+Depends on: WT-03 Plan and model assumptions, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 

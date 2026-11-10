@@ -6,6 +6,7 @@
 - Section key: `damage`
 - Group: `tools`
 - Status: `planned`
+- Depends on: `foundation`, `stats-all`
 
 Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.
 
@@ -46,6 +47,8 @@ None.
 
 Character/map selectors plus game, minimum, maximum and exact damage cards.
 
+Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, SA-01 Calculation context
+
 Acceptance:
 
 - Values match upstream.
@@ -56,6 +59,8 @@ Acceptance:
 
 Layer tabs with per-layer values and notes, plus the mastery bar and breakdown.
 
+Depends on: DMG-01 Damage context and summary
+
 Acceptance:
 
 - Every upstream layer is present.
@@ -65,6 +70,8 @@ Acceptance:
 ### DMG-03 — Formula tree
 
 Expandable formula tree for damage and mastery.
+
+Depends on: DMG-02 Damage layers and mastery, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

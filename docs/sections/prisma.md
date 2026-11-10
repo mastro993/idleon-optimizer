@@ -6,6 +6,7 @@
 - Section key: `prisma`
 - Group: `w2`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.
 
@@ -45,6 +46,8 @@ Bubble icons if present.
 
 Run the bubble impact search with metric filters, progress and cancel.
 
+Depends on: FND-03 Shared save JSON import, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Cancel restores the previous result.
@@ -54,6 +57,8 @@ Acceptance:
 ### PR-02 — Result rows and coverage
 
 Ranked bubble impacts with per-metric deltas and a coverage table.
+
+Depends on: PR-01 Prisma search and run
 
 Acceptance:
 

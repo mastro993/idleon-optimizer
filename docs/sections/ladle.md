@@ -6,6 +6,7 @@
 - Section key: `ladle`
 - Group: `w4`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.
 
@@ -51,6 +52,8 @@ Cooking icons if present.
 
 Per-character ladle uses, rates and Cooking EXP balloon breakdown.
 
+Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -60,6 +63,8 @@ Acceptance:
 ### LD-02 — Kitchens and Jellyfish reset
 
 Daily kitchen layout, reset investment and expandable reset instructions.
+
+Depends on: LD-01 Ladle summary and breakdowns
 
 Acceptance:
 
@@ -71,6 +76,8 @@ Acceptance:
 
 Compare objectives across reset days and show meal targets/outcomes.
 
+Depends on: LD-01 Ladle summary and breakdowns
+
 Acceptance:
 
 - Objective switch changes ranking.
@@ -80,6 +87,8 @@ Acceptance:
 ### LD-04 — NMLB donation planner
 
 Blue Jellyfish planner for kitchen speed after N resets, including predicted rotation.
+
+Depends on: LD-03 Forecast comparison and meal outcomes, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 

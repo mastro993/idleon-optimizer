@@ -6,6 +6,7 @@
 - Section key: `stats-all`
 - Group: `general`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.
 
@@ -45,6 +46,8 @@ None beyond icons.
 
 Character, map, visibility, skill and construction-mode selectors with save defaults.
 
+Depends on: FND-01 Dashboard card grid, FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, FND-09 Empty, loading, error and stale states
+
 Acceptance:
 
 - Every upstream selector exists.
@@ -54,6 +57,8 @@ Acceptance:
 ### SA-02 — Category breakdowns
 
 Map-aware character/account breakdowns for combat, skills, carry capacity and account totals.
+
+Depends on: SA-01 Calculation context
 
 Acceptance:
 
@@ -65,6 +70,8 @@ Acceptance:
 
 Per-system formula cards with inputs, saved values, computed values and explanations.
 
+Depends on: SA-02 Category breakdowns, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Search and filtering work.
@@ -74,6 +81,8 @@ Acceptance:
 ### SA-04 — Input change ledger
 
 Show which inputs changed and which formulas they affect.
+
+Depends on: SA-02 Category breakdowns
 
 Acceptance:
 

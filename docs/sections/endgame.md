@@ -6,6 +6,7 @@
 - Section key: `endgame`
 - Group: `general`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.
 
@@ -38,6 +39,8 @@ None.
 ### EG-01 — Endgame verdict and stats
 
 Always display NO before and after loading, with the stats and error panels.
+
+Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 

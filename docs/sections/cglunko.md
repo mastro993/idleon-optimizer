@@ -6,6 +6,7 @@
 - Section key: `cglunko`
 - Group: `w5`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.
 
@@ -47,6 +48,8 @@ Cglunko icons if present.
 
 Summary, drop-rate formula breakdown and combat context.
 
+Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -57,6 +60,8 @@ Acceptance:
 
 Upgrade list, priority and optimizer for the selected color.
 
+Depends on: CL-01 Overview and DR breakdown, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Optimizer respects costs.
@@ -66,6 +71,8 @@ Acceptance:
 ### CL-03 — Stone focus
 
 Blue/purple stone pages, digit impact and recommended focus target.
+
+Depends on: CL-02 Upgrades and optimizer
 
 Acceptance:
 

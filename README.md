@@ -49,7 +49,7 @@ dashboard that opens every calculator, with one milestone per section and one is
 
 The product target is a dashboard-first desktop suite with all 30 upstream pages, the same
 information architecture and the same images where licensing allows. Progress is tracked as one
-GitHub milestone per section and one issue per feature: 31 milestones and 121 feature issues.
+GitHub milestone per section and one issue per feature: 31 milestones and 123 feature issues.
 
 - [`docs/plan.md`](docs/plan.md) — product, dashboard, JSON import, architecture and verification.
 - [`docs/roadmap.md`](docs/roadmap.md) — generated milestone table and status.
@@ -63,6 +63,7 @@ node script/roadmap.mjs --apply --repo owner/name
 ```
 
 The sync is idempotent: milestones match by title, issues by feature-id prefix. The live tracker is
+[tracker issue](https://github.com/mastro993/idleon-optimizer/issues/124),
 [milestones](https://github.com/mastro993/idleon-optimizer/milestones) and
 [issues](https://github.com/mastro993/idleon-optimizer/issues).
 

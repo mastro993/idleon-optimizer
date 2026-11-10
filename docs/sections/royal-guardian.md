@@ -6,6 +6,7 @@
 - Section key: `royal-guardian`
 - Group: `w7`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.
 
@@ -51,6 +52,8 @@ assets/royal-guardian maps, resources, units and lines.
 
 Raw clearing values, range targets, world progress and counters.
 
+Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+
 Acceptance:
 
 - Counters match save.
@@ -60,6 +63,8 @@ Acceptance:
 ### RG-02 — Outposts, resources and currencies
 
 Outpost map, resource nodes, currencies, drain staffing and banked hours.
+
+Depends on: RG-01 Overview and counters
 
 Acceptance:
 
@@ -71,6 +76,8 @@ Acceptance:
 
 Upgrade list, global breakdown tree and forecast tab.
 
+Depends on: RG-02 Outposts, resources and currencies, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Breakdown sums.
@@ -80,6 +87,8 @@ Acceptance:
 ### RG-04 — Optimizer, unit EXP and shelf
 
 Outpost/unit optimizer, unit EXP moves and shelf layout steps.
+
+Depends on: RG-03 Upgrades, breakdowns and forecast, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 

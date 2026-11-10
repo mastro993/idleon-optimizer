@@ -6,6 +6,7 @@
 - Section key: `combat-sim`
 - Group: `general`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the active combat simulator: loadout editor, mechanics overrides, component terms, encounter simulation, comparisons, Killroy, obols, cards, kills-over-time and replays.
 
@@ -49,6 +50,8 @@ assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB, local-only un
 
 Edit character, equipment, talents and loadout presets with save-backed defaults.
 
+Depends on: FND-01 Dashboard card grid, FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, FND-09 Empty, loading, error and stale states
+
 Acceptance:
 
 - Loadout changes update the simulation immediately.
@@ -58,6 +61,8 @@ Acceptance:
 ### CS-02 — Mechanics overrides
 
 Override combat mechanics and component terms with searchable groups and reset-to-save behavior.
+
+Depends on: CS-01 Loadout editor
 
 Acceptance:
 
@@ -69,6 +74,8 @@ Acceptance:
 
 Run active combat against the selected encounter with the upstream options and progress reporting.
 
+Depends on: CS-02 Mechanics overrides, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Runs can be cancelled.
@@ -78,6 +85,8 @@ Acceptance:
 ### CS-04 — Character, loadout and map comparison
 
 Side-by-side comparison across characters, loadouts and maps.
+
+Depends on: CS-03 Encounter simulator
 
 Acceptance:
 
@@ -89,6 +98,8 @@ Acceptance:
 
 Killroy encounter results, obol fragments, kills by monster, card drops and kills-over-time chart.
 
+Depends on: CS-03 Encounter simulator, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Each result tab renders from the same run.
@@ -99,6 +110,8 @@ Acceptance:
 
 Combat-driven progress, The Den outcomes and smelting output panels.
 
+Depends on: CS-03 Encounter simulator
+
 Acceptance:
 
 - Panels match upstream outputs.
@@ -108,6 +121,8 @@ Acceptance:
 ### CS-07 — Replays and combat assets
 
 Play, scrub and speed-control combat replays using the upstream sprites and maps.
+
+Depends on: CS-03 Encounter simulator, FND-06 Upstream asset pipeline
 
 Acceptance:
 

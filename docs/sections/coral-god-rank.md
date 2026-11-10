@@ -6,6 +6,7 @@
 - Section key: `coral-god-rank`
 - Group: `w5`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the coral kid upgrade and god-rank offering planner with beam search and projection.
 
@@ -46,6 +47,8 @@ Coral icons if present.
 
 All upstream planner inputs with validation and a summary of the current state.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Every input is present.
@@ -56,6 +59,8 @@ Acceptance:
 
 Run the beam planner and show projected coral state and action list.
 
+Depends on: CR-01 Planner controls and summary, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Plan respects budget and max levels.
@@ -65,6 +70,8 @@ Acceptance:
 ### CR-03 — Offering fit and current levels
 
 Show offering fit and current coral kid levels.
+
+Depends on: CR-02 Beam-search plan and projection
 
 Acceptance:
 

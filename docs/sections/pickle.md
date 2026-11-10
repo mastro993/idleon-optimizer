@@ -6,6 +6,7 @@
 - Section key: `pickle`
 - Group: `tools`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the hidden DPS/TTK calculator.
 
@@ -36,6 +37,8 @@ None.
 ### PK-01 — DPS and TTK
 
 Compute DPS and time-to-kill from the upstream inputs.
+
+Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 

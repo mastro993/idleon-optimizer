@@ -6,6 +6,7 @@
 - Section key: `jelly-operator`
 - Group: `w7`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.
 
@@ -52,6 +53,8 @@ assets/jelly-operator cells and board art.
 
 Cell palette, board sections, saved layout and operation estimate.
 
+Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+
 Acceptance:
 
 - Every cell type is placeable.
@@ -61,6 +64,8 @@ Acceptance:
 ### JO-02 — Operation simulator
 
 Run the interactive simulator with fever, roid, revive, run and remove mode.
+
+Depends on: JO-01 Layout editor and overview, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 
@@ -72,6 +77,8 @@ Acceptance:
 
 Upgrade list, account snapshot, bonuses and per-cell breakdowns.
 
+Depends on: JO-01 Layout editor and overview, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -82,6 +89,8 @@ Acceptance:
 
 Plan board sections with strategy, objective, cell type, tokens, quality and beam size.
 
+Depends on: JO-01 Layout editor and overview
+
 Acceptance:
 
 - Planner respects section rules.
@@ -91,6 +100,8 @@ Acceptance:
 ### JO-05 — Coordinator optimizer
 
 Optimize the full board with the coordinator and show critical target timeline.
+
+Depends on: JO-04 Sections planner, JO-02 Operation simulator, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 

@@ -6,6 +6,7 @@
 - Section key: `cooking-mastery`
 - Group: `w4`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.
 
@@ -47,6 +48,8 @@ Meal icons if present.
 
 Current Mastery EXP/hr, upgrade comparison and EXP rate breakdown.
 
+Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -57,6 +60,8 @@ Acceptance:
 
 Allocate the daily reset budget across upgrades for the selected goal.
 
+Depends on: CK-01 Mastery EXP and upgrade comparison
+
 Acceptance:
 
 - Allocation respects the budget.
@@ -66,6 +71,8 @@ Acceptance:
 ### CK-03 — Yellow point allocator
 
 Spend yellow points across characters/meals with a goal selector.
+
+Depends on: CK-01 Mastery EXP and upgrade comparison
 
 Acceptance:
 

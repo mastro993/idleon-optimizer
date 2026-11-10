@@ -6,6 +6,7 @@
 - Section key: `drop-rate`
 - Group: `tools`
 - Status: `planned`
+- Depends on: `foundation`, `stats-all`
 
 Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.
 
@@ -42,6 +43,8 @@ None.
 
 Character/map selectors, dungeon runtime/luck/DR fields and the total drop-rate card.
 
+Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and responsive rules, SA-01 Calculation context
+
 Acceptance:
 
 - Total matches upstream.
@@ -51,6 +54,8 @@ Acceptance:
 ### DR-02 — Drop-rate formula tree
 
 Expandable breakdown of every drop-rate term.
+
+Depends on: DR-01 Drop-rate inputs and total, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

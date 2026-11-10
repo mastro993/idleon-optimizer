@@ -6,6 +6,7 @@
 - Section key: `shadow`
 - Group: `general`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].
 
@@ -36,6 +37,8 @@ None.
 ### SH-01 — Shadow-ban verdict
 
 Show YES for nonzero, NO for zero and UNKNOWN before a valid save or when the flag is missing.
+
+Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 

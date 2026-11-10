@@ -6,6 +6,7 @@
 - Section key: `clamworks`
 - Group: `w7`
 - Status: `planned`
+- Depends on: `foundation`, `combat-sim`
 
 Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.
 
@@ -50,6 +51,8 @@ Clamworks icons if present.
 
 Summary, pearl value breakdown, all upgrades and upgrade priority.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Values match upstream.
@@ -59,6 +62,8 @@ Acceptance:
 ### CW-02 — AFK claim and compare
 
 AFK claim calculator with character, multikill and compare panel.
+
+Depends on: CW-01 Overview and upgrades
 
 Acceptance:
 
@@ -70,6 +75,8 @@ Acceptance:
 
 Upgrade optimizer plus promotion tracker and worker class rewards.
 
+Depends on: CW-01 Overview and upgrades, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Optimizer respects costs.
@@ -79,6 +86,8 @@ Acceptance:
 ### CW-04 — Scurge combat
 
 Scurge combat and upgrade panels.
+
+Depends on: CW-01 Overview and upgrades, CS-03 Encounter simulator
 
 Acceptance:
 

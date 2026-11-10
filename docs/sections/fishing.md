@@ -6,6 +6,7 @@
 - Section key: `fishing`
 - Group: `w2`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.
 
@@ -48,6 +49,8 @@ Fishing icons if present.
 
 Catch rate, fish distribution and real-versus-panel EXP per pool.
 
+Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -58,6 +61,8 @@ Acceptance:
 
 Rank every lure/line combination for the selected pool and depth.
 
+Depends on: FI-01 AFK catches and fish split
+
 Acceptance:
 
 - All 225 combinations are evaluated.
@@ -67,6 +72,8 @@ Acceptance:
 ### FI-03 — Depth projection and other characters
 
 Project fishing depth and show other characters fishing the Trench.
+
+Depends on: FI-01 AFK catches and fish split
 
 Acceptance:
 

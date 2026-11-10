@@ -6,6 +6,7 @@
 - Section key: `farming`
 - Group: `w6`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.
 
@@ -54,6 +55,8 @@ Crop icons if present.
 
 Full 9x4 field, per-plot detail and crop selection.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Every plot renders.
@@ -63,6 +66,8 @@ Acceptance:
 ### FM-02 — Plot assignment and Land Rank
 
 Assign crops to plots and allocate Land Rank for the selected objective.
+
+Depends on: FM-01 Field and plot detail, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 
@@ -74,6 +79,8 @@ Acceptance:
 
 Preset objectives, recommended allocation and preset comparison.
 
+Depends on: FM-02 Plot assignment and Land Rank
+
 Acceptance:
 
 - Every upstream preset exists.
@@ -84,6 +91,8 @@ Acceptance:
 
 Evolution chain to a target crop, hardest remaining steps and overgrowth stopping.
 
+Depends on: FM-02 Plot assignment and Land Rank
+
 Acceptance:
 
 - Chain is complete.
@@ -93,6 +102,8 @@ Acceptance:
 ### FM-05 — Signals, thresholds and curves
 
 Priority signals, account multipliers, GMO thresholds, Crop Scientist bonuses, growth breakpoints and all-plot curves.
+
+Depends on: FM-01 Field and plot detail, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

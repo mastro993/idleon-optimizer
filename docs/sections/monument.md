@@ -6,6 +6,7 @@
 - Section key: `monument`
 - Group: `w5`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.
 
@@ -46,6 +47,8 @@ Monument icons if present.
 
 Bravery stats, wave, boosts, rerolls, HP, odds, milestones and bonuses.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Values match upstream.
@@ -55,6 +58,8 @@ Acceptance:
 ### MN-02 — Justice calculator and advisor
 
 Justice stats, reset/undo, effects editor, search, case and response advisor.
+
+Depends on: MN-01 Bravery calculator
 
 Acceptance:
 
@@ -66,6 +71,8 @@ Acceptance:
 
 Wisdom stats and training/reward-charge effects.
 
+Depends on: MN-01 Bravery calculator
+
 Acceptance:
 
 - Values match upstream.
@@ -75,6 +82,8 @@ Acceptance:
 ### MN-04 — Permanent rewards and bonus sources
 
 Permanent summary, next-run charge and training/reward-charge source list.
+
+Depends on: MN-03 Wisdom calculator, FND-11 Shared formula tree and breakdown component
 
 Acceptance:
 

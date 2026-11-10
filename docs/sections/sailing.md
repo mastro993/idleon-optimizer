@@ -6,6 +6,7 @@
 - Section key: `sailing`
 - Group: `w5`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.
 
@@ -49,6 +50,8 @@ Sailing icons if present.
 
 Current versus optimized fleet assignment across routes.
 
+Depends on: FND-03 Shared save JSON import
+
 Acceptance:
 
 - Optimized assignment beats current.
@@ -58,6 +61,8 @@ Acceptance:
 ### SL-02 — Ships, captains and replacements
 
 Ship upgrade breakpoints, captain quality/leveling and strongest-source replacement matrix.
+
+Depends on: SL-01 Fleet assignment
 
 Acceptance:
 
@@ -69,6 +74,8 @@ Acceptance:
 
 Chest outcomes, per-boat tier chances, near-full pile and selected island artifacts.
 
+Depends on: SL-01 Fleet assignment
+
 Acceptance:
 
 - Chances sum to one.
@@ -78,6 +85,8 @@ Acceptance:
 ### SL-04 — Fleet pile simulation
 
 Simulate the fleet pile with progress and results.
+
+Depends on: SL-03 Chest, artifact and loot outcomes, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 

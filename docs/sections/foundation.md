@@ -6,6 +6,7 @@
 - Section key: `foundation`
 - Group: `core`
 - Status: `in-progress`
+- Depends on: nothing
 
 Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the upstream asset pipeline and the per-section verification harness.
 
@@ -48,6 +49,8 @@ assets/upstream is generated from a local upstream checkout; nothing is committe
 
 Landing dashboard with a searchable, grouped card grid mirroring upstream index.html: icon, title, world badge, description and stable card ids.
 
+Depends on: None; this is an entry point.
+
 Acceptance:
 
 - All 25 upstream dashboard cards are present and grouped exactly like index.html.
@@ -57,6 +60,8 @@ Acceptance:
 ### FND-02 — Section registry and routing
 
 A single registry declares every section: id, title, group, icon, spec link, status and factory. The shell routes to a section, keeps per-section state alive and restores the last opened section.
+
+Depends on: FND-01 Dashboard card grid
 
 Acceptance:
 
@@ -68,6 +73,8 @@ Acceptance:
 
 One import path for raw decoded saves used by every section, replacing the research-only paste panel. Supports file, paste and drag-and-drop.
 
+Depends on: FND-02 Section registry and routing
+
 Acceptance:
 
 - Raw it.json, save.json and the existing fixture import with the same values as today.
@@ -77,6 +84,8 @@ Acceptance:
 ### FND-04 — Project and section JSON import/export
 
 Export the whole app state as versioned JSON and import it back. Also accept the upstream ROv2 state string and per-section config JSON.
+
+Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
@@ -88,6 +97,8 @@ Acceptance:
 
 A single import pipeline: detect format, parse, migrate to the current schema, show a preview, apply atomically, and keep a warning list.
 
+Depends on: FND-03 Shared save JSON import, FND-04 Project and section JSON import/export
+
 Acceptance:
 
 - Malformed JSON, wrong format and unsupported versions each get a specific message.
@@ -97,6 +108,8 @@ Acceptance:
 ### FND-06 — Upstream asset pipeline
 
 Script that copies the upstream assets tree from a local checkout into gitignored assets/upstream, writes a manifest and verifies referenced files. Requires explicit permission before any asset is committed or distributed.
+
+Depends on: FND-02 Section registry and routing
 
 Acceptance:
 
@@ -108,6 +121,8 @@ Acceptance:
 
 Persist the active section, imported save metadata and section configs across launches in a local app-data file.
 
+Depends on: FND-04 Project and section JSON import/export
+
 Acceptance:
 
 - Relaunch restores the last section and imported state.
@@ -117,6 +132,8 @@ Acceptance:
 ### FND-08 — Shared layout, theme and responsive rules
 
 Ely-based shell, cards, tabs, tables and form controls shared by all sections; dark palette and spacing match upstream.
+
+Depends on: FND-01 Dashboard card grid
 
 Acceptance:
 
@@ -128,6 +145,8 @@ Acceptance:
 
 Consistent states for no save, partial save, missing data, long-running work, cancelled work and stale results.
 
+Depends on: FND-08 Shared layout, theme and responsive rules
+
 Acceptance:
 
 - Every section renders a helpful no-save state.
@@ -138,11 +157,37 @@ Acceptance:
 
 Extend the gpui-mcp harness so each section has a smoke path, stable ids and a screenshot baseline.
 
+Depends on: FND-02 Section registry and routing, FND-08 Shared layout, theme and responsive rules
+
 Acceptance:
 
 - script/mcp-sections.mjs opens every dashboard card and asserts its root node.
 - Each section has at least one interaction check and one screenshot.
 - Lane isolation still works when sections run in parallel.
+
+### FND-11 — Shared formula tree and breakdown component
+
+One expandable formula-tree/breakdown component used by every calculator: nodes show label, input, multiplier, source and result, with search and copy.
+
+Depends on: FND-08 Shared layout, theme and responsive rules
+
+Acceptance:
+
+- Every breakdown section renders through the shared component.
+- Search highlights matching nodes.
+- Node values and sums match the section totals.
+
+### FND-12 — Background task runner with progress and cancel
+
+Shared runner for simulations and optimizers: off-thread work, progress reporting, cancellation and a stale-result marker.
+
+Depends on: FND-09 Empty, loading, error and stale states
+
+Acceptance:
+
+- Long tasks never block the UI thread.
+- Cancel restores the previous result.
+- Results are marked stale when their inputs change.
 
 ## Verification
 

@@ -6,6 +6,7 @@
 - Section key: `opal`
 - Group: `w5`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.
 
@@ -45,6 +46,8 @@ Villager icons if present.
 
 Villager EXP rates, current opal state and formula breakdown.
 
+Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Values match upstream.
@@ -55,6 +58,8 @@ Acceptance:
 
 Optimize opal distribution for the selected target and total.
 
+Depends on: OP-01 Villagers and current state, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Distribution respects totals.
@@ -64,6 +69,8 @@ Acceptance:
 ### OP-03 — Manual opal simulator
 
 Manual distribution inputs with simulated results.
+
+Depends on: OP-02 Opal optimizer
 
 Acceptance:
 

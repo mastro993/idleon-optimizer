@@ -6,6 +6,7 @@
 - Section key: `cog`
 - Group: `w3`
 - Status: `planned`
+- Depends on: `foundation`
 
 Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.
 
@@ -47,6 +48,8 @@ Cog icons if present.
 
 Optimize cog placement for build, construction EXP and Flaggy rate objectives.
 
+Depends on: FND-03 Shared save JSON import, FND-12 Background task runner with progress and cancel
+
 Acceptance:
 
 - Optimizer respects board rules.
@@ -56,6 +59,8 @@ Acceptance:
 ### CG-02 — Weighted objectives and perfect board
 
 Weighted objective inputs plus perfect-board and reset actions.
+
+Depends on: CG-01 Cog board optimizer
 
 Acceptance:
 
@@ -67,6 +72,8 @@ Acceptance:
 
 Board insights, shelf contents, roll ranges and what to roll for.
 
+Depends on: CG-01 Cog board optimizer, FND-11 Shared formula tree and breakdown component
+
 Acceptance:
 
 - Insights match the optimizer.
@@ -76,6 +83,8 @@ Acceptance:
 ### CG-04 — Swap walkthrough
 
 Step-by-step swap list with previous/next/done controls.
+
+Depends on: CG-01 Cog board optimizer
 
 Acceptance:
 
