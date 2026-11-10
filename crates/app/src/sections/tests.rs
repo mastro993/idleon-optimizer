@@ -111,6 +111,26 @@ fn only_implemented_sections_skip_the_placeholder() {
 }
 
 #[test]
+fn the_manifest_lists_every_section_for_the_harness() {
+    let manifest: serde_json::Value = serde_json::from_str(&manifest()).expect("manifest JSON");
+    let entries = manifest.as_array().expect("manifest array");
+    assert_eq!(entries.len(), SECTIONS.len());
+    assert_eq!(
+        entries
+            .iter()
+            .filter(|entry| entry["dashboard"].as_bool() == Some(true))
+            .count(),
+        card_count()
+    );
+    for (entry, section) in entries.iter().zip(&SECTIONS) {
+        assert_eq!(entry["id"], section.id);
+        assert_eq!(entry["title"], section.title);
+        assert_eq!(entry["group"], section.group.id());
+        assert_eq!(entry["status"], section.status.label());
+    }
+}
+
+#[test]
 fn search_reads_title_description_and_world() {
     let research = find("research").expect("research card");
     assert!(research.matches("research"));

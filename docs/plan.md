@@ -249,7 +249,8 @@ Details: [`docs/sections/research.md`](sections/research.md).
 - **Import parity:** raw save, ROv2 string, project JSON and section config round-trip; malformed
   input leaves state untouched.
 - **Gates:** `cargo test`, `cargo clippy --workspace --all-targets -- -D warnings`,
-  `cargo fmt --all -- --check`, `node script/roadmap.mjs`, `node script/mcp-drive.mjs`.
+  `cargo fmt --all -- --check`, `node script/roadmap.mjs`, `node script/mcp-drive.mjs`,
+  `node script/mcp-sections.mjs`.
 
 ## 11. Milestones and progress tracking
 
