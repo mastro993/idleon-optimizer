@@ -1,20 +1,23 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::assets::Manifest;
+use crate::sections::endgame;
+use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
+use crate::task::{TaskEvent, TaskRunner, TaskState};
 use crate::ui;
 use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
+use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::model::{
-    Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
-    SimContext, Simulation, Target,
+    Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
+    Target,
 };
+use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
+use idleon_core::save::Shadow;
 use idleon_core::{game, optimize, save, shape, sim};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -96,42 +99,24 @@ struct RunInputs {
     effort: Effort,
 }
 
-impl RunInputs {
-    /// Whether these inputs still match the simulation the window shows.
-    fn matches(
-        &self,
-        simulation: &Simulation,
-        context: &SimContext,
-        target: Target,
-        effort: Effort,
-    ) -> bool {
-        self.simulation == *simulation
-            && self.context == *context
-            && self.target == target
-            && self.effort == effort
-    }
-}
-
-/// What a background run reports: its latest line and whether it has finished.
-struct RunProgress {
-    progress: Progress,
-    done: bool,
-}
-
 /// Everything the window renders and mutates.
 pub struct AppState {
     pub simulation: Simulation,
     pub context: SimContext,
-    pub result: Option<OptimizeResult>,
-    pub running: bool,
     pub effort: Effort,
     pub target: Target,
+    /// Upstream artwork resolved through `assets/upstream/manifest.json`.
+    pub assets: Manifest,
     /// Where the window is: the dashboard or one section.
     pub route: Route,
     /// The last section opened; the dashboard offers to resume it.
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The endgame section's audit of the last applied save.
+    pub endgame: endgame::State,
+    /// The BoneJoePickle section's inputs, kept alive the same way.
+    pub pickle: PickleState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -143,21 +128,18 @@ pub struct AppState {
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
-    /// The latest progress line while a run is in flight.
-    pub run_progress: Option<Progress>,
-    /// Whether the last run was cancelled; cleared by the next run or result action.
-    pub run_cancelled: bool,
-    /// The inputs the stored result came from; `None` when there is no result.
-    result_inputs: Option<RunInputs>,
-    /// Set to stop the background run at its next progress report.
-    cancel: Option<Arc<AtomicBool>>,
+    /// The shared background runner for the research optimizer.
+    optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shared EXP formula tree on the research Rates pane.
+    pub breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
+    pub shadow: Shadow,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
-    run_task: Option<Task<()>>,
-    progress_task: Option<Task<()>>,
     _search_subscription: Subscription,
     _import_subscription: Subscription,
+    _optimizer_subscription: Subscription,
 }
 
 impl AppState {
@@ -209,34 +191,62 @@ impl AppState {
                     state.check_paste(cx);
                 }
             });
+        // The runner owns the off-thread work; the window only mirrors its status
+        // line, so every section's run reports the same way in the status bar.
+        let optimizer = cx.new(|_| TaskRunner::<OptimizeResult, RunInputs>::new());
+        let optimizer_subscription =
+            cx.subscribe(&optimizer, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Optimizing… {:.0}%", progress.fraction * 100.0);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Run cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Run cancelled; nothing was applied.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "{} steps in {} ms.",
+                                result.steps.len(),
+                                result.elapsed_ms
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let mut state = Self {
             simulation,
             context: SimContext::default(),
-            result: None,
-            running: false,
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            endgame: endgame::State::default(),
+            pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             import,
             save_partial: false,
             save_loaded: false,
-            run_progress: None,
-            run_cancelled: false,
-            result_inputs: None,
-            cancel: None,
+            optimizer,
+            breakdown,
+            shadow: Shadow::default(),
             focus,
             bridge,
-            run_task: None,
-            progress_task: None,
             _search_subscription: search_subscription,
             _import_subscription: import_subscription,
+            _optimizer_subscription: optimizer_subscription,
         };
         if let Some(id) = section {
             state.open_section(&id, window, cx);
@@ -301,11 +311,24 @@ impl AppState {
         )
     }
 
-    /// Whether the stored result no longer matches the visible simulation.
-    pub fn result_stale(&self) -> bool {
-        self.result_inputs.as_ref().is_some_and(|inputs| {
-            !inputs.matches(&self.simulation, &self.context, self.target, self.effort)
-        })
+    /// The optimizer run: running, progress, result and staleness.
+    pub fn optimize_state(&self, cx: &App) -> TaskState<OptimizeResult> {
+        self.optimizer.read(cx).state(&self.run_inputs())
+    }
+
+    /// Whether the research optimizer has a run in flight.
+    pub fn optimize_running(&self, cx: &App) -> bool {
+        self.optimizer.read(cx).running()
+    }
+
+    /// The inputs a run started now would use.
+    fn run_inputs(&self) -> RunInputs {
+        RunInputs {
+            simulation: self.simulation.clone(),
+            context: self.context.clone(),
+            target: self.target,
+            effort: self.effort,
+        }
     }
 
     /// Open the shared import dialog, where every section's header import goes.
@@ -367,11 +390,13 @@ impl AppState {
             return;
         };
         let message = import::applied(&imported);
+        self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.research.selected_cell = None;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
+        self.shadow = imported.shadow;
         self.import.ok = true;
         self.import.message = message.clone();
         self.status = message;
@@ -533,6 +558,26 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    /// The damage per second the pickle table solves for.
+    pub fn set_pickle_dps(&mut self, dps: f64, cx: &mut Context<Self>) {
+        self.pickle.dps = if dps.is_finite() {
+            dps.clamp(0.0, MAX_DPS)
+        } else {
+            0.0
+        };
+        cx.notify();
+    }
+
+    /// The kill-time budget the pickle table solves inside.
+    pub fn set_pickle_ttk(&mut self, seconds: f64, cx: &mut Context<Self>) {
+        self.pickle.max_ttk = if seconds.is_finite() {
+            seconds.clamp(MIN_TTK, MAX_TTK)
+        } else {
+            DEFAULT_TTK
+        };
         cx.notify();
     }
 
@@ -732,7 +777,7 @@ impl AppState {
         self.context_changed(cx);
     }
 
-    /// Put every supplement back to its default and drop the stale result.
+    /// Put every supplement back to its default; the stored result turns stale.
     pub fn reset_supplements(&mut self, cx: &mut Context<Self>) {
         self.context = SimContext::default();
         self.status = "Supplements reset to their defaults.".into();
@@ -740,7 +785,7 @@ impl AppState {
     }
 
     fn context_changed(&mut self, cx: &mut Context<Self>) {
-        // The stored result stays visible and `result_stale` marks it: a change
+        // The stored result stays visible and the runner marks it stale: a change
         // to the inputs must not silently throw away what the last run found.
         cx.notify();
     }
@@ -753,162 +798,45 @@ impl AppState {
     }
 
     pub fn apply_result(&mut self, cx: &mut Context<Self>) {
-        if let Some(result) = self.result.take() {
+        if let Some(result) = self.optimizer.update(cx, |runner, _| runner.take_result()) {
             let gain = result.gain_pct();
             self.simulation = result.after;
             self.status = format!("Applied the optimized layout ({gain:+.1}%).");
         }
-        self.result_inputs = None;
-        self.run_cancelled = false;
         cx.notify();
     }
 
     pub fn dismiss_result(&mut self, cx: &mut Context<Self>) {
-        self.result = None;
-        self.result_inputs = None;
-        self.run_cancelled = false;
+        self.optimizer.update(cx, |runner, _| runner.clear());
         cx.notify();
     }
 
     /// Stop the run in flight at its next progress report; the previous result stays.
     pub fn cancel_optimize(&mut self, cx: &mut Context<Self>) {
-        if !self.running {
-            return;
+        if self.optimizer.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the run…".into();
+            cx.notify();
         }
-        if let Some(cancel) = &self.cancel {
-            cancel.store(true, Ordering::Relaxed);
-        }
-        if let Some(progress) = &mut self.run_progress {
-            progress.message = "Cancelling…".into();
-        }
-        self.status = "Cancelling the run…".into();
-        cx.notify();
     }
 
-    /// Run the optimizers off the UI thread, reporting progress and honouring cancel.
+    /// Run the optimizers off the UI thread through the shared task runner.
     pub fn optimize(&mut self, cx: &mut Context<Self>) {
-        if self.running {
-            return;
-        }
-        self.running = true;
-        self.run_cancelled = false;
-        let starting = Progress {
-            fraction: 0.0,
-            message: "Starting…".into(),
-        };
-        self.run_progress = Some(starting.clone());
-        self.status = "Optimizing…".into();
-        let inputs = RunInputs {
-            simulation: self.simulation.clone(),
-            context: self.context.clone(),
-            target: self.target,
-            effort: self.effort,
-        };
+        let inputs = self.run_inputs();
         let request = OptimizeRequest {
             target: inputs.target,
             effort: inputs.effort,
             respec_grid: matches!(inputs.effort, Effort::Thorough),
             grid_points: None,
         };
-        let simulation = inputs.simulation.clone();
-        let context = inputs.context.clone();
-        let cancel = Arc::new(AtomicBool::new(false));
-        self.cancel = Some(cancel.clone());
-        let shared = Arc::new(Mutex::new(RunProgress {
-            progress: starting,
-            done: false,
-        }));
-        cx.notify();
-
-        // The run reports from a background thread, so a foreground pump copies
-        // its latest line into the entity while the work is in flight.
-        let pump_shared = shared.clone();
-        self.progress_task = Some(cx.spawn(async move |this, cx| {
-            loop {
-                let (progress, done) = {
-                    let shared = pump_shared.lock().expect("run progress");
-                    (shared.progress.clone(), shared.done)
-                };
-                let percent = progress.fraction * 100.0;
-                this.update(cx, |state, cx| {
-                    if state.running {
-                        state.run_progress = Some(progress);
-                        state.status = format!("Optimizing… {percent:.0}%");
-                        cx.notify();
-                    }
-                })
-                .ok();
-                if done {
-                    break;
-                }
-                cx.background_executor()
-                    .timer(Duration::from_millis(40))
-                    .await;
-            }
-        }));
-
-        self.run_task = Some(cx.spawn(async move |this, cx| {
-            let report_shared = shared.clone();
-            let outcome = cx
-                .background_executor()
-                .spawn(async move {
-                    let result = optimize::run(&simulation, &context, &request, &mut |progress| {
-                        if cancel.load(Ordering::Relaxed) {
-                            return Control::Stop;
-                        }
-                        report_shared.lock().expect("run progress").progress = progress;
-                        Control::Continue
-                    });
-                    report_shared.lock().expect("run progress").done = true;
-                    result
-                })
-                .await;
-            this.update(cx, |state, cx| state.finish_run(outcome, inputs, cx))
-                .ok();
-        }));
-    }
-
-    /// Store a finished run, or keep the previous result when it was cancelled.
-    fn finish_run(
-        &mut self,
-        outcome: Option<OptimizeResult>,
-        inputs: RunInputs,
-        cx: &mut Context<Self>,
-    ) {
-        self.running = false;
-        self.run_progress = None;
-        self.cancel = None;
-        if settle_run(&mut self.result, &mut self.result_inputs, outcome, inputs) {
-            self.run_cancelled = true;
-            self.status = if self.result.is_some() {
-                "Run cancelled; the previous result is unchanged.".into()
-            } else {
-                "Run cancelled; nothing was applied.".into()
-            };
-        } else if let Some(result) = &self.result {
-            self.status = format!("{} steps in {} ms.", result.steps.len(), result.elapsed_ms);
+        let started = self.optimizer.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                optimize::run(&inputs.simulation, &inputs.context, &request, report)
+            })
+        });
+        if started {
+            self.status = "Optimizing…".into();
+            cx.notify();
         }
-        cx.notify();
-    }
-}
-
-/// Apply a finished run to the stored result; `true` when it was cancelled.
-///
-/// A cancelled run stores nothing, so the result the window already shows stays
-/// exactly as it was.
-fn settle_run(
-    result: &mut Option<OptimizeResult>,
-    result_inputs: &mut Option<RunInputs>,
-    outcome: Option<OptimizeResult>,
-    inputs: RunInputs,
-) -> bool {
-    match outcome {
-        Some(outcome) => {
-            *result = Some(outcome);
-            *result_inputs = Some(inputs);
-            false
-        }
-        None => true,
     }
 }
 
@@ -979,110 +907,5 @@ mod tests {
         assert_eq!(SaveStatus::of(true, true, true), SaveStatus::Partial);
         assert_eq!(SaveStatus::Loaded.label(), "Save imported");
         assert_eq!(SaveStatus::Partial.label(), "Save imported with warnings");
-    }
-
-    #[test]
-    fn stored_result_inputs_match_only_the_simulation_they_ran_on() {
-        let inputs = RunInputs {
-            simulation: Simulation::default(),
-            context: SimContext::default(),
-            target: Target::Hours(24.0),
-            effort: Effort::Balanced,
-        };
-        assert!(inputs.matches(
-            &Simulation::default(),
-            &SimContext::default(),
-            Target::Hours(24.0),
-            Effort::Balanced,
-        ));
-        let changed = Simulation {
-            research_level: 2,
-            ..Simulation::default()
-        };
-        assert!(!inputs.matches(
-            &changed,
-            &SimContext::default(),
-            Target::Hours(24.0),
-            Effort::Balanced,
-        ));
-        let context = SimContext {
-            extra_shapes: 1,
-            ..SimContext::default()
-        };
-        assert!(!inputs.matches(
-            &Simulation::default(),
-            &context,
-            Target::Hours(24.0),
-            Effort::Balanced,
-        ));
-        assert!(!inputs.matches(
-            &Simulation::default(),
-            &SimContext::default(),
-            Target::Level(120),
-            Effort::Balanced,
-        ));
-        assert!(!inputs.matches(
-            &Simulation::default(),
-            &SimContext::default(),
-            Target::Hours(24.0),
-            Effort::Thorough,
-        ));
-    }
-
-    fn dummy_result() -> OptimizeResult {
-        OptimizeResult {
-            before: Simulation::default(),
-            after: Simulation::default(),
-            before_rate: 10.0,
-            after_rate: 12.0,
-            projection: Default::default(),
-            steps: vec!["Ran.".into()],
-            elapsed_ms: 3,
-        }
-    }
-
-    #[test]
-    fn a_cancelled_run_keeps_the_previous_result() {
-        let inputs = RunInputs {
-            simulation: Simulation::default(),
-            context: SimContext::default(),
-            target: Target::Hours(24.0),
-            effort: Effort::Balanced,
-        };
-        let previous = dummy_result();
-        let mut result = Some(previous.clone());
-        let mut result_inputs = Some(inputs.clone());
-        assert!(settle_run(
-            &mut result,
-            &mut result_inputs,
-            None,
-            inputs.clone()
-        ));
-        assert_eq!(
-            result.as_ref().map(|result| result.after_rate),
-            Some(previous.after_rate),
-            "cancelling replaced the result the window was showing"
-        );
-        assert_eq!(result_inputs, Some(inputs));
-    }
-
-    #[test]
-    fn a_finished_run_replaces_the_result_and_its_inputs() {
-        let inputs = RunInputs {
-            simulation: Simulation::default(),
-            context: SimContext::default(),
-            target: Target::Hours(24.0),
-            effort: Effort::Balanced,
-        };
-        let mut result = Some(dummy_result());
-        let mut result_inputs = None;
-        assert!(!settle_run(
-            &mut result,
-            &mut result_inputs,
-            Some(dummy_result()),
-            inputs.clone()
-        ));
-        assert_eq!(result.as_ref().map(|result| result.after_rate), Some(12.0));
-        assert_eq!(result_inputs, Some(inputs));
     }
 }

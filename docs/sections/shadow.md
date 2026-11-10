@@ -5,7 +5,7 @@
 - Milestone: `M7`
 - Section key: `shadow`
 - Group: `general`
-- Status: `planned`
+- Status: `done`
 - Depends on: `foundation`
 
 Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].

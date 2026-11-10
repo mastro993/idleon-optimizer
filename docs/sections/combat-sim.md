@@ -42,7 +42,7 @@ Port the active combat simulator: loadout editor, mechanics overrides, component
 
 ## Assets
 
-assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB, local-only until licensed.
+assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB of committed artwork.
 
 ## Feature issues
 

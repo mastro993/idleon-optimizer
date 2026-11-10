@@ -41,7 +41,7 @@ Turn the research-only window into a sectioned desktop suite: a dashboard that o
 
 ## Assets
 
-assets/upstream is generated from a local upstream checkout; nothing is committed until permission is confirmed.
+assets/upstream is imported from the upstream checkout into the repository; the manifest records the upstream commit and per-file hashes.
 
 ## Feature issues
 
@@ -107,14 +107,14 @@ Acceptance:
 
 ### FND-06 — Upstream asset pipeline
 
-Script that copies the upstream assets tree from a local checkout into gitignored assets/upstream, writes a manifest and verifies referenced files. Requires explicit permission before any asset is committed or distributed.
+Script that copies the upstream assets tree from a local checkout into committed assets/upstream, writes a manifest and verifies referenced files. The images are game assets, free to use, not upstream-authored work; the credit lives in assets/upstream/README.md.
 
 Depends on: FND-02 Section registry and routing
 
 Acceptance:
 
 - script/import-upstream-assets.mjs --from <checkout> --dry-run lists every file and total size.
-- Applying writes assets/upstream plus manifest with hashes; the app resolves images through the manifest.
+- Applying writes assets/upstream plus a manifest with per-file hashes and the upstream commit; the app resolves images through the manifest.
 - Missing assets render a labelled placeholder, never a broken layout.
 
 ### FND-07 — Session persistence and recent imports

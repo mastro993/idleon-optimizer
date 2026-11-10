@@ -3,12 +3,12 @@
 use crate::state::AppState;
 use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
+use crate::ui::task;
 use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::motion::ProgressBar;
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
@@ -112,7 +112,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
         });
 
     let run_entity = entity.clone();
-    let running = state.running;
+    let running = state.optimize_running(cx);
     let run = Button::new(
         "run-optimize",
         if running { "Optimizing…" } else { "Optimize" },
@@ -163,10 +163,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
 }
 
 fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let stale = state.result_stale();
-    let running = state.running;
-    let progress = state.run_progress.clone();
-    let cancelled = state.run_cancelled;
+    let run = state.optimize_state(cx);
     let mut body = div()
         .id("optimizer-result-body")
         .flex()
@@ -174,24 +171,28 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_3()
         .min_h_0();
 
-    if running {
-        if let Some(progress) = progress {
-            body = body.child(progress_card(progress, cx));
+    if run.running {
+        if let Some(progress) = run.progress.clone() {
+            let cancel = cx.entity();
+            body = body.child(task::progress_card(
+                "run",
+                "Optimizing",
+                "Runs off the UI thread. Cancelling keeps the result this run replaced.",
+                progress,
+                move |_window, cx| {
+                    cancel.update(cx, |state, cx| state.cancel_optimize(cx));
+                },
+            ));
         }
-    } else if cancelled {
-        body = body.child(Banner::new(
+    } else if run.cancelled {
+        body = body.child(task::cancelled_banner(
             "run-cancelled",
-            Severity::Info,
-            if state.result.is_some() {
-                "Run cancelled; the previous result is unchanged."
-            } else {
-                "Run cancelled; nothing was applied."
-            },
+            run.result.is_some(),
         ));
     }
 
-    let Some(result) = state.result.clone() else {
-        if !running {
+    let Some(result) = run.result else {
+        if !run.running {
             body = body.child(
                 Card::new()
                     .header(CardHeader::new("Result"))
@@ -214,6 +215,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     } else {
         Tone::Neutral
     };
+    let stale = run.stale;
     let entity = cx.entity();
     let apply = entity.clone();
     let dismiss = entity.clone();
@@ -232,13 +234,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     let mut trailing = div().flex().items_center().gap_2();
     if stale {
-        trailing = trailing.child(
-            div()
-                .id("result-stale-badge")
-                .role(gpui::Role::Label)
-                .aria_label("Stale: the inputs changed after this run")
-                .child(Badge::new("Stale").tone(Tone::Warning)),
-        );
+        trailing = trailing.child(task::stale_badge("result-stale"));
     }
     trailing = trailing.child(
         div()
@@ -258,11 +254,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .action(trailing),
     );
     if stale {
-        card = card.child(Banner::new(
-            "result-stale",
-            Severity::Warning,
-            "The inputs changed after this run; the values below are from the previous inputs. Run again to refresh them.",
-        ));
+        card = card.child(task::stale_banner("result-stale"));
     }
     body.child(
         card.child(
@@ -338,54 +330,6 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         ),
     )
     .into_any_element()
-}
-
-/// The run in flight: its latest line, a progress bar and the cancel action.
-fn progress_card(progress: idleon_core::model::Progress, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let cancel = entity.clone();
-    let fraction = progress.fraction.clamp(0.0, 1.0);
-    let summary = format!("{:.0}% — {}", fraction * 100.0, progress.message);
-    Card::new()
-        .header(
-            CardHeader::new("Optimizing").description(
-                "Runs off the UI thread. Cancelling keeps the result this run replaced.",
-            ),
-        )
-        .child(
-            div()
-                .p_3()
-                .flex()
-                .flex_col()
-                .gap_3()
-                .child(
-                    div()
-                        .id("run-progress")
-                        .role(gpui::Role::Label)
-                        .aria_label(summary)
-                        .flex()
-                        .flex_col()
-                        .gap_1()
-                        .child(ProgressBar::new("run-progress-bar", fraction))
-                        .child(
-                            div()
-                                .flex()
-                                .justify_between()
-                                .gap_2()
-                                .child(Caption::new(progress.message))
-                                .child(Caption::new(format!("{:.0}%", fraction * 100.0))),
-                        ),
-                )
-                .child(
-                    Button::new("run-cancel", "Cancel")
-                        .size(ControlSize::Sm)
-                        .icon(IconName::X)
-                        .on_click(move |_event, _window, cx| {
-                            cancel.update(cx, |state, cx| state.cancel_optimize(cx));
-                        }),
-                ),
-        )
-        .into_any_element()
 }
 
 /// Rate at `hours`, interpolated between the projection's samples.

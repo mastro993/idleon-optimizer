@@ -10,7 +10,7 @@
 //! star talent slot, which needs the talent system; it is warned about and
 //! shifts the rate by 2e-5 relative, inside the documented tolerance.
 
-use idleon_core::save::import;
+use idleon_core::save::{ShadowVerdict, import};
 use idleon_core::sim;
 
 fn fixture() -> String {
@@ -94,6 +94,8 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(sim::shapes_owned(simulation.research_level, context), 8);
     assert_eq!(sim::magnifiers_owned(simulation, context), 17);
     assert_eq!(sim::grid_points(simulation, context).earned, 176);
+    // `OptLacc[26]` is zero in the fixture, so the upstream page answers NO.
+    assert_eq!(imported.shadow.verdict(), ShadowVerdict::No);
 
     // The additive tree, in upstream order.
     for (name, value) in [
