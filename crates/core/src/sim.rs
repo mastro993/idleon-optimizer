@@ -139,7 +139,7 @@ pub fn kaleidoscope_map(mags: &[Mag], slots: usize) -> Vec<u32> {
         }
         let Some(slot) = mag.slot else { continue };
         let col = slot % 8;
-        if col != 7 {
+        if col != 7 && slot + 1 < map.len() {
             map[slot + 1] += 1;
         }
         if col != 0 {
@@ -148,7 +148,9 @@ pub fn kaleidoscope_map(mags: &[Mag], slots: usize) -> Vec<u32> {
         if slot > 7 {
             map[slot - 8] += 1;
         }
-        if slot < 72 {
+        // The last row of the observation grid has no slot below it; the map is
+        // only as wide as the observations this app models.
+        if slot + 8 < map.len() {
             map[slot + 8] += 1;
         }
     }
@@ -576,6 +578,19 @@ mod tests {
     }
 
     #[test]
+    fn a_kaleidoscope_on_the_last_row_has_no_southern_neighbour() {
+        let last = game().observations.len() - 1;
+        let map = kaleidoscope_map(&[Mag::new(MagKind::Kaleidoscope, Some(last))], last + 1);
+        assert_eq!(map.len(), last + 1);
+        assert_eq!(map[last], 0, "the bottom row must not boost itself");
+        assert_eq!(map[last - 1], 1, "its left neighbour is boosted");
+        assert_eq!(map[last - 8], 1, "its northern neighbour is boosted");
+        // A slot one past the data must also be safe.
+        let wide = kaleidoscope_map(&[Mag::new(MagKind::Kaleidoscope, Some(41))], 43);
+        assert_eq!(wide[41], 0);
+    }
+
+    #[test]
     fn magnifier_caps_follow_the_level_gates() {
         assert_eq!(mag_cap(1), 1);
         assert_eq!(mag_cap(40), 2);
@@ -627,6 +642,17 @@ mod tests {
         assert_eq!(projection.final_level, 62);
         assert!(projection.hours > 0.0);
         assert!(projection.samples.len() >= 2);
+    }
+
+    #[test]
+    fn projection_to_a_far_level_terminates_with_an_honest_hour_count() {
+        let (mut sim, ctx) = filled();
+        sim.research_level = 150;
+        sim.mags = vec![Mag::new(MagKind::Regular, Some(3))];
+        let projection = project(&sim, &ctx, Target::Level(151));
+        assert_eq!(projection.final_level, 151);
+        assert!(projection.hours > 1e6, "hours {}", projection.hours);
+        assert!(projection.samples.len() < 64, "samples {}", projection.samples.len());
     }
 
     #[test]

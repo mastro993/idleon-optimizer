@@ -29,9 +29,9 @@ pub fn count(value: u64) -> String {
     out
 }
 
-/// Hours as `3d 4h`, or minutes when short.
+/// Hours as `3d 4h`, or minutes when short; absurd projections read as a dash.
 pub fn hours(value: f64) -> String {
-    if !value.is_finite() {
+    if !value.is_finite() || value > 1_000_000.0 {
         return "—".into();
     }
     if value >= 24.0 {
@@ -75,3 +75,15 @@ pub fn shape_color(shape: usize) -> Hsla {
     rgb(value).into()
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn absurd_hours_read_as_a_dash() {
+        assert_eq!(hours(f64::INFINITY), "—");
+        assert_eq!(hours(1.1e19), "—");
+        assert_eq!(hours(26.0), "1d 2h");
+    }
+}

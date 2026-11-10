@@ -12,9 +12,12 @@ use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{
+    Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px,
+};
 use idleon_core::game;
 use idleon_core::model::{Effort, Target};
+use idleon_core::sim::Sample;
 
 pub fn optimizer_pane(
     state: &mut AppState,
@@ -259,6 +262,10 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                             ),
                         ),
                 )
+                .child(projection_chart(
+                    &result.projection.samples,
+                    (colors.accent, colors.fg_muted, colors.border, colors.sunken),
+                ))
                 .child(div().h(px(1.0)).bg(colors.border))
                 .child(
                     ScrollArea::new("steps-scroll").child(
@@ -274,6 +281,121 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
         .into_any_element()
 }
 
+/// Rate at `hours`, interpolated between the projection's samples.
+fn rate_at(samples: &[Sample], hours: f64) -> f64 {
+    match samples {
+        [] => 0.0,
+        [only] => only.rate,
+        _ => {
+            let mut previous = &samples[0];
+            for sample in &samples[1..] {
+                if sample.hours >= hours {
+                    let span = sample.hours - previous.hours;
+                    if span <= 0.0 {
+                        return sample.rate;
+                    }
+                    let share = (hours - previous.hours) / span;
+                    return previous.rate + (sample.rate - previous.rate) * share;
+                }
+                previous = sample;
+            }
+            previous.rate
+        }
+    }
+}
+
+/// Bar heights for the projection: EXP/hour across the run, slowest at the bottom.
+///
+/// The run is resampled into `bins` even slices, so the chart reads as a timeline
+/// however few level-ups the projection recorded. A flat projection sits level in
+/// the middle instead of collapsing onto an edge.
+fn bar_heights(samples: &[Sample], height: f32, bins: usize) -> Vec<f32> {
+    const FLOOR: f32 = 2.0;
+    if samples.is_empty() {
+        return Vec::new();
+    }
+    let height = height.max(FLOOR + 1.0);
+    let bins = bins.max(2);
+    let last = samples.last().map(|sample| sample.hours).unwrap_or(0.0);
+    let span = if last > 0.0 { last } else { 1.0 };
+    let rates: Vec<f64> = (0..bins)
+        .map(|index| rate_at(samples, span * index as f64 / (bins - 1) as f64))
+        .collect();
+    let slowest = rates.iter().copied().fold(f64::INFINITY, f64::min);
+    let fastest = rates.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let range = fastest - slowest;
+    rates
+        .iter()
+        .map(|rate| {
+            if !range.is_finite() || range <= 0.0 {
+                return height / 2.0;
+            }
+            let share = ((rate - slowest) / range) as f32;
+            FLOOR + share * (height - FLOOR)
+        })
+        .collect()
+}
+
+fn projection_chart(samples: &[Sample], palette: (Hsla, Hsla, Hsla, Hsla)) -> impl IntoElement {
+    const PLOT_HEIGHT: f32 = 96.0;
+    let (accent, muted, border, sunken) = palette;
+    let start = samples.first().copied().unwrap_or_default();
+    let end = samples.last().copied().unwrap_or_default();
+    let described = format!(
+        "Rate over hours: starts at {} EXP/hr, ends at {} EXP/hr after {}",
+        format::rate(start.rate),
+        format::rate(end.rate),
+        format::hours(end.hours)
+    );
+    let heights = bar_heights(samples, PLOT_HEIGHT, 48);
+    let mut bars = div().id("projection-bars").flex().items_end().w_full().h(px(PLOT_HEIGHT));
+    for weight in &heights {
+        bars = bars.child(
+            div()
+                .flex_1()
+                .min_w(px(1.0))
+                .h(px(*weight))
+                .bg(accent.opacity(0.75)),
+        );
+    }
+    div()
+        .id("projection-chart")
+        .role(gpui::Role::Label)
+        .aria_label(described)
+        .flex()
+        .flex_col()
+        .gap_1()
+        .w_full()
+        .child(
+            div()
+                .w_full()
+                .rounded(px(6.0))
+                .border_1()
+                .border_color(border)
+                .bg(sunken)
+                .px(px(3.0))
+                .py(px(3.0))
+                .child(bars),
+        )
+        .child(
+            div()
+                .flex()
+                .justify_between()
+                .text_size(px(11.0))
+                .text_color(muted)
+                .child(format!(
+                    "start {} · {}",
+                    format::hours(start.hours),
+                    format::rate(start.rate)
+                ))
+                .child(format!(
+                    "end {} · {}",
+                    format::hours(end.hours),
+                    format::rate(end.rate)
+                )),
+        )
+}
+
 fn metric(id: &'static str, label: &'static str, value: String) -> impl IntoElement {
     div()
         .id(id)
@@ -284,4 +406,34 @@ fn metric(id: &'static str, label: &'static str, value: String) -> impl IntoElem
         .gap_0p5()
         .child(Caption::new(label))
         .child(div().text_size(px(16.0)).child(value))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bars_grow_with_the_rate_and_keep_a_floor() {
+        let samples = [
+            Sample { hours: 0.0, level: 100, rate: 100.0 },
+            Sample { hours: 5.0, level: 101, rate: 200.0 },
+        ];
+        let heights = bar_heights(&samples, 100.0, 4);
+        assert_eq!(heights.len(), 4);
+        assert_eq!(heights[0], 2.0, "the slowest end sits on the floor");
+        assert_eq!(heights[3], 100.0, "the fastest end fills the plot");
+        assert!(heights.windows(2).all(|pair| pair[0] <= pair[1]), "rising: {heights:?}");
+    }
+
+    #[test]
+    fn bars_cope_with_an_empty_or_flat_projection() {
+        assert!(bar_heights(&[], 100.0, 8).is_empty());
+        let flat = [
+            Sample { hours: 0.0, level: 1, rate: 42.0 },
+            Sample { hours: 24.0, level: 1, rate: 42.0 },
+        ];
+        assert_eq!(bar_heights(&flat, 100.0, 4), vec![50.0; 4]);
+        let single = [Sample { hours: 0.0, level: 1, rate: 7.0 }];
+        assert_eq!(bar_heights(&single, 100.0, 3), vec![50.0; 3]);
+    }
 }

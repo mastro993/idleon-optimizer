@@ -2,13 +2,17 @@
 
 use crate::state::AppState;
 use crate::ui::format;
-use ely_gpui_component::buttons::IconButton;
+use ely_gpui_component::buttons::{Button, IconButton};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
+use ely_gpui_component::forms::{Input, Stepper};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
+use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
 use idleon_core::{game, sim};
 
 pub fn dashboard_pane(
@@ -19,6 +23,13 @@ pub fn dashboard_pane(
     let rate = state.rate();
     let points = state.grid_points();
     let cards = div()
+        .id("kpi-row")
+        .role(gpui::Role::Label)
+        .aria_label(format!(
+            "Research EXP/hr {} · multiplier {:.2}",
+            format::rate(rate.total),
+            rate.multi
+        ))
         .flex()
         .flex_wrap()
         .gap_3()
@@ -70,7 +81,238 @@ pub fn dashboard_pane(
         .size_full()
         .min_h_0()
         .child(cards)
-        .child(observations_card(state, cx))
+        .child(
+            div()
+                .id("rates-body")
+                .flex()
+                .flex_1()
+                .min_h_0()
+                .gap_3()
+                .child(
+                    div()
+                        .id("observations-column")
+                        .flex()
+                        .flex_col()
+                        .flex_1()
+                        .min_w_0()
+                        .min_h_0()
+                        .child(observations_card(state, cx)),
+                )
+                .child(
+                    div()
+                        .id("supplements-column")
+                        .flex()
+                        .flex_col()
+                        .flex_none()
+                        .w(px(340.0))
+                        .min_h_0()
+                        .gap_3()
+                        .child(supplements_card(state, cx))
+                        .child(save_card(state, cx)),
+                ),
+        )
+}
+
+/// One supplement row: its name, its value, and a stepper that edits it.
+fn supplement_row(
+    id: &'static str,
+    label: &'static str,
+    value: f64,
+    (min, max, step, precision): (f64, f64, f64, usize),
+    set: fn(&mut AppState, f64, &mut Context<AppState>),
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let entity = cx.entity();
+    let shown = format!("{value:.precision$}");
+    div()
+        .id(id)
+        .role(gpui::Role::Label)
+        .aria_label(format!("{label}: {shown}"))
+        .aria_value(shown)
+        .flex()
+        .items_center()
+        .justify_between()
+        .gap_2()
+        .h(px(30.0))
+        .child(Caption::new(label).text_color(muted))
+        .child(
+            Stepper::new(SharedString::from(format!("{id}-stepper")), value)
+                .range(min, max)
+                .step(step)
+                .precision(precision)
+                .on_change(move |value, _window, cx| {
+                    entity.update(cx, |state, cx| set(state, value, cx));
+                }),
+        )
+        .into_any_element()
+}
+
+fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let muted = cx.theme().colors.fg_muted;
+    let open = state.supplements_open;
+    let entity = cx.entity();
+    let toggle = entity.clone();
+    let reset = entity.clone();
+    let header = CardHeader::new("Supplements")
+        .description("Save-derived multipliers that live outside the grid")
+        .action(
+            div()
+                .flex()
+                .items_center()
+                .gap_1()
+                .child(
+                    Button::new("supp-reset", "Reset")
+                        .size(ControlSize::Sm)
+                        .disabled(!open)
+                        .on_click(move |_event, _window, cx| {
+                            reset.update(cx, |state, cx| state.reset_supplements(cx));
+                        }),
+                )
+                .child(
+                    Button::new("supp-toggle", if open { "Hide" } else { "Show" })
+                        .size(ControlSize::Sm)
+                        .on_click(move |_event, _window, cx| {
+                            toggle.update(cx, |state, cx| state.set_supplements_open(!open, cx));
+                        }),
+                ),
+        );
+    let card = Card::new().header(header);
+    if !open {
+        return card.child(
+            div().px_3().pb_2().child(
+                Caption::new("Hidden; the simulated multipliers keep their values.").text_color(muted),
+            ),
+        );
+    }
+    let context = state.context.clone();
+    card.child(
+        div()
+            .id("supplements-card")
+            .flex()
+            .flex_col()
+            .gap_1()
+            .px_3()
+            .pb_2()
+            .child(supplement_row(
+                "supp-svrxp",
+                "Server EXP scale",
+                context.server_var_res_xp,
+                (1.0, 10.0, 0.05, 2),
+                AppState::set_server_var_res_xp,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-abm",
+                "All-bonus multiplier",
+                context.all_bonus_multi,
+                (1.0, 100.0, 0.05, 2),
+                AppState::set_all_bonus_multi,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-extra-pct",
+                "Extra account %",
+                context.extra_pct,
+                (0.0, 10_000.0, 5.0, 0),
+                AppState::set_extra_pct,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-extra-multi",
+                "Extra account ×",
+                context.extra_multiplier,
+                (0.0, 100.0, 0.05, 2),
+                AppState::set_extra_multiplier,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-points",
+                "Bonus grid points",
+                context.bonus_grid_points as f64,
+                (0.0, 100_000.0, 10.0, 0),
+                AppState::set_bonus_grid_points,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-shapes",
+                "Extra shapes",
+                context.extra_shapes as f64,
+                (0.0, 100.0, 1.0, 0),
+                AppState::set_extra_shapes,
+                cx,
+            ))
+            .child(supplement_row(
+                "supp-mags",
+                "Extra magnifiers",
+                context.extra_magnifiers as f64,
+                (0.0, 200.0, 1.0, 0),
+                AppState::set_extra_magnifiers,
+                cx,
+            )),
+    )
+}
+
+fn save_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let colors = &cx.theme().colors;
+    let open = state.save_open;
+    let message = state.save_message.clone();
+    let ok = state.save_ok;
+    let entity = cx.entity();
+    let toggle = entity.clone();
+    let import = entity.clone();
+    let header = CardHeader::new("Save import")
+        .description("Paste a decoded save (JSON)")
+        .action(
+            Button::new("save-toggle", if open { "Hide" } else { "Show" })
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    toggle.update(cx, |state, cx| state.set_save_open(!open, cx));
+                }),
+        );
+    let card = Card::new().header(header);
+    if !open {
+        return card.child(div().px_3().pb_2().child(
+            Caption::new("Hidden. Nothing is imported until you paste a save.")
+                .text_color(colors.fg_muted),
+        ));
+    }
+    card.child(
+        div()
+            .id("save-panel")
+            .flex()
+            .flex_col()
+            .gap_2()
+            .px_3()
+            .pb_3()
+            .child({
+                let input_focus = state.save_input.read(cx).focus().clone();
+                div()
+                    .id("save-input")
+                    .aria_label("Game save JSON")
+                    .w_full()
+                    .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
+                    .child(Input::new(&state.save_input).size(ControlSize::Sm))
+            })
+            .child(
+                Button::new("save-import", "Import save")
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        import.update(cx, |state, cx| state.import_save(cx));
+                    }),
+            )
+            .child(
+                div()
+                    .id("save-status")
+                    .role(gpui::Role::Label)
+                    .aria_label(message.clone())
+                    .w_full()
+                    .line_clamp(4)
+                    .text_size(px(11.0))
+                    .text_color(if ok { colors.fg_muted } else { colors.danger })
+                    .child(message),
+            ),
+    )
 }
 
 fn observations_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {

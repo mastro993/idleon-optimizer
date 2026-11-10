@@ -3,7 +3,7 @@
 // outside an editor session.
 //
 // Usage: node script/mcp-smoke.mjs [--app idleon-optimizer] [--shot out.png]
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
@@ -12,6 +12,21 @@ const flag = (name, fallback) => {
   return index >= 0 ? args[index + 1] : fallback;
 };
 const appId = flag('--app', 'idleon-optimizer');
+
+/// macOS stops drawing an occluded window, and the bridge waits for frames, so
+/// bring the app forward before driving it.
+const activate = (pid) => {
+  if (process.platform !== 'darwin' || !pid) return;
+  try {
+    execFileSync('osascript', [
+      '-e',
+      `tell application "System Events" to set frontmost of first process whose unix id is ${pid} to true`,
+    ], { stdio: 'ignore' });
+  } catch {
+    // Activation is best effort; a visible window works without it.
+  }
+};
+
 const shot = flag('--shot', null);
 
 const child = spawn('gpui-mcp', [], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -78,6 +93,7 @@ try {
     console.error(`no running app ${appId}; got ${JSON.stringify(entry)}`);
     process.exit(1);
   }
+  activate(app.pid);
   console.log(`app: ${JSON.stringify(app)}`);
 
   const tree = JSON.parse(await call('get_ui_tree'));

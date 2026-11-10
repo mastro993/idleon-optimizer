@@ -13,6 +13,7 @@ fn main() -> Result<()> {
         .with_assets(ely_gpui_component::Assets)
         .run(|cx: &mut App| {
             ely_gpui_component::init(cx).expect("Ely failed to start");
+            ui::grid_view::bind_keys(cx);
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
             if let Err(error) = open_window(cx) {
                 eprintln!("idleon-optimizer: {error:#}");

@@ -17,17 +17,29 @@ afford a real search instead of a heuristic.
 
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
+  Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
 - **Local simulation** — research EXP/hour with its additive and multiplicative breakdown, insight
   levelling per observation, magnifier caps, grid points earned and spent, shapes and magnifiers
   owned, and an event-driven projection to a research level or an hour budget.
 - **Three optimizers, all in-process and parallel**
-  - shape placement: greedy over the preset's target priorities, then hill-climbing on the real EXP
-    rate;
-  - magnifier assignment: kaleidoscopes, then monocles on the best insight ROI, then magnifying
-    glasses on the richest observations;
-  - grid-point spending: marginal-value climb with a refine pass that moves points.
+  - shape placement: greedy over the preset's target priorities, then a lattice search on the real
+    EXP rate (moves, rotation sweeps once level 90 unlocks them, shape-order swaps);
+  - magnifier assignment: two greedy orders kept best-of, then repair moves and swaps; kaleidoscopes
+    weigh the neighbours that actually hold glasses, monocles go to the best insight ROI;
+  - grid-point spending: marginal climb as the incumbent, a whole-layout beam search over the
+    unlocked squares that wins when it can, then a refine pass that moves points; levels on the
+    magnifier-grant squares are priced with the pool they unlock.
 - **Sixteen presets** — Res EXP, Minehead, DR, Insight, Lumi/hr, Sushi, Gaming, Construction, … as
   placement priorities.
+- **Supplements** — the save-derived multipliers that live outside the grid (`serverVarResXP`,
+  all-bonus multiplier, extra account %, extra multiplier, flat grid points, extra shapes and
+  magnifiers), editable in the Rates pane; the displayed rate follows each change.
+- **Save import** — paste a decoded game save (JSON) and the grid levels, shape positions,
+  magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid points and
+  the decodable true multipliers are read from it. Fields the app cannot model are reported as
+  warnings instead of guessed; unreadable saves leave the run untouched.
+- **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
+  as it goes.
 
 ## Run
 

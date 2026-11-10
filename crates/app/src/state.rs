@@ -1,13 +1,14 @@
 //! Application state: the simulation being edited and the run in flight.
 
 use crate::ui;
-use gpui::{Context, FocusHandle, Task, Window};
+use ely_gpui_component::forms::TextInput;
+use gpui::{AppContext as _, Context, Entity, FocusHandle, Task, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
 };
-use idleon_core::{game, optimize, shape, sim};
+use idleon_core::{game, optimize, save, shape, sim};
 
 /// The view the window shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,6 +56,16 @@ pub struct AppState {
     pub tab: Tab,
     pub selected_cell: Option<usize>,
     pub status: String,
+    /// Whether the save-derived supplements card is expanded.
+    pub supplements_open: bool,
+    /// Whether the save import card is expanded.
+    pub save_open: bool,
+    /// The pasted save object.
+    pub save_input: Entity<TextInput>,
+    /// What the last import attempt said.
+    pub save_message: String,
+    /// Whether the last import succeeded, for the status tone.
+    pub save_ok: bool,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
@@ -80,20 +91,29 @@ impl AppState {
             .take(2)
             .map(|slot| Mag::new(MagKind::Regular, Some(slot)))
             .collect();
+        let save_input = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .multi_line(3, 8)
+                .placeholder("Paste the decoded game save (JSON)")
+                .label("Game save JSON")
+        });
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
-        let clear = focus.clone();
-        let _ = clear;
         Self {
             simulation,
             context: SimContext::default(),
             result: None,
             running: false,
             effort: Effort::Balanced,
-            target: Target::Level(150),
+            target: Target::Hours(24.0),
             tab: Tab::Grid,
             selected_cell: None,
             status: "Ready. Level squares, place shapes, then optimize.".into(),
+            supplements_open: true,
+            save_open: false,
+            save_input,
+            save_message: "Nothing imported yet.".into(),
+            save_ok: true,
             focus,
             bridge,
             run_task: None,
@@ -125,8 +145,29 @@ impl AppState {
         self.selected_cell.and_then(|cell| game().node_at(cell))
     }
 
-    pub fn select(&mut self, cell: usize, cx: &mut Context<Self>) {
+    /// Select a square and hand it the keyboard.
+    pub fn select(&mut self, cell: usize, window: &mut Window, cx: &mut Context<Self>) {
         self.selected_cell = Some(cell);
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Move the selection one square, clamped to the grid; selects the first square when none is.
+    pub fn move_selection(&mut self, dx: i32, dy: i32, cx: &mut Context<Self>) {
+        self.selected_cell = Some(step_cell(self.selected_cell, dx, dy));
+        cx.notify();
+    }
+
+    /// Raise or lower the selected square's level.
+    pub fn bump_selected(&mut self, delta: i64, cx: &mut Context<Self>) {
+        let Some(cell) = self.selected_cell else {
+            return;
+        };
+        self.bump_level(cell, delta, cx);
+    }
+
+    pub fn deselect(&mut self, cx: &mut Context<Self>) {
+        self.selected_cell = None;
         cx.notify();
     }
 
@@ -300,6 +341,85 @@ impl AppState {
         cx.notify();
     }
 
+    pub fn set_supplements_open(&mut self, open: bool, cx: &mut Context<Self>) {
+        self.supplements_open = open;
+        cx.notify();
+    }
+
+    pub fn set_save_open(&mut self, open: bool, cx: &mut Context<Self>) {
+        self.save_open = open;
+        cx.notify();
+    }
+
+    /// The save-derived supplements the account carries outside the grid.
+    pub fn set_server_var_res_xp(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.server_var_res_xp = value.clamp(1.0, 10.0);
+        self.context_changed(cx);
+    }
+
+    pub fn set_all_bonus_multi(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.all_bonus_multi = value.clamp(1.0, 100.0);
+        self.context_changed(cx);
+    }
+
+    pub fn set_extra_pct(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.extra_pct = value.clamp(0.0, 10_000.0);
+        self.context_changed(cx);
+    }
+
+    pub fn set_extra_multiplier(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.extra_multiplier = value.clamp(0.0, 100.0);
+        self.context_changed(cx);
+    }
+
+    pub fn set_bonus_grid_points(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.bonus_grid_points = value.clamp(0.0, 100_000.0).round() as u32;
+        self.context_changed(cx);
+    }
+
+    pub fn set_extra_shapes(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.extra_shapes = value.clamp(0.0, 100.0).round() as u32;
+        self.context_changed(cx);
+    }
+
+    pub fn set_extra_magnifiers(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.context.extra_magnifiers = value.clamp(0.0, 200.0).round() as u32;
+        self.context_changed(cx);
+    }
+
+    /// Put every supplement back to its default and drop the stale result.
+    pub fn reset_supplements(&mut self, cx: &mut Context<Self>) {
+        self.context = SimContext::default();
+        self.status = "Supplements reset to their defaults.".into();
+        self.context_changed(cx);
+    }
+
+    fn context_changed(&mut self, cx: &mut Context<Self>) {
+        self.result = None;
+        cx.notify();
+    }
+
+    /// Read the pasted save and, if it parses, replace the run with it.
+    pub fn import_save(&mut self, cx: &mut Context<Self>) {
+        let text = self.save_input.read(cx).text().to_string();
+        match save::import(&text) {
+            Ok(imported) => {
+                self.simulation = imported.simulation;
+                self.context = imported.context;
+                self.result = None;
+                self.selected_cell = None;
+                self.save_ok = true;
+                self.save_message = imported_summary(&imported.warnings);
+                self.status = "Imported a save.".into();
+            }
+            Err(error) => {
+                self.save_ok = false;
+                self.save_message = error.to_string();
+            }
+        }
+        cx.notify();
+    }
+
     pub fn reset_layout(&mut self, cx: &mut Context<Self>) {
         self.simulation.placements.clear();
         self.simulation.mags.clear();
@@ -366,5 +486,48 @@ fn kind_label(kind: MagKind) -> &'static str {
         MagKind::Regular => "magnifying glass",
         MagKind::Monocle => "monocle",
         MagKind::Kaleidoscope => "kaleidoscope",
+    }
+}
+
+/// One arrow press from `current`, clamped to the grid's edges.
+fn step_cell(current: Option<usize>, dx: i32, dy: i32) -> usize {
+    let game = game();
+    let cols = game.grid.cols as i32;
+    let rows = game.grid.rows as i32;
+    let Some(cell) = current else {
+        return 0;
+    };
+    let col = (cell as i32 % cols + dx).clamp(0, cols - 1);
+    let row = (cell as i32 / cols + dy).clamp(0, rows - 1);
+    (row * cols + col) as usize
+}
+
+/// What an import left out, in one line for the panel.
+fn imported_summary(warnings: &[String]) -> String {
+    if warnings.is_empty() {
+        return "Imported: the save had every field this app reads.".into();
+    }
+    format!("Imported with {} warning(s): {}", warnings.len(), warnings.join("; "))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn arrows_move_one_square_and_stop_at_the_edges() {
+        assert_eq!(step_cell(Some(129), 1, 0), 130);
+        assert_eq!(step_cell(Some(129), 0, -1), 109);
+        assert_eq!(step_cell(Some(19), 1, 0), 19);
+        assert_eq!(step_cell(Some(0), -1, -1), 0);
+        assert_eq!(step_cell(None, 1, 0), 0);
+    }
+
+    #[test]
+    fn import_summary_names_the_warnings() {
+        assert!(imported_summary(&[]).contains("Imported"));
+        let summary = imported_summary(&["crowns".into(), "sailing".into()]);
+        assert!(summary.contains("2 warning"));
+        assert!(summary.contains("crowns"));
     }
 }

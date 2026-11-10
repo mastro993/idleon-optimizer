@@ -2,10 +2,25 @@
 // selecting a square, adding a shape, running the optimizer, applying a result.
 //
 // Usage: node script/mcp-drive.mjs [--keep]
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
 const keep = process.argv.includes('--keep');
+
+/// macOS stops drawing an occluded window, and the bridge waits for frames, so
+/// bring the app forward before driving it.
+const activate = (pid) => {
+  if (process.platform !== 'darwin' || !pid) return;
+  try {
+    execFileSync('osascript', [
+      '-e',
+      `tell application "System Events" to set frontmost of first process whose unix id is ${pid} to true`,
+    ], { stdio: 'ignore' });
+  } catch {
+    // Activation is best effort; a visible window works without it.
+  }
+};
+
 const child = spawn('gpui-mcp', [], { stdio: ['pipe', 'pipe', 'pipe'] });
 let nextId = 1;
 const pending = new Map();
@@ -40,11 +55,22 @@ const request = (method, params) => {
   });
 };
 
+let appPid = null;
+
 const call = async (name, args = {}) => {
-  const result = await request('tools/call', { name, arguments: args });
-  const text = result?.content?.find((part) => part.type === 'text')?.text;
-  if (result?.isError) throw new Error(`${name}: ${text}`);
-  return { text, content: result?.content ?? [] };
+  for (let attempt = 1; ; attempt += 1) {
+    const result = await request('tools/call', { name, arguments: args });
+    const text = result?.content?.find((part) => part.type === 'text')?.text;
+    // macOS stops drawing an occluded window; the bridge waits for the frame the
+    // action should cause. Bring the app forward and try once more.
+    if (result?.isError && /frame wait timed out/i.test(text ?? '') && attempt === 1) {
+      activate(appPid);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      continue;
+    }
+    if (result?.isError) throw new Error(`${name}: ${text}`);
+    return { text, content: result?.content ?? [] };
+  }
 };
 
 const tree = async () => {
@@ -95,6 +121,8 @@ try {
     (candidate) => (candidate.app_id ?? candidate.id) === 'idleon-optimizer',
   );
   if (!app) throw new Error('the app is not running; start ./target/debug/idleon-optimizer first');
+  appPid = app.pid;
+  activate(appPid);
 
   // Start on the grid tab whatever the last run left behind.
   if (has(await tree(), 'grid')) {
@@ -152,6 +180,71 @@ try {
     await call('click_element', { id: 'grid' });
   }
   await waitFor((current) => has(current, 'cell-129'), 'grid tab reopens');
+
+  // Keyboard on the focused grid: arrows move the selection, `+` levels it, Escape drops it.
+  await call('click_element', { id: 'cell-129' });
+  await waitFor(
+    (current) => (labelOf(current, 'square-name') ?? '').includes('J6'),
+    'J6 is selected for the keyboard',
+  );
+  await call('keyboard', { keystroke: 'right' });
+  await waitFor(
+    (current) => (labelOf(current, 'square-name') ?? '').includes('K6'),
+    'the right arrow moves the selection',
+  );
+  const levelBefore = labelOf(await tree(), 'square-level') ?? '';
+  await call('keyboard', { keystroke: '=' });
+  await waitFor(
+    (current) => (labelOf(current, 'square-level') ?? '') !== levelBefore,
+    'plus raises the selected square',
+  );
+  await call('keyboard', { keystroke: 'escape' });
+  await waitFor(
+    (current) => !has(current, 'square-name'),
+    'Escape clears the selection',
+  );
+
+  // Supplements: a stepper press changes the displayed rate immediately.
+  if (has(await tree(), 'rates')) {
+    await call('click_element', { id: 'rates' });
+  }
+  await waitFor((current) => has(current, 'supp-abm'), 'supplements card is open');
+  nodes = await tree();
+  check('every supplement is exposed', ['supp-svrxp', 'supp-abm', 'supp-extra-pct', 'supp-extra-multi', 'supp-points', 'supp-shapes', 'supp-mags'].every((id) => has(nodes, id)));
+  const rateBefore = labelOf(nodes, 'kpi-row') ?? '';
+  check('the rate readout is exposed', rateBefore.length > 0, rateBefore);
+  await call('click_element', { id: 'supp-abm-stepper-more' });
+  await waitFor(
+    (current) => (labelOf(current, 'kpi-row') ?? '') !== rateBefore,
+    'raising the all-bonus multiplier moves the rate',
+  );
+  await call('click_element', { id: 'supp-reset' });
+  await waitFor(
+    (current) => (labelOf(current, 'kpi-row') ?? '') === rateBefore,
+    'reset restores the supplement',
+  );
+
+  // Save import: a paste that cannot parse reports an error and keeps the run.
+  // Idempotent: the panel may still be open from an earlier run.
+  if (!has(await tree(), 'save-import') && has(await tree(), 'save-toggle')) {
+    await call('click_element', { id: 'save-toggle' });
+  }
+  await waitFor((current) => has(current, 'save-import'), 'save panel opens');
+  await call('click_element', { id: 'save-input' });
+  await call('type_text', { text: '{"not":"a save"}' });
+  await call('click_element', { id: 'save-import' });
+  await waitFor(
+    (current) => {
+      const status = labelOf(current, 'save-status') ?? '';
+      return status.length > 0 && !status.includes('Nothing imported yet');
+    },
+    'an unreadable save reports its error',
+  );
+
+  if (has(await tree(), 'grid')) {
+    await call('click_element', { id: 'grid' });
+  }
+  await waitFor((current) => has(current, 'cell-129'), 'the run survives a failed import');
 
   const { content } = await call('screenshot');
   const image = content.find((part) => part.type === 'image');

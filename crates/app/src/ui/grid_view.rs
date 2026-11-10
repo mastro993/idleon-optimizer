@@ -6,10 +6,41 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    Context, Hsla, IntoElement, ParentElement, PathBuilder, Pixels, Point, Styled, Window, canvas,
-    div, point, px,
+    App, Context, Hsla, IntoElement, KeyBinding, ParentElement, PathBuilder, Pixels, Point, Styled,
+    Window, canvas, div, point, px,
 };
 use idleon_core::game;
+
+gpui::actions!(
+    idleon_grid,
+    [
+        SelectLeft,
+        SelectRight,
+        SelectUp,
+        SelectDown,
+        LevelUp,
+        LevelDown,
+        Deselect,
+    ]
+);
+
+/// Key context of the grid canvas: bindings here never fire while an input has focus.
+pub const GRID_CONTEXT: &str = "ResearchGrid";
+
+/// Arrow keys move the selected square, `+`/`-` level it, Escape deselects.
+pub fn bind_keys(cx: &mut App) {
+    let context = Some(GRID_CONTEXT);
+    cx.bind_keys([
+        KeyBinding::new("left", SelectLeft, context),
+        KeyBinding::new("right", SelectRight, context),
+        KeyBinding::new("up", SelectUp, context),
+        KeyBinding::new("down", SelectDown, context),
+        KeyBinding::new("=", LevelUp, context),
+        KeyBinding::new("shift-=", LevelUp, context),
+        KeyBinding::new("-", LevelDown, context),
+        KeyBinding::new("escape", Deselect, context),
+    ]);
+}
 
 /// Logical pixels per grid cell.
 const CELL: f32 = 46.0;
@@ -63,6 +94,29 @@ pub fn grid_pane(
 
     div()
         .id("grid-card")
+        .key_context(GRID_CONTEXT)
+        .track_focus(&state.focus)
+        .on_action(cx.listener(|state, _: &SelectLeft, _window, cx| {
+            state.move_selection(-1, 0, cx);
+        }))
+        .on_action(cx.listener(|state, _: &SelectRight, _window, cx| {
+            state.move_selection(1, 0, cx);
+        }))
+        .on_action(cx.listener(|state, _: &SelectUp, _window, cx| {
+            state.move_selection(0, -1, cx);
+        }))
+        .on_action(cx.listener(|state, _: &SelectDown, _window, cx| {
+            state.move_selection(0, 1, cx);
+        }))
+        .on_action(cx.listener(|state, _: &LevelUp, _window, cx| {
+            state.bump_selected(1, cx);
+        }))
+        .on_action(cx.listener(|state, _: &LevelDown, _window, cx| {
+            state.bump_selected(-1, cx);
+        }))
+        .on_action(cx.listener(|state, _: &Deselect, _window, cx| {
+            state.deselect(cx);
+        }))
         .flex()
         .flex_col()
         .flex_1()
@@ -162,7 +216,7 @@ fn grid_cell(state: &AppState, cell: usize, cx: &mut Context<AppState>) -> impl 
         .aria_label(title.clone())
         .aria_selected(selected)
         .tooltip(ely_gpui_component::primitives::Tooltip::text(title))
-        .on_click(cx.listener(move |state, _event, _window, cx| state.select(cell, cx)))
+        .on_click(cx.listener(move |state, _event, window, cx| state.select(cell, window, cx)))
         .child(label)
 }
 
@@ -202,6 +256,7 @@ fn shape_overlay(state: &AppState, cx: &mut Context<AppState>) -> impl IntoEleme
             }
         },
     )
+    .size_full()
 }
 
 fn legend(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {

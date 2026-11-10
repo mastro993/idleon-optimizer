@@ -138,14 +138,17 @@ disabled controls get `.aria_disabled(true)`; read-only fields get `.aria_read_o
    non-negative by test. Done.
 5. **Verification** — `cargo test`, `clippy`, gpui-mcp smoke and drive harness, screenshots. Done.
 
+Landed after the first pass: beam search over grid spending with grant-aware pricing, magnifier
+repair moves, a wider shape search gated on the rotation unlock, the supplements editor, save
+import, the projection chart, and keyboard control of the grid.
+
 Still open, in priority order:
 
-1. Save-file import: parse the upstream's decoded save JSON into `Simulation` and `SimContext`
-   instead of hand-entered multipliers.
-2. Shape dragging on the canvas (today: nudge and rotate from the inspector).
-3. A projection chart on the optimize pane (the samples are already computed).
-4. Further optimizer work: beam search over grid spending, two-shape swap moves, and a wider local
-   search on rotations once profiles show where the time goes.
+1. Shape dragging on the canvas (today: nudge and rotate from the inspector, arrows for squares).
+2. `allBonusMulti` and `extra_pct` still lean on save fields that the upstream derives through dozens
+   of game systems; the import warns instead of guessing, so some saves under-report the multiplier.
+3. `crates/core/src/save.rs` is 846 lines: split into `save/{mod,research,account}.rs` by feature.
+4. Optimizer depth: two-shape joint moves, and a projection-aware secondary objective for monocles.
 
 ## 8. Risks
 

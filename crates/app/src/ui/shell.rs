@@ -31,10 +31,8 @@ pub fn shell(
     let rate = state.rate();
     let points = state.grid_points();
 
-    let focus = state.focus.clone();
     div()
         .id("app-root")
-        .track_focus(&focus)
         .flex()
         .flex_col()
         .size_full()
