@@ -1,0 +1,131 @@
+{
+ "upgrades": [
+  {
+   "name": "PEARL VALUE",
+   "desc": "Pearls_you_find_are_worth_$_instead_of_just_1",
+   "perLv": 1,
+   "costBase": 1.2
+  },
+  {
+   "name": "CLAM COMRADES",
+   "desc": "Increases_the_total_number_of_clams_on_the_map_to_$",
+   "perLv": 1,
+   "costBase": 5
+  },
+  {
+   "name": "LUCKY DAY",
+   "desc": "Pearls_have_a_$%_chance_to_be_worth_10x_when_picked_up!",
+   "perLv": 3,
+   "costBase": 1.5
+  },
+  {
+   "name": "MULTI-SCALPING",
+   "desc": "Boosts_pearl_value_based_on_your_Multikill!_Currently_gives_}x",
+   "perLv": 1,
+   "costBase": 1.4
+  },
+  {
+   "name": "FRUGALITY",
+   "desc": "All_upgrades_are_$%_cheaper",
+   "perLv": 12,
+   "costBase": 1.15
+  },
+  {
+   "name": "PURE PEARLS",
+   "desc": "Clams_now_drop_pure_pearls!_These_are_worth_$x_more_than_normal!",
+   "perLv": 50,
+   "costBase": 1.5
+  },
+  {
+   "name": "ENCYSTATION UP",
+   "desc": "Boosts_the_drop_rate_of_pearls_by_}x",
+   "perLv": 10,
+   "costBase": 1.35
+  },
+  {
+   "name": "SHINIER PEARLS",
+   "desc": "Increases_the_value_of_all_pearls_found_by_}x",
+   "perLv": 10,
+   "costBase": 1.25
+  },
+  {
+   "name": "ANTI INFLATION",
+   "desc": "All_upgrades_are_}x_cheaper",
+   "perLv": 16,
+   "costBase": 1.22
+  }
+ ],
+ "scurge": [
+  {
+   "name": "RECKONING",
+   "desc": "Active_clam_kills_give_+$_@__Scurge_EXP,_with_each_Scurge_Lv_earning_green_pearls!",
+   "perLv": 1,
+   "unlockLevel": 0
+  },
+  {
+   "name": "PEARL INFECTION",
+   "desc": "Increases_the_value_of_all_pearls_found_by_}x",
+   "perLv": 50,
+   "unlockLevel": 5
+  },
+  {
+   "name": "SELF AFFLICTION",
+   "desc": "Reduce_your_DMG_by_$x,_and_get_}x_more_Scurge_EXP!_(Hold_down_to_reset)",
+   "perLv": 200,
+   "unlockLevel": 10
+  },
+  {
+   "name": "COST DISSOLVING",
+   "desc": "All_pearl_upgrades_are_$%_cheaper",
+   "perLv": 25,
+   "unlockLevel": 25
+  },
+  {
+   "name": "EVEN BETTER",
+   "desc": "Boost_Scurge_EXP_gain_by_}x",
+   "perLv": 150,
+   "unlockLevel": 50
+  },
+  {
+   "name": "CROSS CULTING",
+   "desc": "Each_Upgrade_LV_on_this_page_lowers_cost_of_the_pearl_upgrade_in_the_same_slot_by_}x",
+   "perLv": 10,
+   "unlockLevel": 100
+  },
+  {
+   "name": "GRAVESTART",
+   "desc": "Start_with_$%_Scurge_EXP_instead_of_0%_every_time_you_level_up",
+   "perLv": 1,
+   "unlockLevel": 250
+  },
+  {
+   "name": "SWARMING",
+   "desc": "Get_a_}x_Scurge_EXP_multi_for_each_real_player_in_the_map!_@_Total_Bonus:$x",
+   "perLv": 10,
+   "unlockLevel": 500
+  },
+  {
+   "name": "TRUE SCURGE",
+   "desc": "Each_Scurge_LV_gives_a_}x_multiplier_to_Pearl_Value",
+   "perLv": 10,
+   "unlockLevel": 1000
+  }
+ ],
+ "promotion": [
+  "+1_Grade_for_2_Gallery_Slots",
+  "+1_Legend_Talent_PTS",
+  "+10_LV/day_for_Kattlekruk_bubbles",
+  "+5%_Meritocracy_Multi_bonus",
+  "+1_Legend_Talent_PTS",
+  "+20%_extra_Daily_Coral",
+  "+15_LV/day_from_Brain_Coral",
+  "+3%_Gallery_Bonus_Multi",
+  "+25%_Lumi_Gains_Rate",
+  "1.25x_Research_EXP_gain",
+  "10x_Cooking_Speed",
+  "2x_Spelunking_POW"
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer"
+ }
+}

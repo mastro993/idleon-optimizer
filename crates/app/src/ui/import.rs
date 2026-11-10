@@ -315,6 +315,7 @@ mod tests {
             },
             context: Default::default(),
             tree: Default::default(),
+            clamworks: Default::default(),
             save: serde_json::Value::Null,
             format,
             characters,
