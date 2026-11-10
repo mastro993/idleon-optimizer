@@ -1,5 +1,6 @@
 //! The window: shell, dashboard, shared section chrome and the automation bridge.
 
+pub mod assets;
 pub mod bridge;
 pub mod dashboard;
 pub mod format;

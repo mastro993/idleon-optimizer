@@ -102,6 +102,8 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
                 StatusBarItem::new("status-detail").label(format!("{id} is not in the registry")),
             ),
     };
+    let status =
+        status.right(StatusBarItem::new("status-assets").label(state.assets.status_label()));
 
     let mut root = div()
         .id("app-root")

@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::assets::Manifest;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
@@ -12,6 +13,7 @@ use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
 };
+use idleon_core::save::Shadow;
 use idleon_core::{game, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
@@ -100,6 +102,8 @@ pub struct AppState {
     pub context: SimContext,
     pub effort: Effort,
     pub target: Target,
+    /// Upstream artwork resolved through `assets/upstream/manifest.json`.
+    pub assets: Manifest,
     /// Where the window is: the dashboard or one section.
     pub route: Route,
     /// The last section opened; the dashboard offers to resume it.
@@ -119,6 +123,8 @@ pub struct AppState {
     pub save_loaded: bool,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
+    pub shadow: Shadow,
     pub focus: FocusHandle,
     #[allow(dead_code)]
     bridge: BridgeHandle,
@@ -211,6 +217,7 @@ impl AppState {
             context: SimContext::default(),
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
@@ -221,6 +228,7 @@ impl AppState {
             save_partial: false,
             save_loaded: false,
             optimizer,
+            shadow: Shadow::default(),
             focus,
             bridge,
             _search_subscription: search_subscription,
@@ -374,6 +382,7 @@ impl AppState {
         self.research.selected_cell = None;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
+        self.shadow = imported.shadow;
         self.import.ok = true;
         self.import.message = message.clone();
         self.status = message;
