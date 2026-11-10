@@ -7,9 +7,9 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build implements the research section. The plan covers the full upstream suite: a
-dashboard that opens every calculator, with one milestone per section and one issue per feature
-([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section. The plan covers the
+full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
+issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -19,6 +19,9 @@ dashboard that opens every calculator, with one milestone per section and one is
 
 ## What it does
 
+- **The dashboard** — the 25 upstream calculators as a card grid grouped General through World 7,
+  each with its icon, world badge and description. Search filters by title, description or world,
+  Escape clears it, and every card has a stable `card-<section>` id that opens its section.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -75,8 +78,9 @@ cd idleon-optimizer
 cargo run --release
 ```
 
-The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the window with a
-legal starter layout at research level 100 so every pane has something to show.
+The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the dashboard; the
+Research Optimizer card opens the research section with a legal starter layout at research level
+100 so every pane has something to show.
 
 ## Stack pins
 
@@ -107,11 +111,13 @@ afterwards, so several can run at once without seeing each other. Pass `--attach
 `cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation.
 
 `script/mcp-drive.mjs` talks to the app through
-[gpui-mcp](https://github.com/mastro993/gpui-mcp) over stdio: it asserts the grid is exposed as
-semantic nodes, that a click selects a square, that dragging a shape moves its squares, that the
-keyboard walks and levels the grid, that a run produces a result and never loses EXP, that applying
-it clears the result, and that the supplements and save-import panels behave. Both scripts need the
-`gpui-mcp` binary (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
+[gpui-mcp](https://github.com/mastro993/gpui-mcp) over stdio: it asserts the dashboard exposes all
+25 cards, that search filters and Escape clears it, that a card opens its section and Back returns,
+that the grid is exposed as semantic nodes, that a click selects a square, that dragging a shape
+moves its squares, that the keyboard walks and levels the grid, that a run produces a result and
+never loses EXP, that applying it clears the result, and that the supplements and save-import panels
+behave. Both scripts need the `gpui-mcp` binary
+(`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
 If background subagent launches fail with a missing `@earendil-works/chord`, run
@@ -128,7 +134,8 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ```
 crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
   data/research.json  extracted from the upstream repo
-crates/app         GPUI + Ely window: grid canvas, inspector, rates, optimize pane
+crates/app         GPUI + Ely window: dashboard, section shell, grid, inspector, rates, optimize
+  src/sections.rs    the 25-card dashboard catalog and search filter
 script/            data extraction, roadmap sync, MCP smoke and drive harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
 docs/roadmap.json  milestones and feature issues (source of truth)
@@ -156,9 +163,9 @@ assets or code needs written permission from the upstream author.
 
 ## Scope
 
-The current build covers the research grid, its optimizers and save import. The roadmap covers all
-remaining upstream sections (combat sim, sailing, cooking, royal guardian, …) and the dashboard that
-opens them.
+The current build covers the dashboard, the research grid, its optimizers and save import. The
+roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …);
+their cards open planned-section placeholders until those milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their

@@ -1,8 +1,8 @@
 //! Application state: the simulation being edited and the run in flight.
 
-use crate::ui;
-use ely_gpui_component::forms::TextInput;
-use gpui::{AppContext as _, Context, Entity, FocusHandle, Task, Window};
+use crate::{sections, ui};
+use ely_gpui_component::forms::{InputEvent, TextInput};
+use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
@@ -61,7 +61,11 @@ pub struct AppState {
     pub running: bool,
     pub effort: Effort,
     pub target: Target,
+    /// The open section, or `None` on the dashboard.
+    pub section: Option<&'static str>,
     pub tab: Tab,
+    /// The dashboard search field.
+    pub search: Entity<TextInput>,
     pub selected_cell: Option<usize>,
     /// The shape the pointer is dragging, and where the drag started.
     pub shape_drag: Option<ShapeDrag>,
@@ -82,6 +86,7 @@ pub struct AppState {
     #[allow(dead_code)]
     bridge: BridgeHandle,
     run_task: Option<Task<()>>,
+    _search_subscription: Subscription,
 }
 
 impl AppState {
@@ -115,6 +120,17 @@ impl AppState {
                 .placeholder("Paste the decoded game save (JSON)")
                 .label("Game save JSON")
         });
+        let search = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("Search calculators…")
+                .label("Search calculators")
+        });
+        let search_subscription =
+            cx.subscribe(&search, |_state, _search, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            });
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         Self {
@@ -124,11 +140,13 @@ impl AppState {
             running: false,
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            section: None,
             tab: Tab::Grid,
+            search,
             selected_cell: None,
             shape_drag: None,
             selected_shape: None,
-            status: "Ready. Level squares, place shapes, then optimize.".into(),
+            status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             save_open: false,
             save_input,
@@ -137,7 +155,41 @@ impl AppState {
             focus,
             bridge,
             run_task: None,
+            _search_subscription: search_subscription,
         }
+    }
+
+    /// The open section's catalog entry, or `None` on the dashboard.
+    pub fn current_section(&self) -> Option<&'static sections::Section> {
+        self.section.and_then(sections::find)
+    }
+
+    /// Open a section, leaving the dashboard.
+    pub fn open_section(&mut self, id: &'static str, cx: &mut Context<Self>) {
+        let Some(section) = sections::find(id) else {
+            self.status = format!("Unknown section: {id}.");
+            return cx.notify();
+        };
+        self.section = Some(section.id);
+        self.status = if section.id == "research" {
+            "Research optimizer. Level squares, place shapes, then optimize.".into()
+        } else {
+            format!("{} is on the roadmap.", section.title)
+        };
+        cx.notify();
+    }
+
+    /// Return to the landing dashboard.
+    pub fn back_to_dashboard(&mut self, cx: &mut Context<Self>) {
+        self.section = None;
+        self.status = "Dashboard. Pick a calculator.".into();
+        cx.notify();
+    }
+
+    /// Empty the dashboard search; Escape calls this.
+    pub fn clear_search(&mut self, cx: &mut Context<Self>) {
+        self.search.update(cx, |search, cx| search.set_text("", cx));
+        cx.notify();
     }
 
     /// Current research EXP per hour.
