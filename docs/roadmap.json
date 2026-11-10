@@ -3016,28 +3016,30 @@
       "key": "pickle",
       "title": "BoneJoePickle Calculator",
       "group": "tools",
-      "status": "planned",
+      "status": "done",
       "summary": "Port the hidden DPS/TTK calculator.",
       "upstream": [
         "pickle-calc.html"
       ],
       "ui": [
-        "Inputs",
-        "DPS and TTK results"
+        "DPS and kill-time inputs",
+        "Miniboss pickle table"
       ],
       "inputs": [
-        "Pickle combat values"
+        "DPS",
+        "Max time to kill"
       ],
       "outputs": [
-        "DPS",
-        "TTK"
+        "Max pickles",
+        "Effective HP",
+        "Kill time"
       ],
       "assets": "None.",
       "features": [
         {
           "id": "PK-01",
           "title": "DPS and TTK",
-          "description": "Compute DPS and time-to-kill from the upstream inputs.",
+          "description": "Compute each miniboss's maximum pickles, effective HP and time-to-kill from DPS and a kill-time budget.",
           "acceptance": [
             "Values match upstream.",
             "Inputs validate.",

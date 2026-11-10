@@ -91,6 +91,24 @@ const INTERACTIONS = {
       detail,
     );
   },
+  pickle: async (lane) => {
+    await lane.call('focus_element', { id: 'ely-text-input' });
+    await lane.call('type_text', { text: '50000000' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        !has(nodes, 'pickle-empty') &&
+        (labelOf(nodes, 'pickle-row-slimeB') ?? '').includes('max pickles 125'),
+      'pickle: DPS updates the table',
+    );
+    await lane.call('set_value', { id: 'thumb-0', value: '120' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'pickle-row-slimeB') ?? '').includes('max pickles 139'),
+      'pickle: the kill-time budget updates the table',
+    );
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');

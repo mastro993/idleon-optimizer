@@ -7,10 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section and the shadow-ban
-check. The plan covers the
-full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
-issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section, the shadow-ban check
+and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a dashboard that
+opens every calculator, with one milestone per section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -67,6 +67,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   page shows the save status and the flag it read under the verdict, so it never guesses.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
+- **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
+  max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
+  with effective HP and kill time.
 
 ## Roadmap
 

@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod pickle;
 pub mod research;
 pub mod shadow;
 
@@ -516,9 +517,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::Tools,
         description: "Hidden DPS and time-to-kill calculator",
         spec: "docs/sections/pickle.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: false,
-        view: PLACEHOLDER,
+        view: pickle::view,
         keys: no_keys,
     },
 ];

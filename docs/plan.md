@@ -1,8 +1,9 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, 29 sections planned.** The live breakdown is
-[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
-each section's full specification is under [`docs/sections/`](sections/).
+Status: **foundation in progress, research partial, shadow-ban and BoneJoePickle done, 27 sections
+planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
+[`docs/roadmap.json`](roadmap.json); each section's full specification is under
+[`docs/sections/`](sections/).
 
 ## 1. Product goal
 
@@ -243,14 +244,18 @@ The app, Ely and the automation bridge must share one GPUI build.
 Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
 bump moves all three together and the smoke harness is the check.
 
-## 9. Research status
+## 9. Research and BoneJoePickle status
 
-The research section is still partial. Done: grid, shapes,
-magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
-chart, keyboard and canvas dragging. Missing: the five extra tabs (Insight ROI, Observation
-Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation,
-strategy comparison/timeline, complete save-derived multipliers, state export/import and undo.
-Details: [`docs/sections/research.md`](sections/research.md).
+The research section is still partial. Done: grid, shapes, magnifiers, local sim,
+shape/mag/grid optimizers, 16 presets, supplements, save import, projection chart, keyboard and
+canvas dragging. Missing: the five extra tabs (Insight ROI, Observation Unlocks, Shape
+Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy
+comparison/timeline, complete save-derived multipliers, state export/import and undo. Details:
+[`docs/sections/research.md`](sections/research.md).
+
+The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
+minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
+tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).

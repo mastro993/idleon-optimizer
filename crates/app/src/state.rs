@@ -1,6 +1,7 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
 use crate::assets::Manifest;
+use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -12,6 +13,7 @@ use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::save::Shadow;
 use idleon_core::{game, optimize, save, shape, sim};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -136,6 +138,8 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The BoneJoePickle section's inputs, kept alive the same way.
+    pub pickle: PickleState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -228,6 +232,7 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -541,6 +546,26 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    /// The damage per second the pickle table solves for.
+    pub fn set_pickle_dps(&mut self, dps: f64, cx: &mut Context<Self>) {
+        self.pickle.dps = if dps.is_finite() {
+            dps.clamp(0.0, MAX_DPS)
+        } else {
+            0.0
+        };
+        cx.notify();
+    }
+
+    /// The kill-time budget the pickle table solves inside.
+    pub fn set_pickle_ttk(&mut self, seconds: f64, cx: &mut Context<Self>) {
+        self.pickle.max_ttk = if seconds.is_finite() {
+            seconds.clamp(MIN_TTK, MAX_TTK)
+        } else {
+            DEFAULT_TTK
+        };
         cx.notify();
     }
 
