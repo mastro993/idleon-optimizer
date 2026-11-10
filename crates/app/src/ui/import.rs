@@ -314,6 +314,7 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
+            tree: Default::default(),
             format,
             characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
