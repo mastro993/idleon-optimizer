@@ -43,7 +43,9 @@ pub fn respec(
 ) -> GridOutcome {
     let (width, depth, limit) = search_profile(effort);
     let points = sim::grid_points(sim, ctx);
-    let free = budget.map_or(points.free, |budget| budget.saturating_sub(sim.grid.spent()));
+    let free = budget.map_or(points.free, |budget| {
+        budget.saturating_sub(sim.grid.spent())
+    });
     if free == 0 {
         return GridOutcome {
             grid: sim.grid.clone(),
@@ -248,9 +250,7 @@ impl<'a> Spender<'a> {
                 let value = self.rate(&trial);
                 let better = match best {
                     None => true,
-                    Some((current, id)) => {
-                        value > current || (value == current && cell < id)
-                    }
+                    Some((current, id)) => value > current || (value == current && cell < id),
                 };
                 if better {
                     best = Some((value, cell));

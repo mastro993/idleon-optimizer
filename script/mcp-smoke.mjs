@@ -3,8 +3,12 @@
 // outside an editor session.
 //
 // Usage: node script/mcp-smoke.mjs [--app idleon-optimizer] [--shot out.png]
+//          [--spawn] [--keep] [--app-bin PATH]
+//   --spawn  launch a private instance (own endpoint directory) and stop it after
 import { spawn, execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
@@ -28,8 +32,46 @@ const activate = (pid) => {
 };
 
 const shot = flag('--shot', null);
+const keep = args.includes('--keep');
+const spawnOwn = args.includes('--spawn');
+const appBin = flag('--app-bin', join(process.cwd(), 'target/debug/idleon-optimizer'));
 
-const child = spawn('gpui-mcp', [], { stdio: ['pipe', 'pipe', 'pipe'] });
+// A private endpoint directory keeps this instance invisible to every other
+// lane's server, so concurrent runs cannot drive each other's window.
+let endpointDir = null;
+let appProcess = null;
+if (spawnOwn) {
+  if (!existsSync(appBin)) {
+    console.error(`no app binary at ${appBin}; run cargo build -p idleon-optimizer first`);
+    process.exit(1);
+  }
+  endpointDir = mkdtempSync(join(tmpdir(), 'idleon-smoke-'));
+  appProcess = spawn(appBin, ['--endpoint-dir', endpointDir], { stdio: 'ignore' });
+  const deadline = Date.now() + 30000;
+  let published = false;
+  while (Date.now() < deadline && !published) {
+    published = readdirSync(endpointDir).some((name) => name.endsWith('.json'));
+    if (!published) execFileSync('sleep', ['0.2']);
+  }
+  if (!published) {
+    console.error('the app never published an endpoint');
+    appProcess.kill();
+    process.exit(1);
+  }
+}
+
+const stopApp = () => {
+  if (appProcess && !keep) {
+    appProcess.kill();
+    appProcess = null;
+  }
+};
+
+const child = spawn(
+  'gpui-mcp',
+  endpointDir ? ['--endpoint-dir', endpointDir] : [],
+  { stdio: ['pipe', 'pipe', 'pipe'] },
+);
 let nextId = 1;
 const pending = new Map();
 let buffer = '';
@@ -86,11 +128,18 @@ try {
   const catalog = await request('tools/list', {});
   console.log(`tools: ${catalog.tools.length}`);
 
-  const apps = JSON.parse(await call('list_apps'));
-  const entry = Array.isArray(apps) ? apps : (apps.apps ?? []);
-  const app = entry.find((candidate) => (candidate.app_id ?? candidate.appId ?? candidate.id) === appId);
+  // The endpoint file lands before the bridge answers, so poll for discovery.
+  let entry = [];
+  let app = null;
+  for (let attempt = 0; attempt < 40 && !app; attempt += 1) {
+    const apps = JSON.parse(await call('list_apps'));
+    entry = Array.isArray(apps) ? apps : (apps.apps ?? []);
+    app = entry.find((candidate) => (candidate.app_id ?? candidate.appId ?? candidate.id) === appId);
+    if (!app) execFileSync('sleep', ['0.25']);
+  }
   if (!app) {
     console.error(`no running app ${appId}; got ${JSON.stringify(entry)}`);
+    if (endpointDir) console.error(`endpoint dir ${endpointDir}: ${JSON.stringify(readdirSync(endpointDir))}`);
     process.exit(1);
   }
   activate(app.pid);
@@ -116,4 +165,5 @@ try {
   process.exitCode = 1;
 } finally {
   child.kill();
+  stopApp();
 }

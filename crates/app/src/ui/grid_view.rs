@@ -43,7 +43,8 @@ pub fn bind_keys(cx: &mut App) {
 }
 
 /// Logical pixels per grid cell.
-const CELL: f32 = 46.0;
+pub const CELL_PX: f32 = 46.0;
+const CELL: f32 = CELL_PX;
 /// The geometry data is authored at 30 px per cell.
 const DATA_CELL: f32 = 30.0;
 
@@ -64,6 +65,17 @@ pub fn grid_pane(
     let mut board = div()
         .id("research-grid")
         .relative()
+        .on_mouse_move(
+            cx.listener(|state, event: &gpui::MouseMoveEvent, _window, cx| {
+                if state.dragging_shape().is_some() {
+                    state.drag_shape_to((event.position.x.into(), event.position.y.into()), cx);
+                }
+            }),
+        )
+        .on_mouse_up(
+            gpui::MouseButton::Left,
+            cx.listener(|state, _event, _window, cx| state.end_shape_drag(cx)),
+        )
         .flex()
         .flex_col()
         .flex_none()
@@ -72,11 +84,23 @@ pub fn grid_pane(
         .rounded(px(6.0))
         .overflow_hidden();
 
+    // The shape whose row was last picked gets its squares outlined.
+    let picked: Vec<usize> = state
+        .selected_shape
+        .and_then(|shape| state.simulation.placements.get(shape))
+        .map(idleon_core::shape::cells_at)
+        .unwrap_or_default();
+
     for row in 0..game.grid.rows {
-        let mut line = div().id(("grid-row", row)).flex().flex_row().flex_none().h(px(CELL));
+        let mut line = div()
+            .id(("grid-row", row))
+            .flex()
+            .flex_row()
+            .flex_none()
+            .h(px(CELL));
         for col in 0..game.grid.cols {
             let cell = row * game.grid.cols + col;
-            line = line.child(grid_cell(state, cell, cx));
+            line = line.child(grid_cell(state, cell, picked.contains(&cell), cx));
         }
         board = board.child(line);
     }
@@ -167,7 +191,12 @@ fn shaped_cells(state: &AppState) -> usize {
         .count()
 }
 
-fn grid_cell(state: &AppState, cell: usize, cx: &mut Context<AppState>) -> impl IntoElement {
+fn grid_cell(
+    state: &AppState,
+    cell: usize,
+    picked: bool,
+    cx: &mut Context<AppState>,
+) -> impl IntoElement {
     let colors = &cx.theme().colors;
     let game = game();
     let level = state.simulation.grid.level(cell);
@@ -180,11 +209,14 @@ fn grid_cell(state: &AppState, cell: usize, cx: &mut Context<AppState>) -> impl 
     } else if level == 0 {
         tint.opacity(0.10)
     } else {
-        let strength = (level as f32 / node.map(|n| n.max_lv).unwrap_or(1).max(1) as f32).clamp(0.2, 1.0);
+        let strength =
+            (level as f32 / node.map(|n| n.max_lv).unwrap_or(1).max(1) as f32).clamp(0.2, 1.0);
         tint.opacity(0.12 + 0.33 * strength)
     };
     let border = if selected {
         colors.accent
+    } else if picked {
+        colors.accent.opacity(0.7)
     } else if level > 0 {
         tint.opacity(0.55)
     } else {
@@ -196,7 +228,13 @@ fn grid_cell(state: &AppState, cell: usize, cx: &mut Context<AppState>) -> impl 
         level.to_string()
     };
     let title = node
-        .map(|node| format!("{} · {} · level {level}", node.name.replace('_', " "), idleon_core::model::coord(cell)))
+        .map(|node| {
+            format!(
+                "{} · {} · level {level}",
+                node.name.replace('_', " "),
+                idleon_core::model::coord(cell)
+            )
+        })
         .unwrap_or_else(|| format!("{} · empty", idleon_core::model::coord(cell)));
     let id = format!("cell-{cell}");
 
@@ -212,11 +250,26 @@ fn grid_cell(state: &AppState, cell: usize, cx: &mut Context<AppState>) -> impl 
         .border_color(border)
         .text_size(px(13.0))
         .text_color(colors.fg)
-        .when(selected, |el| el.font_weight(gpui::FontWeight::BOLD))
+        .when(selected || picked, |el| {
+            el.font_weight(gpui::FontWeight::BOLD)
+        })
         .aria_label(title.clone())
         .aria_selected(selected)
         .tooltip(ely_gpui_component::primitives::Tooltip::text(title))
         .on_click(cx.listener(move |state, _event, window, cx| state.select(cell, window, cx)))
+        .on_mouse_down(
+            gpui::MouseButton::Left,
+            cx.listener(move |state, event: &gpui::MouseDownEvent, window, cx| {
+                if let Some(shape) = state.shape_at(cell) {
+                    state.begin_shape_drag(
+                        shape,
+                        (event.position.x.into(), event.position.y.into()),
+                        window,
+                        cx,
+                    );
+                }
+            }),
+        )
         .child(label)
 }
 
@@ -289,7 +342,9 @@ fn legend(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
         );
     }
     if state.simulation.placements.is_empty() {
-        row = row.child(Caption::new("No shapes placed. Add one from the inspector."));
+        row = row.child(Caption::new(
+            "No shapes placed. Add one from the inspector.",
+        ));
     }
     row
 }

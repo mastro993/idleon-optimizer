@@ -6,7 +6,7 @@
 //! lookup table here encodes that periodicity once and then answers a placement
 //! in a handful of additions.
 
-use crate::data::{game, ShapeDef};
+use crate::data::{ShapeDef, game};
 use crate::model::Placement;
 use std::sync::OnceLock;
 
@@ -61,10 +61,7 @@ pub fn cell_origin(cell: usize) -> [f64; 2] {
     let cols = game().grid.cols;
     let col = cell % cols;
     let row = cell / cols;
-    [
-        ORIGIN[0] + CELL * col as f64,
-        ORIGIN[1] + CELL * row as f64,
-    ]
+    [ORIGIN[0] + CELL * col as f64, ORIGIN[1] + CELL * row as f64]
 }
 
 /// Cells a polygon covers: a cell counts when any of its corners is inside.
@@ -76,14 +73,9 @@ pub fn covered_cells(polygon: &[[f64; 2]]) -> Vec<usize> {
             continue;
         }
         let [x, y] = cell_origin(cell);
-        let hit = [
-            [3.0, 3.0],
-            [24.0, 3.0],
-            [3.0, 24.0],
-            [24.0, 24.0],
-        ]
-        .iter()
-        .any(|[ox, oy]| point_in_polygon(x + ox, y + oy, polygon));
+        let hit = [[3.0, 3.0], [24.0, 3.0], [3.0, 24.0], [24.0, 24.0]]
+            .iter()
+            .any(|[ox, oy]| point_in_polygon(x + ox, y + oy, polygon));
         if hit {
             covered.push(cell);
         }

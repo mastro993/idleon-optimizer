@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "gpui-idleon-optimizer": {
+      "type": "stdio",
+      "command": "gpui-mcp",
+      "args": ["--app-id", "idleon-optimizer"]
+    }
+  }
+}

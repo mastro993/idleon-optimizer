@@ -277,7 +277,16 @@ impl<'a> Evaluator<'a> {
         let kal_map = sim::kaleidoscope_map(&self.scratch.mags, slots);
         let kal_base = sim::kalei_base(&self.scratch.grid, &self.overlay, self.ctx);
         (0..slots)
-            .map(|obs| insight_roi(&self.scratch, self.ctx, &self.overlay, obs, &kal_map, kal_base))
+            .map(|obs| {
+                insight_roi(
+                    &self.scratch,
+                    self.ctx,
+                    &self.overlay,
+                    obs,
+                    &kal_map,
+                    kal_base,
+                )
+            })
             .sum()
     }
 
@@ -338,8 +347,12 @@ impl<'a> Evaluator<'a> {
             }
         }
 
-        let move_gain = best_move.map(|(rate, ..)| rate).unwrap_or(f64::NEG_INFINITY);
-        let swap_gain = best_swap.map(|(rate, ..)| rate).unwrap_or(f64::NEG_INFINITY);
+        let move_gain = best_move
+            .map(|(rate, ..)| rate)
+            .unwrap_or(f64::NEG_INFINITY);
+        let swap_gain = best_swap
+            .map(|(rate, ..)| rate)
+            .unwrap_or(f64::NEG_INFINITY);
         let threshold = base * (1.0 + 1e-12);
         if move_gain <= threshold && swap_gain <= threshold {
             return false;
@@ -435,7 +448,11 @@ fn kind_summary(mags: &[Mag]) -> String {
     let counts = count_kinds(mags);
     let mut parts = Vec::new();
     if counts.kaleidoscopes > 0 {
-        parts.push(plural(counts.kaleidoscopes, "kaleidoscope", "kaleidoscopes"));
+        parts.push(plural(
+            counts.kaleidoscopes,
+            "kaleidoscope",
+            "kaleidoscopes",
+        ));
     }
     if counts.monocles > 0 {
         parts.push(plural(counts.monocles, "monocle", "monocles"));
@@ -479,7 +496,12 @@ struct KindCounts {
 
 /// EXP a glass on `obs` adds, with the kaleidoscopes beside it already counted.
 fn glass_value(sim: &Simulation, obs: usize, kal_map: &[u32], kal_base: f64, insight: f64) -> f64 {
-    let level = sim.observations.insight_level.get(obs).copied().unwrap_or(0) as f64;
+    let level = sim
+        .observations
+        .insight_level
+        .get(obs)
+        .copied()
+        .unwrap_or(0) as f64;
     sim::obs_base_exp(obs)
         * (1.0 + insight * level / 100.0)
         * (1.0 + kal_map.get(obs).copied().unwrap_or(0) as f64 * kal_base)
@@ -514,10 +536,7 @@ fn kaleidoscope_weight(
     neighbour_slots(obs)
         .into_iter()
         .map(|slot| {
-            let held = glasses
-                .iter()
-                .filter(|mag| mag.slot == Some(slot))
-                .count() as f64;
+            let held = glasses.iter().filter(|mag| mag.slot == Some(slot)).count() as f64;
             held * glass_value(sim, slot, &[], kal_base, insight)
         })
         .sum()
@@ -552,8 +571,8 @@ fn insight_roi(
 ) -> f64 {
     let level = sim.observations.insight_level[obs];
     let missing = (sim::insight_exp_req(obs, level) - sim.observations.insight_exp[obs]).max(1.0);
-    let bonus = sim::grid_bonus(&sim.grid, overlay, 91, ctx)
-        + sim::grid_bonus(&sim.grid, overlay, 92, ctx);
+    let bonus =
+        sim::grid_bonus(&sim.grid, overlay, 91, ctx) + sim::grid_bonus(&sim.grid, overlay, 92, ctx);
     let kaleido = 1.0 + kal_map.get(obs).copied().unwrap_or(0) as f64 * kal_base;
     3.0 * (1.0 + bonus / 100.0) * kaleido / missing
 }

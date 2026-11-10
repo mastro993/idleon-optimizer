@@ -46,22 +46,23 @@ pub fn dashboard_pane(
                 .caption("additive and grid bonuses"),
         )
         .child(
-            KpiCard::new(
-                Statistic::new("kpi-obs", "Observation EXP", rate.obs_base).decimals(1),
-            )
-            .caption("before multipliers"),
+            KpiCard::new(Statistic::new("kpi-obs", "Observation EXP", rate.obs_base).decimals(1))
+                .caption("before multipliers"),
         )
         .child(
             KpiCard::new(
-                Statistic::new("kpi-points", "Free grid points", points.free as f64)
-                    .decimals(0),
+                Statistic::new("kpi-points", "Free grid points", points.free as f64).decimals(0),
             )
             .caption(format!("{} spent of {}", points.spent, points.earned)),
         )
         .child(
             KpiCard::new(
-                Statistic::new("kpi-shapes", "Shapes", state.simulation.placements.len() as f64)
-                    .decimals(0),
+                Statistic::new(
+                    "kpi-shapes",
+                    "Shapes",
+                    state.simulation.placements.len() as f64,
+                )
+                .decimals(0),
             )
             .caption(format!("{} unlocked", state.shapes_owned())),
         )
@@ -179,11 +180,9 @@ fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl In
         );
     let card = Card::new().header(header);
     if !open {
-        return card.child(
-            div().px_3().pb_2().child(
-                Caption::new("Hidden; the simulated multipliers keep their values.").text_color(muted),
-            ),
-        );
+        return card.child(div().px_3().pb_2().child(
+            Caption::new("Hidden; the simulated multipliers keep their values.").text_color(muted),
+        ));
     }
     let context = state.context.clone();
     card.child(
@@ -272,10 +271,12 @@ fn save_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEleme
         );
     let card = Card::new().header(header);
     if !open {
-        return card.child(div().px_3().pb_2().child(
-            Caption::new("Hidden. Nothing is imported until you paste a save.")
-                .text_color(colors.fg_muted),
-        ));
+        return card.child(
+            div().px_3().pb_2().child(
+                Caption::new("Hidden. Nothing is imported until you paste a save.")
+                    .text_color(colors.fg_muted),
+            ),
+        );
     }
     card.child(
         div()
@@ -334,28 +335,23 @@ fn observations_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl I
     let half = rows.len().div_ceil(2);
     let mut columns = div().flex().gap_3().min_h_0();
     for chunk in rows.chunks(half.max(1)) {
-        let mut column = div()
-            .flex()
-            .flex_col()
-            .flex_1()
-            .min_w_0()
-            .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap_1()
-                    .h(px(24.0))
-                    .px_1()
-                    .text_size(px(11.0))
-                    .text_color(muted)
-                    .child(div().w(px(20.0)).child("#"))
-                    .child(div().flex_1().min_w_0().child("Observation"))
-                    .child(div().w(px(44.0)).child("Insight"))
-                    .child(div().w(px(24.0)).child("+"))
-                    .child(div().w(px(34.0)).child("Mags"))
-                    .child(div().w(px(56.0)).child("Ins/hr"))
-                    .child(div().w(px(24.0)).child("")),
-            );
+        let mut column = div().flex().flex_col().flex_1().min_w_0().child(
+            div()
+                .flex()
+                .items_center()
+                .gap_1()
+                .h(px(24.0))
+                .px_1()
+                .text_size(px(11.0))
+                .text_color(muted)
+                .child(div().w(px(20.0)).child("#"))
+                .child(div().flex_1().min_w_0().child("Observation"))
+                .child(div().w(px(44.0)).child("Insight"))
+                .child(div().w(px(24.0)).child("+"))
+                .child(div().w(px(34.0)).child("Mags"))
+                .child(div().w(px(56.0)).child("Ins/hr"))
+                .child(div().w(px(24.0)).child("")),
+        );
         for obs in chunk {
             let obs = *obs;
             let observation = &game().observations[obs];

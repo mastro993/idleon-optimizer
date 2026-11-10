@@ -70,15 +70,21 @@ the intersection. Bumping any one means moving all three together; the smoke scr
 
 ```console
 cargo test                                  # core maths, geometry and optimizer invariants
-cargo run                                    # then, in another shell:
-node script/mcp-smoke.mjs --shot /tmp/ui.png # lists the app, reads the UI tree, screenshots it
-node script/mcp-drive.mjs                    # clicks through grid → shapes → optimize → apply
+cargo build -p idleon-optimizer
+node script/mcp-smoke.mjs --spawn --shot /tmp/ui.png  # own instance, tree + screenshot
+node script/mcp-drive.mjs                   # own instance, drives every flow end to end
 ```
+
+Both harnesses launch their own window on a private bridge endpoint and stop it
+afterwards, so several can run at once without seeing each other. Pass `--attach`
+(drive) or drop `--spawn` (smoke) to drive a window you started with
+`cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation.
 
 `script/mcp-drive.mjs` talks to the app through
 [gpui-mcp](https://github.com/mastro993/gpui-mcp) over stdio: it asserts the grid is exposed as
-semantic nodes, that a click selects a square, that adding a shape lists it, that a run produces a
-result, that the result never loses EXP, and that applying it clears the result. Both scripts need the
+semantic nodes, that a click selects a square, that dragging a shape moves its squares, that the
+keyboard walks and levels the grid, that a run produces a result and never loses EXP, that applying
+it clears the result, and that the supplements and save-import panels behave. Both scripts need the
 `gpui-mcp` binary (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 

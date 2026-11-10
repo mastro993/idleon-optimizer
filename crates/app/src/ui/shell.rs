@@ -60,7 +60,13 @@ pub fn shell(
                         .text_color(colors.accent),
                 ),
         )
-        .child(div().id("workspace").flex_1().min_h_0().child(pane(state, window, cx)))
+        .child(
+            div()
+                .id("workspace")
+                .flex_1()
+                .min_h_0()
+                .child(pane(state, window, cx)),
+        )
         .child(
             StatusBar::new()
                 .left(StatusBarItem::new("status-rate").label(format!(
@@ -77,11 +83,7 @@ pub fn shell(
         )
 }
 
-fn pane(
-    state: &mut AppState,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> impl IntoElement {
+fn pane(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> impl IntoElement {
     match state.tab {
         Tab::Grid => div()
             .id("pane-grid")

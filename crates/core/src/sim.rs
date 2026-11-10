@@ -3,7 +3,7 @@
 //! Formulas are ports of `js/stats/systems/w7/research-math.js` in the upstream
 //! calculators, minus the save-specific multipliers this app leaves to the user.
 
-use crate::data::{game, ShapeDef};
+use crate::data::{ShapeDef, game};
 use crate::model::{GridState, Mag, MagKind, Observations, SimContext, Simulation, Target};
 
 /// Research EXP per hour, split into its factors for the dashboard.
@@ -200,9 +200,11 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
     for mag in &sim.mags {
         if mag.kind == MagKind::Regular
             && let Some(slot) = mag.slot
-                && slot < to_find && observation_usable(slot, sim.research_level, &sim.observations) {
-                    per_slot[slot] += 1;
-                }
+            && slot < to_find
+            && observation_usable(slot, sim.research_level, &sim.observations)
+        {
+            per_slot[slot] += 1;
+        }
     }
 
     let mut obs_total = 0.0;
@@ -211,7 +213,12 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
         if count == 0 {
             continue;
         }
-        let level = sim.observations.insight_level.get(obs).copied().unwrap_or(0);
+        let level = sim
+            .observations
+            .insight_level
+            .get(obs)
+            .copied()
+            .unwrap_or(0);
         let kal_multi = 1.0 + kal_map[obs] as f64 * kal_base;
         obs_total += count as f64
             * obs_base_exp(obs)
@@ -233,12 +240,7 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
         .take(to_find)
         .filter(|found| **found)
         .count() as f64;
-    let insight_sum: u32 = sim
-        .observations
-        .insight_level
-        .iter()
-        .take(to_find)
-        .sum();
+    let insight_sum: u32 = sim.observations.insight_level.iter().take(to_find).sum();
 
     let additive = additive_base
         + grid_bonus(&sim.grid, &overlay, 112, ctx) * found_count
@@ -297,16 +299,23 @@ fn shaped_rate_with_overlay(
     for mag in &sim.mags {
         if mag.kind == MagKind::Regular
             && let Some(slot) = mag.slot
-                && slot < to_find && observation_usable(slot, sim.research_level, &sim.observations) {
-                    per_slot[slot] += 1;
-                }
+            && slot < to_find
+            && observation_usable(slot, sim.research_level, &sim.observations)
+        {
+            per_slot[slot] += 1;
+        }
     }
     let mut obs_total = 0.0;
     for obs in 0..to_find {
         if per_slot[obs] == 0 {
             continue;
         }
-        let level = sim.observations.insight_level.get(obs).copied().unwrap_or(0);
+        let level = sim
+            .observations
+            .insight_level
+            .get(obs)
+            .copied()
+            .unwrap_or(0);
         obs_total += per_slot[obs] as f64
             * obs_base_exp(obs)
             * (1.0 + insight_bonus * level as f64 / 100.0)
@@ -377,13 +386,16 @@ pub fn cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
 /// Grid points earned at a research level.
 pub fn grid_points_earned(research_level: u32, points_node_level: u32, bonus: u32) -> u32 {
     let lv = research_level;
-    lv + bonus
-        + (lv / 10) * (1 + (lv / 60).min(1) + points_node_level)
+    lv + bonus + (lv / 10) * (1 + (lv / 60).min(1) + points_node_level)
 }
 
 /// Grid points earned, spent and free.
 pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> GridPoints {
-    let earned = grid_points_earned(sim.research_level, sim.grid.level(50), ctx.bonus_grid_points);
+    let earned = grid_points_earned(
+        sim.research_level,
+        sim.grid.level(50),
+        ctx.bonus_grid_points,
+    );
     let spent = sim.grid.spent();
     GridPoints {
         earned,
@@ -395,9 +407,7 @@ pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> GridPoints {
 /// Shapes the research level and account grant.
 pub fn shapes_owned(research_level: u32, ctx: &SimContext) -> usize {
     let lv = research_level;
-    let granted = (1..=10)
-        .filter(|step| lv >= step * 20)
-        .count() as u32;
+    let granted = (1..=10).filter(|step| lv >= step * 20).count() as u32;
     (ctx.extra_shapes + granted).min(game().shapes.len() as u32) as usize
 }
 
@@ -451,9 +461,10 @@ pub fn project(sim: &Simulation, ctx: &SimContext, target: Target) -> Projection
             break;
         }
         if let Some(level) = target_level
-            && state.research_level >= level {
-                break;
-            }
+            && state.research_level >= level
+        {
+            break;
+        }
         let rate = exp_rate(&state, ctx).total;
         if rate <= 0.0 {
             break;
@@ -484,7 +495,11 @@ pub fn project(sim: &Simulation, ctx: &SimContext, target: Target) -> Projection
         }
 
         let step = to_level.min(to_insight).min(max_hours - hours);
-        let step = if step.is_finite() { step.max(1e-9) } else { 0.0 };
+        let step = if step.is_finite() {
+            step.max(1e-9)
+        } else {
+            0.0
+        };
         if step <= 0.0 && to_level > 0.0 && to_insight.is_infinite() {
             break;
         }
@@ -501,14 +516,8 @@ pub fn project(sim: &Simulation, ctx: &SimContext, target: Target) -> Projection
 
         if step >= to_insight && to_insight.is_finite() {
             let req = insight_exp_req(insight_obs, state.observations.insight_level[insight_obs]);
-            let insight_rate_value = insight_rate(
-                insight_obs,
-                &state,
-                &overlay,
-                ctx,
-                &kal_map,
-                kal_base,
-            );
+            let insight_rate_value =
+                insight_rate(insight_obs, &state, &overlay, ctx, &kal_map, kal_base);
             state.observations.insight_exp[insight_obs] += insight_rate_value * step;
             state.observations.insight_exp[insight_obs] -= req;
             state.observations.insight_level[insight_obs] += 1;
@@ -522,9 +531,10 @@ pub fn project(sim: &Simulation, ctx: &SimContext, target: Target) -> Projection
         });
 
         if let Some(level) = target_level
-            && state.research_level >= level {
-                break;
-            }
+            && state.research_level >= level
+        {
+            break;
+        }
     }
 
     Projection {
@@ -563,7 +573,8 @@ mod tests {
         assert!((obs_base_exp(0) - 4.0).abs() < 1e-9);
         // Upstream: (4 + (t/2 + floor(t/4))) * (1 + t^(1+t/15*0.4)/10) + t^1.5 + 1.5t
         let t = 10.0_f64;
-        let expected = (4.0 + (t / 2.0 + (t / 4.0).floor())) * (1.0 + t.powf(1.0 + t / 15.0 * 0.4) / 10.0)
+        let expected = (4.0 + (t / 2.0 + (t / 4.0).floor()))
+            * (1.0 + t.powf(1.0 + t / 15.0 * 0.4) / 10.0)
             + t.powf(1.5)
             + 1.5 * t;
         assert!((obs_base_exp(10) - expected).abs() < 1e-9);
@@ -652,7 +663,11 @@ mod tests {
         let projection = project(&sim, &ctx, Target::Level(151));
         assert_eq!(projection.final_level, 151);
         assert!(projection.hours > 1e6, "hours {}", projection.hours);
-        assert!(projection.samples.len() < 64, "samples {}", projection.samples.len());
+        assert!(
+            projection.samples.len() < 64,
+            "samples {}",
+            projection.samples.len()
+        );
     }
 
     #[test]
@@ -673,9 +688,6 @@ mod tests {
         let points = grid_points(&sim, &ctx);
         assert!(points.earned > 0);
         assert_eq!(points.spent, sim.grid.spent());
-        assert_eq!(
-            points.free,
-            points.earned.saturating_sub(points.spent)
-        );
+        assert_eq!(points.free, points.earned.saturating_sub(points.spent));
     }
 }

@@ -118,7 +118,10 @@ mod tests {
             .expect("minehead preset");
         assert!(minehead.targets.len() >= 5);
         for target in &minehead.targets {
-            assert!(game.node_at(*target).is_some(), "target {target} is not a node");
+            assert!(
+                game.node_at(*target).is_some(),
+                "target {target} is not a node"
+            );
         }
     }
 }

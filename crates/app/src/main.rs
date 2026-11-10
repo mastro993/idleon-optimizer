@@ -5,17 +5,38 @@ mod ui;
 
 use anyhow::{Context as _, Result};
 use ely_gpui_component::theme::Theme;
-use gpui::{App, AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOptions, point, px, size};
+use gpui::{
+    App, AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOptions, point, px, size,
+};
 use state::AppState;
+use std::path::PathBuf;
+
+/// Where this instance publishes itself for gpui-mcp.
+///
+/// A private directory lets several instances (one per agent lane) run at once
+/// without any of them seeing or driving the others.
+fn endpoint_dir() -> Option<PathBuf> {
+    let mut arguments = std::env::args().skip(1);
+    while let Some(argument) = arguments.next() {
+        if argument == "--endpoint-dir" {
+            return arguments.next().map(PathBuf::from);
+        }
+        if let Some(value) = argument.strip_prefix("--endpoint-dir=") {
+            return Some(PathBuf::from(value));
+        }
+    }
+    None
+}
 
 fn main() -> Result<()> {
+    let endpoint = endpoint_dir();
     gpui_platform::application()
         .with_assets(ely_gpui_component::Assets)
-        .run(|cx: &mut App| {
+        .run(move |cx: &mut App| {
             ely_gpui_component::init(cx).expect("Ely failed to start");
             ui::grid_view::bind_keys(cx);
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
-            if let Err(error) = open_window(cx) {
+            if let Err(error) = open_window(cx, endpoint) {
                 eprintln!("idleon-optimizer: {error:#}");
                 cx.quit();
             }
@@ -23,7 +44,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn open_window(cx: &mut App) -> Result<()> {
+fn open_window(cx: &mut App, endpoint: Option<PathBuf>) -> Result<()> {
     let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(bounds)),
@@ -36,7 +57,7 @@ fn open_window(cx: &mut App) -> Result<()> {
         ..Default::default()
     };
     cx.open_window(options, |window, cx| {
-        cx.new(|cx| AppState::new(window, cx))
+        cx.new(|cx| AppState::new(window, endpoint, cx))
     })
     .context("window failed to open")?;
     cx.activate(true);

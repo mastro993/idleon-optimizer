@@ -75,7 +75,6 @@ pub fn shape_color(shape: usize) -> Hsla {
     rgb(value).into()
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

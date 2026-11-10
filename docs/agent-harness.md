@@ -42,6 +42,40 @@ To undo it, delete the installed copy:
 rm -rf "$(npm root -g)/@earendil-works/pi-coding-agent/node_modules/@earendil-works/chord"
 ```
 
+## One window per lane
+
+A single shared bridge endpoint means every agent drives the same window: one
+lane's clicks land in another lane's state, focus moves under someone else's
+hands, and screenshots race. Both sides of gpui-mcp can scope discovery to a
+private directory, so each lane owns an instance:
+
+- the app takes `--endpoint-dir <absolute dir>` and publishes only there;
+- the server takes `--endpoint-dir <same dir>` and lists only that app.
+
+`script/mcp-drive.mjs` and `script/mcp-smoke.mjs --spawn` do this for you: they
+create a temp directory, launch `target/debug/idleon-optimizer --endpoint-dir …`,
+wait for the endpoint file, start `gpui-mcp` against it, run, then stop the app.
+Three lanes can run concurrently with no interference:
+
+```console
+node script/mcp-drive.mjs --shot /tmp/lane-a.png &
+node script/mcp-drive.mjs --shot /tmp/lane-b.png &
+node script/mcp-smoke.mjs --spawn --shot /tmp/lane-c.png &
+wait
+```
+
+Use `--attach` (drive) or drop `--spawn` (smoke) to drive a window you started
+yourself through the default discovery directory. `--keep` leaves a spawned
+window running so you can look at it.
+
+Two consequences worth knowing:
+
+- Every instance activates itself on open, so the last one launched takes focus.
+  The harnesses re-activate their own pid before frame-dependent calls and retry
+  a `frame wait timed out` once.
+- A lane must not `pkill -f target/debug/idleon-optimizer`: that kills other
+  lanes' windows. Let the harness stop the instance it started.
+
 ## Verifying a lane without the MCP client
 
 The app exposes itself through [gpui-mcp](https://github.com/mastro993/gpui-mcp); both harnesses in

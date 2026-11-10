@@ -5,16 +5,14 @@ use crate::ui::format;
 use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::IconName;
+use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{
-    Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px,
-};
+use gpui::{Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::game;
 use idleon_core::model::{Effort, Target};
 use idleon_core::sim::Sample;
@@ -120,14 +118,17 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
 
     let run_entity = entity.clone();
     let running = state.running;
-    let run = Button::new("run-optimize", if running { "Optimizing…" } else { "Optimize" })
-        .primary()
-        .icon(IconName::Play)
-        .full_width()
-        .disabled(running)
-        .on_click(move |_event, _window, cx| {
-            run_entity.update(cx, |state, cx| state.optimize(cx));
-        });
+    let run = Button::new(
+        "run-optimize",
+        if running { "Optimizing…" } else { "Optimize" },
+    )
+    .primary()
+    .icon(IconName::Play)
+    .full_width()
+    .disabled(running)
+    .on_click(move |_event, _window, cx| {
+        run_entity.update(cx, |state, cx| state.optimize(cx));
+    });
 
     Card::new()
         .header(CardHeader::new("Target").description(
@@ -162,9 +163,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
                         .child(presets),
                 )
                 .child(run)
-                .child(
-                    Caption::new(state.status.clone()).text_color(colors.fg_muted),
-                ),
+                .child(Caption::new(state.status.clone()).text_color(colors.fg_muted)),
         )
 }
 
@@ -186,7 +185,11 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
     };
 
     let gain = result.gain_pct();
-    let tone = if gain > 0.0 { Tone::Success } else { Tone::Neutral };
+    let tone = if gain > 0.0 {
+        Tone::Success
+    } else {
+        Tone::Neutral
+    };
     let entity = cx.entity();
     let apply = entity.clone();
     let dismiss = entity.clone();
@@ -206,7 +209,11 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
     Card::new()
         .header(
             CardHeader::new("Result")
-                .description(format!("{} steps · {} ms", result.steps.len(), result.elapsed_ms))
+                .description(format!(
+                    "{} steps · {} ms",
+                    result.steps.len(),
+                    result.elapsed_ms
+                ))
                 .action(
                     div()
                         .id("result-gain")
@@ -226,8 +233,16 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                     div()
                         .flex()
                         .gap_4()
-                        .child(metric("result-before", "Before", format::rate(result.before_rate)))
-                        .child(metric("result-after", "After", format::rate(result.after_rate)))
+                        .child(metric(
+                            "result-before",
+                            "Before",
+                            format::rate(result.before_rate),
+                        ))
+                        .child(metric(
+                            "result-after",
+                            "After",
+                            format::rate(result.after_rate),
+                        ))
                         .child(metric(
                             "result-projection",
                             "Projected",
@@ -254,13 +269,11 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                                     apply.update(cx, |state, cx| state.apply_result(cx));
                                 }),
                         )
-                        .child(
-                            Button::new("dismiss-result", "Dismiss").on_click(
-                                move |_event, _window, cx| {
-                                    dismiss.update(cx, |state, cx| state.dismiss_result(cx));
-                                },
-                            ),
-                        ),
+                        .child(Button::new("dismiss-result", "Dismiss").on_click(
+                            move |_event, _window, cx| {
+                                dismiss.update(cx, |state, cx| state.dismiss_result(cx));
+                            },
+                        )),
                 )
                 .child(projection_chart(
                     &result.projection.samples,
@@ -348,7 +361,12 @@ fn projection_chart(samples: &[Sample], palette: (Hsla, Hsla, Hsla, Hsla)) -> im
         format::hours(end.hours)
     );
     let heights = bar_heights(samples, PLOT_HEIGHT, 48);
-    let mut bars = div().id("projection-bars").flex().items_end().w_full().h(px(PLOT_HEIGHT));
+    let mut bars = div()
+        .id("projection-bars")
+        .flex()
+        .items_end()
+        .w_full()
+        .h(px(PLOT_HEIGHT));
     for weight in &heights {
         bars = bars.child(
             div()
@@ -415,25 +433,48 @@ mod tests {
     #[test]
     fn bars_grow_with_the_rate_and_keep_a_floor() {
         let samples = [
-            Sample { hours: 0.0, level: 100, rate: 100.0 },
-            Sample { hours: 5.0, level: 101, rate: 200.0 },
+            Sample {
+                hours: 0.0,
+                level: 100,
+                rate: 100.0,
+            },
+            Sample {
+                hours: 5.0,
+                level: 101,
+                rate: 200.0,
+            },
         ];
         let heights = bar_heights(&samples, 100.0, 4);
         assert_eq!(heights.len(), 4);
         assert_eq!(heights[0], 2.0, "the slowest end sits on the floor");
         assert_eq!(heights[3], 100.0, "the fastest end fills the plot");
-        assert!(heights.windows(2).all(|pair| pair[0] <= pair[1]), "rising: {heights:?}");
+        assert!(
+            heights.windows(2).all(|pair| pair[0] <= pair[1]),
+            "rising: {heights:?}"
+        );
     }
 
     #[test]
     fn bars_cope_with_an_empty_or_flat_projection() {
         assert!(bar_heights(&[], 100.0, 8).is_empty());
         let flat = [
-            Sample { hours: 0.0, level: 1, rate: 42.0 },
-            Sample { hours: 24.0, level: 1, rate: 42.0 },
+            Sample {
+                hours: 0.0,
+                level: 1,
+                rate: 42.0,
+            },
+            Sample {
+                hours: 24.0,
+                level: 1,
+                rate: 42.0,
+            },
         ];
         assert_eq!(bar_heights(&flat, 100.0, 4), vec![50.0; 4]);
-        let single = [Sample { hours: 0.0, level: 1, rate: 7.0 }];
+        let single = [Sample {
+            hours: 0.0,
+            level: 1,
+            rate: 7.0,
+        }];
         assert_eq!(bar_heights(&single, 100.0, 3), vec![50.0; 3]);
     }
 }

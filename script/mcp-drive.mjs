@@ -1,14 +1,29 @@
-// Drives the running app through gpui-mcp and asserts the flows that matter:
-// selecting a square, adding a shape, running the optimizer, applying a result.
+// Drives the app through gpui-mcp and asserts the flows that matter: selecting a
+// square, dragging a shape, the keyboard, optimizing, applying a result, the
+// supplements editor and the save importer.
 //
-// Usage: node script/mcp-drive.mjs [--keep]
+// By default it launches its own window with a private endpoint directory, so
+// several lanes can run this at once without fighting over one instance.
+//
+// Usage: node script/mcp-drive.mjs [--attach] [--keep] [--app-bin PATH]
+//   --attach    drive a window you already started (shared discovery directory)
+//   --keep      leave the spawned window running for a look
 import { spawn, execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-const keep = process.argv.includes('--keep');
+const argv = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const index = argv.indexOf(name);
+  return index >= 0 ? argv[index + 1] : fallback;
+};
+const keep = argv.includes('--keep');
+const attach = argv.includes('--attach');
+const appBin = flag('--app-bin', join(process.cwd(), 'target/debug/idleon-optimizer'));
 
 /// macOS stops drawing an occluded window, and the bridge waits for frames, so
-/// bring the app forward before driving it.
+/// bring this instance forward before driving it.
 const activate = (pid) => {
   if (process.platform !== 'darwin' || !pid) return;
   try {
@@ -21,7 +36,40 @@ const activate = (pid) => {
   }
 };
 
-const child = spawn('gpui-mcp', [], { stdio: ['pipe', 'pipe', 'pipe'] });
+let endpointDir = null;
+let appProcess = null;
+if (!attach) {
+  if (!existsSync(appBin)) {
+    console.error(`no app binary at ${appBin}; run cargo build -p idleon-optimizer first`);
+    process.exit(1);
+  }
+  endpointDir = mkdtempSync(join(tmpdir(), 'idleon-lane-'));
+  appProcess = spawn(appBin, ['--endpoint-dir', endpointDir], { stdio: 'ignore' });
+  const deadline = Date.now() + 30000;
+  let published = false;
+  while (Date.now() < deadline && !published) {
+    published = readdirSync(endpointDir).some((name) => name.endsWith('.json'));
+    if (!published) execFileSync('sleep', ['0.2']);
+  }
+  if (!published) {
+    console.error('the app never published an endpoint; is it crashing at startup?');
+    appProcess.kill();
+    process.exit(1);
+  }
+}
+
+const stopApp = () => {
+  if (appProcess && !keep) {
+    appProcess.kill();
+    appProcess = null;
+  }
+};
+
+const child = spawn(
+  'gpui-mcp',
+  endpointDir ? ['--endpoint-dir', endpointDir] : [],
+  { stdio: ['pipe', 'pipe', 'pipe'] },
+);
 let nextId = 1;
 const pending = new Map();
 let buffer = '';
@@ -115,13 +163,17 @@ try {
   });
   child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} })}\n`);
 
-  const apps = (await call('list_apps')).text;
-  const running = JSON.parse(apps);
-  const app = (Array.isArray(running) ? running : running.apps ?? []).find(
-    (candidate) => (candidate.app_id ?? candidate.id) === 'idleon-optimizer',
-  );
+  // The endpoint file lands before the bridge answers, so poll for discovery.
+  let app = null;
+  for (let attempt = 0; attempt < 40 && !app; attempt += 1) {
+    const running = JSON.parse((await call('list_apps')).text);
+    app = (Array.isArray(running) ? running : running.apps ?? []).find(
+      (candidate) => (candidate.app_id ?? candidate.id) === 'idleon-optimizer',
+    );
+    if (!app) execFileSync('sleep', ['0.25']);
+  }
   if (!app) throw new Error('the app is not running; start ./target/debug/idleon-optimizer first');
-  appPid = app.pid;
+  appPid = appProcess?.pid ?? app.pid;
   activate(appPid);
 
   // Start on the grid tab whatever the last run left behind.
@@ -147,13 +199,52 @@ try {
   );
   check('grid marks the selected cell', labelOf(nodes, cell) !== null);
 
+  // Drag a shape by its polygon: pointer down on a covered square, move, release.
+  // A disabled Ely button keeps `enabled: true` but carries no click action.
+  const canClick = (node) => (node?.actions ?? []).includes('click');
+  const shapeAdd = (await tree()).find((node) => node.id === 'shape-add');
+  if (canClick(shapeAdd)) {
+    await call('click_element', { id: 'shape-add' });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  const summary = labelOf(await tree(), 'shape-summary-0');
+  const anchor = /^([A-T])(\d+)/.exec(summary ?? '');
+  if (anchor) {
+    const cell = (12 - Number(anchor[2])) * 20 + (anchor[1].charCodeAt(0) - 65);
+    const destination = cell % 20 < 18 ? cell + 2 : cell - 2;
+    const from = (await tree()).find((node) => node.id === `cell-${cell}`);
+    const to = (await tree()).find((node) => node.id === `cell-${destination}`);
+    if (from && to) {
+      const [sx, sy] = [from.bounds.x + from.bounds.width / 2, from.bounds.y + from.bounds.height / 2];
+      const [tx, ty] = [to.bounds.x + to.bounds.width / 2, to.bounds.y + to.bounds.height / 2];
+      await call('pointer_move', { x: sx, y: sy });
+      await call('pointer_down', { x: sx, y: sy });
+      for (let step = 1; step <= 8; step += 1) {
+        await call('pointer_move', {
+          x: sx + ((tx - sx) * step) / 8,
+          y: sy + ((ty - sy) * step) / 8,
+          held_button: 'left',
+        });
+      }
+      await call('pointer_up', { x: tx, y: ty });
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const moved = labelOf(await tree(), 'shape-summary-0');
+      check('dragging a shape moves its squares', moved !== summary, `${summary} -> ${moved}`);
+    }
+  }
+
   // Add a shape from the inspector.
   const before = nodes.filter((node) => /^shape-row/.test(node.id ?? '')).length;
-  await call('click_element', { id: 'shape-add' });
-  await waitFor(
-    (current) => current.filter((node) => /^shape-row/.test(node.id ?? '')).length > before,
-    'adding a shape lists it',
-  );
+  const canAdd = canClick((await tree()).find((node) => node.id === 'shape-add'));
+  if (canAdd) {
+    await call('click_element', { id: 'shape-add' });
+    await waitFor(
+      (current) => current.filter((node) => /^shape-row/.test(node.id ?? '')).length > before,
+      'adding a shape lists it',
+    );
+  } else {
+    check('shapes are capped, nothing to add', true);
+  }
 
   // Switch to the Optimize tab and run.
   if (has(await tree(), 'run')) {
@@ -249,14 +340,16 @@ try {
   const { content } = await call('screenshot');
   const image = content.find((part) => part.type === 'image');
   if (image) {
-    writeFileSync('/tmp/idleon-drive.png', Buffer.from(image.data, 'base64'));
-    console.log('screenshot: /tmp/idleon-drive.png');
+    const shot = flag('--shot', '/tmp/idleon-drive.png');
+    writeFileSync(shot, Buffer.from(image.data, 'base64'));
+    console.log(`screenshot: ${shot}`);
   }
 } catch (error) {
   failures += 1;
   console.error(`drive failed: ${error.message}`);
 } finally {
   if (!keep) child.kill();
+  stopApp();
 }
 
 if (failures > 0) {

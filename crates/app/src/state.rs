@@ -45,6 +45,14 @@ impl Tab {
     }
 }
 
+/// A shape drag in flight: where the pointer grabbed it, and where it was.
+#[derive(Clone, Debug)]
+pub struct ShapeDrag {
+    pub shape: usize,
+    pub start_pointer: (f32, f32),
+    pub start_position: (f64, f64),
+}
+
 /// Everything the window renders and mutates.
 pub struct AppState {
     pub simulation: Simulation,
@@ -55,6 +63,10 @@ pub struct AppState {
     pub target: Target,
     pub tab: Tab,
     pub selected_cell: Option<usize>,
+    /// The shape the pointer is dragging, and where the drag started.
+    pub shape_drag: Option<ShapeDrag>,
+    /// The shape whose row or polygon was last picked.
+    pub selected_shape: Option<usize>,
     pub status: String,
     /// Whether the save-derived supplements card is expanded.
     pub supplements_open: bool,
@@ -73,8 +85,12 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let bridge = ui::bridge::install(window, cx);
+    pub fn new(
+        window: &mut Window,
+        endpoint_dir: Option<std::path::PathBuf>,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let bridge = ui::bridge::install(window, cx, endpoint_dir);
         let mut simulation = Simulation {
             research_level: 100,
             grid: idleon_core::GridState::seeded(1),
@@ -83,7 +99,9 @@ impl AppState {
         simulation.observations.found.fill(true);
         // Two glasses on the richest observations this level can already use.
         let mut usable: Vec<usize> = (0..game().observations.len())
-            .filter(|obs| sim::observation_usable(*obs, simulation.research_level, &simulation.observations))
+            .filter(|obs| {
+                sim::observation_usable(*obs, simulation.research_level, &simulation.observations)
+            })
             .collect();
         usable.sort_by(|a, b| sim::obs_base_exp(*b).total_cmp(&sim::obs_base_exp(*a)));
         simulation.mags = usable
@@ -108,6 +126,8 @@ impl AppState {
             target: Target::Hours(24.0),
             tab: Tab::Grid,
             selected_cell: None,
+            shape_drag: None,
+            selected_shape: None,
             status: "Ready. Level squares, place shapes, then optimize.".into(),
             supplements_open: true,
             save_open: false,
@@ -145,6 +165,87 @@ impl AppState {
         self.selected_cell.and_then(|cell| game().node_at(cell))
     }
 
+    /// The topmost shape covering a square, if any.
+    pub fn shape_at(&self, cell: usize) -> Option<usize> {
+        self.simulation
+            .placements
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, placement)| shape::cells_at(placement).contains(&cell))
+            .map(|(index, _)| index)
+    }
+
+    /// The shape being dragged, if a drag is in flight.
+    pub fn dragging_shape(&self) -> Option<usize> {
+        self.shape_drag.as_ref().map(|drag| drag.shape)
+    }
+
+    /// Start dragging a shape from a pointer position in window pixels.
+    pub fn begin_shape_drag(
+        &mut self,
+        shape: usize,
+        pointer: (f32, f32),
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(placement) = self.simulation.placements.get(shape) else {
+            return;
+        };
+        self.selected_shape = Some(shape);
+        self.status = "Dragging a shape; release to drop it.".into();
+        self.shape_drag = Some(ShapeDrag {
+            shape,
+            start_pointer: pointer,
+            start_position: (placement.x, placement.y),
+        });
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Move the dragged shape to follow the pointer, on the placement lattice.
+    pub fn drag_shape_to(&mut self, pointer: (f32, f32), cx: &mut Context<Self>) {
+        let Some(drag) = self.shape_drag.clone() else {
+            return;
+        };
+        // The canvas draws one data pixel at CELL_PX / 30 logical pixels.
+        let scale = 30.0 / crate::ui::grid_view::CELL_PX as f64;
+        let dx = f64::from(pointer.0 - drag.start_pointer.0) * scale;
+        let dy = f64::from(pointer.1 - drag.start_pointer.1) * scale;
+        if let Some(placement) = self.simulation.placements.get_mut(drag.shape) {
+            placement.x = shape::snap(drag.start_position.0 + dx);
+            placement.y = shape::snap(drag.start_position.1 + dy);
+        }
+        cx.notify();
+    }
+
+    /// Finish a drag, keeping the shape where it was dropped.
+    pub fn end_shape_drag(&mut self, cx: &mut Context<Self>) {
+        if self.shape_drag.take().is_some() {
+            if let Some(shape) = self.selected_shape {
+                let name = game()
+                    .shapes
+                    .get(
+                        self.simulation
+                            .placements
+                            .get(shape)
+                            .map(|p| p.shape)
+                            .unwrap_or(0),
+                    )
+                    .map(|def| def.name.clone())
+                    .unwrap_or_default();
+                self.status = format!("Placed {name} by hand.");
+            }
+            cx.notify();
+        }
+    }
+
+    /// Highlight a shape without moving it.
+    pub fn select_shape(&mut self, shape: Option<usize>, cx: &mut Context<Self>) {
+        self.selected_shape = shape;
+        cx.notify();
+    }
+
     /// Select a square and hand it the keyboard.
     pub fn select(&mut self, cell: usize, window: &mut Window, cx: &mut Context<Self>) {
         self.selected_cell = Some(cell);
@@ -172,19 +273,13 @@ impl AppState {
     }
 
     pub fn set_level(&mut self, cell: usize, level: u32, cx: &mut Context<Self>) {
-        let cap = game()
-            .node_at(cell)
-            .map(|node| node.max_lv)
-            .unwrap_or(0);
+        let cap = game().node_at(cell).map(|node| node.max_lv).unwrap_or(0);
         self.simulation.grid.set(cell, level.min(cap));
         cx.notify();
     }
 
     pub fn bump_level(&mut self, cell: usize, delta: i64, cx: &mut Context<Self>) {
-        let cap = game()
-            .node_at(cell)
-            .map(|node| node.max_lv)
-            .unwrap_or(1);
+        let cap = game().node_at(cell).map(|node| node.max_lv).unwrap_or(1);
         let next = (self.simulation.grid.level(cell) as i64 + delta).clamp(0, cap as i64);
         self.set_level(cell, next as u32, cx);
     }
@@ -263,7 +358,11 @@ impl AppState {
             y: shape::snap(y - shape.dims[1] / 2.0),
             rot: 0.0,
         });
-        self.status = format!("Added {} on {}.", shape.name, idleon_core::model::coord(cell));
+        self.status = format!(
+            "Added {} on {}.",
+            shape.name,
+            idleon_core::model::coord(cell)
+        );
         cx.notify();
     }
 
@@ -462,9 +561,7 @@ impl AppState {
         self.run_task = Some(cx.spawn(async move |this, cx| {
             let outcome = cx
                 .background_executor()
-                .spawn(async move {
-                    optimize::run(&simulation, &context, &request, &mut |_| {})
-                })
+                .spawn(async move { optimize::run(&simulation, &context, &request, &mut |_| {}) })
                 .await;
             this.update(cx, |state, cx| {
                 state.running = false;
@@ -507,7 +604,11 @@ fn imported_summary(warnings: &[String]) -> String {
     if warnings.is_empty() {
         return "Imported: the save had every field this app reads.".into();
     }
-    format!("Imported with {} warning(s): {}", warnings.len(), warnings.join("; "))
+    format!(
+        "Imported with {} warning(s): {}",
+        warnings.len(),
+        warnings.join("; ")
+    )
 }
 
 #[cfg(test)]

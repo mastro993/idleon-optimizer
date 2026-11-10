@@ -79,8 +79,14 @@ fn shapes_stay_on_the_canvas_and_within_the_unlock_count() {
     let result = run(&simulation, &ctx, Effort::Balanced);
     assert!(result.after.placements.len() <= sim::shapes_owned(120, &ctx));
     for placement in &result.after.placements {
-        assert!(shape::in_bounds(placement), "{placement:?} leaves the canvas");
-        assert!(!shape::cells_at(placement).is_empty(), "{placement:?} covers nothing");
+        assert!(
+            shape::in_bounds(placement),
+            "{placement:?} leaves the canvas"
+        );
+        assert!(
+            !shape::cells_at(placement).is_empty(),
+            "{placement:?} covers nothing"
+        );
     }
 }
 
@@ -130,9 +136,16 @@ fn runs_are_deterministic() {
         for effort in [Effort::Quick, Effort::Balanced, Effort::Thorough] {
             let first = run(state, state_ctx, effort);
             let second = run(state, state_ctx, effort);
-            assert_eq!(first.after.placements, second.after.placements, "{effort:?}");
+            assert_eq!(
+                first.after.placements, second.after.placements,
+                "{effort:?}"
+            );
             assert_eq!(first.after.mags, second.after.mags, "{effort:?}");
-            assert_eq!(first.after.grid.levels(), second.after.grid.levels(), "{effort:?}");
+            assert_eq!(
+                first.after.grid.levels(),
+                second.after.grid.levels(),
+                "{effort:?}"
+            );
             assert_eq!(first.after_rate, second.after_rate, "{effort:?}");
             assert_eq!(first.steps, second.steps, "{effort:?}");
         }
@@ -166,7 +179,11 @@ fn layout_rate(simulation: &Simulation, ctx: &SimContext, grid: &GridState) -> f
     while trial.mags.len() < owned {
         let mut placed = false;
         for slot in &slots {
-            let held = trial.mags.iter().filter(|mag| mag.slot == Some(*slot)).count();
+            let held = trial
+                .mags
+                .iter()
+                .filter(|mag| mag.slot == Some(*slot))
+                .count();
             if held < cap {
                 trial.mags.push(Mag::new(MagKind::Regular, Some(*slot)));
                 placed = true;
@@ -197,8 +214,14 @@ fn beam_spending_never_loses_to_the_marginal_climb() {
         for outcome in [&climb, &beamed] {
             for cell in outcome.grid.live_cells() {
                 let node = game().node_at(cell).expect("a live cell has a node");
-                assert!(outcome.grid.level(cell) <= node.max_lv, "cell {cell} over its cap");
-                assert!(optimize::grid::unlocked(cell, &outcome.grid), "cell {cell} locked");
+                assert!(
+                    outcome.grid.level(cell) <= node.max_lv,
+                    "cell {cell} over its cap"
+                );
+                assert!(
+                    optimize::grid::unlocked(cell, &outcome.grid),
+                    "cell {cell} locked"
+                );
             }
         }
     }
@@ -208,7 +231,13 @@ fn beam_spending_never_loses_to_the_marginal_climb() {
 fn beam_spending_honours_an_explicit_budget() {
     let (simulation, ctx) = seeded(1, 150, 4);
     for budget in [0_u32, 12, 40] {
-        let outcome = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, Some(budget), &mut |_| {});
+        let outcome = optimize::grid::respec(
+            &simulation,
+            &ctx,
+            Effort::Thorough,
+            Some(budget),
+            &mut |_| {},
+        );
         let spent = outcome.grid.spent().saturating_sub(simulation.grid.spent());
         assert!(spent <= budget, "budget {budget} spent {spent}");
         assert_eq!(outcome.spent, outcome.grid.spent());
@@ -252,7 +281,10 @@ fn magnifier_repair_never_lowers_the_rate_and_stays_legal() {
         );
         let owned = sim::magnifiers_owned(&simulation, &ctx) as usize;
         let cap = sim::mag_cap(level) as usize;
-        assert!(thorough.mags.len() <= owned, "level {level} placed beyond the pool");
+        assert!(
+            thorough.mags.len() <= owned,
+            "level {level} placed beyond the pool"
+        );
         for mag in &thorough.mags {
             let Some(slot) = mag.slot else {
                 panic!("a placed magnifier has a slot");
@@ -269,7 +301,10 @@ fn magnifier_repair_never_lowers_the_rate_and_stays_legal() {
             assert!(held <= cap, "slot {slot} holds {held} of {cap}");
         }
         let again = optimize::mags::optimize(&simulation, &ctx, Effort::Thorough);
-        assert_eq!(thorough.mags, again.mags, "level {level} is not deterministic");
+        assert_eq!(
+            thorough.mags, again.mags,
+            "level {level} is not deterministic"
+        );
         assert_eq!(thorough.rate, again.rate);
     }
 }
@@ -360,8 +395,14 @@ fn shape_search_only_rotates_where_the_level_unlocks_it() {
         );
         assert_eq!(outcome.overlay.len(), game().cells());
         for placement in &outcome.placements {
-            assert!(shape::in_bounds(placement), "{placement:?} leaves the canvas");
-            assert!(!shape::cells_at(placement).is_empty(), "{placement:?} covers nothing");
+            assert!(
+                shape::in_bounds(placement),
+                "{placement:?} leaves the canvas"
+            );
+            assert!(
+                !shape::cells_at(placement).is_empty(),
+                "{placement:?} covers nothing"
+            );
             if !sim::can_rotate(level) {
                 assert_eq!(placement.rot, 0.0, "level {level} cannot rotate");
             }
@@ -382,13 +423,26 @@ fn beam_spending_unlocks_only_squares_it_may() {
         .collect();
     let outcome = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, None, &mut |_| {});
     let earned = sim::grid_points(&simulation, &ctx).earned;
-    assert!(outcome.grid.spent() <= earned, "spent {} of {earned}", outcome.grid.spent());
+    assert!(
+        outcome.grid.spent() <= earned,
+        "spent {} of {earned}",
+        outcome.grid.spent()
+    );
     for cell in outcome.grid.live_cells() {
         let node = game().node_at(cell).expect("a live cell has a node");
-        assert!(outcome.grid.level(cell) <= node.max_lv, "cell {cell} over its cap");
-        assert!(optimize::grid::unlocked(cell, &outcome.grid), "cell {cell} locked");
+        assert!(
+            outcome.grid.level(cell) <= node.max_lv,
+            "cell {cell} over its cap"
+        );
+        assert!(
+            optimize::grid::unlocked(cell, &outcome.grid),
+            "cell {cell} locked"
+        );
     }
-    assert!(outcome.grid.spent() > 0, "nothing was spent on an empty grid");
+    assert!(
+        outcome.grid.spent() > 0,
+        "nothing was spent on an empty grid"
+    );
 }
 
 #[test]
@@ -412,7 +466,11 @@ fn progress_and_steps_report_what_the_run_did() {
             fractions.windows(2).all(|pair| pair[1] >= pair[0]),
             "{effort:?} progress went backwards: {fractions:?}"
         );
-        assert_eq!(fractions.last().copied(), Some(1.0), "{effort:?} never finished");
+        assert_eq!(
+            fractions.last().copied(),
+            Some(1.0),
+            "{effort:?} never finished"
+        );
         assert!(messages.iter().all(|message| !message.is_empty()));
         assert!(!result.steps.is_empty(), "{effort:?} reported no steps");
         let last = result.steps.last().expect("a last step");
@@ -421,7 +479,10 @@ fn progress_and_steps_report_what_the_run_did() {
             "{effort:?} last step does not name the final rate: {last}"
         );
         for step in &result.steps {
-            assert!(step.ends_with('.'), "{effort:?} step is not a sentence: {step}");
+            assert!(
+                step.ends_with('.'),
+                "{effort:?} step is not a sentence: {step}"
+            );
         }
     }
 }

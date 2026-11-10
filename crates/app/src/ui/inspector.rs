@@ -37,11 +37,9 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
     let card = Card::new().header(CardHeader::new("Selected square"));
 
     let Some(node) = node else {
-        return card.child(
-            div()
-                .p_3()
-                .child(Caption::new("Pick a square on the grid to see what it does.")),
-        );
+        return card.child(div().p_3().child(Caption::new(
+            "Pick a square on the grid to see what it does.",
+        )));
     };
     let cell = selected.unwrap_or(node.id);
     let level = state.simulation.grid.level(cell);
@@ -83,16 +81,27 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 div()
                                     .id("square-name")
                                     .role(gpui::Role::Label)
-                                    .aria_label(format!("{} · {}", node.name.replace('_', " "), coord(cell)))
+                                    .aria_label(format!(
+                                        "{} · {}",
+                                        node.name.replace('_', " "),
+                                        coord(cell)
+                                    ))
                                     .text_size(px(14.0))
-                                    .child(format!("{} · {}", node.name.replace('_', " "), coord(cell))),
+                                    .child(format!(
+                                        "{} · {}",
+                                        node.name.replace('_', " "),
+                                        coord(cell)
+                                    )),
                             )
                             .child(
                                 div()
                                     .id("square-level")
                                     .role(gpui::Role::Label)
                                     .aria_label(format!("Level {level} / {}", node.max_lv))
-                                    .child(Caption::new(format!("Level {level} / {}", node.max_lv))),
+                                    .child(Caption::new(format!(
+                                        "Level {level} / {}",
+                                        node.max_lv
+                                    ))),
                             ),
                     )
                     .child(
@@ -100,10 +109,7 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                             .tone(Tone::Neutral),
                     ),
             )
-            .child(
-                Caption::new(node.desc.replace('_', " "))
-                    .text_color(colors.fg_muted),
-            )
+            .child(Caption::new(node.desc.replace('_', " ")).text_color(colors.fg_muted))
             .child(
                 div()
                     .flex()
@@ -135,8 +141,7 @@ fn square_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                     )
                     .child(Caption::new(format!(
                         "+{:.1}% now · {:.1} per level",
-                        bonus,
-                        node.bonus_per_lv
+                        bonus, node.bonus_per_lv
                     ))),
             ),
     )
@@ -177,15 +182,13 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
     );
 
     if placed == 0 {
-        return card.child(
-            div().p_3().child(Caption::new(
-                "No shapes yet. Add one, or run the optimizer to place them for you.",
-            )),
-        );
+        return card.child(div().p_3().child(Caption::new(
+            "No shapes yet. Add one, or run the optimizer to place them for you.",
+        )));
     }
 
     let overlay = state.simulation.overlay();
-    let names: Vec<(usize, String, f64, usize)> = state
+    let names: Vec<(usize, String, f64, usize, String)> = state
         .simulation
         .placements
         .iter()
@@ -196,12 +199,17 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                 .into_iter()
                 .filter(|cell| overlay[*cell] == placement.shape as i32)
                 .count();
-            (index, def.name.clone(), def.bonus_pct, covered)
+            let anchor = shape::cells_at(placement)
+                .into_iter()
+                .min()
+                .map(coord)
+                .unwrap_or_default();
+            (index, def.name.clone(), def.bonus_pct, covered, anchor)
         })
         .collect();
 
     let mut list = div().flex().flex_col().gap_1().p_3();
-    for (index, name, bonus, covered) in names {
+    for (index, name, bonus, covered, anchor) in names {
         let rotate_left = entity.clone();
         let rotate_right = entity.clone();
         let remove = entity.clone();
@@ -209,16 +217,21 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
         let right = entity.clone();
         let up = entity.clone();
         let down = entity.clone();
+        let pick = entity.clone();
+        let picked = state.selected_shape == Some(index);
         list = list.child(
             div()
                 .id(("shape-row", index))
+                .on_click(move |_event, _window, cx| {
+                    pick.update(cx, |state, cx| state.select_shape(Some(index), cx));
+                })
                 .flex()
                 .flex_col()
                 .gap_1()
                 .rounded(px(6.0))
                 .px_2()
                 .py_1()
-                .bg(colors.sunken)
+                .bg(if picked { colors.hover } else { colors.sunken })
                 .child(
                     div()
                         .flex()
@@ -231,10 +244,19 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                                 .bg(format::shape_color(index)),
                         )
                         .child(name)
-                        .child(Caption::new(format!(
-                            "+{bonus:.0}% · {covered} cell{}",
-                            if covered == 1 { "" } else { "s" }
-                        ))),
+                        .child(
+                            div()
+                                .id(("shape-summary", index))
+                                .role(gpui::Role::Label)
+                                .aria_label(format!(
+                                    "{anchor} · {covered} cell{}",
+                                    if covered == 1 { "" } else { "s" }
+                                ))
+                                .child(Caption::new(format!(
+                                    "+{bonus:.0}% · {covered} cell{} at {anchor}",
+                                    if covered == 1 { "" } else { "s" }
+                                ))),
+                        ),
                 )
                 .child(
                     div()
@@ -282,8 +304,9 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                             IconButton::new(("shape-rotate-left", index), IconName::RotateCcw)
                                 .tooltip("Rotate left")
                                 .on_click(move |_event, _window, cx| {
-                                    rotate_left
-                                        .update(cx, |state, cx| state.rotate_shape(index, -5.0, cx));
+                                    rotate_left.update(cx, |state, cx| {
+                                        state.rotate_shape(index, -5.0, cx)
+                                    });
                                 }),
                         )
                         .child(

@@ -7,7 +7,7 @@
 //! which slot when that scores better.
 
 use crate::data::game;
-use crate::model::{Effort, Placement, Progress, Simulation, SimContext};
+use crate::model::{Effort, Placement, Progress, SimContext, Simulation};
 use crate::shape;
 use crate::sim;
 use rayon::prelude::*;
@@ -82,7 +82,9 @@ pub fn optimize(
     };
     let owned = sim::shapes_owned(sim.research_level, ctx);
     if owned == 0 {
-        outcome.steps.push("No shapes unlocked at this level yet.".into());
+        outcome
+            .steps
+            .push("No shapes unlocked at this level yet.".into());
         return outcome;
     }
 
@@ -93,9 +95,9 @@ pub fn optimize(
     let weights = Weights::build(sim, ctx);
     let anchors = weights.anchors();
     if anchors.is_empty() {
-        outcome.steps.push(
-            "Every square a shape still helps is covered; kept the current layout.".into(),
-        );
+        outcome
+            .steps
+            .push("Every square a shape still helps is covered; kept the current layout.".into());
         return outcome;
     }
 
@@ -270,16 +272,12 @@ fn best_for_rotation(
                 }
                 tried.push(key);
                 let cells = shape::cells_for(pattern, base_col, base_row);
-                let fresh: Vec<usize> =
-                    cells.into_iter().filter(|cell| !covered[*cell]).collect();
+                let fresh: Vec<usize> = cells.into_iter().filter(|cell| !covered[*cell]).collect();
                 if fresh.is_empty() {
                     continue;
                 }
                 let above: f64 = fresh.iter().map(|cell| weights.above[*cell]).sum();
-                let value: f64 = fresh
-                    .iter()
-                    .map(|cell| weights.value[*cell] * scale)
-                    .sum();
+                let value: f64 = fresh.iter().map(|cell| weights.value[*cell] * scale).sum();
                 let placement = Placement {
                     shape: shape_id,
                     x: (base_col * shape::CELL as i32) as f64
@@ -396,7 +394,9 @@ fn local_search(
                             break;
                         }
                     }
-                    let Some((value, placement)) = best else { break };
+                    let Some((value, placement)) = best else {
+                        break;
+                    };
                     current[index] = placement;
                     current_score = value;
                     changes.slides += 1;
