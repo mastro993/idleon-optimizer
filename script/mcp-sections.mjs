@@ -167,6 +167,36 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
   },
+  statue: async (lane) => {
+    await lane.call('click_element', { id: 'statue-search' });
+    await lane.call('type_text', { text: 'move' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'statue-row-1') && !has(nodes, 'statue-row-0'),
+      'statue: search narrows the table',
+    );
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('keyboard', { keystroke: 'backspace' });
+    await waitForNode(lane, 'statue-row-0', 'statue: clearing search restores the table');
+
+    await lane.call('focus_element', { id: 'statue-sort' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => nodes.find((node) => node.id === 'statue-sort')?.value?.value === 'Lowest level first',
+      'statue: sort changes to lowest level first',
+    );
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'up' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => nodes.find((node) => node.id === 'statue-sort')?.value?.value === 'Game order',
+      'statue: sort returns to game order',
+    );
+  },
 };
 
 const prefix = shardCount > 1 ? `[${shardIndex + 1}/${shardCount}] ` : '';

@@ -1,0 +1,233 @@
+{
+ "count": 32,
+ "statues": [
+  {
+   "index": 0,
+   "name": "POWER",
+   "effect": "BASE DAMAGE",
+   "percent": false,
+   "basePerLevel": 3
+  },
+  {
+   "index": 1,
+   "name": "SPEED",
+   "effect": "MOVE SPEED",
+   "percent": true,
+   "basePerLevel": 0.1
+  },
+  {
+   "index": 2,
+   "name": "MINING",
+   "effect": "MINING POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 3,
+   "name": "FEASTY",
+   "effect": "FOOD EFFECT",
+   "percent": true,
+   "basePerLevel": 1
+  },
+  {
+   "index": 4,
+   "name": "HEALTH",
+   "effect": "BASE HEALTH",
+   "percent": false,
+   "basePerLevel": 3
+  },
+  {
+   "index": 5,
+   "name": "KACHOW",
+   "effect": "CRIT DAMAGE",
+   "percent": true,
+   "basePerLevel": 0.4
+  },
+  {
+   "index": 6,
+   "name": "LUMBERBOB",
+   "effect": "CHOPPIN POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 7,
+   "name": "THICC SKIN",
+   "effect": "BASE DEFENCE",
+   "percent": false,
+   "basePerLevel": 1
+  },
+  {
+   "index": 8,
+   "name": "OCEANMAN",
+   "effect": "FISHING POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 9,
+   "name": "OL RELIABLE",
+   "effect": "CATCHIN POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 10,
+   "name": "EXP",
+   "effect": "CLASS EXP",
+   "percent": true,
+   "basePerLevel": 0.1
+  },
+  {
+   "index": 11,
+   "name": "ANVIL",
+   "effect": "PRODUCT SPD",
+   "percent": true,
+   "basePerLevel": 0.5
+  },
+  {
+   "index": 12,
+   "name": "CAULDRON",
+   "effect": "ALCHEMY EXP",
+   "percent": true,
+   "basePerLevel": 0.5
+  },
+  {
+   "index": 13,
+   "name": "BEHOLDER",
+   "effect": "CRIT CHANCE",
+   "percent": true,
+   "basePerLevel": 0.2
+  },
+  {
+   "index": 14,
+   "name": "BULLSEYE",
+   "effect": "ACCURACY",
+   "percent": true,
+   "basePerLevel": 0.8
+  },
+  {
+   "index": 15,
+   "name": "BOX",
+   "effect": "TRAPPIN POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 16,
+   "name": "TWOSOUL",
+   "effect": "WORSHIP POWER",
+   "percent": false,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 17,
+   "name": "EHEXPEE",
+   "effect": "SKILL EXP",
+   "percent": true,
+   "basePerLevel": 0.1
+  },
+  {
+   "index": 18,
+   "name": "SEESAW",
+   "effect": "CONS EXP",
+   "percent": true,
+   "basePerLevel": 0.5
+  },
+  {
+   "index": 19,
+   "name": "PECUNIA",
+   "effect": "COINS",
+   "percent": true,
+   "basePerLevel": 1
+  },
+  {
+   "index": 20,
+   "name": "MUTTON",
+   "effect": "COOKING EXP",
+   "percent": true,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 21,
+   "name": "EGG",
+   "effect": "BREEDING EXP",
+   "percent": true,
+   "basePerLevel": 0.4
+  },
+  {
+   "index": 22,
+   "name": "BATTLEAXE",
+   "effect": "DAMAGE",
+   "percent": true,
+   "basePerLevel": 0.2
+  },
+  {
+   "index": 23,
+   "name": "SPIRAL",
+   "effect": "DIVINITY EXP",
+   "percent": true,
+   "basePerLevel": 1
+  },
+  {
+   "index": 24,
+   "name": "BOAT",
+   "effect": "SAILING SPD",
+   "percent": true,
+   "basePerLevel": 0.5
+  },
+  {
+   "index": 25,
+   "name": "COMPOST",
+   "effect": "FARMING EXP",
+   "percent": true,
+   "basePerLevel": 0.4
+  },
+  {
+   "index": 26,
+   "name": "STEALTH",
+   "effect": "STEALTH",
+   "percent": true,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 27,
+   "name": "ESSENCE",
+   "effect": "WHITE ESS",
+   "percent": true,
+   "basePerLevel": 0.6
+  },
+  {
+   "index": 28,
+   "name": "VILLAGER",
+   "effect": "VILLAGER EXP",
+   "percent": true,
+   "basePerLevel": 0.3
+  },
+  {
+   "index": 29,
+   "name": "DRAGON",
+   "effect": "STATUES BONUS",
+   "percent": true,
+   "basePerLevel": 0.2
+  },
+  {
+   "index": 30,
+   "name": "SPELUNKY",
+   "effect": "SPELUNK EXP",
+   "percent": true,
+   "basePerLevel": 0.1
+  },
+  {
+   "index": 31,
+   "name": "CORAL",
+   "effect": "DAILY CORAL",
+   "percent": true,
+   "basePerLevel": 0.02
+  }
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "file": "js/stats/data/common/statues.js"
+ }
+}

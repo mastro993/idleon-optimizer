@@ -12,6 +12,8 @@
 //!   groups of four numbers.
 //! - The research level is the highest `Lv0_<char>[20]` across characters, and
 //!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
+//! - Statue levels are `StatueLevels_<char>` JSON strings of `[level, exp]`
+//!   pairs in statue order; `charNames` supplies the selector's labels.
 //!
 //! The app's own state exports use the decoded names (`gridLevels`, `magData`,
 //! …) at the top level, so the importer accepts either shape. [`import`] reports
@@ -28,6 +30,7 @@ mod account;
 pub(crate) mod json;
 mod research;
 mod shadow;
+mod statue;
 
 pub use shadow::{Shadow, ShadowVerdict};
 
@@ -66,6 +69,8 @@ pub struct Imported {
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
+    /// The per-character statue levels and EXP the save carries.
+    pub statues: crate::statue::StatueSave,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -177,11 +182,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let statues = statue::read(save, root, &mut warnings);
 
     Ok(Imported {
         simulation,
         context,
         save: Value::Object(save.clone()),
+        statues,
         format,
         characters: roster,
         named_characters,

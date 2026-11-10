@@ -1,7 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, shadow-ban and BoneJoePickle done, 27 sections
-planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
+Status: **foundation in progress, research and statue partial, shadow-ban, endgame and
+BoneJoePickle done, 25 sections planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md);
+the machine-readable source is
 [`docs/roadmap.json`](roadmap.json); each section's full specification is under
 [`docs/sections/`](sections/).
 
@@ -248,7 +249,7 @@ The app, Ely and the automation bridge must share one GPUI build.
 Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
 bump moves all three together and the smoke harness is the check.
 
-## 9. Research and BoneJoePickle status
+## 9. Implemented section status
 
 Research, shadow and endgame are implemented; research is still partial. Done: grid, shapes,
 magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
@@ -263,6 +264,13 @@ tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](se
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
+
+The statue section has its table (ST-01). Done: the 32-row table, the saved level and EXP progress,
+the next-level requirement including the statue-1/2/3 rounding gates, per-row availability, the
+character selector and search/sort. Missing: the STARTUE EXP bubble and time estimates (ST-02) and
+batch set/apply with the statue-farming breakdown (ST-03). Formula parity against the upstream JS
+uses the fixture in `crates/core/tests/statue-requirements.json`. Details:
+[`docs/sections/statue.md`](sections/statue.md).
 
 ## 10. Verification
 

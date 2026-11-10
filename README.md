@@ -7,10 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the shadow-ban check,
-the endgame check and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a
-dashboard that opens every calculator, with one milestone per section and one issue per feature
-([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section, the statue table, the
+shadow-ban check, the endgame check and the hidden BoneJoePickle calculator. The plan covers the full
+upstream suite: a dashboard that opens every calculator, with one milestone per section and one issue
+per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -37,6 +37,11 @@ dashboard that opens every calculator, with one milestone per section and one is
   header names a partial import, and every long job goes through one shared task runner: it runs off
   the UI thread, reports progress, cancels without losing the previous result, and marks a result
   stale when its inputs change.
+- **The statue table** — all 32 statues for the selected character with their saved level, EXP
+  progress and the full bar the next level needs, an availability badge for rows the save leaves
+  out, search by name or effect, and game-order, level or remaining-EXP sort. It reads
+  `StatueLevels_<n>` and `charNames`; requirements are the upstream EXP formula, including the
+  statue-1/2/3 rounding gates above level 300.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -63,8 +68,9 @@ dashboard that opens every calculator, with one milestone per section and one is
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
   format, research level, character count and warnings before Apply; the grid levels, shape
-  positions, magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid
-  points and the decodable true multipliers are read from it. Fields the app cannot model are
+  positions, magnifiers, insight, research level/EXP, each character's statue levels/EXP and names,
+  server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are read
+  from it. Fields the app cannot model are
   reported as warnings instead of guessed; a save that cannot be read only replaces the message and
   leaves the run untouched.
 - **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
@@ -113,8 +119,10 @@ cargo run --release
 
 The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the dashboard; the
 Research Optimizer card opens the research section with a legal starter layout at research level
-100 so every pane has something to show. `cargo run -- --section damage` opens a registry entry
-directly, including the hidden tools and any unknown id (which shows the missing-section state).
+100 so every pane has something to show; the Statue Calculator card opens the table, which lists
+every statue as unavailable until a save is imported. `cargo run -- --section damage` opens a
+registry entry directly, including the hidden tools and any unknown id (which shows the
+missing-section state).
 
 ## Stack pins
 
@@ -159,10 +167,11 @@ moves its squares, that the keyboard walks and levels the grid, that a run produ
 never loses EXP, that applying it clears the result, and that the shared import dialog previews a
 save before applying it and cannot replace the run with one it cannot read. `script/mcp-sections.mjs`
 reads the registry from the binary, opens every dashboard card and every hidden tool, asserts each
-section root and shared header, drives one interaction and writes a screenshot plus a JSON sidecar
-under `target/mcp-sections/`. `--baseline`
-compares those captures with a previous run (pixels, not bytes), and `--parallel N` proves the lanes
-stay isolated by checking shards in N windows at once. These scripts need the `gpui-mcp` binary
+section root and shared header, drives one interaction (the statue table's search and sort, the
+research grid's tabs) and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`.
+`--baseline` compares those captures with a previous run (pixels, not bytes), and `--parallel N`
+proves the lanes stay isolated by checking shards in N windows at once. These scripts need the
+`gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
@@ -180,8 +189,9 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ```
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  extracted from the upstream repo
+  data/statues.json   the 32 statue rows, extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`)
+  src/sections/      the registry plus one module per section (`research/`, `statue/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -200,6 +210,11 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 `node script/extract-research-data.mjs <path-to-upstream-repo>`: 62 grid squares, 10 shapes with
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
 the upstream tables move.
+
+`crates/core/data/statues.json` and the fixture parity table in
+`crates/core/tests/statue-requirements.json` are generated by
+`node script/extract-statue-data.mjs <path-to-upstream-repo> fixtures/data.json`: 32 statue names,
+effects and per-level bases, plus the upstream EXP requirement for every fixture statue level.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
@@ -227,9 +242,11 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers, save import and the
-endgame check. The roadmap covers all remaining upstream sections (combat sim, sailing, cooking,
-royal guardian, …); their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid, its optimizers, the statue table, save
+import and the endgame check. The rest of the statue milestone (STARTUE bubble, time estimates,
+batch apply and farming breakdown) and the remaining upstream sections (combat sim, sailing,
+cooking, royal guardian, …) are planned; their cards open planned-section placeholders until those
+milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their

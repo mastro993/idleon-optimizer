@@ -14,6 +14,7 @@ pub mod endgame;
 pub mod pickle;
 pub mod research;
 pub mod shadow;
+pub mod statue;
 
 use crate::state::AppState;
 use crate::ui::section;
@@ -182,9 +183,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::General,
         description: "Statues needed per level, STARTUE EXP bubble, time estimates",
         spec: "docs/sections/statue.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: statue::view,
         keys: no_keys,
     },
     Section {
