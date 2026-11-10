@@ -143,6 +143,8 @@ pub struct AppState {
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// The shared EXP formula tree on the research Rates pane.
+    pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The latest progress line while a run is in flight.
     pub run_progress: Option<Progress>,
     /// Whether the last run was cancelled; cleared by the next run or result action.
@@ -209,6 +211,7 @@ impl AppState {
                     state.check_paste(cx);
                 }
             });
+        let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let mut state = Self {
@@ -227,6 +230,7 @@ impl AppState {
             import,
             save_partial: false,
             save_loaded: false,
+            breakdown,
             run_progress: None,
             run_cancelled: false,
             result_inputs: None,
