@@ -2,6 +2,7 @@
 
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::endgame;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
@@ -119,6 +120,8 @@ pub struct AppState {
     pub clamworks_tab: ClamworksTab,
     /// The multikill total Multi-Scalping reads, until the combat sim lands.
     pub clamworks_multikill: f64,
+    /// The endgame section's audit of the last applied save.
+    pub endgame: endgame::State,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The dashboard search field.
@@ -242,6 +245,7 @@ impl AppState {
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
+            endgame: endgame::State::default(),
             pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
@@ -401,6 +405,7 @@ impl AppState {
             return;
         };
         let message = import::applied(&imported);
+        self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.clamworks = imported.clamworks;

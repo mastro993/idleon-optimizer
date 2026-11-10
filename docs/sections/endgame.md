@@ -5,7 +5,7 @@
 - Milestone: `M8`
 - Section key: `endgame`
 - Group: `general`
-- Status: `planned`
+- Status: `done`
 - Depends on: `foundation`
 
 Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.
