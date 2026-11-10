@@ -15,22 +15,37 @@ const keep = hasFlag('--keep');
 const appBin = flag('--app-bin', DEFAULT_APP_BIN);
 
 /// A small flat `save.json` the run pastes into the import dialog: two
-/// characters at level 42 and 30, so the preview's numbers are assertable.
+/// characters at level 42 and 30, so the preview's numbers are assertable, plus
+/// the raw fields the Killroy forecast reads.
 const harnessSave = () => {
-  const sparse = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   const character = (level) => JSON.stringify(sparse(30, { 20: level }));
+  // World 3 reached: every portal gate is open in the KLA rows.
+  const portals = () => sparse(251, { 100: [0], 150: [0], 200: [0], 250: [0] });
+  const summon = sparse(4, { 3: sparse(3, { 2: 5 }) });
   return JSON.stringify({
     Research: JSON.stringify([
       sparse(240, { 50: 3, 52: 4 }),
-      sparse(240, {}),
+      sparse(240),
       sparse(80, { 0: 1, 1: 1 }),
-      sparse(80, {}),
-      sparse(80, {}),
+      sparse(80),
+      sparse(80),
       [],
       [],
     ]),
     Lv0_0: character(42),
     Lv0_1: character(30),
+    CharacterClass_0: 24,
+    CharacterClass_1: 10,
+    TimeAway: JSON.stringify({ GlobalTime: 1794296810.952, ShopRestock: 62019.836 }),
+    OptLacc: sparse(228, { 39: 5, 113: 3, 203: 2768292, 204: 3735, 205: 2453, 206: 3692, 227: 1 }),
+    KLA_0: portals(),
+    KLA_1: portals(),
+    Summon: summon,
+    KRbest: { ratB: 2240, thermostat: 2356, w5b3: 977, mushW: 1985, w5a3: 2973, w4b5: 1909,
+      beanG: 3238, sheep: 3169, acorn: 1577, w6b2: 1050, w5b4: 2410, mushG: 1988, speaker: 1470,
+      frogBIG: 1620, sandcastle: 1740, w4a3: 890 },
+    serverVars: { KillroySwap: 7 },
   });
 };
 
@@ -289,6 +304,47 @@ try {
   );
   const appliedRate = labelOf(await tree(), 'kpi-row') ?? '';
   check('the applied save drives the rate', appliedRate.length > 0, appliedRate);
+
+  // Killroy: the forecast reads raw save fields, names the encounter, and the
+  // week range re-renders the table.
+  await call('click_element', { id: 'back-to-dashboard' });
+  await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens');
+  await call('click_element', { id: 'dashboard-search' });
+  await call('keyboard', { keystroke: 'secondary-a' });
+  await call('type_text', { text: 'killroy' });
+  await waitFor((current) => has(current, 'card-killroy'), 'search finds killroy');
+  await call('click_element', { id: 'card-killroy' });
+  await waitFor((current) => has(current, 'killroy-forecast'), 'the killroy card opens its forecast');
+  nodes = await tree();
+  check(
+    'the forecast starts at this week',
+    (labelOf(nodes, 'killroy-week-0') ?? '').includes('This week'),
+    String(labelOf(nodes, 'killroy-week-0')),
+  );
+  check(
+    'the forecast names the room and family',
+    (labelOf(nodes, 'killroy-encounter-0') ?? '').includes('Rats Nest'),
+    String(labelOf(nodes, 'killroy-encounter-0')),
+  );
+  check('the rotation statistics are exposed', has(nodes, 'killroy-families') && has(nodes, 'killroy-notes'));
+  for (let press = 12; press > 2; press -= 1) {
+    await call('click_element', { id: 'killroy-weeks-down' });
+    await new Promise((resolve) => setTimeout(resolve, 120));
+  }
+  await waitFor(
+    (current) => has(current, 'killroy-week-2') && !has(current, 'killroy-week-3'),
+    'the week range updates the forecast',
+  );
+
+  // Back to the research rates pane for the failed-import checks.
+  await call('click_element', { id: 'back-to-dashboard' });
+  await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens after killroy');
+  await call('click_element', { id: 'dashboard-search' });
+  await call('keyboard', { keystroke: 'secondary-a' });
+  await call('type_text', { text: 'research' });
+  await waitFor((current) => has(current, 'card-research'), 'search finds research again');
+  await call('click_element', { id: 'card-research' });
+  await waitFor((current) => has(current, 'kpi-row'), 'the research rates pane reopens');
 
   // A paste that cannot parse only replaces the message: no Apply, run untouched.
   await call('click_element', { id: 'header-import' });

@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod killroy;
 pub mod research;
 
 use crate::state::AppState;
@@ -251,9 +252,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W2,
         description: "Weekly encounters, monster and class records, kills, skulls and +1 upgrade comparisons",
         spec: "docs/sections/killroy.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: killroy::view,
         keys: no_keys,
     },
     Section {

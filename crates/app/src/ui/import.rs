@@ -317,6 +317,7 @@ mod tests {
             format,
             characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
+            save: idleon_core::save::Save::new(serde_json::json!({})),
         }
     }
 

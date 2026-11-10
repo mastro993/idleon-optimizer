@@ -3385,6 +3385,7 @@ dependencies = [
  "gpui-pre",
  "gpui-pre-platform",
  "idleon-core",
+ "jiff",
  "serde_json",
 ]
 

@@ -54,6 +54,12 @@ const [shardIndex, shardCount] = (() => {
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
+  killroy: async (lane) => {
+    await lane.call('click_element', { id: 'killroy-import' });
+    await waitForNode(lane, 'import-drop', 'killroy: the empty state opens the import');
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitFor(lane, (nodes) => !has(nodes, 'import-drop'), 'killroy: cancel closes the import');
+  },
   research: async (lane) => {
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');

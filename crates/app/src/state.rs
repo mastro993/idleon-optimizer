@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::sections::killroy::State as KillroyState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -93,6 +94,10 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The Killroy section's forecast settings.
+    pub killroy: KillroyState,
+    /// The decoded save behind the simulation, for sections that read raw fields.
+    pub save: Option<save::Save>,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -171,6 +176,8 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            killroy: KillroyState::default(),
+            save: None,
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -302,6 +309,7 @@ impl AppState {
         let message = import::applied(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.save = Some(imported.save);
         self.result = None;
         self.research.selected_cell = None;
         self.save_loaded = true;
@@ -309,6 +317,12 @@ impl AppState {
         self.import.message = message.clone();
         self.status = message;
         self.close_import(window, cx);
+    }
+
+    /// Set how many upcoming weeks the Killroy forecast covers.
+    pub fn set_killroy_weeks(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.killroy.weeks = value.round().clamp(1.0, 52.0) as usize;
+        cx.notify();
     }
 
     /// Empty the dashboard search; Escape calls this.

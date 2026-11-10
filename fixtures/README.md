@@ -12,3 +12,8 @@ and paste the file's contents, or drop the file on it.
 
 Treat it as frozen. Add small purpose-built saves to `crates/core/tests/save.rs` for edge cases
 instead of editing this one; regenerating it means updating the fixture test on purpose.
+
+`killroy.json` is the upstream planner's forecast for `data.json` wrapped as `it.json` with
+`serverVars.KillroySwap = 7`. Regenerate it with `node script/killroy-oracle.mjs <upstream-repo> 2`
+after changing the wrap or the horizon; `crates/core/tests/killroy.rs` compares the port field for
+field. Treat it as frozen for the same reason: it is the oracle's output, not this app's.

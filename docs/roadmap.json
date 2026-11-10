@@ -1275,7 +1275,7 @@
       "key": "killroy",
       "title": "Killroy Calculator",
       "group": "w2",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.",
       "upstream": [
         "killroy-calc.html",

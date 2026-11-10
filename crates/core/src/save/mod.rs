@@ -27,6 +27,9 @@
 mod account;
 mod json;
 mod research;
+mod value;
+
+pub use value::{Save, at, number, row_values};
 
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
@@ -66,6 +69,8 @@ pub struct Imported {
     pub characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
+    /// The decoded save, for sections that read raw fields (Killroy).
+    pub save: Save,
 }
 
 /// Why an import could not be read.
@@ -116,9 +121,9 @@ struct Character {
 
 /// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
 pub fn import(save_json: &str) -> Result<Imported, ImportError> {
-    let root: Value =
+    let parsed: Value =
         serde_json::from_str(save_json).map_err(|error| ImportError::NotJson(error.to_string()))?;
-    let root = root
+    let root = parsed
         .as_object()
         .ok_or_else(|| ImportError::NoSaveFields("the top level is not an object".into()))?;
     // `it.json` nests the save under `data`; a plain save is the object itself.
@@ -170,6 +175,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         format,
         characters: roster,
         warnings,
+        save: Save::new(parsed),
     })
 }
 

@@ -5,7 +5,7 @@
 - Milestone: `M12`
 - Section key: `killroy`
 - Group: `w2`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.
