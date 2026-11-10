@@ -115,11 +115,15 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
 the upstream tables move.
 
+`fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
+manual debugging (paste it into the Save import panel). It is test input only: game formulas and save
+decoding stay ports of the upstream repo, never inferred from the fixture. See
+[`fixtures/README.md`](fixtures/README.md).
+
 ## Scope
 
-v1 covers the research grid and its optimizers. Not included: save-file import (the upstream reads
-the game save through Google sign-in; this app takes account multipliers as supplement inputs), and
-the other calculators in the upstream repo (combat sim, sailing, cooking, royal guardian, …).
+v1 covers the research grid, its optimizers and save import. Not included: the other calculators in
+the upstream repo (combat sim, sailing, cooking, royal guardian, …).
 
 The formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers collapse
 into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
