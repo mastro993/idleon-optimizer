@@ -213,6 +213,7 @@ try {
     await call('click_element', { id: 'run' });
   }
   await waitFor((current) => has(current, 'run-optimize'), 'optimize pane opens');
+
   await call('click_element', { id: 'run-optimize' });
   await waitFor((current) => has(current, 'apply-result'), 'optimizing produces a result', 60000);
 
@@ -221,6 +222,19 @@ try {
   check('result reports a gain', gain.includes('%'), gain);
   check('the optimizer never loses EXP', !gain.trim().startsWith('-'), gain);
   check('result reports the after rate', has(nodes, 'result-after'));
+
+  // Changing an input keeps the result visible and marks it stale.
+  await call('click_element', { id: 'target-value-more' });
+  await waitFor(
+    (current) => has(current, 'result-stale'),
+    'changing the target marks the result stale',
+  );
+  check('a stale result keeps its numbers', has(await tree(), 'result-after'));
+  await call('click_element', { id: 'target-value-less' });
+  await waitFor(
+    (current) => !has(current, 'result-stale'),
+    'restoring the input clears the stale mark',
+  );
 
   await call('click_element', { id: 'apply-result' });
   await waitFor(
@@ -290,7 +304,11 @@ try {
   nodes = await tree();
   check('the preview names the research level', labelOf(nodes, 'import-level') === 'Research level: 42');
   check('the preview counts characters', labelOf(nodes, 'import-characters') === 'Characters: 2');
-  check('the preview counts warnings', /^Warnings: \d+$/.test(labelOf(nodes, 'import-warnings') ?? ''));
+  const warningLabel = labelOf(nodes, 'import-warnings') ?? '';
+  check('the preview counts warnings', /^Warnings: \d+$/.test(warningLabel));
+  const expectedSaveStatus = Number(warningLabel.replace(/\D+/g, '')) > 0
+    ? 'Save imported with warnings'
+    : 'Save imported';
   await call('click_element', { id: 'import-apply' });
   await waitFor(
     (current) =>
@@ -300,7 +318,8 @@ try {
   );
   check(
     'the header reports the loaded save',
-    has(await tree(), 'header-save') && labelOf(await tree(), 'header-save') === 'Save imported',
+    has(await tree(), 'header-save') &&
+      labelOf(await tree(), 'header-save') === expectedSaveStatus,
   );
   const appliedRate = labelOf(await tree(), 'kpi-row') ?? '';
   check('the applied save drives the rate', appliedRate.length > 0, appliedRate);

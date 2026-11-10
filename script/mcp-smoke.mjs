@@ -56,6 +56,11 @@ try {
       (node) => node.id === 'section-back' || node.id === 'section-missing-back',
     );
     if (!known && !empty) throw new Error(`section ${section} rendered no empty state`);
+    // Every known section renders the shared no-save state until a save loads.
+    const saveLabel = nodes.find((node) => node.id === 'header-save')?.label ?? '';
+    if (known && saveLabel === 'No save' && !nodes.some((node) => node.id === 'no-save-state')) {
+      throw new Error(`section ${section} rendered no no-save state`);
+    }
     console.log(`section: ${root.id}${empty ? ` (${empty.id})` : ''}`);
   }
 

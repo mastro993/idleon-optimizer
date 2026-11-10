@@ -314,10 +314,13 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
+            clamworks: Default::default(),
+            save: idleon_core::save::Save::new(serde_json::Value::Null),
             format,
             characters,
+            named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
-            save: idleon_core::save::Save::new(serde_json::json!({})),
+            shadow: Default::default(),
         }
     }
 

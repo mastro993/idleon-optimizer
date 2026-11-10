@@ -3,6 +3,7 @@
 use crate::state::AppState;
 use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
+use crate::ui::task;
 use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
@@ -13,7 +14,7 @@ use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::game;
 use idleon_core::model::{Effort, Target};
 use idleon_core::sim::Sample;
@@ -111,7 +112,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
         });
 
     let run_entity = entity.clone();
-    let running = state.running;
+    let running = state.optimize_running(cx);
     let run = Button::new(
         "run-optimize",
         if running { "Optimizing…" } else { "Optimize" },
@@ -161,29 +162,60 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
         )
 }
 
-fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
-    let Some(result) = state.result.clone() else {
-        return Card::new()
-            .header(CardHeader::new("Result"))
-            .child(
-                div().p_3().flex().flex_col().gap_2().child(
-                    Banner::new(
-                        "result-empty",
-                        Severity::Info,
-                        "Nothing yet. Pick a target and press Optimize; the run happens in this process, so it can be thorough.",
+fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let run = state.optimize_state(cx);
+    let mut body = div()
+        .id("optimizer-result-body")
+        .flex()
+        .flex_col()
+        .gap_3()
+        .min_h_0();
+
+    if run.running {
+        if let Some(progress) = run.progress.clone() {
+            let cancel = cx.entity();
+            body = body.child(task::progress_card(
+                "run",
+                "Optimizing",
+                "Runs off the UI thread. Cancelling keeps the result this run replaced.",
+                progress,
+                move |_window, cx| {
+                    cancel.update(cx, |state, cx| state.cancel_optimize(cx));
+                },
+            ));
+        }
+    } else if run.cancelled {
+        body = body.child(task::cancelled_banner(
+            "run-cancelled",
+            run.result.is_some(),
+        ));
+    }
+
+    let Some(result) = run.result else {
+        if !run.running {
+            body = body.child(
+                Card::new()
+                    .header(CardHeader::new("Result"))
+                    .child(
+                        div().p_3().flex().flex_col().gap_2().child(Banner::new(
+                            "result-empty",
+                            Severity::Info,
+                            "Nothing yet. Pick a target and press Optimize; the run happens in this process, so it can be thorough.",
+                        )),
                     ),
-                ),
-            )
-            .into_any_element();
+            );
+        }
+        return body.into_any_element();
     };
 
+    let colors = &cx.theme().colors;
     let gain = result.gain_pct();
     let tone = if gain > 0.0 {
         Tone::Success
     } else {
         Tone::Neutral
     };
+    let stale = run.stale;
     let entity = cx.entity();
     let apply = entity.clone();
     let dismiss = entity.clone();
@@ -200,23 +232,32 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
         );
     }
 
-    Card::new()
-        .header(
-            CardHeader::new("Result")
-                .description(format!(
-                    "{} steps · {} ms",
-                    result.steps.len(),
-                    result.elapsed_ms
-                ))
-                .action(
-                    div()
-                        .id("result-gain")
-                        .role(gpui::Role::Label)
-                        .aria_label(format!("{gain:+.1}% EXP/hr"))
-                        .child(Badge::new(format!("{gain:+.1}% EXP/hr")).tone(tone)),
-                ),
-        )
-        .child(
+    let mut trailing = div().flex().items_center().gap_2();
+    if stale {
+        trailing = trailing.child(task::stale_badge("result-stale"));
+    }
+    trailing = trailing.child(
+        div()
+            .id("result-gain")
+            .role(gpui::Role::Label)
+            .aria_label(format!("{gain:+.1}% EXP/hr"))
+            .child(Badge::new(format!("{gain:+.1}% EXP/hr")).tone(tone)),
+    );
+
+    let mut card = Card::new().header(
+        CardHeader::new("Result")
+            .description(format!(
+                "{} steps · {} ms",
+                result.steps.len(),
+                result.elapsed_ms
+            ))
+            .action(trailing),
+    );
+    if stale {
+        card = card.child(task::stale_banner("result-stale"));
+    }
+    body.child(
+        card.child(
             div()
                 .flex()
                 .flex_col()
@@ -260,6 +301,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                         .child(
                             Button::new("apply-result", "Apply layout")
                                 .primary()
+                                .disabled(stale)
                                 .on_click(move |_event, _window, cx| {
                                     apply.update(cx, |state, cx| state.apply_result(cx));
                                 }),
@@ -285,8 +327,9 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                             .child(steps),
                     ),
                 ),
-        )
-        .into_any_element()
+        ),
+    )
+    .into_any_element()
 }
 
 /// Rate at `hours`, interpolated between the projection's samples.
