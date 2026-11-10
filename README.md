@@ -22,6 +22,13 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **The dashboard** — the 25 upstream calculators as a card grid grouped General through World 7,
   each with its icon, world badge and description. Search filters by title, description or world,
   Escape clears it, and every card has a stable `card-<section>` id that opens its section.
+- **One section registry** — `src/sections/` declares every upstream page once: id, title, group,
+  icon, description, spec link, status, dashboard card and the module that renders it. The shell
+  routes to that module, keeps each section's own state alive across dashboard visits, and offers to
+  resume the last section. Escape or Cmd/Ctrl+Left leaves any section; planned sections and unknown
+  ids land on a named empty state instead of a panic. The five hidden upstream tools (All Stats,
+  Damage, Drop Rate, Coin Multiplier, BoneJoePickle) are registered without cards and open with
+  `--section <id>`.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -80,7 +87,8 @@ cargo run --release
 
 The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the dashboard; the
 Research Optimizer card opens the research section with a legal starter layout at research level
-100 so every pane has something to show.
+100 so every pane has something to show. `cargo run -- --section damage` opens a registry entry
+directly, including the hidden tools and any unknown id (which shows the missing-section state).
 
 ## Stack pins
 
@@ -102,18 +110,22 @@ the intersection. Bumping any one means moving all three together; the smoke scr
 cargo test                                  # core maths, geometry and optimizer invariants
 cargo build -p idleon-optimizer
 node script/mcp-smoke.mjs --spawn --shot /tmp/ui.png  # own instance, tree + screenshot
+node script/mcp-smoke.mjs --spawn --section damage     # a planned section's empty state
+node script/mcp-smoke.mjs --spawn --section nope       # the unknown-section empty state
 node script/mcp-drive.mjs                   # own instance, drives every flow end to end
 ```
 
 Both harnesses launch their own window on a private bridge endpoint and stop it
 afterwards, so several can run at once without seeing each other. Pass `--attach`
 (drive) or drop `--spawn` (smoke) to drive a window you started with
-`cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation.
+`cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation and `--section <id>` to
+open a registry entry at launch.
 
 `script/mcp-drive.mjs` talks to the app through
 [gpui-mcp](https://github.com/mastro993/gpui-mcp) over stdio: it asserts the dashboard exposes all
-25 cards, that search filters and Escape clears it, that a card opens its section and Back returns,
-that the grid is exposed as semantic nodes, that a click selects a square, that dragging a shape
+25 cards, that search filters and Escape clears it, that a card opens its section, that Escape and
+Cmd/Ctrl+Left return to the dashboard, that Resume reopens the section with its own tab, that Back
+returns, that the grid is exposed as semantic nodes, that a click selects a square, that dragging a shape
 moves its squares, that the keyboard walks and levels the grid, that a run produces a result and
 never loses EXP, that applying it clears the result, and that the supplements and save-import panels
 behave. Both scripts need the `gpui-mcp` binary
@@ -134,8 +146,10 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ```
 crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
   data/research.json  extracted from the upstream repo
-crates/app         GPUI + Ely window: dashboard, section shell, grid, inspector, rates, optimize
-  src/sections.rs    the 25-card dashboard catalog and search filter
+crates/app         GPUI + Ely window: shell, dashboard and the section modules
+  src/sections/      the registry plus one module per section (`research/`)
+  src/ui/            window chrome, dashboard, shared section states, bridge
+  src/state.rs       AppState, the route and each section's state
 script/            data extraction, roadmap sync, MCP smoke and drive harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
 docs/roadmap.json  milestones and feature issues (source of truth)

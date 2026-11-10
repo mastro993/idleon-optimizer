@@ -1,6 +1,8 @@
-//! Application state: the simulation being edited and the run in flight.
+//! Application state: where the window is, the simulation being edited and the run in flight.
 
-use crate::{sections, ui};
+use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
+use crate::sections::{self, Section};
+use crate::ui;
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Task, Window};
 use gpui_mcp::BridgeHandle;
@@ -10,47 +12,37 @@ use idleon_core::model::{
 };
 use idleon_core::{game, optimize, save, shape, sim};
 
-/// The view the window shows.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Tab {
-    /// Grid canvas, shape list and node inspector.
-    Grid,
-    /// Rate breakdown and the observation board.
-    Rates,
-    /// Target, effort and the last result.
-    Run,
+/// Where the window is: the landing dashboard, a registry section, or an id the
+/// registry does not declare.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Route {
+    Dashboard,
+    Section(&'static Section),
+    /// An id no registry entry declares: the shell renders a clear empty state.
+    Missing(String),
 }
 
-impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Grid, Tab::Rates, Tab::Run];
-
-    pub fn id(self) -> &'static str {
-        match self {
-            Tab::Grid => "grid",
-            Tab::Rates => "rates",
-            Tab::Run => "run",
+impl Route {
+    /// Resolve a section id against the registry.
+    pub fn open(id: &str) -> Self {
+        match sections::find(id) {
+            Some(section) => Route::Section(section),
+            None => Route::Missing(id.to_string()),
         }
     }
 
-    pub fn label(self) -> &'static str {
+    /// The registry entry this route shows, if any.
+    pub fn section(&self) -> Option<&'static Section> {
         match self {
-            Tab::Grid => "Grid",
-            Tab::Rates => "Rates",
-            Tab::Run => "Optimize",
+            Route::Section(section) => Some(section),
+            _ => None,
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
+    /// Whether the dashboard is showing.
+    pub fn is_dashboard(&self) -> bool {
+        matches!(self, Route::Dashboard)
     }
-}
-
-/// A shape drag in flight: where the pointer grabbed it, and where it was.
-#[derive(Clone, Debug)]
-pub struct ShapeDrag {
-    pub shape: usize,
-    pub start_pointer: (f32, f32),
-    pub start_position: (f64, f64),
 }
 
 /// Everything the window renders and mutates.
@@ -61,16 +53,14 @@ pub struct AppState {
     pub running: bool,
     pub effort: Effort,
     pub target: Target,
-    /// The open section, or `None` on the dashboard.
-    pub section: Option<&'static str>,
-    pub tab: Tab,
+    /// Where the window is: the dashboard or one section.
+    pub route: Route,
+    /// The last section opened; the dashboard offers to resume it.
+    pub last_section: Option<&'static str>,
+    /// The research section's own state, kept alive across dashboard visits.
+    pub research: ResearchState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
-    pub selected_cell: Option<usize>,
-    /// The shape the pointer is dragging, and where the drag started.
-    pub shape_drag: Option<ShapeDrag>,
-    /// The shape whose row or polygon was last picked.
-    pub selected_shape: Option<usize>,
     pub status: String,
     /// Whether the save-derived supplements card is expanded.
     pub supplements_open: bool,
@@ -90,9 +80,12 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Build the window state. `section` opens that registry id at launch, so a
+    /// lane or a harness can start on any section, including hidden tools.
     pub fn new(
         window: &mut Window,
         endpoint_dir: Option<std::path::PathBuf>,
+        section: Option<String>,
         cx: &mut Context<Self>,
     ) -> Self {
         let bridge = ui::bridge::install(window, cx, endpoint_dir);
@@ -133,19 +126,17 @@ impl AppState {
             });
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
-        Self {
+        let mut state = Self {
             simulation,
             context: SimContext::default(),
             result: None,
             running: false,
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
-            section: None,
-            tab: Tab::Grid,
+            route: Route::Dashboard,
+            last_section: None,
+            research: ResearchState::default(),
             search,
-            selected_cell: None,
-            shape_drag: None,
-            selected_shape: None,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             save_open: false,
@@ -156,34 +147,58 @@ impl AppState {
             bridge,
             run_task: None,
             _search_subscription: search_subscription,
+        };
+        if let Some(id) = section {
+            state.open_section(&id, window, cx);
         }
+        state
     }
 
-    /// The open section's catalog entry, or `None` on the dashboard.
-    pub fn current_section(&self) -> Option<&'static sections::Section> {
-        self.section.and_then(sections::find)
+    /// The open section's registry entry, or `None` on the dashboard.
+    pub fn current_section(&self) -> Option<&'static Section> {
+        self.route.section()
     }
 
-    /// Open a section, leaving the dashboard.
-    pub fn open_section(&mut self, id: &'static str, cx: &mut Context<Self>) {
-        let Some(section) = sections::find(id) else {
-            self.status = format!("Unknown section: {id}.");
+    /// Open a section, leaving the dashboard. An id the registry does not declare
+    /// lands on the missing-section state instead of panicking.
+    pub fn open_section(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+        self.route = Route::open(id);
+        match self.route.section() {
+            Some(section) => {
+                self.last_section = Some(section.id);
+                self.status = match section.status {
+                    sections::Status::Ready => {
+                        format!("{} · {}", section.title, section.description)
+                    }
+                    sections::Status::Planned => {
+                        format!(
+                            "{} is planned; its spec is {}.",
+                            section.title, section.spec
+                        )
+                    }
+                };
+            }
+            None => self.status = format!("Unknown section: {id}."),
+        }
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Return to the landing dashboard, keeping every section's state alive.
+    pub fn back_to_dashboard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.route = Route::Dashboard;
+        self.status = "Dashboard. Pick a calculator.".into();
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Reopen the last section, restored to the state it was left in.
+    pub fn resume_last_section(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(id) = self.last_section else {
+            self.status = "No section opened yet.".into();
             return cx.notify();
         };
-        self.section = Some(section.id);
-        self.status = if section.id == "research" {
-            "Research optimizer. Level squares, place shapes, then optimize.".into()
-        } else {
-            format!("{} is on the roadmap.", section.title)
-        };
-        cx.notify();
-    }
-
-    /// Return to the landing dashboard.
-    pub fn back_to_dashboard(&mut self, cx: &mut Context<Self>) {
-        self.section = None;
-        self.status = "Dashboard. Pick a calculator.".into();
-        cx.notify();
+        self.open_section(id, window, cx);
     }
 
     /// Empty the dashboard search; Escape calls this.
@@ -214,7 +229,9 @@ impl AppState {
 
     /// The selected square's game data, if a square is selected.
     pub fn selected_node(&self) -> Option<&'static idleon_core::GridNode> {
-        self.selected_cell.and_then(|cell| game().node_at(cell))
+        self.research
+            .selected_cell
+            .and_then(|cell| game().node_at(cell))
     }
 
     /// The topmost shape covering a square, if any.
@@ -230,7 +247,7 @@ impl AppState {
 
     /// The shape being dragged, if a drag is in flight.
     pub fn dragging_shape(&self) -> Option<usize> {
-        self.shape_drag.as_ref().map(|drag| drag.shape)
+        self.research.shape_drag.as_ref().map(|drag| drag.shape)
     }
 
     /// Start dragging a shape from a pointer position in window pixels.
@@ -244,9 +261,9 @@ impl AppState {
         let Some(placement) = self.simulation.placements.get(shape) else {
             return;
         };
-        self.selected_shape = Some(shape);
+        self.research.selected_shape = Some(shape);
         self.status = "Dragging a shape; release to drop it.".into();
-        self.shape_drag = Some(ShapeDrag {
+        self.research.shape_drag = Some(ShapeDrag {
             shape,
             start_pointer: pointer,
             start_position: (placement.x, placement.y),
@@ -257,11 +274,11 @@ impl AppState {
 
     /// Move the dragged shape to follow the pointer, on the placement lattice.
     pub fn drag_shape_to(&mut self, pointer: (f32, f32), cx: &mut Context<Self>) {
-        let Some(drag) = self.shape_drag.clone() else {
+        let Some(drag) = self.research.shape_drag.clone() else {
             return;
         };
         // The canvas draws one data pixel at CELL_PX / 30 logical pixels.
-        let scale = 30.0 / crate::ui::grid_view::CELL_PX as f64;
+        let scale = 30.0 / crate::sections::research::grid::CELL_PX as f64;
         let dx = f64::from(pointer.0 - drag.start_pointer.0) * scale;
         let dy = f64::from(pointer.1 - drag.start_pointer.1) * scale;
         if let Some(placement) = self.simulation.placements.get_mut(drag.shape) {
@@ -273,8 +290,8 @@ impl AppState {
 
     /// Finish a drag, keeping the shape where it was dropped.
     pub fn end_shape_drag(&mut self, cx: &mut Context<Self>) {
-        if self.shape_drag.take().is_some() {
-            if let Some(shape) = self.selected_shape {
+        if self.research.shape_drag.take().is_some() {
+            if let Some(shape) = self.research.selected_shape {
                 let name = game()
                     .shapes
                     .get(
@@ -294,33 +311,33 @@ impl AppState {
 
     /// Highlight a shape without moving it.
     pub fn select_shape(&mut self, shape: Option<usize>, cx: &mut Context<Self>) {
-        self.selected_shape = shape;
+        self.research.selected_shape = shape;
         cx.notify();
     }
 
     /// Select a square and hand it the keyboard.
     pub fn select(&mut self, cell: usize, window: &mut Window, cx: &mut Context<Self>) {
-        self.selected_cell = Some(cell);
+        self.research.selected_cell = Some(cell);
         window.focus(&self.focus, cx);
         cx.notify();
     }
 
     /// Move the selection one square, clamped to the grid; selects the first square when none is.
     pub fn move_selection(&mut self, dx: i32, dy: i32, cx: &mut Context<Self>) {
-        self.selected_cell = Some(step_cell(self.selected_cell, dx, dy));
+        self.research.selected_cell = Some(step_cell(self.research.selected_cell, dx, dy));
         cx.notify();
     }
 
     /// Raise or lower the selected square's level.
     pub fn bump_selected(&mut self, delta: i64, cx: &mut Context<Self>) {
-        let Some(cell) = self.selected_cell else {
+        let Some(cell) = self.research.selected_cell else {
             return;
         };
         self.bump_level(cell, delta, cx);
     }
 
     pub fn deselect(&mut self, cx: &mut Context<Self>) {
-        self.selected_cell = None;
+        self.research.selected_cell = None;
         cx.notify();
     }
 
@@ -337,7 +354,7 @@ impl AppState {
     }
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
-        self.tab = tab;
+        self.research.tab = tab;
         cx.notify();
     }
 
@@ -400,7 +417,7 @@ impl AppState {
         let cell = (0..overlay.len())
             .filter(|cell| overlay[*cell] < 0 && self.simulation.grid.level(*cell) > 0)
             .max_by(|a, b| values[*a].total_cmp(&values[*b]))
-            .or(self.selected_cell)
+            .or(self.research.selected_cell)
             .or_else(|| self.simulation.grid.live_cells().next())
             .unwrap_or(0);
         let [x, y] = shape::cell_origin(cell);
@@ -558,7 +575,7 @@ impl AppState {
                 self.simulation = imported.simulation;
                 self.context = imported.context;
                 self.result = None;
-                self.selected_cell = None;
+                self.research.selected_cell = None;
                 self.save_ok = true;
                 self.save_message = imported_summary(&imported.warnings);
                 self.status = "Imported a save.".into();
@@ -666,6 +683,30 @@ fn imported_summary(warnings: &[String]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_known_id_routes_to_its_registry_entry() {
+        let route = Route::open("research");
+        assert_eq!(route.section().map(|section| section.id), Some("research"));
+        assert!(!route.is_dashboard());
+    }
+
+    #[test]
+    fn an_unknown_id_routes_to_the_missing_state_instead_of_panicking() {
+        let route = Route::open("no-such-section");
+        assert_eq!(route, Route::Missing("no-such-section".into()));
+        assert_eq!(route.section(), None);
+        assert!(!route.is_dashboard());
+        assert!(Route::open("").section().is_none());
+    }
+
+    #[test]
+    fn hidden_tools_still_route_for_the_harness_and_deep_links() {
+        let route = Route::open("damage");
+        let section = route.section().expect("the damage page is registered");
+        assert!(!section.dashboard);
+        assert_eq!(section.status, sections::Status::Planned);
+    }
 
     #[test]
     fn arrows_move_one_square_and_stop_at_the_edges() {

@@ -1,80 +1,28 @@
-//! The open section: research's tabbed panes, or a planned placeholder.
+//! Shared section states: sections that are planned, and ids the registry lacks.
 //!
-//! The research section renders its own tab strip; every other dashboard card
-//! lands on a placeholder until its milestone lands.
+//! Both render an empty state with a way back. Neither can panic: the router
+//! resolves every id against the registry before the shell picks a renderer.
 
 use crate::state::AppState;
-use crate::ui::rates;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::IconName;
-use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
 
-/// The research section: its three upstream tabs and the active pane.
-pub fn research_section(
-    state: &mut AppState,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> impl IntoElement {
-    match state.tab {
-        crate::state::Tab::Grid => div()
-            .id("pane-grid")
-            .flex()
-            .size_full()
-            .gap_3()
-            .min_h_0()
-            .child(
-                div()
-                    .id("grid-column")
-                    .flex()
-                    .flex_col()
-                    .flex_1()
-                    .min_w_0()
-                    .min_h_0()
-                    .child(crate::ui::grid_view::grid_pane(state, window, cx)),
-            )
-            .child(
-                div()
-                    .id("inspector-column")
-                    .flex()
-                    .flex_col()
-                    .flex_none()
-                    .w(px(360.0))
-                    .min_h_0()
-                    .child(crate::ui::inspector::inspector_pane(state, window, cx)),
-            )
-            .into_any_element(),
-        crate::state::Tab::Rates => div()
-            .id("pane-rates")
-            .size_full()
-            .min_h_0()
-            .child(rates::rates_pane(state, window, cx))
-            .into_any_element(),
-        crate::state::Tab::Run => div()
-            .id("pane-run")
-            .size_full()
-            .min_h_0()
-            .child(crate::ui::optimizer::optimizer_pane(state, window, cx))
-            .into_any_element(),
-    }
-}
-
-/// A calm placeholder whose root id proves the card opened the right section.
-pub fn placeholder_section(
+/// A section the registry declares as planned: its spec exists, the module does not.
+pub fn planned(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
-) -> impl IntoElement {
+) -> AnyElement {
     let Some(section) = state.current_section() else {
-        return div().id("section-unknown").into_any_element();
+        return div().into_any_element();
     };
     let entity = cx.entity();
     let back = entity.clone();
     div()
-        .id(format!("section-{}", section.id))
         .flex()
         .flex_col()
         .size_full()
@@ -94,16 +42,48 @@ pub fn placeholder_section(
                         "On the roadmap",
                     )
                     .body(format!(
-                        "{} is specified in docs/sections/{}.md and has not been built yet. The research optimizer is available today.",
-                        section.title, section.id
+                        "{} is specified in {} and has not been built yet. The research optimizer is available today.",
+                        section.title, section.spec
                     ))
                     .action(
                         Button::new("section-back", "Back to dashboard")
                             .icon(IconName::ArrowLeft)
-                            .on_click(move |_event, _window, cx| {
-                                back.update(cx, |state, cx| state.back_to_dashboard(cx));
+                            .on_click(move |_event, window, cx| {
+                                back.update(cx, |state, cx| state.back_to_dashboard(window, cx));
                             }),
                     ),
+                ),
+        )
+        .into_any_element()
+}
+
+/// The route's id is not in the registry: say so, name the id, and offer the way back.
+pub fn missing(id: &str, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let entity = cx.entity();
+    let back = entity.clone();
+    div()
+        .flex()
+        .flex_col()
+        .size_full()
+        .min_h_0()
+        .gap_4()
+        .child(
+            Card::new()
+                .header(CardHeader::new("Unknown section").description(id.to_string()))
+                .child(
+                    EmptyState::new("section-missing", IconName::SearchX, "No such section")
+                        .body(format!(
+                            "The registry does not declare “{id}”. Check the id, or open a calculator from the dashboard."
+                        ))
+                        .action(
+                            Button::new("section-missing-back", "Back to dashboard")
+                                .icon(IconName::ArrowLeft)
+                                .on_click(move |_event, window, cx| {
+                                    back.update(cx, |state, cx| {
+                                        state.back_to_dashboard(window, cx);
+                                    });
+                                }),
+                        ),
                 ),
         )
         .into_any_element()

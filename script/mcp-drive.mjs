@@ -193,9 +193,17 @@ try {
   await call('keyboard', { keystroke: 'escape' });
   await waitFor((current) => has(current, 'card-combat-sim'), 'Escape clears the search');
 
-  // A planned card opens its section and the header goes back.
+  // A planned card opens its section; Escape and the header's Back both return,
+  // and the dashboard offers to resume the section it remembers.
   await call('click_element', { id: 'card-fishing' });
   await waitFor((current) => has(current, 'section-fishing'), 'a card opens its section');
+  await call('keyboard', { keystroke: 'escape' });
+  await waitFor(
+    (current) => has(current, 'dashboard-resume') && !has(current, 'section-fishing'),
+    'Escape returns to the dashboard',
+  );
+  await call('click_element', { id: 'dashboard-resume' });
+  await waitFor((current) => has(current, 'section-fishing'), 'resume reopens the section');
   await call('click_element', { id: 'back-to-dashboard' });
   await waitFor((current) => has(current, 'card-fishing'), 'back returns to the dashboard');
 
@@ -206,6 +214,23 @@ try {
   await waitFor((current) => has(current, 'card-research'), 'search finds research');
   await call('click_element', { id: 'card-research' });
   await waitFor((current) => has(current, 'cell-129'), 'research card opens the grid');
+
+  // The router keeps the section's own state and remembers the last section:
+  // switch tabs, leave with the back shortcut, resume the same tab.
+  await call('click_element', { id: 'run' });
+  await waitFor((current) => has(current, 'run-optimize'), 'the optimize tab opens');
+  await call('keyboard', { keystroke: 'secondary-left' });
+  await waitFor(
+    (current) => has(current, 'dashboard-resume') && !has(current, 'section-research'),
+    'the back shortcut returns to the dashboard',
+  );
+  await call('click_element', { id: 'dashboard-resume' });
+  await waitFor(
+    (current) => has(current, 'run-optimize'),
+    'resume restores the section and its open tab',
+  );
+  await call('click_element', { id: 'grid' });
+  await waitFor((current) => has(current, 'cell-129'), 'the grid tab reopens');
 
   nodes = await tree();
   check('grid cells are exposed', nodes.filter((node) => /^cell-\d+$/.test(node.id ?? '')).length > 200);

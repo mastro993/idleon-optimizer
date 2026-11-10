@@ -86,6 +86,7 @@ pub fn grid_pane(
 
     // The shape whose row was last picked gets its squares outlined.
     let picked: Vec<usize> = state
+        .research
         .selected_shape
         .and_then(|shape| state.simulation.placements.get(shape))
         .map(idleon_core::shape::cells_at)
@@ -200,7 +201,7 @@ fn grid_cell(
     let colors = &cx.theme().colors;
     let game = game();
     let level = state.simulation.grid.level(cell);
-    let selected = state.selected_cell == Some(cell);
+    let selected = state.research.selected_cell == Some(cell);
     let node = game.node_at(cell);
     let tint = format::goal_color(node.and_then(|node| node.goal.as_deref()));
     let is_node = node.is_some();

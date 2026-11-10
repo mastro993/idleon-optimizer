@@ -1,36 +1,56 @@
-//! Window chrome: the dashboard, the active section and the status bar.
+//! Window chrome: the dashboard, the routed section and the status bar.
+//!
+//! The shell owns the window, the shared header and the routing shortcuts; a
+//! section owns its own tab strip and content behind the registry factory.
 
-use crate::sections::SECTIONS;
-use crate::state::{AppState, Tab};
-use crate::ui::{dashboard, format, section};
+use crate::sections;
+use crate::state::{AppState, Route};
+use crate::ui::{dashboard, section};
 use ely_gpui_component::buttons::IconButton;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::shell::{StatusBar, StatusBarItem, TabBar, WindowTab};
+use ely_gpui_component::shell::{StatusBar, StatusBarItem};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Heading;
 use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px};
+use gpui::{
+    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Role, Styled, Window, div, px,
+};
+
+gpui::actions!(idleon_shell, [BackToDashboard]);
+
+/// Key context of a section page: it makes Back work from every section,
+/// including the ones that own Escape themselves (the research grid binds it
+/// deeper, so Escape there clears the selection before it leaves the page).
+pub const SECTION_CONTEXT: &str = "Section";
+
+/// Register the routing shortcuts.
+pub fn bind_keys(cx: &mut App) {
+    let context = Some(SECTION_CONTEXT);
+    cx.bind_keys([
+        KeyBinding::new("escape", BackToDashboard, context),
+        KeyBinding::new("secondary-left", BackToDashboard, context),
+    ]);
+}
+
+/// The shared header's way back to the dashboard.
+fn back_button(entity: &gpui::Entity<AppState>) -> IconButton {
+    let back = entity.clone();
+    IconButton::new("back-to-dashboard", IconName::ArrowLeft)
+        .tooltip("Back to dashboard")
+        .on_click(move |_event, window, cx| {
+            back.update(cx, |state, cx| state.back_to_dashboard(window, cx));
+        })
+}
 
 /// Window chrome and the active view.
-pub fn shell(
-    state: &mut AppState,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> impl IntoElement {
-    let (bg, fg, border, accent, muted) = {
+pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let (bg, fg, border, muted) = {
         let colors = &cx.theme().colors;
-        (
-            colors.bg,
-            colors.fg,
-            colors.border,
-            colors.accent,
-            colors.fg_muted,
-        )
+        (colors.bg, colors.fg, colors.border, colors.fg_muted)
     };
-    let section = state.current_section();
+    let route = state.route.clone();
     let entity = cx.entity();
-    let rate = state.rate();
 
     let mut header = div()
         .id("app-header")
@@ -45,8 +65,8 @@ pub fn shell(
         .border_b_1()
         .border_color(border);
 
-    match section {
-        None => {
+    match &route {
+        Route::Dashboard => {
             header = header
                 .child(Heading::new(3, "Idleon Optimizer"))
                 .child(
@@ -63,22 +83,15 @@ pub fn shell(
                     div()
                         .id("header-cards")
                         .role(Role::Label)
-                        .aria_label(format!("{} calculators", SECTIONS.len()))
+                        .aria_label(format!("{} calculators", sections::card_count()))
                         .text_size(px(12.0))
                         .text_color(muted)
-                        .child(format!("{} calculators", SECTIONS.len())),
+                        .child(format!("{} calculators", sections::card_count())),
                 );
         }
-        Some(section) => {
-            let back = entity.clone();
+        Route::Section(section) => {
             header = header
-                .child(
-                    IconButton::new("back-to-dashboard", IconName::ArrowLeft)
-                        .tooltip("Back to dashboard")
-                        .on_click(move |_event, _window, cx| {
-                            back.update(cx, |state, cx| state.back_to_dashboard(cx));
-                        }),
-                )
+                .child(back_button(&entity))
                 .child(div().text_size(px(18.0)).child(section.icon))
                 .child(
                     div()
@@ -89,75 +102,77 @@ pub fn shell(
                 )
                 .child(Badge::new(section.badge()))
                 .child(div().flex_1());
-            if section.id == "research" {
-                header = header.child(tabs(state, cx));
-            }
-            header = header.child(
-                div()
-                    .id("header-rate")
-                    .role(Role::Label)
-                    .aria_label(format!("Research EXP/hr {}", format::rate(rate.total)))
-                    .text_size(px(12.0))
-                    .text_color(accent)
-                    .child(format!("{} /hr", format::rate(rate.total))),
-            );
+        }
+        Route::Missing(_) => {
+            header = header
+                .child(back_button(&entity))
+                .child(
+                    div()
+                        .id("section-title")
+                        .role(Role::Heading)
+                        .aria_label("Unknown section")
+                        .child(Heading::new(3, "Unknown section")),
+                )
+                .child(div().flex_1());
         }
     }
 
-    let body = match section.map(|section| section.id) {
-        None => div()
+    let body = match &route {
+        Route::Dashboard => div()
             .id("pane-dashboard")
             .size_full()
             .p_6()
             .min_h_0()
             .child(dashboard::dashboard_pane(state, window, cx))
             .into_any_element(),
-        Some("research") => div()
-            .id("pane-section")
+        Route::Section(section) => {
+            let view = (section.view)(state, window, cx);
+            div()
+                .id(format!("section-{}", section.id))
+                .size_full()
+                .p_3()
+                .min_h_0()
+                .child(view)
+                .into_any_element()
+        }
+        Route::Missing(id) => div()
+            .id("section-unknown")
             .size_full()
             .p_3()
             .min_h_0()
-            .child(section::research_section(state, window, cx))
-            .into_any_element(),
-        Some(_) => div()
-            .id("pane-section")
-            .size_full()
-            .p_3()
-            .min_h_0()
-            .child(section::placeholder_section(state, window, cx))
+            .child(section::missing(id, window, cx))
             .into_any_element(),
     };
 
-    let status = match section {
-        None => StatusBar::new()
+    let status = match &route {
+        Route::Dashboard => StatusBar::new()
             .left(
-                StatusBarItem::new("status-view").label(format!("{} calculators", SECTIONS.len())),
+                StatusBarItem::new("status-view")
+                    .label(format!("{} calculators", sections::card_count())),
             )
             .left(
                 StatusBarItem::new("status-detail")
                     .label("Search by title, description or world; Escape clears the search."),
             ),
-        Some(section) if section.id == "research" => StatusBar::new()
-            .left(StatusBarItem::new("status-rate").label(format!(
-                "{} EXP/hr · ×{:.2}",
-                format::rate(rate.total),
-                rate.multi
-            )))
-            .left(StatusBarItem::new("status-points").label(format!(
-                "{} / {} grid points",
-                format::count(state.grid_points().spent as u64),
-                format::count(state.grid_points().earned as u64)
-            ))),
-        Some(section) => StatusBar::new()
+        Route::Section(section) => StatusBar::new()
             .left(StatusBarItem::new("status-view").label(format!(
                 "{} · {}",
                 section.title,
                 section.badge()
             )))
-            .left(StatusBarItem::new("status-detail").label("Section planned")),
+            .left(StatusBarItem::new("status-detail").label(format!(
+                "{} · {}",
+                section.status.label(),
+                section.spec
+            ))),
+        Route::Missing(id) => StatusBar::new()
+            .left(StatusBarItem::new("status-view").label("Unknown section"))
+            .left(
+                StatusBarItem::new("status-detail").label(format!("{id} is not in the registry")),
+            ),
     };
 
-    div()
+    let mut root = div()
         .id("app-root")
         .flex()
         .flex_col()
@@ -165,22 +180,16 @@ pub fn shell(
         .bg(bg)
         .text_color(fg)
         .text_size(px(13.0))
+        .track_focus(&state.focus)
+        .on_action(cx.listener(|state, _: &BackToDashboard, window, cx| {
+            state.back_to_dashboard(window, cx);
+            cx.stop_propagation();
+        }))
         .child(header)
         .child(div().id("workspace").flex_1().min_h_0().child(body))
-        .child(status.right(StatusBarItem::new("status-status").label(state.status.clone())))
-}
-
-/// The research section's upstream tab strip.
-fn tabs(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let entity = cx.entity();
-    let mut tabs = TabBar::new("app-tabs").selected(SharedString::from(state.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
+        .child(status.right(StatusBarItem::new("status-status").label(state.status.clone())));
+    if !route.is_dashboard() {
+        root = root.key_context(SECTION_CONTEXT);
     }
-    let picker = entity.clone();
-    tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            picker.update(cx, |state, cx| state.set_tab(tab, cx));
-        }
-    })
+    root.into_any_element()
 }

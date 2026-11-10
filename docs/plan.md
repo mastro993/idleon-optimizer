@@ -67,8 +67,19 @@ Section shell:
 - Per-section state survives tab switches and dashboard visits for the session, and persists when
   the project is saved.
 
-Section registry: one entry per section with id, title, group, icon, spec link, status and factory.
-The dashboard, router, harness and roadmap generator all read the same registry.
+Section registry (`crates/app/src/sections/mod.rs`): one entry per section with id, title, group,
+icon, description, spec link, status, dashboard card flag, view factory and key bindings. The
+dashboard, router, shortcuts and harness read it, and a test keeps its ids in step with
+`docs/roadmap.json` and checks every spec file exists. Adding a section is one registry entry plus
+one module under `sections/` (and one `AppState` state field when it needs its own state). The five
+hidden upstream tools are registered without a dashboard card and open by id.
+
+Routing: `Route` is `Dashboard`, `Section(&Section)` or `Missing(id)`. Opening a section resolves
+the id against the registry, remembers it as the last section and focuses the page so the shortcuts
+work. The dashboard offers Resume for the last section and reopens it with its state intact. Escape
+and Cmd/Ctrl+Left return to the dashboard from any section; a section can bind a deeper key context,
+as the research grid does for Escape. An unknown id renders the missing-section empty state and a
+planned section renders the shared "On the roadmap" empty state — neither can panic.
 
 ## 4. Sections and milestones
 
@@ -181,9 +192,11 @@ crates/core                         no GPUI, testable
     <section>/{mod,model,sim,optimize}.rs
   shared/                           formulas, trees, number formatting, game data
 crates/app                          GPUI + Ely
-  shell/                            window, dashboard, router, import dialog, status bar
-  sections/<section>/               one UI module per section
-  state/                            ProjectState, SaveData handle, per-section state
+  sections/                         the registry and one module per section
+    mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
+    research/                       the research section's state, tab strip and panes
+  ui/                               shell (window, router, shortcuts), dashboard, section states
+  state.rs                          AppState, Route (`Dashboard`/`Section`/`Missing`) and state
 assets/upstream                     generated, gitignored, manifest-backed
 docs/plan.md                        this document
 docs/roadmap.json                   milestones and feature issues (source of truth)

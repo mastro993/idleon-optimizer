@@ -3,8 +3,9 @@
 // outside an editor session.
 //
 // Usage: node script/mcp-smoke.mjs [--app idleon-optimizer] [--shot out.png]
-//          [--spawn] [--keep] [--app-bin PATH]
-//   --spawn  launch a private instance (own endpoint directory) and stop it after
+//          [--spawn] [--keep] [--app-bin PATH] [--section ID]
+//   --spawn    launch a private instance (own endpoint directory) and stop it after
+//   --section  start the app on a registry id (or an unknown one to see the empty state)
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -32,6 +33,7 @@ const activate = (pid) => {
 };
 
 const shot = flag('--shot', null);
+const section = flag('--section', null);
 const keep = args.includes('--keep');
 const spawnOwn = args.includes('--spawn');
 const appBin = flag('--app-bin', join(process.cwd(), 'target/debug/idleon-optimizer'));
@@ -46,7 +48,9 @@ if (spawnOwn) {
     process.exit(1);
   }
   endpointDir = mkdtempSync(join(tmpdir(), 'idleon-smoke-'));
-  appProcess = spawn(appBin, ['--endpoint-dir', endpointDir], { stdio: 'ignore' });
+  const appArgs = ['--endpoint-dir', endpointDir];
+  if (section) appArgs.push('--section', section);
+  appProcess = spawn(appBin, appArgs, { stdio: 'ignore' });
   const deadline = Date.now() + 30000;
   let published = false;
   while (Date.now() < deadline && !published) {
@@ -152,6 +156,25 @@ try {
     console.log(` - ${node.id ?? '?'} ${node.role ?? ''} ${JSON.stringify(node.label ?? node.text ?? '')}`);
   }
   if (tree.diagnostics?.length) console.log(`diagnostics: ${JSON.stringify(tree.diagnostics)}`);
+
+  // `--section` proves the route: a known id lands on its own section root, an
+  // unknown one on the missing state, and the latter always renders an empty state.
+  if (section) {
+    const known = nodes.some((node) => node.id === `section-${section}`);
+    const root = nodes.find(
+      (node) => node.id === (known ? `section-${section}` : 'section-unknown'),
+    );
+    if (!root) {
+      throw new Error(
+        `no section root for ${section}; got ${nodes.map((node) => node.id).slice(0, 12).join(', ')}`,
+      );
+    }
+    const empty = nodes.find(
+      (node) => node.id === 'section-back' || node.id === 'section-missing-back',
+    );
+    if (!known && !empty) throw new Error(`section ${section} rendered no empty state`);
+    console.log(`section: ${root.id}${empty ? ` (${empty.id})` : ''}`);
+  }
 
   if (shot) {
     const { content } = await callRaw('screenshot', {});
