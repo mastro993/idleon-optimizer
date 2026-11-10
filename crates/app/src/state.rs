@@ -11,6 +11,7 @@ use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+use idleon_core::save::Shadow;
 use idleon_core::{game, optimize, save, shape, sim};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -143,6 +144,8 @@ pub struct AppState {
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
+    pub shadow: Shadow,
     /// The latest progress line while a run is in flight.
     pub run_progress: Option<Progress>,
     /// Whether the last run was cancelled; cleared by the next run or result action.
@@ -227,6 +230,7 @@ impl AppState {
             import,
             save_partial: false,
             save_loaded: false,
+            shadow: Shadow::default(),
             run_progress: None,
             run_cancelled: false,
             result_inputs: None,
@@ -372,6 +376,7 @@ impl AppState {
         self.research.selected_cell = None;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
+        self.shadow = imported.shadow;
         self.import.ok = true;
         self.import.message = message.clone();
         self.status = message;

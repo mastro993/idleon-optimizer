@@ -7,7 +7,8 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section. The plan covers the
+The current build opens on the dashboard and implements the research section and the shadow-ban
+check. The plan covers the
 full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
 issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
@@ -61,6 +62,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   points and the decodable true multipliers are read from it. Fields the app cannot model are
   reported as warnings instead of guessed; a save that cannot be read only replaces the message and
   leaves the run untouched.
+- **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
+  any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
+  page shows the save status and the flag it read under the verdict, so it never guesses.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 

@@ -317,6 +317,7 @@ mod tests {
             format,
             characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
+            shadow: Default::default(),
         }
     }
 
