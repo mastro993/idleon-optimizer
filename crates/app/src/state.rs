@@ -90,7 +90,7 @@ impl AppState {
             result: None,
             running: false,
             effort: Effort::Balanced,
-            target: Target::Level(100),
+            target: Target::Level(150),
             tab: Tab::Grid,
             selected_cell: None,
             status: "Ready. Level squares, place shapes, then optimize.".into(),

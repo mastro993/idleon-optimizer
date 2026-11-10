@@ -9,6 +9,10 @@ afford a real search instead of a heuristic.
 
 ![The research grid with shapes placed](docs/grid.png)
 
+| Rates | Optimize |
+| --- | --- |
+| ![Rate breakdown and observations](docs/rates.png) | ![A finished run](docs/result.png) |
+
 ## What it does
 
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,

@@ -48,6 +48,19 @@ pub struct GridPoints {
     pub free: u32,
 }
 
+/// A rate as `1.23M` or `845K`, for step descriptions.
+pub fn format_rate(value: f64) -> String {
+    if value >= 1e9 {
+        format!("{:.2}B", value / 1e9)
+    } else if value >= 1e6 {
+        format!("{:.2}M", value / 1e6)
+    } else if value >= 1e3 {
+        format!("{:.1}K", value / 1e3)
+    } else {
+        format!("{value:.0}")
+    }
+}
+
 /// The base EXP of one observation with a single magnifier.
 pub fn obs_base_exp(obs: usize) -> f64 {
     let t = obs as f64;

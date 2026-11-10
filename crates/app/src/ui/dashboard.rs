@@ -4,11 +4,9 @@ use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::buttons::IconButton;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
+use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::{game, sim};
@@ -30,19 +28,16 @@ pub fn dashboard_pane(
                     .decimals(0)
                     .size(ely_gpui_component::theme::TextSize::Lg),
             )
-            .icon(IconName::Zap)
             .caption("observations × multipliers"),
         )
         .child(
             KpiCard::new(Statistic::new("kpi-multi", "Multiplier", rate.multi).decimals(2))
-                .icon(IconName::Layers)
                 .caption("additive and grid bonuses"),
         )
         .child(
             KpiCard::new(
                 Statistic::new("kpi-obs", "Observation EXP", rate.obs_base).decimals(1),
             )
-            .icon(IconName::Gauge)
             .caption("before multipliers"),
         )
         .child(
@@ -50,7 +45,6 @@ pub fn dashboard_pane(
                 Statistic::new("kpi-points", "Free grid points", points.free as f64)
                     .decimals(0),
             )
-            .icon(IconName::Target)
             .caption(format!("{} spent of {}", points.spent, points.earned)),
         )
         .child(
@@ -58,7 +52,6 @@ pub fn dashboard_pane(
                 Statistic::new("kpi-shapes", "Shapes", state.simulation.placements.len() as f64)
                     .decimals(0),
             )
-            .icon(IconName::Layers)
             .caption(format!("{} unlocked", state.shapes_owned())),
         )
         .child(
@@ -66,7 +59,6 @@ pub fn dashboard_pane(
                 Statistic::new("kpi-mags", "Magnifiers", state.simulation.mags.len() as f64)
                     .decimals(0),
             )
-            .icon(IconName::Gauge)
             .caption(format!("{} owned", state.magnifiers_owned())),
         );
 
@@ -82,106 +74,124 @@ pub fn dashboard_pane(
 }
 
 fn observations_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+    let (border, muted, surface) = {
+        let palette = &cx.theme().colors;
+        (palette.border, palette.fg_muted, palette.sunken)
+    };
     let level = state.simulation.research_level;
+    let to_find = sim::observations_to_find(level, &state.simulation.observations.found);
+    let rows: Vec<usize> = (0..to_find.min(game().observations.len()))
+        .filter(|obs| sim::observation_usable(*obs, level, &state.simulation.observations))
+        .collect();
+    let shown = rows.len();
+    let entity = cx.entity();
     let overlay = state.simulation.overlay();
     let kal_map = sim::kaleidoscope_map(&state.simulation.mags, game().observations.len());
     let kal_base = sim::kalei_base(&state.simulation.grid, &overlay, &state.context);
-    let to_find = sim::observations_to_find(level, &state.simulation.observations.found);
-    let entity = cx.entity();
 
-    let mut table = Table::new(["#", "Observation", "Insight", "Magnifiers", "Insight/hr", ""]);
-    for obs in 0..to_find.min(game().observations.len()) {
-        let observation = &game().observations[obs];
-        let found = state.simulation.observations.found[obs];
-        let usable = sim::observation_usable(obs, level, &state.simulation.observations);
-        let insight_level = state.simulation.observations.insight_level[obs];
-        let insight_rate = sim::insight_rate(
-            obs,
-            &state.simulation,
-            &overlay,
-            &state.context,
-            &kal_map,
-            kal_base,
-        );
-        let mags = state
-            .simulation
-            .mags
-            .iter()
-            .filter(|mag| mag.slot == Some(obs))
-            .count();
-        let toggle = entity.clone();
-        let bump = entity.clone();
-        table = table.row([
-            div().child(format!("{}", obs + 1)).into_any_element(),
-            div()
-                .flex()
-                .flex_col()
-                .child(observation.name.replace('_', " "))
-                .child(
-                    Caption::new(format!("needs research {}", observation.roll_req as u32)),
-                )
-                .into_any_element(),
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(format!("Lv {insight_level}"))
-                .child(
-                    IconButton::new(("obs-plus", obs), IconName::Plus)
-                        .size(ControlSize::Sm)
-                        .tooltip("Raise insight")
-                        .on_click(move |_event, _window, cx| {
-                            bump.update(cx, |state, cx| state.bump_insight(obs, 1, cx));
-                        }),
-                )
-                .into_any_element(),
-            div()
-                .child(if usable {
-                    format!("{mags}")
-                } else if found {
-                    "locked".to_string()
-                } else {
-                    "unfound".to_string()
-                })
-                .into_any_element(),
-            div().child(format::rate(insight_rate)).into_any_element(),
-            div()
-                .child(
-                    IconButton::new(("obs-toggle", obs), IconName::RefreshCw)
-                        .size(ControlSize::Sm)
-                        .tooltip("Toggle found")
-                        .on_click(move |_event, _window, cx| {
-                            toggle.update(cx, |state, cx| state.toggle_found(obs, cx));
-                        }),
-                )
-                .into_any_element(),
-        ]);
+    let half = rows.len().div_ceil(2);
+    let mut columns = div().flex().gap_3().min_h_0();
+    for chunk in rows.chunks(half.max(1)) {
+        let mut column = div()
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_w_0()
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap_1()
+                    .h(px(24.0))
+                    .px_1()
+                    .text_size(px(11.0))
+                    .text_color(muted)
+                    .child(div().w(px(20.0)).child("#"))
+                    .child(div().flex_1().min_w_0().child("Observation"))
+                    .child(div().w(px(44.0)).child("Insight"))
+                    .child(div().w(px(24.0)).child("+"))
+                    .child(div().w(px(34.0)).child("Mags"))
+                    .child(div().w(px(56.0)).child("Ins/hr"))
+                    .child(div().w(px(24.0)).child("")),
+            );
+        for obs in chunk {
+            let obs = *obs;
+            let observation = &game().observations[obs];
+            let insight_level = state.simulation.observations.insight_level[obs];
+            let insight_rate = sim::insight_rate(
+                obs,
+                &state.simulation,
+                &overlay,
+                &state.context,
+                &kal_map,
+                kal_base,
+            );
+            let mags = state
+                .simulation
+                .mags
+                .iter()
+                .filter(|mag| mag.slot == Some(obs))
+                .count();
+            let bump = entity.clone();
+            let toggle = entity.clone();
+            column = column.child(
+                div()
+                    .id(("obs-row", obs))
+                    .flex()
+                    .items_center()
+                    .gap_1()
+                    .h(px(30.0))
+                    .px_1()
+                    .border_b_1()
+                    .border_color(border)
+                    .text_size(px(12.0))
+                    .child(div().w(px(20.0)).child(format!("{}", obs + 1)))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .child(observation.name.replace('_', " ")),
+                    )
+                    .child(div().w(px(44.0)).child(format!("Lv {insight_level}")))
+                    .child(
+                        IconButton::new(("obs-plus", obs), IconName::Plus)
+                            .size(ControlSize::Sm)
+                            .tooltip("Raise insight")
+                            .on_click(move |_event, _window, cx| {
+                                bump.update(cx, |state, cx| state.bump_insight(obs, 1, cx));
+                            }),
+                    )
+                    .child(div().w(px(34.0)).child(format!("{mags}")))
+                    .child(div().w(px(56.0)).child(format::rate(insight_rate)))
+                    .child(
+                        IconButton::new(("obs-toggle", obs), IconName::RefreshCw)
+                            .size(ControlSize::Sm)
+                            .tooltip("Toggle found")
+                            .on_click(move |_event, _window, cx| {
+                                toggle.update(cx, |state, cx| state.toggle_found(obs, cx));
+                            }),
+                    ),
+            );
+        }
+        columns = columns.child(column);
     }
 
     Card::new()
-        .header(
-            CardHeader::new("Observations")
-                .description(format!(
-                    "{to_find} of {} found at research level {level}",
-                    game().observations.len()
-                )),
-        )
+        .header(CardHeader::new("Observations").description(format!(
+            "{shown} usable of {to_find} found at research level {level}"
+        )))
         .child(
             div()
                 .flex_1()
                 .min_h_0()
                 .overflow_hidden()
                 .p_3()
-                .child(
-                    ScrollArea::new("observations-scroll").child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .text_color(colors.fg)
-                            .child(table),
-                    ),
-                ),
+                .child(div().h(px(1.0)).bg(surface))
+                .child(columns),
         )
-        .h(px(520.0))
+        .child(
+            div().px_3().pb_2().text_size(px(11.0)).text_color(muted).child(
+                "Insight/hr counts monocles only; magnifiers marked here sit on that observation.",
+            ),
+        )
 }

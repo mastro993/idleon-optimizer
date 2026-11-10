@@ -144,9 +144,9 @@ pub fn optimize(
     }
 
     outcome.steps.push(format!(
-        "Placed {} shapes: {:.3}M EXP/hr ({:+.1}%).",
+        "Placed {} shapes: {} EXP/hr ({:+.1}%).",
         outcome.placements.len(),
-        outcome.rate / 1e6,
+        sim::format_rate(outcome.rate),
         if before > 0.0 {
             (outcome.rate / before - 1.0) * 100.0
         } else {
