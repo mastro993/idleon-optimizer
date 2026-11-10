@@ -24,13 +24,13 @@ into a local Rust core, so a run costs milliseconds of CPU instead of minutes of
    - one `Optimize` run that chains them and projects the result.
 4. **Presets** — the sixteen upstream activity presets (Res EXP, Minehead, DR, Insight, Lumi/hr, …)
    as placement priorities.
-5. **Agent-drivable UI** — every control carries a stable id, label, role and disabled state for the
+5. **Save import** — paste a decoded save and read the grid, shapes, magnifiers, insight, research
+   level/EXP and the account multipliers that can be decoded from it; warn about the rest.
+6. **Agent-drivable UI** — every control carries a stable id, label, role and disabled state for the
    gpui-mcp bridge, so an agent can read and drive the window.
 
 **Out of scope (v1)** — explicitly deferred, not forgotten:
 
-- Save-file import (upstream reads the game save through Google sign-in; this app takes the
-  save-derived multipliers as manual supplement inputs instead).
 - The other calculators in the upstream repo (combat sim, sailing, cooking, royal guardian, …).
 - Cloud sync, multi-account, mobile.
 
@@ -60,6 +60,7 @@ crates/core                      no UI, no GPUI, fast to test
   model.rs                       GridState, Placement, Mag, Simulation, SimContext, requests
   shape.rs                       polygon geometry, 30 px coverage lattice, overlays
   sim.rs                         EXP rate, curves, insight, grid points, projection, cell values
+  save/{mod,research,account}.rs decoded save → simulation, research rows, account multipliers
   optimize/{shapes,mags,grid}.rs placement, assignment, point spending
   optimize/mod.rs                the run that chains them
 
@@ -67,7 +68,7 @@ crates/app                       GPUI + Ely
   main.rs                        application, window, theme
   state.rs                       AppState entity: simulation, context, run task, selection
   ui/shell.rs                    title bar, tab strip, status bar, pane layout
-  ui/grid_view.rs                the 20×12 canvas, shapes, hit testing, keyboard
+  ui/grid_view.rs                the 20×12 canvas, shapes, hit testing, dragging, keyboard
   ui/inspector.rs                selected square, shape list, rotation
   ui/dashboard.rs                rate breakdown, observation board
   ui/optimizer.rs                target, effort, run, results, projection chart
@@ -112,9 +113,11 @@ carrying EXP/hour, grid points, shape and magnifier counts.
   stepper, max level), and the shape list with bonus, covered cells and rotation nudge. Shapes draw
   as translucent polygons over a goal-coloured grid, with level badges.
 - **Rates** — KPI cards (EXP/hour, multiplier, observation EXP, grid points, shapes, magnifiers),
-  the observation board with insight level and insight/hour per slot, and the magnifier pool.
-- **Optimize** — target (level or hours), effort (quick / balanced / thorough), run button with
-  progress, before/after comparison, projection summary and the step list, apply/dismiss.
+  the observation board with insight level and insight/hour per slot, the magnifier pool, the
+  supplements editor and the save-import panel.
+- **Optimize** — target (level or hours), effort (quick / balanced / thorough), preset, run button
+  with progress, before/after comparison, projection summary, EXP/hour chart and the step list,
+  apply/dismiss.
 
 Every element that an agent might touch gets `.id(...)`; icon-only buttons get `.aria_label(...)`;
 disabled controls get `.aria_disabled(true)`; read-only fields get `.aria_read_only(true)`.
@@ -140,15 +143,25 @@ disabled controls get `.aria_disabled(true)`; read-only fields get `.aria_read_o
 
 Landed after the first pass: beam search over grid spending with grant-aware pricing, magnifier
 repair moves, a wider shape search gated on the rotation unlock, the supplements editor, save
-import, the projection chart, and keyboard control of the grid.
+import, the projection chart, shape dragging on the canvas, keyboard control of the grid, and the
+split of the save importer by feature.
 
 Still open, in priority order:
 
-1. Shape dragging on the canvas (today: nudge and rotate from the inspector, arrows for squares).
-2. `allBonusMulti` and `extra_pct` still lean on save fields that the upstream derives through dozens
-   of game systems; the import warns instead of guessing, so some saves under-report the multiplier.
-3. `crates/core/src/save.rs` is 846 lines: split into `save/{mod,research,account}.rs` by feature.
-4. Optimizer depth: two-shape joint moves, and a projection-aware secondary objective for monocles.
+1. Save-derived multipliers: `allBonusMulti`, `extra_pct`, `extra_multiplier` and the flat grid
+   points still lean on fields the upstream derives through dozens of game systems (sticker tree,
+   arcade, Clam Works, equipment, Menagerie, Button, Jelly, RoG outpost, …). The import warns
+   instead of guessing, so some saves under-report the rate.
+2. Target-aware optimization: the run maximizes the current EXP/hour and projects afterwards;
+   upstream simulates to the target, spends points earned on the way and re-optimizes on level-ups
+   and insight level-ups. The same applies to the optional assume-observations, extended insight
+   lookahead and tournament (+12 h) toggles.
+3. Optimizer depth: two-shape joint moves, and a projection-aware secondary objective for monocles.
+4. Editing comfort: no undo/redo for grid, shape or magnifier edits.
+
+Not ported from the upstream research page (outside v1, listed so the gap is explicit): the Insight
+ROI and Observation Unlock analyses, the Decision Tree sandbox, custom preset priority editing, the
+state export/import string, Google sign-in/auto save refresh, and the Minehead and Sushi tabs.
 
 ## 8. Risks
 
