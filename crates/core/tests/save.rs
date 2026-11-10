@@ -262,6 +262,17 @@ fn it_json_and_save_json_import_the_same_values() {
     assert_eq!(it_json.characters, 2);
     assert_eq!(save_json.characters, it_json.characters);
     assert_eq!(save_json.warnings, it_json.warnings);
+    // The audit-ready save and its named roster survive the import; a flat
+    // save.json carries the same decoded object without the names.
+    assert_eq!(it_json.named_characters, 2);
+    assert_eq!(save_json.named_characters, 0);
+    for field in ["Research", "Lv0_0", "OptLacc", "Holes"] {
+        assert_eq!(
+            it_json.save.get(field),
+            save_json.save.get(field),
+            "{field} is the same decoded field"
+        );
+    }
 
     let it_rate = sim::exp_rate(&it_json.simulation, &it_json.context);
     let save_rate = sim::exp_rate(&save_json.simulation, &save_json.context);

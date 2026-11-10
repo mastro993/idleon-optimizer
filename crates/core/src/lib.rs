@@ -6,6 +6,7 @@
 //! follow `js/stats/systems/w7/research-math.js`.
 
 pub mod data;
+pub mod endgame;
 pub mod model;
 pub mod optimize;
 pub mod save;

@@ -1,0 +1,1245 @@
+{
+ "generatedFrom": "Corgan/idleon-research-optimizer js/endgame-stats.js",
+ "save": "fixtures/data.json",
+ "stats": [
+  {
+   "id": "totalMoney",
+   "label": "Total money",
+   "group": "General",
+   "value": 6.100056391290721e+44,
+   "partial": false
+  },
+  {
+   "id": "totalLevels",
+   "label": "Total character levels",
+   "group": "General",
+   "value": 14683,
+   "partial": false
+  },
+  {
+   "id": "totalStatues",
+   "label": "Total Statues",
+   "group": "General",
+   "value": 12438,
+   "partial": false
+  },
+  {
+   "id": "totalBuildings",
+   "label": "Total Buildings",
+   "group": "General",
+   "value": 5075,
+   "partial": false
+  },
+  {
+   "id": "totalGreenStacks",
+   "label": "Total Green Stacks",
+   "group": "General",
+   "value": 283,
+   "partial": false
+  },
+  {
+   "id": "logSample",
+   "label": "Log Sample",
+   "group": "General",
+   "value": 940575302680250,
+   "partial": false
+  },
+  {
+   "id": "copperSample",
+   "label": "Copper Sample",
+   "group": "General",
+   "value": 2380363542874640,
+   "partial": false
+  },
+  {
+   "id": "fliesSample",
+   "label": "Flies Sample",
+   "group": "General",
+   "value": 5090887246603.79,
+   "partial": false
+  },
+  {
+   "id": "sporeSample",
+   "label": "Spore Sample",
+   "group": "General",
+   "value": 110313543.68496,
+   "partial": false
+  },
+  {
+   "id": "goldFishSample",
+   "label": "Gold Fish Sample",
+   "group": "General",
+   "value": 3035490481500.02,
+   "partial": false
+  },
+  {
+   "id": "totalWaves",
+   "label": "Total Waves",
+   "group": "General",
+   "value": 1170,
+   "partial": false
+  },
+  {
+   "id": "totalMeals",
+   "label": "Total Meals",
+   "group": "General",
+   "value": 9203,
+   "partial": false
+  },
+  {
+   "id": "totalShrines",
+   "label": "Total Shrines",
+   "group": "General",
+   "value": 270,
+   "partial": false
+  },
+  {
+   "id": "totalVials",
+   "label": "Total Vials",
+   "group": "General",
+   "value": 1123,
+   "partial": false
+  },
+  {
+   "id": "totalCards",
+   "label": "Total Cards",
+   "group": "General",
+   "value": 90284314573,
+   "partial": false
+  },
+  {
+   "id": "bits",
+   "label": "Bits",
+   "group": "General",
+   "value": 5.45220262350724e+92,
+   "partial": false
+  },
+  {
+   "id": "godRank",
+   "label": "God Rank",
+   "group": "General",
+   "value": 21,
+   "partial": false
+  },
+  {
+   "id": "greenMushroomKills",
+   "label": "Green Mushroom Kills",
+   "group": "General",
+   "value": 7481103249.398215,
+   "partial": false
+  },
+  {
+   "id": "highestCropOg",
+   "label": "Highest Crop OG",
+   "group": "General",
+   "value": 4294967296,
+   "partial": false
+  },
+  {
+   "id": "jadeCoins",
+   "label": "Jade Coins",
+   "group": "General",
+   "value": 1,
+   "partial": false
+  },
+  {
+   "id": "whiteEssence",
+   "label": "White Essence",
+   "group": "General",
+   "value": 3.45548021600506e+31,
+   "partial": false
+  },
+  {
+   "id": "totalBoats",
+   "label": "Total Boats",
+   "group": "General",
+   "value": 7779,
+   "partial": false
+  },
+  {
+   "id": "logBook",
+   "label": "Log Book",
+   "group": "General",
+   "value": 88,
+   "partial": false
+  },
+  {
+   "id": "totalShinyLevels",
+   "label": "Total Shiny Levels",
+   "group": "General",
+   "value": 587,
+   "partial": false
+  },
+  {
+   "id": "totalBreedabilityLevels",
+   "label": "Total Breedability Levels",
+   "group": "General",
+   "value": 313,
+   "partial": false
+  },
+  {
+   "id": "totalPlotRanks",
+   "label": "Total Plot Ranks",
+   "group": "General",
+   "value": 10812,
+   "partial": false
+  },
+  {
+   "id": "totalDayMarketLevels",
+   "label": "Total Day Market Levels",
+   "group": "General",
+   "value": 1525,
+   "partial": false
+  },
+  {
+   "id": "totalNightMarketLevels",
+   "label": "Total Night Market Levels",
+   "group": "General",
+   "value": 961,
+   "partial": false
+  },
+  {
+   "id": "totalPrimeKills",
+   "label": "Total Prime Kills",
+   "group": "General",
+   "value": 172325,
+   "partial": false
+  },
+  {
+   "id": "highestPowerPet",
+   "label": "Highest Power Pet",
+   "group": "General",
+   "value": 1070582.00442723,
+   "partial": false
+  },
+  {
+   "id": "slab",
+   "label": "Slab",
+   "group": "General",
+   "value": 1867,
+   "partial": false
+  },
+  {
+   "id": "totalTomePoints",
+   "label": "Tome score",
+   "group": "General",
+   "value": 50912,
+   "partial": true
+  },
+  {
+   "id": "totalPaletteLevels",
+   "label": "Total Palette Levels",
+   "group": "General",
+   "value": 905,
+   "partial": false
+  },
+  {
+   "id": "totalDivinityBlessingLevels",
+   "label": "Total Divinity Blessing Levels",
+   "group": "General",
+   "value": 2320,
+   "partial": false
+  },
+  {
+   "id": "totalSummoningUpgrades",
+   "label": "Total Summoning Upgrades",
+   "group": "General",
+   "value": 20188,
+   "partial": false
+  },
+  {
+   "id": "totalSpelunkingUpgrades",
+   "label": "Total Spelunking Upgrades",
+   "group": "General",
+   "value": 10048,
+   "partial": false
+  },
+  {
+   "id": "totalZenithMarketUpgrades",
+   "label": "Total Zenith Market Upgrades",
+   "group": "General",
+   "value": 669,
+   "partial": false
+  },
+  {
+   "id": "totalCoralKidUpgrades",
+   "label": "Total Coral Kid Upgrades",
+   "group": "General",
+   "value": 80,
+   "partial": false
+  },
+  {
+   "id": "totalSushiStationUpgrades",
+   "label": "Total Sushi Station Upgrades",
+   "group": "General",
+   "value": 8379,
+   "partial": false
+  },
+  {
+   "id": "totalSushiKnowledgeLevels",
+   "label": "Total Sushi Knowledge Levels",
+   "group": "General",
+   "value": 856,
+   "partial": false
+  },
+  {
+   "id": "totalSushiPerfectos",
+   "label": "Total Sushi Perfectos",
+   "group": "General",
+   "value": 18,
+   "partial": false
+  },
+  {
+   "id": "totalButtonPresses",
+   "label": "Total Button Presses",
+   "group": "General",
+   "value": 222,
+   "partial": false
+  },
+  {
+   "id": "cookingMasteryLevel",
+   "label": "Cooking Mastery Level",
+   "group": "General",
+   "value": 18,
+   "partial": false
+  },
+  {
+   "id": "totalAdviceFishUpgrades",
+   "label": "Total Advice Fish Upgrades",
+   "group": "General",
+   "value": 433,
+   "partial": false
+  },
+  {
+   "id": "totalEquinoxUpgrades",
+   "label": "Total Equinox Upgrades",
+   "group": "General",
+   "value": 409,
+   "partial": false
+  },
+  {
+   "id": "bestJellyDps",
+   "label": "Best Jelly DPS",
+   "group": "General",
+   "value": 264770690.882348,
+   "partial": false
+  },
+  {
+   "id": "totalJellyCellLevels",
+   "label": "Total Jelly Cell Levels",
+   "group": "General",
+   "value": 191,
+   "partial": false
+  },
+  {
+   "id": "totalJellyUpgrades",
+   "label": "Total Jelly Upgrades",
+   "group": "General",
+   "value": 910,
+   "partial": false
+  },
+  {
+   "id": "bestSushiCombo",
+   "label": "Best Sushi Combo",
+   "group": "General",
+   "value": 6753,
+   "partial": false
+  },
+  {
+   "id": "arenaWaves",
+   "label": "Arena Waves",
+   "group": "General",
+   "value": 215,
+   "partial": false
+  },
+  {
+   "id": "dkOrbKills",
+   "label": "DK Orb kills",
+   "group": "General",
+   "value": 6283563,
+   "partial": false
+  },
+  {
+   "id": "sbPlunderousKills",
+   "label": "SB Plunderous kills",
+   "group": "General",
+   "value": 16734,
+   "partial": false
+  },
+  {
+   "id": "esWormholeKills",
+   "label": "ES Wormhole kills",
+   "group": "General",
+   "value": 2362675,
+   "partial": false
+  },
+  {
+   "id": "vwPortals",
+   "label": "VW portals",
+   "group": "General",
+   "value": 89,
+   "partial": false
+  },
+  {
+   "id": "fractalHours",
+   "label": "Fractal Hours",
+   "group": "General",
+   "value": 5808,
+   "partial": false
+  },
+  {
+   "id": "dungeonCredits",
+   "label": "Dungeon Credits",
+   "group": "General",
+   "value": 1684605,
+   "partial": false
+  },
+  {
+   "id": "dungeonFlurbos",
+   "label": "Dungeon Flurbos",
+   "group": "General",
+   "value": 144571,
+   "partial": false
+  },
+  {
+   "id": "endlessSummoningWins",
+   "label": "Endless Summoning Wins",
+   "group": "General",
+   "value": 150,
+   "partial": false
+  },
+  {
+   "id": "bestCrucibleRound",
+   "label": "Best Crucible Round",
+   "group": "General",
+   "value": 0,
+   "partial": false
+  },
+  {
+   "id": "menagerieRank",
+   "label": "Menagerie Rank",
+   "group": "General",
+   "value": 26,
+   "partial": false
+  },
+  {
+   "id": "totalMenagerieBoostLevels",
+   "label": "Total Menagerie Boost Levels",
+   "group": "General",
+   "value": 107,
+   "partial": false
+  },
+  {
+   "id": "highestDamage",
+   "label": "Highest Damage",
+   "group": "Tasks",
+   "value": 7.61195265536512e+34,
+   "partial": false
+  },
+  {
+   "id": "afkTime",
+   "label": "Afk Time",
+   "group": "Tasks",
+   "value": 409012.038611057,
+   "partial": false
+  },
+  {
+   "id": "monstersKilled",
+   "label": "Monsters Killed",
+   "group": "Tasks",
+   "value": 17675913207005.3,
+   "partial": false
+  },
+  {
+   "id": "postOfficeOrders",
+   "label": "Post Office Orders",
+   "group": "Tasks",
+   "value": 271711.04,
+   "partial": true
+  },
+  {
+   "id": "refinedSalts",
+   "label": "Refined Salts",
+   "group": "Tasks",
+   "value": 1093931967,
+   "partial": false
+  },
+  {
+   "id": "totalMaterialPrinted",
+   "label": "Total Material Printed",
+   "group": "Tasks",
+   "value": 14754186378368600000,
+   "partial": false
+  },
+  {
+   "id": "trashedCogs",
+   "label": "Trashed Cogs",
+   "group": "Tasks",
+   "value": 14708,
+   "partial": false
+  },
+  {
+   "id": "plantsPicked",
+   "label": "Plants Picked",
+   "group": "Tasks",
+   "value": 299527,
+   "partial": false
+  },
+  {
+   "id": "totalBubbles",
+   "label": "Total Bubbles",
+   "group": "Tasks",
+   "value": 5862559,
+   "partial": false
+  },
+  {
+   "id": "totalStamps",
+   "label": "Total Stamps",
+   "group": "Tasks",
+   "value": 24571,
+   "partial": false
+  },
+  {
+   "id": "highestNugget",
+   "label": "Highest Nugget",
+   "group": "Tasks",
+   "value": 1561908451.44996,
+   "partial": false
+  },
+  {
+   "id": "totalSkillsLevels",
+   "label": "Total skill levels",
+   "group": "Skills",
+   "value": 122495,
+   "partial": false
+  },
+  {
+   "id": "mining",
+   "label": "Mining",
+   "group": "Skills",
+   "value": 158,
+   "partial": false
+  },
+  {
+   "id": "smithing",
+   "label": "Smithing",
+   "group": "Skills",
+   "value": 203,
+   "partial": false
+  },
+  {
+   "id": "choppin",
+   "label": "Chopping",
+   "group": "Skills",
+   "value": 185,
+   "partial": false
+  },
+  {
+   "id": "fishing",
+   "label": "Fishing",
+   "group": "Skills",
+   "value": 124,
+   "partial": false
+  },
+  {
+   "id": "alchemy",
+   "label": "Alchemy",
+   "group": "Skills",
+   "value": 193,
+   "partial": false
+  },
+  {
+   "id": "catching",
+   "label": "Catching",
+   "group": "Skills",
+   "value": 163,
+   "partial": false
+  },
+  {
+   "id": "trapping",
+   "label": "Trapping",
+   "group": "Skills",
+   "value": 126,
+   "partial": false
+  },
+  {
+   "id": "construction",
+   "label": "Construction",
+   "group": "Skills",
+   "value": 8005,
+   "partial": false
+  },
+  {
+   "id": "worship",
+   "label": "Worship",
+   "group": "Skills",
+   "value": 158,
+   "partial": false
+  },
+  {
+   "id": "cooking",
+   "label": "Cooking",
+   "group": "Skills",
+   "value": 142,
+   "partial": false
+  },
+  {
+   "id": "breeding",
+   "label": "Breeding",
+   "group": "Skills",
+   "value": 135,
+   "partial": false
+  },
+  {
+   "id": "laboratory",
+   "label": "Laboratory",
+   "group": "Skills",
+   "value": 321,
+   "partial": false
+  },
+  {
+   "id": "sailing",
+   "label": "Sailing",
+   "group": "Skills",
+   "value": 175,
+   "partial": false
+  },
+  {
+   "id": "divinity",
+   "label": "Divinity",
+   "group": "Skills",
+   "value": 437,
+   "partial": false
+  },
+  {
+   "id": "gaming",
+   "label": "Gaming",
+   "group": "Skills",
+   "value": 435,
+   "partial": false
+  },
+  {
+   "id": "farming",
+   "label": "Farming",
+   "group": "Skills",
+   "value": 486,
+   "partial": false
+  },
+  {
+   "id": "sneaking",
+   "label": "Sneaking",
+   "group": "Skills",
+   "value": 1211,
+   "partial": false
+  },
+  {
+   "id": "summoning",
+   "label": "Summoning",
+   "group": "Skills",
+   "value": 223,
+   "partial": false
+  },
+  {
+   "id": "spelunking",
+   "label": "Spelunking",
+   "group": "Skills",
+   "value": 501,
+   "partial": false
+  },
+  {
+   "id": "research",
+   "label": "Research",
+   "group": "Skills",
+   "value": 122,
+   "partial": false
+  },
+  {
+   "id": "strength",
+   "label": "Strength",
+   "group": "Character",
+   "value": 5942091,
+   "partial": false
+  },
+  {
+   "id": "agility",
+   "label": "Agility",
+   "group": "Character",
+   "value": 4456979,
+   "partial": false
+  },
+  {
+   "id": "wisdom",
+   "label": "Wisdom",
+   "group": "Character",
+   "value": 5487366,
+   "partial": false
+  },
+  {
+   "id": "luck",
+   "label": "Luck",
+   "group": "Character",
+   "value": 1183284,
+   "partial": false
+  },
+  {
+   "id": "level",
+   "label": "Level",
+   "group": "Character",
+   "value": 1353,
+   "partial": false
+  },
+  {
+   "id": "dropRate",
+   "label": "Drop Rate",
+   "group": "Character",
+   "value": 7877.952017877134,
+   "partial": true
+  },
+  {
+   "id": "cashMulti",
+   "label": "Highest coin multiplier",
+   "group": "Character",
+   "value": 1.3911875383690461e+23,
+   "partial": true
+  },
+  {
+   "id": "defence",
+   "label": "Defence",
+   "group": "Character",
+   "value": 3060646393.298531,
+   "partial": false
+  },
+  {
+   "id": "accuracy",
+   "label": "Accuracy",
+   "group": "Character",
+   "value": 9.763756240882857e+30,
+   "partial": true
+  },
+  {
+   "id": "hp",
+   "label": "HP",
+   "group": "Character",
+   "value": 410384992604.8048,
+   "partial": false
+  },
+  {
+   "id": "mp",
+   "label": "MP",
+   "group": "Character",
+   "value": 230703197.37168643,
+   "partial": false
+  },
+  {
+   "id": "w1Colo",
+   "label": "W1 Colosseum",
+   "group": "Miscellaneous",
+   "value": 0,
+   "partial": false
+  },
+  {
+   "id": "w2Colo",
+   "label": "W2 Colosseum",
+   "group": "Miscellaneous",
+   "value": 474430.67,
+   "partial": false
+  },
+  {
+   "id": "w3Colo",
+   "label": "W3 Colosseum",
+   "group": "Miscellaneous",
+   "value": 1455842.124,
+   "partial": false
+  },
+  {
+   "id": "w4Colo",
+   "label": "W4 Colosseum",
+   "group": "Miscellaneous",
+   "value": 10321168.662,
+   "partial": false
+  },
+  {
+   "id": "w5Colo",
+   "label": "W5 Colosseum",
+   "group": "Miscellaneous",
+   "value": 94361848.614,
+   "partial": false
+  },
+  {
+   "id": "w6Colo",
+   "label": "W6 Colosseum",
+   "group": "Miscellaneous",
+   "value": 29174298.2438726,
+   "partial": false
+  },
+  {
+   "id": "choppingMinigame",
+   "label": "Chopping Minigame",
+   "group": "Miscellaneous",
+   "value": 109,
+   "partial": false
+  },
+  {
+   "id": "fishingMinigame",
+   "label": "Fishing Minigame",
+   "group": "Miscellaneous",
+   "value": 16,
+   "partial": false
+  },
+  {
+   "id": "catchingMinigame",
+   "label": "Catching Minigame",
+   "group": "Miscellaneous",
+   "value": 39,
+   "partial": false
+  },
+  {
+   "id": "miningMinigame",
+   "label": "Mining Minigame",
+   "group": "Miscellaneous",
+   "value": 13,
+   "partial": false
+  },
+  {
+   "id": "penpalMinigame",
+   "label": "Penpal Minigame",
+   "group": "Miscellaneous",
+   "value": 76,
+   "partial": false
+  },
+  {
+   "id": "hoopsMinigame",
+   "label": "Hoops Minigame",
+   "group": "Miscellaneous",
+   "value": 11,
+   "partial": false
+  },
+  {
+   "id": "dartsMinigame",
+   "label": "Darts Minigame",
+   "group": "Miscellaneous",
+   "value": 129,
+   "partial": false
+  },
+  {
+   "id": "redoxSaltRank",
+   "label": "Redox Salt Rank",
+   "group": "Miscellaneous",
+   "value": 668,
+   "partial": false
+  },
+  {
+   "id": "explosiveSaltRank",
+   "label": "Explosive Salt Rank",
+   "group": "Miscellaneous",
+   "value": 278,
+   "partial": false
+  },
+  {
+   "id": "spontaneitySaltRank",
+   "label": "Spontaneity Salt Rank",
+   "group": "Miscellaneous",
+   "value": 113,
+   "partial": false
+  },
+  {
+   "id": "dioxideSaltRank",
+   "label": "Dioxide Salt Rank",
+   "group": "Miscellaneous",
+   "value": 76,
+   "partial": false
+  },
+  {
+   "id": "purpleSaltRank",
+   "label": "Purple Salt Rank",
+   "group": "Miscellaneous",
+   "value": 26,
+   "partial": false
+  },
+  {
+   "id": "nulloSaltRank",
+   "label": "Nullo Salt Rank",
+   "group": "Miscellaneous",
+   "value": 21,
+   "partial": false
+  },
+  {
+   "id": "crosslinkSaltRank",
+   "label": "Crosslink Salt Rank",
+   "group": "Miscellaneous",
+   "value": 15,
+   "partial": false
+  },
+  {
+   "id": "propagatedSaltRank",
+   "label": "Propagated Salt Rank",
+   "group": "Miscellaneous",
+   "value": 6,
+   "partial": false
+  },
+  {
+   "id": "anionicSaltRank",
+   "label": "Anionic Salt Rank",
+   "group": "Miscellaneous",
+   "value": 1,
+   "partial": false
+  },
+  {
+   "id": "highestCogExp",
+   "label": "Highest Cog Exp",
+   "group": "Miscellaneous",
+   "value": 651,
+   "partial": false
+  },
+  {
+   "id": "highestConstructExp/hr",
+   "label": "Highest Construct Exp/hr",
+   "group": "Miscellaneous",
+   "value": 145881419702748930,
+   "partial": false
+  },
+  {
+   "id": "highestCallMeBob",
+   "label": "Highest Call Me Bob",
+   "group": "Miscellaneous",
+   "value": 263402,
+   "partial": false
+  },
+  {
+   "id": "highestCallMeAsh",
+   "label": "Highest Call Me Ash",
+   "group": "Miscellaneous",
+   "value": 263402,
+   "partial": false
+  },
+  {
+   "id": "highestHammerHammer",
+   "label": "Highest Hammer Hammer",
+   "group": "Miscellaneous",
+   "value": 263653,
+   "partial": false
+  },
+  {
+   "id": "highestBigP",
+   "label": "Highest Big P",
+   "group": "Miscellaneous",
+   "value": 20027,
+   "partial": false
+  },
+  {
+   "id": "highestShowdownLevel",
+   "label": "Highest Showdown Level",
+   "group": "Miscellaneous",
+   "value": 85,
+   "partial": false
+  },
+  {
+   "id": "mostGiantsKilled",
+   "label": "Most Giants Killed",
+   "group": "Miscellaneous",
+   "value": 58,
+   "partial": false
+  },
+  {
+   "id": "biggestHaulSpelunking",
+   "label": "Biggest Haul Spelunking",
+   "group": "Miscellaneous",
+   "value": 5.882915206400102e+37,
+   "partial": false
+  },
+  {
+   "id": "highestSpelunkingPower",
+   "label": "Highest Spelunking Power",
+   "group": "Miscellaneous",
+   "value": 1.8098968669187474e+29,
+   "partial": true
+  },
+  {
+   "id": "totalSpelunkingDepths",
+   "label": "Total Spelunking Depths",
+   "group": "Miscellaneous",
+   "value": 2366,
+   "partial": false
+  },
+  {
+   "id": "totalManicSpelunkingDepths",
+   "label": "Total Manic Spelunking Depths",
+   "group": "Miscellaneous",
+   "value": 329,
+   "partial": false
+  },
+  {
+   "id": "mineheadOpponentsDefeated",
+   "label": "Minehead Opponents Defeated",
+   "group": "Miscellaneous",
+   "value": 23,
+   "partial": false
+  },
+  {
+   "id": "totalGrandDiscoveries",
+   "label": "Total Grand Discoveries",
+   "group": "Miscellaneous",
+   "value": 68,
+   "partial": false
+  },
+  {
+   "id": "glimboTotalTrades",
+   "label": "Glimbo Total Trades",
+   "group": "Miscellaneous",
+   "value": 2153,
+   "partial": false
+  },
+  {
+   "id": "totalGamingCrowns",
+   "label": "Total Gaming Crowns",
+   "group": "Miscellaneous",
+   "value": 17,
+   "partial": false
+  },
+  {
+   "id": "highestMegafeather",
+   "label": "Highest Megafeather",
+   "group": "Miscellaneous",
+   "value": 28,
+   "partial": false
+  },
+  {
+   "id": "highestMegaFish",
+   "label": "Highest Mega Fish",
+   "group": "Miscellaneous",
+   "value": 21,
+   "partial": false
+  },
+  {
+   "id": "highestMegaFlesh",
+   "label": "Highest Mega Flesh",
+   "group": "Miscellaneous",
+   "value": 18,
+   "partial": false
+  },
+  {
+   "id": "totalGrimoireUpgrades",
+   "label": "Total Grimoire Upgrades",
+   "group": "Masterclass",
+   "value": 8013,
+   "partial": false
+  },
+  {
+   "id": "totalBonesCollected",
+   "label": "Total Bones Collected",
+   "group": "Masterclass",
+   "value": 600364172468772000,
+   "partial": false
+  },
+  {
+   "id": "totalCompassUpgrades",
+   "label": "Total Compass Upgrades",
+   "group": "Masterclass",
+   "value": 27987,
+   "partial": false
+  },
+  {
+   "id": "totalDustCollected",
+   "label": "Total Dust Collected",
+   "group": "Masterclass",
+   "value": 1e+22,
+   "partial": false
+  },
+  {
+   "id": "totalMedallions",
+   "label": "Total Medallions",
+   "group": "Masterclass",
+   "value": 132,
+   "partial": false
+  },
+  {
+   "id": "totalArcanistUpgrades",
+   "label": "Total Arcanist Upgrades",
+   "group": "Masterclass",
+   "value": 20524,
+   "partial": false
+  },
+  {
+   "id": "totalTachyonsCollected",
+   "label": "Total Tachyons Collected",
+   "group": "Masterclass",
+   "value": 1e+22,
+   "partial": false
+  },
+  {
+   "id": "highestArcaneMapMulti",
+   "label": "Highest Arcane Map Multi",
+   "group": "Masterclass",
+   "value": 1.027866221243589,
+   "partial": false
+  },
+  {
+   "id": "totalRoyalArmoryUpgrades",
+   "label": "Total Royal Armory Upgrades",
+   "group": "Masterclass",
+   "value": 1999,
+   "partial": false
+  },
+  {
+   "id": "totalRoyalResourceGrades",
+   "label": "Total Royal Resource Grades",
+   "group": "Masterclass",
+   "value": 1879,
+   "partial": false
+  },
+  {
+   "id": "totalRoyalStatueLevels",
+   "label": "Total Royal Statue Levels",
+   "group": "Masterclass",
+   "value": 42,
+   "partial": false
+  },
+  {
+   "id": "totalOutposts",
+   "label": "Total Outposts",
+   "group": "Masterclass",
+   "value": 54,
+   "partial": false
+  },
+  {
+   "id": "highestOutpostResourceRate",
+   "label": "Highest Outpost Resource Rate",
+   "group": "Masterclass",
+   "value": 1461015016121.7917,
+   "partial": false
+  },
+  {
+   "id": "totalMeasurementLevels",
+   "label": "Total Measurement Levels",
+   "group": "Caverns",
+   "value": 4439,
+   "partial": false
+  },
+  {
+   "id": "totalOpals",
+   "label": "Total Opals",
+   "group": "Caverns",
+   "value": 266,
+   "partial": false
+  },
+  {
+   "id": "totalLayersDestroyed",
+   "label": "Total Layers Destroyed",
+   "group": "Caverns",
+   "value": 67,
+   "partial": false
+  },
+  {
+   "id": "totalBarExpansions",
+   "label": "Total Bar Expansions",
+   "group": "Caverns",
+   "value": 620,
+   "partial": false
+  },
+  {
+   "id": "bestDenScore",
+   "label": "Best Den Score",
+   "group": "Caverns",
+   "value": 46350370.7949937,
+   "partial": false
+  },
+  {
+   "id": "totalBraveryLevels",
+   "label": "Total Bravery Levels",
+   "group": "Caverns",
+   "value": 123981,
+   "partial": false
+  },
+  {
+   "id": "totalJusticeLevels",
+   "label": "Total Justice Levels",
+   "group": "Caverns",
+   "value": 106776,
+   "partial": false
+  },
+  {
+   "id": "highestJusticeRound",
+   "label": "Highest Justice Round",
+   "group": "Caverns",
+   "value": 75,
+   "partial": false
+  },
+  {
+   "id": "bellRings",
+   "label": "Bell Rings",
+   "group": "Caverns",
+   "value": 423,
+   "partial": false
+  },
+  {
+   "id": "bellPings",
+   "label": "Bell Pings",
+   "group": "Caverns",
+   "value": 26,
+   "partial": false
+  },
+  {
+   "id": "totalStringLevels",
+   "label": "Total String Levels",
+   "group": "Caverns",
+   "value": 762,
+   "partial": false
+  },
+  {
+   "id": "brokenJars",
+   "label": "Broken Jars",
+   "group": "Caverns",
+   "value": 8775021,
+   "partial": false
+  },
+  {
+   "id": "totalCollectibleLevels",
+   "label": "Total Collectible Levels",
+   "group": "Caverns",
+   "value": 360,
+   "partial": false
+  },
+  {
+   "id": "totalGambitTime",
+   "label": "Total Gambit Time",
+   "group": "Caverns",
+   "value": 3748.500000000336,
+   "partial": false
+  },
+  {
+   "id": "highestVillagerExp/hr",
+   "label": "Highest Villager Exp/hr",
+   "group": "Caverns",
+   "value": 257792092996649.34,
+   "partial": true
+  },
+  {
+   "id": "totalVillagerExp/hr",
+   "label": "Total Villager Exp/hr",
+   "group": "Caverns",
+   "value": 662556997443808.4,
+   "partial": true
+  },
+  {
+   "id": "highestColonyLevel",
+   "label": "Highest Colony Level",
+   "group": "Caverns",
+   "value": 7,
+   "partial": false
+  },
+  {
+   "id": "highestSanctumLevel",
+   "label": "Highest Sanctum Level",
+   "group": "Caverns",
+   "value": 17,
+   "partial": false
+  },
+  {
+   "id": "totalFountainUpgrades",
+   "label": "Total Fountain Upgrades",
+   "group": "Caverns",
+   "value": 2475,
+   "partial": false
+  }
+ ]
+}

@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+use crate::sections::endgame;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
 use crate::ui;
@@ -132,6 +133,8 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The endgame section's audit of the last applied save.
+    pub endgame: endgame::State,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -221,6 +224,7 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            endgame: endgame::State::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -367,6 +371,7 @@ impl AppState {
             return;
         };
         let message = import::applied(&imported);
+        self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.research.selected_cell = None;

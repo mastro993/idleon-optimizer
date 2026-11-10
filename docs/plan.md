@@ -237,7 +237,7 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Research status
 
-The research section is the only implemented one and is still partial. Done: grid, shapes,
+Research and endgame are implemented; research is still partial. Done: grid, shapes,
 magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
 chart, keyboard and canvas dragging. Missing: the five extra tabs (Insight ROI, Observation
 Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation,

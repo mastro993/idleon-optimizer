@@ -20,7 +20,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M5 | Drop Rate Calculator | Tools | 2 | planned | foundation, stats-all | [drop-rate](sections/drop-rate.md) |
 | M6 | Coin Multiplier Calculator | Tools | 2 | planned | foundation, stats-all | [coin-multi](sections/coin-multi.md) |
 | M7 | Shadow Ban Check | General | 1 | planned | foundation | [shadow](sections/shadow.md) |
-| M8 | Endgame Check | General | 1 | planned | foundation | [endgame](sections/endgame.md) |
+| M8 | Endgame Check | General | 1 | done | foundation | [endgame](sections/endgame.md) |
 | M9 | Statue Calculator | General | 3 | planned | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | planned | foundation | [fishing](sections/fishing.md) |
 | M11 | Prisma Calculator | World 2 | 2 | planned | foundation | [prisma](sections/prisma.md) |
