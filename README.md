@@ -192,22 +192,22 @@ manual debugging (open Import in the header and paste it). It is test input only
 decoding stay ports of the upstream repo, never inferred from the fixture. See
 [`fixtures/README.md`](fixtures/README.md).
 
-Upstream images are not committed. The upstream licence reserves all rights, so
-`script/import-upstream-assets.mjs --from <checkout>` copies them into gitignored `assets/upstream/`
-with a hashed manifest:
+Upstream artwork is committed in `assets/upstream/`. The images are game assets from Legends of
+Idleon, not original work of the upstream repository; credit sits in `assets/upstream/README.md`.
+`script/import-upstream-assets.mjs --from <checkout> --force` regenerates the folder with a hashed
+manifest:
 
 ```console
 node script/import-upstream-assets.mjs --from <checkout> --dry-run  # every file and total size
-node script/import-upstream-assets.mjs --from <checkout>            # copy, manifest, verify
+node script/import-upstream-assets.mjs --from <checkout> --force    # copy, manifest, verify
 node script/import-upstream-assets.mjs --verify                     # re-check hashes on disk
 ```
 
 The app reads `assets/upstream/manifest.json` and resolves every image reference through it. A
 missing install or a deleted file draws a labelled placeholder in the same box; sections never
-assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The script
-refuses to write inside a git worktree unless `.gitignore` covers the target, and never stages or
-commits anything. Distributing a build with upstream assets or code needs written permission from
-the upstream author.
+assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The game
+artwork is free to use; the upstream code is still all-rights-reserved, so ports stay rewrites with
+source references and the credit note stays with the images.
 
 ## Scope
 

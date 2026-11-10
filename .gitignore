@@ -4,6 +4,3 @@
 /target/
 .DS_Store
 *.log
-
-# Upstream images are all-rights-reserved and imported locally only.
-/assets/upstream/
