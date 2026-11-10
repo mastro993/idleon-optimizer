@@ -368,12 +368,12 @@ function issueBody(feature, milestone, numbers) {
   return lines.join('\n');
 }
 
-function milestoneBody(milestone, milestoneNumbers) {
+function milestoneBody(milestone, milestoneNumbers, repo) {
   const deps = (milestone.dependsOn || []).map((key) => {
     const dependency = milestonesByKey.get(key);
     const number = milestoneNumbers.get(key);
     return number
-      ? `[${dependency.id} ${dependency.title}](../../milestone/${number})`
+      ? `[${dependency.id} ${dependency.title}](https://github.com/${repo}/milestone/${number})`
       : `${dependency.id} ${dependency.title}`;
   });
   return [
@@ -388,7 +388,7 @@ function milestoneBody(milestone, milestoneNumbers) {
   ].join('\n');
 }
 
-function trackerBody(numbers, milestoneNumbers) {
+function trackerBody(numbers, milestoneNumbers, repo) {
   const lines = [
     roadmap.trackerIssue?.body || 'Implementation tracker.',
     '',
@@ -406,7 +406,7 @@ function trackerBody(numbers, milestoneNumbers) {
   for (const milestone of roadmap.milestones) {
     const number = milestoneNumbers.get(milestone.key);
     const link = number
-      ? `[${milestone.id} ${milestone.title}](../../milestone/${number})`
+      ? `[${milestone.id} ${milestone.title}](https://github.com/${repo}/milestone/${number})`
       : `${milestone.id} ${milestone.title}`;
     lines.push(
       `| ${link} | ${milestone.features.length} | ${(milestone.dependsOn || []).join(', ') || '-'} | ${milestone.status || 'planned'} |`,
@@ -453,7 +453,7 @@ function apply() {
     const existing = existingMilestones.get(title);
     if (existing) {
       milestoneNumbers.set(milestone.key, existing.number);
-      const body = milestoneBody(milestone, milestoneNumbers);
+      const body = milestoneBody(milestone, milestoneNumbers, repo);
       if (!dryRun && existing.description !== body) {
         patch(`repos/${repo}/milestones/${existing.number}`, { description: body });
         console.log(`updated milestone ${title}`);
@@ -475,7 +475,7 @@ function apply() {
       );
       milestoneNumbers.set(milestone.key, created.number);
       patch(`repos/${repo}/milestones/${created.number}`, {
-        description: milestoneBody(milestone, milestoneNumbers),
+        description: milestoneBody(milestone, milestoneNumbers, repo),
       });
       console.log(`milestone ${title} -> #${created.number}`);
     }
@@ -575,7 +575,7 @@ function apply() {
   if (roadmap.trackerIssue) {
     const title = roadmap.trackerIssue.title;
     const existing = existingIssues.get(title);
-    const body = trackerBody(numbers, milestoneNumbers);
+    const body = trackerBody(numbers, milestoneNumbers, repo);
     if (dryRun) {
       console.log(`would upsert tracker issue ${title}`);
     } else if (existing) {
