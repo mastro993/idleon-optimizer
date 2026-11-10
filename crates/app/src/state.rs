@@ -1,6 +1,7 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
 use crate::assets::Manifest;
+use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::{self, Section};
@@ -16,7 +17,7 @@ use idleon_core::model::{
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::save::Shadow;
-use idleon_core::{game, optimize, save, shape, sim};
+use idleon_core::{Clamworks, game, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -112,6 +113,12 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The Clamworks state the last imported save carried.
+    pub clamworks: Clamworks,
+    /// The Clamworks tab the section was left on.
+    pub clamworks_tab: ClamworksTab,
+    /// The multikill total Multi-Scalping reads, until the combat sim lands.
+    pub clamworks_multikill: f64,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The dashboard search field.
@@ -129,6 +136,8 @@ pub struct AppState {
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared formula tree on the Clamworks overview.
+    pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     pub focus: FocusHandle,
@@ -217,6 +226,8 @@ impl AppState {
                 cx.notify();
             });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
+        let clamworks_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let mut state = Self {
@@ -228,6 +239,9 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            clamworks: Clamworks::default(),
+            clamworks_tab: ClamworksTab::default(),
+            clamworks_multikill: 0.0,
             pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
@@ -237,6 +251,7 @@ impl AppState {
             save_loaded: false,
             optimizer,
             breakdown,
+            clamworks_breakdown,
             shadow: Shadow::default(),
             focus,
             bridge,
@@ -388,6 +403,7 @@ impl AppState {
         let message = import::applied(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.clamworks = imported.clamworks;
         self.research.selected_cell = None;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
@@ -552,6 +568,16 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_clamworks_tab(&mut self, tab: ClamworksTab, cx: &mut Context<Self>) {
+        self.clamworks_tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_clamworks_multikill(&mut self, multikill: f64, cx: &mut Context<Self>) {
+        self.clamworks_multikill = multikill.max(0.0);
         cx.notify();
     }
 
