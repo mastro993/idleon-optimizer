@@ -91,7 +91,7 @@ impl Mag {
 }
 
 /// Per-observation progress.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Observations {
     pub found: Vec<bool>,
     pub insight_level: Vec<u32>,
@@ -120,7 +120,7 @@ impl Observations {
 }
 
 /// Save-derived multipliers that are not on the grid.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SimContext {
     /// Save constant scaling the research EXP curve.
     pub server_var_res_xp: f64,
@@ -153,7 +153,7 @@ impl Default for SimContext {
 }
 
 /// Everything a simulation run reads.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Simulation {
     pub research_level: u32,
     pub research_exp: f64,
@@ -235,6 +235,15 @@ pub struct OptimizeRequest {
 pub struct Progress {
     pub fraction: f32,
     pub message: String,
+}
+
+/// What a progress reporter asks the run to do next.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Control {
+    /// Keep going.
+    Continue,
+    /// Stop the run and leave the previous result in place.
+    Stop,
 }
 
 /// Outcome of one optimizer run.

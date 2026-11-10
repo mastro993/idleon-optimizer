@@ -6,10 +6,27 @@
 use crate::state::AppState;
 use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
+use ely_gpui_component::feedback::{Banner, EmptyState};
 use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
+use ely_gpui_component::primitives::{IconName, Severity};
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+
+/// The no-save state every section shows until a decoded save is imported.
+///
+/// It names what the fallback means and offers the shared import action, so a
+/// section that needs account data is never a blank page with no way forward.
+pub fn no_save(cx: &mut Context<AppState>) -> AnyElement {
+    let import = cx.entity();
+    Banner::new(
+        "no-save-state",
+        Severity::Info,
+        "No save imported — this section uses defaults and supplements until you import a decoded save.",
+    )
+    .action("Import save", move |window, cx| {
+        import.update(cx, |state, cx| state.open_import(window, cx));
+    })
+    .into_any_element()
+}
 
 /// A section the registry declares as planned: its spec exists, the module does not.
 pub fn planned(

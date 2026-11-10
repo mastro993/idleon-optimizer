@@ -7,7 +7,7 @@
 //! which slot when that scores better.
 
 use crate::data::game;
-use crate::model::{Effort, Placement, Progress, SimContext, Simulation};
+use crate::model::{Control, Effort, Placement, Progress, SimContext, Simulation};
 use crate::shape;
 use crate::sim;
 use rayon::prelude::*;
@@ -68,7 +68,7 @@ pub fn optimize(
     sim: &Simulation,
     ctx: &SimContext,
     effort: Effort,
-    report: &mut dyn FnMut(Progress),
+    report: &mut dyn FnMut(Progress) -> Control,
 ) -> ShapesOutcome {
     let game = game();
     let before = sim::exp_rate(sim, ctx).total;
@@ -88,10 +88,13 @@ pub fn optimize(
         return outcome;
     }
 
-    report(Progress {
+    if report(Progress {
         fraction: 0.05,
         message: "Scoring grid squares…".into(),
-    });
+    }) == Control::Stop
+    {
+        return outcome;
+    }
     let weights = Weights::build(sim, ctx);
     let anchors = weights.anchors();
     if anchors.is_empty() {
@@ -123,10 +126,13 @@ pub fn optimize(
     let mut covered = vec![false; game.cells()];
     let mut greedy = Vec::new();
     for (index, shape_id) in order.iter().enumerate() {
-        report(Progress {
+        if report(Progress {
             fraction: 0.1 + 0.5 * index as f32 / order.len() as f32,
             message: format!("Placing {}.", game.shapes[*shape_id].name),
-        });
+        }) == Control::Stop
+        {
+            return outcome;
+        }
         if let Some(placement) = place_shape(
             *shape_id,
             &anchors,
@@ -333,7 +339,7 @@ fn local_search(
     ctx: &SimContext,
     placements: Vec<Placement>,
     effort: Effort,
-    report: &mut dyn FnMut(Progress),
+    report: &mut dyn FnMut(Progress) -> Control,
 ) -> (Vec<Placement>, f64, Changes) {
     let (lattice, passes, limit) = profile(effort);
     let mut search = Search {
@@ -350,10 +356,13 @@ fn local_search(
     }
 
     for pass in 0..passes {
-        report(Progress {
+        if report(Progress {
             fraction: 0.6 + 0.35 * pass as f32 / passes as f32,
             message: format!("Refining placements (pass {} of {passes})…", pass + 1),
-        });
+        }) == Control::Stop
+        {
+            return (current, current_score, changes);
+        }
         let mut changed = false;
 
         // Anchors, fine step last: a shape slides onto the lattice that scores

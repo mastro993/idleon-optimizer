@@ -32,6 +32,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
+- **Consistent states** — every section shows the shared no-save banner with its import action, the
+  header names a partial import, long runs show a progress bar and Cancel, cancelling keeps the
+  previous result, and results are marked stale instead of disappearing when an input changes.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.

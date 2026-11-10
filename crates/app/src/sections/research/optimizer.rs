@@ -8,12 +8,13 @@ use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
+use ely_gpui_component::motion::ProgressBar;
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::game;
 use idleon_core::model::{Effort, Target};
 use idleon_core::sim::Sample;
@@ -161,23 +162,52 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
         )
 }
 
-fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let stale = state.result_stale();
+    let running = state.running;
+    let progress = state.run_progress.clone();
+    let cancelled = state.run_cancelled;
+    let mut body = div()
+        .id("optimizer-result-body")
+        .flex()
+        .flex_col()
+        .gap_3()
+        .min_h_0();
+
+    if running {
+        if let Some(progress) = progress {
+            body = body.child(progress_card(progress, cx));
+        }
+    } else if cancelled {
+        body = body.child(Banner::new(
+            "run-cancelled",
+            Severity::Info,
+            if state.result.is_some() {
+                "Run cancelled; the previous result is unchanged."
+            } else {
+                "Run cancelled; nothing was applied."
+            },
+        ));
+    }
+
     let Some(result) = state.result.clone() else {
-        return Card::new()
-            .header(CardHeader::new("Result"))
-            .child(
-                div().p_3().flex().flex_col().gap_2().child(
-                    Banner::new(
-                        "result-empty",
-                        Severity::Info,
-                        "Nothing yet. Pick a target and press Optimize; the run happens in this process, so it can be thorough.",
+        if !running {
+            body = body.child(
+                Card::new()
+                    .header(CardHeader::new("Result"))
+                    .child(
+                        div().p_3().flex().flex_col().gap_2().child(Banner::new(
+                            "result-empty",
+                            Severity::Info,
+                            "Nothing yet. Pick a target and press Optimize; the run happens in this process, so it can be thorough.",
+                        )),
                     ),
-                ),
-            )
-            .into_any_element();
+            );
+        }
+        return body.into_any_element();
     };
 
+    let colors = &cx.theme().colors;
     let gain = result.gain_pct();
     let tone = if gain > 0.0 {
         Tone::Success
@@ -200,23 +230,42 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
         );
     }
 
-    Card::new()
-        .header(
-            CardHeader::new("Result")
-                .description(format!(
-                    "{} steps · {} ms",
-                    result.steps.len(),
-                    result.elapsed_ms
-                ))
-                .action(
-                    div()
-                        .id("result-gain")
-                        .role(gpui::Role::Label)
-                        .aria_label(format!("{gain:+.1}% EXP/hr"))
-                        .child(Badge::new(format!("{gain:+.1}% EXP/hr")).tone(tone)),
-                ),
-        )
-        .child(
+    let mut trailing = div().flex().items_center().gap_2();
+    if stale {
+        trailing = trailing.child(
+            div()
+                .id("result-stale-badge")
+                .role(gpui::Role::Label)
+                .aria_label("Stale: the inputs changed after this run")
+                .child(Badge::new("Stale").tone(Tone::Warning)),
+        );
+    }
+    trailing = trailing.child(
+        div()
+            .id("result-gain")
+            .role(gpui::Role::Label)
+            .aria_label(format!("{gain:+.1}% EXP/hr"))
+            .child(Badge::new(format!("{gain:+.1}% EXP/hr")).tone(tone)),
+    );
+
+    let mut card = Card::new().header(
+        CardHeader::new("Result")
+            .description(format!(
+                "{} steps · {} ms",
+                result.steps.len(),
+                result.elapsed_ms
+            ))
+            .action(trailing),
+    );
+    if stale {
+        card = card.child(Banner::new(
+            "result-stale",
+            Severity::Warning,
+            "The inputs changed after this run; the values below are from the previous inputs. Run again to refresh them.",
+        ));
+    }
+    body.child(
+        card.child(
             div()
                 .flex()
                 .flex_col()
@@ -260,6 +309,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                         .child(
                             Button::new("apply-result", "Apply layout")
                                 .primary()
+                                .disabled(stale)
                                 .on_click(move |_event, _window, cx| {
                                     apply.update(cx, |state, cx| state.apply_result(cx));
                                 }),
@@ -284,6 +334,55 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement 
                             .child(Caption::new("Steps"))
                             .child(steps),
                     ),
+                ),
+        ),
+    )
+    .into_any_element()
+}
+
+/// The run in flight: its latest line, a progress bar and the cancel action.
+fn progress_card(progress: idleon_core::model::Progress, cx: &mut Context<AppState>) -> AnyElement {
+    let entity = cx.entity();
+    let cancel = entity.clone();
+    let fraction = progress.fraction.clamp(0.0, 1.0);
+    let summary = format!("{:.0}% — {}", fraction * 100.0, progress.message);
+    Card::new()
+        .header(
+            CardHeader::new("Optimizing").description(
+                "Runs off the UI thread. Cancelling keeps the result this run replaced.",
+            ),
+        )
+        .child(
+            div()
+                .p_3()
+                .flex()
+                .flex_col()
+                .gap_3()
+                .child(
+                    div()
+                        .id("run-progress")
+                        .role(gpui::Role::Label)
+                        .aria_label(summary)
+                        .flex()
+                        .flex_col()
+                        .gap_1()
+                        .child(ProgressBar::new("run-progress-bar", fraction))
+                        .child(
+                            div()
+                                .flex()
+                                .justify_between()
+                                .gap_2()
+                                .child(Caption::new(progress.message))
+                                .child(Caption::new(format!("{:.0}%", fraction * 100.0))),
+                        ),
+                )
+                .child(
+                    Button::new("run-cancel", "Cancel")
+                        .size(ControlSize::Sm)
+                        .icon(IconName::X)
+                        .on_click(move |_event, _window, cx| {
+                            cancel.update(cx, |state, cx| state.cancel_optimize(cx));
+                        }),
                 ),
         )
         .into_any_element()

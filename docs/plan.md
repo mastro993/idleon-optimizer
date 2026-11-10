@@ -81,6 +81,12 @@ and Cmd/Ctrl+Left return to the dashboard from any section; a section can bind a
 as the research grid does for Escape. An unknown id renders the missing-section empty state and a
 planned section renders the shared "On the roadmap" empty state — neither can panic.
 
+Section states are shared: every section page renders a `no-save-state` banner with the import
+action until a save loads; the header distinguishes a full save from a partial one with warnings;
+long optimizer runs show a progress bar and `run-cancel`; a cancelled run keeps the result already
+on screen; and a stored result whose inputs changed is marked stale (badge, banner, disabled Apply)
+instead of being dropped.
+
 ## 4. Sections and milestones
 
 One milestone per section, one issue per feature. The full feature lists, inputs, outputs, assets
