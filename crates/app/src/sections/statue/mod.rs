@@ -513,6 +513,7 @@ fn availability_cell(row: &Row, no_save: bool) -> AnyElement {
         )))
         .role(Role::Label)
         .aria_label(label.clone())
+        .flex()
         .child(Badge::new(label).tone(tone).dot())
         .into_any_element()
 }
