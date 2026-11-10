@@ -1,0 +1,38 @@
+[workspace]
+members = ["crates/core", "crates/app"]
+# The automation bridge is a nested workspace checked out as a submodule. Keeping
+# it out of this one lets it inherit its own package metadata and lets the GPUI
+# patches below point at its vendored tree.
+exclude = ["vendor/gpui-mcp"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT"
+
+[workspace.dependencies]
+# One GPUI snapshot for the app, Ely and the automation bridge. gpui-pre 0.3.9
+# is the newest snapshot the bridge vendors; Ely at the pinned rev takes the
+# same one, so no two copies of GPUI end up in the graph.
+gpui = { package = "gpui-pre", version = "=0.3.9" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.9", features = [
+  "font-kit",
+  "wayland",
+  "x11",
+] }
+ely-gpui-component = { git = "https://github.com/ELY-Open-Source/Ely-GPUI-Components", rev = "28e56904580a014cf088231bd6239f6b7ea133b7" }
+gpui-mcp = { path = "vendor/gpui-mcp/crates/gpui-mcp", default-features = false, features = [
+  "gpui-pre",
+] }
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rayon = "1"
+
+# The bridge's GPUI carries the accessibility ids and roles it reads; patch the
+# registry snapshot to that tree so the app, the platform crate and the bridge
+# compile against one GPUI.
+[patch.crates-io]
+gpui-pre = { path = "vendor/gpui-mcp/vendor/gpui-pre" }

@@ -1,0 +1,103 @@
+// Minimal MCP stdio client for gpui-mcp: lists running GPUI apps, prints the
+// UI tree of ours, and optionally screenshots it. Keeps verification working
+// outside an editor session.
+//
+// Usage: node script/mcp-smoke.mjs [--app idleon-optimizer] [--shot out.png]
+import { spawn } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+
+const args = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : fallback;
+};
+const appId = flag('--app', 'idleon-optimizer');
+const shot = flag('--shot', null);
+
+const child = spawn('gpui-mcp', [], { stdio: ['pipe', 'pipe', 'pipe'] });
+let nextId = 1;
+const pending = new Map();
+let buffer = '';
+
+child.stdout.on('data', (chunk) => {
+  buffer += chunk.toString();
+  let index;
+  while ((index = buffer.indexOf('\n')) >= 0) {
+    const line = buffer.slice(0, index).trim();
+    buffer = buffer.slice(index + 1);
+    if (!line) continue;
+    const message = JSON.parse(line);
+    const entry = pending.get(message.id);
+    if (entry) {
+      pending.delete(message.id);
+      entry(message);
+    }
+  }
+});
+child.stderr.on('data', (chunk) => process.stderr.write(chunk));
+
+function request(method, params) {
+  const id = nextId++;
+  return new Promise((resolve, reject) => {
+    pending.set(id, (message) => {
+      if (message.error) reject(new Error(JSON.stringify(message.error)));
+      else resolve(message.result);
+    });
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+  });
+}
+
+function notify(method, params) {
+  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\n`);
+}
+
+const callRaw = async (name, params = {}) => {
+  const result = await request('tools/call', { name, arguments: params });
+  const text = result?.content?.find((part) => part.type === 'text')?.text;
+  if (result?.isError) throw new Error(`${name}: ${text}`);
+  return { text, content: result?.content ?? [] };
+};
+
+const call = async (name, params = {}) => (await callRaw(name, params)).text;
+
+try {
+  await request('initialize', {
+    protocolVersion: '2025-06-18',
+    capabilities: {},
+    clientInfo: { name: 'smoke', version: '0' },
+  });
+  notify('notifications/initialized', {});
+
+  const catalog = await request('tools/list', {});
+  console.log(`tools: ${catalog.tools.length}`);
+
+  const apps = JSON.parse(await call('list_apps'));
+  const entry = Array.isArray(apps) ? apps : (apps.apps ?? []);
+  const app = entry.find((candidate) => (candidate.app_id ?? candidate.appId ?? candidate.id) === appId);
+  if (!app) {
+    console.error(`no running app ${appId}; got ${JSON.stringify(entry)}`);
+    process.exit(1);
+  }
+  console.log(`app: ${JSON.stringify(app)}`);
+
+  const tree = JSON.parse(await call('get_ui_tree'));
+  const nodes = Array.isArray(tree.nodes) ? tree.nodes : Object.values(tree.nodes ?? {});
+  console.log(`nodes: ${nodes.length}`);
+  for (const node of nodes.slice(0, 40)) {
+    console.log(` - ${node.id ?? '?'} ${node.role ?? ''} ${JSON.stringify(node.label ?? node.text ?? '')}`);
+  }
+  if (tree.diagnostics?.length) console.log(`diagnostics: ${JSON.stringify(tree.diagnostics)}`);
+
+  if (shot) {
+    const { content } = await callRaw('screenshot', {});
+    const image = content.find((part) => part.type === 'image');
+    if (!image) throw new Error(`screenshot returned ${JSON.stringify(content).slice(0, 200)}`);
+    writeFileSync(shot, Buffer.from(image.data, 'base64'));
+    console.log(`screenshot: ${shot}`);
+  }
+} catch (error) {
+  console.error(`smoke failed: ${error.message}`);
+  process.exitCode = 1;
+} finally {
+  child.kill();
+}

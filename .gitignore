@@ -1,0 +1,6 @@
+> Third-party GPUI fork, checked out as a submodule at the pinned bridge commit.
+/vendor/gpui-mcp/
+
+/target/
+.DS_Store
+*.log

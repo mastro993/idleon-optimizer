@@ -1,0 +1,4 @@
+[submodule "vendor/gpui-mcp"]
+	path = vendor/gpui-mcp
+	url = https://github.com/mastro993/gpui-mcp
+	branch = gpui-pre-0.3.9

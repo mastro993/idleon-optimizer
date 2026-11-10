@@ -1,0 +1,18 @@
+[package]
+name = "idleon-optimizer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "idleon-optimizer"
+path = "src/main.rs"
+
+[dependencies]
+idleon-core = { path = "../core" }
+ely-gpui-component = { workspace = true }
+gpui = { workspace = true }
+gpui_platform = { workspace = true }
+gpui-mcp = { workspace = true }
+anyhow = { workspace = true }

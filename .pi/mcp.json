@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gpui": {
+      "command": "gpui-mcp",
+      "description": "Reads and drives this app's live GPUI window: semantic tree, clicks, typing, screenshots, frame timing."
+    }
+  }
+}
