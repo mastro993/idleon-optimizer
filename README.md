@@ -70,6 +70,10 @@ result, that the result never loses EXP, and that applying it clears the result.
 `gpui-mcp` binary (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
+If background subagent launches fail with a missing `@earendil-works/chord`, run
+`node script/install-pi-chord.mjs` (idempotent, re-run after a Pi upgrade) — see
+[`docs/agent-harness.md`](docs/agent-harness.md).
+
 To let an agent drive the window itself, the repo ships `.pi/mcp.json` registering the same server as
 `gpui`; `get_ui_tree`, `click_element`, `type_text`, `screenshot` and `wait_for_element` then work
 against this app. Every control in the UI carries a stable id for that purpose (`cell-129`,

@@ -8,6 +8,7 @@
 pub mod data;
 pub mod model;
 pub mod optimize;
+pub mod save;
 pub mod shape;
 pub mod sim;
 
