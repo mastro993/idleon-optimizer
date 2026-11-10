@@ -26,7 +26,20 @@ fn argument(name: &str) -> Option<String> {
     None
 }
 
+/// Whether a bare `--flag` argument is present.
+fn has_argument(name: &str) -> bool {
+    std::env::args()
+        .skip(1)
+        .any(|argument| argument == name || argument.starts_with(&format!("{name}=")))
+}
+
 fn main() -> Result<()> {
+    // The verification harnesses read the registry from the binary instead of
+    // duplicating section ids in JavaScript.
+    if has_argument("--list-sections") {
+        println!("{}", sections::manifest());
+        return Ok(());
+    }
     let endpoint = argument("--endpoint-dir").map(PathBuf::from);
     // `--section <id>` opens that registry entry at launch: the harness uses it
     // to reach hidden tools, and an unknown id proves the missing-section state.

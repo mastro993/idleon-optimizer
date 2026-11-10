@@ -537,6 +537,26 @@ pub fn card_count() -> usize {
     cards().count()
 }
 
+/// The registry as JSON, so the harness can enumerate sections without
+/// hardcoding ids that the table already owns.
+pub fn manifest() -> String {
+    let sections: Vec<serde_json::Value> = SECTIONS
+        .iter()
+        .map(|section| {
+            serde_json::json!({
+                "id": section.id,
+                "title": section.title,
+                "group": section.group.id(),
+                "badge": section.badge(),
+                "status": section.status.label(),
+                "dashboard": section.dashboard,
+                "spec": section.spec,
+            })
+        })
+        .collect();
+    serde_json::to_string(&sections).expect("the section manifest is plain JSON")
+}
+
 /// The shared renderer for every planned section.
 const PLACEHOLDER: View = section::planned;
 

@@ -8,124 +8,17 @@
 // Usage: node script/mcp-drive.mjs [--attach] [--keep] [--app-bin PATH]
 //   --attach    drive a window you already started (shared discovery directory)
 //   --keep      leave the spawned window running for a look
-import { spawn, execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
+import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
 
-const argv = process.argv.slice(2);
-const flag = (name, fallback) => {
-  const index = argv.indexOf(name);
-  return index >= 0 ? argv[index + 1] : fallback;
-};
-const keep = argv.includes('--keep');
-const attach = argv.includes('--attach');
-const appBin = flag('--app-bin', join(process.cwd(), 'target/debug/idleon-optimizer'));
+const keep = hasFlag('--keep');
+const appBin = flag('--app-bin', DEFAULT_APP_BIN);
 
-/// macOS stops drawing an occluded window, and the bridge waits for frames, so
-/// bring this instance forward before driving it.
-const activate = (pid) => {
-  if (process.platform !== 'darwin' || !pid) return;
-  try {
-    execFileSync('osascript', [
-      '-e',
-      `tell application "System Events" to set frontmost of first process whose unix id is ${pid} to true`,
-    ], { stdio: 'ignore' });
-  } catch {
-    // Activation is best effort; a visible window works without it.
-  }
-};
-
-let endpointDir = null;
-let appProcess = null;
-if (!attach) {
-  if (!existsSync(appBin)) {
-    console.error(`no app binary at ${appBin}; run cargo build -p idleon-optimizer first`);
-    process.exit(1);
-  }
-  endpointDir = mkdtempSync(join(tmpdir(), 'idleon-lane-'));
-  appProcess = spawn(appBin, ['--endpoint-dir', endpointDir], { stdio: 'ignore' });
-  const deadline = Date.now() + 30000;
-  let published = false;
-  while (Date.now() < deadline && !published) {
-    published = readdirSync(endpointDir).some((name) => name.endsWith('.json'));
-    if (!published) execFileSync('sleep', ['0.2']);
-  }
-  if (!published) {
-    console.error('the app never published an endpoint; is it crashing at startup?');
-    appProcess.kill();
-    process.exit(1);
-  }
-}
-
-const stopApp = () => {
-  if (appProcess && !keep) {
-    appProcess.kill();
-    appProcess = null;
-  }
-};
-
-const child = spawn(
-  'gpui-mcp',
-  endpointDir ? ['--endpoint-dir', endpointDir] : [],
-  { stdio: ['pipe', 'pipe', 'pipe'] },
-);
-let nextId = 1;
-const pending = new Map();
-let buffer = '';
 let failures = 0;
+let lane = null;
 
-child.stdout.on('data', (chunk) => {
-  buffer += chunk.toString();
-  let index;
-  while ((index = buffer.indexOf('\n')) >= 0) {
-    const line = buffer.slice(0, index).trim();
-    buffer = buffer.slice(index + 1);
-    if (!line) continue;
-    const message = JSON.parse(line);
-    const entry = pending.get(message.id);
-    if (entry) {
-      pending.delete(message.id);
-      entry(message);
-    }
-  }
-});
-child.stderr.on('data', (chunk) => process.stderr.write(chunk));
-
-const request = (method, params) => {
-  const id = nextId++;
-  return new Promise((resolve, reject) => {
-    pending.set(id, (message) => {
-      if (message.error) reject(new Error(JSON.stringify(message.error)));
-      else resolve(message.result);
-    });
-    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
-  });
-};
-
-let appPid = null;
-
-const call = async (name, args = {}) => {
-  for (let attempt = 1; ; attempt += 1) {
-    const result = await request('tools/call', { name, arguments: args });
-    const text = result?.content?.find((part) => part.type === 'text')?.text;
-    // macOS stops drawing an occluded window; the bridge waits for the frame the
-    // action should cause. Bring the app forward and try once more.
-    if (result?.isError && /frame wait timed out/i.test(text ?? '') && attempt === 1) {
-      activate(appPid);
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      continue;
-    }
-    if (result?.isError) throw new Error(`${name}: ${text}`);
-    return { text, content: result?.content ?? [] };
-  }
-};
-
-const tree = async () => {
-  const { text } = await call('get_ui_tree');
-  const parsed = JSON.parse(text);
-  return Object.values(parsed.nodes ?? {});
-};
+const tree = () => lane.tree();
+const call = (name, args = {}) => lane.call(name, args);
 
 const check = (label, condition, detail = '') => {
   if (condition) {
@@ -138,8 +31,6 @@ const check = (label, condition, detail = '') => {
 
 const labelOf = (nodes, id) => nodes.find((node) => node.id === id)?.label ?? null;
 const has = (nodes, id) => nodes.some((node) => node.id === id);
-const textIn = (nodes, needle) =>
-  nodes.some((node) => JSON.stringify(node.label ?? '').includes(needle));
 
 const waitFor = async (predicate, label, timeoutMs = 15000) => {
   const deadline = Date.now() + timeoutMs;
@@ -156,25 +47,11 @@ const waitFor = async (predicate, label, timeoutMs = 15000) => {
 };
 
 try {
-  await request('initialize', {
-    protocolVersion: '2025-06-18',
-    capabilities: {},
-    clientInfo: { name: 'drive', version: '0' },
+  lane = await McpLane.start({
+    appBin,
+    attach: hasFlag('--attach'),
+    keep,
   });
-  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} })}\n`);
-
-  // The endpoint file lands before the bridge answers, so poll for discovery.
-  let app = null;
-  for (let attempt = 0; attempt < 40 && !app; attempt += 1) {
-    const running = JSON.parse((await call('list_apps')).text);
-    app = (Array.isArray(running) ? running : running.apps ?? []).find(
-      (candidate) => (candidate.app_id ?? candidate.id) === 'idleon-optimizer',
-    );
-    if (!app) execFileSync('sleep', ['0.25']);
-  }
-  if (!app) throw new Error('the app is not running; start ./target/debug/idleon-optimizer first');
-  appPid = appProcess?.pid ?? app.pid;
-  activate(appPid);
 
   // The dashboard is the landing page: every upstream card is exposed.
   await waitFor((current) => has(current, 'card-research'), 'dashboard opens');
@@ -387,19 +264,14 @@ try {
   }
   await waitFor((current) => has(current, 'cell-129'), 'the run survives a failed import');
 
-  const { content } = await call('screenshot');
-  const image = content.find((part) => part.type === 'image');
-  if (image) {
-    const shot = flag('--shot', '/tmp/idleon-drive.png');
-    writeFileSync(shot, Buffer.from(image.data, 'base64'));
-    console.log(`screenshot: ${shot}`);
-  }
+  const shot = flag('--shot', '/tmp/idleon-drive.png');
+  writeFileSync(shot, await lane.screenshot());
+  console.log(`screenshot: ${shot}`);
 } catch (error) {
   failures += 1;
   console.error(`drive failed: ${error.message}`);
 } finally {
-  if (!keep) child.kill();
-  stopApp();
+  lane?.close();
 }
 
 if (failures > 0) {
