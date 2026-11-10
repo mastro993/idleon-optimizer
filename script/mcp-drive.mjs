@@ -22,6 +22,26 @@ const keep = argv.includes('--keep');
 const attach = argv.includes('--attach');
 const appBin = flag('--app-bin', join(process.cwd(), 'target/debug/idleon-optimizer'));
 
+/// A small flat `save.json` the run pastes into the import dialog: two
+/// characters at level 42 and 30, so the preview's numbers are assertable.
+const harnessSave = () => {
+  const sparse = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const character = (level) => JSON.stringify(sparse(30, { 20: level }));
+  return JSON.stringify({
+    Research: JSON.stringify([
+      sparse(240, { 50: 3, 52: 4 }),
+      sparse(240, {}),
+      sparse(80, { 0: 1, 1: 1 }),
+      sparse(80, {}),
+      sparse(80, {}),
+      [],
+      [],
+    ]),
+    Lv0_0: character(42),
+    Lv0_1: character(30),
+  });
+};
+
 /// macOS stops drawing an occluded window, and the bridge waits for frames, so
 /// bring this instance forward before driving it.
 const activate = (pid) => {
@@ -365,21 +385,53 @@ try {
     'reset restores the supplement',
   );
 
-  // Save import: a paste that cannot parse reports an error and keeps the run.
-  // Idempotent: the panel may still be open from an earlier run.
-  if (!has(await tree(), 'save-import') && has(await tree(), 'save-toggle')) {
-    await call('click_element', { id: 'save-toggle' });
-  }
-  await waitFor((current) => has(current, 'save-import'), 'save panel opens');
-  await call('click_element', { id: 'save-input' });
-  await call('type_text', { text: '{"not":"a save"}' });
-  await call('click_element', { id: 'save-import' });
+  // The shared import dialog: the header opens it from any section, the preview
+  // names the format, level, characters and warnings, and Apply replaces the run.
+  await call('click_element', { id: 'header-import' });
+  await waitFor((current) => has(current, 'import-drop'), 'the header opens the import dialog');
+  await call('click_element', { id: 'import-input' });
+  await call('type_text', { text: harnessSave() });
   await waitFor(
-    (current) => {
-      const status = labelOf(current, 'save-status') ?? '';
-      return status.length > 0 && !status.includes('Nothing imported yet');
-    },
+    (current) => labelOf(current, 'import-format') === 'Format: save.json',
+    'the preview names the detected format',
+  );
+  nodes = await tree();
+  check('the preview names the research level', labelOf(nodes, 'import-level') === 'Research level: 42');
+  check('the preview counts characters', labelOf(nodes, 'import-characters') === 'Characters: 2');
+  check('the preview counts warnings', /^Warnings: \d+$/.test(labelOf(nodes, 'import-warnings') ?? ''));
+  await call('click_element', { id: 'import-apply' });
+  await waitFor(
+    (current) =>
+      !has(current, 'import-drop') &&
+      (labelOf(current, 'status-status') ?? '').includes('research level 42'),
+    'applying the save replaces the run',
+  );
+  check(
+    'the header reports the loaded save',
+    has(await tree(), 'header-save') && labelOf(await tree(), 'header-save') === 'Save imported',
+  );
+  const appliedRate = labelOf(await tree(), 'kpi-row') ?? '';
+  check('the applied save drives the rate', appliedRate.length > 0, appliedRate);
+
+  // A paste that cannot parse only replaces the message: no Apply, run untouched.
+  await call('click_element', { id: 'header-import' });
+  await waitFor((current) => has(current, 'import-drop'), 'the dialog reopens');
+  await call('click_element', { id: 'import-input' });
+  await call('keyboard', { keystroke: 'secondary-a' });
+  await call('type_text', { text: '{"not":"a save"}' });
+  await waitFor(
+    (current) => (labelOf(current, 'import-status') ?? '').includes('no save fields'),
     'an unreadable save reports its error',
+  );
+  nodes = await tree();
+  check('an unreadable save exposes no preview', !has(nodes, 'import-format'));
+  const apply = nodes.find((node) => node.id === 'import-apply');
+  check('an unreadable save cannot be applied', !(apply?.actions ?? []).includes('click'));
+  await call('click_element', { id: 'import-cancel' });
+  await waitFor(
+    (current) =>
+      !has(current, 'import-drop') && labelOf(current, 'kpi-row') === appliedRate,
+    'a failed import leaves the run untouched',
   );
 
   if (has(await tree(), 'grid')) {
@@ -387,12 +439,27 @@ try {
   }
   await waitFor((current) => has(current, 'cell-129'), 'the run survives a failed import');
 
-  const { content } = await call('screenshot');
-  const image = content.find((part) => part.type === 'image');
+  // macOS stops drawing an occluded window and the native capture gives up after
+  // 15s, so a shot may need the window brought forward and one more try.
+  const shot = flag('--shot', '/tmp/idleon-drive.png');
+  let image = null;
+  for (let attempt = 0; attempt < 3 && !image; attempt += 1) {
+    try {
+      const { content } = await call('screenshot');
+      image = content.find((part) => part.type === 'image') ?? null;
+    } catch (error) {
+      console.error(`screenshot attempt ${attempt + 1}: ${error.message}`);
+      activate(appPid);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
   if (image) {
-    const shot = flag('--shot', '/tmp/idleon-drive.png');
     writeFileSync(shot, Buffer.from(image.data, 'base64'));
     console.log(`screenshot: ${shot}`);
+  } else {
+    // Evidence, not an assertion: a capture an occluded window never delivers
+    // must not turn a passing drive into a failed gate.
+    console.warn(`no screenshot: the native capture never returned (wanted ${shot})`);
   }
 } catch (error) {
   failures += 1;

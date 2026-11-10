@@ -5,12 +5,12 @@
 
 use crate::sections;
 use crate::state::{AppState, Route};
-use crate::ui::{dashboard, layout, section};
+use crate::ui::{dashboard, import, layout, section};
 use ely_gpui_component::shell::{StatusBar, StatusBarItem};
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Styled, Window, div, px,
+    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Role, Styled, Window, div, px,
 };
 
 gpui::actions!(idleon_shell, [BackToDashboard]);
@@ -112,9 +112,24 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
         }))
         .child(header)
         .child(div().id("workspace").flex_1().min_h_0().child(body))
-        .child(status.right(StatusBarItem::new("status-status").label(state.status.clone())));
-    if !route.is_dashboard() {
+        // The status line is a labelled node of its own: a status bar item has no
+        // aria label, and an agent or a screen reader reads the run's state here.
+        .child(
+            status.right(
+                div()
+                    .id("status-status")
+                    .role(Role::Label)
+                    .aria_label(state.status.clone())
+                    .child(StatusBarItem::new("status-text").label(state.status.clone())),
+            ),
+        );
+    // The import dialog owns Escape while it is open, so the section's back
+    // shortcut waits until it closes.
+    if !route.is_dashboard() && !state.import.open {
         root = root.key_context(SECTION_CONTEXT);
+    }
+    if state.import.open {
+        root = root.child(import::dialog(state, cx));
     }
     root.into_any_element()
 }

@@ -51,10 +51,13 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **Supplements** — the save-derived multipliers that live outside the grid (`serverVarResXP`,
   all-bonus multiplier, extra account %, extra multiplier, flat grid points, extra shapes and
   magnifiers), editable in the Rates pane; the displayed rate follows each change.
-- **Save import** — paste a decoded game save (JSON) and the grid levels, shape positions,
-  magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid points and
-  the decodable true multipliers are read from it. Fields the app cannot model are reported as
-  warnings instead of guessed; unreadable saves leave the run untouched.
+- **Save import** — the header's Import button opens one dialog from the dashboard or any section:
+  drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
+  format, research level, character count and warnings before Apply; the grid levels, shape
+  positions, magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid
+  points and the decodable true multipliers are read from it. Fields the app cannot model are
+  reported as warnings instead of guessed; a save that cannot be read only replaces the message and
+  leaves the run untouched.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 
@@ -130,8 +133,8 @@ open a registry entry at launch.
 Cmd/Ctrl+Left return to the dashboard, that Resume reopens the section with its own tab, that Back
 returns, that the grid is exposed as semantic nodes, that a click selects a square, that dragging a shape
 moves its squares, that the keyboard walks and levels the grid, that a run produces a result and
-never loses EXP, that applying it clears the result, and that the supplements and save-import panels
-behave. Both scripts need the `gpui-mcp` binary
+never loses EXP, that applying it clears the result, and that the shared import dialog previews a
+save before applying it and cannot replace the run with one it cannot read. Both scripts need the `gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
@@ -169,7 +172,7 @@ vertices and dimensions, 43 observations, and the sixteen presets' target square
 the upstream tables move.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
-manual debugging (paste it into the Save import panel). It is test input only: game formulas and save
+manual debugging (open Import in the header and paste it). It is test input only: game formulas and save
 decoding stay ports of the upstream repo, never inferred from the fixture. See
 [`fixtures/README.md`](fixtures/README.md).
 
