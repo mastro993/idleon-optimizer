@@ -6,6 +6,8 @@ pub mod format;
 pub mod grid_view;
 pub mod inspector;
 pub mod optimizer;
+pub mod rates;
+pub mod section;
 pub mod shell;
 
 use crate::state::AppState;

@@ -1,5 +1,6 @@
-//! Desktop research-grid optimizer for Legends of Idleon.
+//! Desktop calculator suite for Legends of Idleon.
 
+mod sections;
 mod state;
 mod ui;
 

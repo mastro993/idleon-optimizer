@@ -176,13 +176,38 @@ try {
   appPid = appProcess?.pid ?? app.pid;
   activate(appPid);
 
-  // Start on the grid tab whatever the last run left behind.
-  if (has(await tree(), 'grid')) {
-    await call('click_element', { id: 'grid' });
-  }
-  await waitFor((current) => has(current, 'cell-129'), 'grid tab opens');
-
+  // The dashboard is the landing page: every upstream card is exposed.
+  await waitFor((current) => has(current, 'card-research'), 'dashboard opens');
   let nodes = await tree();
+  const cards = nodes.filter((node) => /^card-/.test(node.id ?? ''));
+  check('all 25 dashboard cards are exposed', cards.length === 25, String(cards.length));
+  check('cards carry their world badge', (labelOf(nodes, 'card-research') ?? '').includes('W7'));
+
+  // Search filters by world, and Escape clears it.
+  await call('click_element', { id: 'dashboard-search' });
+  await call('type_text', { text: 'w5' });
+  await waitFor(
+    (current) => has(current, 'card-fountain') && !has(current, 'card-combat-sim'),
+    'search filters by world',
+  );
+  await call('keyboard', { keystroke: 'escape' });
+  await waitFor((current) => has(current, 'card-combat-sim'), 'Escape clears the search');
+
+  // A planned card opens its section and the header goes back.
+  await call('click_element', { id: 'card-fishing' });
+  await waitFor((current) => has(current, 'section-fishing'), 'a card opens its section');
+  await call('click_element', { id: 'back-to-dashboard' });
+  await waitFor((current) => has(current, 'card-fishing'), 'back returns to the dashboard');
+
+  // The research card opens the one implemented section. Filter first so the
+  // card is in view, as scrolling to it by hand would do.
+  await call('click_element', { id: 'dashboard-search' });
+  await call('type_text', { text: 'research' });
+  await waitFor((current) => has(current, 'card-research'), 'search finds research');
+  await call('click_element', { id: 'card-research' });
+  await waitFor((current) => has(current, 'cell-129'), 'research card opens the grid');
+
+  nodes = await tree();
   check('grid cells are exposed', nodes.filter((node) => /^cell-\d+$/.test(node.id ?? '')).length > 200);
   check('run control is exposed', has(nodes, 'run-optimize') || has(nodes, 'app-tabs'));
 

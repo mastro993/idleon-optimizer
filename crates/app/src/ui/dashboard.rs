@@ -1,435 +1,234 @@
-//! Rates pane: the EXP breakdown and the observation board.
+//! Landing dashboard: the searchable card grid ported from upstream `index.html`.
 
+use crate::sections::{Group, SECTIONS, Section};
 use crate::state::AppState;
-use crate::ui::format;
-use ely_gpui_component::buttons::{Button, IconButton};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::forms::{Input, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::buttons::Button;
+use ely_gpui_component::data_display::{Badge, Tone};
+use ely_gpui_component::feedback::EmptyState;
+use ely_gpui_component::forms::SearchInput;
+use ely_gpui_component::layout::{Card, ScrollArea, SimpleGrid};
 use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+    Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
 };
-use idleon_core::{game, sim};
 
+/// The searchable dashboard, grouped General, World 2-7.
 pub fn dashboard_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    let rate = state.rate();
-    let points = state.grid_points();
-    let cards = div()
-        .id("kpi-row")
-        .role(gpui::Role::Label)
-        .aria_label(format!(
-            "Research EXP/hr {} · multiplier {:.2}",
-            format::rate(rate.total),
-            rate.multi
-        ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-rate", "Research EXP/hr", rate.total)
-                    .decimals(0)
-                    .size(ely_gpui_component::theme::TextSize::Lg),
-            )
-            .caption("observations × multipliers"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("kpi-multi", "Multiplier", rate.multi).decimals(2))
-                .caption("additive and grid bonuses"),
-        )
-        .child(
-            KpiCard::new(Statistic::new("kpi-obs", "Observation EXP", rate.obs_base).decimals(1))
-                .caption("before multipliers"),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-points", "Free grid points", points.free as f64).decimals(0),
-            )
-            .caption(format!("{} spent of {}", points.spent, points.earned)),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kpi-shapes",
-                    "Shapes",
-                    state.simulation.placements.len() as f64,
-                )
-                .decimals(0),
-            )
-            .caption(format!("{} unlocked", state.shapes_owned())),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new("kpi-mags", "Magnifiers", state.simulation.mags.len() as f64)
-                    .decimals(0),
-            )
-            .caption(format!("{} owned", state.magnifiers_owned())),
-        );
+    let query = state.search.read(cx).text().trim().to_string();
+    let entity = cx.entity();
+    let search_focus = state.search.read(cx).focus().clone();
+    let clear = entity.clone();
+    let muted = cx.theme().colors.fg_muted;
 
-    div()
-        .id("dashboard")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .size_full()
-        .min_h_0()
-        .child(cards)
-        .child(
+    let mut groups = div().flex().flex_col().gap_6();
+    let mut matches = 0;
+    for group in Group::ALL {
+        let sections: Vec<&'static Section> = SECTIONS
+            .iter()
+            .filter(|section| section.group == group && section.matches(&query))
+            .collect();
+        if sections.is_empty() {
+            continue;
+        }
+        matches += sections.len();
+        let id = group.id();
+        let mut grid = SimpleGrid::new(format!("dashboard-grid-{id}"), px(300.0), px(12.0));
+        for section in sections {
+            grid = grid.child(section_card(section, &entity, muted));
+        }
+        groups = groups.child(
             div()
-                .id("rates-body")
+                .id(format!("dashboard-group-{id}"))
                 .flex()
-                .flex_1()
-                .min_h_0()
+                .flex_col()
                 .gap_3()
                 .child(
                     div()
-                        .id("observations-column")
+                        .id(format!("dashboard-group-title-{id}"))
+                        .role(Role::Heading)
+                        .aria_label(group.label())
+                        .text_size(cx.theme().text_size(TextSize::Sm))
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .text_color(muted)
+                        .child(group.label()),
+                )
+                .child(grid),
+        );
+    }
+
+    div()
+        .id("dashboard")
+        .track_focus(&state.focus)
+        .on_key_down(cx.listener(|state, event: &gpui::KeyDownEvent, _window, cx| {
+            if event.keystroke.key == "escape" {
+                state.clear_search(cx);
+                cx.stop_propagation();
+            }
+        }))
+        .flex()
+        .flex_col()
+        .size_full()
+        .min_h_0()
+        .gap_4()
+        .child(
+            div()
+                .id("dashboard-header")
+                .flex()
+                .flex_none()
+                .items_end()
+                .justify_between()
+                .gap_4()
+                .child(
+                    div()
                         .flex()
                         .flex_col()
-                        .flex_1()
-                        .min_w_0()
-                        .min_h_0()
-                        .child(observations_card(state, cx)),
+                        .gap_1()
+                        .child(
+                            div()
+                                .text_size(cx.theme().text_size(TextSize::Xxl))
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .child("Calculators & Optimizers"),
+                        )
+                        .child(
+                            div()
+                                .text_size(cx.theme().text_size(TextSize::Md))
+                                .text_color(muted)
+                                .child(format!(
+                                    "{} calculators and optimizers for Legends of Idleon.",
+                                    SECTIONS.len()
+                                )),
+                        ),
                 )
                 .child(
                     div()
-                        .id("supplements-column")
-                        .flex()
-                        .flex_col()
+                        .id("dashboard-search")
+                        .role(Role::Search)
+                        .aria_label("Search calculators")
                         .flex_none()
-                        .w(px(340.0))
-                        .min_h_0()
-                        .gap_3()
-                        .child(supplements_card(state, cx))
-                        .child(save_card(state, cx)),
+                        .w(px(360.0))
+                        .on_click(move |_event, window, cx| window.focus(&search_focus, cx))
+                        .child(SearchInput::new("dashboard-search-field", &state.search)),
                 ),
         )
-}
-
-/// One supplement row: its name, its value, and a stepper that edits it.
-fn supplement_row(
-    id: &'static str,
-    label: &'static str,
-    value: f64,
-    (min, max, step, precision): (f64, f64, f64, usize),
-    set: fn(&mut AppState, f64, &mut Context<AppState>),
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
-    let shown = format!("{value:.precision$}");
-    div()
-        .id(id)
-        .role(gpui::Role::Label)
-        .aria_label(format!("{label}: {shown}"))
-        .aria_value(shown)
-        .flex()
-        .items_center()
-        .justify_between()
-        .gap_2()
-        .h(px(30.0))
-        .child(Caption::new(label).text_color(muted))
         .child(
-            Stepper::new(SharedString::from(format!("{id}-stepper")), value)
-                .range(min, max)
-                .step(step)
-                .precision(precision)
-                .on_change(move |value, _window, cx| {
-                    entity.update(cx, |state, cx| set(state, value, cx));
-                }),
-        )
-        .into_any_element()
-}
-
-fn supplements_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let muted = cx.theme().colors.fg_muted;
-    let open = state.supplements_open;
-    let entity = cx.entity();
-    let toggle = entity.clone();
-    let reset = entity.clone();
-    let header = CardHeader::new("Supplements")
-        .description("Save-derived multipliers that live outside the grid")
-        .action(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(
-                    Button::new("supp-reset", "Reset")
-                        .size(ControlSize::Sm)
-                        .disabled(!open)
-                        .on_click(move |_event, _window, cx| {
-                            reset.update(cx, |state, cx| state.reset_supplements(cx));
-                        }),
-                )
-                .child(
-                    Button::new("supp-toggle", if open { "Hide" } else { "Show" })
-                        .size(ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            toggle.update(cx, |state, cx| state.set_supplements_open(!open, cx));
-                        }),
-                ),
-        );
-    let card = Card::new().header(header);
-    if !open {
-        return card.child(div().px_3().pb_2().child(
-            Caption::new("Hidden; the simulated multipliers keep their values.").text_color(muted),
-        ));
-    }
-    let context = state.context.clone();
-    card.child(
-        div()
-            .id("supplements-card")
-            .flex()
-            .flex_col()
-            .gap_1()
-            .px_3()
-            .pb_2()
-            .child(supplement_row(
-                "supp-svrxp",
-                "Server EXP scale",
-                context.server_var_res_xp,
-                (1.0, 10.0, 0.05, 2),
-                AppState::set_server_var_res_xp,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-abm",
-                "All-bonus multiplier",
-                context.all_bonus_multi,
-                (1.0, 100.0, 0.05, 2),
-                AppState::set_all_bonus_multi,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-extra-pct",
-                "Extra account %",
-                context.extra_pct,
-                (0.0, 10_000.0, 5.0, 0),
-                AppState::set_extra_pct,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-extra-multi",
-                "Extra account ×",
-                context.extra_multiplier,
-                (0.0, 100.0, 0.05, 2),
-                AppState::set_extra_multiplier,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-points",
-                "Bonus grid points",
-                context.bonus_grid_points as f64,
-                (0.0, 100_000.0, 10.0, 0),
-                AppState::set_bonus_grid_points,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-shapes",
-                "Extra shapes",
-                context.extra_shapes as f64,
-                (0.0, 100.0, 1.0, 0),
-                AppState::set_extra_shapes,
-                cx,
-            ))
-            .child(supplement_row(
-                "supp-mags",
-                "Extra magnifiers",
-                context.extra_magnifiers as f64,
-                (0.0, 200.0, 1.0, 0),
-                AppState::set_extra_magnifiers,
-                cx,
-            )),
-    )
-}
-
-fn save_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
-    let open = state.save_open;
-    let message = state.save_message.clone();
-    let ok = state.save_ok;
-    let entity = cx.entity();
-    let toggle = entity.clone();
-    let import = entity.clone();
-    let header = CardHeader::new("Save import")
-        .description("Paste a decoded save (JSON)")
-        .action(
-            Button::new("save-toggle", if open { "Hide" } else { "Show" })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    toggle.update(cx, |state, cx| state.set_save_open(!open, cx));
-                }),
-        );
-    let card = Card::new().header(header);
-    if !open {
-        return card.child(
-            div().px_3().pb_2().child(
-                Caption::new("Hidden. Nothing is imported until you paste a save.")
-                    .text_color(colors.fg_muted),
-            ),
-        );
-    }
-    card.child(
-        div()
-            .id("save-panel")
-            .flex()
-            .flex_col()
-            .gap_2()
-            .px_3()
-            .pb_3()
-            .child({
-                let input_focus = state.save_input.read(cx).focus().clone();
-                div()
-                    .id("save-input")
-                    .aria_label("Game save JSON")
-                    .w_full()
-                    .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
-                    .child(Input::new(&state.save_input).size(ControlSize::Sm))
-            })
-            .child(
-                Button::new("save-import", "Import save")
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        import.update(cx, |state, cx| state.import_save(cx));
-                    }),
-            )
-            .child(
-                div()
-                    .id("save-status")
-                    .role(gpui::Role::Label)
-                    .aria_label(message.clone())
-                    .w_full()
-                    .line_clamp(4)
-                    .text_size(px(11.0))
-                    .text_color(if ok { colors.fg_muted } else { colors.danger })
-                    .child(message),
-            ),
-    )
-}
-
-fn observations_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let (border, muted, surface) = {
-        let palette = &cx.theme().colors;
-        (palette.border, palette.fg_muted, palette.sunken)
-    };
-    let level = state.simulation.research_level;
-    let to_find = sim::observations_to_find(level, &state.simulation.observations.found);
-    let rows: Vec<usize> = (0..to_find.min(game().observations.len()))
-        .filter(|obs| sim::observation_usable(*obs, level, &state.simulation.observations))
-        .collect();
-    let shown = rows.len();
-    let entity = cx.entity();
-    let overlay = state.simulation.overlay();
-    let kal_map = sim::kaleidoscope_map(&state.simulation.mags, game().observations.len());
-    let kal_base = sim::kalei_base(&state.simulation.grid, &overlay, &state.context);
-
-    let half = rows.len().div_ceil(2);
-    let mut columns = div().flex().gap_3().min_h_0();
-    for chunk in rows.chunks(half.max(1)) {
-        let mut column = div().flex().flex_col().flex_1().min_w_0().child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .h(px(24.0))
-                .px_1()
-                .text_size(px(11.0))
-                .text_color(muted)
-                .child(div().w(px(20.0)).child("#"))
-                .child(div().flex_1().min_w_0().child("Observation"))
-                .child(div().w(px(44.0)).child("Insight"))
-                .child(div().w(px(24.0)).child("+"))
-                .child(div().w(px(34.0)).child("Mags"))
-                .child(div().w(px(56.0)).child("Ins/hr"))
-                .child(div().w(px(24.0)).child("")),
-        );
-        for obs in chunk {
-            let obs = *obs;
-            let observation = &game().observations[obs];
-            let insight_level = state.simulation.observations.insight_level[obs];
-            let insight_rate = sim::insight_rate(
-                obs,
-                &state.simulation,
-                &overlay,
-                &state.context,
-                &kal_map,
-                kal_base,
-            );
-            let mags = state
-                .simulation
-                .mags
-                .iter()
-                .filter(|mag| mag.slot == Some(obs))
-                .count();
-            let bump = entity.clone();
-            let toggle = entity.clone();
-            column = column.child(
-                div()
-                    .id(("obs-row", obs))
-                    .flex()
-                    .items_center()
-                    .gap_1()
-                    .h(px(30.0))
-                    .px_1()
-                    .border_b_1()
-                    .border_color(border)
-                    .text_size(px(12.0))
-                    .child(div().w(px(20.0)).child(format!("{}", obs + 1)))
-                    .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .child(observation.name.replace('_', " ")),
-                    )
-                    .child(div().w(px(44.0)).child(format!("Lv {insight_level}")))
-                    .child(
-                        IconButton::new(("obs-plus", obs), IconName::Plus)
-                            .size(ControlSize::Sm)
-                            .tooltip("Raise insight")
-                            .on_click(move |_event, _window, cx| {
-                                bump.update(cx, |state, cx| state.bump_insight(obs, 1, cx));
-                            }),
-                    )
-                    .child(div().w(px(34.0)).child(format!("{mags}")))
-                    .child(div().w(px(56.0)).child(format::rate(insight_rate)))
-                    .child(
-                        IconButton::new(("obs-toggle", obs), IconName::RefreshCw)
-                            .size(ControlSize::Sm)
-                            .tooltip("Toggle found")
-                            .on_click(move |_event, _window, cx| {
-                                toggle.update(cx, |state, cx| state.toggle_found(obs, cx));
-                            }),
-                    ),
-            );
-        }
-        columns = columns.child(column);
-    }
-
-    Card::new()
-        .header(CardHeader::new("Observations").description(format!(
-            "{shown} usable of {to_find} found at research level {level}"
-        )))
-        .child(
-            div()
+            ScrollArea::new("dashboard-scroll")
+                .vertical()
+                .shadows()
                 .flex_1()
                 .min_h_0()
-                .overflow_hidden()
-                .p_3()
-                .child(div().h(px(1.0)).bg(surface))
-                .child(columns),
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap_6()
+                        .pb_4()
+                        .when(matches == 0, |body| {
+                            body.child(
+                                EmptyState::new(
+                                    "dashboard-empty",
+                                    IconName::SearchX,
+                                    "No matching calculators",
+                                )
+                                .body(format!(
+                                    "Nothing matches “{query}”. Try a title, description or world such as W5."
+                                ))
+                                .action(
+                                    Button::new("dashboard-clear-search", "Clear search")
+                                        .on_click(move |_event, _window, cx| {
+                                            clear.update(cx, |state, cx| state.clear_search(cx));
+                                        }),
+                                ),
+                            )
+                        })
+                        .when(matches > 0, |body| body.child(groups)),
+                ),
         )
+}
+
+/// One clickable card: icon, title, world badge and one-line description.
+fn section_card(
+    section: &'static Section,
+    entity: &gpui::Entity<AppState>,
+    muted: gpui::Hsla,
+) -> impl IntoElement {
+    let entity = entity.clone();
+    let label = SharedString::from(format!(
+        "{} · {} — {}",
+        section.title,
+        section.badge(),
+        section.description
+    ));
+    div()
+        .id(SharedString::from(format!("card-{}", section.id)))
+        .role(Role::Button)
+        .aria_label(label)
+        .cursor_pointer()
+        .on_click(move |_event, _window, cx| {
+            entity.update(cx, |state, cx| state.open_section(section.id, cx));
+        })
         .child(
-            div().px_3().pb_2().text_size(px(11.0)).text_color(muted).child(
-                "Insight/hr counts monocles only; magnifiers marked here sit on that observation.",
+            Card::new().child(
+                div()
+                    .flex()
+                    .items_start()
+                    .gap_3()
+                    .child(
+                        div()
+                            .flex_none()
+                            .w(px(32.0))
+                            .text_size(px(24.0))
+                            .line_height(px(30.0))
+                            .child(section.icon),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .flex_1()
+                            .min_w_0()
+                            .flex_col()
+                            .gap_1p5()
+                            .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap_2()
+                                    .min_w_0()
+                                    .child(
+                                        div()
+                                            .flex_1()
+                                            .min_w_0()
+                                            .text_size(px(15.0))
+                                            .font_weight(FontWeight::SEMIBOLD)
+                                            .child(section.title),
+                                    )
+                                    .child(Badge::new(section.badge()).tone(tone(section.group))),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(12.0))
+                                    .line_height(px(17.0))
+                                    .text_color(muted)
+                                    .child(section.description),
+                            ),
+                    ),
             ),
         )
+}
+
+/// The upstream palette's nearest Ely tone for each world badge.
+fn tone(group: Group) -> Tone {
+    match group {
+        Group::General => Tone::Neutral,
+        Group::W2 | Group::W5 => Tone::Info,
+        Group::W3 => Tone::Success,
+        Group::W4 => Tone::Accent,
+        Group::W6 => Tone::Danger,
+        Group::W7 => Tone::Warning,
+    }
 }
