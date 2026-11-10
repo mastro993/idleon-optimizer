@@ -13,8 +13,8 @@ changing maths or save handling, read the upstream implementation first (clone i
 or needs a realistic run to debug:
 
 - import it in tests through `idleon_core::save::import` (`crates/core/tests/fixture.rs`);
-- paste it into the Rates pane's Save import panel, or type it through the MCP bridge, to debug the
-  app with real account state.
+- paste it into the Import dialog (the Import button in the shared header), or type it through the
+  MCP bridge, to debug the app with real account state.
 
 It is test input only: never tune production logic to its quirks. Add small purpose-built saves in
 `crates/core/tests/save.rs` for edge cases and leave the fixture frozen; if it is regenerated,

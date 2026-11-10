@@ -14,7 +14,9 @@
 //!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
 //!
 //! The app's own state exports use the decoded names (`gridLevels`, `magData`,
-//! …) at the top level, so the importer accepts either shape.
+//! …) at the top level, so the importer accepts either shape. [`import`] reports
+//! which shape it read in `Imported::format`, so a caller can preview a save and
+//! apply it in a second step without parsing twice.
 //!
 //! Deliberately unsupported, because the save does not carry the inputs the
 //! upstream needs: the additive account research bonus tree (`extra_pct`, read
@@ -29,11 +31,39 @@ mod research;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
 
+/// The shape the imported text had, as the upstream loader detects it
+/// (`raw.data ? 'it.json' : 'save.json'`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Format {
+    /// `it.json`: the decoded save under `data`, with `serverVars` and the
+    /// companion roster beside it.
+    ItJson,
+    /// `save.json`: the decoded save at the top level.
+    SaveJson,
+    /// The decoded research fields of an app state export, at the top level.
+    ResearchState,
+}
+
+impl Format {
+    /// The name a preview shows.
+    pub fn label(self) -> &'static str {
+        match self {
+            Format::ItJson => "it.json",
+            Format::SaveJson => "save.json",
+            Format::ResearchState => "research state",
+        }
+    }
+}
+
 /// What an import produced.
 #[derive(Clone, Debug)]
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// Which shape the text had.
+    pub format: Format,
+    /// How many characters the save carries, from its `Lv0_<n>` rows.
+    pub characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
 }
@@ -99,18 +129,23 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let mut warnings = Vec::new();
     let rows = research::research_rows(save, &mut warnings);
-    if rows.is_empty()
-        && !RESEARCH_FIELDS
-            .iter()
-            .any(|field| save.contains_key(*field))
-    {
+    let format = detect(root, save);
+    let carries_research = RESEARCH_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field));
+    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research) else {
         return Err(ImportError::NoSaveFields(format!(
             "expected one of {} at the top level or in the Research rows",
             RESEARCH_FIELDS.join(", ")
         )));
-    }
+    };
 
     let characters = characters(save);
+    let roster = character_count(save);
+    if roster == 0 {
+        warnings
+            .push("characters: no Lv0_<n> rows in the save; only the account fields import".into());
+    }
     let mut simulation = Simulation::default();
 
     match research::research_level(save, &characters) {
@@ -132,8 +167,39 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     Ok(Imported {
         simulation,
         context,
+        format,
+        characters: roster,
         warnings,
     })
+}
+
+/// Which shape the text has: a save wrapped in `data`, a flat save, or an app
+/// state export under its decoded field names.
+fn detect(root: &Map<String, Value>, save: &Map<String, Value>) -> Option<Format> {
+    if matches!(root.get("data"), Some(Value::Object(_))) {
+        return Some(Format::ItJson);
+    }
+    let raw = save.contains_key("Research")
+        || save
+            .keys()
+            .any(|key| key.starts_with("Lv0_") || key.starts_with("Exp0_"));
+    if raw {
+        return Some(Format::SaveJson);
+    }
+    RESEARCH_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field))
+        .then_some(Format::ResearchState)
+}
+
+/// How many characters the save carries: one per `Lv0_<n>` row.
+fn character_count(save: &Map<String, Value>) -> usize {
+    save.keys()
+        .filter(|key| {
+            key.strip_prefix("Lv0_")
+                .is_some_and(|index| index.parse::<usize>().is_ok())
+        })
+        .count()
 }
 
 fn characters(save: &Map<String, Value>) -> Vec<Character> {
