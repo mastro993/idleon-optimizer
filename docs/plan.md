@@ -192,8 +192,16 @@ counts and field names, not save values.
   `#0f3460` borders, `#00d4ff` accent; world badges use the upstream per-world colours.
 - Below 1360 px the fixed side rails stack under their main pane; data tables scroll inside a
   height that shrinks with the window, so the 1080×680 minimum stays usable.
-- Images come from `assets/upstream/` through a manifest. Every image reference has a placeholder
-  and alt text. The manifest records source path, hash and size.
+- Images come from `assets/upstream/` through `manifest.json`: each entry has the path relative to
+  the upstream assets folder, its byte count and sha256. `script/import-upstream-assets.mjs` copies
+  the tree, writes the manifest and verifies it; `--dry-run` lists every file and the total size and
+  `--verify` re-checks the hashes on disk. The app loads the first manifest it finds from
+  `IDLEON_ASSETS_DIR`, the executable's folder, the working directory or the repository root. Every
+  image reference has alt text and a labelled placeholder in the same box, so a missing install or
+  a deleted file never breaks the layout.
+- The import script never stages or commits anything and refuses to write inside a git worktree
+  unless `.gitignore` covers the target; upstream assets stay local-only until permission is
+  confirmed.
 - Every interactive control gets a stable id, accessible label, role and disabled state for the
   gpui-mcp bridge. Section roots use `section-<key>`.
 
@@ -240,12 +248,15 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Research status
 
-The research section is the only implemented one and is still partial. Done: grid, shapes,
+The research section is still partial. Done: grid, shapes,
 magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
 chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the five extra
 tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi
 Station), target-aware simulation, strategy comparison, complete save-derived multipliers, state
 export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
+
+The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
+UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
 
 ## 10. Verification
 

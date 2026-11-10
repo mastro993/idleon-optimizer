@@ -7,7 +7,8 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section. The plan covers the
+The current build opens on the dashboard and implements the research section and the shadow-ban
+check. The plan covers the
 full upstream suite: a dashboard that opens every calculator, with one milestone per section and one
 issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
@@ -65,6 +66,9 @@ issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   points and the decodable true multipliers are read from it. Fields the app cannot model are
   reported as warnings instead of guessed; a save that cannot be read only replaces the message and
   leaves the run untouched.
+- **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
+  any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
+  page shows the save status and the flag it read under the verdict, so it never guesses.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 
@@ -169,7 +173,8 @@ crates/core        game data, geometry, simulation maths, optimizers   (no GPUI)
   data/research.json  extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
   src/sections/      the registry plus one module per section (`research/`)
-  src/ui/            window chrome, dashboard, shared section states, bridge
+  src/ui/            window chrome, dashboard, shared section states, assets, bridge
+  src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
 script/            data extraction, roadmap sync, MCP lane, smoke, drive and section harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
@@ -193,8 +198,20 @@ decoding stay ports of the upstream repo, never inferred from the fixture. See
 
 Upstream images are not committed. The upstream licence reserves all rights, so
 `script/import-upstream-assets.mjs --from <checkout>` copies them into gitignored `assets/upstream/`
-with a manifest and the app falls back to labelled placeholders. Distributing a build with upstream
-assets or code needs written permission from the upstream author.
+with a hashed manifest:
+
+```console
+node script/import-upstream-assets.mjs --from <checkout> --dry-run  # every file and total size
+node script/import-upstream-assets.mjs --from <checkout>            # copy, manifest, verify
+node script/import-upstream-assets.mjs --verify                     # re-check hashes on disk
+```
+
+The app reads `assets/upstream/manifest.json` and resolves every image reference through it. A
+missing install or a deleted file draws a labelled placeholder in the same box; sections never
+assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The script
+refuses to write inside a git worktree unless `.gitignore` covers the target, and never stages or
+commits anything. Distributing a build with upstream assets or code needs written permission from
+the upstream author.
 
 ## Scope
 
