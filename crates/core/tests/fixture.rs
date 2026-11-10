@@ -4,7 +4,7 @@
 //! `idleon-research-optimizer` repo, not from this file. The assertions below
 //! pin the fixture so a change to either side is noticed deliberately.
 
-use idleon_core::save::import;
+use idleon_core::save::{ShadowVerdict, import};
 use idleon_core::sim;
 
 fn fixture() -> String {
@@ -37,6 +37,8 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     // are warned about rather than guessed.
     assert!((context.extra_multiplier - 5.771_131_034_482_759).abs() < 1e-9);
     assert_eq!(context.bonus_grid_points, 16);
+    // `OptLacc[26]` is zero in the fixture, so the upstream page answers NO.
+    assert_eq!(imported.shadow.verdict(), ShadowVerdict::No);
     for field in ["serverVarResXP", "allBonusMulti", "extra_pct"] {
         assert!(
             imported

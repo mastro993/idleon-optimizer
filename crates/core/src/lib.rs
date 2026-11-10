@@ -6,16 +6,21 @@
 //! `js/stats/systems/w7/research-math.js` and
 //! `js/stats/systems/w6/farming-planner.js`.
 
+pub mod breakdown;
 pub mod data;
+pub mod endgame;
 pub mod farming;
+pub mod formula;
 pub mod model;
 pub mod optimize;
+pub mod pickle;
 pub mod save;
 pub mod shape;
 pub mod sim;
 
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use farming::{CropValue, Farm, Plot, PlotMetrics, Snapshot};
+pub use formula::{FormulaNode, ValueFormat};
 pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,

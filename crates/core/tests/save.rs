@@ -1,7 +1,7 @@
 //! Save import: the decoded game save maps onto a simulation and its multipliers.
 
 use idleon_core::model::{GridState, Mag, MagKind, Observations, Placement, Simulation};
-use idleon_core::save::{Format, ImportError, import};
+use idleon_core::save::{Format, ImportError, ShadowVerdict, import};
 use idleon_core::sim;
 use serde_json::{Value, json};
 
@@ -236,6 +236,93 @@ fn garbage_and_a_json_array_are_rejected() {
     ));
 }
 
+/// A save carrying only the research rows, plus one `OptLacc` shape.
+fn shadow_save(opt_lacc: Option<Value>) -> Value {
+    let mut data = json!({
+        "Research": stringified(&Value::Array(research_rows())),
+    });
+    if let Some(opt_lacc) = opt_lacc {
+        data["OptLacc"] = opt_lacc;
+    }
+    json!({ "data": data, "serverVars": { "A_ResXP": 1.01 } })
+}
+
+/// `OptLacc` with `value` in slot 26, stringified like the game writes it.
+fn opt_lacc(value: Value) -> Value {
+    let mut cells = vec![json!(0.0); 30];
+    cells[26] = value;
+    stringified(&Value::Array(cells))
+}
+
+#[test]
+fn the_shadow_verdict_reaches_all_three_states() {
+    let shadow = |opt_lacc: Option<Value>| {
+        import(&shadow_save(opt_lacc).to_string())
+            .expect("the shadow save imports")
+            .shadow
+    };
+
+    assert_eq!(
+        shadow(Some(opt_lacc(json!(1.0)))).verdict(),
+        ShadowVerdict::Yes
+    );
+    assert_eq!(
+        shadow(Some(opt_lacc(json!(0.0)))).verdict(),
+        ShadowVerdict::No
+    );
+    assert_eq!(shadow(None).verdict(), ShadowVerdict::Unknown);
+}
+
+#[test]
+fn the_shadow_verdict_never_guesses() {
+    let shadow = |opt_lacc: Option<Value>| {
+        import(&shadow_save(opt_lacc).to_string())
+            .expect("the shadow save imports")
+            .shadow
+    };
+
+    // The flag the page reads is kept alongside the answer.
+    assert_eq!(shadow(Some(opt_lacc(json!(2.0)))).flag, Some(2.0));
+    assert_eq!(
+        shadow(Some(opt_lacc(json!(-3.0)))).verdict(),
+        ShadowVerdict::Yes,
+        "every nonzero finite flag is a yes"
+    );
+    // The page accepts a numeric string the way `Number(value)` does.
+    assert_eq!(
+        shadow(Some(opt_lacc(json!("3")))).verdict(),
+        ShadowVerdict::Yes
+    );
+    assert_eq!(
+        shadow(Some(opt_lacc(json!("0")))).verdict(),
+        ShadowVerdict::No
+    );
+    assert_eq!(
+        shadow(Some(stringified(&json!({ "26": 1 })))).verdict(),
+        ShadowVerdict::Yes,
+        "the upstream lookup also reads an object key"
+    );
+    for unreadable in [
+        json!(null),
+        json!(""),
+        json!("Infinity"),
+        json!("NaN"),
+        json!(true),
+        json!([0.0]),
+    ] {
+        assert_eq!(
+            shadow(Some(opt_lacc(unreadable.clone()))).verdict(),
+            ShadowVerdict::Unknown,
+            "{unreadable} is not a readable flag"
+        );
+    }
+    // A short `OptLacc` has no slot 26 at all.
+    assert_eq!(
+        shadow(Some(stringified(&json!([0.0, 1.0])))).verdict(),
+        ShadowVerdict::Unknown
+    );
+}
+
 /// The same fields without the `data` wrapper, as a plain `save.json` writes them.
 fn save_json(wrapped: &Value) -> Value {
     let mut flat = wrapped
@@ -262,6 +349,17 @@ fn it_json_and_save_json_import_the_same_values() {
     assert_eq!(it_json.characters, 2);
     assert_eq!(save_json.characters, it_json.characters);
     assert_eq!(save_json.warnings, it_json.warnings);
+    // The audit-ready save and its named roster survive the import; a flat
+    // save.json carries the same decoded object without the names.
+    assert_eq!(it_json.named_characters, 2);
+    assert_eq!(save_json.named_characters, 0);
+    for field in ["Research", "Lv0_0", "OptLacc", "Holes"] {
+        assert_eq!(
+            it_json.save.get(field),
+            save_json.save.get(field),
+            "{field} is the same decoded field"
+        );
+    }
 
     let it_rate = sim::exp_rate(&it_json.simulation, &it_json.context);
     let save_rate = sim::exp_rate(&save_json.simulation, &save_json.context);

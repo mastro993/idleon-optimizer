@@ -41,6 +41,12 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
         Route::Section(_) => layout::page_header(state, cx),
         Route::Missing(id) => layout::missing_header(id, state, cx),
     };
+    // Every section carries the same no-save state under its header; importing
+    // replaces it with the save status the header already reflects.
+    let no_save = match &route {
+        Route::Section(_) if !state.save_loaded => Some(section::no_save(cx)),
+        _ => None,
+    };
 
     let body = match &route {
         Route::Dashboard => div()
@@ -96,6 +102,8 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
                 StatusBarItem::new("status-detail").label(format!("{id} is not in the registry")),
             ),
     };
+    let status =
+        status.right(StatusBarItem::new("status-assets").label(state.assets.status_label()));
 
     let mut root = div()
         .id("app-root")
@@ -111,6 +119,7 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
             cx.stop_propagation();
         }))
         .child(header)
+        .children(no_save)
         .child(div().id("workspace").flex_1().min_h_0().child(body))
         // The status line is a labelled node of its own: a status bar item has no
         // aria label, and an agent or a screen reader reads the run's state here.

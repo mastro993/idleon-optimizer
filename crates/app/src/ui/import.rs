@@ -326,9 +326,12 @@ mod tests {
             },
             context: Default::default(),
             farming: Default::default(),
+            save: serde_json::Value::Null,
             format,
             characters,
+            named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
+            shadow: Default::default(),
         }
     }
 
