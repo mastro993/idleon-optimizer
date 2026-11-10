@@ -1,4 +1,5 @@
-//! Import a game save into a simulation, its multipliers and the farming field.
+//! Import a game save into a simulation, its multipliers, the farming field and
+//! the Clamworks state.
 //!
 //! The upstream calculators read the game's save through Google sign-in and a
 //! decode step; this app takes the decoded object as text. The layout follows
@@ -35,6 +36,7 @@ mod shadow;
 
 pub use shadow::{Shadow, ShadowVerdict};
 
+use crate::clamworks::Clamworks;
 use crate::farming::Farm;
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
@@ -73,6 +75,8 @@ pub struct Imported {
     pub context: SimContext,
     /// The farming field, ranks, crops and market levels the save carries.
     pub farming: Farm,
+    /// The Clamworks state the save carries, or the zero state when it has none.
+    pub clamworks: Clamworks,
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
@@ -196,11 +200,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .and_then(|character| character.farming)
         .unwrap_or(0);
     let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
+    let clamworks = Clamworks::from_save(save, &mut warnings);
 
     Ok(Imported {
         simulation,
         context,
         farming,
+        clamworks,
         save: Value::Object(save.clone()),
         format,
         characters: roster,

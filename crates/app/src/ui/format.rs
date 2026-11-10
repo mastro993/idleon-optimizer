@@ -5,14 +5,28 @@ use idleon_core::game;
 
 /// A rate as `1.23M` or `845K`, in EXP per hour.
 pub fn rate(value: f64) -> String {
-    if value >= 1e9 {
-        format!("{:.2}B", value / 1e9)
-    } else if value >= 1e6 {
-        format!("{:.2}M", value / 1e6)
-    } else if value >= 1e3 {
-        format!("{:.1}K", value / 1e3)
+    let (scaled, suffix) = scale(value);
+    match suffix {
+        "" => format!("{scaled:.0}"),
+        "K" => format!("{scaled:.1}K"),
+        _ => format!("{scaled:.2}{suffix}"),
+    }
+}
+
+/// A large count split into its scaled value and suffix, for `Statistic`.
+pub fn scale(value: f64) -> (f64, &'static str) {
+    if !value.is_finite() {
+        return (value, "");
+    }
+    let magnitude = value.abs();
+    if magnitude >= 1e9 {
+        (value / 1e9, "B")
+    } else if magnitude >= 1e6 {
+        (value / 1e6, "M")
+    } else if magnitude >= 1e3 {
+        (value / 1e3, "K")
     } else {
-        format!("{value:.0}")
+        (value, "")
     }
 }
 
@@ -241,6 +255,15 @@ mod tests {
         assert_eq!(duration(0.5), "0.50s");
         assert_eq!(duration(780.0), "13.0m");
         assert_eq!(duration(86_400.0), "1.00d");
+    }
+
+    #[test]
+    fn large_counts_scale_to_a_suffix() {
+        assert_eq!(scale(845.0), (845.0, ""));
+        assert_eq!(scale(1_500.0), (1.5, "K"));
+        assert_eq!(scale(2_960_058_875.172_09), (2.960_058_875_172_09, "B"));
+        assert_eq!(rate(1_500.0), "1.5K");
+        assert_eq!(rate(2_960_058_875.172_09), "2.96B");
     }
 
     #[test]

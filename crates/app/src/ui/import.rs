@@ -326,6 +326,7 @@ mod tests {
             },
             context: Default::default(),
             farming: Default::default(),
+            clamworks: Default::default(),
             save: serde_json::Value::Null,
             format,
             characters,
