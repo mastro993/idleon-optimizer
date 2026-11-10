@@ -5,7 +5,7 @@
 - Milestone: `M30`
 - Section key: `pickle`
 - Group: `tools`
-- Status: `planned`
+- Status: `done`
 - Depends on: `foundation`
 
 Port the hidden DPS/TTK calculator.
@@ -16,17 +16,19 @@ Port the hidden DPS/TTK calculator.
 
 ## UI
 
-- Inputs
-- DPS and TTK results
+- DPS and kill-time inputs
+- Miniboss pickle table
 
 ## Inputs
 
-- Pickle combat values
+- DPS
+- Max time to kill
 
 ## Outputs
 
-- DPS
-- TTK
+- Max pickles
+- Effective HP
+- Kill time
 
 ## Assets
 
@@ -36,7 +38,7 @@ None.
 
 ### PK-01 — DPS and TTK
 
-Compute DPS and time-to-kill from the upstream inputs.
+Compute each miniboss's maximum pickles, effective HP and time-to-kill from DPS and a kill-time budget.
 
 Depends on: FND-03 Shared save JSON import
 

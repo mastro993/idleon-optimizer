@@ -5,7 +5,9 @@ pub mod grid;
 pub mod mags;
 pub mod shapes;
 
-use crate::model::{Effort, OptimizeRequest, OptimizeResult, Progress, SimContext, Simulation};
+use crate::model::{
+    Control, Effort, OptimizeRequest, OptimizeResult, Progress, SimContext, Simulation,
+};
 use crate::sim;
 use std::time::Instant;
 
@@ -15,32 +17,44 @@ use std::time::Instant;
 /// against; shapes then stake out the squares worth spending on; a Thorough run
 /// spends grid points and re-places both, because the spending moves the value
 /// of the squares out from under the shapes and the magnifier grants.
+///
+/// The reporter can return [`Control::Stop`] to cancel; the run then returns
+/// `None` so the caller keeps the result it already had.
 pub fn run(
     simulation: &Simulation,
     ctx: &SimContext,
     request: &OptimizeRequest,
-    report: &mut dyn FnMut(Progress),
-) -> OptimizeResult {
+    report: &mut dyn FnMut(Progress) -> Control,
+) -> Option<OptimizeResult> {
     let started = Instant::now();
     let before = simulation.clone();
     let before_rate = sim::exp_rate(&before, ctx).total;
     let mut after = before.clone();
     let mut steps = Vec::new();
 
-    report(Progress {
+    if report(Progress {
         fraction: 0.02,
         message: "Assigning magnifiers…".into(),
-    });
+    }) == Control::Stop
+    {
+        return None;
+    }
     let mags_outcome = mags::optimize(&after, ctx, request.effort);
     after.mags = mags_outcome.mags;
     steps.extend(mags_outcome.steps);
 
+    let mut stopped = false;
     let shapes_outcome = shapes::optimize(&after, ctx, request.effort, &mut |progress| {
-        report(Progress {
+        let control = report(Progress {
             fraction: 0.05 + progress.fraction * 0.55,
             message: progress.message,
-        })
+        });
+        stopped |= control == Control::Stop;
+        control
     });
+    if stopped {
+        return None;
+    }
     after.placements = shapes_outcome.placements;
     steps.extend(shapes_outcome.steps);
 
@@ -52,37 +66,53 @@ pub fn run(
             request.effort,
             request.grid_points,
             &mut |progress| {
-                report(Progress {
+                let control = report(Progress {
                     fraction: 0.62 + progress.fraction * 0.2,
                     message: progress.message,
-                })
+                });
+                stopped |= control == Control::Stop;
+                control
             },
         );
+        if stopped {
+            return None;
+        }
         after.grid = grid_outcome.grid;
         steps.extend(grid_outcome.steps);
 
         let reshaped = shapes::optimize(&after, ctx, request.effort, &mut |progress| {
-            report(Progress {
+            let control = report(Progress {
                 fraction: 0.84 + progress.fraction * 0.1,
                 message: progress.message,
-            })
+            });
+            stopped |= control == Control::Stop;
+            control
         });
+        if stopped {
+            return None;
+        }
         after.placements = reshaped.placements;
         steps.extend(reshaped.steps);
 
-        report(Progress {
+        if report(Progress {
             fraction: 0.95,
             message: "Re-fitting magnifiers to the new levels…".into(),
-        });
+        }) == Control::Stop
+        {
+            return None;
+        }
         let remags = mags::optimize(&after, ctx, request.effort);
         after.mags = remags.mags;
         steps.extend(remags.steps);
     }
 
-    report(Progress {
+    if report(Progress {
         fraction: 0.97,
         message: "Projecting the run…".into(),
-    });
+    }) == Control::Stop
+    {
+        return None;
+    }
     let after_rate = sim::exp_rate(&after, ctx).total;
     // A level target already met says nothing about the layout; project a day.
     let projection = match request.target {
@@ -105,12 +135,15 @@ pub fn run(
         projection.final_level,
         hours_label(projection.hours)
     ));
-    report(Progress {
+    if report(Progress {
         fraction: 1.0,
         message: "Done.".into(),
-    });
+    }) == Control::Stop
+    {
+        return None;
+    }
 
-    OptimizeResult {
+    Some(OptimizeResult {
         before,
         after,
         before_rate,
@@ -118,7 +151,7 @@ pub fn run(
         projection,
         steps,
         elapsed_ms: started.elapsed().as_millis(),
-    }
+    })
 }
 
 /// Hours as the projection reports them, in a unit a person can read.

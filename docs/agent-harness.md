@@ -93,12 +93,15 @@ pkill -f target/debug/idleon-optimizer
 touches the UI.
 
 The app also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
-it and asserts the section root:
+it and asserts the section root and (while no save is loaded) the shared `no-save-state` banner:
 
 ```console
 node script/mcp-smoke.mjs --spawn --section damage   # a hidden tool: planned empty state
 node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-section empty state
 ```
+
+`mcp-drive.mjs` also changes the optimizer target after a run to prove the result is marked
+`result-stale`, then restores it and applies the result.
 
 ## Per-section verification
 

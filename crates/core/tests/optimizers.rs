@@ -1,7 +1,8 @@
 //! Invariants every optimizer run must hold.
 
 use idleon_core::model::{
-    Effort, GridState, Mag, MagKind, Observations, OptimizeRequest, SimContext, Simulation, Target,
+    Control, Effort, GridState, Mag, MagKind, Observations, OptimizeRequest, SimContext,
+    Simulation, Target,
 };
 use idleon_core::{game, optimize, shape, sim};
 use std::time::Instant;
@@ -52,7 +53,8 @@ fn run(
         respec_grid: effort == Effort::Thorough,
         grid_points: None,
     };
-    optimize::run(simulation, ctx, &request, &mut |_| {})
+    optimize::run(simulation, ctx, &request, &mut |_| Control::Continue)
+        .expect("the run was not cancelled")
 }
 
 #[test]
@@ -201,8 +203,12 @@ fn layout_rate(simulation: &Simulation, ctx: &SimContext, grid: &GridState) -> f
 fn beam_spending_never_loses_to_the_marginal_climb() {
     for level in [60u32, 100, 150] {
         let (simulation, ctx) = seeded(1, level, 4);
-        let climb = optimize::grid::respec(&simulation, &ctx, Effort::Quick, None, &mut |_| {});
-        let beamed = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, None, &mut |_| {});
+        let climb = optimize::grid::respec(&simulation, &ctx, Effort::Quick, None, &mut |_| {
+            Control::Continue
+        });
+        let beamed = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, None, &mut |_| {
+            Control::Continue
+        });
         let climbed = layout_rate(&simulation, &ctx, &climb.grid);
         let beam_rate = layout_rate(&simulation, &ctx, &beamed.grid);
         assert!(
@@ -236,7 +242,7 @@ fn beam_spending_honours_an_explicit_budget() {
             &ctx,
             Effort::Thorough,
             Some(budget),
-            &mut |_| {},
+            &mut |_| Control::Continue,
         );
         let spent = outcome.grid.spent().saturating_sub(simulation.grid.spent());
         assert!(spent <= budget, "budget {budget} spent {spent}");
@@ -387,7 +393,9 @@ fn magnifier_assignment_matches_brute_force_on_a_small_board() {
 fn shape_search_only_rotates_where_the_level_unlocks_it() {
     for level in [40u32, 95] {
         let (simulation, ctx) = seeded(1, level, 2);
-        let outcome = optimize::shapes::optimize(&simulation, &ctx, Effort::Thorough, &mut |_| {});
+        let outcome = optimize::shapes::optimize(&simulation, &ctx, Effort::Thorough, &mut |_| {
+            Control::Continue
+        });
         assert!(
             outcome.rate >= sim::exp_rate(&simulation, &ctx).total - 1e-9,
             "level {level}: the search lowered the rate to {}",
@@ -421,7 +429,9 @@ fn beam_spending_unlocks_only_squares_it_may() {
     simulation.mags = (0..3)
         .map(|slot| Mag::new(MagKind::Regular, Some(slot)))
         .collect();
-    let outcome = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, None, &mut |_| {});
+    let outcome = optimize::grid::respec(&simulation, &ctx, Effort::Thorough, None, &mut |_| {
+        Control::Continue
+    });
     let earned = sim::grid_points(&simulation, &ctx).earned;
     assert!(
         outcome.grid.spent() <= earned,
@@ -460,7 +470,9 @@ fn progress_and_steps_report_what_the_run_did() {
         let result = optimize::run(&simulation, &ctx, &request, &mut |progress| {
             fractions.push(progress.fraction);
             messages.push(progress.message);
-        });
+            Control::Continue
+        })
+        .expect("the run was not cancelled");
         assert!(!fractions.is_empty(), "{effort:?} reported no progress");
         assert!(
             fractions.windows(2).all(|pair| pair[1] >= pair[0]),
@@ -485,4 +497,22 @@ fn progress_and_steps_report_what_the_run_did() {
             );
         }
     }
+}
+
+#[test]
+fn a_stopped_report_cancels_the_run_without_a_result() {
+    let (simulation, ctx) = seeded(1, 150, 6);
+    let request = OptimizeRequest {
+        target: Target::Level(155),
+        effort: Effort::Thorough,
+        respec_grid: true,
+        grid_points: None,
+    };
+    let mut reports = 0;
+    let result = optimize::run(&simulation, &ctx, &request, &mut |_| {
+        reports += 1;
+        Control::Stop
+    });
+    assert!(result.is_none(), "a stopped run returned a result");
+    assert_eq!(reports, 1, "the run kept working after it was stopped");
 }

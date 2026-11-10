@@ -11,7 +11,7 @@ fn fixture() -> Save {
     ))
     .expect("the fixture is committed");
     let imported = save::import(&text).expect("the fixture imports");
-    Save::from(&imported.data)
+    Save::from_parts(&imported.save, imported.companion.as_ref())
 }
 
 fn close(actual: f64, expected: f64) {

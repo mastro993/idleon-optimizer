@@ -51,8 +51,70 @@ pub fn percent(value: f64) -> String {
 
 /// A count with thousands separators.
 pub fn count(value: u64) -> String {
-    let digits = value.to_string();
-    let mut out = String::with_capacity(digits.len() + digits.len() / 3);
+    group(&value.to_string())
+}
+
+/// A leaderboard value, as the upstream endgame page prints it: `Unavailable`
+/// without a value, a grouped number below a million, `fmt_val` above.
+pub fn stat_value(value: Option<f64>) -> String {
+    let Some(value) = value else {
+        return "Unavailable".into();
+    };
+    if value < 1e6 {
+        let rounded = format!("{value:.2}");
+        let (whole, fraction) = match rounded.split_once('.') {
+            Some((whole, fraction)) => (whole, fraction.trim_end_matches('0')),
+            None => (rounded.as_str(), ""),
+        };
+        return match fraction {
+            "" => group(whole),
+            fraction => format!("{}.{fraction}", group(whole)),
+        };
+    }
+    fmt_val(value)
+}
+
+/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or an exponent.
+pub fn fmt_val(value: f64) -> String {
+    let magnitude = value.abs();
+    let (divisor, suffix) = if magnitude >= 1e24 {
+        // `toExponential(2)` prints a signed exponent.
+        let exponent = magnitude.log10().floor() as i32;
+        let mantissa = value / 10_f64.powi(exponent);
+        return format!(
+            "{mantissa:.2}e{}{exponent}",
+            if exponent < 0 { "-" } else { "+" }
+        );
+    } else if magnitude >= 1e21 {
+        (1e21, "QQQ")
+    } else if magnitude >= 1e18 {
+        (1e18, "QQ")
+    } else if magnitude >= 1e15 {
+        (1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (1e12, "T")
+    } else if magnitude >= 1e9 {
+        (1e9, "B")
+    } else if magnitude >= 1e6 {
+        (1e6, "M")
+    } else {
+        (1e3, "K")
+    };
+    if magnitude >= 1e6 {
+        format!("{:.2}{suffix}", value / divisor)
+    } else {
+        format!("{:.1}{suffix}", value / divisor)
+    }
+}
+
+/// Thousands separators around the whole part of a number.
+fn group(whole: &str) -> String {
+    let (sign, digits) = match whole.strip_prefix('-') {
+        Some(digits) => ("-", digits),
+        None => ("", whole),
+    };
+    let mut out = String::with_capacity(whole.len() + whole.len() / 3);
+    out.push_str(sign);
     for (index, digit) in digits.chars().enumerate() {
         if index > 0 && (digits.len() - index).is_multiple_of(3) {
             out.push(',');
@@ -127,5 +189,18 @@ mod tests {
         assert_eq!(hours(f64::INFINITY), "—");
         assert_eq!(hours(1.1e19), "—");
         assert_eq!(hours(26.0), "1d 2h");
+    }
+
+    #[test]
+    fn leaderboard_values_match_the_upstream_formatter() {
+        assert_eq!(stat_value(None), "Unavailable");
+        assert_eq!(stat_value(Some(3_748.500_000_000_336)), "3,748.5");
+        assert_eq!(stat_value(Some(746.926)), "746.93");
+        assert_eq!(stat_value(Some(0.0)), "0");
+        assert_eq!(stat_value(Some(1_000_000.0)), "1.00M");
+        assert_eq!(stat_value(Some(6.100_056_391_290_721e44)), "6.10e+44");
+        assert_eq!(stat_value(Some(14_754_186_378_368_600_000.0)), "14.75QQ");
+        assert_eq!(count(1_234_567), "1,234,567");
+        assert_eq!(group("-1234"), "-1,234");
     }
 }

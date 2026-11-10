@@ -25,8 +25,11 @@
 //! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
 
 mod account;
-mod json;
+pub(crate) mod json;
 mod research;
+mod shadow;
+
+pub use shadow::{Shadow, ShadowVerdict};
 
 use crate::model::{SimContext, Simulation};
 use serde_json::{Map, Value};
@@ -60,35 +63,26 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
-    /// The decoded save object, kept raw for sections beyond research.
-    pub data: SaveData,
+    /// The decoded save object (`data` in an `it.json`, the object itself in a
+    /// flat save), kept whole so read-only sections can audit it.
+    pub save: Value,
+    /// The `it.json` wrapper's companion roster, beside the save.
+    pub companion: Option<Value>,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
     pub characters: usize,
+    /// How many names the `charNames` roster beside the save carries.
+    pub named_characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
+    /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
+    pub shadow: Shadow,
 }
 
-/// The decoded save object every section reads.
-///
-/// The research importer decodes the rows it needs; sections with their own
-/// systems read the same object through [`SaveData::parsed`] instead of asking
-/// for a second import. The `it.json` wrapper's companion roster stays beside
-/// the save, exactly as the upstream loader reads it.
-#[derive(Clone, Debug)]
-pub struct SaveData {
-    /// The save object: `data` when the text wraps it, the root otherwise.
-    pub fields: Map<String, Value>,
-    /// The `it.json` wrapper's `companion` roster, when present.
-    pub companion: Option<Value>,
-}
-
-impl SaveData {
-    /// A field that may be a JSON value or a string holding one.
-    pub fn parsed(&self, key: &str) -> Option<Value> {
-        json::parsed_field(&self.fields, key)
-    }
+/// A save field that may be a JSON value or a string holding one.
+pub(crate) fn parsed(value: &Value, key: &str) -> Option<Value> {
+    json::parsed_field(value.as_object()?, key)
 }
 
 /// Why an import could not be read.
@@ -165,6 +159,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let characters = characters(save);
     let roster = character_count(save);
+    let named_characters = root
+        .get("charNames")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
     if roster == 0 {
         warnings
             .push("characters: no Lv0_<n> rows in the save; only the account fields import".into());
@@ -186,18 +184,17 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
-    let data = SaveData {
-        fields: save.clone(),
-        companion: root.get("companion").cloned(),
-    };
 
     Ok(Imported {
         simulation,
         context,
-        data,
+        save: Value::Object(save.clone()),
+        companion: root.get("companion").cloned(),
         format,
         characters: roster,
+        named_characters,
         warnings,
+        shadow: Shadow::read(save),
     })
 }
 

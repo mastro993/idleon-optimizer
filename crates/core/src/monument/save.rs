@@ -5,7 +5,7 @@
 //! arrays of `serde_json::Value` where a row mixes numbers and strings, and
 //! small numeric accessors so the formulas stay readable.
 
-use crate::save::SaveData;
+use crate::save as imported_save;
 use serde_json::Value;
 use std::collections::BTreeSet;
 
@@ -56,36 +56,38 @@ pub struct Save {
     pub state_r7_available: bool,
 }
 
-impl From<&SaveData> for Save {
-    fn from(data: &SaveData) -> Self {
-        let research = array(data, "Research");
+impl Save {
+    /// Build the monument view from the imported save object and the
+    /// `it.json` companion roster beside it.
+    pub fn from_parts(save: &Value, companion: Option<&Value>) -> Self {
+        let research = array(save, "Research");
         let state_r7 = research.get(7).and_then(Value::as_array).cloned();
-        let options = array(data, "OptionsListAccount");
+        let options = array(save, "OptionsListAccount");
         let options = if options.is_empty() {
-            array(data, "OptLacc")
+            array(save, "OptLacc")
         } else {
             options
         };
-        let (companions, enhanced_companions, companion_available) = companions(data);
+        let (companions, enhanced_companions, companion_available) = companions(companion);
         Self {
-            holes: array(data, "Holes"),
+            holes: array(save, "Holes"),
             state_r7_available: state_r7.is_some(),
             state_r7: state_r7.unwrap_or_default(),
             research,
-            lv0: rows(data, "Lv0_"),
+            lv0: rows(save, "Lv0_"),
             options,
-            spelunk: array(data, "Spelunk"),
-            summon: array(data, "Summon"),
-            arcade: array(data, "ArcadeUpg"),
-            ninja: array(data, "Ninja"),
-            sailing: array(data, "Sailing"),
-            tasks: task_groups(data),
-            gem_items: array(data, "GemItemsPurchased"),
-            arcane: array(data, "Arcane"),
-            compass: array(data, "Compass"),
-            equipment: rows(data, "EquipOrder_"),
-            achievements: array(data, "AchieveReg").iter().map(number).collect(),
-            bundles: data.parsed("BundlesReceived"),
+            spelunk: array(save, "Spelunk"),
+            summon: array(save, "Summon"),
+            arcade: array(save, "ArcadeUpg"),
+            ninja: array(save, "Ninja"),
+            sailing: array(save, "Sailing"),
+            tasks: task_groups(save),
+            gem_items: array(save, "GemItemsPurchased"),
+            arcane: array(save, "Arcane"),
+            compass: array(save, "Compass"),
+            equipment: rows(save, "EquipOrder_"),
+            achievements: array(save, "AchieveReg").iter().map(number).collect(),
+            bundles: imported_save::parsed(save, "BundlesReceived"),
             companions,
             enhanced_companions,
             companion_available,
@@ -250,17 +252,19 @@ impl Save {
 }
 
 /// A save field that must be an array.
-fn array(data: &SaveData, key: &str) -> Vec<Value> {
-    match data.parsed(key) {
+fn array(save: &Value, key: &str) -> Vec<Value> {
+    match imported_save::parsed(save, key) {
         Some(Value::Array(items)) => items,
         _ => Vec::new(),
     }
 }
 
 /// Every `<prefix><n>` field, ordered by its numeric suffix.
-fn rows(data: &SaveData, prefix: &str) -> Vec<Value> {
-    let mut indexed: Vec<(usize, String)> = data
-        .fields
+fn rows(save: &Value, prefix: &str) -> Vec<Value> {
+    let Some(fields) = save.as_object() else {
+        return Vec::new();
+    };
+    let mut indexed: Vec<(usize, String)> = fields
         .keys()
         .filter_map(|key| {
             key.strip_prefix(prefix)
@@ -271,23 +275,20 @@ fn rows(data: &SaveData, prefix: &str) -> Vec<Value> {
     indexed.sort_by_key(|(index, _)| *index);
     indexed
         .into_iter()
-        .map(|(_, key)| data.parsed(&key).unwrap_or(Value::Null))
+        .map(|(_, key)| imported_save::parsed(save, &key).unwrap_or(Value::Null))
         .collect()
 }
 
 /// `TaskZZ0`-`TaskZZ5`, the six task groups `tasksGlobalData` holds.
-fn task_groups(data: &SaveData) -> Vec<Value> {
+fn task_groups(save: &Value) -> Vec<Value> {
     (0..=5)
-        .map(|group| {
-            data.parsed(&format!("TaskZZ{group}"))
-                .unwrap_or(Value::Null)
-        })
+        .map(|group| imported_save::parsed(save, &format!("TaskZZ{group}")).unwrap_or(Value::Null))
         .collect()
 }
 
 /// The companion roster: ids owned, ids at level two, and whether it exists.
-fn companions(data: &SaveData) -> (BTreeSet<u32>, BTreeSet<u32>, bool) {
-    let Some(list) = data.companion.as_ref().and_then(|root| at_key(root, "l")) else {
+fn companions(companion: Option<&Value>) -> (BTreeSet<u32>, BTreeSet<u32>, bool) {
+    let Some(list) = companion.and_then(|root| at_key(root, "l")) else {
         return (BTreeSet::new(), BTreeSet::new(), false);
     };
     let entries: Vec<String> = match list {
@@ -364,7 +365,7 @@ mod tests {
         ))
         .expect("the fixture is committed");
         let imported = save::import(&text).expect("the fixture imports");
-        Save::from(&imported.data)
+        Save::from_parts(&imported.save, imported.companion.as_ref())
     }
 
     #[test]

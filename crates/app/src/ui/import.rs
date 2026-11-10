@@ -314,13 +314,13 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
-            data: idleon_core::save::SaveData {
-                fields: Default::default(),
-                companion: None,
-            },
+            save: serde_json::Value::Null,
+            companion: None,
             format,
             characters,
+            named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
+            shadow: Default::default(),
         }
     }
 
