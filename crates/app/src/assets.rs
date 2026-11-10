@@ -1,7 +1,7 @@
 //! Manifest-backed upstream artwork.
 //!
-//! The upstream images are all-rights-reserved and live outside the repository
-//! in a gitignored folder, so the app never assumes a path exists. It reads
+//! Upstream images are game artwork, committed under `assets/upstream/` with a
+//! credit note. The app never assumes a path exists: it reads
 //! `assets/upstream/manifest.json` (written by `script/import-upstream-assets.mjs`),
 //! resolves a reference only when the file is on disk, and reports the rest as
 //! missing so the UI can draw a labelled placeholder.

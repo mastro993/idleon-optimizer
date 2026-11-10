@@ -7,9 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the shadow-ban check and
-the endgame check. The plan covers the full upstream suite: a dashboard that opens every calculator,
-with one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section, the shadow-ban check,
+the endgame check and the hidden BoneJoePickle calculator. The plan covers the full upstream suite: a
+dashboard that opens every calculator, with one milestone per section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -33,8 +34,9 @@ with one milestone per section and one issue per feature ([`docs/roadmap.md`](do
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
 - **Consistent states** — every section shows the shared no-save banner with its import action, the
-  header names a partial import, long runs show a progress bar and Cancel, cancelling keeps the
-  previous result, and results are marked stale instead of disappearing when an input changes.
+  header names a partial import, and every long job goes through one shared task runner: it runs off
+  the UI thread, reports progress, cancels without losing the previous result, and marks a result
+  stale when its inputs change.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -75,6 +77,9 @@ with one milestone per section and one issue per feature ([`docs/roadmap.md`](do
   `fixtures/endgame-stats.json` pins the ported values against the upstream JS.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
+- **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
+  max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
+  with effective HP and kill time.
 
 ## Roadmap
 
@@ -203,22 +208,22 @@ upstream `js/endgame-stats.js` audit of that save, regenerated with
 the Rust port against it. Both are test input only: game formulas and save decoding stay ports of the
 upstream repo, never inferred from the fixtures. See [`fixtures/README.md`](fixtures/README.md).
 
-Upstream images are not committed. The upstream licence reserves all rights, so
-`script/import-upstream-assets.mjs --from <checkout>` copies them into gitignored `assets/upstream/`
-with a hashed manifest:
+Upstream artwork is committed in `assets/upstream/`. The images are game assets from Legends of
+Idleon, not original work of the upstream repository; credit sits in `assets/upstream/README.md`.
+`script/import-upstream-assets.mjs --from <checkout> --force` regenerates the folder with a hashed
+manifest:
 
 ```console
 node script/import-upstream-assets.mjs --from <checkout> --dry-run  # every file and total size
-node script/import-upstream-assets.mjs --from <checkout>            # copy, manifest, verify
+node script/import-upstream-assets.mjs --from <checkout> --force    # copy, manifest, verify
 node script/import-upstream-assets.mjs --verify                     # re-check hashes on disk
 ```
 
 The app reads `assets/upstream/manifest.json` and resolves every image reference through it. A
 missing install or a deleted file draws a labelled placeholder in the same box; sections never
-assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The script
-refuses to write inside a git worktree unless `.gitignore` covers the target, and never stages or
-commits anything. Distributing a build with upstream assets or code needs written permission from
-the upstream author.
+assume a sprite exists. `IDLEON_ASSETS_DIR` points the app at a different asset folder. The game
+artwork is free to use; the upstream code is still all-rights-reserved, so ports stay rewrites with
+source references and the credit note stays with the images.
 
 ## Scope
 

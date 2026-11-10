@@ -3,6 +3,7 @@
 mod assets;
 mod sections;
 mod state;
+mod task;
 mod ui;
 
 use anyhow::{Context as _, Result};

@@ -1,8 +1,9 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, 29 sections planned.** The live breakdown is
-[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
-each section's full specification is under [`docs/sections/`](sections/).
+Status: **foundation in progress, research partial, shadow-ban and BoneJoePickle done, 27 sections
+planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
+[`docs/roadmap.json`](roadmap.json); each section's full specification is under
+[`docs/sections/`](sections/).
 
 ## 1. Product goal
 
@@ -24,27 +25,25 @@ Definition of done for a section: every feature issue closed, formula fixtures m
 the section opens from the dashboard, the harness drives its main flow, assets resolve, and no
 unexplained import warning remains.
 
-## 2. Licensing and asset blocker
+## 2. Licensing and assets
 
 The upstream repository's `LICENSE` says: **Copyright 2026 Jonathan Rock. All rights reserved. This
 repository is provided solely for educational review. No usage, modification, distribution, or
 reproduction of this code is allowed for any purpose without explicit written permission.**
 
-That blocks redistributing upstream code or images. This plan therefore separates implementation
-from asset distribution:
+The images are game assets from Legends of Idleon, not original work of the upstream repository,
+so they are free to use and are committed here with credit. The upstream code licence still
+reserves every other right.
 
 - Formulas and data tables stay ports with upstream source references; the existing extraction
   script documents provenance.
-- Upstream images are **not committed**. `script/import-upstream-assets.mjs` copies them from a
-  local checkout into gitignored `assets/upstream/` and writes a manifest with hashes.
+- Upstream images are **committed** under `assets/upstream/` with credit in
+  `assets/upstream/README.md`; they are game assets, free to use, not upstream-authored work.
+  `script/import-upstream-assets.mjs` copies them from a local checkout, writes a manifest with
+  hashes and records the upstream commit.
 - The app resolves images through the manifest and falls back to a labelled placeholder.
-- Public release, binary distribution or committing assets requires **written permission** from the
-  upstream author. Until then the app is for local/educational use only.
-- If permission is refused, the fallback is original artwork and layouts with the same information
-  architecture; functionality is unaffected.
-
-This is a release blocker, not a nice-to-have. Do not publish a build containing upstream assets or
-code without written permission.
+- Reusing upstream code still needs written permission; keep ports as rewrites with source
+  references rather than copies.
 
 ## 3. Dashboard and navigation
 
@@ -82,10 +81,12 @@ as the research grid does for Escape. An unknown id renders the missing-section 
 planned section renders the shared "On the roadmap" empty state — neither can panic.
 
 Section states are shared: every section page renders a `no-save-state` banner with the import
-action until a save loads; the header distinguishes a full save from a partial one with warnings;
-long optimizer runs show a progress bar and `run-cancel`; a cancelled run keeps the result already
-on screen; and a stored result whose inputs changed is marked stale (badge, banner, disabled Apply)
-instead of being dropped.
+action until a save loads; the header distinguishes a full save from a partial one with warnings.
+Long work goes through one shared `TaskRunner` (`src/task.rs`): the job runs on the background
+executor, a foreground pump copies progress into the entity, `run-cancel` stops the job at its next
+report, a cancelled run keeps the result already on screen, and a stored result whose inputs changed
+is marked stale (badge, banner, disabled Apply) instead of being dropped. `ui/task.rs` renders the
+progress card, the cancelled notice and the stale marker for every section.
 
 ## 4. Sections and milestones
 
@@ -199,9 +200,8 @@ counts and field names, not save values.
   `IDLEON_ASSETS_DIR`, the executable's folder, the working directory or the repository root. Every
   image reference has alt text and a labelled placeholder in the same box, so a missing install or
   a deleted file never breaks the layout.
-- The import script never stages or commits anything and refuses to write inside a git worktree
-  unless `.gitignore` covers the target; upstream assets stay local-only until permission is
-  confirmed.
+- The import script replaces the committed `assets/upstream/` tree wholesale, so a refresh is one
+  reviewed diff; the committed `README.md` carries the credit note.
 - Every interactive control gets a stable id, accessible label, role and disabled state for the
   gpui-mcp bridge. Section roots use `section-<key>`.
 
@@ -218,8 +218,10 @@ crates/app                          GPUI + Ely
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
     research/                       the research section's state, tab strip and panes
   ui/                               shell (window, router, shortcuts), dashboard, section states
+  ui/task.rs                        shared progress card, cancelled notice and stale marker
+  task.rs                           TaskRunner: off-thread job, progress, cancel, stale inputs
   state.rs                          AppState, Route (`Dashboard`/`Section`/`Missing`) and state
-assets/upstream                     generated, gitignored, manifest-backed
+assets/upstream                     committed upstream artwork, manifest-backed
 docs/plan.md                        this document
 docs/roadmap.json                   milestones and feature issues (source of truth)
 docs/roadmap.md                     generated progress table
@@ -246,7 +248,7 @@ The app, Ely and the automation bridge must share one GPUI build.
 Newer Ely pins `0.3.10`/`0.3.11`; the bridge patches up to `0.3.9`. These are the intersection. A
 bump moves all three together and the smoke harness is the check.
 
-## 9. Research status
+## 9. Research and BoneJoePickle status
 
 Research, shadow and endgame are implemented; research is still partial. Done: grid, shapes,
 magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
@@ -254,6 +256,10 @@ chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Mis
 tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi
 Station), target-aware simulation, strategy comparison, complete save-derived multipliers, state
 export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
+
+The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
+minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
+tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
@@ -306,13 +312,15 @@ issue to track progress; when all issues in a section are closed, mark the miles
 
 ## 12. Risks
 
-- **Licensing:** the upstream licence forbids reuse and redistribution; assets and code need written
-  permission. Mitigated by local-only asset import and placeholders, but release remains blocked.
+- **Licensing:** the upstream licence forbids reuse and redistribution of code; the game artwork is
+  separate and free to use. Mitigated by keeping code as ports with source references and by the
+  committed credit note.
 - **Scope:** 30 sections is a large surface. Mitigated by one milestone per section, shared
   primitives and a strict definition of done.
 - **Formula drift:** upstream JS changes; mitigated by committed fixtures, source references and
   parity tests.
 - **GPUI churn:** three pinned projects; mitigated by exact pins and the smoke harness.
-- **Asset weight:** 42 MB, mostly combat-sim; local-only manifest keeps the repo small.
+- **Asset weight:** 42 MB of PNGs, mostly combat-sim, now in the repository; a refresh is a single
+  generated diff and the manifest keeps references honest.
 - **Performance:** large simulations (combat, tower defense, decision tree) must run off the UI
   thread and stay cancellable.
