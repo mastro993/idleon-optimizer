@@ -372,7 +372,9 @@ function milestoneBody(milestone, milestoneNumbers) {
   const deps = (milestone.dependsOn || []).map((key) => {
     const dependency = milestonesByKey.get(key);
     const number = milestoneNumbers.get(key);
-    return number ? `#${number} ${dependency.id} ${dependency.title}` : `${dependency.id} ${dependency.title}`;
+    return number
+      ? `[${dependency.id} ${dependency.title}](../../milestone/${number})`
+      : `${dependency.id} ${dependency.title}`;
   });
   return [
     milestone.summary,
