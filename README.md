@@ -119,13 +119,16 @@ node script/mcp-smoke.mjs --spawn --shot /tmp/ui.png  # own instance, tree + scr
 node script/mcp-smoke.mjs --spawn --section damage     # a planned section's empty state
 node script/mcp-smoke.mjs --spawn --section nope       # the unknown-section empty state
 node script/mcp-drive.mjs                   # own instance, drives every flow end to end
+node script/mcp-sections.mjs                # own instance, every section + screenshots
+node script/mcp-sections.mjs --parallel 3   # three isolated lanes at once
+node script/mcp-sections.mjs --baseline target/mcp-sections-baseline  # compare captures
 ```
 
-Both harnesses launch their own window on a private bridge endpoint and stop it
+All three harnesses launch their own window on a private bridge endpoint and stop it
 afterwards, so several can run at once without seeing each other. Pass `--attach`
 (drive) or drop `--spawn` (smoke) to drive a window you started with
-`cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation and `--section <id>` to
-open a registry entry at launch.
+`cargo run`. The app itself takes `--endpoint-dir <dir>` for that isolation, `--section <id>` to
+open a registry entry at launch, and `--list-sections` to print the registry as JSON.
 
 `script/mcp-drive.mjs` talks to the app through
 [gpui-mcp](https://github.com/mastro993/gpui-mcp) over stdio: it asserts the dashboard exposes all
@@ -134,7 +137,11 @@ Cmd/Ctrl+Left return to the dashboard, that Resume reopens the section with its 
 returns, that the grid is exposed as semantic nodes, that a click selects a square, that dragging a shape
 moves its squares, that the keyboard walks and levels the grid, that a run produces a result and
 never loses EXP, that applying it clears the result, and that the supplements and save-import panels
-behave. Both scripts need the `gpui-mcp` binary
+behave. `script/mcp-sections.mjs` reads the registry from the binary, opens every
+dashboard card and every hidden tool, asserts each section root and shared header, drives one
+interaction and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`. `--baseline`
+compares those captures with a previous run (pixels, not bytes), and `--parallel N` proves the lanes
+stay isolated by checking shards in N windows at once. These scripts need the `gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
@@ -156,7 +163,7 @@ crates/app         GPUI + Ely window: shell, dashboard and the section modules
   src/sections/      the registry plus one module per section (`research/`)
   src/ui/            window chrome, dashboard, shared section states, bridge
   src/state.rs       AppState, the route and each section's state
-script/            data extraction, roadmap sync, MCP smoke and drive harnesses
+script/            data extraction, roadmap sync, MCP lane, smoke, drive and section harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
 docs/roadmap.json  milestones and feature issues (source of truth)
 docs/sections/     generated full specification per section

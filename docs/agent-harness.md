@@ -78,7 +78,7 @@ Two consequences worth knowing:
 
 ## Verifying a lane without the MCP client
 
-The app exposes itself through [gpui-mcp](https://github.com/mastro993/gpui-mcp); both harnesses in
+The app exposes itself through [gpui-mcp](https://github.com/mastro993/gpui-mcp); the harnesses in
 `script/` are plain Node clients, so they work from a terminal, a subagent or CI:
 
 ```console
@@ -102,3 +102,32 @@ node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-secti
 
 `mcp-drive.mjs` also changes the optimizer target after a run to prove the result is marked
 `result-stale`, then restores it and applies the result.
+
+## Per-section verification
+
+`script/mcp-sections.mjs` is the section gate. It reads the registry from
+`idleon-optimizer --list-sections` (so a new registry entry needs no harness edit), opens every
+dashboard card through the search field, opens each hidden tool through its own `--section` lane,
+asserts the section root and shared header ids, drives one interaction and writes
+`target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
+fails loudly; add one to `INTERACTIONS` in the script.
+
+```console
+node script/mcp-sections.mjs                      # all 30 sections
+node script/mcp-sections.mjs --only research,damage  # a subset
+node script/mcp-sections.mjs --parallel 3         # 3 isolated lanes
+node script/mcp-sections.mjs --baseline target/mcp-sections-baseline
+node script/mcp-sections.mjs --baseline target/mcp-sections-baseline --update-baseline
+```
+
+Screenshots are element captures of the section body, so small window-position differences between
+runs do not matter. Captures park the pointer first, which keeps hover styling out of the baseline.
+`--baseline` compares with a per-channel tolerance and a 0.2% mismatch budget (anti-aliasing jitter
+is allowed; a layout change is not); a missing baseline is seeded automatically. `--parallel` shards
+the registry round-robin and skips captures, because only the frontmost window can be captured
+reliably on macOS. The parallel run proves lane isolation and interaction paths; the default
+sequential run owns the screenshots.
+
+Every lane owns a private `--endpoint-dir`, and `script/mcp-lane.mjs` is the shared spawn/stdio
+client for the three harnesses.
+
