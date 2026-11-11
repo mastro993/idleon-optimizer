@@ -157,9 +157,15 @@ pub fn kaleidoscope_map(mags: &[Mag], slots: usize) -> Vec<u32> {
     map
 }
 
-/// The multiplier a kaleidoscope adds, from the grid's own kaleidoscope nodes.
+/// The multiplier a kaleidoscope adds, from the grid's own kaleidoscope nodes
+/// and the emporium and jelly terms (`getKaleiMultiBase`).
 pub fn kalei_base(grid: &GridState, overlay: &[i32], ctx: &SimContext) -> f64 {
-    (30.0 + grid_bonus(grid, overlay, 52, ctx) + grid_bonus(grid, overlay, 72, ctx)) / 100.0
+    (30.0
+        + grid_bonus(grid, overlay, 52, ctx)
+        + grid_bonus(grid, overlay, 72, ctx)
+        + 6.0 * ctx.emporium(46)
+        + ctx.jelly_kalei_pct)
+        / 100.0
 }
 
 /// Insight EXP per hour one observation earns from its monocles.
@@ -171,9 +177,6 @@ pub fn insight_rate(
     kal_map: &[u32],
     kal_base: f64,
 ) -> f64 {
-    if !observation_usable(obs, sim.research_level, &sim.observations) {
-        return 0.0;
-    }
     let count = sim
         .mags
         .iter()
@@ -184,10 +187,17 @@ pub fn insight_rate(
     }
     let bonus = grid_bonus(&sim.grid, overlay, 92, ctx) + grid_bonus(&sim.grid, overlay, 91, ctx);
     let extra = kal_map.get(obs).copied().unwrap_or(0) as f64;
-    3.0 * count * (1.0 + bonus / 100.0) * (1.0 + extra * kal_base)
+    3.0 * count
+        * (1.0 + bonus / 100.0)
+        * (1.0 + 35.0 * ctx.emporium(46) / 100.0)
+        * (1.0 + ctx.jelly_insight_pct / 100.0)
+        * (1.0 + extra * kal_base)
 }
 
 /// Total research EXP per hour for a full state.
+///
+/// A port of `simTotalExpWith`: observation EXP times the additive pool and
+/// every true multiplier the save decoded.
 pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
     let game = game();
     let overlay = sim.overlay();
@@ -201,7 +211,6 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
         if mag.kind == MagKind::Regular
             && let Some(slot) = mag.slot
             && slot < to_find
-            && observation_usable(slot, sim.research_level, &sim.observations)
         {
             per_slot[slot] += 1;
         }
@@ -226,33 +235,81 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
             * kal_multi;
     }
 
-    let additive_base = grid_bonus(&sim.grid, &overlay, 50, ctx)
-        + grid_bonus(&sim.grid, &overlay, 90, ctx)
-        + grid_bonus(&sim.grid, &overlay, 110, ctx)
-        + grid_bonus(&sim.grid, &overlay, 31, ctx)
-        + grid_bonus(&sim.grid, &overlay, 51, ctx)
-        + ctx.extra_pct;
+    let multi = total_multiplier(sim, ctx, &|cell| grid_bonus(&sim.grid, &overlay, cell, ctx));
+    ExpRate {
+        obs_base: obs_total,
+        multi,
+        total: obs_total * multi,
+    }
+}
 
-    let found_count = sim
+/// `simTotalExpWith`'s multiplier: the additive pool times every true
+/// multiplier. `grid` resolves one cell's bonus, so the shaped scoring path
+/// can feed the same formula a hypothetical overlay.
+fn total_multiplier(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> f64 {
+    let to_find = observations_to_find(sim.research_level, &sim.observations.found);
+    let found = sim
         .observations
         .found
         .iter()
         .take(to_find)
         .filter(|found| **found)
         .count() as f64;
-    let insight_sum: u32 = sim.observations.insight_level.iter().take(to_find).sum();
-
-    let additive = additive_base
-        + grid_bonus(&sim.grid, &overlay, 112, ctx) * found_count
-        + grid_bonus(&sim.grid, &overlay, 94, ctx) * insight_sum as f64;
-    let takin_notes = grid_bonus(&sim.grid, &overlay, 70, ctx);
-
-    let multi = (1.0 + additive / 100.0) * (1.0 + takin_notes / 100.0) * ctx.extra_multiplier;
-    ExpRate {
-        obs_base: obs_total,
-        multi,
-        total: obs_total * multi,
-    }
+    let insight: f64 = sim
+        .observations
+        .insight_level
+        .iter()
+        .take(to_find)
+        .map(|level| *level as f64)
+        .sum();
+    let dynamic_sticker = if ctx.sticker_fixed > 0.0 {
+        (1.0 + (grid(68) * ctx.boony_count + 30.0 * ctx.event_shop_37) / 100.0) * ctx.sticker_fixed
+    } else {
+        0.0
+    };
+    let sticker_multi = if ctx.sticker_multiplicative {
+        1.0 + dynamic_sticker / 100.0
+    } else {
+        1.0
+    };
+    let additive = grid(50)
+        + grid(90)
+        + grid(110)
+        + grid(31)
+        + grid(51)
+        + ctx.extra_pct
+        + if ctx.sticker_multiplicative {
+            0.0
+        } else {
+            dynamic_sticker
+        }
+        + ctx.mastery_additive_pct
+        + grid(112) * found
+        + grid(94) * insight;
+    let button0 = if ctx.button_base_no_grid > 0.0 {
+        ctx.button_base_no_grid * (1.0 + grid(125) / 100.0)
+    } else {
+        ctx.button0
+    };
+    (1.0 + additive / 100.0)
+        * (1.0 + grid(70) / 100.0)
+        * ctx.research_equipment_multi.clamp(1.0, 15.0)
+        * sticker_multi
+        * ctx.mastery_exp_multi
+        * (1.0 + 0.25 * ctx.clam_work9)
+        * (1.0 + 3.0 * ctx.dream14 / 100.0)
+        * (1.0 + button0 / 100.0)
+        * (1.0 + ctx.arcade63 / 100.0)
+        * ctx.killroy5.max(1.0)
+        * ctx.companion_52
+        * (1.0 + 0.5 * ctx.companion_54_level2)
+        * (1.0 + ctx.rog(0) / 100.0)
+        * (1.0 + ctx.cglunko11 / 100.0)
+        * (1.0 + ctx.fountain_2_16 / 100.0)
+        * ctx.jelly_research_multi
+        * (1.0 + ctx.menagerie_b3 / 100.0)
+        * ctx.royal_research.max(1.0)
+        * ctx.extra_multiplier.max(1.0)
 }
 
 /// Research EXP/hour when every cell in `cells` carries a shape of `bonus_pct`.
@@ -300,7 +357,6 @@ fn shaped_rate_with_overlay(
         if mag.kind == MagKind::Regular
             && let Some(slot) = mag.slot
             && slot < to_find
-            && observation_usable(slot, sim.research_level, &sim.observations)
         {
             per_slot[slot] += 1;
         }
@@ -322,25 +378,10 @@ fn shaped_rate_with_overlay(
             * (1.0 + kal_map[obs] as f64 * kal_base);
     }
 
-    let additive_base = grid_bonus_with(&sim.grid, overlay, 50, ctx, bonus_pct)
-        + grid_bonus_with(&sim.grid, overlay, 90, ctx, bonus_pct)
-        + grid_bonus_with(&sim.grid, overlay, 110, ctx, bonus_pct)
-        + grid_bonus_with(&sim.grid, overlay, 31, ctx, bonus_pct)
-        + grid_bonus_with(&sim.grid, overlay, 51, ctx, bonus_pct)
-        + ctx.extra_pct;
-    let found_count = sim
-        .observations
-        .found
-        .iter()
-        .take(to_find)
-        .filter(|found| **found)
-        .count() as f64;
-    let insight_sum: u32 = sim.observations.insight_level.iter().take(to_find).sum();
-    let additive = additive_base
-        + grid_bonus_with(&sim.grid, overlay, 112, ctx, bonus_pct) * found_count
-        + grid_bonus_with(&sim.grid, overlay, 94, ctx, bonus_pct) * insight_sum as f64;
-    let takin = grid_bonus_with(&sim.grid, overlay, 70, ctx, bonus_pct);
-    obs_total * (1.0 + additive / 100.0) * (1.0 + takin / 100.0) * ctx.extra_multiplier
+    let multi = total_multiplier(sim, ctx, &|cell| {
+        grid_bonus_with(&sim.grid, overlay, cell, ctx, bonus_pct)
+    });
+    obs_total * multi
 }
 
 /// Grid bonus under an explicit overlay and one shape bonus, used while scoring.
@@ -385,8 +426,10 @@ pub fn cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
 
 /// Grid points earned at a research level.
 pub fn grid_points_earned(research_level: u32, points_node_level: u32, bonus: u32) -> u32 {
-    let lv = research_level;
-    lv + bonus + (lv / 10) * (1 + (lv / 60).min(1) + points_node_level)
+    let lv = research_level as f64;
+    let sq50 = points_node_level as f64;
+    (lv + bonus as f64 + (lv / 10.0).floor() * (1.0 + (lv / 60.0).floor().min(1.0) + sq50).round())
+        .floor() as u32
 }
 
 /// Grid points earned, spent and free.
@@ -404,18 +447,49 @@ pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> GridPoints {
     }
 }
 
-/// Shapes the research level and account grant.
+/// Shapes owned, as `computeShapesOwnedAt` counts them.
 pub fn shapes_owned(research_level: u32, ctx: &SimContext) -> usize {
-    let lv = research_level;
-    let granted = (1..=10).filter(|step| lv >= step * 20).count() as u32;
-    (ctx.extra_shapes + granted).min(game().shapes.len() as u32) as usize
+    let lv = research_level as f64;
+    let owned = if ctx.bundle_ban_m { 1.0 } else { 0.0 }
+        + ctx.event_shop.get(36).copied().unwrap_or(0) as f64
+        + (0.0f64.max(
+            (lv / 20.0).floor()
+                * if ctx.companion_54_level2 > 0.0 {
+                    1.0
+                } else {
+                    0.0
+                },
+        ))
+        .min(1.0)
+        + (0.0f64.max((lv / 20.0).floor() * if ctx.spellunky_upg7 >= 1.0 { 1.0 } else { 0.0 }))
+            .min(1.0)
+        + (lv / 20.0).floor().min(1.0)
+        + (lv / 30.0).floor().min(1.0)
+        + (lv / 50.0).floor().min(1.0)
+        + (lv / 80.0).floor().min(1.0)
+        + (lv / 110.0).floor().min(1.0)
+        + ctx.extra_shapes as f64;
+    owned.round().min(game().shapes.len() as f64) as usize
 }
 
-/// Magnifiers owned: the grid's grants plus the account's.
+/// Magnifiers owned, as `computeMagnifiersOwnedWith` counts them.
 pub fn magnifiers_owned(sim: &Simulation, ctx: &SimContext) -> u32 {
     let lv = sim.research_level;
+    let kaleidoscopes = (sim.grid.level(72) as f64 + ctx.event_shop(33)).round();
+    let monocles = sim.grid.level(91) as f64;
     let level_bonus = (lv / 10).min(1) + (lv / 100).min(1) + (lv / 130).min(1) + (lv / 140).min(1);
-    (1 + sim.grid.level(72) + sim.grid.level(91) + ctx.extra_magnifiers + level_bonus).min(80)
+    let owned = 1.0
+        + kaleidoscopes
+        + monocles
+        + ctx.minehead(2)
+        + ctx.minehead(12)
+        + ctx.minehead(20)
+        + ctx.event_shop(34)
+        + level_bonus as f64
+        + if ctx.companion_153 { 1.0 } else { 0.0 }
+        + ctx.rog(8)
+        + ctx.extra_magnifiers as f64;
+    owned.round().min(80.0) as u32
 }
 
 /// Rotations unlock at research level 90.

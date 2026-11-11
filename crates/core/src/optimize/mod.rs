@@ -56,6 +56,7 @@ pub fn run(
         return None;
     }
     after.placements = shapes_outcome.placements;
+    after.saved_overlay = None;
     steps.extend(shapes_outcome.steps);
 
     let thorough = request.effort == Effort::Thorough;
@@ -92,6 +93,7 @@ pub fn run(
             return None;
         }
         after.placements = reshaped.placements;
+        after.saved_overlay = None;
         steps.extend(reshaped.steps);
 
         if report(Progress {

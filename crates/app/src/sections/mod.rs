@@ -13,6 +13,7 @@
 pub mod clamworks;
 pub mod endgame;
 pub mod killroy;
+pub mod monument;
 pub mod pickle;
 pub mod research;
 pub mod shadow;
@@ -376,9 +377,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Bravery, Justice, Wisdom — reward multipliers, permanent bonuses, time scaling",
         spec: "docs/sections/monument.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: monument::view,
         keys: no_keys,
     },
     Section {

@@ -13,6 +13,7 @@ pub mod endgame;
 pub mod formula;
 pub mod killroy;
 pub mod model;
+pub mod monument;
 pub mod optimize;
 pub mod pickle;
 pub mod save;
