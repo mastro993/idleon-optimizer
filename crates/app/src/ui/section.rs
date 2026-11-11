@@ -19,13 +19,12 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div,
 ///
 /// The planned page shows it when `assets/upstream` is installed and a labelled
 /// placeholder otherwise; sections without upstream art show no preview.
-const PREVIEWS: [(&str, &str); 6] = [
+const PREVIEWS: [(&str, &str); 5] = [
     ("combat-sim", "combat-sim/player/0.png"),
     ("royal-guardian", "royal-guardian/RGres0.png"),
     ("jelly-operator", "jelly-operator/JellyUnit0.png"),
     ("sneaking", "sneaking/NjR0.png"),
     ("spelunking", "spelunking/CaveTile0.png"),
-    ("worship-td", "worship-td/TowerType0.png"),
 ];
 
 fn preview(section: &str) -> Option<&'static str> {
