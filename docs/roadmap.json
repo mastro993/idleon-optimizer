@@ -1221,7 +1221,7 @@
       "key": "prisma",
       "title": "Prisma Calculator",
       "group": "w2",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.",
       "upstream": [
         "prisma-calc.html",

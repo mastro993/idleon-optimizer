@@ -23,6 +23,7 @@ pub mod killroy;
 pub mod ladle;
 pub mod monument;
 pub mod pickle;
+pub mod prisma;
 pub mod research;
 pub mod sailing;
 pub mod shadow;
@@ -257,9 +258,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W2,
         description: "Compare each bubble's Prisma impact on damage, stats, skills and account totals",
         spec: "docs/sections/prisma.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: prisma::view,
         keys: no_keys,
     },
     Section {

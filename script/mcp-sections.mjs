@@ -222,6 +222,21 @@ const cglunkoSave = ({ rows = true } = {}) => {
     OptLacc: JSON.stringify(options),
   });
 };
+/// A small flat `save.json` carrying two cauldrons of bubbles: one already
+/// Prisma-ed, one ready to add Prisma to, one unpurchased and one large bubble,
+/// so every status the plan knows is on screen.
+const prismaSave = () => {
+  const options = Array(385).fill(0);
+  options[383] = 120; // fragments
+  options[384] = '_0,'; // Roid Ragin already carries Prisma
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify([100]),
+    CurrentMap_0: 5,
+    CauldronInfo: JSON.stringify([[10, 0, 25, 5], [40], [7], [12]]),
+    OptLacc: JSON.stringify(options),
+  });
+};
 
 /// A small flat `save.json` carrying worship tower levels and a best-wave table,
 /// so the simulator has every type unlocked and a run to play.
@@ -378,6 +393,25 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'baseline' });
     await waitForNode(lane, 'killroy-forecast', 'killroy: the baseline tab reopens');
+  },
+  prisma: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'prisma: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: prismaSave() });
+    await waitForNode(lane, 'import-format', 'prisma: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'prisma-summary', 'prisma: the plan lists the saved state after Apply');
+    await lane.call('click_element', { id: 'prisma-run' });
+    await waitForNode(lane, 'prisma-row-0-2', 'prisma: the run lists the comparable bubbles');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'prisma-change-0-2') ?? '').includes('+10'),
+      'prisma: the ready bubble gains the Prisma multiplier'
+    );
+    const coverage = labelOf(await lane.tree(), 'prisma-coverage-count') ?? '';
+    if (!coverage.includes('missing')) throw new Error(`prisma: coverage reads ${coverage}`);
   },
   jar: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

@@ -1,0 +1,3063 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/prisma.js",
+   "js/stats/systems/w2/alchemy.js"
+  ],
+  "saves": [
+   "fixtures/data.json",
+   "crates/core/tests/prisma-save.json"
+  ]
+ },
+ "saves": {
+  "fixture": {
+   "characters": [
+    {
+     "ci": 0,
+     "name": "Character 1",
+     "className": "Arcane Cultist"
+    },
+    {
+     "ci": 1,
+     "name": "Character 2",
+     "className": "Death Bringer"
+    },
+    {
+     "ci": 2,
+     "name": "Character 3",
+     "className": "Siege Breaker"
+    },
+    {
+     "ci": 3,
+     "name": "Character 4",
+     "className": "Royal Guardian"
+    },
+    {
+     "ci": 4,
+     "name": "Character 5",
+     "className": "Wind Walker"
+    },
+    {
+     "ci": 5,
+     "name": "Character 6",
+     "className": "Elemental Sorcerer"
+    },
+    {
+     "ci": 6,
+     "name": "Character 7",
+     "className": "Royal Guardian"
+    },
+    {
+     "ci": 7,
+     "name": "Character 8",
+     "className": "Voidwalker"
+    },
+    {
+     "ci": 8,
+     "name": "Character 9",
+     "className": "Blood Berserker"
+    },
+    {
+     "ci": 9,
+     "name": "Character 10",
+     "className": "Siege Breaker"
+    },
+    {
+     "ci": 10,
+     "name": "Character 11",
+     "className": "Beginner"
+    }
+   ],
+   "multiplier": 2.7427980559932577,
+   "cauldrons": {
+    "0": {
+     "fragments": 99347,
+     "map": 200,
+     "rows": [
+      {
+       "id": "0:0",
+       "name": "Roid Ragin",
+       "effect": "TotalSTR",
+       "level": 308803,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 81653.75498712093,
+       "withPrisma": 223959.76044322507
+      },
+      {
+       "id": "0:1",
+       "name": "Warriors Rule",
+       "effect": "Opassz",
+       "level": 20676,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.9951751423333013,
+       "withPrisma": 8.215160557751108
+      },
+      {
+       "id": "0:2",
+       "name": "Hearty Diggy",
+       "effect": "MinEff",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.75124378109453,
+       "withPrisma": 136.45761472603272
+      },
+      {
+       "id": "0:3",
+       "name": "Wyoming Blood",
+       "effect": "MiningACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 30023.5,
+       "withPrisma": 82348.39743411358
+      },
+      {
+       "id": "0:4",
+       "name": "Reely Smart",
+       "effect": "MinFishEXP",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 99.60159362549801,
+       "withPrisma": 273.1870573698464
+      },
+      {
+       "id": "0:5",
+       "name": "Big Meaty Claws",
+       "effect": "bdmgHP",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 80000,
+       "withPrisma": 219423.84447946062
+      },
+      {
+       "id": "0:6",
+       "name": "Sploosh Sploosh",
+       "effect": "FishingACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 30023.5,
+       "withPrisma": 82348.39743411358
+      },
+      {
+       "id": "0:7",
+       "name": "Stronk Tools",
+       "effect": "ToolW",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 64.77329347284504,
+       "withPrisma": 177.66006341760013
+      },
+      {
+       "id": "0:8",
+       "name": "Fmj",
+       "effect": "DefPct",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 10000,
+       "withPrisma": 27427.980559932577
+      },
+      {
+       "id": "0:9",
+       "name": "Bappity Boopity",
+       "effect": "critDMG",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 34.82587064676617,
+       "withPrisma": 95.52033030822291
+      },
+      {
+       "id": "0:10",
+       "name": "Brittley Spears",
+       "effect": "pctDmg1",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.900249376558605,
+       "withPrisma": 109.43832642367113
+      },
+      {
+       "id": "0:11",
+       "name": "Call Me Bob",
+       "effect": "conEXPACTIVE",
+       "level": 263402,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 658530,
+       "withPrisma": 1806214.80381324
+      },
+      {
+       "id": "0:12",
+       "name": "Carpenter",
+       "effect": "Construction",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 4.987531172069826,
+       "withPrisma": 13.679790802958891
+      },
+      {
+       "id": "0:13",
+       "name": "Buff Boi Talent",
+       "effect": "TalWarrior",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 20005,
+       "withPrisma": 54869.67511014512
+      },
+      {
+       "id": "0:14",
+       "name": "Orange Bargain",
+       "effect": "BubbleCostOr",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.97601439136518,
+       "withPrisma": 109.64613455899492
+      },
+      {
+       "id": "0:15",
+       "name": "Penny Of Strength",
+       "effect": "CashSTR",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 17.973040439340988,
+       "withPrisma": 49.296420377312664
+      },
+      {
+       "id": "0:16",
+       "name": "Multorange",
+       "effect": "MultiOr",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.397903145282077,
+       "withPrisma": 6.576964085339799
+      },
+      {
+       "id": "0:17",
+       "name": "Dream Of Ironfish",
+       "effect": "MinFshAFK",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 11.98202695956066,
+       "withPrisma": 32.86428025154178
+      },
+      {
+       "id": "0:18",
+       "name": "Shimmeron",
+       "effect": "GFoodz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 79.84031936127745,
+       "withPrisma": 218.98587273399264
+      },
+      {
+       "id": "0:19",
+       "name": "Bite But Not Chew",
+       "effect": "nonFoodACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 49.9001996007984,
+       "withPrisma": 136.8661704587454
+      },
+      {
+       "id": "0:20",
+       "name": "Spear Powah",
+       "effect": "W1",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.88035892323031,
+       "withPrisma": 109.38377092694947
+      },
+      {
+       "id": "0:21",
+       "name": "Slabi Orefish",
+       "effect": "W2",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.991026919242273,
+       "withPrisma": 8.203782819521209
+      },
+      {
+       "id": "0:22",
+       "name": "Gamer At Heart",
+       "effect": "W3ACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 19.940179461615156,
+       "withPrisma": 54.69188546347473
+      },
+      {
+       "id": "0:23",
+       "name": "Slabi Strength",
+       "effect": "W4",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 24.92522432701894,
+       "withPrisma": 68.36485682934341
+      },
+      {
+       "id": "0:24",
+       "name": "Power Trione",
+       "effect": "W5",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 22.942643391521198,
+       "withPrisma": 62.9270376936109
+      },
+      {
+       "id": "0:25",
+       "name": "Farquad Force",
+       "effect": "W6",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 29.91026919242273,
+       "withPrisma": 82.03782819521209
+      },
+      {
+       "id": "0:26",
+       "name": "Endgame Eff I",
+       "effect": "W7",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.991026919242273,
+       "withPrisma": 8.203782819521209
+      },
+      {
+       "id": "0:27",
+       "name": "Tome Strength",
+       "effect": "W8",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.4925224327018944,
+       "withPrisma": 6.836485682934342
+      },
+      {
+       "id": "0:28",
+       "name": "Essence Boost",
+       "effect": "W9AllCharz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.85044865403788,
+       "withPrisma": 136.72971365868682
+      },
+      {
+       "id": "0:29",
+       "name": "Crop Chapter",
+       "effect": "W10AllCharz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 11.970074812967582,
+       "withPrisma": 32.83149792710134
+      },
+      {
+       "id": "0:30",
+       "name": "Double Pagey",
+       "effect": "W11",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 29.806259314456035,
+       "withPrisma": 81.75255010412094
+      },
+      {
+       "id": "0:31",
+       "name": "Dmg Of The Sun",
+       "effect": "W12",
+       "level": 20020,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 3940.9448818897636,
+       "withPrisma": 10809.215960823822
+      },
+      {
+       "id": "0:32",
+       "name": "Bone Bubble",
+       "effect": "W13",
+       "level": 20012,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 195.1248049921997,
+       "withPrisma": 535.1879358086688
+      },
+      {
+       "id": "0:33",
+       "name": "Royal Riches",
+       "effect": "W14",
+       "level": 22543,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 19.964575122880042,
+       "withPrisma": 54.758797835766735
+      }
+     ]
+    },
+    "1": {
+     "fragments": 99347,
+     "map": 200,
+     "rows": [
+      {
+       "id": "1:0",
+       "name": "Swift Steppin",
+       "effect": "TotalAGI",
+       "level": 308803,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 81653.75498712093,
+       "withPrisma": 223959.76044322507
+      },
+      {
+       "id": "1:1",
+       "name": "Archer Or Bust",
+       "effect": "Gpassz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.9950124688279303,
+       "withPrisma": 8.214714377176815
+      },
+      {
+       "id": "1:2",
+       "name": "Hammer Hammer",
+       "effect": "AnvilACTIVE",
+       "level": 263653,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 527329,
+       "withPrisma": 1446356.9560688685
+      },
+      {
+       "id": "1:3",
+       "name": "LIL Big Damage",
+       "effect": "Mastery",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 19.90049751243781,
+       "withPrisma": 54.58304589041308
+      },
+      {
+       "id": "1:4",
+       "name": "Anvilnomics",
+       "effect": "AnvilProdCost",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.80099502487562,
+       "withPrisma": 109.16609178082616
+      },
+      {
+       "id": "1:5",
+       "name": "Quick Slap",
+       "effect": "bdmgSPD",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 80000,
+       "withPrisma": 219423.84447946062
+      },
+      {
+       "id": "1:6",
+       "name": "Sanic Tools",
+       "effect": "ToolA",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 64.77329347284504,
+       "withPrisma": 177.66006341760013
+      },
+      {
+       "id": "1:7",
+       "name": "Bug]",
+       "effect": "CatchingACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 30023.5,
+       "withPrisma": 82348.39743411358
+      },
+      {
+       "id": "1:8",
+       "name": "Shaquracy",
+       "effect": "AccPct",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 20000,
+       "withPrisma": 54855.961119865155
+      },
+      {
+       "id": "1:9",
+       "name": "Cheap Shot",
+       "effect": "CritChance",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 6.965174129353234,
+       "withPrisma": 19.10406606164458
+      },
+      {
+       "id": "1:10",
+       "name": "Bow Jack",
+       "effect": "pctDmg2",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.900249376558605,
+       "withPrisma": 109.43832642367113
+      },
+      {
+       "id": "1:11",
+       "name": "Call Me Ash",
+       "effect": "TrapACTIVE",
+       "level": 263402,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 526829,
+       "withPrisma": 1444985.557040872
+      },
+      {
+       "id": "1:12",
+       "name": "Cuz I Catch Em All",
+       "effect": "CritShiny",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 3.985074626865672,
+       "withPrisma": 10.93025493955522
+      },
+      {
+       "id": "1:13",
+       "name": "Fast Boi Talent",
+       "effect": "TalArchers",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 20005,
+       "withPrisma": 54869.67511014512
+      },
+      {
+       "id": "1:14",
+       "name": "Green Bargain",
+       "effect": "BubbleCostGr",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.97601439136518,
+       "withPrisma": 109.64613455899492
+      },
+      {
+       "id": "1:15",
+       "name": "Dollar Of Agility",
+       "effect": "CashAGI",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 17.973040439340988,
+       "withPrisma": 49.296420377312664
+      },
+      {
+       "id": "1:16",
+       "name": "Premigreen",
+       "effect": "MultiGr",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.397903145282077,
+       "withPrisma": 6.576964085339799
+      },
+      {
+       "id": "1:17",
+       "name": "Fly In Mind",
+       "effect": "CatchinAFK",
+       "level": 20000,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 11.976047904191617,
+       "withPrisma": 32.847880910098894
+      },
+      {
+       "id": "1:18",
+       "name": "Kill Per Kill",
+       "effect": "kpkACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 69.86027944111777,
+       "withPrisma": 191.61263864224355
+      },
+      {
+       "id": "1:19",
+       "name": "Afk Expexp",
+       "effect": "DubEXP",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.920159680638726,
+       "withPrisma": 109.49293636699632
+      },
+      {
+       "id": "1:20",
+       "name": "Bow Power",
+       "effect": "A1",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.88035892323031,
+       "withPrisma": 109.38377092694947
+      },
+      {
+       "id": "1:21",
+       "name": "Slabo Critterbug",
+       "effect": "A2",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.991026919242273,
+       "withPrisma": 8.203782819521209
+      },
+      {
+       "id": "1:22",
+       "name": "Sailor At Heart",
+       "effect": "A3ACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 15.952143569292124,
+       "withPrisma": 43.753508370779784
+      },
+      {
+       "id": "1:23",
+       "name": "Slabo Agility",
+       "effect": "A4",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 24.92522432701894,
+       "withPrisma": 68.36485682934341
+      },
+      {
+       "id": "1:24",
+       "name": "Power Tritwo",
+       "effect": "A5",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 22.942643391521198,
+       "withPrisma": 62.9270376936109
+      },
+      {
+       "id": "1:25",
+       "name": "Quickdraw Quiver",
+       "effect": "A6",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.88035892323031,
+       "withPrisma": 109.38377092694947
+      },
+      {
+       "id": "1:26",
+       "name": "Essence Boost",
+       "effect": "A7AllCharz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.85044865403788,
+       "withPrisma": 136.72971365868682
+      },
+      {
+       "id": "1:27",
+       "name": "Endgame Eff II",
+       "effect": "A8",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.991026919242273,
+       "withPrisma": 8.203782819521209
+      },
+      {
+       "id": "1:28",
+       "name": "Tome Agility",
+       "effect": "A9",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.4925224327018944,
+       "withPrisma": 6.836485682934342
+      },
+      {
+       "id": "1:29",
+       "name": "Stealth Chapter",
+       "effect": "A10AllCharz",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 9.975062344139651,
+       "withPrisma": 27.359581605917782
+      },
+      {
+       "id": "1:30",
+       "name": "Spapunkie",
+       "effect": "A11",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 397.0223325062035,
+       "withPrisma": 1088.9520817839236
+      },
+      {
+       "id": "1:31",
+       "name": "Dmg Of The Moon",
+       "effect": "A12",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 3940.886699507389,
+       "withPrisma": 10809.056378298552
+      },
+      {
+       "id": "1:32",
+       "name": "Dust Bubble",
+       "effect": "A13",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 195.1219512195122,
+       "withPrisma": 535.1801084864893
+      }
+     ]
+    },
+    "2": {
+     "fragments": 99347,
+     "map": 200,
+     "rows": [
+      {
+       "id": "2:0",
+       "name": "Stable Jenius",
+       "effect": "TotalWIS",
+       "level": 308803,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 81653.75498712093,
+       "withPrisma": 223959.76044322507
+      },
+      {
+       "id": "2:1",
+       "name": "Mage Is Best",
+       "effect": "Ppassz",
+       "level": 20090,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.9950347567030784,
+       "withPrisma": 8.214775508317443
+      },
+      {
+       "id": "2:2",
+       "name": "Hocus Choppus",
+       "effect": "ChopEff",
+       "level": 20046,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.751811774049436,
+       "withPrisma": 136.45917261600525
+      },
+      {
+       "id": "2:3",
+       "name": "Molto Loggo",
+       "effect": "MultiLogACTIVE",
+       "level": 21125,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 31711,
+       "withPrisma": 86976.8691536022
+      },
+      {
+       "id": "2:4",
+       "name": "Noodubble",
+       "effect": "ChopAlchEXP",
+       "level": 20027,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 99.70129934783691,
+       "withPrisma": 273.46053003124894
+      },
+      {
+       "id": "2:5",
+       "name": "Name I Guess",
+       "effect": "bdmgMP",
+       "level": 20017,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 80068,
+       "withPrisma": 219610.35474726817
+      },
+      {
+       "id": "2:6",
+       "name": "Le Brain Tools",
+       "effect": "ToolM",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 64.77346278317152,
+       "withPrisma": 177.6605278016345
+      },
+      {
+       "id": "2:7",
+       "name": "Cookin Roadkill",
+       "effect": "AlchemyACTIVE",
+       "level": 20019,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 119.58186071979691,
+       "withPrisma": 327.9888951143155
+      },
+      {
+       "id": "2:8",
+       "name": "Brewstachio",
+       "effect": "BrewSpd",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.75142928163062,
+       "withPrisma": 136.4581235165425
+      },
+      {
+       "id": "2:9",
+       "name": "All For Kill",
+       "effect": "AttackAfk",
+       "level": 20020,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.80119284294235,
+       "withPrisma": 109.16663435583503
+      },
+      {
+       "id": "2:10",
+       "name": "Matty Stafford",
+       "effect": "pctDmg3",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.900249376558605,
+       "withPrisma": 109.43832642367113
+      },
+      {
+       "id": "2:11",
+       "name": "Call Me Pope",
+       "effect": "worshipACTIVE",
+       "level": 20000,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 3.391629297458894,
+       "withPrisma": 9.302554243720033
+      },
+      {
+       "id": "2:12",
+       "name": "Gospel Leader",
+       "effect": "maxCharge",
+       "level": 20003,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 59.91014825537862,
+       "withPrisma": 164.32143816912034
+      },
+      {
+       "id": "2:13",
+       "name": "Smart Boi Talent",
+       "effect": "TalWiz",
+       "level": 20058,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 20063,
+       "withPrisma": 55028.75739739273
+      },
+      {
+       "id": "2:14",
+       "name": "Purple Bargain",
+       "effect": "BubbleCostPu",
+       "level": 20047,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.97607059175432,
+       "withPrisma": 109.646288705313
+      },
+      {
+       "id": "2:15",
+       "name": "Nickel Of Wisdom",
+       "effect": "CashWIS",
+       "level": 20056,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 17.973115602907498,
+       "withPrisma": 49.296626535796776
+      },
+      {
+       "id": "2:16",
+       "name": "Severapurple",
+       "effect": "MultiPu",
+       "level": 20055,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.3979088872292755,
+       "withPrisma": 6.5769798343414125
+      },
+      {
+       "id": "2:17",
+       "name": "Tree Sleeper",
+       "effect": "ChoppinAFK",
+       "level": 20050,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 11.976107516177203,
+       "withPrisma": 32.84804441373707
+      },
+      {
+       "id": "2:18",
+       "name": "Hyperswift",
+       "effect": "BAspd",
+       "level": 20046,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 29.95517035265989,
+       "withPrisma": 82.16098301022241
+      },
+      {
+       "id": "2:19",
+       "name": "Matrix Evolved",
+       "effect": "LabXpACTIVE",
+       "level": 20042,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 59.88048999103675,
+       "withPrisma": 164.24009153933932
+      },
+      {
+       "id": "2:20",
+       "name": "Wand Pawur",
+       "effect": "M1",
+       "level": 20000,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.88035892323031,
+       "withPrisma": 109.38377092694947
+      },
+      {
+       "id": "2:21",
+       "name": "Slabe Logsoul",
+       "effect": "M2",
+       "level": 20041,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.9910452216307646,
+       "withPrisma": 8.203833019276784
+      },
+      {
+       "id": "2:22",
+       "name": "Pious At Heart",
+       "effect": "M3ACTIVE",
+       "level": 20038,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 298.51027907438674,
+       "withPrisma": 818.7534131392327
+      },
+      {
+       "id": "2:23",
+       "name": "Slabe Wisdom",
+       "effect": "M4",
+       "level": 20034,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 24.9253508510003,
+       "withPrisma": 68.36520385907352
+      },
+      {
+       "id": "2:24",
+       "name": "Power Trithree",
+       "effect": "M5",
+       "level": 20031,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 22.942731935660575,
+       "withPrisma": 62.92728055230425
+      },
+      {
+       "id": "2:25",
+       "name": "Smarter Spells",
+       "effect": "M6",
+       "level": 20029,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 24.925332271392303,
+       "withPrisma": 68.36515289896082
+      },
+      {
+       "id": "2:26",
+       "name": "Endgame Eff III",
+       "effect": "M7",
+       "level": 20021,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.9910363029729594,
+       "withPrisma": 8.203808557199494
+      },
+      {
+       "id": "2:27",
+       "name": "Essence Boost",
+       "effect": "M8AllCharz",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.75142928163062,
+       "withPrisma": 136.4581235165425
+      },
+      {
+       "id": "2:28",
+       "name": "Tome Wisdom",
+       "effect": "M9",
+       "level": 20008,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.492525413593781,
+       "withPrisma": 6.836493858918813
+      },
+      {
+       "id": "2:29",
+       "name": "Essence Chapter",
+       "effect": "M10AllCharz",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 14.962621480189384,
+       "withPrisma": 41.0394491084264
+      },
+      {
+       "id": "2:30",
+       "name": "Deep Depth",
+       "effect": "M11",
+       "level": 20011,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 7.920835188758597,
+       "withPrisma": 21.725251357570066
+      },
+      {
+       "id": "2:31",
+       "name": "Dmg Of The Soul",
+       "effect": "M12",
+       "level": 20008,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 3940.9099862123303,
+       "withPrisma": 10809.120249027595
+      },
+      {
+       "id": "2:32",
+       "name": "Tachyon Bubble",
+       "effect": "M13",
+       "level": 20004,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 243.9036285602809,
+       "withPrisma": 668.97839826484
+      }
+     ]
+    },
+    "3": {
+     "fragments": 99347,
+     "map": 200,
+     "rows": [
+      {
+       "id": "3:0",
+       "name": "Lotto Skills",
+       "effect": "TotalLUK",
+       "level": 307445,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 81592.60759120862,
+       "withPrisma": 223792.04548458772
+      },
+      {
+       "id": "3:1",
+       "name": "Droppin Loads",
+       "effect": "DropRate",
+       "level": 20023,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.860647986861096,
+       "withPrisma": 109.32970780899417
+      },
+      {
+       "id": "3:2",
+       "name": "Startue Exp",
+       "effect": "StatueStartEXP",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 24.925280199252803,
+       "withPrisma": 68.36501007559782
+      },
+      {
+       "id": "3:3",
+       "name": "Level Up Gift",
+       "effect": "LevelUpACTIVE",
+       "level": 20016,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 99.85034420832086,
+       "withPrisma": 273.8693299848401
+      },
+      {
+       "id": "3:4",
+       "name": "Prowesessary",
+       "effect": "ProwessMulti",
+       "level": 20769,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 2.4956791012530606,
+       "withPrisma": 6.845143787299895
+      },
+      {
+       "id": "3:5",
+       "name": "Stamp Tramp",
+       "effect": "TPpostage",
+       "level": 20018,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 20018,
+       "withPrisma": 54905.33148487303
+      },
+      {
+       "id": "3:6",
+       "name": "Undeveloped Costs",
+       "effect": "BubbleCost",
+       "level": 20023,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.860647986861096,
+       "withPrisma": 109.32970780899417
+      },
+      {
+       "id": "3:7",
+       "name": "Da Daily Drip",
+       "effect": "LqdCap",
+       "level": 20015,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 29.850857568978373,
+       "withPrisma": 81.8748741099255
+      },
+      {
+       "id": "3:8",
+       "name": "Grind Time",
+       "effect": "expACTIVE",
+       "level": 103286,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 30995.5,
+       "withPrisma": 85014.39714453902
+      },
+      {
+       "id": "3:9",
+       "name": "Laaarrrryyyy",
+       "effect": "DoubleBubbleUpg",
+       "level": 268094,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 119.9552562697152,
+       "withPrisma": 329.0130437027479
+      },
+      {
+       "id": "3:10",
+       "name": "Cogs For Hands",
+       "effect": "CogMakeSpd",
+       "level": 20019,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 80076,
+       "withPrisma": 219632.2971317161
+      },
+      {
+       "id": "3:11",
+       "name": "Sample It",
+       "effect": "SampleSize",
+       "level": 20023,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 11.976075362607785,
+       "withPrisma": 32.84795622298938
+      },
+      {
+       "id": "3:12",
+       "name": "Big Game Hunter",
+       "effect": "GiantsACTIVE",
+       "level": 20023,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 59.91023786964544,
+       "withPrisma": 164.32168396295717
+      },
+      {
+       "id": "3:13",
+       "name": "Ignore Overdues",
+       "effect": "booksSpeed",
+       "level": 20041,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 99.70150738769216,
+       "withPrisma": 273.4611006425595
+      },
+      {
+       "id": "3:14",
+       "name": "Yellow Bargain",
+       "effect": "BubbleCostYe",
+       "level": 20037,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.97605865629208,
+       "withPrisma": 109.64625596875037
+      },
+      {
+       "id": "3:15",
+       "name": "Mr Massacre",
+       "effect": "MKtierACTIVE",
+       "level": 20027,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 89.77586292772824,
+       "withPrisma": 246.23706231329018
+      },
+      {
+       "id": "3:16",
+       "name": "Egg Ink",
+       "effect": "EggInc",
+       "level": 20025,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.920259157737355,
+       "withPrisma": 109.49320921258906
+      },
+      {
+       "id": "3:17",
+       "name": "Diamond Chef",
+       "effect": "MealSpdz",
+       "level": 20016,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 1.299805282340606,
+       "withPrisma": 3.5651034015735816
+      },
+      {
+       "id": "3:18",
+       "name": "Card Champ",
+       "effect": "CardDropz",
+       "level": 20049,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 99.80088605704614,
+       "withPrisma": 273.73367626367076
+      },
+      {
+       "id": "3:19",
+       "name": "Petting The Rift",
+       "effect": "NewPetRift",
+       "level": 20033,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 14.962654981825425,
+       "withPrisma": 41.03954099664861
+      },
+      {
+       "id": "3:20",
+       "name": "Boaty Bubble",
+       "effect": "Y1",
+       "level": 20032,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 134.52989752263457,
+       "withPrisma": 368.9883413980543
+      },
+      {
+       "id": "3:21",
+       "name": "Big P",
+       "effect": "Y2ACTIVE",
+       "level": 20027,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 1.4985064967391846,
+       "withPrisma": 4.1101007061495025
+      },
+      {
+       "id": "3:22",
+       "name": "Bit By Bit",
+       "effect": "Y3",
+       "level": 20030,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.82587064676617,
+       "withPrisma": 136.66230114812177
+      },
+      {
+       "id": "3:23",
+       "name": "Gifts Abound",
+       "effect": "Y4",
+       "level": 20025,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.88050784167289,
+       "withPrisma": 109.38417938016427
+      },
+      {
+       "id": "3:24",
+       "name": "Atom Split",
+       "effect": "Y5",
+       "level": 20045,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 13.97211849639034,
+       "withPrisma": 38.322699450006866
+      },
+      {
+       "id": "3:25",
+       "name": "Cropius Mapper",
+       "effect": "Y6",
+       "level": 20028,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 4.9825853318738185,
+       "withPrisma": 13.66622536208403
+      },
+      {
+       "id": "3:26",
+       "name": "Essence Boost",
+       "effect": "Y7",
+       "level": 20018,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 49.85058272736328,
+       "withPrisma": 136.73008139474308
+      },
+      {
+       "id": "3:27",
+       "name": "Hinge Buster",
+       "effect": "Y8",
+       "level": 20018,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 99.6515332536838,
+       "withPrisma": 273.32403168495136
+      },
+      {
+       "id": "3:28",
+       "name": "Ninja Looter",
+       "effect": "Y9ACTIVE",
+       "level": 20025,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 1.2991038088125466,
+       "withPrisma": 3.5631794013444895
+      },
+      {
+       "id": "3:29",
+       "name": "Lo Cost Mo Jade",
+       "effect": "Y10",
+       "level": 20030,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 98.80269058295964,
+       "withPrisma": 270.99582765784504
+      },
+      {
+       "id": "3:30",
+       "name": "Faster Nrg",
+       "effect": "Y11",
+       "level": 20026,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 19.900626055848157,
+       "withPrisma": 54.5833984590291
+      },
+      {
+       "id": "3:31",
+       "name": "Kattle Da Goat",
+       "effect": "Y12",
+       "level": 20030,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 39.40973930152484,
+       "withPrisma": 108.09295634342341
+      },
+      {
+       "id": "3:32",
+       "name": "Codfrey Rulz Ok",
+       "effect": "Y13",
+       "level": 20070,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 4.878463782207097,
+       "withPrisma": 13.380640978071142
+      }
+     ]
+    }
+   }
+  },
+  "tiny": {
+   "characters": [
+    {
+     "ci": 0,
+     "name": "Tester",
+     "className": "Beginner"
+    }
+   ],
+   "multiplier": 2,
+   "cauldrons": {
+    "0": {
+     "fragments": 120,
+     "map": 5,
+     "rows": [
+      {
+       "id": "0:0",
+       "name": "Roid Ragin",
+       "effect": "TotalSTR",
+       "level": 10,
+       "status": "already",
+       "comparable": true,
+       "reason": "Already Prisma-ed in this save.",
+       "base": 10,
+       "withPrisma": 20
+      },
+      {
+       "id": "0:1",
+       "name": "Warriors Rule",
+       "effect": "Opassz",
+       "level": 0,
+       "status": "unpurchased",
+       "comparable": false,
+       "reason": "Purchase this bubble first.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:2",
+       "name": "Hearty Diggy",
+       "effect": "MinEff",
+       "level": 25,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 10,
+       "withPrisma": 20
+      },
+      {
+       "id": "0:3",
+       "name": "Wyoming Blood",
+       "effect": "MiningACTIVE",
+       "level": 5,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 31,
+       "withPrisma": 62
+      },
+      {
+       "id": "0:4",
+       "name": "Reely Smart",
+       "effect": "MinFishEXP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:5",
+       "name": "Big Meaty Claws",
+       "effect": "bdmgHP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:6",
+       "name": "Sploosh Sploosh",
+       "effect": "FishingACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:7",
+       "name": "Stronk Tools",
+       "effect": "ToolW",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:8",
+       "name": "Fmj",
+       "effect": "DefPct",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:9",
+       "name": "Bappity Boopity",
+       "effect": "critDMG",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:10",
+       "name": "Brittley Spears",
+       "effect": "pctDmg1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:11",
+       "name": "Call Me Bob",
+       "effect": "conEXPACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:12",
+       "name": "Carpenter",
+       "effect": "Construction",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:13",
+       "name": "Buff Boi Talent",
+       "effect": "TalWarrior",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:14",
+       "name": "Orange Bargain",
+       "effect": "BubbleCostOr",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:15",
+       "name": "Penny Of Strength",
+       "effect": "CashSTR",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:16",
+       "name": "Multorange",
+       "effect": "MultiOr",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:17",
+       "name": "Dream Of Ironfish",
+       "effect": "MinFshAFK",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:18",
+       "name": "Shimmeron",
+       "effect": "GFoodz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:19",
+       "name": "Bite But Not Chew",
+       "effect": "nonFoodACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:20",
+       "name": "Spear Powah",
+       "effect": "W1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:21",
+       "name": "Slabi Orefish",
+       "effect": "W2",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:22",
+       "name": "Gamer At Heart",
+       "effect": "W3ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:23",
+       "name": "Slabi Strength",
+       "effect": "W4",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:24",
+       "name": "Power Trione",
+       "effect": "W5",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:25",
+       "name": "Farquad Force",
+       "effect": "W6",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:26",
+       "name": "Endgame Eff I",
+       "effect": "W7",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:27",
+       "name": "Tome Strength",
+       "effect": "W8",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:28",
+       "name": "Essence Boost",
+       "effect": "W9AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:29",
+       "name": "Crop Chapter",
+       "effect": "W10AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:30",
+       "name": "Double Pagey",
+       "effect": "W11",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:31",
+       "name": "Dmg Of The Sun",
+       "effect": "W12",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:32",
+       "name": "Bone Bubble",
+       "effect": "W13",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "0:33",
+       "name": "Royal Riches",
+       "effect": "W14",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      }
+     ]
+    },
+    "1": {
+     "fragments": 120,
+     "map": 5,
+     "rows": [
+      {
+       "id": "1:0",
+       "name": "Swift Steppin",
+       "effect": "TotalAGI",
+       "level": 40,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 40,
+       "withPrisma": 80
+      },
+      {
+       "id": "1:1",
+       "name": "Archer Or Bust",
+       "effect": "Gpassz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:2",
+       "name": "Hammer Hammer",
+       "effect": "AnvilACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:3",
+       "name": "LIL Big Damage",
+       "effect": "Mastery",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:4",
+       "name": "Anvilnomics",
+       "effect": "AnvilProdCost",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:5",
+       "name": "Quick Slap",
+       "effect": "bdmgSPD",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:6",
+       "name": "Sanic Tools",
+       "effect": "ToolA",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:7",
+       "name": "Bug]",
+       "effect": "CatchingACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:8",
+       "name": "Shaquracy",
+       "effect": "AccPct",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:9",
+       "name": "Cheap Shot",
+       "effect": "CritChance",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:10",
+       "name": "Bow Jack",
+       "effect": "pctDmg2",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:11",
+       "name": "Call Me Ash",
+       "effect": "TrapACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:12",
+       "name": "Cuz I Catch Em All",
+       "effect": "CritShiny",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:13",
+       "name": "Fast Boi Talent",
+       "effect": "TalArchers",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:14",
+       "name": "Green Bargain",
+       "effect": "BubbleCostGr",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:15",
+       "name": "Dollar Of Agility",
+       "effect": "CashAGI",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:16",
+       "name": "Premigreen",
+       "effect": "MultiGr",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:17",
+       "name": "Fly In Mind",
+       "effect": "CatchinAFK",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:18",
+       "name": "Kill Per Kill",
+       "effect": "kpkACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:19",
+       "name": "Afk Expexp",
+       "effect": "DubEXP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:20",
+       "name": "Bow Power",
+       "effect": "A1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:21",
+       "name": "Slabo Critterbug",
+       "effect": "A2",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:22",
+       "name": "Sailor At Heart",
+       "effect": "A3ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:23",
+       "name": "Slabo Agility",
+       "effect": "A4",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:24",
+       "name": "Power Tritwo",
+       "effect": "A5",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:25",
+       "name": "Quickdraw Quiver",
+       "effect": "A6",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:26",
+       "name": "Essence Boost",
+       "effect": "A7AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:27",
+       "name": "Endgame Eff II",
+       "effect": "A8",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:28",
+       "name": "Tome Agility",
+       "effect": "A9",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:29",
+       "name": "Stealth Chapter",
+       "effect": "A10AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:30",
+       "name": "Spapunkie",
+       "effect": "A11",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:31",
+       "name": "Dmg Of The Moon",
+       "effect": "A12",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "1:32",
+       "name": "Dust Bubble",
+       "effect": "A13",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      }
+     ]
+    },
+    "2": {
+     "fragments": 120,
+     "map": 5,
+     "rows": [
+      {
+       "id": "2:0",
+       "name": "Stable Jenius",
+       "effect": "TotalWIS",
+       "level": 7,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 7,
+       "withPrisma": 14
+      },
+      {
+       "id": "2:1",
+       "name": "Mage Is Best",
+       "effect": "Ppassz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:2",
+       "name": "Hocus Choppus",
+       "effect": "ChopEff",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:3",
+       "name": "Molto Loggo",
+       "effect": "MultiLogACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:4",
+       "name": "Noodubble",
+       "effect": "ChopAlchEXP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:5",
+       "name": "Name I Guess",
+       "effect": "bdmgMP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:6",
+       "name": "Le Brain Tools",
+       "effect": "ToolM",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:7",
+       "name": "Cookin Roadkill",
+       "effect": "AlchemyACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:8",
+       "name": "Brewstachio",
+       "effect": "BrewSpd",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:9",
+       "name": "All For Kill",
+       "effect": "AttackAfk",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:10",
+       "name": "Matty Stafford",
+       "effect": "pctDmg3",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:11",
+       "name": "Call Me Pope",
+       "effect": "worshipACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:12",
+       "name": "Gospel Leader",
+       "effect": "maxCharge",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:13",
+       "name": "Smart Boi Talent",
+       "effect": "TalWiz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:14",
+       "name": "Purple Bargain",
+       "effect": "BubbleCostPu",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:15",
+       "name": "Nickel Of Wisdom",
+       "effect": "CashWIS",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:16",
+       "name": "Severapurple",
+       "effect": "MultiPu",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:17",
+       "name": "Tree Sleeper",
+       "effect": "ChoppinAFK",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:18",
+       "name": "Hyperswift",
+       "effect": "BAspd",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:19",
+       "name": "Matrix Evolved",
+       "effect": "LabXpACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:20",
+       "name": "Wand Pawur",
+       "effect": "M1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:21",
+       "name": "Slabe Logsoul",
+       "effect": "M2",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:22",
+       "name": "Pious At Heart",
+       "effect": "M3ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:23",
+       "name": "Slabe Wisdom",
+       "effect": "M4",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:24",
+       "name": "Power Trithree",
+       "effect": "M5",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:25",
+       "name": "Smarter Spells",
+       "effect": "M6",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:26",
+       "name": "Endgame Eff III",
+       "effect": "M7",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:27",
+       "name": "Essence Boost",
+       "effect": "M8AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:28",
+       "name": "Tome Wisdom",
+       "effect": "M9",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:29",
+       "name": "Essence Chapter",
+       "effect": "M10AllCharz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:30",
+       "name": "Deep Depth",
+       "effect": "M11",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:31",
+       "name": "Dmg Of The Soul",
+       "effect": "M12",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "2:32",
+       "name": "Tachyon Bubble",
+       "effect": "M13",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      }
+     ]
+    },
+    "3": {
+     "fragments": 120,
+     "map": 5,
+     "rows": [
+      {
+       "id": "3:0",
+       "name": "Lotto Skills",
+       "effect": "TotalLUK",
+       "level": 12,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 12,
+       "withPrisma": 24
+      },
+      {
+       "id": "3:1",
+       "name": "Droppin Loads",
+       "effect": "DropRate",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:2",
+       "name": "Startue Exp",
+       "effect": "StatueStartEXP",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:3",
+       "name": "Level Up Gift",
+       "effect": "LevelUpACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:4",
+       "name": "Prowesessary",
+       "effect": "ProwessMulti",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:5",
+       "name": "Stamp Tramp",
+       "effect": "TPpostage",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:6",
+       "name": "Undeveloped Costs",
+       "effect": "BubbleCost",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:7",
+       "name": "Da Daily Drip",
+       "effect": "LqdCap",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:8",
+       "name": "Grind Time",
+       "effect": "expACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:9",
+       "name": "Laaarrrryyyy",
+       "effect": "DoubleBubbleUpg",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:10",
+       "name": "Cogs For Hands",
+       "effect": "CogMakeSpd",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:11",
+       "name": "Sample It",
+       "effect": "SampleSize",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:12",
+       "name": "Big Game Hunter",
+       "effect": "GiantsACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:13",
+       "name": "Ignore Overdues",
+       "effect": "booksSpeed",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:14",
+       "name": "Yellow Bargain",
+       "effect": "BubbleCostYe",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:15",
+       "name": "Mr Massacre",
+       "effect": "MKtierACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:16",
+       "name": "Egg Ink",
+       "effect": "EggInc",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:17",
+       "name": "Diamond Chef",
+       "effect": "MealSpdz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:18",
+       "name": "Card Champ",
+       "effect": "CardDropz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:19",
+       "name": "Petting The Rift",
+       "effect": "NewPetRift",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:20",
+       "name": "Boaty Bubble",
+       "effect": "Y1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:21",
+       "name": "Big P",
+       "effect": "Y2ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:22",
+       "name": "Bit By Bit",
+       "effect": "Y3",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:23",
+       "name": "Gifts Abound",
+       "effect": "Y4",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:24",
+       "name": "Atom Split",
+       "effect": "Y5",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:25",
+       "name": "Cropius Mapper",
+       "effect": "Y6",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:26",
+       "name": "Essence Boost",
+       "effect": "Y7",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:27",
+       "name": "Hinge Buster",
+       "effect": "Y8",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:28",
+       "name": "Ninja Looter",
+       "effect": "Y9ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:29",
+       "name": "Lo Cost Mo Jade",
+       "effect": "Y10",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:30",
+       "name": "Faster Nrg",
+       "effect": "Y11",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:31",
+       "name": "Kattle Da Goat",
+       "effect": "Y12",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:32",
+       "name": "Codfrey Rulz Ok",
+       "effect": "Y13",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      }
+     ]
+    }
+   }
+  }
+ }
+}

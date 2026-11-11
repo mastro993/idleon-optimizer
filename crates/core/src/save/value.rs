@@ -8,6 +8,9 @@
 
 use serde_json::{Map, Value};
 
+/// A save's own field map and the wrapper object beside it.
+pub(crate) type Parts<'a> = (&'a Map<String, Value>, &'a Map<String, Value>);
+
 /// Top-level keys that live beside `data` in an `it.json` wrapper.
 const WRAPPER_KEYS: [&str; 3] = ["companion", "serverVars", "charNames"];
 
@@ -85,6 +88,15 @@ impl Save {
             }
         }
         count
+    }
+
+    /// The save's own field map and the wrapper object beside it.
+    ///
+    /// The account decoder reads some fields from the wrapper (`companion`)
+    /// and the rest from the save; this hands both over without cloning.
+    pub(crate) fn parts(&self) -> Option<Parts<'_>> {
+        let root = self.root.as_object()?;
+        Some((self.fields().unwrap_or(root), root))
     }
 
     /// A character's name beside its index, when the save carries one.
