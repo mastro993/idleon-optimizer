@@ -1,4 +1,5 @@
-//! Import a game save into a simulation, its multipliers and the Clamworks state.
+//! Import a game save into a simulation, its multipliers, the farming field,
+//! the account multiplier tree and the Clamworks state.
 //!
 //! The upstream calculators read the game's save through Google sign-in and a
 //! decode step; this app takes the decoded object as text. The layout follows
@@ -12,6 +13,9 @@
 //!   groups of four numbers.
 //! - The research level is the highest `Lv0_<char>[20]` across characters, and
 //!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
+//! - The farming side reads `FarmPlot`, `FarmRank`, `FarmUpg`, `FarmCrop`,
+//!   `Spelunk[50]` and `GemItemsPurchased`; the active character's Farming level
+//!   is `Lv0_<char>[16]`. A research-only save stays silent about farming.
 //!
 //! The app's own state exports use the decoded names (`gridLevels`, `magData`,
 //! …) at the top level, so the importer accepts either shape. [`import`] reports
@@ -24,6 +28,7 @@
 //! nothing is guessed.
 
 mod account;
+mod farming;
 mod formula;
 pub(crate) mod json;
 mod research;
@@ -34,6 +39,7 @@ pub use shadow::{Shadow, ShadowVerdict};
 pub use value::{Save, at, number, row_values};
 
 use crate::clamworks::Clamworks;
+use crate::farming::Farm;
 use crate::model::{SimContext, Simulation};
 pub use account::{BonusTerm, BonusTree};
 pub use formula::log as game_log;
@@ -50,6 +56,8 @@ pub enum Format {
     SaveJson,
     /// The decoded research fields of an app state export, at the top level.
     ResearchState,
+    /// The decoded farming fields of an app state export, at the top level.
+    FarmingState,
 }
 
 impl Format {
@@ -59,6 +67,7 @@ impl Format {
             Format::ItJson => "it.json",
             Format::SaveJson => "save.json",
             Format::ResearchState => "research state",
+            Format::FarmingState => "farming state",
         }
     }
 }
@@ -68,6 +77,8 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The farming field, ranks, crops and market levels the save carries.
+    pub farming: Farm,
     /// The save-derived multiplier tree behind [`Self::context`].
     pub tree: BonusTree,
     /// The Clamworks state the save carries, or the zero state when it has none.
@@ -157,6 +168,15 @@ impl Character {
             .map(|level| level.max(0.0).round() as u32)
     }
 
+    /// The Farming skill level the farming planner reads (`Lv0_<n>[16]`).
+    fn farming_level(&self) -> Option<u32> {
+        self.levels
+            .get(16)
+            .copied()
+            .flatten()
+            .map(|level| level.max(0.0).round() as u32)
+    }
+
     /// The summed skill level at `skill` (0 = the first skill row).
     fn skill(&self, skill: usize) -> f64 {
         self.levels.get(skill + 1).copied().flatten().unwrap_or(0.0)
@@ -182,10 +202,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let carries_research = RESEARCH_FIELDS
         .iter()
         .any(|field| save.contains_key(*field));
-    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research) else {
+    let carries_farming = farming::has_farming(save);
+    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research || carries_farming)
+    else {
         return Err(ImportError::NoSaveFields(format!(
-            "expected one of {} at the top level or in the Research rows",
-            RESEARCH_FIELDS.join(", ")
+            "expected a research seed field ({}) or a farming field ({}) at the top level or in the Research rows",
+            RESEARCH_FIELDS.join(", "),
+            farming::FARMING_FIELDS.join(", ")
         )));
     };
 
@@ -217,6 +240,11 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.saved_overlay = research::shape_overlay(save, &rows);
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
+    let farm_level = characters
+        .first()
+        .and_then(Character::farming_level)
+        .unwrap_or(0);
+    let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
     let clamworks = Clamworks::from_save(save, &mut warnings);
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
@@ -224,6 +252,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     Ok(Imported {
         simulation,
         context,
+        farming,
         tree,
         clamworks,
         save: Save::new(parsed),
@@ -243,16 +272,25 @@ fn detect(root: &Map<String, Value>, save: &Map<String, Value>) -> Option<Format
         return Some(Format::ItJson);
     }
     let raw = save.contains_key("Research")
+        || farming::RAW_FARMING_FIELDS
+            .iter()
+            .any(|field| save.contains_key(*field))
         || save
             .keys()
             .any(|key| key.starts_with("Lv0_") || key.starts_with("Exp0_"));
     if raw {
         return Some(Format::SaveJson);
     }
-    RESEARCH_FIELDS
+    if RESEARCH_FIELDS
         .iter()
         .any(|field| save.contains_key(*field))
-        .then_some(Format::ResearchState)
+    {
+        return Some(Format::ResearchState);
+    }
+    farming::FARMING_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field))
+        .then_some(Format::FarmingState)
 }
 
 /// How many characters the save carries: one per `Lv0_<n>` row.

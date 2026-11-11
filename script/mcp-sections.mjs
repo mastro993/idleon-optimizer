@@ -94,6 +94,22 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'import-cancel' });
     await waitFor(lane, (nodes) => !has(nodes, 'import-drop'), 'killroy: cancel closes the import');
   },
+  farming: async (lane) => {
+    await lane.call('click_element', { id: 'plot-1' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
+      'farming: clicking a plot moves the detail'
+    );
+    await lane.call('click_element', { id: 'back-to-dashboard' });
+    await waitForNode(lane, 'dashboard', 'farming: back returns to the dashboard');
+    await lane.call('click_element', { id: 'dashboard-resume' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
+      'farming: the plot selection survives the dashboard round-trip'
+    );
+  },
   endgame: async (lane) => {
     await waitForNode(lane, 'endgame-verdict', 'endgame: the verdict is there before a save');
     const before = labelOf(await lane.tree(), 'endgame-verdict');
