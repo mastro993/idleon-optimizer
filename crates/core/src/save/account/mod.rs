@@ -19,6 +19,7 @@ mod equipment;
 mod fields;
 mod lab;
 mod mastery;
+mod statue;
 mod systems;
 mod tome;
 mod tome_high;
@@ -212,6 +213,52 @@ pub(crate) fn account(
     let mut context = decoder.context();
     let tree = decoder.tree(&mut context);
     (context, tree)
+}
+
+/// Decode the statue calculator's account inputs: the STARTUE EXP bubble, the
+/// Skinny 0 Cal vial, the Onyx/Zenith tier multiplier and the Royal Guardian
+/// Flair levels.
+pub(crate) fn statue_leveling(
+    save: &Map<String, Value>,
+    root: &Map<String, Value>,
+    characters: &[Character],
+    simulation: &Simulation,
+    warnings: &mut Vec<String>,
+) -> crate::statue::Leveling {
+    for (field, detail) in [
+        (
+            "CauldronInfo",
+            "not in the save; the STARTUE EXP bubble and Skinny 0 Cal vial read as zero",
+        ),
+        (
+            "RoyalG",
+            "not in the save; statue Flair levels are unknown and estimates assume no Flair bonus",
+        ),
+        (
+            "StuG",
+            "not in the save; the Onyx/Zenith statue multiplier stays at 1×",
+        ),
+    ] {
+        if fields::field(save, field).is_none()
+            && !warnings.iter().any(|warning| warning.starts_with(field))
+        {
+            warnings.push(format!("{field}: {detail}"));
+        }
+    }
+    let overlay = simulation.overlay();
+    let mut decoder = Decoder {
+        save,
+        root,
+        data: account_data(),
+        characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings,
+    };
+    decoder.statue_leveling()
 }
 
 impl Decoder<'_> {

@@ -26,6 +26,7 @@ use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
+use gpui::Context;
 use idleon_core::cog::Goal as CogGoal;
 use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
@@ -180,13 +181,17 @@ pub struct CombatConfig {
     presets: Vec<CombatPreset>,
 }
 
-/// The statue section's config: selected character and sort. The search text is
-/// a filter, not state, and the statue rows come from the save.
+/// The statue section's config: selected character, sort, deposit estimate and
+/// the plan inputs. The search text is a filter, not state, and the statue rows
+/// come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct StatueConfig {
     character: usize,
     sort: StatueSort,
+    estimate: idleon_core::statue::Estimate,
+    targets: Vec<Option<u32>>,
+    rates: Vec<String>,
 }
 
 /// The whole window state as a project document.
@@ -248,6 +253,9 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         value(&StatueConfig {
             character: state.statue.character,
             sort: state.statue.sort,
+            estimate: state.statue.estimate,
+            targets: state.statue.targets.clone(),
+            rates: state.statue.rates.clone(),
         }),
     );
     insert(
@@ -327,6 +335,7 @@ pub fn apply(
     configs: Vec<Config>,
     warnings: &mut Vec<String>,
     changes: &mut Vec<String>,
+    cx: &mut Context<AppState>,
 ) {
     let pipeline::ProjectImport { document, save } = import;
     let project::Project {
@@ -347,7 +356,7 @@ pub fn apply(
             imported.context = context;
             changes.extend(research_changes(&state.simulation, &imported.simulation));
             changes.extend(supplement_changes(&state.context, &imported.context));
-            state.load_imported(imported);
+            state.load_imported(imported, cx);
         }
         None => {
             changes.extend(research_changes(&state.simulation, &simulation));
@@ -357,7 +366,7 @@ pub fn apply(
         }
     }
     for config in configs {
-        assign(state, config, warnings);
+        assign(state, config, warnings, cx);
     }
     // A section id the registry does not declare was already named in the
     // preview's warnings, so the route simply stays where it is.
@@ -437,7 +446,12 @@ pub fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String>
 
 /// Assign one decoded section config. Warnings are for values the loaded save
 /// or the grid no longer has room for; they never fail the import.
-pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) {
+pub fn assign(
+    state: &mut AppState,
+    config: Config,
+    warnings: &mut Vec<String>,
+    cx: &mut Context<AppState>,
+) {
     match config {
         Config::Research(config) => {
             state.research.tab = config.tab;
@@ -524,6 +538,7 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
         }
         Config::Statue(config) => {
             state.statue.sort = config.sort;
+            state.statue.estimate = config.estimate;
             if state.statue.save.has_character(config.character) {
                 state.statue.character = config.character;
             } else {
@@ -532,6 +547,7 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
                     config.character + 1
                 ));
             }
+            state.statue.set_plan(config.targets, config.rates, cx);
         }
         Config::Monument(config) => {
             state.monument = MonumentState {
@@ -995,9 +1011,15 @@ mod tests {
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,
+            estimate: idleon_core::statue::Estimate::Average,
+            targets: vec![Some(120), None],
+            rates: vec!["1.2M".into(), String::new()],
         });
         assert_eq!(statue.character, 4);
         assert_eq!(statue.sort, StatueSort::Remaining);
+        assert_eq!(statue.estimate, idleon_core::statue::Estimate::Average);
+        assert_eq!(statue.targets, vec![Some(120), None]);
+        assert_eq!(statue.rates, vec!["1.2M".to_string(), String::new()]);
         let combat = round_trip(&CombatConfig {
             character: 2,
             tab: CombatTab::Talents,

@@ -348,6 +348,32 @@ const statsSave = () => {
   });
 };
 
+/// A small flat `save.json` with one character's statue rows, a STARTUE EXP
+/// bubble at level 200, a Skinny 0 Cal vial at level 20 and one Royal Guardian
+/// Flair level, so the bubble, the deposit estimate and the time estimate all
+/// have save state to read.
+const statueSave = () => {
+  const sparse = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const cauldron = Array.from({ length: 5 }, () => []);
+  cauldron[3] = sparse(46, { 2: 200 });
+  cauldron[4] = sparse(60, { 6: 20 });
+  const royal = Array.from({ length: 23 }, () => []);
+  royal[22] = sparse(32, { 0: 1 });
+  return JSON.stringify({
+    charNames: ['Ana'],
+    Research: '[]',
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+    StatueLevels_0: JSON.stringify(
+      Array.from({ length: 32 }, (_, index) => [100 + index, 0]),
+    ),
+    CauldronInfo: JSON.stringify(cauldron),
+    OptLacc: JSON.stringify(sparse(70, { 69: 2 })),
+    StuG: JSON.stringify(sparse(32, { 0: 2, 1: 3 })),
+    RoyalG: JSON.stringify(royal),
+  });
+};
+
 /// A project document as the app writes it: the research state, the
 /// supplements, one config per section and the section the window was on.
 const projectDocument = () =>
@@ -764,6 +790,50 @@ const INTERACTIONS = {
       lane,
       (nodes) => nodes.find((node) => node.id === 'statue-sort')?.value?.value === 'Game order',
       'statue: sort returns to game order',
+    );
+
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'statue: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: statueSave() });
+    await waitForNode(lane, 'import-format', 'statue: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'kpi-retention') ?? '').includes('19.2%'),
+      'statue: the STARTUE bubble sets the EXP retention',
+    );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'kpi-tier') ?? '').includes('1.2x'),
+      'statue: the Onyx tier multiplies deposits',
+    );
+
+    const guaranteed = labelOf(await lane.tree(), 'statue-needed-0');
+    await lane.call('focus_element', { id: 'statue-estimate' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'statue-needed-0') !== guaranteed,
+      'statue: the deposit estimate changes the statues needed',
+    );
+
+    await lane.call('click_element', { id: 'statue-rate-0' });
+    await lane.call('type_text', { text: '1M' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'statue-rate-source') ?? '').includes('manual entries'),
+      'statue: the rate source names the manual entries',
+    );
+    await waitFor(
+      lane,
+      (nodes) => {
+        const time = labelOf(nodes, 'statue-time-0') ?? '';
+        return time.includes('Time to target') && !time.includes('Add rate') && !time.endsWith('—');
+      },
+      'statue: the farming rate produces a time estimate',
     );
   },
   'stats-all': async (lane) => {

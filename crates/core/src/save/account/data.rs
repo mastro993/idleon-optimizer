@@ -108,6 +108,7 @@ pub struct AccountData {
     #[serde(rename = "arcaneNoMulti")]
     pub arcane_no_multi: Vec<u32>,
     pub bubbles: Bubbles,
+    pub vials: Vials,
     /// `RandoListo2[8]`: the per-level bonus of each Cooking Mastery upgrade.
     #[serde(rename = "cookingMasteryPerLv")]
     pub cooking_mastery_per_lv: Vec<f64>,
@@ -119,12 +120,11 @@ pub struct AccountData {
     pub cooking_mastery_vial: Option<VialParam>,
 }
 
-/// The one alchemy vial that boosts Cooking Mastery EXP.
+/// One alchemy vial's curve: its `CauldronInfo[4]` slot and the game formula
+/// its description names (`add`, `decay`).
 #[derive(Debug, Deserialize)]
 pub struct VialParam {
-    /// The vial's slot in `CauldronInfo[4]`.
     pub index: usize,
-    /// The game formula the vial's description names (`add`).
     pub kind: String,
     pub x1: f64,
     pub x2: f64,
@@ -146,10 +146,14 @@ pub struct ExoticParam {
     pub denom: f64,
 }
 
-/// The alchemy bubble the gallery reads (`CODFREY_RULZ_OK`, Kazam 32).
+/// The alchemy bubbles the account decoder reads: the gallery's
+/// `CODFREY_RULZ_OK` (Kazam 32) and the statue calculator's STARTUE EXP bubble
+/// (`AlchemyDescription[3][2]`).
 #[derive(Debug, Deserialize)]
 pub struct Bubbles {
     pub y13: BubbleParam,
+    #[serde(rename = "statueStart")]
+    pub statue_start: BubbleParam,
 }
 
 #[derive(Debug, Deserialize)]
@@ -159,6 +163,13 @@ pub struct BubbleParam {
     pub x1: f64,
     pub x2: f64,
     pub formula: String,
+}
+
+/// The alchemy vials the statue calculator reads.
+#[derive(Debug, Deserialize)]
+pub struct Vials {
+    #[serde(rename = "statueDouble")]
+    pub statue_double: VialParam,
 }
 
 impl AccountData {

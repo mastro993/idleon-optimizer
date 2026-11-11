@@ -85,3 +85,78 @@ writeFileSync(
   `${JSON.stringify(expected, null, 1)}\n`,
 );
 console.log(`wrote the requirement table for character ${characters.findIndex((rows) => rows.length)}`);
+
+// The target-cost oracle: the upstream loader's view of the fixture, its
+// statue leveling inputs and `statueTargetCost` for three targets per statue.
+const { loadSaveData } = await import(join(source, 'js/save/loader.js'));
+const { saveData } = await import(join(source, 'js/state.js'));
+const { statueLevelingInputs, statueTargetCost } = await import(
+  join(source, 'js/stats/systems/common/statue-leveling.js')
+);
+loadSaveData(save);
+const costs = [];
+for (let charIdx = 0; charIdx < (saveData.statueLvAllData || []).length; charIdx += 1) {
+  const savedRows = saveData.statueLvAllData[charIdx] || [];
+  if (!savedRows.length) continue;
+  const inputs = statueLevelingInputs(saveData, charIdx);
+  const rows = [];
+  for (let index = 0; index < STATUE_COUNT; index += 1) {
+    const saved = savedRows[index];
+    const level = Number(saved?.[0]);
+    if (!Number.isSafeInteger(level)) continue;
+    const targets = [level + 1, level + 10, Math.max(level - 1, 0)];
+    const entries = targets.map((target) => {
+      try {
+        const cost = statueTargetCost(saveData, index, target, { charIdx, inputs });
+        return cost.available
+          ? {
+              target,
+              expNeeded: cost.expNeeded,
+              statuesGuaranteed: cost.statuesGuaranteed,
+              statuesAverage: cost.statuesAverage,
+            }
+          : { target, unavailable: cost.missing };
+      } catch (error) {
+        return { target, unavailable: error.message };
+      }
+    });
+    const sample = statueTargetCost(saveData, index, level + 1, { charIdx, inputs });
+    rows.push({
+      index,
+      level,
+      exp: Number(saved?.[1]),
+      flairLevel: sample.flairLevel,
+      flairMultiplier: sample.flairMultiplier,
+      guaranteedExp: sample.guaranteedExp,
+      averageExp: sample.averageExp,
+      costs: entries,
+    });
+  }
+  costs.push({
+    character: charIdx,
+    name: saveData.charNames?.[charIdx] || '',
+    inputs: {
+      bubblePct: inputs.bubblePct,
+      costFactor: inputs.costFactor,
+      retentionPct: inputs.retentionPct,
+      doubleChance: inputs.doubleChance,
+      onyxCount: inputs.onyxCount,
+      zenithCount: inputs.zenithCount,
+      tierMultiplier: inputs.tierMultiplier,
+      flairAvailable: inputs.flairAvailable,
+    },
+    rows,
+  });
+}
+writeFileSync(
+  new URL('../crates/core/tests/statue-costs.json', import.meta.url),
+  JSON.stringify({
+    generatedFrom: {
+      repo: 'Corgan/idleon-research-optimizer',
+      file: 'js/stats/systems/common/statue-leveling.js',
+      fixture: 'fixtures/data.json',
+    },
+    characters: costs,
+  }),
+);
+console.log(`wrote the target-cost table for ${costs.length} characters`);

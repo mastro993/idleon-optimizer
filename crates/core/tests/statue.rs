@@ -185,3 +185,173 @@ fn a_save_without_statue_rows_warns_and_offers_no_characters() {
         imported.warnings
     );
 }
+
+/// The target-cost table the upstream JS produced for the fixture.
+fn upstream_costs() -> Value {
+    serde_json::from_str(include_str!("statue-costs.json"))
+        .expect("the extracted target-cost table is valid JSON")
+}
+
+fn assert_close(actual: f64, expected: Value, what: &str) {
+    let expected = expected
+        .as_f64()
+        .unwrap_or_else(|| panic!("{what}: the upstream table has a number"));
+    let tolerance = (expected.abs() * 1e-12).max(1e-9);
+    assert!(
+        (actual - expected).abs() <= tolerance,
+        "{what}: got {actual}, upstream {expected}"
+    );
+}
+
+#[test]
+fn the_fixture_matches_the_upstream_target_cost_table() {
+    let imported = import(&fixture()).expect("the fixture imports");
+    let saved = &imported.statues;
+    let leveling = saved.leveling();
+    let expected = upstream_costs();
+    let characters = expected["characters"]
+        .as_array()
+        .expect("the table has characters");
+    assert_eq!(characters.len(), 11);
+
+    for character in characters {
+        let ci = character["character"].as_u64().expect("a character index") as usize;
+        let inputs = &character["inputs"];
+        assert_close(
+            leveling.bubble_pct,
+            inputs["bubblePct"].clone(),
+            "bubblePct",
+        );
+        assert_close(
+            leveling.cost_factor,
+            inputs["costFactor"].clone(),
+            "costFactor",
+        );
+        assert_close(
+            leveling.retention_pct,
+            inputs["retentionPct"].clone(),
+            "retentionPct",
+        );
+        assert_close(
+            leveling.double_chance,
+            inputs["doubleChance"].clone(),
+            "doubleChance",
+        );
+        assert_eq!(
+            u64::from(leveling.onyx),
+            inputs["onyxCount"].as_u64().expect("an onyx count")
+        );
+        assert_eq!(
+            u64::from(leveling.zenith),
+            inputs["zenithCount"].as_u64().expect("a zenith count")
+        );
+        assert_close(
+            leveling.tier_multiplier,
+            inputs["tierMultiplier"].clone(),
+            "tierMultiplier",
+        );
+        assert_eq!(
+            leveling.flair_available,
+            inputs["flairAvailable"].as_bool().expect("a flag")
+        );
+
+        for row in character["rows"].as_array().expect("rows") {
+            let index = row["index"].as_u64().expect("an index") as usize;
+            let flair = row["flairLevel"].as_u64().expect("a flair level") as u32;
+            assert_eq!(leveling.flair_level(index), flair, "statue {index} flair");
+            assert_close(
+                leveling.flair_multiplier(index),
+                row["flairMultiplier"].clone(),
+                &format!("statue {index} flair multiplier"),
+            );
+            for cost in row["costs"].as_array().expect("costs") {
+                let target = cost["target"].as_u64().expect("a target") as u32;
+                let actual = statue::target_cost(saved, leveling, ci, index, target)
+                    .unwrap_or_else(|error| {
+                        panic!("character {ci} statue {index} target {target}: {error:?}")
+                    });
+                assert_close(
+                    actual.guaranteed_exp,
+                    row["guaranteedExp"].clone(),
+                    &format!("statue {index} guaranteed EXP"),
+                );
+                assert_close(
+                    actual.average_exp,
+                    row["averageExp"].clone(),
+                    &format!("statue {index} average EXP"),
+                );
+                assert_close(
+                    actual.exp_needed,
+                    cost["expNeeded"].clone(),
+                    &format!("character {ci} statue {index} target {target} EXP"),
+                );
+                assert_eq!(
+                    Some(actual.statues_guaranteed),
+                    cost["statuesGuaranteed"].as_u64(),
+                    "character {ci} statue {index} target {target} guaranteed statues"
+                );
+                assert_eq!(
+                    Some(actual.statues_average),
+                    cost["statuesAverage"].as_u64(),
+                    "character {ci} statue {index} target {target} average statues"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn a_save_without_royal_guardian_data_keeps_flair_neutral() {
+    let imported = import(&save_with(json!([[5, 0.0]]), None)).expect("the save imports");
+    let leveling = imported.statues.leveling();
+    assert!(!leveling.flair_available);
+    assert_eq!(leveling.flair_level(0), 0);
+    assert_eq!(leveling.flair_multiplier(0), 1.0);
+    assert!(
+        imported
+            .warnings
+            .iter()
+            .any(|warning| warning.starts_with("RoyalG")),
+        "the missing Flair row is named: {:?}",
+        imported.warnings
+    );
+}
+
+/// A statue save with a STARTUE bubble level at `level` and nothing else.
+fn save_with_bubble(level: f64) -> String {
+    let mut yellow = vec![0.0; 46];
+    yellow[2] = level;
+    let mut cauldron = vec![vec![]; 5];
+    cauldron[3] = yellow;
+    let data = json!({
+        "Research": json!([[]]).to_string(),
+        "Lv0_0": json!([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]).to_string(),
+        "StatueLevels_0": json!(vec![[10.0, 0.0]; statue::count()]).to_string(),
+        "CauldronInfo": json!(cauldron).to_string(),
+    });
+    json!({ "data": data }).to_string()
+}
+
+#[test]
+fn the_startue_bubble_from_the_save_changes_the_estimate() {
+    let plain = import(&save_with_bubble(0.0)).expect("the save imports");
+    let bubbled = import(&save_with_bubble(400.0)).expect("the save imports");
+    let plain_leveling = plain.statues.leveling();
+    let bubbled_leveling = bubbled.statues.leveling();
+    assert_eq!(plain_leveling.retention_pct, 0.0);
+    assert!(bubbled_leveling.retention_pct > 0.0);
+    assert!(bubbled_leveling.retention_pct <= 50.0);
+
+    // One level's bar is always full, so the bubble shows on a multi-level target.
+    let plain_cost =
+        statue::target_cost(&plain.statues, plain_leveling, 0, 0, 20).expect("a target");
+    let bubbled_cost =
+        statue::target_cost(&bubbled.statues, bubbled_leveling, 0, 0, 20).expect("a target");
+    assert!(
+        bubbled_cost.exp_needed < plain_cost.exp_needed,
+        "the bubble lowers the EXP a target needs: {} vs {}",
+        bubbled_cost.exp_needed,
+        plain_cost.exp_needed
+    );
+    assert!(bubbled_cost.statues_guaranteed < plain_cost.statues_guaranteed);
+}
