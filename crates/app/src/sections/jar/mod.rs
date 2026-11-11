@@ -1,20 +1,28 @@
-//! The Jar Calculator section: the upstream Overview and Production tabs.
+//! The Jar Calculator section: the upstream Overview, Production, Rupie Value
+//! and Chances tabs.
 //!
-//! The upstream `jar-calc.html` has nine tabs. JR-01 builds the first two; the
-//! rest arrive with JR-02 to JR-04 and are added to [`Tab::ALL`] then, so the
-//! strip never offers a tab that has nothing behind it.
+//! The upstream `jar-calc.html` has nine tabs. JR-01 and JR-02 build the first
+//! four; the rest arrive with JR-03 and JR-04 and are added to [`Tab::ALL`]
+//! then, so the strip never offers a tab that has nothing behind it.
 
+mod chances;
 mod overview;
 mod production;
+mod rupies;
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
+use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::ScrollArea;
+use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::shell::{TabBar, WindowTab};
+use ely_gpui_component::theme::ActiveTheme as _;
+use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
+};
 
 /// The jar page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -25,15 +33,27 @@ pub enum Tab {
     Overview,
     /// The shared production rate, its multipliers and every slot.
     Production,
+    /// The multiplier every rupie is worth and what a break pays.
+    #[serde(rename = "rupie")]
+    RupieValue,
+    /// The opal, collectible and enchant chances and their tier scaling.
+    Chances,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 2] = [Tab::Overview, Tab::Production];
+    pub const ALL: [Tab; 4] = [
+        Tab::Overview,
+        Tab::Production,
+        Tab::RupieValue,
+        Tab::Chances,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Production => "production",
+            Tab::RupieValue => "rupie",
+            Tab::Chances => "chances",
         }
     }
 
@@ -41,6 +61,8 @@ impl Tab {
         match self {
             Tab::Overview => "Overview",
             Tab::Production => "Production",
+            Tab::RupieValue => "Rupie Value",
+            Tab::Chances => "Chances",
         }
     }
 
@@ -72,6 +94,8 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
                 .child(match tab {
                     Tab::Overview => overview::overview(state, cx),
                     Tab::Production => production::production(state, cx),
+                    Tab::RupieValue => rupies::rupies(state, cx),
+                    Tab::Chances => chances::chances(state, cx),
                 }),
         )
         .into_any_element()
@@ -89,6 +113,71 @@ fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
             entity.update(cx, |state, cx| state.set_jar_tab(tab, cx));
         }
     })
+}
+
+/// A KPI figure with its value scaled to `K`/`M`/`B`, so a cavern-sized
+/// multiplier still fits the card.
+pub(super) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
+    let (scaled, suffix) = crate::ui::format::scaled(value);
+    let statistic = Statistic::new(id, label, scaled).decimals(2);
+    match suffix.is_empty() {
+        true => statistic,
+        false => statistic.suffix(suffix),
+    }
+}
+
+/// A labelled figure: the automation bridge and screen readers read the
+/// headline as one value instead of walking the card's children.
+fn labelled(
+    id: &'static str,
+    title: &'static str,
+    display: String,
+    body: AnyElement,
+) -> AnyElement {
+    div()
+        .id(id)
+        .role(Role::Label)
+        .aria_label(format!("{title}: {display}"))
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_w(px(200.0))
+        .child(body)
+        .into_any_element()
+}
+
+/// A KPI card wearing its own label, so its figure reads as one value.
+pub(super) fn kpi(
+    id: &'static str,
+    title: &'static str,
+    display: String,
+    statistic: Statistic,
+    caption: impl Into<SharedString>,
+) -> AnyElement {
+    labelled(
+        id,
+        title,
+        display,
+        KpiCard::new(statistic).caption(caption).into_any_element(),
+    )
+}
+
+/// A card whose headline is a formatted string: a chance reads `1 in 1.09M`,
+/// which the numeric statistic cannot show.
+pub(super) fn metric(
+    id: &'static str,
+    title: &'static str,
+    display: String,
+    caption: String,
+    tone: Tone,
+    cx: &Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let body = Card::new()
+        .header(CardHeader::new(title).action(Badge::new(display.clone()).tone(tone)))
+        .child(Caption::new(caption).text_color(muted))
+        .into_any_element();
+    labelled(id, title, display, body)
 }
 
 /// A save without `Holes` has no jar state: say so and offer the import.

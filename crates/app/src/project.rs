@@ -164,11 +164,12 @@ pub struct CogConfig {
     goal: CogGoal,
 }
 
-/// The Jar section's config: its tab.
+/// The Jar section's config: its tab and the tier the rupie value projects.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct JarConfig {
     tab: JarTab,
+    tier: u32,
 }
 
 /// The combat simulator's config: the selected character, its tab and the named
@@ -292,7 +293,13 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             goal: state.cog.goal,
         }),
     );
-    insert("jar", value(&JarConfig { tab: state.jar_tab }));
+    insert(
+        "jar",
+        value(&JarConfig {
+            tab: state.jar_tab,
+            tier: state.jar_tier,
+        }),
+    );
     insert("stats-all", value(&state.stats_all.context));
     insert(
         "ladle",
@@ -612,6 +619,7 @@ pub fn assign(
         }
         Config::Jar(config) => {
             state.jar_tab = config.tab;
+            state.jar_tier = config.tier.min(idleon_core::jar::INCOME_TIERS - 1);
         }
         Config::Ladle(config) => {
             let characters = state
@@ -958,8 +966,17 @@ mod tests {
         assert_eq!(cog.goal, CogGoal::Flaggy);
         let jar = round_trip(&JarConfig {
             tab: JarTab::Production,
+            tier: 3,
         });
         assert_eq!(jar.tab, JarTab::Production);
+        assert_eq!(jar.tier, 3);
+        // The rupie tab keeps its upstream `rupie` name, not the enum's.
+        let rupies = round_trip(&JarConfig {
+            tab: JarTab::RupieValue,
+            tier: 2,
+        });
+        assert_eq!(rupies.tab, JarTab::RupieValue);
+        assert_eq!(rupies.tier, 2);
         let prism = round_trip(&PrismaConfig {
             character: 2,
             cauldron: "kazam".into(),

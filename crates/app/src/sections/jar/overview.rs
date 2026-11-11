@@ -1,8 +1,9 @@
 //! The Overview tab: the jar summary, the rupie balances and the cavern's state.
 
+use crate::sections::jar::metric;
 use crate::state::AppState;
 use crate::ui::format;
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
+use ely_gpui_component::data_display::{KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::Severity;
@@ -227,35 +228,14 @@ fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
             "Pick a collectible in game to target it".into(),
         ),
     };
-    div()
-        .id("jar-state")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(card("jar-gilded", "Gilded bonus", gilded, cx))
-        .child(card("jar-break-all", "Break All", break_all, cx))
-        .child(card("jar-target", "Targeted enchant", target, cx))
-        .into_any_element()
-}
-
-/// One state card: its name, its value as a badge, and a line of context.
-fn card(
-    id: &'static str,
-    label: &'static str,
-    (value, tone, caption): (String, Tone, String),
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    div()
-        .id(id)
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_w(px(240.0))
-        .child(
-            Card::new()
-                .header(CardHeader::new(label).action(Badge::new(value).tone(tone)))
-                .child(Caption::new(caption).text_color(muted)),
-        )
-        .into_any_element()
+    let cards = [
+        ("jar-gilded", "Gilded bonus", gilded),
+        ("jar-break-all", "Break All", break_all),
+        ("jar-target", "Targeted enchant", target),
+    ];
+    let mut row = div().id("jar-state").flex().flex_wrap().gap_3();
+    for (id, label, (value, tone, caption)) in cards {
+        row = row.child(metric(id, label, value, caption, tone, cx));
+    }
+    row.into_any_element()
 }
