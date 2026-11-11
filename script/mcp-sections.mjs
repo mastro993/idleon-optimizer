@@ -117,6 +117,26 @@ const worshipSave = () => {
   });
 };
 
+/// A small flat `save.json` with a levelled warrior, an equipped helmet and a
+/// weapon slot holding a key the item catalog does not know, so the loadout
+/// editor loads saved defaults, its totals move and its flags fire.
+const combatSave = () => {
+  const armor = Array(16).fill('');
+  armor[0] = 'EquipmentHats1';
+  armor[1] = 'NotAnItem';
+  return JSON.stringify({
+    Research: '[]',
+    charNames: ['Ana'],
+    Lv0_0: JSON.stringify([120]),
+    CharacterClass_0: 7,
+    EquipOrder_0: JSON.stringify([armor, Array(7).fill(''), []]),
+    EMm0_0: JSON.stringify({ 0: { STR: 2, Defence: 4 }, 1: { Weapon_Power: 3 } }),
+    EMm1_0: '{}',
+    SL_0: JSON.stringify({ 0: 5, 3: 2 }),
+    SM_0: JSON.stringify({ 0: 20, 3: 10 }),
+  });
+};
+
 /// A project document as the app writes it: the research state, the
 /// supplements, one config per section and the section the window was on.
 const projectDocument = () =>
@@ -234,6 +254,62 @@ const INTERACTIONS = {
     if (!levels.includes('160')) throw new Error(`endgame: totalLevels reads ${levels}`);
     const after = labelOf(nodes, 'endgame-verdict');
     if (after !== 'NO') throw new Error(`endgame: expected NO after a save, got ${after}`);
+  },
+  'combat-sim': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'combat-sim: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: combatSave() });
+    await waitForNode(lane, 'import-format', 'combat-sim: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the loadout loads');
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'combat-slot-0-0') ?? '').includes('Farmer Brim') &&
+        (labelOf(nodes, 'combat-issues') ?? '').includes('NotAnItem'),
+      'combat-sim: saved gear loads and the unknown item is flagged',
+    );
+    // Pick the weapon slot, then the first weapon the picker offers.
+    await lane.call('click_element', { id: 'combat-slot-0-1' });
+    await waitForNode(lane, 'combat-item-select', 'combat-sim: the slot detail opens');
+    await lane.call('focus_element', { id: 'combat-item-select' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const power = /Weapon Power (\d+)/.exec(labelOf(nodes, 'combat-summary') ?? '');
+        return (
+          !(labelOf(nodes, 'combat-slot-0-1') ?? '').includes('NotAnItem') &&
+          power !== null &&
+          Number(power[1]) > 0
+        );
+      },
+      'combat-sim: picking an item updates the totals and clears the flag',
+    );
+    // A talent edit moves the summary on the next frame.
+    await lane.call('click_element', { id: 'talents' });
+    await waitForNode(lane, 'combat-talent-0', 'combat-sim: the talent table opens');
+    await lane.call('click_element', { id: 'combat-talent-0-more' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('6 talent points'),
+      'combat-sim: a talent edit updates the summed points',
+    );
+    // The working loadout saves as a named preset.
+    await lane.call('click_element', { id: 'combat-preset-name' });
+    await lane.call('type_text', { text: 'Bossing' });
+    await lane.call('click_element', { id: 'combat-preset-save' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'combat-preset-0') ?? '').includes('Bossing'),
+      'combat-sim: the preset is saved',
+    );
+    await lane.call('click_element', { id: 'gear' });
+    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
   },
   shadow: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

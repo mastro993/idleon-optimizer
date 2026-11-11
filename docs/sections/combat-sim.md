@@ -5,10 +5,19 @@
 - Milestone: `M2`
 - Section key: `combat-sim`
 - Group: `general`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port the active combat simulator: loadout editor, mechanics overrides, component terms, encounter simulation, comparisons, Killroy, obols, cards, kills-over-time and replays.
+
+## Current build
+
+- CS-01 ships the loadout editor: the character picker, the 16 armor and 7 tool slots with their saved `EMm` upgrade deltas, and the talent table read from `SL_<n>`/`SM_<n>` (`readEquipment`, `readTalents` in `combat-sim-setup.js`).
+- Item pickers read the extracted `crates/core/data/combat.json` catalog (871 wearable items) and filter by the upstream `ARMOR_TYPES`/`TOOL_TYPEGEN` slot rules; `script/extract-combat-data.mjs` regenerates it from the upstream `ITEMS` table.
+- Every edit recomputes the gear totals the header shows: weapon power, defence, the class main stat and the summed talent points, so the summary always matches the editor. It is the simulator's input preview; DPS/TTK output arrives with the encounter run.
+- Missing or invalid equipment is flagged: an item key outside the catalog, an item in the wrong slot family, a level or class requirement the character misses, and a saved talent level above its saved maximum.
+- Named loadouts are presets of item keys and talent levels. They live in the project JSON under `sections.combat-sim` and survive an export/import round trip; applying one replaces the working loadout like equipping each slot by hand.
+- Neutral this build: mechanics overrides (CS-02), the encounter run and its result tabs (CS-03 to CS-06) and replays (CS-07).
 
 ## Upstream sources
 
@@ -132,6 +141,7 @@ Acceptance:
 
 ## Verification
 
-- Combat fixtures match upstream damage and kill counts.
-- Replay harness takes a screenshot.
-- Asset manifest covers every referenced file.
+- The loadout readers match upstream `readEquipment`/`readTalents` on the committed synthetic save.
+- The item catalog covers every equipped item in that save and every slot has picker options.
+- Presets round-trip through the project JSON and refuse another character's loadout.
+- The section harness imports a save, edits an item and a talent, flags an unknown item and saves a preset.
