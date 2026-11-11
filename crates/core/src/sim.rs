@@ -194,6 +194,90 @@ pub fn insight_rate(
         * (1.0 + extra * kal_base)
 }
 
+/// One term of the research AFK gains rate.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AfkTerm {
+    /// What the term is called.
+    pub label: &'static str,
+    /// The percentage points it adds to the AFK gains sum.
+    pub value: f64,
+    /// The grid square it reads, when it is a grid bonus.
+    pub grid_cell: Option<usize>,
+    /// The upstream system or save field behind the value.
+    pub source: &'static str,
+    /// Why the term is missing from the sum, when this build cannot model it.
+    pub unavailable: Option<&'static str>,
+}
+
+impl AfkTerm {
+    fn new(label: &'static str, value: f64, source: &'static str) -> Self {
+        Self {
+            label,
+            value,
+            grid_cell: None,
+            source,
+            unavailable: None,
+        }
+    }
+
+    fn grid(label: &'static str, cell: usize, value: f64) -> Self {
+        Self {
+            grid_cell: Some(cell),
+            ..Self::new(label, value, "Grid")
+        }
+    }
+}
+
+/// The research AFK gains rate, ported from `js/stats/defs/research-afk-gains.js`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AfkRate {
+    /// The share of active EXP the account earns while away, 0 to 1.
+    pub rate: f64,
+    /// The terms that make it up.
+    pub terms: Vec<AfkTerm>,
+}
+
+/// The research AFK gains rate for a full state.
+///
+/// `rate = min(1, 0.01 + sum / 100)`, the upstream descriptor's combine. The
+/// Gambit Milestone 15 term is listed but left out of the sum: its Hole
+/// measurement chain is not modelled yet, so it is reported rather than guessed.
+pub fn afk_rate(sim: &Simulation, ctx: &SimContext) -> AfkRate {
+    let overlay = sim.overlay();
+    let grid = |cell| grid_bonus(&sim.grid, &overlay, cell, ctx);
+    let companion_153 = if ctx.companion_153 {
+        20.0 + 10.0 * ctx.companion_153_level2
+    } else {
+        0.0
+    };
+    let terms = vec![
+        AfkTerm::new("Companion 28", ctx.companion_28, "Companion 28"),
+        AfkTerm::new("Companion 153", companion_153, "Companion 153"),
+        AfkTerm {
+            unavailable: Some("Hole measurements"),
+            ..AfkTerm::new("Gambit Milestone 15", 0.0, "Gambit")
+        },
+        AfkTerm::new("Minehead Floor 1", ctx.minehead(1), "Minehead"),
+        AfkTerm::new("Minehead Floor 10", ctx.minehead(10), "Minehead"),
+        AfkTerm::grid("Grid 71 · Powered Down Research", 71, grid(71)),
+        AfkTerm::grid("Grid 111 · Research AFK Gains", 111, grid(111)),
+        AfkTerm::new("Sailing artifact 36", ctx.sailing_art36, "Sailing"),
+        AfkTerm::new("Card w7b11", ctx.card_w7b11, "Cards0"),
+        AfkTerm::new("Gem shop 45", 2.0 * ctx.gem_shop_45, "GemItemsPurchased"),
+        AfkTerm::new("Ring of Glory 4", ctx.rog(4), "Sushi"),
+        AfkTerm::new("Ring of Glory 24", ctx.rog(24), "Sushi"),
+    ];
+    let sum: f64 = terms
+        .iter()
+        .filter(|term| term.unavailable.is_none())
+        .map(|term| term.value)
+        .sum();
+    AfkRate {
+        rate: (0.01 + sum / 100.0).min(1.0),
+        terms,
+    }
+}
+
 /// Total research EXP per hour for a full state.
 ///
 /// A port of `simTotalExpWith`: observation EXP times the additive pool and
@@ -763,5 +847,50 @@ mod tests {
         assert!(points.earned > 0);
         assert_eq!(points.spent, sim.grid.spent());
         assert_eq!(points.free, points.earned.saturating_sub(points.spent));
+    }
+
+    #[test]
+    fn the_afk_rate_starts_at_one_percent_and_sums_its_terms() {
+        let (mut sim, mut ctx) = filled();
+        sim.grid = crate::model::GridState::empty();
+        let bare = afk_rate(&sim, &ctx);
+        assert!((bare.rate - 0.01).abs() < 1e-12);
+        assert!(
+            bare.terms
+                .iter()
+                .any(|term| term.label == "Gambit Milestone 15" && term.unavailable.is_some())
+        );
+        ctx.companion_28 = 30.0;
+        ctx.minehead = vec![0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0];
+        ctx.sailing_art36 = 5.0;
+        ctx.card_w7b11 = 1.0;
+        ctx.gem_shop_45 = 10.0;
+        let rate = afk_rate(&sim, &ctx);
+        let sum: f64 = rate
+            .terms
+            .iter()
+            .filter(|term| term.unavailable.is_none())
+            .map(|term| term.value)
+            .sum();
+        assert!((rate.rate - (0.01 + sum / 100.0).min(1.0)).abs() < 1e-12);
+        let term = |label: &str| {
+            rate.terms
+                .iter()
+                .find(|term| term.label == label)
+                .map(|term| term.value)
+        };
+        assert_eq!(term("Companion 28"), Some(30.0));
+        assert_eq!(term("Minehead Floor 1"), Some(2.0));
+        assert_eq!(term("Minehead Floor 10"), Some(3.0));
+        assert_eq!(term("Sailing artifact 36"), Some(5.0));
+        assert_eq!(term("Card w7b11"), Some(1.0));
+        assert_eq!(term("Gem shop 45"), Some(20.0));
+    }
+
+    #[test]
+    fn the_afk_rate_caps_at_one() {
+        let (sim, mut ctx) = filled();
+        ctx.companion_28 = 1_000.0;
+        assert_eq!(afk_rate(&sim, &ctx).rate, 1.0);
     }
 }

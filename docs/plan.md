@@ -263,12 +263,15 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Section status
 
-Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: grid,
-shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import,
-projection chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the
-five extra tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead,
-Sushi Station), target-aware simulation, strategy comparison, complete save-derived multipliers,
-state export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
+Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: the
+dashboard (summary, grid and observation previews, EXP/AFK/insight breakdowns and the grid-point
+split), grid, shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements,
+save import, projection chart, keyboard, canvas dragging and the shared searchable EXP formula tree.
+The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
+lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observation Unlocks, Shape
+Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy comparison,
+complete save-derived multipliers, state export/import and undo.
+Details: [`docs/sections/research.md`](sections/research.md).
 
 The Clamworks section implements CW-01: the overview with the pearl-value breakdown, every pearl
 upgrade and the upstream priority ranking, plus save decoding for pearl balance, upgrade levels,

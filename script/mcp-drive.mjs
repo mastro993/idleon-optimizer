@@ -125,7 +125,36 @@ try {
   await call('type_text', { text: 'research' });
   await waitFor((current) => has(current, 'card-research'), 'search finds research');
   await call('click_element', { id: 'card-research' });
-  await waitFor((current) => has(current, 'cell-129'), 'research card opens the grid');
+  await waitFor(
+    (current) => has(current, 'research-dashboard'),
+    'research card opens the dashboard',
+  );
+  nodes = await tree();
+  check(
+    'the dashboard renders its six blocks',
+    ['dash-kpis', 'dash-grid', 'dash-observations', 'dash-exp-formula', 'dash-afk-formula', 'dash-insight-formula']
+      .every((id) => has(nodes, id)),
+    nodes.map((node) => node.id).filter(Boolean).join(' '),
+  );
+  check(
+    'the summary names the loaded rate',
+    (labelOf(nodes, 'dash-kpis') ?? '').includes('/hr'),
+    String(labelOf(nodes, 'dash-kpis')),
+  );
+  // The grid preview links to the editor and selects the square it was clicked on.
+  await call('click_element', { id: 'dash-cell-129' });
+  await waitFor(
+    (current) => (labelOf(current, 'square-name') ?? '').includes('J6'),
+    'the grid preview opens the editor on its square',
+  );
+  // The observation preview links to the rates editor and names its selection.
+  await call('click_element', { id: 'dashboard' });
+  await waitFor((current) => has(current, 'research-dashboard'), 'the dashboard tab reopens');
+  await call('click_element', { id: 'dash-obs-0' });
+  await waitFor(
+    (current) => (labelOf(current, 'observations-selected') ?? '').startsWith('Selected:'),
+    'the observation preview opens the rates editor on its observation',
+  );
 
   // The router keeps the section's own state and remembers the last section:
   // switch tabs, leave with the back shortcut, resume the same tab.
@@ -363,6 +392,8 @@ try {
   await call('type_text', { text: 'research' });
   await waitFor((current) => has(current, 'card-research'), 'search finds research again');
   await call('click_element', { id: 'card-research' });
+  await waitFor((current) => has(current, 'research-dashboard'), 'research reopens on its dashboard');
+  await call('click_element', { id: 'rates' });
   await waitFor((current) => has(current, 'kpi-row'), 'the research rates pane reopens');
 
   // A paste that cannot parse only replaces the message: no Apply, run untouched.

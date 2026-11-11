@@ -1,9 +1,12 @@
-//! The Research Optimizer section: its upstream tab strip and the three panes.
+//! The Research Optimizer section: its upstream tab strip and its panes.
 
+pub mod dashboard;
 pub mod grid;
 mod inspector;
 mod optimizer;
 mod rates;
+
+pub use dashboard::Trees;
 
 use crate::state::AppState;
 use crate::ui::format;
@@ -13,12 +16,14 @@ use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, Window, div, px};
 
-/// The research page's three upstream tabs.
+/// The research page's tabs; the dashboard opens first, as upstream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Tab {
-    /// Grid canvas, shape list and node inspector.
+    /// Summary, grid and observation previews and the breakdown trees.
     #[default]
+    Dashboard,
+    /// Grid canvas, shape list and node inspector.
     Grid,
     /// Rate breakdown and the observation board.
     Rates,
@@ -27,10 +32,11 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Grid, Tab::Rates, Tab::Run];
+    pub const ALL: [Tab; 4] = [Tab::Dashboard, Tab::Grid, Tab::Rates, Tab::Run];
 
     pub fn id(self) -> &'static str {
         match self {
+            Tab::Dashboard => "dashboard",
             Tab::Grid => "grid",
             Tab::Rates => "rates",
             Tab::Run => "run",
@@ -39,6 +45,7 @@ impl Tab {
 
     pub fn label(self) -> &'static str {
         match self {
+            Tab::Dashboard => "Dashboard",
             Tab::Grid => "Grid",
             Tab::Rates => "Rates",
             Tab::Run => "Optimize",
@@ -68,6 +75,8 @@ pub struct State {
     pub shape_drag: Option<ShapeDrag>,
     /// The shape whose row or polygon was last picked.
     pub selected_shape: Option<usize>,
+    /// The observation the dashboard preview last opened.
+    pub selected_observation: Option<usize>,
 }
 
 /// Register the grid's shortcuts: arrows, `+`/`-` and Escape.
@@ -139,6 +148,14 @@ fn pane(
     tab: Tab,
 ) -> AnyElement {
     match tab {
+        Tab::Dashboard => div()
+            .id("pane-dashboard")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(dashboard::dashboard_pane(state, window, cx))
+            .into_any_element(),
         Tab::Grid => {
             let grid = grid::grid_pane(state, window, cx).into_any_element();
             let inspector = inspector::inspector_pane(state, window, cx).into_any_element();

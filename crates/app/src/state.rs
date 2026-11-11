@@ -197,6 +197,8 @@ pub struct AppState {
     pub(crate) worship_optimize: Entity<TaskRunner<SearchOutcome, OptimizeRunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
+    /// The research dashboard's four breakdown trees.
+    pub research_trees: crate::sections::research::Trees,
     /// The shared formula tree on the Clamworks overview.
     pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
@@ -384,6 +386,7 @@ impl AppState {
                 cx.notify();
             });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
+        let research_trees = crate::sections::research::Trees::new(window, cx);
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let focus = cx.focus_handle();
@@ -431,6 +434,7 @@ impl AppState {
             worship_plan,
             worship_optimize,
             breakdown,
+            research_trees,
             clamworks_breakdown,
             shadow: Shadow::default(),
             focus,
@@ -999,6 +1003,21 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    /// Open the Grid editor on a square the dashboard preview picked.
+    pub fn open_grid_cell(&mut self, cell: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.research.tab = Tab::Grid;
+        self.research.selected_cell = Some(cell);
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Open the Rates editor on an observation the dashboard preview picked.
+    pub fn open_observation(&mut self, obs: usize, cx: &mut Context<Self>) {
+        self.research.tab = Tab::Rates;
+        self.research.selected_observation = Some(obs);
         cx.notify();
     }
 

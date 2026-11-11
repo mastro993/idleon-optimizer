@@ -172,6 +172,50 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert!((rate.obs_base - 464_661.605_531_104_6).abs() < 1e-6);
     assert!((rate.total / 14_315_743_085.962_536 - 1.0).abs() < 1e-4);
 
+    // The dashboard reads the same rate, and its AFK terms come from this save.
+    let afk = sim::afk_rate(simulation, context);
+    assert!((context.companion_28 - 0.0).abs() < 1e-9);
+    assert!((context.companion_153_level2 - 0.0).abs() < 1e-9);
+    assert!((context.sailing_art36 - 5.0).abs() < 1e-9);
+    assert!((context.card_w7b11 - 1.0).abs() < 1e-9);
+    assert!((context.gem_shop_45 - 10.0).abs() < 1e-9);
+    // Upstream reports 0.55362 with the Gambit Milestone's 3%; this build lists
+    // that term as not modelled and leaves it out.
+    assert!((afk.rate - 0.523_62).abs() < 1e-9, "{}", afk.rate);
+    let summary = idleon_core::dashboard::summary(simulation, context);
+    assert!((summary.active_rate - rate.total).abs() < 1e-6);
+    assert!((summary.offline_rate / 7_496_009_394.671_702 - 1.0).abs() < 1e-4);
+    assert!((summary.exp_required / 573_434_105_600_703_300.0 - 1.0).abs() < 1e-9);
+    assert!((summary.hours_active / 21_867_825.609_115_824 - 1.0).abs() < 1e-4);
+    assert!((summary.afk_rate - 0.523_62).abs() < 1e-9);
+    assert_eq!(summary.mag_cap, 4);
+    assert_eq!(summary.magnifiers, 17);
+
+    let insight = idleon_core::dashboard::insight_multiplier(simulation, context);
+    assert!((insight.grid_92 - 68.175).abs() < 1e-9);
+    assert!((insight.grid_91 - 5.454).abs() < 1e-9);
+    assert!((insight.emperor_pct - 35.0).abs() < 1e-9);
+    assert!((insight.jelly_pct - 40.0).abs() < 1e-9);
+    assert!((insight.multi - 3.281_588_1).abs() < 1e-9);
+    assert!((insight.per_monocle - 9.844_764_3).abs() < 1e-9);
+
+    let cards = idleon_core::dashboard::observations(simulation, context);
+    assert_eq!(cards.len(), 43);
+    let board_exp: f64 = cards.iter().map(|card| card.exp).sum();
+    assert!((board_exp / rate.total - 1.0).abs() < 1e-9);
+    let card = |obs: usize| cards.iter().find(|card| card.obs == obs).expect("a card");
+    assert!((card(40).exp / 3_189_669_459.531_201 - 1.0).abs() < 1e-4);
+    assert!((card(42).exp / 11_126_073_626.431_335 - 1.0).abs() < 1e-4);
+    assert!((card(37).insight - 39.379_057_2).abs() < 1e-7);
+    assert_eq!(card(37).monocles, 4);
+    assert_eq!(card(34).kaleidoscopes, 4);
+
+    let points = idleon_core::dashboard::grid_points(simulation, context);
+    assert_eq!(points.every_ten, 36);
+    assert_eq!(points.account_sources, 18);
+    assert_eq!(points.points.earned, 176);
+    assert_eq!(points.points.free, 6);
+
     // The terms the save cannot supply are named instead of guessed.
     assert!(
         imported

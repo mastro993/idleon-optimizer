@@ -140,6 +140,10 @@ pub struct SimContext {
     pub extra_pct: f64,
     /// Companion 52's bonus, already folded with companion 153's.
     pub companion_52: f64,
+    /// Companion 28's bonus, the research AFK gains term.
+    pub companion_28: f64,
+    /// Companion 153's second level, worth another +10% AFK gains.
+    pub companion_153_level2: f64,
     /// The sticker bonus before the crown multiplier.
     pub sticker_fixed: f64,
     /// Rat King crowns found, which scale the sticker.
@@ -202,6 +206,12 @@ pub struct SimContext {
     pub bundle_ban_k: bool,
     /// Sailing artifact 37, capped at ten grid points.
     pub sailing_art37: f64,
+    /// Sailing artifact 36, the research AFK gains term (capped at 6).
+    pub sailing_art36: f64,
+    /// Card `w7b11`'s level, the pirate deckhand AFK term (capped at 10).
+    pub card_w7b11: f64,
+    /// Gem shop slot 45 (`GemItemsPurchased[45]`), worth 2% AFK each.
+    pub gem_shop_45: f64,
     /// W7 task board research grid points.
     pub task_grid_points: f64,
     /// Jelly rewards 4 and 57, flat grid points.
@@ -224,6 +234,8 @@ impl Default for SimContext {
             all_bonus_multi: 1.0,
             extra_pct: 0.0,
             companion_52: 1.0,
+            companion_28: 0.0,
+            companion_153_level2: 0.0,
             sticker_fixed: 0.0,
             boony_count: 0.0,
             event_shop_37: 0.0,
@@ -255,6 +267,9 @@ impl Default for SimContext {
             bundle_ban_m: false,
             bundle_ban_k: false,
             sailing_art37: 0.0,
+            sailing_art36: 0.0,
+            card_w7b11: 0.0,
+            gem_shop_45: 0.0,
             task_grid_points: 0.0,
             jelly_grid_points: 0.0,
             spellunky_upg7: 0.0,
