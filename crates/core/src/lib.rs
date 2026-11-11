@@ -25,6 +25,7 @@ pub mod formula;
 pub mod import;
 pub mod jar;
 pub mod killroy;
+pub mod ladle;
 pub mod model;
 pub mod monument;
 pub mod optimize;

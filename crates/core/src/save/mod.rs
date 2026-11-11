@@ -106,6 +106,8 @@ pub struct Imported {
     pub clamworks: Clamworks,
     /// The Jar Cavern state, when the save carries its `Holes` rows.
     pub jar: Option<Jar>,
+    /// The ladle optimizer's per-character Cooking state and counts.
+    pub ladle: Option<crate::ladle::Ladle>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
     /// sections can read raw fields and audit it.
     pub save: Save,
@@ -224,7 +226,9 @@ impl Character {
 pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let parsed: Value =
         serde_json::from_str(save_json).map_err(|error| ImportError::NotJson(error.to_string()))?;
-    let root = parsed
+    let document = Save::new(parsed);
+    let root = document
+        .root()
         .as_object()
         .ok_or_else(|| ImportError::NoSaveFields("the top level is not an object".into()))?;
     // `it.json` nests the save under `data`; a plain save is the object itself.
@@ -293,6 +297,12 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
     }
+    let ladle = crate::ladle::Ladle::from_save(&document);
+    if ladle.is_none() {
+        warnings.push(
+            "Lv0_<n>: no character rows in the save; the ladle optimizer has no roster".into(),
+        );
+    }
 
     Ok(Imported {
         simulation,
@@ -303,7 +313,8 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         tree,
         clamworks,
         jar,
-        save: Save::new(parsed),
+        ladle,
+        save: document,
         companion,
         statues,
         coral,

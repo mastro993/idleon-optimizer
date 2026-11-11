@@ -532,6 +532,7 @@ mod tests {
             tree: Default::default(),
             clamworks: Default::default(),
             jar: None,
+            ladle: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),
             companion: None,
             statues: Default::default(),

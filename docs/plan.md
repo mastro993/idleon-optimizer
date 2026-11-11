@@ -1,8 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, Clamworks and
-the combat simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument
-Bravery and the All Stats context built, 16 sections planned.**
+Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks
+and the combat simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done,
+Monument Bravery and the All Stats context built, 14 sections planned.**
 The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
 [`docs/roadmap.json`](roadmap.json); each section's full specification is under [`docs/sections/`](sections/).
 

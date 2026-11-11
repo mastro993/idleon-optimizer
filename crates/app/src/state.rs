@@ -9,6 +9,7 @@ use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::killroy::State as KillroyState;
+use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
@@ -28,6 +29,7 @@ use gpui_mcp::BridgeHandle;
 use idleon_core::farming::Farm;
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
+use idleon_core::ladle::Ladle;
 use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
@@ -170,6 +172,10 @@ pub struct AppState {
     pub jar_tab: JarTab,
     /// The Jar Cavern the loaded save carries, if it has one.
     pub jar: Option<Jar>,
+    /// The ladle optimizer's save-derived roster and counts.
+    pub ladle: Option<Ladle>,
+    /// The ladle section's selectors, panel inputs and formula trees.
+    pub ladle_state: LadleSectionState,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The statue section's saved rows, character and table controls.
@@ -399,6 +405,7 @@ impl AppState {
             });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let research_trees = crate::sections::research::Trees::new(window, cx);
+        let ladle_state = LadleSectionState::new(window, cx);
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let fishing_breakdown =
@@ -432,6 +439,8 @@ impl AppState {
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar: None,
+            ladle: None,
+            ladle_state,
             pickle: PickleState::default(),
             statue,
             combat,
@@ -775,6 +784,9 @@ impl AppState {
         self.farm = imported.farming;
         self.clamworks = imported.clamworks;
         self.jar = imported.jar;
+        self.ladle_state
+            .adopt(&imported.ladle.clone().unwrap_or_default());
+        self.ladle = imported.ladle;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet

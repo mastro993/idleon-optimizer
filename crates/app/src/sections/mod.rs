@@ -18,6 +18,7 @@ pub mod farming;
 pub mod fishing;
 pub mod jar;
 pub mod killroy;
+pub mod ladle;
 pub mod monument;
 pub mod pickle;
 pub mod research;
@@ -302,9 +303,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W4,
         description: "Ladles/day per character, Cooking EXP balloons, meal costs, ladle + NMLB leveling plan",
         spec: "docs/sections/ladle.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: ladle::view,
         keys: no_keys,
     },
     Section {
