@@ -23,8 +23,9 @@ pub fn map(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>
     let scale = scale_for(window, trial);
     let width = trial.scene.w as f32 * scale;
     let height = trial.scene.h as f32 * scale;
-    let view = state.worship.view.clone().unwrap_or_else(RunView::empty);
-    let slots = slots(state);
+    let view = state.worship.display_view();
+    let replaying = state.worship.replaying();
+    let slots = if replaying { Vec::new() } else { slots(state) };
     let selected = state.worship.selected;
     let ranges = state.worship.ranges;
     let manifest = state.assets.clone();
@@ -35,8 +36,9 @@ pub fn map(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>
         .id("worship-map")
         .role(gpui::Role::Group)
         .aria_label(format!(
-            "{} map · wave {} · {} mobs · {} towers",
+            "{} map · {}wave {} · {} mobs · {} towers",
             trial.mob_def.name,
+            if replaying { "replay · " } else { "" },
             view.wave,
             view.mobs.len(),
             view.towers.len()
@@ -102,7 +104,7 @@ pub fn map(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>
             &manifest,
             scale,
             selected == Some(tower.id),
-            entity.clone(),
+            (!replaying).then(|| entity.clone()),
             &colors,
         ));
     }
@@ -148,10 +150,15 @@ pub fn map(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>
         .child(board)
         .child(
             Caption::new(format!(
-                "{}×{} scene at {:.0}% · dots are open slots",
+                "{}×{} scene at {:.0}% · {}",
                 trial.scene.w as u32,
                 trial.scene.h as u32,
-                scale * 100.0
+                scale * 100.0,
+                if replaying {
+                    "recorded replay, no placement".to_string()
+                } else {
+                    "dots are open slots".to_string()
+                }
             ))
             .text_color(colors.fg_muted),
         )
@@ -288,7 +295,7 @@ fn tower_marker(
     manifest: &Manifest,
     scale: f32,
     selected: bool,
-    entity: gpui::Entity<AppState>,
+    entity: Option<gpui::Entity<AppState>>,
     colors: &Palette,
 ) -> AnyElement {
     let size = 44.0 * scale * 1.15;
@@ -314,12 +321,8 @@ fn tower_marker(
         .w(px(size))
         .h(px(size))
         .rounded(px(6.0))
-        .cursor_pointer()
         .when(selected, |marker| {
             marker.border_2().border_color(colors.accent)
-        })
-        .on_click(move |_event, _window, cx| {
-            entity.update(cx, |state, cx| state.worship_select(Some(tower_id), cx));
         })
         .child(
             div()
@@ -333,6 +336,13 @@ fn tower_marker(
                 .text_color(colors.fg)
                 .child(format!("{}", tower.level)),
         );
+    if let Some(entity) = entity {
+        marker = marker
+            .cursor_pointer()
+            .on_click(move |_event, _window, cx| {
+                entity.update(cx, |state, cx| state.worship_select(Some(tower_id), cx));
+            });
+    }
     if let Some(icon) = icon {
         marker = marker.child(img(icon).w(px(size)).h(px(size)));
     }

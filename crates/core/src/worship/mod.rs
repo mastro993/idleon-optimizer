@@ -9,12 +9,17 @@
 //!
 //! Two upstream runtime choices are explicit assumptions here, as they are
 //! there: wizards scan on 100 ms ticks with a 300 ms popup after each cooldown,
-//! and a pulse volley rolls one critical for all of its hits. Replay frames,
-//! phases and the strategy optimizer belong to later feature issues.
+//! and a pulse volley rolls one critical for all of its hits. Plans, phases and
+//! the strategy optimizer belong to later feature issues.
 
+mod replay;
 mod sim;
 
-pub use sim::{EffectKind, EndReason, Inputs, MobView, Placed, Run, RunError, RunView, TowerView};
+pub use replay::{Replay, ReplayConfig, ReplayFrame};
+pub use sim::{
+    CloudView, EffectKind, EndReason, Inputs, KrakenView, MobView, Placed, Run, RunError, RunView,
+    TowerView,
+};
 
 use serde::Deserialize;
 use std::sync::OnceLock;

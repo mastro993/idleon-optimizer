@@ -3,8 +3,9 @@
 //! A port of `createWorshipTdRun` in
 //! `js/stats/systems/w3/worship-td.js`, reduced to what the live simulator
 //! needs: wave countdowns, spawns, mob timers, tower firing, projectiles and
-//! the totem. Plans, phases, replays and the strategy search are later issues.
+//! the totem. Plans, phases and the strategy search are later issues.
 
+use super::{Replay, ReplayConfig, ReplayFrame};
 use super::{
     TICKS_PER_SECOND, Trial, Wave, atom5_bonus, aura_applies, data, distance, geometry, hp_multi,
     kill_credit, kill_exp, new_tower_cost, placement_bands, skip_reward, tower_atkcd,
@@ -510,6 +511,8 @@ pub struct Run {
     next_mob: u64,
     next_object: u64,
     next_tower: u64,
+    tower_version: u64,
+    replay: Option<Recorder>,
     result: Option<RunResult>,
 }
 
@@ -540,6 +543,111 @@ impl Rng {
     }
 }
 
+/// The run's opt-in replay recorder.
+struct Recorder {
+    interval_sec: f64,
+    every: u64,
+    from_wave: u32,
+    max_frames: usize,
+    frames: Vec<ReplayFrame>,
+    tower_sets: Vec<Vec<TowerView>>,
+    set_version: u64,
+}
+
+impl Recorder {
+    fn new(config: ReplayConfig) -> Self {
+        let every = (config.interval_sec * TICKS_PER_SECOND).round().max(1.0) as u64;
+        Self {
+            interval_sec: every as f64 / TICKS_PER_SECOND,
+            every,
+            from_wave: config.from_wave,
+            max_frames: config.max_frames.max(16),
+            frames: Vec::new(),
+            tower_sets: Vec::new(),
+            set_version: u64::MAX,
+        }
+    }
+
+    fn record(&mut self, run: &Run) {
+        if !run.tick.is_multiple_of(self.every) || run.wave < self.from_wave {
+            return;
+        }
+        self.capture(run);
+    }
+
+    fn capture(&mut self, run: &Run) {
+        if run.tower_version != self.set_version {
+            // Replay layouts are static: cooldown and firing state move every
+            // tick and belong to the live run, not to a scrub.
+            let mut towers = run.tower_views();
+            for tower in &mut towers {
+                tower.state = 0;
+                tower.cd = 0.0;
+                tower.cd_max = 0.0;
+                tower.last_fire = None;
+            }
+            self.tower_sets.push(towers);
+            self.set_version = run.tower_version;
+        }
+        self.frames.push(ReplayFrame {
+            tick: run.tick,
+            t: run.tick as f64 / TICKS_PER_SECOND,
+            wave: run.wave,
+            countdown: run.countdown,
+            pts: run.pts,
+            totem: run.totem,
+            set: self.tower_sets.len().saturating_sub(1),
+            mobs: run.mob_views(),
+            clouds: run.cloud_views(),
+            krakens: run.kraken_views(),
+        });
+        if self.frames.len() > self.max_frames {
+            self.every *= 2;
+            self.interval_sec = self.every as f64 / TICKS_PER_SECOND;
+            let every = self.every;
+            self.frames.retain(|frame| frame.tick.is_multiple_of(every));
+        }
+    }
+
+    fn finish(&mut self, run: &Run) {
+        if self
+            .frames
+            .last()
+            .is_none_or(|frame| frame.tick != run.tick)
+        {
+            self.capture(run);
+        }
+    }
+
+    fn replay(&self, run: &Run) -> Replay {
+        // Drop tower sets no frame references, renumbering the rest.
+        let mut tower_sets: Vec<Vec<TowerView>> = Vec::new();
+        let mut mapping = vec![None; self.tower_sets.len()];
+        let mut frames = self.frames.clone();
+        for frame in &mut frames {
+            let compact = match mapping.get(frame.set).copied().flatten() {
+                Some(index) => index,
+                None => {
+                    let index = tower_sets.len();
+                    tower_sets.push(self.tower_sets.get(frame.set).cloned().unwrap_or_default());
+                    if let Some(slot) = mapping.get_mut(frame.set) {
+                        *slot = Some(index);
+                    }
+                    index
+                }
+            };
+            frame.set = compact;
+        }
+        Replay::new(
+            self.interval_sec,
+            frames,
+            tower_sets,
+            run.finished,
+            run.finished.then_some(run.end_reason),
+        )
+    }
+}
+
 const TRAIT_RECIPE: &str = "AAAAAAAAAAAA";
 const STALL_SEC: f64 = 120.0;
 const PUSH_TICKS: u64 = 6;
@@ -547,6 +655,25 @@ const PUSH_TICKS: u64 = 6;
 impl Run {
     /// A fresh run on a trial.
     pub fn new(inputs: Inputs, trial_index: usize, seed: u64) -> Self {
+        Self::new_inner(inputs, trial_index, seed, None)
+    }
+
+    /// A fresh run that records a replay at `config`'s interval.
+    pub fn new_with_replay(
+        inputs: Inputs,
+        trial_index: usize,
+        seed: u64,
+        config: ReplayConfig,
+    ) -> Self {
+        Self::new_inner(inputs, trial_index, seed, Some(config))
+    }
+
+    fn new_inner(
+        inputs: Inputs,
+        trial_index: usize,
+        seed: u64,
+        replay: Option<ReplayConfig>,
+    ) -> Self {
         let max_ticks = (4.0 * 3600.0 * TICKS_PER_SECOND) as u64;
         Self {
             pts: inputs.start_pts,
@@ -589,6 +716,8 @@ impl Run {
             next_mob: 0,
             next_object: 0,
             next_tower: 0,
+            tower_version: 0,
+            replay: replay.map(Recorder::new),
             result: None,
         }
     }
@@ -688,6 +817,7 @@ impl Run {
         self.pts -= cost;
         self.spent += cost;
         self.apply_traits();
+        self.tower_version += 1;
         Ok(Placed { id, cost })
     }
 
@@ -743,6 +873,7 @@ impl Run {
         if learned {
             self.apply_traits();
         }
+        self.tower_version += 1;
         Ok(Placed { id, cost })
     }
 
@@ -757,6 +888,7 @@ impl Run {
         let refund = self.towers.remove(index).refund;
         self.pts = (self.pts + refund).round();
         self.apply_traits();
+        self.tower_version += 1;
         Ok(refund)
     }
 
@@ -1481,6 +1613,7 @@ impl Run {
     }
 
     fn step_once(&mut self) {
+        self.record_replay();
         let trial = self.trial();
         if self.tick.is_multiple_of(10) {
             self.countdown = (self.countdown - 1.0).round();
@@ -1874,10 +2007,66 @@ impl Run {
         !self.finished
     }
 
+    /// The run's replay timeline, once it has recorded one.
+    pub fn replay(&mut self) -> Option<Replay> {
+        if self.finished {
+            self.finish_replay();
+        }
+        let recorder = self.replay.as_ref()?;
+        Some(recorder.replay(self))
+    }
+
+    fn record_replay(&mut self) {
+        if let Some(mut recorder) = self.replay.take() {
+            recorder.record(self);
+            self.replay = Some(recorder);
+        }
+    }
+
+    fn finish_replay(&mut self) {
+        if let Some(mut recorder) = self.replay.take() {
+            recorder.finish(self);
+            self.replay = Some(recorder);
+        }
+    }
+
     /// A snapshot for rendering.
     pub fn view(&self) -> RunView {
-        let mobs = self
-            .mobs
+        RunView {
+            tick: self.tick,
+            t: self.tick as f64 / TICKS_PER_SECOND,
+            wave: self.wave,
+            countdown: self.countdown,
+            pts: self.pts,
+            totem: self.totem,
+            done: self.finished,
+            end_reason: self.finished.then_some(self.end_reason),
+            mobs: self.mob_views(),
+            towers: self.tower_views(),
+            boulders: self
+                .boulders
+                .iter()
+                .map(|boulder| BoulderView {
+                    id: boulder.id,
+                    x: boulder.x,
+                    y: self.geom_node_y(boulder.node),
+                    dir: boulder.dir,
+                    born: boulder.born,
+                })
+                .collect(),
+            clouds: self.cloud_views(),
+            krakens: self.kraken_views(),
+            effects: self
+                .effects
+                .iter()
+                .filter(|effect| effect.end >= self.tick)
+                .cloned()
+                .collect(),
+        }
+    }
+
+    fn mob_views(&self) -> Vec<MobView> {
+        self.mobs
             .iter()
             .filter(|mob| !mob.dead)
             .map(|mob| MobView {
@@ -1895,62 +2084,40 @@ impl Run {
                 node: self.trial().path[mob.pi],
                 node_y: self.geom_node_y(self.trial().path[mob.pi]),
             })
-            .collect();
-        RunView {
-            tick: self.tick,
-            t: self.tick as f64 / TICKS_PER_SECOND,
-            wave: self.wave,
-            countdown: self.countdown,
-            pts: self.pts,
-            totem: self.totem,
-            done: self.finished,
-            end_reason: self.finished.then_some(self.end_reason),
-            mobs,
-            towers: self
-                .towers
-                .iter()
-                .map(|tower| self.tower_view(tower))
-                .collect(),
-            boulders: self
-                .boulders
-                .iter()
-                .map(|boulder| BoulderView {
-                    id: boulder.id,
-                    x: boulder.x,
-                    y: self.geom_node_y(boulder.node),
-                    dir: boulder.dir,
-                    born: boulder.born,
-                })
-                .collect(),
-            clouds: self
-                .clouds
-                .iter()
-                .map(|cloud| CloudView {
-                    id: cloud.id,
-                    x: cloud.x,
-                    y: cloud.y,
-                    born: cloud.born,
-                    until: cloud.until,
-                })
-                .collect(),
-            krakens: self
-                .krakens
-                .iter()
-                .map(|kraken| KrakenView {
-                    id: kraken.id,
-                    x: kraken.x,
-                    y: kraken.y,
-                    vx: kraken.vx,
-                    hits: kraken.hits,
-                })
-                .collect(),
-            effects: self
-                .effects
-                .iter()
-                .filter(|effect| effect.end >= self.tick)
-                .cloned()
-                .collect(),
-        }
+            .collect()
+    }
+
+    fn cloud_views(&self) -> Vec<CloudView> {
+        self.clouds
+            .iter()
+            .map(|cloud| CloudView {
+                id: cloud.id,
+                x: cloud.x,
+                y: cloud.y,
+                born: cloud.born,
+                until: cloud.until,
+            })
+            .collect()
+    }
+
+    fn kraken_views(&self) -> Vec<KrakenView> {
+        self.krakens
+            .iter()
+            .map(|kraken| KrakenView {
+                id: kraken.id,
+                x: kraken.x,
+                y: kraken.y,
+                vx: kraken.vx,
+                hits: kraken.hits,
+            })
+            .collect()
+    }
+
+    fn tower_views(&self) -> Vec<TowerView> {
+        self.towers
+            .iter()
+            .map(|tower| self.tower_view(tower))
+            .collect()
     }
 
     fn tower_view(&self, tower: &Tower) -> TowerView {
@@ -1980,6 +2147,9 @@ impl Run {
 
     /// The completed run's totals, computed once.
     pub fn result(&mut self) -> RunResult {
+        if self.finished {
+            self.finish_replay();
+        }
         if let Some(result) = &self.result {
             return result.clone();
         }
