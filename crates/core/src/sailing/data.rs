@@ -94,6 +94,12 @@ pub fn island_cloud_required(idx: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
+/// The captain EXP one trip to an island brings, `0` for an island the data
+/// lacks.
+pub fn island_captain_exp(idx: usize) -> f64 {
+    island(idx).map(|island| island.captain_exp).unwrap_or(0.0)
+}
+
 /// The first artifact index an island can drop.
 pub fn island_artifact_offset(idx: usize) -> usize {
     (0..idx).map(island_artifact_count).sum()

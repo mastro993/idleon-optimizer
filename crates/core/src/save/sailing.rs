@@ -67,6 +67,14 @@ pub(crate) fn import(
                     .collect()
             })
             .unwrap_or_default(),
+        currency_balances: sailing
+            .get(1)
+            .map(|row| {
+                row.iter()
+                    .map(|value| json::number(value).unwrap_or(0.0))
+                    .collect()
+            })
+            .unwrap_or_default(),
     };
     if carries_fleet {
         if boats.is_empty() {
@@ -229,6 +237,7 @@ fn captain(row: &[Value]) -> Captain {
         rarity: number(0).max(0.0).round() as u32,
         bonus_types: [number(1).round() as i32, number(2).round() as i32],
         level: number(3).max(0.0).round() as u32,
+        exp: number(4).max(0.0),
         rolls: [number(5), number(6)],
     }
 }

@@ -1,54 +1,114 @@
-//! Sailing fleet assignment: current versus optimized pairings on one route.
+//! The Sailing Calculator: the upstream fleet, ship, captain and replacement tabs.
+//!
+//! The upstream `sailing-calc.html` has fleet, levels, captains, odds, artifacts,
+//! simulation and formula tabs. SL-01 built the fleet assignment, SL-02 adds the
+//! ship breakpoints, captain quality and replacement matrix; the chest, artifact,
+//! pile and formula tabs arrive with SL-03 and SL-04 and are added to [`Tab::ALL`]
+//! then, so the strip never offers a tab with nothing behind it.
+//!
+//! The assignment controls and the header stay above the strip because every tab
+//! reads the same island, goal and fleet mode, as upstream's own layout does.
+
+mod captains;
+mod fleet;
+mod replacements;
+mod ships;
 
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
-use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
+use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Tooltip};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
+use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::primitives::IconName;
+use ely_gpui_component::shell::{TabBar, WindowTab};
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
 use idleon_core::sailing::{
-    AssignmentMode, FleetPlan, Goal, RouteMetrics, captain_bonus_name, island_artifact_count,
-    island_distance, route_metrics,
+    AssignmentMode, Goal, captain_bonus_name, island_artifact_count, island_distance,
 };
 
 /// The section's own state, kept across dashboard visits.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct State {
+    pub tab: Tab,
     pub mode: AssignmentMode,
     pub island: usize,
     pub goal: Goal,
+    /// Sort the ship tab by the lowest breakpoint ETA instead of by boat.
+    pub sort_by_eta: bool,
 }
 
 impl Default for State {
     fn default() -> Self {
         Self {
+            tab: Tab::Fleet,
             mode: AssignmentMode::Optimized,
             island: 0,
             goal: Goal::Treasure,
+            sort_by_eta: false,
         }
     }
 }
 
-/// The sailing section: controls, the KPI row and the assignment table.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    let table_height = layout::table_height(f32::from(window.viewport_size().height));
-    let comparison = state.fleet_comparison();
-    let plan = match state.sailing_state.mode {
-        AssignmentMode::Optimized => &comparison.optimized,
-        AssignmentMode::Saved => &comparison.saved,
-    };
-    let gain = comparison.gain_pct();
-    let empty = state.fleet.boats.is_empty();
+/// The sailing page's tabs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Tab {
+    /// Current versus optimized captain-to-boat pairings.
+    #[default]
+    Fleet,
+    /// Ship loot and speed breakpoints, costs and ETAs.
+    Ships,
+    /// Captain roll quality, EXP and leveling.
+    Captains,
+    /// The strongest-source replacement matrix.
+    Replacements,
+}
 
+impl Tab {
+    pub const ALL: [Tab; 4] = [Tab::Fleet, Tab::Ships, Tab::Captains, Tab::Replacements];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Tab::Fleet => "fleet",
+            Tab::Ships => "ships",
+            Tab::Captains => "captains",
+            Tab::Replacements => "replacements",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Tab::Fleet => "Fleet",
+            Tab::Ships => "Ships",
+            Tab::Captains => "Captains",
+            Tab::Replacements => "Replacements",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.id() == id)
+    }
+}
+
+/// The sailing section: header, fleet controls, the tab strip and the active tab.
+pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    if state.fleet.boats.is_empty() {
+        return empty(cx);
+    }
+    let table_height = layout::table_height(f32::from(window.viewport_size().height));
+    let tab = state.sailing_state.tab;
+    let body = match tab {
+        Tab::Fleet => fleet::fleet_tab(state, table_height, cx),
+        Tab::Ships => ships::ships_tab(state, table_height, cx),
+        Tab::Captains => captains::captains_tab(state, table_height, cx),
+        Tab::Replacements => replacements::replacements_tab(state, table_height, cx),
+    };
     div()
         .id("sailing-section")
         .flex()
@@ -57,18 +117,33 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .min_h_0()
         .gap_3()
         .child(header(state, cx))
-        .child(kpis(plan, gain, empty, cx))
         .child(controls(state, cx))
+        .child(tabs(state, cx))
         .child(
             div()
-                .id("fleet-body")
+                .id(("sailing-pane", tab as usize))
                 .flex()
                 .flex_col()
                 .flex_1()
                 .min_h_0()
-                .child(table(state, plan, table_height, empty, cx)),
+                .child(body),
         )
         .into_any_element()
+}
+
+/// The upstream tab strip, driven by the state's own tab.
+fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let entity = cx.entity();
+    let mut tabs =
+        TabBar::new("sailing-tabs").selected(SharedString::from(state.sailing_state.tab.id()));
+    for tab in Tab::ALL {
+        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
+    }
+    tabs.on_select(move |id, _window, cx| {
+        if let Some(tab) = Tab::from_id(id.as_ref()) {
+            entity.update(cx, |state, cx| state.set_sailing_tab(tab, cx));
+        }
+    })
 }
 
 fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -86,10 +161,10 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .flex_none()
         .items_center()
         .gap_3()
-        .child(Badge::new("Fleet Assignment").tone(Tone::Accent))
+        .child(Badge::new("Sailing").tone(Tone::Accent))
         .child(
             Caption::new(
-                "Ship levels, chest odds, artifacts and the pile simulation follow in SL-02/SL-03.",
+                "Chest outcomes, artifacts and the pile simulation follow in SL-03/SL-04.",
             )
             .text_color(muted),
         )
@@ -104,121 +179,7 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-fn kpis(plan: &FleetPlan, gain: f64, empty: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mode = plan.mode.label();
-    let pairings = plan.routes.len();
-    let gain_label = if empty || plan.mode == AssignmentMode::Saved && pairings == 0 {
-        "—".to_string()
-    } else if gain.abs() < 0.005 {
-        "0.00%".to_string()
-    } else {
-        format!("{gain:+.2}%")
-    };
-    let minimum = plan
-        .routes
-        .first()
-        .map(|route| route.timing.minimum_minutes)
-        .unwrap_or(0.0);
-    div()
-        .id("fleet-kpis")
-        .role(gpui::Role::Label)
-        .aria_label(format!(
-            "{} fleet · {} pairings · {} treasure/hr · {} artifacts/hr · {} gain",
-            mode,
-            pairings,
-            format::rate(plan.treasure_per_hour()),
-            artifacts(plan.artifact_finds_per_hour()),
-            gain_label
-        ))
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(text_kpi(
-            "fleet-mode",
-            "Fleet assignment",
-            mode,
-            &format!("{pairings} active boat/captain pairings"),
-            muted,
-        ))
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kpi-generated",
-                    "Generated chests/hr",
-                    plan.generated_chests_per_hour(),
-                )
-                .decimals(2),
-            )
-            .caption(format!(
-                "{} kept at tier {}+",
-                format::rate(plan.kept_chests_per_hour()),
-                plan.routes
-                    .first()
-                    .map(|route| route.minimum_tier)
-                    .unwrap_or(0)
-            )),
-        )
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "kpi-treasure",
-                    "Direct treasure/hr",
-                    plan.treasure_per_hour(),
-                )
-                .decimals(0),
-            )
-            .caption("generated kept tiers"),
-        )
-        .child(text_kpi(
-            "kpi-artifacts",
-            "Artifact finds/hr",
-            &artifacts(plan.artifact_finds_per_hour()),
-            "expected successful chest opens",
-            muted,
-        ))
-        .child(
-            div().id("fleet-gain").child(
-                KpiCard::new(
-                    Statistic::new("kpi-gain", "Optimized gain", gain)
-                        .decimals(2)
-                        .suffix("%")
-                        .size(TextSize::Lg),
-                )
-                .caption("optimizer versus the save"),
-            ),
-        )
-        .child(
-            KpiCard::new(Statistic::new("kpi-minimum", "Minimum trip", minimum).decimals(0))
-                .caption("minutes; family/shiny travel reductions not modelled"),
-        )
-        .into_any_element()
-}
-
-fn text_kpi(
-    id: &'static str,
-    label: &'static str,
-    value: &str,
-    caption: &str,
-    muted: gpui::Hsla,
-) -> AnyElement {
-    Card::new()
-        .child(
-            div()
-                .id(id)
-                .role(gpui::Role::Label)
-                .aria_label(value.to_string())
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
-                .child(div().text_size(px(20.0)).child(value.to_string()))
-                .child(Caption::new(caption.to_string()).text_color(muted)),
-        )
-        .into_any_element()
-}
-
+/// The shared fleet controls: everything below reads them.
 fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let mode = state.sailing_state.mode;
@@ -330,7 +291,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .flex()
                         .flex_col()
                         .gap_1()
-                        .min_w(px(220.0))
+                        .min_w(gpui::px(220.0))
                         .child(Caption::new("Fleet destination"))
                         .child(island_select),
                 )
@@ -347,7 +308,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .flex()
                         .flex_col()
                         .gap_1()
-                        .min_w(px(140.0))
+                        .min_w(gpui::px(140.0))
                         .child(Caption::new("Minimum chest"))
                         .child(tier_select),
                 ),
@@ -355,161 +316,50 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-fn table(
-    state: &AppState,
-    plan: &FleetPlan,
-    table_height: gpui::Pixels,
-    empty: bool,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    if empty {
-        let entity = cx.entity();
-        return Card::new()
-            .header(CardHeader::new("Fleet assignment"))
-            .child(
-                EmptyState::new("fleet-empty", IconName::Map, "No sailing fleet loaded")
-                    .body("Import a save with boats and captains to compare the current pairings with the optimizer.")
-                    .action(
-                        Button::new("fleet-import", "Import a save")
-                            .icon(IconName::Upload)
-                            .on_click(move |_event, window, cx| {
-                                entity.update(cx, |state, cx| state.open_import(window, cx));
-                            }),
-                    ),
-            )
-            .into_any_element();
-    }
-
-    let mut table = Table::new([
-        "Boat",
-        "Captain",
-        "Route",
-        "Trip",
-        "Chest/hr",
-        "Base chest",
-        "Treasure/hr",
-        "Artifact/hr",
-        "Best route",
-    ]);
-    for route in &plan.routes {
-        let best = best_island(state, route);
-        let captain = route
-            .captain
-            .map(|captain| captain_short(state, captain))
-            .unwrap_or_else(|| "—".to_string());
-        let details = route
-            .captain
-            .map(|captain| captain_details(state, captain))
-            .unwrap_or_else(|| "No captain".to_string());
-        table = table.row([
-            div()
-                .child(format!("Boat {}", route.boat + 1))
-                .into_any_element(),
-            div()
-                .id(("fleet-captain", route.boat))
-                .tooltip(Tooltip::text(details))
-                .child(captain)
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "Island {} · {}",
-                    route.island + 1,
-                    format::rate(route.timing.distance)
-                ))
-                .into_any_element(),
-            div()
-                .child(trip(route.timing.trip_seconds))
-                .into_any_element(),
-            div()
-                .child(format!("{:.2}", route.generated_chests_per_hour))
-                .into_any_element(),
-            div()
-                .child(format::rate(route.loot.value))
-                .into_any_element(),
-            div()
-                .child(format::rate(route.treasure_per_hour))
-                .into_any_element(),
-            div()
-                .child(artifacts(route.artifact_finds_per_hour))
-                .into_any_element(),
-            div()
-                .child(match best {
-                    Some(route) => {
-                        let score = route.score(plan.goal);
-                        let value = if plan.goal == Goal::Artifact {
-                            artifacts(score)
-                        } else {
-                            format::rate(score)
-                        };
-                        format!("Island {} · {}", route.island + 1, value)
-                    }
-                    None => "—".into(),
-                })
-                .into_any_element(),
-        ]);
-    }
-
-    let table = ScrollArea::new("fleet-table-scroll")
-        .vertical()
-        .h(table_height)
-        .child(div().min_w_0().child(table));
+/// A save without boats has no fleet: say so and offer the shared import.
+fn empty(cx: &mut Context<AppState>) -> AnyElement {
+    let entity = cx.entity();
     Card::new()
-        .header(CardHeader::new(format!(
-            "{} Fleet Assignment",
-            plan.mode.label()
-        ))
-        .description(format!(
-            "{} pairings · trip rate, boat value, natural tier odds, payouts and artifact odds are included.",
-            plan.routes.len()
-        )))
+        .header(CardHeader::new("Fleet assignment"))
         .child(
-            div()
-                .id("fleet-table")
-                .min_h_0()
-                .overflow_hidden()
-                .p_3()
-                .child(table),
-        )
-        .child(
-            div()
-                .px_3()
-                .pb_2()
-                .text_size(px(11.0))
-                .text_color(cx.theme().colors.fg_muted)
-                .child(
-                    "Current save keeps the stored captain-to-boat pairings. Optimized assigns each captain once to maximise the selected goal. Account-wide loot, speed and artifact multipliers outside the save model are excluded, so absolute rates are a lower bound.",
+            EmptyState::new("fleet-empty", IconName::Map, "No sailing fleet loaded")
+                .body(
+                    "Import a save with boats and captains to compare the current pairings with \
+                     the optimizer.",
+                )
+                .action(
+                    Button::new("fleet-import", "Import a save")
+                        .icon(IconName::Upload)
+                        .on_click(move |_event, window, cx| {
+                            entity.update(cx, |state, cx| state.open_import(window, cx));
+                        }),
                 ),
         )
         .into_any_element()
 }
 
-/// The best island for one pairing under the plan's goal.
-fn best_island(state: &AppState, route: &RouteMetrics) -> Option<RouteMetrics> {
-    let available = state.fleet.available_islands().max(1);
-    (0..available)
-        .map(|island| {
-            route_metrics(
-                &state.fleet,
-                route.boat,
-                island,
-                route.captain,
-                &state.sailing,
-            )
-        })
-        .max_by(|a, b| {
-            a.score(state.sailing_state.goal)
-                .total_cmp(&b.score(state.sailing_state.goal))
-        })
+/// A, B, … Z, AA, AB, … as upstream labels captains.
+pub(super) fn captain_code(index: usize) -> String {
+    let mut value = index + 1;
+    let mut code = String::new();
+    while value > 0 {
+        value -= 1;
+        code.insert(0, (b'A' + (value % 26) as u8) as char);
+        value /= 26;
+    }
+    code
 }
 
-fn captain_short(state: &AppState, captain: usize) -> String {
+/// `Captain B · Lv20`, the fleet table's short label.
+pub(super) fn captain_short(state: &AppState, captain: usize) -> String {
     let Some(entry) = state.fleet.captains.get(captain) else {
         return "—".into();
     };
     format!("{} · Lv{}", captain_code(captain), entry.level)
 }
 
-fn captain_details(state: &AppState, captain: usize) -> String {
+/// The tooltip text under a captain label.
+pub(super) fn captain_details(state: &AppState, captain: usize) -> String {
     let Some(entry) = state.fleet.captains.get(captain) else {
         return "No captain".into();
     };
@@ -532,31 +382,8 @@ fn captain_details(state: &AppState, captain: usize) -> String {
     }
 }
 
-/// A, B, … Z, AA, AB, … as upstream labels captains.
-fn captain_code(index: usize) -> String {
-    let mut value = index + 1;
-    let mut code = String::new();
-    while value > 0 {
-        value -= 1;
-        code.insert(0, (b'A' + (value % 26) as u8) as char);
-        value /= 26;
-    }
-    code
-}
-
-fn artifacts(value: f64) -> String {
-    if value <= 0.0 {
-        "—".into()
-    } else if value >= 0.01 {
-        format!("{value:.2}")
-    } else if value >= 1e-4 {
-        format!("{value:.4}")
-    } else {
-        format!("1 in {}", format::rate(1.0 / value))
-    }
-}
-
-fn trip(seconds: f64) -> String {
+/// A trip time as seconds, minutes or hours.
+pub(super) fn trip(seconds: f64) -> String {
     if !seconds.is_finite() {
         return "—".into();
     }
@@ -566,6 +393,42 @@ fn trip(seconds: f64) -> String {
         format!("{:.1}m", seconds / 60.0)
     } else {
         format!("{:.2}h", seconds / 3600.0)
+    }
+}
+
+/// An artifact find rate, reading as a reciprocal once it is tiny.
+pub(super) fn artifacts(value: f64) -> String {
+    if value <= 0.0 {
+        "—".into()
+    } else if value >= 0.01 {
+        format!("{value:.2}")
+    } else if value >= 1e-4 {
+        format!("{value:.4}")
+    } else {
+        format!("1 in {}", crate::ui::format::rate(1.0 / value))
+    }
+}
+
+/// A signed percentage gain.
+pub(super) fn gain(value: f64) -> String {
+    if !value.is_finite() {
+        return "—".into();
+    }
+    if value.abs() < 0.005 {
+        "0.00%".into()
+    } else {
+        format!("{value:+.2}%")
+    }
+}
+
+/// An hours-to-event as a projection, `Ready` once it is already paid for.
+pub(super) fn hours_or_ready(hours: f64) -> String {
+    if hours <= 0.0 {
+        "Ready".into()
+    } else if hours.is_finite() {
+        crate::ui::format::projection(hours)
+    } else {
+        "—".into()
     }
 }
 
@@ -587,5 +450,21 @@ mod tests {
         assert_eq!(trip(90.0), "1.5m");
         assert_eq!(trip(7200.0), "2.00h");
         assert_eq!(trip(f64::INFINITY), "—");
+    }
+
+    #[test]
+    fn tabs_round_trip_through_their_ids() {
+        for tab in Tab::ALL {
+            assert_eq!(Tab::from_id(tab.id()), Some(tab));
+        }
+    }
+
+    #[test]
+    fn gains_and_etas_read_without_noise() {
+        assert_eq!(gain(21.8007531667), "+21.80%");
+        assert_eq!(gain(0.0), "0.00%");
+        assert_eq!(gain(-3.0), "-3.00%");
+        assert_eq!(hours_or_ready(0.0), "Ready");
+        assert_eq!(hours_or_ready(f64::INFINITY), "—");
     }
 }

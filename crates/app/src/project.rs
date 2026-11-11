@@ -21,6 +21,7 @@ use crate::sections::monument::State as MonumentState;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
+use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
@@ -67,15 +68,17 @@ impl Default for ResearchConfig {
     }
 }
 
-/// The sailing section's config: its pairings mode, island, goal and the chest
-/// tier floor that lives on the route context.
+/// The sailing section's config: its tab, pairings mode, island, goal and the
+/// chest tier floor that lives on the route context.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SailingConfig {
+    tab: SailingTab,
     mode: AssignmentMode,
     island: usize,
     goal: Goal,
     minimum_tier: u32,
+    sort_by_eta: bool,
 }
 
 /// The Worship TD section's config: its trial, palette and playback.
@@ -208,10 +211,12 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     insert(
         "sailing",
         value(&SailingConfig {
+            tab: state.sailing_state.tab,
             mode: state.sailing_state.mode,
             island: state.sailing_state.island,
             goal: state.sailing_state.goal,
             minimum_tier: state.sailing.minimum_tier,
+            sort_by_eta: state.sailing_state.sort_by_eta,
         }),
     );
     insert("farming", value(&state.farming));
@@ -438,11 +443,13 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
         }
         Config::Sailing(config) => {
             state.sailing_state = SailingState {
+                tab: config.tab,
                 mode: config.mode,
                 island: config
                     .island
                     .min(state.fleet.available_islands().saturating_sub(1)),
                 goal: config.goal,
+                sort_by_eta: config.sort_by_eta,
             };
             state.sailing.minimum_tier = config.minimum_tier.min(5);
         }
@@ -810,13 +817,17 @@ mod tests {
         assert_eq!(killroy.mode, crate::sections::killroy::Mode::Upgrades);
         assert_eq!(killroy.upgrades, vec![0, 3]);
         let sailing = round_trip(&SailingState {
+            tab: crate::sections::sailing::Tab::Ships,
             mode: AssignmentMode::Saved,
             island: 3,
             goal: Goal::Chests,
+            sort_by_eta: true,
         });
+        assert_eq!(sailing.tab, crate::sections::sailing::Tab::Ships);
         assert_eq!(sailing.mode, AssignmentMode::Saved);
         assert_eq!(sailing.island, 3);
         assert_eq!(sailing.goal, Goal::Chests);
+        assert!(sailing.sort_by_eta);
         let farming = round_trip(&FarmingState {
             selected_plot: 5,
             target_crop: 12,
@@ -1052,8 +1063,10 @@ mod tests {
         let config: SailingState =
             read(&json!({ "island": 2 }), "sailing", &mut warnings).expect("the config reads");
         assert_eq!(config.island, 2);
+        assert_eq!(config.tab, crate::sections::sailing::Tab::Fleet);
         assert_eq!(config.mode, AssignmentMode::Optimized);
         assert_eq!(config.goal, Goal::Treasure);
+        assert!(!config.sort_by_eta);
         assert!(warnings.is_empty(), "{warnings:?}");
     }
 
