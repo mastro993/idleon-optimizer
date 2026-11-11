@@ -173,18 +173,28 @@ fn minimal_save_imports_levels_magnifiers_and_insight() {
     // The account multipliers need fields a minimal save does not carry.
     assert!((imported.context.all_bonus_multi - 1.0).abs() < 1e-9);
     assert!((imported.context.extra_pct - 0.0).abs() < 1e-9);
+    for field in ["Lab", "Tome", "EMm0_0"] {
+        assert!(
+            imported
+                .warnings
+                .iter()
+                .any(|warning| warning.contains(field)),
+            "warnings name {field}: {:?}",
+            imported.warnings
+        );
+    }
     assert!(
         imported
-            .warnings
+            .tree
+            .additive
             .iter()
-            .any(|warning| warning.contains("allBonusMulti")),
-        "warnings name the missing account fields: {:?}",
-        imported.warnings
+            .any(|term| term.name == "Sticker Bonus" && !term.is_omitted()),
+        "the tree is still built"
     );
 }
 
 #[test]
-fn full_save_imports_without_unjustified_warnings() {
+fn full_save_decodes_the_account_terms_it_carries() {
     let imported = import(&full_save().to_string()).expect("the full save imports");
     let simulation = &imported.simulation;
     let context = &imported.context;
@@ -199,21 +209,76 @@ fn full_save_imports_without_unjustified_warnings() {
     assert!((context.server_var_res_xp - 1.2).abs() < 1e-9);
     // Companion 55 (+15) and the two weekly-boss clouds (+2) at one percent each.
     assert!((context.all_bonus_multi - 1.17).abs() < 1e-9);
-    assert!((context.extra_pct - 12.5).abs() < 1e-9);
     // Killroy 1.2, nonstop studies 1.06, Cglunko 1.03, fountain 1.12,
     // companions 52/153 3.6, companion 54 at level two 1.5, RoG 0 2.0.
+    assert!((context.killroy5 - 1.2).abs() < 1e-9);
+    assert!((context.dream14 - 2.0).abs() < 1e-9);
+    assert!((context.cglunko11 - 3.0).abs() < 1e-9);
     assert!(
-        (context.extra_multiplier - 15.847_695_36).abs() < 1e-9,
-        "extra_multiplier is {}",
-        context.extra_multiplier
+        (context.fountain_2_16 - 12.0).abs() < 1e-9,
+        "fountain {}",
+        context.fountain_2_16
     );
-    // Companion 153 (10), RoG 3 (2), sailing art 37 (6), W7 task (2), ban_k (5).
+    assert!((context.companion_52 - 3.6).abs() < 1e-9);
+    assert!(context.companion_153, "companion 153 is owned");
+    assert!((context.companion_54_level2 - 1.0).abs() < 1e-9);
+    assert!((context.rog(0) - 100.0).abs() < 1e-9);
+    assert!((context.rog(3) - 2.0).abs() < 1e-9);
+    // Companion 153 (10), RoG 3 (0 here), sailing art 37 (6), W7 task (2), ban_k (5).
+    assert_eq!(context.sailing_art37, 6.0);
+    assert_eq!(context.task_grid_points, 2.0);
     assert_eq!(context.bonus_grid_points, 25);
-
+    // The tree is built and the terms the save cannot derive are named.
+    assert!(imported.tree.additive_pct > 0.0);
     assert!(
-        imported.warnings.is_empty(),
-        "unknown keys must not warn: {:?}",
+        imported
+            .warnings
+            .iter()
+            .all(|warning| warning.contains(':')),
+        "every warning names its field: {:?}",
         imported.warnings
+    );
+    assert!(
+        imported
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("Lab")),
+        "the missing lab is warned about"
+    );
+}
+
+#[test]
+fn equipment_uq_stats_feed_the_research_multiplier() {
+    let mut save = minimal_save();
+    let data = save["data"]
+        .as_object_mut()
+        .expect("the save sits under data");
+    // A gear roll with no built-in UQ: the saved `UQ1txt` names the stat and
+    // `UQ1val` is the bonus, as `equipment.resolve` scans it.
+    let mut slots = vec![json!({}); 16];
+    slots[15] = json!({ "UQ1txt": "%_RESEARCH_EXP", "UQ1val": 40, "UQ2txt": "0", "UQ2val": 0 });
+    let mut order = vec![json!(""); 16];
+    order[15] = json!("Plain_Hat");
+    // `EquipOrder_<char>` holds the gear row then the tool row.
+    data.insert("EMm0_0".into(), stringified(&Value::Array(slots)));
+    data.insert(
+        "EquipOrder_0".into(),
+        stringified(&json!([Value::Array(order), json!([])])),
+    );
+
+    let imported = import(&save.to_string()).expect("the equipment save imports");
+    // `EtcBonuses(108)` is the UQ value; the multiplier applies it once.
+    assert!(
+        (imported.context.research_equipment_multi - 1.4).abs() < 1e-9,
+        "equipment multiplier is {}",
+        imported.context.research_equipment_multi
+    );
+    assert!(
+        imported
+            .tree
+            .term("Equipment Research EXP")
+            .is_some_and(|term| (term.value - 1.4).abs() < 1e-9),
+        "the tree reports the equipment term"
     );
 }
 
@@ -374,7 +439,8 @@ fn it_json_and_save_json_import_the_same_values() {
         (save_json.context.bonus_grid_points),
         it_json.context.bonus_grid_points
     );
-    assert!((save_json.context.extra_multiplier - it_json.context.extra_multiplier).abs() < 1e-9);
+    assert_eq!(save_json.context, it_json.context);
+    assert_eq!(save_json.tree, it_json.tree);
 }
 
 #[test]
@@ -461,6 +527,7 @@ fn imported_rate_matches_a_hand_built_simulation() {
                 rot: 45.0,
             },
         ],
+        saved_overlay: Some(vec![-1; 240]),
         preset: "_none".into(),
     };
 

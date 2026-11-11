@@ -8,9 +8,10 @@ runs them in a local Rust core, so a shape, magnifier and grid-point pass costs 
 afford a real search instead of a heuristic.
 
 The current build opens on the dashboard and implements the research section, the farming field, the
-Clamworks overview and upgrades, the shadow-ban and endgame checks and the hidden BoneJoePickle
-calculator. The plan covers the full upstream suite: a dashboard that opens every calculator, with
-one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+Clamworks overview and upgrades, the shadow-ban and endgame checks, the hidden BoneJoePickle
+calculator and the Bravery tab of the Monument calculator. The plan covers the full upstream suite:
+a dashboard that opens every calculator, with one milestone per section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -70,8 +71,13 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   format, research level, farm plots, character count and warnings before Apply; the grid levels,
   shape positions, magnifiers, insight, research level/EXP, farm plots, ranks, crops, market levels,
   server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are read
-  from it. Fields the app cannot model are reported as warnings instead of guessed; a save that
-  cannot be read only replaces the message and leaves the run untouched.
+  from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app cannot
+  model are reported as warnings instead of guessed; a save that cannot be read only replaces the
+  message and leaves the run untouched.
+- **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
+  kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
+  milestones with one-character ETAs, and the ten permanent reward levels with their current and
+  next effects. Missing companion or Minehead rows are warned about instead of guessed.
 - **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
   any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
   page shows the save status and the flag it read under the verdict, so it never guesses.
@@ -189,7 +195,8 @@ against this app. Every control in the UI carries a stable id for that purpose (
 
 ```
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
-  data/research.json  extracted from the upstream repo
+  data/research.json  research grid, shapes and observations from upstream
+  data/account.json   account tables for the save-derived multiplier tree
   data/farming.json   seed, market, exotic and rank tables
   data/clamworks.json Clamworks upgrade, Scurge and promotion tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
@@ -213,6 +220,12 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. The same run
 writes `crates/core/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
 the twelve promotion rewards. Re-run it when the upstream tables move.
+
+`crates/core/data/account.json` is the account side of the same port:
+`node script/extract-account-data.mjs <path-to-upstream-repo>` writes the event-shop encoding,
+RoG/minehead/jelly tables, equipment UQ stats, lab and tome tables the multiplier tree reads.
+[`docs/research-multipliers.md`](docs/research-multipliers.md) lists every term, the save field it
+comes from and the two upstream steps that are still omitted.
 
 `crates/core/data/farming.json` comes from `node script/extract-farming-data.mjs
 <path-to-upstream-repo>`: the seven seed families, both market pages, the 80 exotic rows, the twenty
@@ -248,9 +261,10 @@ source references and the credit note stays with the images.
 ## Scope
 
 The current build covers the dashboard, the research grid and its optimizers, the farming field, the
-Clamworks overview and upgrades, save import and the shadow-ban and endgame checks. The roadmap
-covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …); their cards
-open planned-section placeholders until those milestones land.
+Clamworks overview and upgrades, save import, the shadow-ban and endgame checks, the hidden
+BoneJoePickle calculator and the Monument Bravery tab. The roadmap covers all remaining upstream
+sections (combat sim, sailing, cooking, royal guardian, …); their cards open planned-section
+placeholders until those milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
 are ports of `js/stats/systems/w7/clamworks.js`. Save-specific multipliers collapse into
