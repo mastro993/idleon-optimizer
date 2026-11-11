@@ -1,7 +1,7 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue and Clamworks partial, shadow-ban, endgame and
-BoneJoePickle done, Monument Bravery built, 24 sections planned.** The live breakdown is
+Status: **foundation in progress, research, statue, farming and Clamworks partial, shadow-ban,
+endgame and BoneJoePickle done, Monument Bravery built, 23 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
