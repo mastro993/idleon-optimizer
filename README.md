@@ -228,6 +228,10 @@ RoG/minehead/jelly tables, equipment UQ stats, lab and tome tables the multiplie
 [`docs/research-multipliers.md`](docs/research-multipliers.md) lists every term, the save field it
 comes from and the two upstream steps that are still omitted.
 
+`crates/core/data/sailing.json` is generated from the same checkout by
+`node script/extract-sailing-data.mjs <path-to-upstream-repo>`: 41 artifacts with base odds, base
+bonuses and tier bonuses, 17 island distances and artifact counts, and the five captain bonus names.
+
 `crates/core/data/farming.json` comes from `node script/extract-farming-data.mjs
 <path-to-upstream-repo>`: the seven seed families, both market pages, the 80 exotic rows, the twenty
 Land Rank names and unlock ranks, the Ninja Rank bases and the five GMO thresholds. Farming chances
@@ -261,12 +265,17 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid and its optimizers, the farming field,
-the Clamworks overview and upgrades, save import, the shadow-ban and endgame checks, the hidden
-BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank planner's inputs and
-current-state summary. The roadmap covers all remaining upstream sections (combat sim, sailing,
-cooking, royal guardian, …); their cards open planned-section placeholders until those milestones
-land.
+The current build covers the dashboard, the research grid and its optimizers, the sailing fleet
+assignment, the farming field, the Clamworks overview and upgrades, save import, the shadow-ban and
+endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank
+planner's inputs and current-state summary. The roadmap covers all remaining upstream sections
+(combat sim, cooking, royal guardian, …); their cards open planned-section placeholders until those
+milestones land.
+
+Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
+cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.
+Account-wide loot, speed and artifact multipliers that need the full account tree stay neutral
+until SL-02 and SL-03 fill them, which makes the displayed absolute rates a lower bound.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
 are ports of `js/stats/systems/w7/clamworks.js`. The Coral God Rank data and formulas follow
