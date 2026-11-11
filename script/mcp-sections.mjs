@@ -348,6 +348,31 @@ const INTERACTIONS = {
     );
   },
   research: async (lane) => {
+    await waitForNode(lane, 'research-dashboard', 'research: the dashboard tab opens first');
+    for (const id of [
+      'dash-kpis',
+      'dash-grid',
+      'dash-observations',
+      'dash-exp-formula',
+      'dash-afk-formula',
+      'dash-insight-formula',
+    ]) {
+      await waitForNode(lane, id, `research: the dashboard renders ${id}`);
+    }
+    await lane.call('click_element', { id: 'dash-cell-129' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'square-name') ?? '').includes('J6'),
+      'research: the grid preview opens the editor on its square',
+    );
+    await lane.call('click_element', { id: 'dashboard' });
+    await waitForNode(lane, 'research-dashboard', 'research: the dashboard tab reopens');
+    await lane.call('click_element', { id: 'dash-obs-0' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'observations-selected') ?? '').startsWith('Selected:'),
+      'research: the observation preview opens the rates editor on its observation',
+    );
     await lane.call('click_element', { id: 'run' });
     await waitForNode(lane, 'run-optimize', 'research: the optimize tab opens');
     await lane.call('click_element', { id: 'rates' });

@@ -328,6 +328,11 @@ impl Decoder<'_> {
         self.nested("Sailing", &[3, 37]).round().clamp(0.0, 10.0)
     }
 
+    /// `Sailing[3][36]`, the Ender Pearl research AFK term, capped at six.
+    pub(super) fn sailing_art36(&self) -> f64 {
+        self.nested("Sailing", &[3, 36]).round().clamp(0.0, 6.0)
+    }
+
     /// `researchGridPointsTaskLevel`: `TaskZZ2[6][3]`.
     pub(super) fn task_grid_points(&self) -> f64 {
         self.nested("TaskZZ2", &[6, 3]).max(0.0)

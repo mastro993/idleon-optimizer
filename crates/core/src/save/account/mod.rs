@@ -190,6 +190,8 @@ impl Decoder<'_> {
         context.all_bonus_multi = self.all_bonus_multi();
         context.rog = self.rog();
         context.companion_52 = self.companion_52();
+        context.companion_28 = self.companion(28);
+        context.companion_153_level2 = if self.companion_level2(153) { 1.0 } else { 0.0 };
         context.sticker_fixed = self.sticker_fixed();
         context.boony_count = self.boony_count();
         context.event_shop_37 = context.event_shop(37);
@@ -218,6 +220,9 @@ impl Decoder<'_> {
         context.bundle_ban_m = self.bundle("ban_m");
         context.bundle_ban_k = self.bundle("ban_k");
         context.sailing_art37 = self.sailing_art37();
+        context.sailing_art36 = self.sailing_art36();
+        context.card_w7b11 = self.card_level("w7b11").min(10.0);
+        context.gem_shop_45 = self.row_at("GemItemsPurchased", 45);
         context.task_grid_points = self.task_grid_points();
         context.jelly_grid_points = self.jelly(4) + self.jelly(57);
         context.bonus_grid_points = self.grid_point_sources(&context).iter().sum::<f64>() as u32;

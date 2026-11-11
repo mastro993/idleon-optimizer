@@ -66,6 +66,21 @@ second changes no point totals; together they shift EXP/hr by `2e-5` relative.
 `crates/core/tests/fixture.rs` pins every other term to its upstream value and
 the rate to a `1e-4` relative tolerance.
 
+## Dashboard AFK gains
+
+The dashboard's AFK rate is the account-wide `research-afk-gains.js` descriptor:
+`min(1, 0.01 + sum / 100)`, summed from companion 28, companion 153 (plus its
+second level), the minehead floor bonuses 1 and 10, grid 71 and 111, sailing
+artifact 36 (capped at 6), card `w7b11` (capped at 10), gem shop slot 45
+(`2 × GemItemsPurchased[45]`) and Ring of Glory 4 and 24.
+
+`SimContext` carries the account terms (`companion_28`,
+`companion_153_level2`, `sailing_art36`, `card_w7b11`, `gem_shop_45`); the grid
+and minehead terms come from the live simulation. Gambit Milestone 15 is listed
+in the tree but left out of the sum, because its `gambitPTSmulti` chain (Hole
+measurements, cosmo, bolaia, monument, jar, arcane and legend terms) is not
+modelled yet. The term is reported as not modelled, never guessed.
+
 ## Verifying against upstream
 
 Run the upstream loader on a save and print the context and tree:

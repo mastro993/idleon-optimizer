@@ -285,6 +285,11 @@ fn observations_card(
     let kal_map = sim::kaleidoscope_map(&state.simulation.mags, game().observations.len());
     let kal_base = sim::kalei_base(&state.simulation.grid, &overlay, &state.context);
 
+    let selected = state
+        .research
+        .selected_observation
+        .filter(|obs| *obs < game().observations.len());
+    let accent = cx.theme().colors.accent;
     let mut table = Table::new(["#", "Observation", "Insight", "+", "Mags", "Ins/hr", ""]);
     for obs in rows {
         let observation = &game().observations[obs];
@@ -312,6 +317,7 @@ fn observations_card(
                 .into_any_element(),
             div()
                 .min_w_0()
+                .when(selected == Some(obs), |name| name.text_color(accent))
                 .child(observation.name.replace('_', " "))
                 .into_any_element(),
             div()
@@ -356,6 +362,31 @@ fn observations_card(
             div().px_3().pb_2().text_size(px(11.0)).text_color(muted).child(
                 "Insight/hr counts monocles only; magnifiers marked here sit on that observation.",
             ),
+        )
+        .child(
+            div()
+                .id("observations-selected")
+                .role(gpui::Role::Label)
+                .aria_label(
+                    selected
+                        .map(|obs| format!("Selected observation: {}", game().observations[obs].name.replace('_', " ")))
+                        .unwrap_or_else(|| "No observation selected".into()),
+                )
+                .px_3()
+                .pb_2()
+                .text_size(px(11.0))
+                .text_color(accent)
+                .child(
+                    selected
+                        .map(|obs| {
+                            format!(
+                                "Selected: {} (#{})",
+                                game().observations[obs].name.replace('_', " "),
+                                obs + 1
+                            )
+                        })
+                        .unwrap_or_else(|| "No observation selected".into()),
+                ),
         );
     card.into_any_element()
 }
