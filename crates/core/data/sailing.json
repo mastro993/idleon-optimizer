@@ -1,0 +1,721 @@
+{
+  "artifacts": [
+    {
+      "id": 0,
+      "name": "Moai Head",
+      "baseOdds": 5,
+      "baseBonus": 1,
+      "tierBonuses": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        750
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Maneki Kat",
+      "baseOdds": 10,
+      "baseBonus": 2,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Ruble Cuble",
+      "baseOdds": 25,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Fauxory Tusk",
+      "baseOdds": 100,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Gold Relic",
+      "baseOdds": 12,
+      "baseBonus": 1,
+      "tierBonuses": [
+        0.5,
+        1,
+        3,
+        4,
+        5,
+        8
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Genie Lamp",
+      "baseOdds": 40,
+      "baseBonus": 2,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Silver Ankh",
+      "baseOdds": 150,
+      "baseBonus": 1,
+      "tierBonuses": [
+        25,
+        50,
+        75,
+        90,
+        95,
+        99
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Emerald Relic",
+      "baseOdds": 25,
+      "baseBonus": 1,
+      "tierBonuses": [
+        50,
+        80,
+        110,
+        170,
+        240,
+        420
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Fun Hippoete",
+      "baseOdds": 200,
+      "baseBonus": 6,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Arrowhead",
+      "baseOdds": 30,
+      "baseBonus": 1,
+      "tierBonuses": [
+        25,
+        50,
+        70,
+        90,
+        110,
+        150
+      ]
+    },
+    {
+      "id": 10,
+      "name": "10 AD Tablet",
+      "baseOdds": 80,
+      "baseBonus": 4,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Ashen Urn",
+      "baseOdds": 250,
+      "baseBonus": 1,
+      "tierBonuses": [
+        200,
+        400,
+        600,
+        800,
+        1000,
+        1400
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Amberite",
+      "baseOdds": 40,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Triagulon",
+      "baseOdds": 125,
+      "baseBonus": 15,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Billcye Tri",
+      "baseOdds": 300,
+      "baseBonus": 1,
+      "tierBonuses": [
+        25,
+        50,
+        75,
+        90,
+        95,
+        99
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Frost Relic",
+      "baseOdds": 100,
+      "baseBonus": 30,
+      "tierBonuses": [
+        30,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Chilled Yarn",
+      "baseOdds": 400,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Causticolumn",
+      "baseOdds": 150,
+      "baseBonus": 10,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Jade Rock",
+      "baseOdds": 500,
+      "baseBonus": 3,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Dreamcatcher",
+      "baseOdds": 200,
+      "baseBonus": 2,
+      "tierBonuses": [
+        25,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Gummy Orb",
+      "baseOdds": 600,
+      "baseBonus": 15,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Fury Relic",
+      "baseOdds": 700,
+      "baseBonus": 25,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Cloud Urn",
+      "baseOdds": 300,
+      "baseBonus": 1,
+      "tierBonuses": [
+        25,
+        50,
+        80,
+        95,
+        97,
+        99
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Weatherbook",
+      "baseOdds": 800,
+      "baseBonus": 10,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Giants Eye",
+      "baseOdds": 900,
+      "baseBonus": 25,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Crystal Steak",
+      "baseOdds": 1000,
+      "baseBonus": 2,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Trilobite Rock",
+      "baseOdds": 1100,
+      "baseBonus": 25,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Opera Mask",
+      "baseOdds": 1200,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Socrates",
+      "baseOdds": 1300,
+      "baseBonus": 10,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 29,
+      "name": "The True Lantern",
+      "baseOdds": 1400,
+      "baseBonus": 15,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 30,
+      "name": "The Onyx Lantern",
+      "baseOdds": 4000,
+      "baseBonus": 30,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 31,
+      "name": "The Shim Lantern",
+      "baseOdds": 12000,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 32,
+      "name": "The Winz Lantern",
+      "baseOdds": 50000,
+      "baseBonus": 25,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 33,
+      "name": "Deathskull",
+      "baseOdds": 3000000,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Obsidian",
+      "baseOdds": 25000000,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Pointagon",
+      "baseOdds": 5000000,
+      "baseBonus": 30,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Ender Pearl",
+      "baseOdds": 100000000,
+      "baseBonus": 25,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Fang of the Gods",
+      "baseOdds": 200000000,
+      "baseBonus": 1,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Nomenclature",
+      "baseOdds": 400000000,
+      "baseBonus": 50,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Me First Dollar",
+      "baseOdds": 700000000,
+      "baseBonus": 100,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Bloodclot",
+      "baseOdds": 1500000000,
+      "baseBonus": 10,
+      "tierBonuses": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "islands": [
+    {
+      "id": 0,
+      "distance": 25,
+      "cloudRequired": 10,
+      "captainExp": 2,
+      "artifactCount": 4
+    },
+    {
+      "id": 1,
+      "distance": 100,
+      "cloudRequired": 200,
+      "captainExp": 6,
+      "artifactCount": 3
+    },
+    {
+      "id": 2,
+      "distance": 250,
+      "cloudRequired": 800,
+      "captainExp": 10,
+      "artifactCount": 2
+    },
+    {
+      "id": 3,
+      "distance": 1000,
+      "cloudRequired": 6000,
+      "captainExp": 20,
+      "artifactCount": 3
+    },
+    {
+      "id": 4,
+      "distance": 3000,
+      "cloudRequired": 30000,
+      "captainExp": 30,
+      "artifactCount": 3
+    },
+    {
+      "id": 5,
+      "distance": 10000,
+      "cloudRequired": 120000,
+      "captainExp": 55,
+      "artifactCount": 2
+    },
+    {
+      "id": 6,
+      "distance": 25000,
+      "cloudRequired": 400000,
+      "captainExp": 85,
+      "artifactCount": 2
+    },
+    {
+      "id": 7,
+      "distance": 100000,
+      "cloudRequired": 2000000,
+      "captainExp": 150,
+      "artifactCount": 2
+    },
+    {
+      "id": 8,
+      "distance": 300000,
+      "cloudRequired": 8000000,
+      "captainExp": 300,
+      "artifactCount": 1
+    },
+    {
+      "id": 9,
+      "distance": 1000000,
+      "cloudRequired": 30000000,
+      "captainExp": 600,
+      "artifactCount": 2
+    },
+    {
+      "id": 10,
+      "distance": 2000000,
+      "cloudRequired": 60000000,
+      "captainExp": 900,
+      "artifactCount": 1
+    },
+    {
+      "id": 11,
+      "distance": 5000000,
+      "cloudRequired": 120000000,
+      "captainExp": 1500,
+      "artifactCount": 1
+    },
+    {
+      "id": 12,
+      "distance": 15000000,
+      "cloudRequired": 400000000,
+      "captainExp": 3000,
+      "artifactCount": 1
+    },
+    {
+      "id": 13,
+      "distance": 40000000,
+      "cloudRequired": 1200000000,
+      "captainExp": 5000,
+      "artifactCount": 2
+    },
+    {
+      "id": 14,
+      "distance": 100000000,
+      "cloudRequired": 2000000000,
+      "captainExp": 10000,
+      "artifactCount": 1
+    },
+    {
+      "id": 15,
+      "distance": 5000000000,
+      "cloudRequired": 2000000000,
+      "captainExp": 100000,
+      "artifactCount": 4
+    },
+    {
+      "id": 16,
+      "distance": 200000000000,
+      "cloudRequired": 2000000000,
+      "captainExp": 250000,
+      "artifactCount": 4
+    }
+  ],
+  "captainBonuses": [
+    {
+      "id": 0,
+      "name": "Boat Speed"
+    },
+    {
+      "id": 1,
+      "name": "Loot Value"
+    },
+    {
+      "id": 2,
+      "name": "Cloud Discover Rate"
+    },
+    {
+      "id": 3,
+      "name": "Artifact Find Chance"
+    },
+    {
+      "id": 4,
+      "name": "Rare Chest Chance"
+    }
+  ]
+}

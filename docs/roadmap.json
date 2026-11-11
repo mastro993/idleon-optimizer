@@ -1937,7 +1937,7 @@
       "key": "sailing",
       "title": "Sailing Calculator",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.",
       "upstream": [
         "sailing-calc.html",

@@ -26,12 +26,18 @@
 //! save by [`account`], which also reports the tree it built. A term whose
 //! save field is missing is left out and warned about by that field's name;
 //! nothing is guessed.
+//!
+//! The same save carries the sailing fleet (`Boats`, `Captains`), the artifact
+//! tiers and island progress in `Sailing`, and the account fields the route
+//! model reads. Account-wide sailing loot, speed and artifact multipliers that
+//! the route model does not read stay neutral.
 
 mod account;
 mod farming;
 mod formula;
 pub(crate) mod json;
 mod research;
+mod sailing;
 mod shadow;
 mod value;
 
@@ -42,6 +48,7 @@ use crate::clamworks::Clamworks;
 use crate::farming::Farm;
 use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
+use crate::sailing::{Fleet, RouteContext};
 pub use account::{BonusTerm, BonusTree};
 pub use formula::log as game_log;
 use serde_json::{Map, Value};
@@ -78,6 +85,10 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The active sailing fleet and its artifact tiers.
+    pub fleet: Fleet,
+    /// The account fields the sailing route model reads.
+    pub sailing: RouteContext,
     /// The farming field, ranks, crops and market levels the save carries.
     pub farming: Farm,
     /// The save-derived multiplier tree behind [`Self::context`].
@@ -171,6 +182,14 @@ impl Character {
             .map(|level| level.max(0.0).round() as u32)
     }
 
+    fn sailing_level(&self) -> Option<u32> {
+        self.levels
+            .get(13)
+            .copied()
+            .flatten()
+            .map(|level| level.max(0.0).round() as u32)
+    }
+
     /// The Farming skill level the farming planner reads (`Lv0_<n>[16]`).
     fn farming_level(&self) -> Option<u32> {
         self.levels
@@ -243,6 +262,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.saved_overlay = research::shape_overlay(save, &rows);
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
+    let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
     let farm_level = characters
         .first()
         .and_then(Character::farming_level)
@@ -259,6 +279,8 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     Ok(Imported {
         simulation,
         context,
+        fleet: sailing.fleet,
+        sailing: sailing.context,
         farming,
         tree,
         clamworks,
