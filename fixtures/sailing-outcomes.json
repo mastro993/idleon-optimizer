@@ -1,0 +1,479 @@
+{
+  "source": "purpose-built save in script/sailing-oracle.mjs",
+  "modules": [
+    "sailing-calc.html",
+    "js/stats/systems/w5/sailing-chests.js",
+    "js/stats/systems/w5/sailing.js"
+  ],
+  "save": {
+    "Research": "[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+    "Lv0_0": "[100,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]",
+    "OptLacc": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+    "Boats": "[[1,0,0,100,0,100,0],[0,0,0,80,0,80,0],[2,0,0,60,0,60,0]]",
+    "Captains": "[[3,0,1,10,250,20,10],[6,3,4,20,1000,30,15],[2,1,0,5,0,10,10]]",
+    "GemItemsPurchased": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+    "SL_0": "{\"325\":120}",
+    "Sailing": "[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5000,250,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[2,2],[1,6,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]"
+  },
+  "unendingLootSearch": 37.77777777777778,
+  "island": 0,
+  "boat": 0,
+  "captain": 0,
+  "maxArtifactTier": 6,
+  "routes": [
+    {
+      "boat": 0,
+      "captain": 0,
+      "island": 0,
+      "generatedChestsPerHour": 0.5,
+      "keptChestsPerHour": 0.5,
+      "lootValue": 50306.11111111112,
+      "treasurePerHour": 50640.32813501809,
+      "artifactFindsPerHour": 0.035373311095548025,
+      "artifactChancePerTrip": 0.07074662219109605,
+      "artifactBase": 1.25,
+      "rarityScale": 1.125,
+      "treasureShares": {
+        "gold": 0.5,
+        "primary": 0.475,
+        "rare": 0.025
+      }
+    },
+    {
+      "boat": 1,
+      "captain": 1,
+      "island": 0,
+      "generatedChestsPerHour": 0.5,
+      "keptChestsPerHour": 0.5,
+      "lootValue": 14061.944444444445,
+      "treasurePerHour": 23654.560768144638,
+      "artifactFindsPerHour": 0.21673669285877464,
+      "artifactChancePerTrip": 0.4334733857175493,
+      "artifactBase": 7.25,
+      "rarityScale": 2.625,
+      "treasureShares": {
+        "gold": 0.5,
+        "primary": 0.475,
+        "rare": 0.025
+      }
+    },
+    {
+      "boat": 2,
+      "captain": 2,
+      "island": 0,
+      "generatedChestsPerHour": 0.5,
+      "keptChestsPerHour": 0.5,
+      "lootValue": 7917.916666666667,
+      "treasurePerHour": 7970.5206641816385,
+      "artifactFindsPerHour": 0.035373311095548025,
+      "artifactChancePerTrip": 0.07074662219109605,
+      "artifactBase": 1.25,
+      "rarityScale": 1.125,
+      "treasureShares": {
+        "gold": 0.5,
+        "primary": 0.475,
+        "rare": 0.025
+      }
+    }
+  ],
+  "fleet": {
+    "generatedPerHour": 1.5,
+    "tiers": [
+      {
+        "tier": 0,
+        "probability": 0.6749999999999999,
+        "cumulative": 1,
+        "expectedPerHour": 1.0125
+      },
+      {
+        "tier": 1,
+        "probability": 0.26,
+        "cumulative": 0.325,
+        "expectedPerHour": 0.39
+      },
+      {
+        "tier": 2,
+        "probability": 0.05525,
+        "cumulative": 0.065,
+        "expectedPerHour": 0.082875
+      },
+      {
+        "tier": 3,
+        "probability": 0.009376250000000001,
+        "cumulative": 0.00975,
+        "expectedPerHour": 0.014064375
+      },
+      {
+        "tier": 4,
+        "probability": 0.00037373375000000005,
+        "cumulative": 0.00037375,
+        "expectedPerHour": 0.0005606006250000001
+      },
+      {
+        "tier": 5,
+        "probability": 1.625e-8,
+        "cumulative": 1.625e-8,
+        "expectedPerHour": 2.4374999999999998e-8
+      }
+    ]
+  },
+  "payouts": [
+    {
+      "tier": 0,
+      "multiplier": 1,
+      "payouts": 1,
+      "chestRate": 1.0125,
+      "averageStoredValue": 25581.75068587106,
+      "totalValuePerChest": 25581.75068587106,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.5,
+          "expectedPayoutsPerChest": 0.5,
+          "expectedValuePerChest": 12790.87534293553,
+          "expectedValuePerHour": 12950.761284722223
+        },
+        "primary": {
+          "chancePerPayout": 0.47500000000000003,
+          "expectedPayoutsPerChest": 0.47500000000000003,
+          "expectedValuePerChest": 12151.331575788754,
+          "expectedValuePerHour": 12303.223220486112
+        },
+        "rare": {
+          "chancePerPayout": 0.025,
+          "expectedPayoutsPerChest": 0.025,
+          "expectedValuePerChest": 639.5437671467766,
+          "expectedValuePerHour": 647.5380642361114
+        }
+      }
+    },
+    {
+      "tier": 1,
+      "multiplier": 1.85,
+      "payouts": 2,
+      "chestRate": 0.39,
+      "averageStoredValue": 38865.04113247865,
+      "totalValuePerChest": 77730.0822649573,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.5,
+          "expectedPayoutsPerChest": 1,
+          "expectedValuePerChest": 38865.04113247865,
+          "expectedValuePerHour": 15157.366041666672
+        },
+        "primary": {
+          "chancePerPayout": 0.47500000000000003,
+          "expectedPayoutsPerChest": 0.9500000000000001,
+          "expectedValuePerChest": 36921.78907585471,
+          "expectedValuePerHour": 14399.497739583336
+        },
+        "rare": {
+          "chancePerPayout": 0.025000000000000005,
+          "expectedPayoutsPerChest": 0.05000000000000001,
+          "expectedValuePerChest": 1943.2520566239318,
+          "expectedValuePerHour": 757.8683020833334
+        }
+      }
+    },
+    {
+      "tier": 2,
+      "multiplier": 3.4225000000000003,
+      "payouts": 3,
+      "chestRate": 0.082875,
+      "averageStoredValue": 71900.32609508547,
+      "totalValuePerChest": 215700.97828525642,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.49999999999999994,
+          "expectedPayoutsPerChest": 1.4999999999999998,
+          "expectedValuePerChest": 107850.48914262821,
+          "expectedValuePerHour": 8938.109287695313
+        },
+        "primary": {
+          "chancePerPayout": 0.4749999999999999,
+          "expectedPayoutsPerChest": 1.4249999999999998,
+          "expectedValuePerChest": 102457.96468549682,
+          "expectedValuePerHour": 8491.203823310549
+        },
+        "rare": {
+          "chancePerPayout": 0.024999999999999998,
+          "expectedPayoutsPerChest": 0.075,
+          "expectedValuePerChest": 5392.524457131411,
+          "expectedValuePerHour": 446.9054643847657
+        }
+      }
+    },
+    {
+      "tier": 3,
+      "multiplier": 6.331625000000001,
+      "payouts": 4,
+      "chestRate": 0.014064375,
+      "averageStoredValue": 133015.60327590813,
+      "totalValuePerChest": 532062.4131036325,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.5,
+          "expectedPayoutsPerChest": 2,
+          "expectedValuePerChest": 266031.20655181626,
+          "expectedValuePerHour": 3741.5626506472013
+        },
+        "primary": {
+          "chancePerPayout": 0.4749999999999999,
+          "expectedPayoutsPerChest": 1.8999999999999997,
+          "expectedValuePerChest": 252729.64622422546,
+          "expectedValuePerHour": 3554.484518114841
+        },
+        "rare": {
+          "chancePerPayout": 0.024999999999999998,
+          "expectedPayoutsPerChest": 0.09999999999999999,
+          "expectedValuePerChest": 13301.560327590816,
+          "expectedValuePerHour": 187.0781325323601
+        }
+      }
+    },
+    {
+      "tier": 4,
+      "multiplier": 11.713506250000002,
+      "payouts": 5,
+      "chestRate": 0.0005606006250000001,
+      "averageStoredValue": 246078.8660604301,
+      "totalValuePerChest": 1230394.3303021505,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.49999999999999994,
+          "expectedPayoutsPerChest": 2.4999999999999996,
+          "expectedValuePerChest": 615197.1651510751,
+          "expectedValuePerHour": 344.879915281921
+        },
+        "primary": {
+          "chancePerPayout": 0.47500000000000003,
+          "expectedPayoutsPerChest": 2.3750000000000004,
+          "expectedValuePerChest": 584437.3068935216,
+          "expectedValuePerHour": 327.635919517825
+        },
+        "rare": {
+          "chancePerPayout": 0.025000000000000005,
+          "expectedPayoutsPerChest": 0.12500000000000003,
+          "expectedValuePerChest": 30759.858257553762,
+          "expectedValuePerHour": 17.243995764096052
+        }
+      }
+    },
+    {
+      "tier": 5,
+      "multiplier": 20,
+      "payouts": 5,
+      "chestRate": 2.4374999999999998e-8,
+      "averageStoredValue": 420162.6068376069,
+      "totalValuePerChest": 2100813.0341880345,
+      "currencies": {
+        "gold": {
+          "chancePerPayout": 0.5,
+          "expectedPayoutsPerChest": 2.5,
+          "expectedValuePerChest": 1050406.5170940172,
+          "expectedValuePerHour": 0.02560365885416667
+        },
+        "primary": {
+          "chancePerPayout": 0.475,
+          "expectedPayoutsPerChest": 2.375,
+          "expectedValuePerChest": 997886.1912393165,
+          "expectedValuePerHour": 0.024323475911458337
+        },
+        "rare": {
+          "chancePerPayout": 0.025,
+          "expectedPayoutsPerChest": 0.12500000000000003,
+          "expectedValuePerChest": 52520.32585470086,
+          "expectedValuePerHour": 0.0012801829427083334
+        }
+      }
+    }
+  ],
+  "nearFull": [
+    {
+      "tier": 0,
+      "chance": 0.24444444444444444,
+      "lootMultiplier": 1,
+      "nextLootMultiplier": 1.85,
+      "valueRatio": 3.7,
+      "artifactMultiplier": 1.4
+    },
+    {
+      "tier": 1,
+      "chance": 0.04888888888888889,
+      "lootMultiplier": 1.85,
+      "nextLootMultiplier": 3.4225000000000003,
+      "valueRatio": 2.7750000000000004,
+      "artifactMultiplier": 1.4
+    },
+    {
+      "tier": 2,
+      "chance": 0.006844444444444445,
+      "lootMultiplier": 3.4225000000000003,
+      "nextLootMultiplier": 6.331625000000001,
+      "valueRatio": 2.4666666666666663,
+      "artifactMultiplier": 1.4
+    },
+    {
+      "tier": 3,
+      "chance": 0.00029333333333333327,
+      "lootMultiplier": 6.331625000000001,
+      "nextLootMultiplier": 11.713506250000002,
+      "valueRatio": 2.3125,
+      "artifactMultiplier": 1.4
+    }
+  ],
+  "islands": [
+    {
+      "island": 1,
+      "incomplete": 3,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.1553387717123319,
+      "artifactFindsPerHour": 0.07766938585616595
+    },
+    {
+      "island": 0,
+      "incomplete": 3,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.07074662219109605,
+      "artifactFindsPerHour": 0.035373311095548025
+    },
+    {
+      "island": 2,
+      "incomplete": 2,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.06262883537563871,
+      "artifactFindsPerHour": 0.031314417687819354
+    },
+    {
+      "island": 4,
+      "incomplete": 3,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.050261163328395406,
+      "artifactFindsPerHour": 0.025130581664197703
+    },
+    {
+      "island": 3,
+      "incomplete": 3,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.023012304443963405,
+      "artifactFindsPerHour": 0.011506152221981703
+    },
+    {
+      "island": 5,
+      "incomplete": 2,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.017460276306604867,
+      "artifactFindsPerHour": 0.008730138153302433
+    },
+    {
+      "island": 6,
+      "incomplete": 2,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.01211408810922749,
+      "artifactFindsPerHour": 0.006057044054613745
+    },
+    {
+      "island": 7,
+      "incomplete": 2,
+      "tripSeconds": 7200,
+      "artifactChancePerTrip": 0.009322518034332861,
+      "artifactFindsPerHour": 0.004661259017166431
+    },
+    {
+      "island": 8,
+      "incomplete": 1,
+      "tripSeconds": 17901.54152163103,
+      "artifactChancePerTrip": 0.002001386246932126,
+      "artifactFindsPerHour": 0.0004024787742580506
+    },
+    {
+      "island": 9,
+      "incomplete": 2,
+      "tripSeconds": 59671.80507210343,
+      "artifactChancePerTrip": 0.006412471983232074,
+      "artifactFindsPerHour": 0.00038686443474839104
+    },
+    {
+      "island": 10,
+      "incomplete": 1,
+      "tripSeconds": 119343.61014420686,
+      "artifactChancePerTrip": 0.0015566337476138781,
+      "artifactFindsPerHour": 0.00004695585699677263
+    },
+    {
+      "island": 11,
+      "incomplete": 1,
+      "tripSeconds": 298359.02536051715,
+      "artifactChancePerTrip": 0.001400970372852483,
+      "artifactFindsPerHour": 0.00001690410851883806
+    },
+    {
+      "island": 12,
+      "incomplete": 1,
+      "tripSeconds": 895077.0760815515,
+      "artifactChancePerTrip": 0.0012736094298658825,
+      "artifactFindsPerHour": 0.0000051224571269205785
+    },
+    {
+      "island": 13,
+      "incomplete": 2,
+      "tripSeconds": 2386872.202884137,
+      "artifactChancePerTrip": 0.002243815255108501,
+      "artifactFindsPerHour": 0.0000033842343585173966
+    },
+    {
+      "island": 14,
+      "incomplete": 1,
+      "tripSeconds": 5967180.507210343,
+      "artifactChancePerTrip": 0.001000693123466065,
+      "artifactFindsPerHour": 6.03718161387077e-7
+    },
+    {
+      "island": 15,
+      "incomplete": 4,
+      "tripSeconds": 298359025.36051714,
+      "artifactChancePerTrip": 0.000495419240308038,
+      "artifactFindsPerHour": 5.977728553556787e-9
+    },
+    {
+      "island": 16,
+      "incomplete": 4,
+      "tripSeconds": 11934361014.420687,
+      "artifactChancePerTrip": 3.572474208682265e-7,
+      "artifactFindsPerHour": 1.0776368450490053e-13
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact": 0,
+      "name": "Moai Head",
+      "currentTier": 1,
+      "denominator": 850,
+      "unlocked": true,
+      "chance": 0.00164820043865
+    },
+    {
+      "artifact": 1,
+      "name": "Maneki Kat",
+      "currentTier": 6,
+      "denominator": null,
+      "unlocked": false,
+      "chance": 0
+    },
+    {
+      "artifact": 2,
+      "name": "Ruble Cuble",
+      "currentTier": 0,
+      "denominator": 25,
+      "unlocked": true,
+      "chance": 0.055941203223753226
+    },
+    {
+      "artifact": 3,
+      "name": "Fauxory Tusk",
+      "currentTier": 0,
+      "denominator": 100,
+      "unlocked": true,
+      "chance": 0.013157218528692893
+    }
+  ]
+}

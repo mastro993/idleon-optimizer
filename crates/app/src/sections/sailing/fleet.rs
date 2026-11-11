@@ -1,6 +1,6 @@
 //! The Fleet tab: current versus optimized pairings on the selected island.
 
-use super::{artifacts, captain_details, captain_short, trip};
+use super::{artifacts, captain_details, captain_short, text_kpi, trip};
 use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
@@ -8,7 +8,6 @@ use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
 use idleon_core::sailing::{AssignmentMode, FleetPlan, Goal, RouteMetrics, route_metrics};
@@ -119,30 +118,6 @@ fn kpis(plan: &FleetPlan, gain: f64, cx: &mut Context<AppState>) -> AnyElement {
         .child(
             KpiCard::new(Statistic::new("kpi-minimum", "Minimum trip", minimum).decimals(0))
                 .caption("minutes; family/shiny travel reductions not modelled"),
-        )
-        .into_any_element()
-}
-
-fn text_kpi(
-    id: &'static str,
-    label: &'static str,
-    value: &str,
-    caption: &str,
-    muted: gpui::Hsla,
-) -> AnyElement {
-    Card::new()
-        .child(
-            div()
-                .id(id)
-                .role(gpui::Role::Label)
-                .aria_label(value.to_string())
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
-                .child(div().text_size(gpui::px(20.0)).child(value.to_string()))
-                .child(Caption::new(caption.to_string()).text_color(muted)),
         )
         .into_any_element()
 }

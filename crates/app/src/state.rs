@@ -17,6 +17,7 @@ use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
+use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
@@ -160,6 +161,8 @@ pub struct AppState {
     pub sailing: RouteContext,
     /// The sailing section's own state, kept alive across dashboard visits.
     pub sailing_state: SailingState,
+    /// The sailing breakdowns' formula trees.
+    pub sailing_trees: SailingTrees,
     /// The farming field the last import carried.
     pub farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
@@ -545,6 +548,7 @@ impl AppState {
             });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let research_trees = crate::sections::research::Trees::new(window, cx);
+        let sailing_trees = SailingTrees::new(window, cx);
         let ladle_state = LadleSectionState::new(window, cx);
         let cglunko_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("cglunko-formula", window, cx));
@@ -573,6 +577,7 @@ impl AppState {
             fleet: Fleet::default(),
             sailing: RouteContext::default(),
             sailing_state: SailingState::default(),
+            sailing_trees,
             farm: Farm::default(),
             farming: FarmingState::default(),
             fishing_save: FishingSave::default(),
@@ -1123,6 +1128,12 @@ impl AppState {
 
     pub fn set_sailing_tab(&mut self, tab: SailingTab, cx: &mut Context<Self>) {
         self.sailing_state.tab = tab;
+        cx.notify();
+    }
+
+    /// The boat the artifact ranking and the breakdowns read.
+    pub fn set_sailing_breakdown_boat(&mut self, boat: usize, cx: &mut Context<Self>) {
+        self.sailing_state.breakdown_boat = boat.min(self.fleet.boats.len().saturating_sub(1));
         cx.notify();
     }
 

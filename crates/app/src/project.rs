@@ -102,6 +102,7 @@ pub struct SailingConfig {
     goal: Goal,
     minimum_tier: u32,
     sort_by_eta: bool,
+    breakdown_boat: usize,
 }
 
 /// The Worship TD section's config: its trial, palette and playback.
@@ -244,6 +245,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             goal: state.sailing_state.goal,
             minimum_tier: state.sailing.minimum_tier,
             sort_by_eta: state.sailing_state.sort_by_eta,
+            breakdown_boat: state.sailing_state.breakdown_boat,
         }),
     );
     insert("farming", value(&state.farming));
@@ -496,6 +498,9 @@ pub fn assign(
                     .min(state.fleet.available_islands().saturating_sub(1)),
                 goal: config.goal,
                 sort_by_eta: config.sort_by_eta,
+                breakdown_boat: config
+                    .breakdown_boat
+                    .min(state.fleet.boats.len().saturating_sub(1)),
             };
             state.sailing.minimum_tier = config.minimum_tier.min(5);
         }
@@ -893,12 +898,14 @@ mod tests {
             island: 3,
             goal: Goal::Chests,
             sort_by_eta: true,
+            breakdown_boat: 2,
         });
         assert_eq!(sailing.tab, crate::sections::sailing::Tab::Ships);
         assert_eq!(sailing.mode, AssignmentMode::Saved);
         assert_eq!(sailing.island, 3);
         assert_eq!(sailing.goal, Goal::Chests);
         assert!(sailing.sort_by_eta);
+        assert_eq!(sailing.breakdown_boat, 2);
         let farming = round_trip(&FarmingState {
             selected_plot: 5,
             target_crop: 12,
@@ -1154,6 +1161,7 @@ mod tests {
         assert_eq!(config.mode, AssignmentMode::Optimized);
         assert_eq!(config.goal, Goal::Treasure);
         assert!(!config.sort_by_eta);
+        assert_eq!(config.breakdown_boat, 0);
         assert!(warnings.is_empty(), "{warnings:?}");
     }
 
