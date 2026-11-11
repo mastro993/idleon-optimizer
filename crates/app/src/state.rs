@@ -1701,10 +1701,59 @@ impl AppState {
         cx.notify();
     }
 
-    /// Set one statue's target level.
+    /// Set one statue's target level. A hand edit ends the batch undo step and
+    /// the status that described it.
     pub fn set_statue_target(&mut self, statue: usize, target: u32, cx: &mut Context<Self>) {
         self.statue.set_target(statue, target);
+        self.statue.batch_status = None;
         cx.notify();
+    }
+
+    /// Set every statue's target to the level in the batch entry, or show why
+    /// the plan left it alone.
+    pub fn set_statue_targets_all(&mut self, cx: &mut Context<Self>) {
+        let text = self.statue.batch_input.read(cx).text().to_string();
+        match self
+            .statue
+            .plan
+            .set_all(&self.statue.save, self.statue.character, &text)
+        {
+            Ok(level) => {
+                self.statue.batch_error = None;
+                self.statue.batch_status = Some(format!(
+                    "All {} targets set to Lv {level}.",
+                    idleon_core::statue::count()
+                ));
+            }
+            Err(error) => self.statue.batch_error = Some(error.message()),
+        }
+        cx.notify();
+    }
+
+    /// Next level for all: clear the entered targets, so every row follows its
+    /// saved level plus one.
+    pub fn set_statue_next_level(&mut self, cx: &mut Context<Self>) {
+        self.statue.plan.next_level();
+        self.statue.batch_error = None;
+        self.statue.batch_status = Some("Targets follow each saved level plus one.".to_string());
+        cx.notify();
+    }
+
+    /// Restore the targets the last statue batch action replaced.
+    pub fn undo_statue_batch(&mut self, cx: &mut Context<Self>) {
+        if let Some(label) = self.statue.plan.undo() {
+            self.statue.batch_error = None;
+            self.statue.batch_status = Some(format!("Undid {label}."));
+            cx.notify();
+        }
+    }
+
+    /// Pick the statue the farming breakdown describes.
+    pub fn set_statue_breakdown(&mut self, statue: usize, cx: &mut Context<Self>) {
+        if statue < idleon_core::statue::count() {
+            self.statue.breakdown_statue = statue;
+            cx.notify();
+        }
     }
 
     /// Pick the loadout editor's tab.

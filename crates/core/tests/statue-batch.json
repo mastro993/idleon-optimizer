@@ -1,0 +1,912 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "file": "statue-calc.html",
+  "fixture": "fixtures/data.json"
+ },
+ "character": 0,
+ "entries": [
+  {
+   "entry": "150",
+   "level": 150,
+   "rows": [
+    {
+     "index": 0,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 1,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 2,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 3,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 4,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 5,
+     "available": true,
+     "expNeeded": 115813.0983178671,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 6894,
+     "statuesAverage": 6894
+    },
+    {
+     "index": 6,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 7,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 8,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 9,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 10,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 11,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 12,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 13,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 14,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 15,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 16,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 17,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 18,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 19,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 20,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 21,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 22,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 23,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 24,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 25,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 26,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 27,
+     "available": true,
+     "expNeeded": 30505.575052266,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 1816,
+     "statuesAverage": 1816
+    },
+    {
+     "index": 28,
+     "available": true,
+     "expNeeded": 140573.79271600346,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 8368,
+     "statuesAverage": 8368
+    },
+    {
+     "index": 29,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 30,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 31,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    }
+   ]
+  },
+  {
+   "entry": "0",
+   "level": 0,
+   "rows": [
+    {
+     "index": 0,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 1,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 2,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 3,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 4,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 5,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 6,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 7,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 8,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 9,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 10,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 11,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 12,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 13,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 14,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 15,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 16,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 17,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 18,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 19,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 20,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 21,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 22,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 23,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 24,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 25,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 26,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 27,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 28,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 29,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 30,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    },
+    {
+     "index": 31,
+     "available": true,
+     "expNeeded": 0,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 0,
+     "statuesAverage": 0
+    }
+   ]
+  },
+  {
+   "entry": "1e3",
+   "level": 1000,
+   "rows": [
+    {
+     "index": 0,
+     "available": true,
+     "expNeeded": 567882111131454460,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 4828929516423932,
+     "statuesAverage": 4828929516423932
+    },
+    {
+     "index": 1,
+     "available": true,
+     "expNeeded": 567881287653872060,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 4828922514063538,
+     "statuesAverage": 4828922514063538
+    },
+    {
+     "index": 2,
+     "available": true,
+     "expNeeded": 567881355763726600,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 4828923093228967,
+     "statuesAverage": 4828923093228967
+    },
+    {
+     "index": 3,
+     "available": true,
+     "expNeeded": 567881330881471700,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 4828922881645167,
+     "statuesAverage": 4828922881645167
+    },
+    {
+     "index": 4,
+     "available": true,
+     "expNeeded": 567882133554451000,
+     "guaranteedExp": 117.60000000000001,
+     "averageExp": 117.60000000000001,
+     "statuesGuaranteed": 4828929707095671,
+     "statuesAverage": 4828929707095671
+    },
+    {
+     "index": 5,
+     "available": true,
+     "expNeeded": 567882167444842800,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966954930,
+     "statuesAverage": 33802509966954930
+    },
+    {
+     "index": 6,
+     "available": true,
+     "expNeeded": 567882044741635840,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802502663192610,
+     "statuesAverage": 33802502663192610
+    },
+    {
+     "index": 7,
+     "available": true,
+     "expNeeded": 567882134069710460,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802507980339908,
+     "statuesAverage": 33802507980339908
+    },
+    {
+     "index": 8,
+     "available": true,
+     "expNeeded": 567882134026700800,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802507977779810,
+     "statuesAverage": 33802507977779810
+    },
+    {
+     "index": 9,
+     "available": true,
+     "expNeeded": 567882134086604700,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802507981345516,
+     "statuesAverage": 33802507981345516
+    },
+    {
+     "index": 10,
+     "available": true,
+     "expNeeded": 567882159396965060,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509487914584,
+     "statuesAverage": 33802509487914584
+    },
+    {
+     "index": 11,
+     "available": true,
+     "expNeeded": 567882134034113200,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802507978221024,
+     "statuesAverage": 33802507978221024
+    },
+    {
+     "index": 12,
+     "available": true,
+     "expNeeded": 567882155390415400,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509249429490,
+     "statuesAverage": 33802509249429490
+    },
+    {
+     "index": 13,
+     "available": true,
+     "expNeeded": 567882047592271200,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802502832873290,
+     "statuesAverage": 33802502832873290
+    },
+    {
+     "index": 14,
+     "available": true,
+     "expNeeded": 567882100969608500,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802506010095744,
+     "statuesAverage": 33802506010095744
+    },
+    {
+     "index": 15,
+     "available": true,
+     "expNeeded": 567878084154696200,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802266913970010,
+     "statuesAverage": 33802266913970010
+    },
+    {
+     "index": 16,
+     "available": true,
+     "expNeeded": 567869768658241100,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33801771943942920,
+     "statuesAverage": 33801771943942920
+    },
+    {
+     "index": 17,
+     "available": true,
+     "expNeeded": 567882106852270000,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802506360254170,
+     "statuesAverage": 33802506360254170
+    },
+    {
+     "index": 18,
+     "available": true,
+     "expNeeded": 567882165323062340,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509840658470,
+     "statuesAverage": 33802509840658470
+    },
+    {
+     "index": 19,
+     "available": true,
+     "expNeeded": 567882167428577860,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509965986776,
+     "statuesAverage": 33802509965986776
+    },
+    {
+     "index": 20,
+     "available": true,
+     "expNeeded": 567882167432613300,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966226980,
+     "statuesAverage": 33802509966226980
+    },
+    {
+     "index": 21,
+     "available": true,
+     "expNeeded": 567882167436609300,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966464836,
+     "statuesAverage": 33802509966464836
+    },
+    {
+     "index": 22,
+     "available": true,
+     "expNeeded": 567882167398563200,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509964200188,
+     "statuesAverage": 33802509964200188
+    },
+    {
+     "index": 23,
+     "available": true,
+     "expNeeded": 567882167442169700,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966795816,
+     "statuesAverage": 33802509966795816
+    },
+    {
+     "index": 24,
+     "available": true,
+     "expNeeded": 567882167420403650,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509965500216,
+     "statuesAverage": 33802509965500216
+    },
+    {
+     "index": 25,
+     "available": true,
+     "expNeeded": 567882167425403700,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509965797840,
+     "statuesAverage": 33802509965797840
+    },
+    {
+     "index": 26,
+     "available": true,
+     "expNeeded": 567882167436370000,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966450590,
+     "statuesAverage": 33802509966450590
+    },
+    {
+     "index": 27,
+     "available": true,
+     "expNeeded": 567882167444757500,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966949850,
+     "statuesAverage": 33802509966949850
+    },
+    {
+     "index": 28,
+     "available": true,
+     "expNeeded": 567882167444867600,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509966956404,
+     "statuesAverage": 33802509966956404
+    },
+    {
+     "index": 29,
+     "available": true,
+     "expNeeded": 567882167418072450,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509965361452,
+     "statuesAverage": 33802509965361452
+    },
+    {
+     "index": 30,
+     "available": true,
+     "expNeeded": 567882163506439740,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509732526172,
+     "statuesAverage": 33802509732526172
+    },
+    {
+     "index": 31,
+     "available": true,
+     "expNeeded": 567882167420335550,
+     "guaranteedExp": 16.8,
+     "averageExp": 16.8,
+     "statuesGuaranteed": 33802509965496164,
+     "statuesAverage": 33802509965496164
+    }
+   ]
+  },
+  {
+   "entry": "12.5",
+   "error": "Enter a nonnegative whole target level."
+  },
+  {
+   "entry": "-3",
+   "error": "Enter a nonnegative whole target level."
+  },
+  {
+   "entry": "abc",
+   "error": "Enter a nonnegative whole target level."
+  },
+  {
+   "entry": "",
+   "error": "Enter a nonnegative whole target level."
+  },
+  {
+   "entry": "1000000",
+   "error": "Statue target EXP exceeds the finite calculation range."
+  }
+ ]
+}

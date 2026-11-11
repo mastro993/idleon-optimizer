@@ -160,3 +160,48 @@ writeFileSync(
   }),
 );
 console.log(`wrote the target-cost table for ${costs.length} characters`);
+
+// The batch oracle: the page's `#apply-all` handler. The number input first
+// settles its own constraints (whole, at least zero), then the handler costs
+// the level for every statue before it writes the plan, so an entry the save
+// cannot cost changes nothing.
+const entries = ['150', '0', '1e3', '12.5', '-3', 'abc', '', '1000000'];
+const charIdx = (saveData.statueLvAllData || []).findIndex((rows) => rows?.length);
+const batchInputs = statueLevelingInputs(saveData, charIdx);
+const batch = entries.map((text) => {
+  const numeric = Number(text.trim());
+  if (text.trim() === '' || !Number.isSafeInteger(numeric) || numeric < 0) {
+    return { entry: text, error: 'Enter a nonnegative whole target level.' };
+  }
+  try {
+    const rows = [];
+    for (let index = 0; index < STATUE_COUNT; index += 1) {
+      const cost = statueTargetCost(saveData, index, numeric, { charIdx, inputs: batchInputs });
+      rows.push({
+        index,
+        available: cost.available,
+        expNeeded: cost.expNeeded ?? null,
+        guaranteedExp: cost.guaranteedExp ?? null,
+        averageExp: cost.averageExp ?? null,
+        statuesGuaranteed: cost.statuesGuaranteed ?? null,
+        statuesAverage: cost.statuesAverage ?? null,
+      });
+    }
+    return { entry: text, level: numeric, rows };
+  } catch (error) {
+    return { entry: text, error: error.message };
+  }
+});
+writeFileSync(
+  new URL('../crates/core/tests/statue-batch.json', import.meta.url),
+  `${JSON.stringify({
+    generatedFrom: {
+      repo: 'Corgan/idleon-research-optimizer',
+      file: 'statue-calc.html',
+      fixture: 'fixtures/data.json',
+    },
+    character: charIdx,
+    entries: batch,
+  }, null, 1)}\n`,
+);
+console.log(`wrote ${batch.length} set-all entries for character ${charIdx}`);

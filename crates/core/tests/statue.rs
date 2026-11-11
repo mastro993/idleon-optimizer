@@ -355,3 +355,149 @@ fn the_startue_bubble_from_the_save_changes_the_estimate() {
     );
     assert!(bubbled_cost.statues_guaranteed < plain_cost.statues_guaranteed);
 }
+
+/// The set-all entries the upstream page's handler accepted and rejected.
+fn upstream_batch() -> Value {
+    serde_json::from_str(include_str!("statue-batch.json"))
+        .expect("the extracted set-all table is valid JSON")
+}
+
+#[test]
+fn a_batch_target_matches_the_upstream_set_all_handler() {
+    let imported = import(&fixture()).expect("the fixture imports");
+    let saved = &imported.statues;
+    let table = upstream_batch();
+    let ci = table["character"].as_u64().expect("a character") as usize;
+    assert_eq!(saved.first_character(), Some(ci));
+
+    for entry in table["entries"].as_array().expect("entries") {
+        let text = entry["entry"].as_str().expect("an entry");
+        let mut plan = statue::Plan::new();
+        plan.set_target(0, 3);
+        let applied = plan.set_all(saved, ci, text);
+        let Some(level) = entry.get("level") else {
+            let error = applied.expect_err("the upstream handler rejects this entry");
+            assert_eq!(
+                error.message(),
+                entry["error"].as_str().expect("an error"),
+                "the rejection for {text:?}"
+            );
+            assert_eq!(plan.target(0), Some(3), "{text:?} changes nothing");
+            continue;
+        };
+        let level = level.as_u64().expect("a level") as u32;
+        applied.unwrap_or_else(|error| panic!("{text:?} applies: {}", error.message()));
+        assert!(
+            plan.targets().iter().all(|target| *target == Some(level)),
+            "{text:?} sets every target to {level}"
+        );
+        for row in entry["rows"].as_array().expect("rows") {
+            let statue = row["index"].as_u64().expect("an index") as usize;
+            let cost = statue::target_cost(saved, saved.leveling(), ci, statue, level)
+                .unwrap_or_else(|error| panic!("statue {statue} at {level}: {error:?}"));
+            assert_close(
+                cost.exp_needed,
+                row["expNeeded"].clone(),
+                &format!("statue {statue} at level {level} EXP"),
+            );
+            assert_close(
+                cost.guaranteed_exp,
+                row["guaranteedExp"].clone(),
+                &format!("statue {statue} at level {level} guaranteed EXP"),
+            );
+            assert_close(
+                cost.average_exp,
+                row["averageExp"].clone(),
+                &format!("statue {statue} at level {level} average EXP"),
+            );
+            // Past 2^53 the upstream double no longer counts single statues;
+            // the port keeps the exact count, so compare at its precision.
+            assert_close(
+                cost.statues_guaranteed as f64,
+                row["statuesGuaranteed"].clone(),
+                &format!("statue {statue} at level {level} guaranteed statues"),
+            );
+            assert_close(
+                cost.statues_average as f64,
+                row["statuesAverage"].clone(),
+                &format!("statue {statue} at level {level} average statues"),
+            );
+        }
+    }
+}
+
+#[test]
+fn the_farming_breakdown_matches_the_upstream_terms() {
+    let imported = import(&fixture()).expect("the fixture imports");
+    let saved = &imported.statues;
+    let leveling = saved.leveling();
+    let expected = upstream_costs();
+    let rate = 1_000_000.0;
+
+    for character in expected["characters"].as_array().expect("characters") {
+        let ci = character["character"].as_u64().expect("a character index") as usize;
+        let inputs = &character["inputs"];
+        for row in character["rows"].as_array().expect("rows") {
+            let index = row["index"].as_u64().expect("an index") as usize;
+            let target = row["level"].as_u64().expect("a level") as u32 + 1;
+            let cost = statue::target_cost(saved, leveling, ci, index, target)
+                .unwrap_or_else(|error| panic!("character {ci} statue {index}: {error:?}"));
+            for estimate in [statue::Estimate::Guaranteed, statue::Estimate::Average] {
+                let tree = statue::breakdown_tree(saved, ci, index, Some(target), estimate, rate);
+                assert_eq!(tree.children.len(), 4);
+                assert_eq!(
+                    tree.value,
+                    estimate.statues(&cost) as f64,
+                    "character {ci} statue {index} needs the row's statues"
+                );
+                let needed = &tree.children[0];
+                assert_close(
+                    needed.value,
+                    row["costs"][0]["expNeeded"].clone(),
+                    &format!("character {ci} statue {index} EXP needed"),
+                );
+                assert_close(
+                    needed.children[0].value,
+                    inputs["bubblePct"].clone(),
+                    "the STARTUE bubble",
+                );
+                assert_close(
+                    needed.children[1].value,
+                    inputs["retentionPct"].clone(),
+                    "the EXP retention",
+                );
+                let deposit = &tree.children[1];
+                assert_close(
+                    deposit.value,
+                    if matches!(estimate, statue::Estimate::Guaranteed) {
+                        row["guaranteedExp"].clone()
+                    } else {
+                        row["averageExp"].clone()
+                    },
+                    &format!("character {ci} statue {index} deposit"),
+                );
+                assert_close(
+                    deposit.children[0].value,
+                    inputs["tierMultiplier"].clone(),
+                    "the Onyx/Zenith tier",
+                );
+                assert_close(
+                    deposit.children[1].value,
+                    row["flairMultiplier"].clone(),
+                    &format!("statue {index} Flair"),
+                );
+                assert_close(
+                    deposit.children[2].value,
+                    serde_json::json!(estimate.vial(leveling.double_chance)),
+                    "the vial under the selected estimate",
+                );
+                let time = &tree.children[3];
+                assert_close(
+                    time.value,
+                    serde_json::json!(estimate.statues(&cost) as f64 / rate),
+                    "the time the rate covers",
+                );
+            }
+        }
+    }
+}

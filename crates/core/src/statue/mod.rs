@@ -8,10 +8,16 @@
 //! with the saved level of statue 1, 2 and 3; single-digit statues gate on the
 //! level being computed.
 
+pub mod batch;
+pub mod breakdown;
+
+pub use batch::{BatchError, Plan};
+pub use breakdown::breakdown_tree;
+
 use serde::Deserialize;
 use std::sync::OnceLock;
 
-const STATUES_JSON: &str = include_str!("../data/statues.json");
+const STATUES_JSON: &str = include_str!("../../data/statues.json");
 
 /// One row of the upstream `StatueInfo` table.
 #[derive(Clone, Debug, Deserialize)]
@@ -146,6 +152,23 @@ pub enum Unavailable {
     NoStatue(usize),
     /// The level is past the finite range of the formula.
     OutOfRange,
+    /// The summed target EXP is past the finite range of the formula.
+    TargetOutOfRange,
+}
+
+impl Unavailable {
+    /// What the table and the breakdown say about a statue they cannot cost.
+    pub fn label(self, statue: usize) -> String {
+        match self {
+            Unavailable::NoRow(row) if row == statue => "Missing row".to_string(),
+            Unavailable::NoRow(gate) => match info(gate) {
+                Some(info) => format!("Needs {}", info.name),
+                None => "Missing gate".to_string(),
+            },
+            Unavailable::NoStatue(_) => "Unavailable".to_string(),
+            Unavailable::OutOfRange | Unavailable::TargetOutOfRange => "Out of range".to_string(),
+        }
+    }
 }
 
 /// The saved statue and the EXP its next level needs.
@@ -320,6 +343,23 @@ pub enum Estimate {
 impl Estimate {
     pub const ALL: [Estimate; 2] = [Estimate::Guaranteed, Estimate::Average];
 
+    /// The selector label, as the upstream `<option>`s read.
+    pub fn label(self) -> &'static str {
+        match self {
+            Estimate::Guaranteed => "Guaranteed EXP",
+            Estimate::Average => "Average with vial doubles",
+        }
+    }
+
+    /// The Skinny 0 Cal vial's multiplier on one deposit under this estimate.
+    pub fn vial(self, double_chance: f64) -> f64 {
+        match self {
+            Estimate::Guaranteed if double_chance >= 1.0 => 2.0,
+            Estimate::Guaranteed => 1.0,
+            Estimate::Average => 1.0 + double_chance,
+        }
+    }
+
     /// The EXP one deposited statue gives under this estimate.
     pub fn deposit(self, cost: &TargetCost) -> f64 {
         match self {
@@ -376,13 +416,8 @@ pub fn target_cost(
     let flair_level = leveling.flair_level(statue);
     let flair_multiplier = leveling.flair_multiplier(statue);
     let base = leveling.tier_multiplier * flair_multiplier;
-    let guaranteed_exp = base
-        * if leveling.double_chance >= 1.0 {
-            2.0
-        } else {
-            1.0
-        };
-    let average_exp = base * (1.0 + leveling.double_chance);
+    let guaranteed_exp = base * Estimate::Guaranteed.vial(leveling.double_chance);
+    let average_exp = base * Estimate::Average.vial(leveling.double_chance);
     if !guaranteed_exp.is_finite()
         || guaranteed_exp <= 0.0
         || !average_exp.is_finite()
@@ -398,7 +433,7 @@ pub fn target_cost(
         threshold = threshold.max(consumed + requirement);
         consumed += requirement * leveling.cost_factor;
         if !threshold.is_finite() || !consumed.is_finite() {
-            return Err(Unavailable::OutOfRange);
+            return Err(Unavailable::TargetOutOfRange);
         }
     }
     let exp_needed = (threshold - progress.exp).max(0.0);
@@ -526,268 +561,4 @@ fn rate_number(text: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn row(level: u32, exp: f64) -> Option<Progress> {
-        Some(Progress { level, exp })
-    }
-
-    fn sample(rows: Vec<Option<Progress>>) -> StatueSave {
-        StatueSave::new(vec![rows], vec!["main".into()])
-    }
-
-    #[test]
-    fn the_bundled_table_covers_every_statue() {
-        assert_eq!(count(), 32);
-        assert_eq!(info(0).unwrap().name, "POWER");
-        assert_eq!(info(0).unwrap().base_per_level, 3.0);
-        assert_eq!(info(1).unwrap().effect, "MOVE SPEED");
-        assert!(info(1).unwrap().percent);
-        assert_eq!(info(31).unwrap().name, "CORAL");
-        assert!(info(32).is_none());
-    }
-
-    #[test]
-    fn single_digit_statues_round_on_their_own_target_level() {
-        let save = sample(vec![row(10, 0.0); count()]);
-        assert_eq!(exp_requirement(&save, 0, 0, 1).unwrap(), 2.0);
-        assert_eq!(exp_requirement(&save, 0, 5, 141).unwrap(), 22_507.0);
-        assert_eq!(exp_requirement(&save, 0, 9, 249).unwrap(), 1_119_089.0);
-    }
-
-    #[test]
-    fn higher_statues_round_on_their_gate_statue() {
-        let mut rows = vec![row(0, 0.0); count()];
-        rows[1] = row(141, 0.0);
-        let save = sample(rows.clone());
-        // Statue 10 rounds on statue 1's saved level (141), not its own level.
-        assert_eq!(exp_requirement(&save, 0, 10, 432).unwrap(), 517_529_111.0);
-        // Past gate level 300 the raw value is kept.
-        rows[1] = row(301, 0.0);
-        let save = sample(rows);
-        let raw = exp_requirement(&save, 0, 10, 432).unwrap();
-        assert_ne!(raw, raw.round());
-    }
-
-    #[test]
-    fn a_missing_gate_row_is_unavailable() {
-        let mut rows = vec![row(10, 0.0); count()];
-        rows[1] = None;
-        let save = sample(rows);
-        assert_eq!(
-            exp_requirement(&save, 0, 10, 432),
-            Err(Unavailable::NoRow(1))
-        );
-        assert_eq!(next_level(&save, 0, 10), Err(Unavailable::NoRow(1)));
-    }
-
-    #[test]
-    fn next_level_reports_the_full_bar_and_the_remainder() {
-        let mut rows = vec![row(10, 0.0); count()];
-        rows[3] = row(141, 100.0);
-        let save = sample(rows);
-        let next = next_level(&save, 0, 3).unwrap();
-        assert_eq!(next.level, 141);
-        assert_eq!(next.exp, 100.0);
-        assert_eq!(next.required, 22_507.0);
-        assert_eq!(next.remaining, 22_407.0);
-    }
-
-    #[test]
-    fn an_unknown_character_or_statue_is_unavailable() {
-        let save = sample(vec![row(10, 0.0); count()]);
-        assert_eq!(next_level(&save, 1, 0), Err(Unavailable::NoRow(0)));
-        assert_eq!(
-            next_level(&save, 0, count()),
-            Err(Unavailable::NoRow(count()))
-        );
-        assert_eq!(
-            exp_requirement(&save, 0, count(), 1),
-            Err(Unavailable::NoStatue(count()))
-        );
-    }
-
-    #[test]
-    fn the_startue_bubble_caps_retention_at_half() {
-        let none = Leveling::new(0.0, 0.0, 0, 0, Vec::new(), false);
-        assert_eq!(none.cost_factor, 1.0);
-        assert_eq!(none.retention_pct, 0.0);
-        assert_eq!(none.tier_multiplier, 1.0);
-
-        let part = Leveling::new(20.0, 0.0, 0, 0, Vec::new(), false);
-        assert!((part.cost_factor - 0.8).abs() < 1e-12);
-        assert!((part.retention_pct - 20.0).abs() < 1e-12);
-
-        let full = Leveling::new(68.4, 0.0, 0, 0, Vec::new(), false);
-        assert_eq!(full.cost_factor, 0.5, "retention is capped at 50%");
-        assert_eq!(full.retention_pct, 50.0);
-        let negative = Leveling::new(-30.0, 0.0, 0, 0, Vec::new(), false);
-        assert_eq!(negative.bubble_pct, 0.0, "a negative bubble reads as none");
-    }
-
-    #[test]
-    fn the_tier_multiplier_adds_onyx_and_zenith() {
-        let leveling = Leveling::new(0.0, 0.0, 10, 4, Vec::new(), false);
-        assert!((leveling.tier_multiplier - (1.0 + 0.1 * 10.0 + 0.15 * 4.0)).abs() < 1e-12);
-        assert_eq!(leveling.double_chance, 0.0);
-        let capped = Leveling::new(0.0, 3.0, 0, 0, Vec::new(), false);
-        assert_eq!(
-            capped.double_chance, 1.0,
-            "the vial chance is clamped to 100%"
-        );
-    }
-
-    #[test]
-    fn flair_multipliers_are_the_saved_tiers() {
-        assert_eq!(flair_multiplier(0), 1.0);
-        assert_eq!(flair_multiplier(1), 7.0);
-        assert_eq!(flair_multiplier(2), 15.0);
-        assert_eq!(flair_multiplier(3), 25.0);
-        assert_eq!(flair_multiplier(4), 33.0);
-    }
-
-    #[test]
-    fn the_bubble_changes_the_statues_a_target_needs() {
-        let save = sample(vec![row(100, 0.0); count()]);
-        let none = Leveling::default();
-        let bubbled = Leveling::new(50.0, 0.0, 0, 0, Vec::new(), true);
-        let plain = target_cost(&save, &none, 0, 0, 105).unwrap();
-        let cheap = target_cost(&save, &bubbled, 0, 0, 105).unwrap();
-        assert!(
-            cheap.exp_needed < plain.exp_needed,
-            "retention lowers the EXP a target needs: {} vs {}",
-            cheap.exp_needed,
-            plain.exp_needed
-        );
-        assert!(cheap.statues_guaranteed < plain.statues_guaranteed);
-    }
-
-    #[test]
-    fn retention_lowers_consumed_exp_but_keeps_the_triggering_bar() {
-        let save = sample(vec![row(10, 0.0); count()]);
-        let leveling = Leveling::new(50.0, 0.0, 0, 0, Vec::new(), true);
-        let cost = target_cost(&save, &leveling, 0, 0, 13).unwrap();
-        let bar = |level| exp_requirement(&save, 0, 0, level).unwrap();
-        // Levels 10 and 11 consume half; level 12 is the bar that triggers the
-        // last level-up, so it is required in full.
-        let expected = 0.5 * (bar(10) + bar(11)) + bar(12);
-        assert!((cost.exp_needed - expected).abs() <= expected * 1e-12);
-    }
-
-    #[test]
-    fn a_target_at_or_below_the_saved_level_needs_nothing() {
-        let save = sample(vec![row(42, 7.0); count()]);
-        let leveling = Leveling::default();
-        for target in [0, 41, 42] {
-            let cost = target_cost(&save, &leveling, 0, 0, target).unwrap();
-            assert_eq!(cost.exp_needed, 0.0, "target {target}");
-            assert_eq!(cost.statues_guaranteed, 0);
-        }
-    }
-
-    #[test]
-    fn the_estimate_switches_between_guaranteed_and_average_deposits() {
-        let save = sample(vec![row(10, 0.0); count()]);
-        let leveling = Leveling::new(0.0, 1.0, 0, 0, Vec::new(), true);
-        let cost = target_cost(&save, &leveling, 0, 0, 20).unwrap();
-        assert_eq!(cost.flair_level, 0, "a save without a Flair row assumes 1x");
-        assert_eq!(cost.flair_multiplier, 1.0);
-        assert_eq!(
-            cost.guaranteed_exp, 2.0,
-            "a full vial chance doubles deposits"
-        );
-        assert_eq!(cost.average_exp, 2.0);
-        assert_eq!(
-            Estimate::Guaranteed.statues(&cost),
-            Estimate::Average.statues(&cost)
-        );
-        assert_eq!(Estimate::Guaranteed.deposit(&cost), 2.0);
-
-        let partial = Leveling::new(0.0, 0.25, 0, 0, Vec::new(), true);
-        let cost = target_cost(&save, &partial, 0, 1, 20).unwrap();
-        assert_eq!(cost.guaranteed_exp, 1.0);
-        assert_eq!(cost.average_exp, 1.25);
-        assert!(cost.statues_average < cost.statues_guaranteed);
-    }
-
-    #[test]
-    fn a_flair_row_multiplies_that_statue_only() {
-        let save = sample(vec![row(10, 0.0); count()]);
-        let leveling = Leveling::new(0.0, 0.0, 0, 0, vec![0, 2], true);
-        let plain = target_cost(&save, &leveling, 0, 0, 20).unwrap();
-        let flaired = target_cost(&save, &leveling, 0, 1, 20).unwrap();
-        assert_eq!(plain.flair_multiplier, 1.0);
-        assert_eq!(flaired.flair_level, 2);
-        assert_eq!(flaired.flair_multiplier, 15.0);
-        assert!(flaired.guaranteed_exp > plain.guaranteed_exp);
-        assert!(flaired.statues_guaranteed < plain.statues_guaranteed);
-    }
-
-    #[test]
-    fn a_missing_row_cannot_be_costed() {
-        let mut rows = vec![row(10, 0.0); count()];
-        rows[5] = None;
-        let save = sample(rows);
-        assert_eq!(
-            target_cost(&save, &Leveling::default(), 0, 5, 12),
-            Err(Unavailable::NoRow(5))
-        );
-        assert_eq!(
-            target_cost(&save, &Leveling::default(), 0, count(), 12),
-            Err(Unavailable::NoRow(count()))
-        );
-    }
-
-    #[test]
-    fn a_rate_reads_suffixes_exponents_and_empty_entries() {
-        assert_eq!(parse_rate(""), Ok(0.0));
-        assert_eq!(parse_rate("   "), Ok(0.0));
-        assert_eq!(parse_rate("500"), Ok(500.0));
-        assert_eq!(parse_rate("500K"), Ok(500_000.0));
-        assert_eq!(parse_rate("1.2m"), Ok(1_200_000.0));
-        assert_eq!(parse_rate(" 2 B "), Ok(2_000_000_000.0));
-        assert_eq!(parse_rate(".5"), Ok(0.5));
-        assert_eq!(parse_rate("1e9"), Ok(1e9));
-        assert_eq!(parse_rate("1.5e-3"), Ok(0.0015));
-        assert_eq!(parse_rate("2.5 T"), Ok(2.5e12));
-    }
-
-    #[test]
-    fn an_invalid_rate_names_the_entry() {
-        for text in ["abc", "-1", "1.2.3", "1e", "K", "1 K M", "NaN", "inf"] {
-            assert_eq!(
-                parse_rate(text),
-                Err(RateError::Invalid),
-                "the rate {text:?} is rejected"
-            );
-        }
-        assert_eq!(parse_rate("1e999"), Err(RateError::TooLarge));
-        assert_eq!(
-            RateError::Invalid.message(),
-            "Enter a nonnegative rate, such as 500K, 1.2M or 1e9."
-        );
-    }
-
-    #[test]
-    fn farm_time_waits_on_a_rate_and_reads_ready_at_zero() {
-        assert_eq!(hours(0, 500.0), 0.0);
-        assert_eq!(hours(10, 2.0), 5.0);
-        assert!(hours(10, 0.0).is_infinite());
-        assert!(hours(10, -1.0).is_infinite());
-        assert!(hours(10, f64::INFINITY).is_infinite());
-    }
-
-    #[test]
-    fn characters_without_a_readable_row_are_not_offered() {
-        let save = StatueSave::new(
-            vec![vec![None; count()], vec![row(1, 0.0); count()]],
-            vec![],
-        );
-        assert!(!save.is_empty());
-        assert_eq!(save.first_character(), Some(1));
-        assert_eq!(save.name(1), "Character 2");
-        assert_eq!(save.missing_rows(0), count());
-        assert_eq!(save.missing_rows(1), 0);
-    }
-}
+mod tests;
