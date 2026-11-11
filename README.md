@@ -83,8 +83,16 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   research level/EXP, each character's statue levels/EXP and names, farm plots, ranks, crops, market
   levels, server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are
   read from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app
-  cannot model are reported as warnings instead of guessed; a document that cannot be read only
-  replaces the message and leaves the run untouched.
+  cannot model are reported as warnings instead of guessed. One pipeline detects, parses and
+  migrates every accepted document (`crates/core/src/import.rs`): malformed JSON names the parser
+  detail, an unknown format marker names the marker and the ones this build reads, and an
+  unsupported version names the version and the one it migrates. A document that cannot be read
+  only replaces the message and leaves the run untouched.
+- **Atomic apply and a change log** — the preview decodes everything the document needs (the
+  embedded save and every section config), so Apply only assigns: a project whose save or config
+  does not fit is refused whole. Every applied field change is logged by name and old → new
+  (`researchLevel: 100 → 122`, `supplements: serverVarResXp`, `killroy: config changed`), summarised
+  in the status bar and listed in the dialog as *Last import changed*.
 - **Project export and import** — Export in the same header writes the whole window state as one
   versioned JSON document (`format` + `version`): the decoded save, the research state, the
   supplements and one config object per section. Copying it and pasting it back into Import
@@ -92,7 +100,8 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   one section's config (`idleon-optimizer-section`) on its own and the upstream optimizer's
   gzip+base64 `ROv2:` state string, which is decompressed and migrated; fields this build does not
   model are named in a warning instead of failing the document, while an unknown version or format
-  gets its own message.
+  gets its own message. A project whose embedded save cannot be read fails as a whole, named by the
+  save field, instead of applying its research half.
 - **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
@@ -200,8 +209,11 @@ section root and shared header, drives one interaction (the statue table's searc
 research grid's tabs) and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`.
 `--baseline` compares those captures with a previous run (pixels, not bytes), and `--parallel N`
 proves the lanes stay isolated by checking shards in N windows at once. The section gate also proves
-the project round trip in one lane: Export opens over the window state, then a project document, an
-`ROv2:` state string and a research section config each preview, apply and leave a visible mark.
+the import round trip in one lane: Export opens over the window state, then a project document, an
+`ROv2:` state string and a research section config each preview, apply and leave a visible mark,
+the change log names the applied field, and malformed JSON, an unknown format, an unsupported
+version, an unreadable embedded save and a malformed section config each report their own message
+without touching the applied state.
 These scripts need the `gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.

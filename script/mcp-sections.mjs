@@ -512,6 +512,31 @@ async function importText(lane, text, format, label) {
   await lane.call('click_element', { id: 'import-apply' });
 }
 
+/// Paste `text` that cannot be read and expect the dialog to name the failure,
+/// offer no preview and keep Apply disabled.
+async function importError(lane, text, expected, label) {
+  await lane.call('click_element', { id: 'header-import' });
+  await waitForNode(lane, 'import-drop', `${label}: the import dialog opens`);
+  await lane.call('click_element', { id: 'import-input' });
+  await lane.call('keyboard', { keystroke: 'secondary-a' });
+  await lane.call('type_text', { text });
+  await waitFor(
+    lane,
+    (nodes) => (labelOf(nodes, 'import-status') ?? '').includes(expected),
+    `${label}: the message names "${expected}"`,
+  );
+  const nodes = await lane.tree();
+  check(`${label}: no preview is offered`, !has(nodes, 'import-format'));
+  const apply = nodes.find((node) => node.id === 'import-apply');
+  check(`${label}: Apply stays disabled`, !(apply?.actions ?? []).includes('click'));
+  await lane.call('click_element', { id: 'import-cancel' });
+  await waitFor(
+    lane,
+    (current) => !has(current, 'import-drop'),
+    `${label}: cancel closes the dialog`,
+  );
+}
+
 /// The project round trip: export opens over the window state, then the project
 /// document, an ROv2 state string and a section config each apply and leave a
 /// visible mark.
@@ -539,6 +564,25 @@ async function visitProjectRoundTrip() {
       (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('research level 123'),
       'project: the status names the applied research level',
     );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('researchLevel: 100 → 123'),
+      'project: the status logs the research level change',
+    );
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-changes', 'project: the dialog lists what the import changed');
+    const logged = (await lane.tree()).filter((node) => node.id?.startsWith('import-change'));
+    check(
+      'project: the change log names the field and both values',
+      logged.some((node) => (node.label ?? '').includes('researchLevel: 100 → 123')),
+      logged.map((node) => node.label).join(' | '),
+    );
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'import-drop'),
+      'project: the change log closes with the dialog',
+    );
 
     await lane.call('click_element', { id: 'back-to-dashboard' });
     await waitForNode(lane, 'dashboard', 'project: back on the dashboard');
@@ -554,6 +598,53 @@ async function visitProjectRoundTrip() {
     await waitForNode(lane, 'section-research', 'config: the research section opens');
     await importText(lane, sectionConfig('research', { tab: 'run' }), 'section config', 'config');
     await waitForNode(lane, 'run-optimize', 'config: the tab came from the section config');
+
+    // Each failure gets its own message and nothing is applied.
+    await importError(lane, '{"Research": ', 'not valid JSON', 'malformed');
+    await importError(
+      lane,
+      JSON.stringify({ format: 'some-other-tool', version: 1 }),
+      'unknown format',
+      'wrong format',
+    );
+    await importError(
+      lane,
+      JSON.stringify({ format: 'idleon-optimizer-project', version: 9 }),
+      'unsupported version',
+      'bad version',
+    );
+    await importError(
+      lane,
+      JSON.stringify({
+        format: 'idleon-optimizer-project',
+        version: 1,
+        save: { not: 'a save' },
+        research: { researchLevel: 130 },
+      }),
+      'no save fields found',
+      'unreadable save',
+    );
+    await importError(
+      lane,
+      sectionConfig('killroy', { weeks: 'twelve' }),
+      'killroy',
+      'malformed config',
+    );
+    // The failed imports never replaced the log or the state they could not read.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-changes', 'errors: the last applied log survives');
+    const survived = (await lane.tree()).filter((node) => node.id?.startsWith('import-change'));
+    check(
+      'errors leave the applied log alone',
+      survived.some((node) => (node.label ?? '').includes('research: config changed')),
+      survived.map((node) => node.label).join(' | '),
+    );
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitForNode(
+      lane,
+      'run-optimize',
+      'errors leave the applied section config in place',
+    );
   } catch (error) {
     fail('project round trip', error);
   } finally {

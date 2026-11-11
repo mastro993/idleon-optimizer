@@ -149,11 +149,13 @@ that share a tree renderer reuse the formula-tree component.
 1. **Raw decoded save** — `it.json` (`{ data, serverVars, companion }`) or flat `save.json`. This is
    the primary user-data import and the format the game writes.
 2. **Optimizer state string** — upstream `ROv2:` + gzip + base64, exported by the research page.
-3. **Project JSON** — `{ "format": "idleon-optimizer", "version": 1, "save": {...}, "sections": {...} }`.
+3. **Project JSON** — `{ "format": "idleon-optimizer-project", "version": 1, "save": {...}, "sections": {...} }`.
 4. **Section config JSON** — `{ "format": "idleon-optimizer-section", "section": "farming", "version": 1, ... }`.
 
 Detection order: project JSON, section config, ROv2 string, raw save. A raw save is detected by
-`Research`/`Lv0_*`/`gridLevels` fields; an unknown object is rejected with a field list.
+`Research`/`Lv0_*`/`gridLevels` fields; an object with a `format` marker this build does not read is
+rejected by name, and an object with no marker and no save field is rejected with the field list it
+expected. `crates/core/src/import.rs` is the one pipeline every accepted format goes through.
 
 ### 5.3 Import pipeline
 
@@ -162,12 +164,16 @@ Detection order: project JSON, section config, ROv2 string, raw save. A raw save
 3. Migrate older versions; unknown fields become warnings, not failures.
 4. Build a preview: format, save name if present, characters, research level, detected sections and
    warnings.
-5. Apply atomically: either the whole import succeeds or the previous state stays intact.
+5. Decode everything the document needs while previewing (the embedded save and each section
+   config), then apply atomically: either the whole import succeeds or the previous state stays
+   intact. Log every applied field change as `field: old → new`, summarise it in the status bar and
+   keep the list in the dialog.
 6. Persist the imported save metadata and add it to recent imports.
 
 Errors name the failing field and the expected shape. Examples: `not valid JSON: expected value at
-line 1 column 2`, `no save fields found: expected Research, Lv0_*, gridLevels`, `unsupported project
-version 3 (this build reads 1)`.
+line 1 column 2`, `unknown format "some-other-tool"; this build reads "idleon-optimizer-project",
+"idleon-optimizer-section" or a decoded save`, `unsupported version: project version 3; this build
+reads 1`, `no save fields found: expected Research, Lv0_*, gridLevels`.
 
 ### 5.4 Export
 

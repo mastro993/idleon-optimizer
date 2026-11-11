@@ -104,7 +104,7 @@ fn field(save: &Map<String, Value>, decoded: &str, raw: &str) -> Option<Value> {
 /// `FarmPlot` rows, padded to the 36-plot field.
 fn plot_rows(value: &Value, warnings: &mut Vec<String>) -> Vec<Plot> {
     let Some(rows) = value.as_array() else {
-        warnings.push("FarmPlot: not an array of plot rows".into());
+        warnings.push("FarmPlot: not an array of plot rows; the field stays empty".into());
         return vec![Plot::default(); PLOTS];
     };
     let mut plots = vec![Plot::default(); PLOTS];

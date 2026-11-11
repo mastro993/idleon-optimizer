@@ -30,7 +30,7 @@ pub(crate) fn research_rows(
             Ok(parsed) => parsed,
             Err(error) => {
                 warnings.push(format!(
-                    "Research: the research string is not JSON ({error})"
+                    "Research: the research string is not JSON ({error}); the row-encoded fields are skipped"
                 ));
                 return Vec::new();
             }
@@ -38,7 +38,7 @@ pub(crate) fn research_rows(
         other => other.clone(),
     };
     let Value::Array(rows) = parsed else {
-        warnings.push("Research: not an array of rows".into());
+        warnings.push("Research: not an array of rows; the row-encoded fields are skipped".into());
         return Vec::new();
     };
     rows.into_iter()

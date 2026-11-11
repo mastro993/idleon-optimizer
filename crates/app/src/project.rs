@@ -21,11 +21,12 @@ use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::Sort as StatueSort;
 use crate::state::{AppState, Route};
 use idleon_core::coral;
-use idleon_core::model::Effort;
+use idleon_core::game;
+use idleon_core::import as pipeline;
+use idleon_core::model::{Effort, SimContext, Simulation};
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::project;
 use idleon_core::sailing::{AssignmentMode, Goal};
-use idleon_core::{game, save};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
@@ -33,7 +34,7 @@ use serde_json::{Map, Value};
 /// The research section's config: its tab, selection, target and supplements.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct ResearchConfig {
+pub struct ResearchConfig {
     tab: ResearchTab,
     selected_cell: Option<usize>,
     selected_shape: Option<usize>,
@@ -62,7 +63,7 @@ impl Default for ResearchConfig {
 /// tier floor that lives on the route context.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct SailingConfig {
+pub struct SailingConfig {
     mode: AssignmentMode,
     island: usize,
     goal: Goal,
@@ -72,7 +73,7 @@ struct SailingConfig {
 /// The Clamworks section's config: its tab and the entered multikill total.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct ClamworksConfig {
+pub struct ClamworksConfig {
     tab: ClamworksTab,
     multikill: f64,
 }
@@ -80,7 +81,7 @@ struct ClamworksConfig {
 /// The Jar section's config: its tab.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct JarConfig {
+pub struct JarConfig {
     tab: JarTab,
 }
 
@@ -88,7 +89,7 @@ struct JarConfig {
 /// a filter, not state, and the statue rows come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-struct StatueConfig {
+pub struct StatueConfig {
     character: usize,
     sort: StatueSort,
 }
@@ -165,68 +166,125 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     configs
 }
 
-/// Apply a project document to the window, collecting what it could not read.
+/// Apply a project document to the window, collecting what it could not read
+/// and every change it made.
 ///
-/// The embedded save goes through the one save importer every section already
-/// reads, so the account sections land exactly where a raw save import leaves
-/// them; a project without a readable save still applies its research half.
-pub fn apply(state: &mut AppState, project: project::Project, warnings: &mut Vec<String>) {
-    let imported = project
-        .save
-        .as_ref()
-        .and_then(|save| match save::import(&save.to_string()) {
-            Ok(imported) => Some(imported),
-            Err(error) => {
-                warnings.push(format!(
-                    "save: {error}; the project's research state still applies"
-                ));
-                None
-            }
-        });
-    match imported {
+/// The document arrives from [`pipeline::read`] with its embedded save already
+/// decoded, and its section configs from [`prepare`], so this only assigns: the
+/// save and the research state land together, then each decoded config is
+/// assigned. Nothing here can fail, so the window never changes halfway.
+pub fn apply(
+    state: &mut AppState,
+    import: pipeline::ProjectImport,
+    configs: Vec<Config>,
+    warnings: &mut Vec<String>,
+    changes: &mut Vec<String>,
+) {
+    let pipeline::ProjectImport { document, save } = import;
+    let project::Project {
+        section,
+        simulation,
+        context,
+        ..
+    } = document;
+    match save {
         Some(mut imported) => {
             warnings.extend(imported.warnings.iter().cloned());
-            imported.simulation = project.simulation;
-            imported.context = project.context;
+            changes.push(format!(
+                "save: {} · {} character(s)",
+                imported.format.label(),
+                imported.characters
+            ));
+            imported.simulation = simulation;
+            imported.context = context;
+            changes.extend(research_changes(&state.simulation, &imported.simulation));
+            changes.extend(supplement_changes(&state.context, &imported.context));
             state.load_imported(imported);
         }
         None => {
-            state.simulation = project.simulation;
-            state.context = project.context;
+            changes.extend(research_changes(&state.simulation, &simulation));
+            changes.extend(supplement_changes(&state.context, &context));
+            state.simulation = simulation;
+            state.context = context;
         }
     }
-    for (id, config) in &project.sections {
-        if !apply_section(state, id, config, warnings) {
-            warnings.push(format!(
-                "sections: {id} is not a section this build declares"
+    for config in configs {
+        assign(state, config, warnings);
+    }
+    // A section id the registry does not declare was already named in the
+    // preview's warnings, so the route simply stays where it is.
+    if let Some(section) = section.as_deref().and_then(sections::find) {
+        if state.route != Route::Section(section) {
+            changes.push(format!(
+                "section: {} → {}",
+                route_name(&state.route),
+                section.id
             ));
         }
-    }
-    if let Some(id) = &project.section {
-        match sections::find(id) {
-            Some(section) => {
-                state.route = Route::Section(section);
-                state.last_section = Some(section.id);
-            }
-            None => warnings.push(format!(
-                "section: {id} is not a section this build declares"
-            )),
-        }
+        state.route = Route::Section(section);
+        state.last_section = Some(section.id);
     }
 }
 
-/// Apply one section's config. Returns whether the registry declares the id.
-pub fn apply_section(
-    state: &mut AppState,
-    id: &str,
-    config: &Value,
-    warnings: &mut Vec<String>,
-) -> bool {
-    match id {
-        "research" => {
-            let Some(config) = read::<ResearchConfig>(config, id, warnings) else {
-                return true;
-            };
+/// One section's config, decoded while the dialog previews the document.
+#[derive(Clone, Debug)]
+pub enum Config {
+    Research(ResearchConfig),
+    Killroy(KillroyState),
+    Sailing(SailingConfig),
+    Farming(FarmingState),
+    Statue(StatueConfig),
+    Monument(MonumentState),
+    Pickle(PickleState),
+    Clamworks(ClamworksConfig),
+    Jar(JarConfig),
+    Coral(coral::Inputs),
+}
+
+/// What decoding one section config found.
+enum Decoded {
+    Config(Box<Config>),
+    /// The registry declares no section with this id.
+    Unknown,
+    /// The id is declared, but the config does not fit this build's shape.
+    Malformed(String),
+}
+
+/// Decode every section config a document carries, without touching the window.
+///
+/// The preview runs this, so applying the document only assigns what was
+/// already read: a malformed config fails the import instead of leaving the
+/// window half-changed, and each unknown-field warning is counted once.
+pub fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String> {
+    let configs: Vec<(String, Value)> = match document {
+        pipeline::Document::Project(project) => project
+            .document
+            .sections
+            .iter()
+            .map(|(id, config)| (id.clone(), config.clone()))
+            .collect(),
+        pipeline::Document::Section(section) => {
+            vec![(section.section.clone(), section.config.clone())]
+        }
+        pipeline::Document::Save(_) => return Ok(Vec::new()),
+    };
+    let warnings = document.warnings_mut();
+    let mut decoded = Vec::new();
+    for (id, config) in &configs {
+        match decode(id, config, warnings) {
+            Decoded::Config(config) => decoded.push(*config),
+            Decoded::Unknown => {}
+            Decoded::Malformed(detail) => return Err(detail),
+        }
+    }
+    Ok(decoded)
+}
+
+/// Assign one decoded section config. Warnings are for values the loaded save
+/// or the grid no longer has room for; they never fail the import.
+pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) {
+    match config {
+        Config::Research(config) => {
             state.research.tab = config.tab;
             state.effort = config.effort;
             state.supplements_open = config.supplements_open;
@@ -243,24 +301,26 @@ pub fn apply_section(
                 warnings,
             );
             match config.target_kind.as_str() {
-                "level" => state.target = idleon_core::model::Target::Level(config.target_value.max(1.0).round() as u32),
-                "hours" => state.target = idleon_core::model::Target::Hours(config.target_value.max(0.5)),
+                "level" => {
+                    state.target = idleon_core::model::Target::Level(
+                        config.target_value.max(1.0).round() as u32,
+                    )
+                }
+                "hours" => {
+                    state.target =
+                        idleon_core::model::Target::Hours(config.target_value.max(0.5))
+                }
                 other => warnings.push(format!(
                     "research: targetKind {other:?} is not \"hours\" or \"level\"; the target is kept"
                 )),
             }
         }
-        "killroy" => {
-            if let Some(config) = read::<KillroyState>(config, id, warnings) {
-                state.killroy = KillroyState {
-                    weeks: config.weeks.clamp(1, 52),
-                };
-            }
-        }
-        "sailing" => {
-            let Some(config) = read::<SailingConfig>(config, id, warnings) else {
-                return true;
+        Config::Killroy(config) => {
+            state.killroy = KillroyState {
+                weeks: config.weeks.clamp(1, 52),
             };
+        }
+        Config::Sailing(config) => {
             state.sailing_state = SailingState {
                 mode: config.mode,
                 island: config
@@ -270,77 +330,87 @@ pub fn apply_section(
             };
             state.sailing.minimum_tier = config.minimum_tier.min(5);
         }
-        "farming" => {
-            if let Some(config) = read::<FarmingState>(config, id, warnings) {
-                state.farming = FarmingState {
-                    selected_plot: config.selected_plot.min(idleon_core::farming::PLOTS - 1),
-                    target_crop: config.target_crop,
-                };
+        Config::Farming(config) => {
+            state.farming = FarmingState {
+                selected_plot: config.selected_plot.min(idleon_core::farming::PLOTS - 1),
+                target_crop: config.target_crop,
+            };
+        }
+        Config::Statue(config) => {
+            state.statue.sort = config.sort;
+            if state.statue.save.has_character(config.character) {
+                state.statue.character = config.character;
+            } else {
+                warnings.push(format!(
+                    "statue: character {} has no saved rows; the table keeps its character",
+                    config.character + 1
+                ));
             }
         }
-        "statue" => {
-            if let Some(config) = read::<StatueConfig>(config, id, warnings) {
-                state.statue.sort = config.sort;
-                if state.statue.save.has_character(config.character) {
-                    state.statue.character = config.character;
-                } else {
-                    warnings.push(format!(
-                        "statue: character {} has no saved rows; the table keeps its character",
-                        config.character + 1
-                    ));
-                }
-            }
+        Config::Monument(config) => {
+            state.monument = MonumentState {
+                tab: config.tab,
+                wave: config.wave.clamp(1, 1001),
+                boosts: config.boosts,
+                rerolls: config.rerolls,
+                remaining_hp: config.remaining_hp.filter(|hp| hp.is_finite() && *hp > 0.0),
+            };
         }
-        "monument" => {
-            if let Some(config) = read::<MonumentState>(config, id, warnings) {
-                state.monument = MonumentState {
-                    tab: config.tab,
-                    wave: config.wave.clamp(1, 1001),
-                    boosts: config.boosts,
-                    rerolls: config.rerolls,
-                    remaining_hp: config.remaining_hp.filter(|hp| hp.is_finite() && *hp > 0.0),
-                };
-            }
-        }
-        "pickle" => {
-            if let Some(config) = read::<PickleState>(config, id, warnings) {
-                state.pickle = PickleState {
-                    dps: if config.dps.is_finite() {
-                        config.dps.clamp(0.0, MAX_DPS)
-                    } else {
-                        0.0
-                    },
-                    max_ttk: if config.max_ttk.is_finite() {
-                        config.max_ttk.clamp(MIN_TTK, MAX_TTK)
-                    } else {
-                        DEFAULT_TTK
-                    },
-                };
-            }
-        }
-        "clamworks" => {
-            if let Some(config) = read::<ClamworksConfig>(config, id, warnings) {
-                state.clamworks_tab = config.tab;
-                state.clamworks_multikill = if config.multikill.is_finite() {
-                    config.multikill.max(0.0)
+        Config::Pickle(config) => {
+            state.pickle = PickleState {
+                dps: if config.dps.is_finite() {
+                    config.dps.clamp(0.0, MAX_DPS)
                 } else {
                     0.0
-                };
-            }
+                },
+                max_ttk: if config.max_ttk.is_finite() {
+                    config.max_ttk.clamp(MIN_TTK, MAX_TTK)
+                } else {
+                    DEFAULT_TTK
+                },
+            };
         }
-        "jar" => {
-            if let Some(config) = read::<JarConfig>(config, id, warnings) {
-                state.jar_tab = config.tab;
-            }
+        Config::Clamworks(config) => {
+            state.clamworks_tab = config.tab;
+            state.clamworks_multikill = if config.multikill.is_finite() {
+                config.multikill.max(0.0)
+            } else {
+                0.0
+            };
         }
-        "coral-god-rank" => {
-            if let Some(config) = read::<coral::Inputs>(config, id, warnings) {
-                state.coral.inputs = config;
-            }
+        Config::Jar(config) => {
+            state.jar_tab = config.tab;
         }
-        _ => return false,
+        Config::Coral(config) => {
+            state.coral.inputs = config;
+        }
     }
-    true
+}
+
+/// Decode one section's config by registry id, naming the fields this build
+/// does not know in `warnings`.
+fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
+    macro_rules! decode {
+        ($kind:ident, $config:ty) => {
+            match read::<$config>(config, id, warnings) {
+                Ok(config) => Decoded::Config(Box::new(Config::$kind(config))),
+                Err(detail) => Decoded::Malformed(detail),
+            }
+        };
+    }
+    match id {
+        "research" => decode!(Research, ResearchConfig),
+        "killroy" => decode!(Killroy, KillroyState),
+        "sailing" => decode!(Sailing, SailingConfig),
+        "farming" => decode!(Farming, FarmingState),
+        "statue" => decode!(Statue, StatueConfig),
+        "monument" => decode!(Monument, MonumentState),
+        "pickle" => decode!(Pickle, PickleState),
+        "clamworks" => decode!(Clamworks, ClamworksConfig),
+        "jar" => decode!(Jar, JarConfig),
+        "coral-god-rank" => decode!(Coral, coral::Inputs),
+        _ => Decoded::Unknown,
+    }
 }
 
 /// A config struct as the document stores it.
@@ -348,13 +418,121 @@ fn value<T: Serialize>(config: &T) -> Value {
     serde_json::to_value(config).unwrap_or(Value::Null)
 }
 
-/// Read one section's config, naming the fields this build does not know and
-/// keeping the section's current config when the shape does not fit.
+/// The research fields that changed, named as the document names them.
+pub fn research_changes(before: &Simulation, after: &Simulation) -> Vec<String> {
+    let mut changes = Vec::new();
+    if before.research_level != after.research_level {
+        changes.push(format!(
+            "researchLevel: {} → {}",
+            before.research_level, after.research_level
+        ));
+    }
+    if before.research_exp != after.research_exp {
+        changes.push(format!(
+            "researchExp: {} → {}",
+            plain_number(before.research_exp),
+            plain_number(after.research_exp)
+        ));
+    }
+    let squares = (0..game().cells())
+        .filter(|cell| before.grid.level(*cell) != after.grid.level(*cell))
+        .count();
+    if squares > 0 {
+        changes.push(format!("gridLevels: {squares} square(s) changed"));
+    }
+    if before.mags != after.mags {
+        changes.push(format!(
+            "magData: {} → {} magnifier(s)",
+            before.mags.len(),
+            after.mags.len()
+        ));
+    }
+    if before.placements != after.placements {
+        changes.push(format!(
+            "shapePositions: {} → {} shape(s)",
+            before.placements.len(),
+            after.placements.len()
+        ));
+    }
+    if before.observations != after.observations {
+        changes.push("insightLvs/occFound: observation progress changed".into());
+    }
+    changes
+}
+
+/// The save-derived multiplier fields that changed, by their document name.
+pub fn supplement_changes(before: &SimContext, after: &SimContext) -> Vec<String> {
+    let (Ok(before), Ok(after)) = (serde_json::to_value(before), serde_json::to_value(after))
+    else {
+        return Vec::new();
+    };
+    let (Some(before), Some(after)) = (before.as_object(), after.as_object()) else {
+        return Vec::new();
+    };
+    let changed: Vec<&str> = after
+        .keys()
+        .map(String::as_str)
+        .filter(|field| before.get(*field) != after.get(*field))
+        .collect();
+    if changed.is_empty() {
+        Vec::new()
+    } else {
+        vec![format!("supplements: {}", changed.join(", "))]
+    }
+}
+
+/// The section configs that differ between two snapshots of the window.
+pub fn config_changes(before: &Map<String, Value>, after: &Map<String, Value>) -> Vec<String> {
+    after
+        .iter()
+        .filter(|(id, config)| before.get(*id) != Some(*config))
+        .map(|(id, _)| format!("{id}: config changed"))
+        .collect()
+}
+
+/// A change log as the one line the status bar shows.
+pub fn change_line(changes: &[String]) -> String {
+    match changes.first() {
+        None => "Nothing changed.".into(),
+        Some(first) if changes.len() == 1 => format!("Changed: {first}."),
+        Some(first) => format!(
+            "{} changes: {first} (and {} more).",
+            changes.len(),
+            changes.len() - 1
+        ),
+    }
+}
+
+/// The route as the change log names it.
+fn route_name(route: &Route) -> &str {
+    match route {
+        Route::Dashboard => "dashboard",
+        Route::Section(section) => section.id,
+        Route::Missing(id) => id,
+    }
+}
+
+/// A number without its trailing `.0`, for a change-log line.
+fn plain_number(value: f64) -> String {
+    if !value.is_finite() {
+        return value.to_string();
+    }
+    if value.fract() == 0.0 {
+        format!("{value:.0}")
+    } else {
+        format!("{value:.2}")
+    }
+}
+
+/// Read one section's config, naming the fields this build does not know.
+///
+/// A config the shape does not fit is an error naming the section: the caller
+/// refuses the whole document rather than applying the rest of it.
 fn read<T: Serialize + DeserializeOwned + Default>(
     config: &Value,
     section: &str,
     warnings: &mut Vec<String>,
-) -> Option<T> {
+) -> Result<T, String> {
     let known = serde_json::to_value(T::default()).ok();
     if let (Some(object), Some(known)) = (
         config.as_object(),
@@ -372,15 +550,7 @@ fn read<T: Serialize + DeserializeOwned + Default>(
             ));
         }
     }
-    match serde_json::from_value(config.clone()) {
-        Ok(config) => Some(config),
-        Err(error) => {
-            warnings.push(format!(
-                "{section}: {error}; the section keeps its current config"
-            ));
-            None
-        }
-    }
+    serde_json::from_value(config.clone()).map_err(|error| format!("{section}: {error}"))
 }
 
 /// An optional index, dropped with a warning when it is outside `limit`.
@@ -514,18 +684,47 @@ mod tests {
     }
 
     #[test]
-    fn a_malformed_config_warns_instead_of_panicking() {
+    fn a_malformed_config_names_the_section_and_applies_nothing() {
         let mut warnings = Vec::new();
-        let config: Option<KillroyState> =
-            read(&json!({ "weeks": "twelve" }), "killroy", &mut warnings);
-        assert!(config.is_none());
-        assert!(warnings[0].contains("killroy"), "{warnings:?}");
+        let error = read::<KillroyState>(&json!({ "weeks": "twelve" }), "killroy", &mut warnings)
+            .expect_err("a string where a number belongs is refused");
+        assert!(error.contains("killroy"), "{error}");
+        assert!(warnings.is_empty(), "{warnings:?}");
 
         let mut warnings = Vec::new();
-        let sailing: Option<SailingState> =
-            read(&json!({ "mode": "frogs" }), "sailing", &mut warnings);
-        assert!(sailing.is_none());
-        assert!(!warnings.is_empty());
+        assert!(
+            read::<SailingState>(&json!({ "mode": "frogs" }), "sailing", &mut warnings).is_err()
+        );
+    }
+
+    #[test]
+    fn prepare_refuses_a_document_whose_config_does_not_fit() {
+        use idleon_core::import as pipeline;
+
+        let mut document =
+            pipeline::read(&project_text(json!({ "weeks": "twelve" }))).expect("the project reads");
+        let error = prepare(&mut document).expect_err("the config is malformed");
+        assert!(error.contains("killroy"), "{error}");
+        // A document whose configs fit prepares every one of them.
+        let mut document =
+            pipeline::read(&project_text(json!({ "weeks": 20 }))).expect("the project reads");
+        let configs = prepare(&mut document).expect("the config fits");
+        assert_eq!(configs.len(), 1);
+        assert!(matches!(
+            configs[0],
+            Config::Killroy(KillroyState { weeks: 20 })
+        ));
+    }
+
+    /// A project document carrying one killroy config, for the prepare tests.
+    fn project_text(config: serde_json::Value) -> String {
+        json!({
+            "format": idleon_core::project::FORMAT,
+            "version": idleon_core::project::VERSION,
+            "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
+            "sections": { "killroy": config },
+        })
+        .to_string()
     }
 
     #[test]
@@ -545,6 +744,81 @@ mod tests {
         assert_eq!(within(Some(3), 4, "selectedCell", &mut warnings), Some(3));
         assert_eq!(within(Some(4), 4, "selectedCell", &mut warnings), None);
         assert!(warnings.len() == 1, "{warnings:?}");
+    }
+
+    #[test]
+    fn a_change_log_names_the_field_its_old_and_its_new_value() {
+        let before = Simulation {
+            research_level: 100,
+            research_exp: 10.0,
+            ..Simulation::default()
+        };
+        let after = Simulation {
+            research_level: 122,
+            research_exp: 42.5,
+            ..Simulation::default()
+        };
+        let changes = research_changes(&before, &after);
+        assert!(
+            changes
+                .iter()
+                .any(|line| line == "researchLevel: 100 → 122"),
+            "{changes:?}"
+        );
+        assert!(
+            changes.iter().any(|line| line == "researchExp: 10 → 42.50"),
+            "{changes:?}"
+        );
+        assert!(research_changes(&before, &before).is_empty());
+    }
+
+    #[test]
+    fn supplement_changes_name_every_field_that_moved() {
+        let before = SimContext::default();
+        let after = SimContext {
+            server_var_res_xp: 1.5,
+            extra_pct: 10.0,
+            ..SimContext::default()
+        };
+        let changes = supplement_changes(&before, &after);
+        assert_eq!(changes.len(), 1, "{changes:?}");
+        assert!(changes[0].starts_with("supplements: "), "{changes:?}");
+        assert!(changes[0].contains("serverVarResXp"), "{changes:?}");
+        assert!(changes[0].contains("extraPct"), "{changes:?}");
+        assert!(supplement_changes(&before, &before).is_empty());
+    }
+
+    #[test]
+    fn config_changes_name_every_section_whose_config_moved() {
+        let before: Map<String, Value> = [("killroy".to_string(), json!({ "weeks": 12 }))]
+            .into_iter()
+            .collect();
+        let after: Map<String, Value> = [
+            ("killroy".to_string(), json!({ "weeks": 20 })),
+            ("jar".to_string(), json!({ "tab": "production" })),
+        ]
+        .into_iter()
+        .collect();
+        let changes = config_changes(&before, &after);
+        assert!(
+            changes.contains(&"killroy: config changed".to_string()),
+            "{changes:?}"
+        );
+        assert!(
+            changes.contains(&"jar: config changed".to_string()),
+            "{changes:?}"
+        );
+        assert!(config_changes(&before, &before).is_empty());
+    }
+
+    #[test]
+    fn the_status_line_counts_the_changes_and_names_the_first() {
+        assert_eq!(change_line(&[]), "Nothing changed.");
+        assert_eq!(change_line(&["a".to_string()]), "Changed: a.");
+        assert_eq!(
+            change_line(&["a".to_string(), "b".to_string(), "c".to_string()]),
+            "3 changes: a (and 2 more)."
+        );
     }
 
     #[test]
