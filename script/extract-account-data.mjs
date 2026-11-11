@@ -73,7 +73,7 @@ const uqRows = (map) =>
 const payload = {
   encoding: encoding.N2L,
   arcade: Object.fromEntries(
-    [27, 51, 54, 59, 62, 63].map((idx) => [idx, arcade.arcadeShopParams(idx)])
+    [27, 51, 54, 59, 62, 63, 69].map((idx) => [idx, arcade.arcadeShopParams(idx)])
   ),
   rogBonus: sushi.ROG_BONUS_QTY,
   mineheadBonus: minehead.MINEHEAD_BONUS_QTY,
@@ -144,6 +144,17 @@ const payload = {
     y13: alchemy.bubbleParams(3, 32),
     prismaEligible: Number(lists.AlchemyDescription[3][32][10]) === 0,
   },
+  // Cooking Mastery per-upgrade bonus (RandoListo2[8]) and the Rift salt lick
+  // that boosts it, both read by `cooking-mastery-calc.html`.
+  cookingMasteryPerLv: lists.RandoListo2[8].slice(0, 6).map(Number),
+  saltLicks: lists.SaltLicks.map((row) => Number(row[3]) || 0),
+  // The Canteen Read vial, the one alchemy vial that boosts Cooking Mastery EXP.
+  cookingMasteryVial: (() => {
+    const index = lists.AlchemyDescription[4].findIndex((row) => row[11] === '7cookmastery');
+    if (index < 0) return null;
+    const row = lists.AlchemyDescription[4][index];
+    return { index, kind: String(row[3]), x1: Number(row[1]) || 0, x2: Number(row[2]) || 0 };
+  })(),
 };
 
 // Unknown fields are dropped so the file stays diffable.

@@ -5,7 +5,7 @@
 - Milestone: `M16`
 - Section key: `cooking-mastery`
 - Group: `w4`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.
@@ -13,7 +13,7 @@ Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yell
 ## Upstream sources
 
 - cooking-mastery-calc.html
-- js/stats/systems/w4/cooking.js
+- js/stats/systems/common/cooking.js
 - js/stats/systems/common/meal-impact.js
 
 ## UI

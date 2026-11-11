@@ -32,6 +32,7 @@ use gpui_mcp::BridgeHandle;
 use idleon_core::cog::{
     CogResult, Goal as CogGoal, OptimizeOptions, optimize as optimize_cog_board,
 };
+use idleon_core::cooking_mastery::Mastery;
 use idleon_core::farming::Farm;
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
@@ -190,6 +191,8 @@ pub struct AppState {
     pub ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
     pub ladle_state: LadleSectionState,
+    /// The Cooking Mastery state the last imported save carried.
+    pub mastery: Option<Mastery>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -245,6 +248,8 @@ pub struct AppState {
     pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Fishing calculator.
     pub fishing_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared EXP rate tree on the Mastery EXP tab.
+    pub mastery_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     pub focus: FocusHandle,
@@ -542,6 +547,8 @@ impl AppState {
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let fishing_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("fishing-formula", window, cx));
+        let mastery_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("cooking-mastery-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -575,6 +582,7 @@ impl AppState {
             jar: None,
             ladle: None,
             ladle_state,
+            mastery: None,
             pickle: PickleState::default(),
             prisma,
             statue,
@@ -603,6 +611,7 @@ impl AppState {
             cglunko_breakdown,
             clamworks_breakdown,
             fishing_breakdown,
+            mastery_breakdown,
             shadow: Shadow::default(),
             focus,
             bridge,
@@ -942,6 +951,7 @@ impl AppState {
         self.ladle_state
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;
+        self.mastery = imported.mastery;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet

@@ -255,6 +255,22 @@ const prismaSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying the rows the Cooking Mastery tab reads: a
+/// mastery rank of 18 with three upgrades bought, a levelled Divorce Cake and
+/// ribbon ranks, so the section ranks the upgrades and recommends one.
+const masterySave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const ribbons = Array(102).fill(0);
+  for (let index = 28; index < 40; index += 1) ribbons[index] = 8;
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(row(30, { 0: 200 })),
+    CookMaster: JSON.stringify([[], [18, 0, 0, 1000], [7, 3, 0, 0, 0, 0], [0, 0]]),
+    Meals: JSON.stringify([row(90, { 73: 150 })]),
+    Ribbon: JSON.stringify(ribbons),
+  });
+};
+
 /// A small flat `save.json` carrying worship tower levels and a best-wave table,
 /// so the simulator has every type unlocked and a run to play.
 const worshipSave = () => {
@@ -577,6 +593,29 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'gear' });
     await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
+  },
+  'cooking-mastery': async (lane) => {
+    // The empty state is the import action: a save without the mastery rows
+    // carries nothing for the tab to read.
+    await waitForNode(lane, 'cooking-mastery-import', 'cooking-mastery: the empty state offers the import');
+    await lane.call('click_element', { id: 'cooking-mastery-import' });
+    await waitForNode(lane, 'import-input', 'cooking-mastery: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('type_text', { text: masterySave() });
+    await waitForNode(lane, 'import-format', 'cooking-mastery: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'cooking-mastery-summary', 'cooking-mastery: the mastery figures load');
+    const summary = labelOf(await lane.tree(), 'cooking-mastery-summary') ?? '';
+    if (!summary.includes('Mastery level 18')) throw new Error(`cooking-mastery: the summary reads ${summary}`);
+    await waitForNode(lane, 'cooking-mastery-upgrades', 'cooking-mastery: the upgrade comparison renders');
+    await waitForNode(lane, 'cooking-mastery-formula-search', 'cooking-mastery: the breakdown tree is there');
+    // A free point ranks SWEET first on this save: the cake level is the only
+    // scaling term above zero.
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-recommendation') ?? '').includes('SWEET'),
+      'cooking-mastery: the recommendation names the best upgrade'
+    );
   },
   shadow: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

@@ -540,6 +540,7 @@ mod tests {
             statues: Default::default(),
             coral: Default::default(),
             worship: Default::default(),
+            mastery: None,
             format,
             characters,
             named_characters: characters,

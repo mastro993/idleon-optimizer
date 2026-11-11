@@ -14,6 +14,7 @@ pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
 pub mod combat_sim;
+pub mod cooking_mastery;
 pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
@@ -318,9 +319,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W4,
         description: "Mastery EXP/hr optimizer — which upgrade to level next",
         spec: "docs/sections/cooking-mastery.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: cooking_mastery::view,
         keys: no_keys,
     },
     Section {

@@ -18,6 +18,7 @@ mod data;
 mod equipment;
 mod fields;
 mod lab;
+mod mastery;
 mod systems;
 mod tome;
 mod tome_high;
@@ -151,6 +152,40 @@ impl Decoder<'_> {
         }
         value * self.all_bonus_multi()
     }
+}
+
+/// Decode the Cooking Mastery state the section reads.
+///
+/// The page's `computeExternalMulti` reads systems the same decoder owns, so
+/// this runs one on the same save instead of a second parser.
+pub(crate) fn cooking_mastery(
+    save: &Map<String, Value>,
+    root: &Map<String, Value>,
+    characters: &[Character],
+    simulation: &Simulation,
+    warnings: &mut Vec<String>,
+) -> Option<crate::cooking_mastery::Mastery> {
+    let overlay = simulation.overlay();
+    let mut decoder = Decoder {
+        save,
+        root,
+        data: account_data(),
+        characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings,
+    };
+    let mastery = decoder.cooking_mastery();
+    if mastery.is_none() {
+        decoder.warn(
+            "CookMaster",
+            "not in the save; the Cooking Mastery section has no upgrades to read",
+        );
+    }
+    mastery
 }
 
 /// Decode the account terms into the simulator context and its tree.
