@@ -19,7 +19,8 @@
 //   --app-bin PATH   app binary to launch
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
@@ -496,11 +497,26 @@ async function capture(lane, unit) {
   else check(`${unit.id}: matches its baseline`, false, detail);
 }
 
+/// Open the shared import dialog. A click that lands while a previous lane's
+/// window is still closing can be lost, so one retry keeps the check about the
+/// import rather than about window focus.
+async function openImport(lane, label) {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await lane.call('click_element', { id: 'header-import' });
+    try {
+      await waitForNode(lane, 'import-drop', `${label}: the import dialog opens`, 6000);
+      return;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+}
+
 /// Paste `text` into the shared import dialog and wait for the preview to name
 /// the document, then apply it.
 async function importText(lane, text, format, label) {
-  await lane.call('click_element', { id: 'header-import' });
-  await waitForNode(lane, 'import-drop', `${label}: the import dialog opens`);
+  await openImport(lane, label);
   await lane.call('click_element', { id: 'import-input' });
   await lane.call('keyboard', { keystroke: 'secondary-a' });
   await lane.call('type_text', { text });
@@ -515,8 +531,7 @@ async function importText(lane, text, format, label) {
 /// Paste `text` that cannot be read and expect the dialog to name the failure,
 /// offer no preview and keep Apply disabled.
 async function importError(lane, text, expected, label) {
-  await lane.call('click_element', { id: 'header-import' });
-  await waitForNode(lane, 'import-drop', `${label}: the import dialog opens`);
+  await openImport(lane, label);
   await lane.call('click_element', { id: 'import-input' });
   await lane.call('keyboard', { keystroke: 'secondary-a' });
   await lane.call('type_text', { text });
@@ -652,6 +667,105 @@ async function visitProjectRoundTrip() {
   }
 }
 
+/// The session file: one lane imports a save and opens a section, a second lane
+/// starts from the same app-data directory and must land back there, and a
+/// third must back up a corrupt file and start on a clean dashboard.
+async function visitSessionPersistence() {
+  const stateDir = mkdtempSync(join(tmpdir(), 'idleon-session-check-'));
+  const sessionFile = join(stateDir, 'session.json');
+  let lane = null;
+  try {
+    lane = await McpLane.start({ appBin, stateDir, keep: false });
+    await waitForNode(lane, 'dashboard', 'session: a fresh app-data directory starts on the dashboard');
+    await importText(lane, endgameSave(), 'save.json', 'session');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'header-save') ?? '').startsWith('Save imported'),
+      'session: the save loads',
+    );
+    await searchFor(lane, 'Research Grid', 'card-research', 'session: search finds the research card');
+    await lane.call('click_element', { id: 'card-research' });
+    await waitForNode(lane, 'section-research', 'session: a section opens');
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-recent', 'session: the import dialog lists recent imports');
+    const recent = (await lane.tree()).filter((node) => node.id?.startsWith('recent-import'));
+    check(
+      'session: a recent import names its format and time',
+      recent.some((node) => {
+        const line = node.label ?? '';
+        return line.includes('save.json') && /\d{1,2}:\d{2}/.test(line);
+      }),
+      recent.map((node) => node.label).join(' | '),
+    );
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'import-drop'),
+      'session: the import dialog closes',
+    );
+    // A tab switch is section config, not an import: only the debounced write
+    // can carry it, so give that write time to land before the process closes.
+    await lane.call('click_element', { id: 'run' });
+    await waitForNode(lane, 'run-optimize', 'session: the section config changes');
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    lane.close();
+    lane = null;
+
+    lane = await McpLane.start({ appBin, stateDir, keep: false });
+    await waitForNode(lane, 'section-research', 'session: relaunch restores the last section');
+    const restored = await lane.tree();
+    const save = labelOf(restored, 'header-save') ?? '';
+    check(
+      'session: relaunch restores the imported save',
+      save.startsWith('Save imported'),
+      save,
+    );
+    check(
+      'session: relaunch restores the section config',
+      has(restored, 'run-optimize'),
+      restored.map((node) => node.id).filter(Boolean).slice(0, 20).join(', '),
+    );
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-recent', 'session: recent imports survive a relaunch');
+    const persisted = (await lane.tree()).filter((node) => node.id?.startsWith('recent-import'));
+    check(
+      'session: the restored recent import keeps its format and time',
+      persisted.some((node) => {
+        const line = node.label ?? '';
+        return line.includes('save.json') && /\d{1,2}:\d{2}/.test(line);
+      }),
+      persisted.map((node) => node.label).join(' | '),
+    );
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'import-drop'),
+      'session: the restored import dialog closes',
+    );
+    lane.close();
+    lane = null;
+
+    writeFileSync(sessionFile, '{not a session');
+    lane = await McpLane.start({ appBin, stateDir, keep: false });
+    await waitForNode(lane, 'dashboard', 'session: a corrupt file starts clean on the dashboard');
+    const nodes = await lane.tree();
+    const status = labelOf(nodes, 'status-status') ?? '';
+    check('session: the corrupt file is reported', status.includes('corrupt'), status);
+    const saveAfterCorrupt = labelOf(nodes, 'header-save') ?? '';
+    check(
+      'session: a corrupt file leaves no save behind',
+      saveAfterCorrupt === 'No save',
+      saveAfterCorrupt,
+    );
+    const backups = readdirSync(stateDir).filter((name) => name.startsWith('session.corrupt-'));
+    check('session: the corrupt file is backed up', backups.length === 1, backups.join(', '));
+  } catch (error) {
+    fail('session persistence', error);
+  } finally {
+    lane?.close();
+  }
+}
+
 async function visitHidden(unit) {
   let lane = null;
   try {
@@ -726,7 +840,10 @@ try {
     await visitCards(cards);
     for (const unit of hidden) await visitHidden(unit);
     // One window proves the whole round trip; a shard's other lanes are busy.
-    if (!only && shardIndex === 0) await visitProjectRoundTrip();
+    if (!only && shardIndex === 0) {
+      await visitProjectRoundTrip();
+      await visitSessionPersistence();
+    }
   }
 } catch (error) {
   failures += 1;

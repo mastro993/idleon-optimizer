@@ -50,7 +50,9 @@ hands, and screenshots race. Both sides of gpui-mcp can scope discovery to a
 private directory, so each lane owns an instance:
 
 - the app takes `--endpoint-dir <absolute dir>` and publishes only there;
-- the server takes `--endpoint-dir <same dir>` and lists only that app.
+- the server takes `--endpoint-dir <same dir>` and lists only that app;
+- the app takes `--state-dir <absolute dir>` for its session file, and every lane gets a private
+  temporary one, so a previous run's restored section or save cannot change what a lane sees.
 
 `script/mcp-drive.mjs` and `script/mcp-smoke.mjs --spawn` do this for you: they
 create a temp directory, launch `target/debug/idleon-optimizer --endpoint-dir …`,

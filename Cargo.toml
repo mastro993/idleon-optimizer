@@ -33,6 +33,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 rayon = "1"
 jiff = "0.2"
+directories = "6"
 
 # The bridge's GPUI carries the accessibility ids and roles it reads; patch the
 # registry snapshot to that tree so the app, the platform crate and the bridge

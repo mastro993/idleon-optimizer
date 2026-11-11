@@ -13,6 +13,7 @@ use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::{self, Section};
+use crate::session::{self, RecentImport, Session};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
 use crate::ui;
 use crate::ui::export::Export;
@@ -167,6 +168,8 @@ pub struct AppState {
     pub supplements_open: bool,
     /// The shared import dialog every section's header opens.
     pub import: Import,
+    /// The window's own local memory: the last project and the recent imports.
+    pub session: Session,
     /// The shared export dialog: the whole window state as one JSON document.
     pub export: Export,
     /// Whether the loaded save left fields out and reported warnings.
@@ -188,6 +191,9 @@ pub struct AppState {
     _statue_search_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
+    _session_subscription: Option<Subscription>,
+    _session_release_subscription: Option<Subscription>,
+    _session_save_pending: bool,
 }
 
 impl AppState {
@@ -197,6 +203,7 @@ impl AppState {
         window: &mut Window,
         endpoint_dir: Option<std::path::PathBuf>,
         section: Option<String>,
+        state_dir: Option<std::path::PathBuf>,
         cx: &mut Context<Self>,
     ) -> Self {
         let bridge = ui::bridge::install(window, cx, endpoint_dir);
@@ -280,6 +287,7 @@ impl AppState {
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
+        let session = Session::load(Session::path(state_dir));
         let mut state = Self {
             simulation,
             context: SimContext::default(),
@@ -311,6 +319,7 @@ impl AppState {
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             import,
+            session,
             export: Export::default(),
             save_partial: false,
             save_loaded: false,
@@ -324,16 +333,70 @@ impl AppState {
             _statue_search_subscription: statue_search_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
+            _session_subscription: None,
+            _session_release_subscription: None,
+            _session_save_pending: false,
         };
+        if let Some(restore) = state.session.restore.take() {
+            let mut warnings = Vec::new();
+            let mut changes = Vec::new();
+            crate::project::apply(
+                &mut state,
+                restore.project,
+                restore.configs,
+                &mut warnings,
+                &mut changes,
+            );
+            state.save_partial |= !warnings.is_empty();
+            state.status = "Restored the last session.".into();
+        }
+        if let Some(notice) = state.session.notice.clone() {
+            state.status = notice;
+        }
         if let Some(id) = section {
             state.open_section(&id, window, cx);
         }
+        // The observer saves after the burst of edits a drag or a typing run
+        // produces; the release hook catches the last one when the window goes.
+        cx.defer_in(window, |state, _window, cx| {
+            state._session_subscription =
+                Some(cx.observe_self(|state, cx| state.schedule_session_save(cx)));
+            state._session_release_subscription =
+                Some(cx.on_release(|state, _cx| state.flush_session()));
+        });
         state
     }
 
     /// The open section's registry entry, or `None` on the dashboard.
     pub fn current_section(&self) -> Option<&'static Section> {
         self.route.section()
+    }
+
+    /// Save the session now, for a route change, an applied import or a close.
+    pub fn flush_session(&mut self) {
+        let Some(project) = session::project_value(self) else {
+            return;
+        };
+        if let Err(error) = self.session.save(&project) {
+            eprintln!("idleon-optimizer: could not save the session: {error}");
+        }
+    }
+
+    /// Let a burst of edits settle before writing the session once.
+    fn schedule_session_save(&mut self, cx: &mut Context<Self>) {
+        if self._session_save_pending {
+            return;
+        }
+        self._session_save_pending = true;
+        cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(session::SAVE_DEBOUNCE).await;
+            this.update(cx, |state, _cx| {
+                state._session_save_pending = false;
+                state.flush_session();
+            })
+            .ok();
+        })
+        .detach();
     }
 
     /// Open a section, leaving the dashboard. An id the registry does not declare
@@ -357,6 +420,7 @@ impl AppState {
             }
             None => self.status = format!("Unknown section: {id}."),
         }
+        self.flush_session();
         window.focus(&self.focus, cx);
         cx.notify();
     }
@@ -365,6 +429,7 @@ impl AppState {
     pub fn back_to_dashboard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.route = Route::Dashboard;
         self.status = "Dashboard. Pick a calculator.".into();
+        self.flush_session();
         window.focus(&self.focus, cx);
         cx.notify();
     }
@@ -492,6 +557,9 @@ impl AppState {
         let Some(Pending { document, configs }) = self.import.pending.take() else {
             return;
         };
+        let format = document.format().to_string();
+        let characters = document.characters();
+        let research_level = document.research_level();
         let mut warnings = document.warnings().to_vec();
         let mut message = import::applied(&document);
         let before_configs = crate::project::configs(self);
@@ -537,6 +605,14 @@ impl AppState {
         self.import.changes = changes;
         self.import.message = message.clone();
         self.status = message;
+        self.session.record(RecentImport::new(
+            format,
+            self.import.source.clone(),
+            characters,
+            research_level,
+            warnings.len(),
+        ));
+        self.flush_session();
         self.close_import(window, cx);
     }
 
