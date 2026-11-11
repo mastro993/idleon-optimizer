@@ -2,6 +2,7 @@
 
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::jar::Tab as JarTab;
@@ -150,6 +151,8 @@ pub struct AppState {
     pub pickle: PickleState,
     /// The statue section's saved rows, character and table controls.
     pub statue: StatueState,
+    /// The coral god rank planner's inputs, kept alive across dashboard visits.
+    pub coral: CoralState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -292,6 +295,7 @@ impl AppState {
             jar: None,
             pickle: PickleState::default(),
             statue,
+            coral: CoralState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -459,6 +463,7 @@ impl AppState {
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.statue.load(imported.statues);
+        self.coral.adopt(&imported.coral);
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
         self.farm = imported.farming;

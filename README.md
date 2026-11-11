@@ -211,7 +211,7 @@ crates/core        game data, geometry, simulation maths, optimizers, endgame au
   data/statues.json   the 32 statue rows, extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
   src/sections/      the registry plus one module per section (`research/`, `statue/`, `farming/`,
-                     `clamworks/`)
+                     `clamworks/`, `coral_god_rank/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -282,10 +282,11 @@ source references and the credit note stays with the images.
 
 The current build covers the dashboard, the research grid and its optimizers, the statue table, the
 sailing fleet assignment, the farming field, the Clamworks overview and upgrades, save import, the
-shadow-ban and endgame checks, the hidden BoneJoePickle calculator and the Monument Bravery tab. The
-rest of the statue milestone (STARTUE bubble, time estimates, batch apply and farming breakdown) and
-the remaining upstream sections (combat sim, cooking, royal guardian, …) are planned; their cards
-open planned-section placeholders until those milestones land.
+shadow-ban and endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery tab and the
+Coral God Rank planner's inputs and current-state summary. The rest of the statue milestone (STARTUE
+bubble, time estimates, batch apply and farming breakdown) and the remaining upstream sections
+(combat sim, cooking, royal guardian, …) are planned; their cards open planned-section placeholders
+until those milestones land.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.
@@ -293,6 +294,8 @@ Account-wide loot, speed and artifact multipliers that need the full account tre
 until SL-02 and SL-03 fill them, which makes the displayed absolute rates a lower bound.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
-are ports of `js/stats/systems/w7/clamworks.js`. Save-specific multipliers collapse into
+are ports of `js/stats/systems/w7/clamworks.js`. The Coral God Rank data and formulas follow
+`js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit are the remaining
+features of that milestone. Save-specific multipliers collapse into
 `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
 lists rather than the save-dependent `build` functions.

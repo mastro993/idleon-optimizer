@@ -345,6 +345,7 @@ mod tests {
             save: serde_json::Value::Null,
             companion: None,
             statues: Default::default(),
+            coral: Default::default(),
             format,
             characters,
             named_characters: characters,

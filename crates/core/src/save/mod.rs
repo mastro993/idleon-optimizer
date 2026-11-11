@@ -29,12 +29,17 @@
 //! save field is missing is left out and warned about by that field's name;
 //! nothing is guessed.
 //!
+//! The coral god rank planner reads its own slice of the same object (`Divinity`,
+//! `OptLacc`, the Minehead row and `UpgVault`); [`Imported::coral`] carries it so
+//! the section never parses the save a second time.
+//!
 //! The same save carries the sailing fleet (`Boats`, `Captains`), the artifact
 //! tiers and island progress in `Sailing`, and the account fields the route
 //! model reads. Account-wide sailing loot, speed and artifact multipliers that
 //! the route model does not read stay neutral.
 
 mod account;
+mod coral;
 mod farming;
 mod formula;
 pub(crate) mod json;
@@ -105,6 +110,8 @@ pub struct Imported {
     pub companion: Option<Value>,
     /// The per-character statue levels and EXP the save carries.
     pub statues: crate::statue::StatueSave,
+    /// The coral god rank planner's save-derived inputs.
+    pub coral: crate::coral::SaveInputs,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -265,6 +272,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.saved_overlay = research::shape_overlay(save, &rows);
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
+    let coral = coral::inputs(save, root, &characters, &rows);
     let statues = statue::read(save, root, &mut warnings);
     let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
     let farm_level = characters
@@ -290,6 +298,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         save: Value::Object(save.clone()),
         companion: root.get("companion").cloned(),
         statues,
+        coral,
         format,
         characters: roster,
         named_characters,

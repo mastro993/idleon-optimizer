@@ -11,6 +11,7 @@
 //! the harness can still open them by id.
 
 pub mod clamworks;
+pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
 pub mod jar;
@@ -368,9 +369,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Coral Kid upgrades, god-rank offering planning, and objective optimization",
         spec: "docs/sections/coral-god-rank.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: coral_god_rank::view,
         keys: no_keys,
     },
     Section {

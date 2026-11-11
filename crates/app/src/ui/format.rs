@@ -64,23 +64,15 @@ pub fn scale(value: f64) -> (f64, &'static str) {
 pub fn value(value: f64) -> String {
     let magnitude = value.abs();
     if magnitude >= 1e24 {
-        format!("{value:.2e}")
-    } else if magnitude >= 1e21 {
-        format!("{:.2}QQQ", value / 1e21)
-    } else if magnitude >= 1e18 {
-        format!("{:.2}QQ", value / 1e18)
-    } else if magnitude >= 1e15 {
-        format!("{:.2}Q", value / 1e15)
-    } else if magnitude >= 1e12 {
-        format!("{:.2}T", value / 1e12)
-    } else if magnitude >= 1e9 {
-        format!("{:.2}B", value / 1e9)
-    } else if magnitude >= 1e6 {
-        format!("{:.2}M", value / 1e6)
-    } else if magnitude >= 1e3 {
-        format!("{:.1}K", value / 1e3)
-    } else {
+        return format!("{value:.2e}");
+    }
+    let (scaled, suffix) = scaled(value);
+    if magnitude >= 1e6 {
+        format!("{scaled:.2}{suffix}")
+    } else if suffix.is_empty() {
         format!("{value:.1}")
+    } else {
+        format!("{scaled:.1}{suffix}")
     }
 }
 
@@ -118,7 +110,7 @@ pub fn stat_value(value: Option<f64>) -> String {
     fmt_val(value)
 }
 
-/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or an exponent.
+/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
 pub fn fmt_val(value: f64) -> String {
     let magnitude = value.abs();
     let (divisor, suffix) = if magnitude >= 1e24 {
@@ -168,6 +160,36 @@ fn group(whole: &str) -> String {
         out.push(digit);
     }
     out
+}
+
+/// A value and its suffix, in the upstream `fmtVal` shorthand.
+pub fn scaled(value: f64) -> (f64, String) {
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        // `toExponential(2)` prints a signed exponent.
+        let exponent = magnitude.log10().floor() as i32;
+        let mantissa = value / 10_f64.powi(exponent);
+        (
+            mantissa,
+            format!("e{}{exponent}", if exponent < 0 { "-" } else { "+" }),
+        )
+    } else if magnitude >= 1e21 {
+        (value / 1e21, "QQQ".into())
+    } else if magnitude >= 1e18 {
+        (value / 1e18, "QQ".into())
+    } else if magnitude >= 1e15 {
+        (value / 1e15, "Q".into())
+    } else if magnitude >= 1e12 {
+        (value / 1e12, "T".into())
+    } else if magnitude >= 1e9 {
+        (value / 1e9, "B".into())
+    } else if magnitude >= 1e6 {
+        (value / 1e6, "M".into())
+    } else if magnitude >= 1e3 {
+        (value / 1e3, "K".into())
+    } else {
+        (value, String::new())
+    }
 }
 
 /// Hours as `3d 4h`, or minutes when short; absurd projections read as a dash.
@@ -302,6 +324,8 @@ mod tests {
         assert_eq!(value(845.0), "845.0");
         assert_eq!(value(121_945.0), "121.9K");
         assert_eq!(value(73_598_959.0), "73.60M");
+        assert_eq!(value(2_909_587_276_919_980_000.0), "2.91QQ");
+        assert_eq!(value(-1_500.0), "-1.5K");
         assert_eq!(percent(0.018_089_4), "1.809%");
         assert_eq!(percent(0.0000001), "<0.0001%");
     }

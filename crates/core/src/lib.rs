@@ -12,6 +12,7 @@
 
 pub mod breakdown;
 pub mod clamworks;
+pub mod coral;
 pub mod data;
 pub mod endgame;
 pub mod farming;

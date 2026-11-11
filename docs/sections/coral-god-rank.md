@@ -5,7 +5,7 @@
 - Milestone: `M21`
 - Section key: `coral-god-rank`
 - Group: `w5`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port the coral kid upgrade and god-rank offering planner with beam search and projection.
