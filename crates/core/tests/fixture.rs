@@ -49,6 +49,14 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(simulation.grid.live_cells().count(), 62);
     assert_eq!(simulation.mags.len(), 80);
     assert_eq!(simulation.placements.len(), 10);
+    // The fixture's sailing fleet: 20 active boat and captain slots, Sailing
+    // level 175 and the save's minimum chest tier.
+    assert_eq!(imported.fleet.boats.len(), 20);
+    assert_eq!(imported.fleet.captains.len(), 20);
+    assert_eq!(imported.fleet.sailing_level, 175);
+    assert_eq!(imported.fleet.artifact_tiers.len(), 60);
+    assert_eq!(imported.fleet.available_islands(), 17);
+    assert_eq!(imported.sailing.minimum_tier, 2);
     assert_eq!(
         simulation
             .observations

@@ -17,6 +17,7 @@ pub mod jar;
 pub mod monument;
 pub mod pickle;
 pub mod research;
+pub mod sailing;
 pub mod shadow;
 
 use crate::state::AppState;
@@ -342,9 +343,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Fleet routes, chest tiers, loot value, artifact odds",
         spec: "docs/sections/sailing.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: sailing::view,
         keys: no_keys,
     },
     Section {

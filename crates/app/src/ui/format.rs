@@ -26,7 +26,7 @@ pub fn hex(color: &str) -> Hsla {
     rgb(value).into()
 }
 
-/// A rate as `1.23M` or `845K`, in EXP per hour.
+/// A rate as `1.23M`, `845K`, `3.10T` or `2.00Q`, in EXP per hour.
 pub fn rate(value: f64) -> String {
     let (scaled, suffix) = scale(value);
     match suffix {
@@ -41,8 +41,15 @@ pub fn scale(value: f64) -> (f64, &'static str) {
     if !value.is_finite() {
         return (value, "");
     }
+    if value == 0.0 {
+        return (0.0, "");
+    }
     let magnitude = value.abs();
-    if magnitude >= 1e9 {
+    if magnitude >= 1e15 {
+        (value / 1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (value / 1e12, "T")
+    } else if magnitude >= 1e9 {
         (value / 1e9, "B")
     } else if magnitude >= 1e6 {
         (value / 1e6, "M")
@@ -304,6 +311,20 @@ mod tests {
         assert_eq!(hours(f64::INFINITY), "—");
         assert_eq!(hours(1.1e19), "—");
         assert_eq!(hours(26.0), "1d 2h");
+    }
+
+    #[test]
+    fn a_negative_zero_rate_reads_as_zero() {
+        assert_eq!(rate(-0.0), "0");
+        assert_eq!(rate(0.0), "0");
+    }
+
+    #[test]
+    fn large_rates_read_in_trillions_and_quadrillions() {
+        assert_eq!(scale(3.1e12), (3.1, "T"));
+        assert_eq!(scale(3.1e15), (3.1, "Q"));
+        assert_eq!(rate(3.1e12), "3.10T");
+        assert_eq!(rate(3.1e15), "3.10Q");
     }
 
     #[test]

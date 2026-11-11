@@ -19,6 +19,7 @@ pub mod model;
 pub mod monument;
 pub mod optimize;
 pub mod pickle;
+pub mod sailing;
 pub mod save;
 pub mod shape;
 pub mod sim;
@@ -32,3 +33,4 @@ pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+pub use sailing::{AssignmentMode, Boat, Captain, Fleet, Goal, RouteContext, RouteMetrics};
