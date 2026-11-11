@@ -21,7 +21,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M6 | Coin Multiplier Calculator | Tools | 2 | planned | foundation, stats-all | [coin-multi](sections/coin-multi.md) |
 | M7 | Shadow Ban Check | General | 1 | done | foundation | [shadow](sections/shadow.md) |
 | M8 | Endgame Check | General | 1 | done | foundation | [endgame](sections/endgame.md) |
-| M9 | Statue Calculator | General | 3 | planned | foundation | [statue](sections/statue.md) |
+| M9 | Statue Calculator | General | 3 | partial | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | planned | foundation | [fishing](sections/fishing.md) |
 | M11 | Prisma Calculator | World 2 | 2 | planned | foundation | [prisma](sections/prisma.md) |
 | M12 | Killroy Calculator | World 2 | 3 | partial | foundation | [killroy](sections/killroy.md) |

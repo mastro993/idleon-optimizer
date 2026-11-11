@@ -79,6 +79,14 @@ fn nested_row(length: usize, index: usize, value: f64) -> Value {
     array(cells)
 }
 
+/// A complete `StatueLevels_<n>` row: one `[level, exp]` pair per statue.
+fn statue_rows() -> Value {
+    let rows = (0..32)
+        .map(|statue| json!([f64::from(statue) + 1.0, f64::from(statue) * 10.0]))
+        .collect();
+    stringified(&Value::Array(rows))
+}
+
 /// A flat array of zeroes with a few slots filled, for `OptLacc`-style fields.
 fn sparse(length: usize, filled: &[(usize, f64)]) -> Value {
     let mut cells = vec![0.0; length];
@@ -132,6 +140,8 @@ fn full_save() -> Value {
             "Rift": stringified(&json!([15.0])),
             "cachedExtPctExSticker": 12.5,
             "ArcadeUpg": stringified(&sparse(70, &[])),
+            "StatueLevels_0": statue_rows(),
+            "StatueLevels_1": statue_rows(),
             "FamValColosseumHighscores": [1, 2, 3],
             "SomeFutureField": { "nested": [4, 5, 6] },
         },
