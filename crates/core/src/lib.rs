@@ -3,8 +3,10 @@
 //! The app is a desktop port of the calculators in
 //! <https://github.com/Corgan/idleon-research-optimizer>. Game constants are
 //! extracted from that repo by `script/extract-research-data.mjs`,
-//! `script/extract-farming-data.mjs` and `script/extract-clamworks-data.mjs`;
-//! the maths follow `js/stats/systems/w7/research-math.js`,
+//! `script/extract-statue-data.mjs`, `script/extract-farming-data.mjs` and
+//! `script/extract-clamworks-data.mjs`; the maths follow
+//! `js/stats/systems/w7/research-math.js`,
+//! `js/stats/systems/common/statue-leveling.js`,
 //! `js/stats/systems/w6/farming-planner.js` and
 //! `js/stats/systems/w7/clamworks.js`.
 
@@ -23,6 +25,7 @@ pub mod sailing;
 pub mod save;
 pub mod shape;
 pub mod sim;
+pub mod statue;
 
 pub use clamworks::Clamworks;
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};

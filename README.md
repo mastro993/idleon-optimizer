@@ -7,10 +7,11 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the farming field, the
-Clamworks overview and upgrades, the shadow-ban and endgame checks, the hidden BoneJoePickle
-calculator and the Bravery tab of the Monument calculator. The plan covers the full upstream suite:
-a dashboard that opens every calculator, with one milestone per section and one issue per feature
+The current build opens on the dashboard and implements the research section, the statue table, the
+farming field, the Clamworks overview and upgrades, the shadow-ban and endgame checks, the hidden
+BoneJoePickle calculator and the Bravery tab of the Monument calculator. The plan covers the full
+upstream suite: a dashboard that opens every calculator, with one milestone per section and one issue
+per feature
 ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
@@ -43,6 +44,11 @@ a dashboard that opens every calculator, with one milestone per section and one 
   header names a partial import, and every long job goes through one shared task runner: it runs off
   the UI thread, reports progress, cancels without losing the previous result, and marks a result
   stale when its inputs change.
+- **The statue table** — all 32 statues for the selected character with their saved level, EXP
+  progress and the full bar the next level needs, an availability badge for rows the save leaves
+  out, search by name or effect, and game-order, level or remaining-EXP sort. It reads
+  `StatueLevels_<n>` and `charNames`; requirements are the upstream EXP formula, including the
+  statue-1/2/3 rounding gates above level 300.
 - **The research grid** — the 20×12 board of upgradeable squares with their goal colours and levels,
   and the ten research shapes as real polygons over it: add, nudge, rotate (5° steps), remove.
   Arrow keys walk the squares, `=`/`-` level the selected one, Escape drops the selection.
@@ -69,11 +75,11 @@ a dashboard that opens every calculator, with one milestone per section and one 
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
   format, research level, farm plots, character count and warnings before Apply; the grid levels,
-  shape positions, magnifiers, insight, research level/EXP, farm plots, ranks, crops, market levels,
-  server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are read
-  from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app cannot
-  model are reported as warnings instead of guessed; a save that cannot be read only replaces the
-  message and leaves the run untouched.
+  shape positions, magnifiers, insight, research level/EXP, each character's statue levels/EXP and
+  names, farm plots, ranks, crops, market levels, server scale, all-bonus multiplier, flat grid
+  points and the decodable true multipliers are read from it. The same decoded save keeps the
+  Monument rows the Bravery tab reads. Fields the app cannot model are reported as warnings instead
+  of guessed; a save that cannot be read only replaces the message and leaves the run untouched.
 - **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
@@ -129,8 +135,10 @@ cargo run --release
 
 The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the dashboard; the
 Research Optimizer card opens the research section with a legal starter layout at research level
-100 so every pane has something to show. `cargo run -- --section damage` opens a registry entry
-directly, including the hidden tools and any unknown id (which shows the missing-section state).
+100 so every pane has something to show; the Statue Calculator card opens the table, which lists
+every statue as unavailable until a save is imported. `cargo run -- --section damage` opens a
+registry entry directly, including the hidden tools and any unknown id (which shows the
+missing-section state).
 
 ## Stack pins
 
@@ -175,10 +183,11 @@ moves its squares, that the keyboard walks and levels the grid, that a run produ
 never loses EXP, that applying it clears the result, and that the shared import dialog previews a
 save before applying it and cannot replace the run with one it cannot read. `script/mcp-sections.mjs`
 reads the registry from the binary, opens every dashboard card and every hidden tool, asserts each
-section root and shared header, drives one interaction and writes a screenshot plus a JSON sidecar
-under `target/mcp-sections/`. `--baseline`
-compares those captures with a previous run (pixels, not bytes), and `--parallel N` proves the lanes
-stay isolated by checking shards in N windows at once. These scripts need the `gpui-mcp` binary
+section root and shared header, drives one interaction (the statue table's search and sort, the
+research grid's tabs) and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`.
+`--baseline` compares those captures with a previous run (pixels, not bytes), and `--parallel N`
+proves the lanes stay isolated by checking shards in N windows at once. These scripts need the
+`gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
@@ -199,8 +208,10 @@ crates/core        game data, geometry, simulation maths, optimizers, endgame au
   data/account.json   account tables for the save-derived multiplier tree
   data/farming.json   seed, market, exotic and rank tables
   data/clamworks.json Clamworks upgrade, Scurge and promotion tables
+  data/statues.json   the 32 statue rows, extracted from the upstream repo
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`, `farming/`, `clamworks/`)
+  src/sections/      the registry plus one module per section (`research/`, `statue/`, `farming/`,
+                     `clamworks/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -238,6 +249,11 @@ and values apply only the multipliers the save carries (market levels, Land Rank
 counts, gem items and Spelunk organic labels); other account systems are named in an import warning
 rather than guessed.
 
+`crates/core/data/statues.json` and the fixture parity table in
+`crates/core/tests/statue-requirements.json` are generated by
+`node script/extract-statue-data.mjs <path-to-upstream-repo> fixtures/data.json`: 32 statue names,
+effects and per-level bases, plus the upstream EXP requirement for every fixture statue level.
+
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
 upstream `js/endgame-stats.js` audit of that save, regenerated with
@@ -264,11 +280,12 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid and its optimizers, the sailing fleet
-assignment, the farming field, the Clamworks overview and upgrades, save import, the shadow-ban and
-endgame checks, the hidden BoneJoePickle calculator and the Monument Bravery tab. The roadmap covers
-all remaining upstream sections (combat sim, cooking, royal guardian, …); their cards open
-planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid and its optimizers, the statue table, the
+sailing fleet assignment, the farming field, the Clamworks overview and upgrades, save import, the
+shadow-ban and endgame checks, the hidden BoneJoePickle calculator and the Monument Bravery tab. The
+rest of the statue milestone (STARTUE bubble, time estimates, batch apply and farming breakdown) and
+the remaining upstream sections (combat sim, cooking, royal guardian, …) are planned; their cards
+open planned-section placeholders until those milestones land.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.

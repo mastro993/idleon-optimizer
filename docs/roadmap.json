@@ -1044,12 +1044,13 @@
       "key": "statue",
       "title": "Statue Calculator",
       "group": "general",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.",
       "upstream": [
         "statue-calc.html",
-        "js/stats/systems/w1/stamp.js",
-        "js/stats/systems/w1/statue.js"
+        "js/stats/systems/common/statue-leveling.js",
+        "js/stats/data/common/statues.js",
+        "js/save/loader.js"
       ],
       "ui": [
         "Character selector",
