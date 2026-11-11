@@ -61,9 +61,10 @@ impl Import {
 /// The line under the preview: what applying would load.
 pub fn summary(import: &Imported) -> String {
     format!(
-        "Ready to apply: {} · research level {}{} · {} character(s) · {} warning(s).",
+        "Ready to apply: {} · research level {}{}{} · {} character(s) · {} warning(s).",
         import.format.label(),
         import.simulation.research_level,
+        fleet(import),
         farming_suffix(import),
         import.characters,
         import.warnings.len()
@@ -82,12 +83,22 @@ fn farming_suffix(import: &Imported) -> String {
 /// The line the dialog keeps once the save is applied.
 pub fn applied(import: &Imported) -> String {
     format!(
-        "Applied {} · research level {}{} · {} character(s).",
+        "Applied {} · research level {}{}{} · {} character(s).",
         import.format.label(),
         import.simulation.research_level,
+        fleet(import),
         farming_suffix(import),
         import.characters
     )
+}
+
+/// The fleet count when the save carries one, so a sailing user knows it loaded.
+fn fleet(import: &Imported) -> String {
+    if import.fleet.boats.is_empty() {
+        String::new()
+    } else {
+        format!(" · {} boat(s)", import.fleet.boats.len())
+    }
 }
 
 /// The import dialog, rendered on top of the shell while it is open.
@@ -325,9 +336,12 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
+            fleet: Default::default(),
+            sailing: Default::default(),
             farming: Default::default(),
             tree: Default::default(),
             clamworks: Default::default(),
+            jar: None,
             save: serde_json::Value::Null,
             companion: None,
             statues: Default::default(),

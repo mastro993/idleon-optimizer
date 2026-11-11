@@ -13,9 +13,11 @@
 pub mod clamworks;
 pub mod endgame;
 pub mod farming;
+pub mod jar;
 pub mod monument;
 pub mod pickle;
 pub mod research;
+pub mod sailing;
 pub mod shadow;
 pub mod statue;
 
@@ -330,9 +332,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Production rates, rupie value, chances, collectibles",
         spec: "docs/sections/jar.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: jar::view,
         keys: no_keys,
     },
     Section {
@@ -342,9 +344,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Fleet routes, chest tiers, loot value, artifact odds",
         spec: "docs/sections/sailing.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: sailing::view,
         keys: no_keys,
     },
     Section {

@@ -1838,7 +1838,7 @@
       "key": "jar",
       "title": "Jar Calculator",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.",
       "upstream": [
         "jar-calc.html",
@@ -1938,7 +1938,7 @@
       "key": "sailing",
       "title": "Sailing Calculator",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.",
       "upstream": [
         "sailing-calc.html",

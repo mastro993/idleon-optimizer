@@ -4,9 +4,11 @@ use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
+use crate::sections::jar::Tab as JarTab;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
+use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::{self, Section};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
@@ -21,8 +23,9 @@ use idleon_core::model::{
     Target,
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
+use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
-use idleon_core::{Clamworks, game, monument, optimize, save, shape, sim};
+use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -118,6 +121,11 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The sailing fleet imported from the save, and the route context.
+    pub fleet: Fleet,
+    pub sailing: RouteContext,
+    /// The sailing section's own state, kept alive across dashboard visits.
+    pub sailing_state: SailingState,
     /// The farming field the last import carried.
     pub farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
@@ -134,6 +142,10 @@ pub struct AppState {
     pub clamworks_multikill: f64,
     /// The endgame section's audit of the last applied save.
     pub endgame: endgame::State,
+    /// The jar section's active tab, kept across dashboard visits.
+    pub jar_tab: JarTab,
+    /// The Jar Cavern the loaded save carries, if it has one.
+    pub jar: Option<Jar>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The statue section's saved rows, character and table controls.
@@ -265,6 +277,9 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            fleet: Fleet::default(),
+            sailing: RouteContext::default(),
+            sailing_state: SailingState::default(),
             farm: Farm::default(),
             farming: FarmingState::default(),
             monument: MonumentState::default(),
@@ -273,6 +288,8 @@ impl AppState {
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
             endgame: endgame::State::default(),
+            jar_tab: JarTab::default(),
+            jar: None,
             pickle: PickleState::default(),
             statue,
             search,
@@ -442,9 +459,21 @@ impl AppState {
         self.simulation = imported.simulation;
         self.context = imported.context;
         self.statue.load(imported.statues);
+        self.fleet = imported.fleet;
+        self.sailing = imported.sailing;
         self.farm = imported.farming;
         self.clamworks = imported.clamworks;
+        self.jar = imported.jar;
         self.research.selected_cell = None;
+        self.sailing_state.island = self
+            .fleet
+            .boats
+            .first()
+            .and_then(|boat| boat.target_island)
+            .filter(|island| *island < self.fleet.available_islands())
+            .unwrap_or(0);
+        self.sailing_state.mode = AssignmentMode::Optimized;
+        self.sailing_state.goal = Goal::Treasure;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
         self.shadow = imported.shadow;
@@ -457,6 +486,37 @@ impl AppState {
     /// Empty the dashboard search; Escape calls this.
     pub fn clear_search(&mut self, cx: &mut Context<Self>) {
         self.search.update(cx, |search, cx| search.set_text("", cx));
+        cx.notify();
+    }
+
+    /// The sailing fleet comparison for the section's current island and goal.
+    pub fn fleet_comparison(&self) -> FleetComparison {
+        compare(
+            &self.fleet,
+            self.sailing_state.island,
+            self.sailing_state.goal,
+            &self.sailing,
+        )
+    }
+
+    pub fn set_fleet_mode(&mut self, mode: AssignmentMode, cx: &mut Context<Self>) {
+        self.sailing_state.mode = mode;
+        cx.notify();
+    }
+
+    pub fn set_fleet_island(&mut self, island: usize, cx: &mut Context<Self>) {
+        let total = self.fleet.available_islands().max(1);
+        self.sailing_state.island = island.min(total - 1);
+        cx.notify();
+    }
+
+    pub fn set_fleet_goal(&mut self, goal: Goal, cx: &mut Context<Self>) {
+        self.sailing_state.goal = goal;
+        cx.notify();
+    }
+
+    pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
+        self.sailing.minimum_tier = tier.min(5);
         cx.notify();
     }
 
@@ -623,6 +683,11 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
+        self.jar_tab = tab;
         cx.notify();
     }
 
