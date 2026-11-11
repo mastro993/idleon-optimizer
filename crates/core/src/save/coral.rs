@@ -135,7 +135,7 @@ pub(crate) fn inputs(
 
     let divinity_levels: Vec<u32> = characters
         .iter()
-        .filter_map(|character| character.divinity)
+        .filter_map(|character| character.divinity())
         .collect();
     if divinity_levels.is_empty() {
         missing.push("Total Divinity levels (Lv0_<n>[14])".into());

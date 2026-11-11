@@ -30,6 +30,31 @@ pub fn scale(value: f64) -> (f64, &'static str) {
     }
 }
 
+/// A game value as `1.23M`, `845.0` or `0.0`, matching the upstream `fmtVal`.
+pub fn value(value: f64) -> String {
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        return format!("{value:.2e}");
+    }
+    let (scaled, suffix) = scaled(value);
+    if magnitude >= 1e6 {
+        format!("{scaled:.2}{suffix}")
+    } else if suffix.is_empty() {
+        format!("{value:.1}")
+    } else {
+        format!("{scaled:.1}{suffix}")
+    }
+}
+
+/// A probability as a percentage with three decimals.
+pub fn percent(value: f64) -> String {
+    if value > 0.0 && value < 0.000001 {
+        "<0.0001%".into()
+    } else {
+        format!("{:.3}%", 100.0 * value)
+    }
+}
+
 /// A count with thousands separators.
 pub fn count(value: u64) -> String {
     group(&value.to_string())
@@ -113,15 +138,6 @@ pub fn scaled(value: f64) -> (f64, String) {
     }
 }
 
-/// A value as `1.23M` or `845.0`, matching the upstream `fmtVal`.
-pub fn value(value: f64) -> String {
-    if value.abs() >= 1e3 {
-        fmt_val(value)
-    } else {
-        format!("{value:.1}")
-    }
-}
-
 /// Hours as `3d 4h`, or minutes when short; absurd projections read as a dash.
 pub fn hours(value: f64) -> String {
     if !value.is_finite() || value > 1_000_000.0 {
@@ -173,6 +189,18 @@ mod tests {
     use super::*;
 
     #[test]
+    fn values_and_percentages_follow_the_upstream_display() {
+        assert_eq!(value(0.0), "0.0");
+        assert_eq!(value(845.0), "845.0");
+        assert_eq!(value(121_945.0), "121.9K");
+        assert_eq!(value(73_598_959.0), "73.60M");
+        assert_eq!(value(2_909_587_276_919_980_000.0), "2.91QQ");
+        assert_eq!(value(-1_500.0), "-1.5K");
+        assert_eq!(percent(0.018_089_4), "1.809%");
+        assert_eq!(percent(0.0000001), "<0.0001%");
+    }
+
+    #[test]
     fn absurd_hours_read_as_a_dash() {
         assert_eq!(hours(f64::INFINITY), "—");
         assert_eq!(hours(1.1e19), "—");
@@ -199,14 +227,5 @@ mod tests {
         assert_eq!(stat_value(Some(14_754_186_378_368_600_000.0)), "14.75QQ");
         assert_eq!(count(1_234_567), "1,234,567");
         assert_eq!(group("-1234"), "-1,234");
-    }
-
-    #[test]
-    fn values_use_the_upstream_shorthand() {
-        assert_eq!(value(845.0), "845.0");
-        assert_eq!(value(1_540.0), "1.5K");
-        assert_eq!(value(5_350_000.0), "5.35M");
-        assert_eq!(value(-1_500.0), "-1.5K");
-        assert_eq!(value(2_909_587_276_919_980_000.0), "2.91QQ");
     }
 }
