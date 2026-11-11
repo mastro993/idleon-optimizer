@@ -1,27 +1,31 @@
 //! The Statue Calculator section: a character's saved statue levels, the EXP
-//! their next level needs, and which rows the save carries.
+//! their next level needs, and the statues and time a target level costs.
 //!
 //! Ported from `statue-calc.html` and `js/stats/systems/common/statue-leveling.js`.
-//! ST-01 covers the table, search and sort; the STARTUE bubble, time estimates
-//! and batch actions arrive with ST-02 and ST-03.
+//! ST-01 covers the table, search and sort; ST-02 adds the STARTUE EXP bubble,
+//! the deposit estimate and the time estimate from a raw statues/hour rate.
+//! Batch set/apply and the statue-farming breakdown arrive with ST-03.
 
 use crate::state::AppState;
 use crate::ui::{format, layout};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::{Banner, EmptyState};
-use ely_gpui_component::forms::{Choice, SearchInput, Select, TextInput};
+use ely_gpui_component::forms::{Choice, Input, InputEvent, SearchInput, Select, TextInput};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::motion::ProgressBar;
 use ely_gpui_component::primitives::{IconName, Severity};
 use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Role, SharedString,
-    Styled, Window, div, px,
+    Styled, Subscription, Window, div, px,
 };
-use idleon_core::statue::{self, NextLevel, Progress, StatueInfo, StatueSave, Unavailable};
+use idleon_core::statue::{
+    self, Estimate, Leveling, NextLevel, Progress, RateError, StatueInfo, StatueSave, TargetCost,
+    Unavailable,
+};
 use std::cmp::Ordering;
 
 /// How the table is ordered when it is not in game order.
@@ -60,12 +64,44 @@ impl Sort {
     }
 }
 
-/// The section's own state: the imported statue rows and the table controls.
+/// The deposit estimate's id, label and id lookup, matching the upstream
+/// selector's two options.
+fn estimate_id(estimate: Estimate) -> &'static str {
+    match estimate {
+        Estimate::Guaranteed => "guaranteed",
+        Estimate::Average => "average",
+    }
+}
+
+fn estimate_label(estimate: Estimate) -> &'static str {
+    match estimate {
+        Estimate::Guaranteed => "Guaranteed EXP",
+        Estimate::Average => "Average with vial doubles",
+    }
+}
+
+fn estimate_from_id(id: &str) -> Option<Estimate> {
+    Estimate::ALL
+        .into_iter()
+        .find(|estimate| estimate_id(*estimate) == id)
+}
+
+/// The section's own state: the imported statue rows, the account multipliers
+/// and the table controls.
 pub struct State {
     pub save: StatueSave,
     pub character: usize,
     pub sort: Sort,
+    pub estimate: Estimate,
+    /// Target levels for the selected character; `None` follows the saved level
+    /// plus one, as the upstream table does.
+    pub targets: Vec<Option<u32>>,
+    /// The raw statues/hour entries, mirroring [`Self::rate_inputs`].
+    pub rates: Vec<String>,
     pub search: Entity<TextInput>,
+    /// One raw statues/hour field per statue.
+    pub rate_inputs: Vec<Entity<TextInput>>,
+    _rate_subscriptions: Vec<Subscription>,
 }
 
 impl State {
@@ -75,21 +111,105 @@ impl State {
                 .placeholder("Name or effect")
                 .label("Find a statue")
         });
+        let rate_inputs: Vec<Entity<TextInput>> = (0..statue::count())
+            .map(|_| {
+                cx.new(|cx| {
+                    TextInput::new(window, cx)
+                        .placeholder("e.g. 1M")
+                        .label("Raw statues per hour")
+                })
+            })
+            .collect();
+        let rate_subscriptions = rate_inputs
+            .iter()
+            .enumerate()
+            .map(|(index, input)| {
+                cx.subscribe(input, move |state, input, event: &InputEvent, cx| {
+                    if *event == InputEvent::Changed {
+                        state.statue.rates[index] = input.read(cx).text().trim().to_string();
+                        cx.notify();
+                    }
+                })
+            })
+            .collect();
         Self {
             save: StatueSave::default(),
             character: 0,
             sort: Sort::Game,
+            estimate: Estimate::Guaranteed,
+            targets: vec![None; statue::count()],
+            rates: vec![String::new(); statue::count()],
             search,
+            rate_inputs,
+            _rate_subscriptions: rate_subscriptions,
         }
     }
 
     /// Replace the saved rows after an import, keeping the selected character
-    /// when the new save still carries it.
-    pub fn load(&mut self, save: StatueSave) {
+    /// when the new save still carries it and clearing the plan inputs.
+    pub fn load(&mut self, save: StatueSave, cx: &mut Context<AppState>) {
         self.save = save;
         if !self.save.has_character(self.character) {
             self.character = self.save.first_character().unwrap_or(0);
         }
+        self.clear_inputs(cx);
+    }
+
+    /// Change the table's character and clear its plan inputs, as the upstream
+    /// character switch does.
+    pub fn select_character(&mut self, character: usize, cx: &mut Context<AppState>) {
+        self.character = character;
+        self.clear_inputs(cx);
+    }
+
+    fn clear_inputs(&mut self, cx: &mut Context<AppState>) {
+        self.targets = vec![None; statue::count()];
+        self.set_rates(vec![String::new(); statue::count()], cx);
+    }
+
+    /// Replace the plan inputs from a project config, keeping one entry per
+    /// statue and syncing the fields on screen.
+    pub fn set_plan(
+        &mut self,
+        targets: Vec<Option<u32>>,
+        rates: Vec<String>,
+        cx: &mut Context<AppState>,
+    ) {
+        let mut targets = targets;
+        targets.resize(statue::count(), None);
+        self.targets = targets;
+        self.set_rates(rates, cx);
+    }
+
+    fn set_rates(&mut self, rates: Vec<String>, cx: &mut Context<AppState>) {
+        let mut rates = rates;
+        rates.resize(statue::count(), String::new());
+        self.rates = rates;
+        for (index, input) in self.rate_inputs.iter().enumerate() {
+            let text = self.rates[index].clone();
+            input.update(cx, |input, cx| input.set_text(text, cx));
+        }
+    }
+
+    /// The target level for a statue: the entered target, else the saved level
+    /// plus one.
+    pub fn target(&self, statue: usize) -> Option<u32> {
+        self.targets.get(statue).copied().flatten().or_else(|| {
+            self.save
+                .progress(self.character, statue)
+                .map(|progress| progress.level + 1)
+        })
+    }
+
+    pub fn set_target(&mut self, statue: usize, target: u32) {
+        if let Some(slot) = self.targets.get_mut(statue) {
+            *slot = Some(target);
+        }
+    }
+
+    /// One statue's raw statues/hour entry, trimmed.
+    pub fn rate_text(&self, statue: usize) -> String {
+        self.rates.get(statue).cloned().unwrap_or_default()
     }
 
     pub fn query(&self, cx: &App) -> String {
@@ -97,12 +217,20 @@ impl State {
     }
 }
 
-/// One table row: static data plus what this save says about it.
+/// One table row: static data plus what this save and plan say about it.
+#[derive(Clone)]
 struct Row {
     index: usize,
     info: &'static StatueInfo,
     progress: Option<Progress>,
     next: Result<NextLevel, Unavailable>,
+    target: Option<u32>,
+    cost: Result<TargetCost, Unavailable>,
+    rate_text: String,
+    rate: Result<f64, RateError>,
+    /// The statues the target needs under the selected estimate.
+    statues: Option<u64>,
+    hours: f64,
 }
 
 impl Row {
@@ -139,14 +267,34 @@ impl Row {
 }
 
 fn rows(state: &State) -> Vec<Row> {
+    let leveling = state.save.leveling();
     (0..statue::count())
         .filter_map(|index| {
             let info = statue::info(index)?;
+            let progress = state.save.progress(state.character, index);
+            let target = state.target(index);
+            let cost = target
+                .map(|target| {
+                    statue::target_cost(&state.save, leveling, state.character, index, target)
+                })
+                .unwrap_or(Err(Unavailable::NoRow(index)));
+            let rate_text = state.rate_text(index);
+            let rate = statue::parse_rate(&rate_text);
+            let statues = cost.as_ref().ok().map(|cost| state.estimate.statues(cost));
+            let hours = statues
+                .map(|statues| statue::hours(statues, rate.unwrap_or(0.0)))
+                .unwrap_or(f64::INFINITY);
             Some(Row {
                 index,
                 info,
-                progress: state.save.progress(state.character, index),
+                progress,
                 next: statue::next_level(&state.save, state.character, index),
+                target,
+                cost,
+                rate_text,
+                rate,
+                statues,
+                hours,
             })
         })
         .collect()
@@ -176,12 +324,14 @@ fn sort_rows(rows: &mut [Row], sort: Sort) {
 pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let query = state.statue.query(cx);
     let save_empty = state.statue.save.is_empty();
-    let mut rows = rows(&state.statue);
-    let total = rows.len();
+    let all_rows = rows(&state.statue);
+    let summary_cards = summary(&state.statue, &all_rows, cx);
+    let mut rows = all_rows.clone();
+    let total = all_rows.len();
     rows.retain(|row| matches(row.info, &query));
     sort_rows(&mut rows, state.statue.sort);
-    let shown = rows.len();
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
+    let flair_missing = state.save_loaded && !state.statue.save.leveling().flair_available;
 
     div()
         .id("statue-section")
@@ -210,19 +360,29 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                 }),
             )
         })
+        .when(flair_missing, |page| {
+            page.child(Banner::new(
+                "statue-no-flair",
+                Severity::Warning,
+                "Royal Guardian data is missing: saved Flair levels are unknown, so estimates assume no Flair bonus.",
+            ))
+        })
         .child(toolbar(state, cx))
+        .when(state.save_loaded && !save_empty, |page| {
+            page.child(summary_cards)
+        })
         .child(statues_card(
             state,
             cx,
+            &all_rows,
             &rows,
-            (shown, total),
-            save_empty,
+            (rows.len(), total),
             table_height,
         ))
         .into_any_element()
 }
 
-/// Character, search and sort controls.
+/// Character, estimate, search and sort controls.
 fn toolbar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let choices: Vec<Choice> = state
@@ -234,6 +394,7 @@ fn toolbar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let has_characters = !choices.is_empty();
     let entity = cx.entity();
     let character = entity.clone();
+    let estimate = entity.clone();
     let sort = entity.clone();
     let search_focus = state.statue.search.read(cx).focus().clone();
 
@@ -255,6 +416,23 @@ fn toolbar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                             character.update(cx, |state, cx| state.set_statue_character(index, cx));
                         }
                     }),
+            ),
+        )
+        .child(
+            field("Deposit estimate", muted).child(
+                Select::new(
+                    "statue-estimate",
+                    Estimate::ALL.map(|estimate| {
+                        Choice::new(estimate_id(estimate), estimate_label(estimate))
+                    }),
+                )
+                .label("Deposit estimate")
+                .selected(estimate_id(state.statue.estimate))
+                .on_change(move |value, _window, cx| {
+                    if let Some(next) = estimate_from_id(value.as_ref()) {
+                        estimate.update(cx, |state, cx| state.set_statue_estimate(next, cx));
+                    }
+                }),
             ),
         )
         .child(
@@ -297,16 +475,130 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
         .child(Caption::new(label).text_color(muted))
 }
 
+/// The four upstream summary cards: statues needed, retention, the tier
+/// multiplier and the parallel completion time.
+fn summary(state: &State, rows: &[Row], cx: &mut Context<AppState>) -> AnyElement {
+    let leveling: &Leveling = state.save.leveling();
+    let muted = cx.theme().colors.fg_muted;
+    let missing = rows.iter().filter(|row| row.cost.is_err()).count();
+    let needed: u64 = rows.iter().filter_map(|row| row.statues).sum();
+    let unmeasured = rows
+        .iter()
+        .filter(|row| {
+            row.statues.is_some_and(|statues| statues > 0)
+                && !matches!(row.rate, Ok(rate) if rate > 0.0)
+        })
+        .count();
+    let parallel = if missing > 0 {
+        "Unavailable".to_string()
+    } else if unmeasured > 0 {
+        "Add rates".to_string()
+    } else {
+        let longest = rows.iter().map(|row| row.hours).fold(0.0_f64, f64::max);
+        format::statue_time(longest)
+    };
+    let needed_caption = format!(
+        "{} · {}",
+        if missing > 0 {
+            format!("Partial: {missing} missing statue rows")
+        } else {
+            "All types combined".to_string()
+        },
+        match state.estimate {
+            Estimate::Guaranteed => "guaranteed EXP",
+            Estimate::Average => "average estimate",
+        }
+    );
+
+    div()
+        .id("statue-summary")
+        .role(Role::Label)
+        .aria_label(format!(
+            "Statues needed {needed} · retention {:.1}% · tier ×{} · parallel completion {parallel}",
+            leveling.retention_pct,
+            format::fmt_val(leveling.tier_multiplier)
+        ))
+        .flex()
+        .flex_wrap()
+        .gap_3()
+        .child(text_kpi(
+            "kpi-statues-needed",
+            "Statues needed",
+            &format::fmt_val(needed as f64),
+            &needed_caption,
+            muted,
+        ))
+        .child(text_kpi(
+            "kpi-retention",
+            "EXP retention",
+            &format!("{:.1}%", leveling.retention_pct),
+            &format!(
+                "STARTUE {}% · retention capped at 50%",
+                format::fmt_val(leveling.bubble_pct)
+            ),
+            muted,
+        ))
+        .child(text_kpi(
+            "kpi-tier",
+            "Onyx / Zenith EXP",
+            &format!("{}x", format::fmt_val(leveling.tier_multiplier)),
+            &format!("{} Onyx+ and {} Zenith statues", leveling.onyx, leveling.zenith),
+            muted,
+        ))
+        .child(text_kpi(
+            "kpi-parallel",
+            "Parallel completion",
+            &parallel,
+            &if unmeasured > 0 {
+                format!("{unmeasured} target rates missing")
+            } else {
+                "All target rates maintained together".to_string()
+            },
+            muted,
+        ))
+        .into_any_element()
+}
+
+fn text_kpi(
+    id: &'static str,
+    label: &'static str,
+    value: &str,
+    caption: &str,
+    muted: gpui::Hsla,
+) -> AnyElement {
+    Card::new()
+        .child(
+            div()
+                .id(id)
+                .role(Role::Label)
+                .aria_label(format!("{label} {value}"))
+                .flex()
+                .flex_col()
+                .gap_1()
+                .p_3()
+                .child(Caption::new(label).text_color(muted))
+                .child(
+                    div()
+                        .text_size(px(20.0))
+                        .font_weight(FontWeight::MEDIUM)
+                        .child(value.to_string()),
+                )
+                .child(Caption::new(caption.to_string()).text_color(muted)),
+        )
+        .into_any_element()
+}
+
 fn statues_card(
-    state: &AppState,
+    state: &mut AppState,
     cx: &mut Context<AppState>,
+    all: &[Row],
     rows: &[Row],
     (shown, total): (usize, usize),
-    save_empty: bool,
     table_height: gpui::Pixels,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let character = state.statue.save.name(state.statue.character);
+    let save_empty = state.statue.save.is_empty();
     let missing = if save_empty {
         0
     } else {
@@ -322,19 +614,38 @@ fn statues_card(
     } else {
         format!("{character} · all {total} statues available")
     };
+    let entity = cx.entity();
+    let estimate = state.statue.estimate;
+    let flair_available = state.statue.save.leveling().flair_available;
+    let rate_error = all.iter().find_map(|row| row.rate.as_ref().err().copied());
+    let rates_entered = all.iter().any(|row| !row.rate_text.is_empty());
+    let rate_source = if rates_entered {
+        format!("Rate source: manual entries for {character}.")
+    } else {
+        format!("Rate source: none yet for {character}.")
+    };
 
     let mut table = Table::new([
         "Statue / effect",
         "Level / progress",
-        "Next level requirement",
         "Availability",
+        "Target",
+        "EXP per statue",
+        "Statues needed",
+        "Raw statues/hr",
+        "Time",
     ]);
     for row in rows {
+        let target = entity.clone();
         table = table.row([
             statue_cell(row),
             level_cell(row),
-            next_cell(row),
             availability_cell(row, !state.save_loaded),
+            target_cell(row, target),
+            exp_cell(row, estimate, flair_available),
+            needed_cell(row),
+            rate_cell(state, row),
+            time_cell(row),
         ]);
     }
 
@@ -378,12 +689,34 @@ fn statues_card(
                 .child(body)
                 .child(
                     div()
+                        .id("statue-rate-source")
+                        .role(Role::Label)
+                        .aria_label(rate_source.clone())
+                        .text_size(px(11.0))
+                        .text_color(muted)
+                        .child(rate_source),
+                )
+                .when_some(rate_error, |column, error| {
+                    column.child(
+                        div()
+                            .id("statue-rate-error")
+                            .role(Role::Label)
+                            .aria_label(error.message())
+                            .text_size(px(11.0))
+                            .text_color(cx.theme().colors.danger)
+                            .child(error.message()),
+                    )
+                })
+                .child(
+                    div()
                         .id("statue-note")
                         .role(Role::Label)
                         .text_size(px(11.0))
                         .text_color(muted)
                         .child(
                             "Requirements are the full EXP bar for the saved level; remaining EXP uses the saved progress. \
+                             The STARTUE EXP bubble lowers the EXP a level consumes, while a full bar still triggers it. \
+                             Deposits multiply the shared Onyx/Zenith bonus and each statue's saved Flair. \
                              Statues 10-19, 20-29 and 30-31 round with the saved level of statue 1, 2 and 3.",
                         ),
                 ),
@@ -472,37 +805,104 @@ fn level_cell(row: &Row) -> AnyElement {
         .into_any_element()
 }
 
-fn next_cell(row: &Row) -> AnyElement {
-    match &row.next {
-        Ok(next) => div()
-            .id(SharedString::from(format!("statue-next-{}", row.index)))
-            .role(Role::Label)
-            .aria_label(format!(
-                "{} EXP for level {}, {} left",
-                format::rate(next.required),
-                next.level + 1,
-                format::rate(next.remaining)
-            ))
-            .flex()
-            .flex_col()
-            .gap_0p5()
-            .child(
-                div()
-                    .text_size(px(13.0))
-                    .child(format!("{} EXP", format::rate(next.required))),
+fn target_cell(row: &Row, entity: Entity<AppState>) -> AnyElement {
+    let Some(target) = row.target else {
+        return unavailable_cell().into_any_element();
+    };
+    let index = row.index;
+    div()
+        .w(px(88.0))
+        .child(
+            ely_gpui_component::forms::NumberInput::new(
+                ("statue-target-field", row.index),
+                f64::from(target),
             )
-            .child(Caption::new(format!(
-                "{} left",
-                format::rate(next.remaining)
-            )))
-            .into_any_element(),
-        Err(_) => div()
-            .id(SharedString::from(format!("statue-next-{}", row.index)))
-            .role(Role::Label)
-            .aria_label("Requirement unavailable")
-            .child("—")
-            .into_any_element(),
-    }
+            .label(format!("{} target level", row.info.name))
+            .range(0.0, 1_000_000.0)
+            .precision(0)
+            .size(ControlSize::Sm)
+            .on_change(move |value, _window, cx| {
+                if value.is_finite() && value >= 0.0 {
+                    let target = value.round() as u32;
+                    entity.update(cx, |state, cx| state.set_statue_target(index, target, cx));
+                }
+            }),
+        )
+        .into_any_element()
+}
+
+fn exp_cell(row: &Row, estimate: Estimate, flair_available: bool) -> AnyElement {
+    let Ok(cost) = &row.cost else {
+        return unavailable_cell().into_any_element();
+    };
+    let deposit = estimate.deposit(cost);
+    let flair = if flair_available {
+        format!(
+            "Flair {} · {}x",
+            cost.flair_level,
+            format::fmt_val(cost.flair_multiplier)
+        )
+    } else {
+        "Flair unknown".to_string()
+    };
+    div()
+        .id(SharedString::from(format!("statue-exp-{}", row.index)))
+        .role(Role::Label)
+        .aria_label(format!(
+            "{} EXP per statue, {flair}",
+            format::fmt_val(deposit)
+        ))
+        .flex()
+        .flex_col()
+        .gap_0p5()
+        .child(div().text_size(px(13.0)).child(format::fmt_val(deposit)))
+        .child(Caption::new(flair))
+        .into_any_element()
+}
+
+fn needed_cell(row: &Row) -> AnyElement {
+    let Some(statues) = row.statues else {
+        return unavailable_cell().into_any_element();
+    };
+    div()
+        .id(SharedString::from(format!("statue-needed-{}", row.index)))
+        .role(Role::Label)
+        .aria_label(format!("{statues} statues needed"))
+        .child(format::fmt_val(statues as f64))
+        .into_any_element()
+}
+
+fn rate_cell(state: &AppState, row: &Row) -> AnyElement {
+    let Some(input) = state.statue.rate_inputs.get(row.index) else {
+        return unavailable_cell().into_any_element();
+    };
+    let invalid = row.rate.is_err();
+    let field = input.clone();
+    div()
+        .id(SharedString::from(format!("statue-rate-{}", row.index)))
+        .role(Role::Label)
+        .aria_label(format!("{} raw statues per hour", row.info.name))
+        .w(px(112.0))
+        .on_click(move |_event, window, cx| {
+            let focus = field.read(cx).focus().clone();
+            window.focus(&focus, cx);
+        })
+        .child(Input::new(input).size(ControlSize::Sm).invalid(invalid))
+        .into_any_element()
+}
+
+fn time_cell(row: &Row) -> AnyElement {
+    let label = if row.statues.is_none() || row.rate.is_err() {
+        "—".to_string()
+    } else {
+        format::statue_time(row.hours)
+    };
+    div()
+        .id(SharedString::from(format!("statue-time-{}", row.index)))
+        .role(Role::Label)
+        .aria_label(format!("Time to target: {label}"))
+        .child(label)
+        .into_any_element()
 }
 
 fn availability_cell(row: &Row, no_save: bool) -> AnyElement {

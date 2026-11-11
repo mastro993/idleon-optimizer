@@ -206,6 +206,31 @@ pub fn hours(value: f64) -> String {
     }
 }
 
+/// The statue calculator's `time()` label from `statue-calc.html`: `Ready` for
+/// a met target, `Add rate` when no farming rate is entered, then seconds,
+/// minutes, hours, days and years.
+pub fn statue_time(hours: f64) -> String {
+    if !hours.is_finite() {
+        return "Add rate".into();
+    }
+    if hours == 0.0 {
+        return "Ready".into();
+    }
+    if hours < 1.0 / 60.0 {
+        return format!("{:.0}s", (hours * 3600.0).ceil());
+    }
+    if hours < 1.0 {
+        return format!("{:.0}m", (hours * 60.0).ceil());
+    }
+    if hours < 24.0 {
+        return format!("{hours:.1}h");
+    }
+    if hours < 8760.0 {
+        return format!("{:.1}d", hours / 24.0);
+    }
+    format!("{}y", fmt_val(hours / 8760.0))
+}
+
 /// A node's goal tint, so the grid reads at a glance.
 pub fn goal_color(goal: Option<&str>) -> Hsla {
     let (hue, saturation) = match goal.unwrap_or("") {
@@ -401,6 +426,18 @@ mod tests {
         assert_eq!(duration(0.5), "0.50s");
         assert_eq!(duration(780.0), "13.0m");
         assert_eq!(duration(86_400.0), "1.00d");
+    }
+
+    #[test]
+    fn statue_times_read_like_the_upstream_labels() {
+        assert_eq!(statue_time(0.0), "Ready");
+        assert_eq!(statue_time(f64::INFINITY), "Add rate");
+        assert_eq!(statue_time(1.0 / 3600.0), "1s");
+        assert_eq!(statue_time(1.5 / 60.0), "2m");
+        assert_eq!(statue_time(2.5), "2.5h");
+        assert_eq!(statue_time(36.0), "1.5d");
+        assert_eq!(statue_time(8760.0), "1.0y");
+        assert_eq!(statue_time(8760.0 * 1234.0), "1.2Ky");
     }
 
     #[test]

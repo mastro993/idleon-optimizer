@@ -49,6 +49,7 @@ use idleon_core::sailing::{
 };
 use idleon_core::save::Shadow;
 use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
+use idleon_core::statue::Estimate as StatueEstimate;
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
 use idleon_core::{Cglunko, Clamworks, Jar, game, monument, optimize, save, shape, sim};
@@ -640,6 +641,7 @@ impl AppState {
                 restore.configs,
                 &mut warnings,
                 &mut changes,
+                cx,
             );
             state.save_partial |= !warnings.is_empty();
             state.status = "Restored the last session.".into();
@@ -874,15 +876,15 @@ impl AppState {
                     &self.context,
                     &imported.context,
                 ));
-                self.load_imported(*imported);
+                self.load_imported(*imported, cx);
             }
             pipeline::Document::Project(project) => {
-                crate::project::apply(self, *project, configs, &mut warnings, &mut changes);
+                crate::project::apply(self, *project, configs, &mut warnings, &mut changes, cx);
                 self.save_partial |= !warnings.is_empty();
             }
             pipeline::Document::Section(_) => {
                 for config in configs {
-                    crate::project::assign(self, config, &mut warnings);
+                    crate::project::assign(self, config, &mut warnings, cx);
                 }
             }
         }
@@ -918,7 +920,7 @@ impl AppState {
     }
 
     /// Take a save the importer already read into every section that reads it.
-    pub(crate) fn load_imported(&mut self, imported: save::Imported) {
+    pub(crate) fn load_imported(&mut self, imported: save::Imported, cx: &mut Context<Self>) {
         self.monument_save = Some(monument::Save::from_parts(
             &imported.save,
             imported.companion.as_ref(),
@@ -938,7 +940,7 @@ impl AppState {
         self.save = Some(imported.save);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
-        self.statue.load(imported.statues);
+        self.statue.load(imported.statues, cx);
         self.coral.adopt(&imported.coral);
         self.worship_adopt(imported.worship);
         self.fleet = imported.fleet;
@@ -1612,13 +1614,25 @@ impl AppState {
     /// cannot be selected, so the table always has a valid subject.
     pub fn set_statue_character(&mut self, character: usize, cx: &mut Context<Self>) {
         if self.statue.save.has_character(character) {
-            self.statue.character = character;
+            self.statue.select_character(character, cx);
             cx.notify();
         }
     }
 
     pub fn set_statue_sort(&mut self, sort: StatueSort, cx: &mut Context<Self>) {
         self.statue.sort = sort;
+        cx.notify();
+    }
+
+    /// Switch the statue table between guaranteed and average deposit estimates.
+    pub fn set_statue_estimate(&mut self, estimate: StatueEstimate, cx: &mut Context<Self>) {
+        self.statue.estimate = estimate;
+        cx.notify();
+    }
+
+    /// Set one statue's target level.
+    pub fn set_statue_target(&mut self, statue: usize, target: u32, cx: &mut Context<Self>) {
+        self.statue.set_target(statue, target);
         cx.notify();
     }
 

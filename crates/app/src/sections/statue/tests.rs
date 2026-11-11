@@ -10,11 +10,22 @@ fn sample(level: u32, exp: f64) -> StatueSave {
 }
 
 fn row(save: &StatueSave, index: usize) -> Row {
+    let progress = save.progress(0, index);
+    let target = progress.map(|progress| progress.level + 1);
+    let cost = target
+        .map(|target| statue::target_cost(save, save.leveling(), 0, index, target))
+        .unwrap_or(Err(Unavailable::NoRow(index)));
     Row {
         index,
         info: statue::info(index).expect("a statue"),
-        progress: save.progress(0, index),
+        progress,
         next: statue::next_level(save, 0, index),
+        target,
+        cost,
+        rate_text: String::new(),
+        rate: Ok(0.0),
+        statues: None,
+        hours: f64::INFINITY,
     }
 }
 
@@ -64,6 +75,18 @@ fn unavailable_rows_sort_after_available_ones() {
     assert_eq!(entries[0].index, 0);
     sort_rows(&mut entries, Sort::Level);
     assert_eq!(entries[0].index, 0);
+}
+
+#[test]
+fn the_deposit_estimate_round_trips_through_its_selector_id() {
+    for estimate in Estimate::ALL {
+        assert_eq!(estimate_from_id(estimate_id(estimate)), Some(estimate));
+    }
+    assert_eq!(estimate_from_id("nope"), None);
+    assert_eq!(
+        estimate_label(Estimate::Average),
+        "Average with vial doubles"
+    );
 }
 
 #[test]

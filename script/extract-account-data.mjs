@@ -70,6 +70,21 @@ for (const [name, item] of Object.entries(items.ITEMS)) {
 const uqRows = (map) =>
   Object.fromEntries(Object.entries(map).map(([key, rows]) => [key, rows.map((row) => [row.stat, row.val])]));
 
+/// The vial row whose effect key is `key`, as `{index, kind, x1, x2, name}`.
+function vialParams(key) {
+  const rows = lists.AlchemyDescription[4] || [];
+  const index = rows.findIndex((row) => row && row[11] === key);
+  if (index < 0) throw new Error(`the upstream vial table has no ${key} row`);
+  const row = rows[index];
+  return {
+    index,
+    kind: String(row[3]),
+    x1: Number(row[1]),
+    x2: Number(row[2]),
+    name: row[0],
+  };
+}
+
 const payload = {
   encoding: encoding.N2L,
   arcade: Object.fromEntries(
@@ -142,6 +157,7 @@ const payload = {
   arcaneNoMulti: (await import(join(source, 'js/stats/data/game-constants.js'))).ARCANE_NO_MULTI ? Array.from((await import(join(source, 'js/stats/data/game-constants.js'))).ARCANE_NO_MULTI) : [],
   bubbles: {
     y13: alchemy.bubbleParams(3, 32),
+    statueStart: alchemy.bubbleParams(3, 2),
     prismaEligible: Number(lists.AlchemyDescription[3][32][10]) === 0,
   },
   // Cooking Mastery per-upgrade bonus (RandoListo2[8]) and the Rift salt lick
@@ -149,12 +165,12 @@ const payload = {
   cookingMasteryPerLv: lists.RandoListo2[8].slice(0, 6).map(Number),
   saltLicks: lists.SaltLicks.map((row) => Number(row[3]) || 0),
   // The Canteen Read vial, the one alchemy vial that boosts Cooking Mastery EXP.
-  cookingMasteryVial: (() => {
-    const index = lists.AlchemyDescription[4].findIndex((row) => row[11] === '7cookmastery');
-    if (index < 0) return null;
-    const row = lists.AlchemyDescription[4][index];
-    return { index, kind: String(row[3]), x1: Number(row[1]) || 0, x2: Number(row[2]) || 0 };
-  })(),
+  cookingMasteryVial: vialParams('7cookmastery'),
+  // The Skinny 0 Cal vial's curve (`AlchemyDescription[4]`, effect
+  // `StatueDouble`), as the statue deposit estimate reads it.
+  vials: {
+    statueDouble: vialParams('StatueDouble'),
+  },
 };
 
 // Unknown fields are dropped so the file stays diffable.

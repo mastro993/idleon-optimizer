@@ -6,6 +6,7 @@
 //! bubble lookups behind the gallery, palettes, and spelunking shop upgrades.
 
 use super::Decoder;
+use super::data::BubbleParam;
 use super::fields;
 
 impl Decoder<'_> {
@@ -236,14 +237,32 @@ impl Decoder<'_> {
         level * per_level * (1.0 + self.arcane(39) / 100.0)
     }
 
-    /// `isBubblePrismad` from `js/stats/systems/w2/alchemy.js`.
-    pub(super) fn bubble_prismad(&self) -> bool {
-        let letters = self.data.bubbles.y13.cauldron;
-        let Some(letter) = self.data.encoding.chars().nth(letters) else {
+    /// Whether the save's Prisma list marks the bubble at `cauldron[index]`.
+    pub(super) fn bubble_prismad_at(&self, cauldron: usize, index: usize) -> bool {
+        let Some(letter) = self.data.encoding.chars().nth(cauldron) else {
             return false;
         };
-        let needle = format!("{letter}{},", self.data.bubbles.y13.index);
+        let needle = format!("{letter}{index},");
         self.ola_text(384).contains(&needle)
+    }
+
+    /// One bubble's value: the curve at its saved level, times its Prisma
+    /// multiplier when the save marks it.
+    pub(super) fn bubble_value(&self, bubble: &BubbleParam) -> f64 {
+        let level = fields::field(self.save, "CauldronInfo")
+            .and_then(|value| fields::object_row(&value, bubble.cauldron))
+            .map(|row| fields::number_at(&row, bubble.index))
+            .unwrap_or(0.0);
+        if level <= 0.0 {
+            return 0.0;
+        }
+        let base = crate::save::formula::eval(&bubble.formula, bubble.x1, bubble.x2, level);
+        let prisma = if self.bubble_prismad_at(bubble.cauldron, bubble.index) {
+            self.prisma_bonus_multi().max(1.0)
+        } else {
+            1.0
+        };
+        base * prisma
     }
 
     /// `getPrismaBonusMult` from `js/stats/systems/w2/alchemy.js`.
@@ -273,21 +292,7 @@ impl Decoder<'_> {
 
     /// `bubbleBonusY13` from `js/stats/systems/w2/alchemy.js`.
     pub(super) fn bubble_y13(&self) -> f64 {
-        let bubble = &self.data.bubbles.y13;
-        let level = fields::field(self.save, "CauldronInfo")
-            .and_then(|value| fields::object_row(&value, bubble.cauldron))
-            .map(|row| fields::number_at(&row, bubble.index))
-            .unwrap_or(0.0);
-        if level <= 0.0 {
-            return 0.0;
-        }
-        let base = crate::save::formula::eval(&bubble.formula, bubble.x1, bubble.x2, level);
-        let prisma = if self.bubble_prismad() {
-            self.prisma_bonus_multi().max(1.0)
-        } else {
-            1.0
-        };
-        base * prisma
+        self.bubble_value(&self.data.bubbles.y13)
     }
 
     /// `computePaletteBonus` from `js/stats/systems/w7/spelunking.js`.

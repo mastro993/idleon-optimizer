@@ -10,6 +10,11 @@
 
 Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.
 
+## Current build
+
+- ST-01 statue table: the 32-row table with saved levels, next-level bars, availability, search and sort.
+- ST-02 STARTUE bubble and time estimates: the decoded STARTUE EXP bubble, Skinny 0 Cal vial, Onyx/Zenith tier and Royal Guardian Flair drive the deposit estimate, the per-row target, statues needed and the time from a raw statues/hour rate, with the rate source shown.
+
 ## Upstream sources
 
 - statue-calc.html

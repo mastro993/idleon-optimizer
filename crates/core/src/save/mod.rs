@@ -296,7 +296,16 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);
     let coral = coral::inputs(save, root, &characters, &rows);
-    let statues = statue::read(save, root, &mut warnings);
+    let mut statues = statue::read(save, root, &mut warnings);
+    if !statues.is_empty() {
+        statues.set_leveling(account::statue_leveling(
+            save,
+            root,
+            &characters,
+            &simulation,
+            &mut warnings,
+        ));
+    }
     let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
     let farm_level = characters
         .first()

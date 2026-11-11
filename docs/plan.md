@@ -318,11 +318,14 @@ Details: [`docs/sections/combat-sim.md`](sections/combat-sim.md).
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
 
-The statue section has its table (ST-01). Done: the 32-row table, the saved level and EXP progress,
-the next-level requirement including the statue-1/2/3 rounding gates, per-row availability, the
-character selector and search/sort. Missing: the STARTUE EXP bubble and time estimates (ST-02) and
-batch set/apply with the statue-farming breakdown (ST-03). Formula parity against the upstream JS
-uses the fixture in `crates/core/tests/statue-requirements.json`. Details:
+The statue section has its table and its estimates (ST-01, ST-02). Done: the 32-row table, the saved
+level and EXP progress, the next-level requirement including the statue-1/2/3 rounding gates, per-row
+availability, the character selector and search/sort; the STARTUE EXP bubble, Skinny 0 Cal vial,
+Onyx/Zenith tier and Royal Guardian Flair behind a per-row target, the statues that target needs
+under a guaranteed or average deposit estimate, and the time from a raw statues/hour rate with its
+source shown. Missing: batch set/apply with the statue-farming breakdown (ST-03). Formula parity
+against the upstream JS uses the fixture in `crates/core/tests/statue-requirements.json` and
+`crates/core/tests/statue-costs.json`. Details:
 [`docs/sections/statue.md`](sections/statue.md).
 
 The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
