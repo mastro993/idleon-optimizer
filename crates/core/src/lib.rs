@@ -18,6 +18,7 @@ pub mod endgame;
 pub mod farming;
 pub mod formula;
 pub mod jar;
+pub mod killroy;
 pub mod model;
 pub mod monument;
 pub mod optimize;

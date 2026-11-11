@@ -342,7 +342,7 @@ mod tests {
             tree: Default::default(),
             clamworks: Default::default(),
             jar: None,
-            save: serde_json::Value::Null,
+            save: idleon_core::save::Save::new(serde_json::Value::Null),
             companion: None,
             statues: Default::default(),
             coral: Default::default(),

@@ -47,8 +47,10 @@ mod research;
 mod sailing;
 mod shadow;
 mod statue;
+mod value;
 
 pub use shadow::{Shadow, ShadowVerdict};
+pub use value::{Save, at, number, row_values};
 
 use crate::clamworks::Clamworks;
 use crate::farming::Farm;
@@ -103,9 +105,9 @@ pub struct Imported {
     pub clamworks: Clamworks,
     /// The Jar Cavern state, when the save carries its `Holes` rows.
     pub jar: Option<Jar>,
-    /// The decoded save object (`data` in an `it.json`, the object itself in a
-    /// flat save), kept whole so read-only sections can audit it.
-    pub save: Value,
+    /// The decoded save with its `it.json` wrapper, kept whole so read-only
+    /// sections can read raw fields and audit it.
+    pub save: Save,
     /// The `it.json` wrapper's companion roster, beside the save.
     pub companion: Option<Value>,
     /// The per-character statue levels and EXP the save carries.
@@ -217,9 +219,9 @@ impl Character {
 
 /// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
 pub fn import(save_json: &str) -> Result<Imported, ImportError> {
-    let root: Value =
+    let parsed: Value =
         serde_json::from_str(save_json).map_err(|error| ImportError::NotJson(error.to_string()))?;
-    let root = root
+    let root = parsed
         .as_object()
         .ok_or_else(|| ImportError::NoSaveFields("the top level is not an object".into()))?;
     // `it.json` nests the save under `data`; a plain save is the object itself.
@@ -281,6 +283,8 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .unwrap_or(0);
     let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
     let clamworks = Clamworks::from_save(save, &mut warnings);
+    let shadow = Shadow::read(save);
+    let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
@@ -295,15 +299,15 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         tree,
         clamworks,
         jar,
-        save: Value::Object(save.clone()),
-        companion: root.get("companion").cloned(),
+        save: Save::new(parsed),
+        companion,
         statues,
         coral,
         format,
         characters: roster,
         named_characters,
         warnings,
-        shadow: Shadow::read(save),
+        shadow,
     })
 }
 

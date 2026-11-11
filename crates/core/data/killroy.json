@@ -1,0 +1,417 @@
+{
+  "families": [
+    "Beginner",
+    "Warrior",
+    "Archer",
+    "Mage"
+  ],
+  "pools": {
+    "68": [
+      {
+        "mapIdx": 1,
+        "name": "Spore Meadows",
+        "monster": "mushG"
+      },
+      {
+        "mapIdx": 2,
+        "name": "Froggy Fields",
+        "monster": "frogG"
+      },
+      {
+        "mapIdx": 8,
+        "name": "Poopy Sewers",
+        "monster": "poopSmall"
+      },
+      {
+        "mapIdx": 13,
+        "name": "The Base Of The Bark",
+        "monster": "branch"
+      },
+      {
+        "mapIdx": 14,
+        "name": "Valley Of The Beans",
+        "monster": "beanG"
+      },
+      {
+        "mapIdx": 15,
+        "name": "Rats Nest",
+        "monster": "ratB"
+      },
+      {
+        "mapIdx": 16,
+        "name": "Jungle Perimeter",
+        "monster": "slimeG"
+      },
+      {
+        "mapIdx": 17,
+        "name": "Birch Enclave",
+        "monster": "mushR"
+      },
+      {
+        "mapIdx": 18,
+        "name": "Hollowed Trunk",
+        "monster": "acorn"
+      },
+      {
+        "mapIdx": 19,
+        "name": "Winding Willows",
+        "monster": "snakeG"
+      },
+      {
+        "mapIdx": 24,
+        "name": "Vegetable Patch",
+        "monster": "carrotO"
+      },
+      {
+        "mapIdx": 26,
+        "name": "Forest Outskirts",
+        "monster": "goblinG"
+      },
+      {
+        "mapIdx": 27,
+        "name": "Encroaching Forest Villas",
+        "monster": "plank"
+      },
+      {
+        "mapIdx": 28,
+        "name": "Tucked Away",
+        "monster": "frogBIG"
+      },
+      {
+        "mapIdx": 31,
+        "name": "Where the Branches End",
+        "monster": "mushW"
+      }
+    ],
+    "69": [
+      {
+        "mapIdx": 51,
+        "name": "Jar Bridge",
+        "monster": "jarSand"
+      },
+      {
+        "mapIdx": 52,
+        "name": "The Mimic Hole",
+        "monster": "mimicA"
+      },
+      {
+        "mapIdx": 53,
+        "name": "Dessert Dunes",
+        "monster": "crabcake"
+      },
+      {
+        "mapIdx": 57,
+        "name": "The Grandioso Canyon",
+        "monster": "coconut"
+      },
+      {
+        "mapIdx": 58,
+        "name": "Shifty Sandbox",
+        "monster": "sandcastle"
+      },
+      {
+        "mapIdx": 59,
+        "name": "Pincer Plateau",
+        "monster": "pincermin"
+      },
+      {
+        "mapIdx": 60,
+        "name": "Slamabam Straightaway",
+        "monster": "potato"
+      },
+      {
+        "mapIdx": 62,
+        "name": "The Ring",
+        "monster": "steak"
+      },
+      {
+        "mapIdx": 63,
+        "name": "Up Up Down Down",
+        "monster": "moonman"
+      },
+      {
+        "mapIdx": 64,
+        "name": "Sands of Time",
+        "monster": "sandgiant"
+      },
+      {
+        "mapIdx": 65,
+        "name": "Djonnuttown",
+        "monster": "snailZ"
+      }
+    ],
+    "70": [
+      {
+        "mapIdx": 101,
+        "name": "Steep Sheep Ledge",
+        "monster": "sheep"
+      },
+      {
+        "mapIdx": 103,
+        "name": "Snowfield Outskirts",
+        "monster": "flake"
+      },
+      {
+        "mapIdx": 104,
+        "name": "The Stache Split",
+        "monster": "stache"
+      },
+      {
+        "mapIdx": 105,
+        "name": "Refrigeration Station",
+        "monster": "bloque"
+      },
+      {
+        "mapIdx": 106,
+        "name": "Mamooooth Mountain",
+        "monster": "mamoth"
+      },
+      {
+        "mapIdx": 107,
+        "name": "Rollin' Tundra",
+        "monster": "snowball"
+      },
+      {
+        "mapIdx": 108,
+        "name": "Signature Slopes",
+        "monster": "penguin"
+      },
+      {
+        "mapIdx": 109,
+        "name": "Thermonuclear Climb",
+        "monster": "thermostat"
+      },
+      {
+        "mapIdx": 110,
+        "name": "Waterlogged Entrance",
+        "monster": "glass"
+      },
+      {
+        "mapIdx": 111,
+        "name": "Cryo Catacombs",
+        "monster": "snakeB"
+      },
+      {
+        "mapIdx": 112,
+        "name": "Overpass of Sound",
+        "monster": "speaker"
+      },
+      {
+        "mapIdx": 113,
+        "name": "Crystal Basecamp",
+        "monster": "eye"
+      },
+      {
+        "mapIdx": 116,
+        "name": "Wam Wonderland",
+        "monster": "ram"
+      }
+    ],
+    "71": [
+      {
+        "mapIdx": 151,
+        "name": "Spaceway Raceway",
+        "monster": "mushP"
+      },
+      {
+        "mapIdx": 152,
+        "name": "TV Outpost",
+        "monster": "w4a2"
+      },
+      {
+        "mapIdx": 153,
+        "name": "Donut Drive-In",
+        "monster": "w4a3"
+      },
+      {
+        "mapIdx": 154,
+        "name": "Outskirts of Fallstar Isle",
+        "monster": "demonP"
+      },
+      {
+        "mapIdx": 155,
+        "name": "Mountainous Deugh",
+        "monster": "w4b2"
+      },
+      {
+        "mapIdx": 156,
+        "name": "Wurm Highway",
+        "monster": "w4b1"
+      },
+      {
+        "mapIdx": 157,
+        "name": "Jelly Cube Bridge",
+        "monster": "w4b3"
+      },
+      {
+        "mapIdx": 158,
+        "name": "Cocoa Tunnel",
+        "monster": "w4b4"
+      },
+      {
+        "mapIdx": 159,
+        "name": "Standstill Plains",
+        "monster": "w4b5"
+      },
+      {
+        "mapIdx": 160,
+        "name": "Shelled Shores",
+        "monster": "w4c1"
+      },
+      {
+        "mapIdx": 161,
+        "name": "The Untraveled Octopath",
+        "monster": "w4c2"
+      },
+      {
+        "mapIdx": 162,
+        "name": "Flamboyant Bayou",
+        "monster": "w4c3"
+      },
+      {
+        "mapIdx": 163,
+        "name": "Enclave of Eyes",
+        "monster": "w4c4"
+      }
+    ],
+    "72": [
+      {
+        "mapIdx": 201,
+        "name": "Naut Sake Perimeter",
+        "monster": "w5a1"
+      },
+      {
+        "mapIdx": 202,
+        "name": "Niagrilled Falls",
+        "monster": "w5a2"
+      },
+      {
+        "mapIdx": 203,
+        "name": "The Killer Roundabout",
+        "monster": "w5a3"
+      },
+      {
+        "mapIdx": 204,
+        "name": "Cracker Jack Lake",
+        "monster": "w5a4"
+      },
+      {
+        "mapIdx": 205,
+        "name": "The Great Molehill",
+        "monster": "w5a5"
+      },
+      {
+        "mapIdx": 206,
+        "name": "Erruption River",
+        "monster": "w5b1"
+      },
+      {
+        "mapIdx": 207,
+        "name": "Mount Doomish",
+        "monster": "w5b2"
+      },
+      {
+        "mapIdx": 208,
+        "name": "OJ Bay",
+        "monster": "w5b3"
+      },
+      {
+        "mapIdx": 209,
+        "name": "Lampar Lake",
+        "monster": "w5b4"
+      },
+      {
+        "mapIdx": 210,
+        "name": "Spitfire River",
+        "monster": "w5b5"
+      },
+      {
+        "mapIdx": 211,
+        "name": "Miner Mole Outskirts",
+        "monster": "w5b6"
+      },
+      {
+        "mapIdx": 212,
+        "name": "Crawly Catacombs",
+        "monster": "w5c1"
+      },
+      {
+        "mapIdx": 213,
+        "name": "The Worm Nest",
+        "monster": "w5c2"
+      }
+    ],
+    "99": [
+      {
+        "mapIdx": 251,
+        "name": "Gooble Goop Creek",
+        "monster": "w6a1"
+      },
+      {
+        "mapIdx": 252,
+        "name": "Picnic Bridgeways",
+        "monster": "w6a2"
+      },
+      {
+        "mapIdx": 253,
+        "name": "Irrigation Station",
+        "monster": "w6a3"
+      },
+      {
+        "mapIdx": 254,
+        "name": "Troll Playground",
+        "monster": "w6a4"
+      },
+      {
+        "mapIdx": 255,
+        "name": "Edge of the Valley",
+        "monster": "w6a5"
+      },
+      {
+        "mapIdx": 256,
+        "name": "Bamboo Laboredge",
+        "monster": "w6b1"
+      },
+      {
+        "mapIdx": 257,
+        "name": "Lightway Path",
+        "monster": "w6b2"
+      },
+      {
+        "mapIdx": 258,
+        "name": "Troll Broodnest",
+        "monster": "w6b3"
+      },
+      {
+        "mapIdx": 259,
+        "name": "Above the Clouds",
+        "monster": "w6b4"
+      },
+      {
+        "mapIdx": 260,
+        "name": "Sleepy Skyline",
+        "monster": "w6c1"
+      },
+      {
+        "mapIdx": 261,
+        "name": "Dozey Dogpark",
+        "monster": "w6c2"
+      },
+      {
+        "mapIdx": 262,
+        "name": "Yolkrock Basin",
+        "monster": "w6d1"
+      },
+      {
+        "mapIdx": 263,
+        "name": "Chieftain Stairway",
+        "monster": "w6d2"
+      },
+      {
+        "mapIdx": 264,
+        "name": "Emperor's Castle Doorstep",
+        "monster": "w6d3"
+      }
+    ]
+  }
+}

@@ -6,6 +6,7 @@ use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::jar::Tab as JarTab;
+use crate::sections::killroy::State as KillroyState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
@@ -122,6 +123,10 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The Killroy section's forecast settings.
+    pub killroy: KillroyState,
+    /// The decoded save behind the simulation, for sections that read raw fields.
+    pub save: Option<save::Save>,
     /// The sailing fleet imported from the save, and the route context.
     pub fleet: Fleet,
     pub sailing: RouteContext,
@@ -280,6 +285,8 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            killroy: KillroyState::default(),
+            save: None,
             fleet: Fleet::default(),
             sailing: RouteContext::default(),
             sailing_state: SailingState::default(),
@@ -462,6 +469,7 @@ impl AppState {
         self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.save = Some(imported.save);
         self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
         self.fleet = imported.fleet;
@@ -486,6 +494,12 @@ impl AppState {
         self.import.message = message.clone();
         self.status = message;
         self.close_import(window, cx);
+    }
+
+    /// Set how many upcoming weeks the Killroy forecast covers.
+    pub fn set_killroy_weeks(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.killroy.weeks = value.round().clamp(1.0, 52.0) as usize;
+        cx.notify();
     }
 
     /// Empty the dashboard search; Escape calls this.

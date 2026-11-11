@@ -7,12 +7,11 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the statue table, the
-farming field, the Clamworks overview and upgrades, the shadow-ban and endgame checks, the hidden
-BoneJoePickle calculator and the Bravery tab of the Monument calculator. The plan covers the full
-upstream suite: a dashboard that opens every calculator, with one milestone per section and one issue
-per feature
-([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and implements the research section, the Killroy weekly
+forecast, the statue table, the farming field, the Clamworks overview and upgrades, the shadow-ban
+and endgame checks, the hidden BoneJoePickle calculator and the Bravery tab of the Monument
+calculator. The plan covers the full upstream suite: a dashboard that opens every calculator, with
+one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -72,6 +71,10 @@ per feature
 - **Supplements** — the save-derived multipliers that live outside the grid (`serverVarResXP`,
   all-bonus multiplier, extra account %, extra multiplier, flat grid points, extra shapes and
   magnifiers), editable in the Rates pane; the displayed rate follows each change.
+- **Killroy weekly forecast** — the server's Killroy rotation, every saved character's three
+  encounter slots for the next 1–52 weeks, family and room frequency, class eligibility, unlock
+  reasons and the save's monster records. The rotation, unlocks and records stay at the imported
+  snapshot; kills and skulls belong to the combat runs in later issues.
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
   format, research level, farm plots, character count and warnings before Apply; the grid levels,

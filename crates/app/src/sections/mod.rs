@@ -15,6 +15,7 @@ pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
 pub mod jar;
+pub mod killroy;
 pub mod monument;
 pub mod pickle;
 pub mod research;
@@ -261,9 +262,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W2,
         description: "Weekly encounters, monster and class records, kills, skulls and +1 upgrade comparisons",
         spec: "docs/sections/killroy.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: killroy::view,
         keys: no_keys,
     },
     Section {
