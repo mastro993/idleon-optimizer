@@ -20,7 +20,8 @@ use idleon_core::sailing::{
 };
 
 /// The section's own state, kept across dashboard visits.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct State {
     pub mode: AssignmentMode,
     pub island: usize,

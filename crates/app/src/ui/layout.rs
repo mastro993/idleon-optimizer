@@ -162,6 +162,7 @@ pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let back = entity.clone();
     let import = entity.clone();
+    let export = entity.clone();
 
     div()
         .id("app-header")
@@ -193,7 +194,7 @@ pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         )
         .child(WorldBadge::new(section.group))
         .child(div().flex_1())
-        .child(save_actions(state.save_status(), muted, import))
+        .child(save_actions(state.save_status(), muted, import, export))
         .into_any_element()
 }
 
@@ -201,6 +202,7 @@ pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 pub fn dashboard_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let colors = &cx.theme().colors;
     let import = cx.entity();
+    let export = cx.entity();
     div()
         .id("app-header")
         .flex()
@@ -233,7 +235,12 @@ pub fn dashboard_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElem
                 .text_color(colors.fg_muted)
                 .child(format!("{} calculators", sections::card_count())),
         )
-        .child(save_actions(state.save_status(), colors.fg_muted, import))
+        .child(save_actions(
+            state.save_status(),
+            colors.fg_muted,
+            import,
+            export,
+        ))
         .into_any_element()
 }
 
@@ -242,6 +249,7 @@ fn save_actions(
     save: SaveStatus,
     muted: gpui::Hsla,
     import: gpui::Entity<AppState>,
+    export: gpui::Entity<AppState>,
 ) -> impl IntoElement {
     div()
         .flex()
@@ -255,6 +263,14 @@ fn save_actions(
                 .text_size(px(12.0))
                 .text_color(muted)
                 .child(save.label()),
+        )
+        .child(
+            Button::new("header-export", "Export")
+                .size(ControlSize::Sm)
+                .icon(IconName::Download)
+                .on_click(move |_event, window, cx| {
+                    export.update(cx, |state, cx| state.open_export(window, cx));
+                }),
         )
         .child(
             Button::new("header-import", "Import")
@@ -289,6 +305,7 @@ pub fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) ->
     let entity = cx.entity();
     let back = entity.clone();
     let import = entity.clone();
+    let export = entity.clone();
     div()
         .id("app-header")
         .flex()
@@ -317,7 +334,7 @@ pub fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) ->
                 .child(Heading::new(3, "Unknown section")),
         )
         .child(div().flex_1())
-        .child(save_actions(state.save_status(), muted, import))
+        .child(save_actions(state.save_status(), muted, import, export))
         .into_any_element()
 }
 

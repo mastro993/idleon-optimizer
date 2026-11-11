@@ -17,7 +17,8 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div};
 
 /// The jar page's tabs.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Tab {
     /// The jar summary, rupie balances and the cavern's status.
     #[default]

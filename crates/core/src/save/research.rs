@@ -10,8 +10,11 @@ use serde_json::{Map, Value};
 /// A magnifier's `(type, slot)` from the save.
 type MagEntry = (Option<f64>, Option<f64>);
 
-/// A shape's `(x, y, rotation)` from the save.
-type Position = (Option<f64>, Option<f64>, Option<f64>);
+/// A shape's `(shape, x, y, rotation)` from the save. The flat save form is
+/// positional, so its `shape` is `None` and the entry's index names it; the
+/// app's own state exports name it, so a placement that is out of array order
+/// keeps its shape.
+type Position = (Option<usize>, Option<f64>, Option<f64>, Option<f64>);
 
 /// The research rows: `Research` is a JSON string in the game's save, but the
 /// app's own state exports use a plain array.
@@ -281,13 +284,18 @@ pub(crate) fn placements(
 
     let shapes = game().shapes.len();
     let mut placements = Vec::new();
-    for (shape, (x, y, rot)) in positions.iter().enumerate() {
+    let mut reported = false;
+    for (index, (slot, x, y, rot)) in positions.iter().enumerate() {
+        let shape = slot.unwrap_or(index);
         if shape >= shapes {
-            warnings.push(format!(
-                "shapePositions: {} entries, only {shapes} shapes exist; the rest are ignored",
-                positions.len()
-            ));
-            break;
+            if !reported {
+                reported = true;
+                warnings.push(format!(
+                    "shapePositions: {} entries, only {shapes} shapes exist; the rest are ignored",
+                    positions.len()
+                ));
+            }
+            continue;
         }
         let (Some(x), Some(y)) = (x, y) else {
             continue;
@@ -305,8 +313,9 @@ pub(crate) fn placements(
     placements
 }
 
-/// Shape `(x, y, rotation)` triples from either the decoded objects or the
-/// save's flat groups of four numbers `[x, y, rotation, unknown]`.
+/// Shape placements from either the decoded objects or the save's flat groups
+/// of four numbers `[x, y, rotation, unknown]`. The object form may name its
+/// `shape`; the flat form cannot, so its index names it.
 fn position_entries(value: &Value) -> Option<Vec<Position>> {
     let items = value.as_array()?;
     if items.iter().all(Value::is_object) {
@@ -315,6 +324,9 @@ fn position_entries(value: &Value) -> Option<Vec<Position>> {
                 .iter()
                 .map(|item| {
                     (
+                        item.get("shape")
+                            .and_then(json::number)
+                            .map(|shape| shape.max(0.0).round() as usize),
                         item.get("x").and_then(json::number),
                         item.get("y").and_then(json::number),
                         item.get("rot").and_then(json::number),
@@ -328,6 +340,7 @@ fn position_entries(value: &Value) -> Option<Vec<Position>> {
             .chunks(4)
             .map(|group| {
                 (
+                    None,
                     group.first().and_then(json::number),
                     group.get(1).and_then(json::number),
                     group.get(2).and_then(json::number),

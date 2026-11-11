@@ -5,7 +5,7 @@
 
 use crate::sections;
 use crate::state::{AppState, Route};
-use crate::ui::{dashboard, import, layout, section};
+use crate::ui::{dashboard, export, import, layout, section};
 use ely_gpui_component::shell::{StatusBar, StatusBarItem};
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
@@ -134,11 +134,14 @@ pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
         );
     // The import dialog owns Escape while it is open, so the section's back
     // shortcut waits until it closes.
-    if !route.is_dashboard() && !state.import.open {
+    if !route.is_dashboard() && !state.import.open && !state.export.open {
         root = root.key_context(SECTION_CONTEXT);
     }
     if state.import.open {
         root = root.child(import::dialog(state, cx));
+    }
+    if state.export.open {
+        root = root.child(export::dialog(state, cx));
     }
     root.into_any_element()
 }

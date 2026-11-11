@@ -21,6 +21,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
 import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
 import { comparePng, decodePng } from './png.mjs';
 
@@ -96,6 +97,54 @@ const jarSave = () => {
   holes[25] = [1, 0, 0, 250];
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
+
+/// A project document as the app writes it: the research state, the
+/// supplements, one config per section and the section the window was on.
+const projectDocument = () =>
+  JSON.stringify({
+    format: 'idleon-optimizer-project',
+    version: 1,
+    section: 'killroy',
+    research: {
+      researchLevel: 123,
+      researchExp: 0,
+      gridLevels: Array(240).fill(0),
+      occFound: Array(80).fill(0),
+      insightLvs: Array(80).fill(0),
+      insightProgress: Array(80).fill(0),
+      magData: [],
+      shapePositions: [],
+    },
+    supplements: { serverVarResXp: 1.5, extraPct: 10 },
+    sections: { killroy: { weeks: 5 } },
+  });
+
+/// The upstream optimizer's state string: gzip+base64 behind `ROv2:`.
+const upstreamState = () => {
+  const state = {
+    _format: 'research-optimizer-state',
+    _version: 2,
+    researchLevel: 140,
+    cachedResearchExp: 12345,
+    gridLevels: Array(240).fill(1),
+    occFound: Array(80).fill(1),
+    insightLvs: Array(80).fill(0),
+    insightProgress: Array(80).fill(0),
+    magData: [],
+    shapePositions: [],
+    serverVarResXP: 1.25,
+  };
+  return `ROv2:${gzipSync(JSON.stringify(state)).toString('base64')}`;
+};
+
+/// One section's config document, the shape the import dialog applies on its own.
+const sectionConfig = (id, config) =>
+  JSON.stringify({
+    format: 'idleon-optimizer-section',
+    version: 1,
+    section: id,
+    config,
+  });
 
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
@@ -323,16 +372,30 @@ const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
   throw new Error(`${label} (timed out)`);
 };
 
-const waitForNode = (lane, id, label) =>
-  waitFor(lane, (nodes) => has(nodes, id), label);
+const waitForNode = (lane, id, label, timeoutMs) =>
+  waitFor(lane, (nodes) => has(nodes, id), label, timeoutMs);
+
+/// Type into the dashboard search and wait for the card it should list. A
+/// window busy with the previous section's frame can drop the first keystrokes,
+/// so this retries once instead of failing the section on a lost focus.
+const searchFor = async (lane, text, cardId, label) => {
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    await lane.call('click_element', { id: 'dashboard-search' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text });
+    try {
+      await waitForNode(lane, cardId, label, 6000);
+      return;
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+  }
+};
 
 /// Open a card from the dashboard, then verify the section it routes to.
 async function visitCard(lane, unit) {
   await waitForNode(lane, 'dashboard-search', 'the dashboard is ready');
-  await lane.call('click_element', { id: 'dashboard-search' });
-  await lane.call('keyboard', { keystroke: 'escape' });
-  await lane.call('type_text', { text: unit.title });
-  await waitForNode(lane, `card-${unit.id}`, `${unit.id}: search lists its card`);
+  await searchFor(lane, unit.title, `card-${unit.id}`, `${unit.id}: search lists its card`);
   await lane.call('click_element', { id: `card-${unit.id}` });
   await visitSection(lane, unit);
   await waitForNode(lane, 'dashboard', `${unit.id}: the card is back on the dashboard`);
@@ -349,7 +412,13 @@ async function visitSection(lane, unit) {
   const root = `section-${unit.id}`;
   await waitForNode(lane, root, `${unit.id}: section root`);
   const nodes = await lane.tree();
-  const missing = ['back-to-dashboard', 'section-title', 'header-import', 'header-save']
+  const missing = [
+    'back-to-dashboard',
+    'section-title',
+    'header-import',
+    'header-export',
+    'header-save',
+  ]
     .filter((id) => !has(nodes, id));
   check(`${unit.id}: shared header`, missing.length === 0, `missing ${missing.join(', ')}`);
   check(
@@ -427,6 +496,71 @@ async function capture(lane, unit) {
   else check(`${unit.id}: matches its baseline`, false, detail);
 }
 
+/// Paste `text` into the shared import dialog and wait for the preview to name
+/// the document, then apply it.
+async function importText(lane, text, format, label) {
+  await lane.call('click_element', { id: 'header-import' });
+  await waitForNode(lane, 'import-drop', `${label}: the import dialog opens`);
+  await lane.call('click_element', { id: 'import-input' });
+  await lane.call('keyboard', { keystroke: 'secondary-a' });
+  await lane.call('type_text', { text });
+  await waitFor(
+    lane,
+    (nodes) => (labelOf(nodes, 'import-format') ?? '').includes(format),
+    `${label}: the preview names the ${format}`,
+  );
+  await lane.call('click_element', { id: 'import-apply' });
+}
+
+/// The project round trip: export opens over the window state, then the project
+/// document, an ROv2 state string and a section config each apply and leave a
+/// visible mark.
+async function visitProjectRoundTrip() {
+  let lane = null;
+  try {
+    lane = await McpLane.start({ appBin, keep });
+    await waitForNode(lane, 'dashboard', 'project: the dashboard is ready');
+
+    await lane.call('click_element', { id: 'header-export' });
+    await waitForNode(lane, 'export-text', 'project: the export dialog opens');
+    const summary = labelOf(await lane.tree(), 'export-summary') ?? '';
+    check(
+      'project: the export names its bytes and sections',
+      summary.includes('bytes') && summary.includes('section config'),
+      summary,
+    );
+    await lane.call('click_element', { id: 'export-copy' });
+    await waitFor(lane, (nodes) => !has(nodes, 'export-text'), 'project: copy closes the export');
+
+    await importText(lane, projectDocument(), 'project', 'project');
+    await waitForNode(lane, 'section-killroy', 'project: applying lands on the saved section');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('research level 123'),
+      'project: the status names the applied research level',
+    );
+
+    await lane.call('click_element', { id: 'back-to-dashboard' });
+    await waitForNode(lane, 'dashboard', 'project: back on the dashboard');
+    await importText(lane, upstreamState(), 'upstream state', 'state');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('research level 140'),
+      'state: the decompressed state migrated to its research level',
+    );
+
+    await searchFor(lane, 'Research Grid', 'card-research', 'config: search lists the research card');
+    await lane.call('click_element', { id: 'card-research' });
+    await waitForNode(lane, 'section-research', 'config: the research section opens');
+    await importText(lane, sectionConfig('research', { tab: 'run' }), 'section config', 'config');
+    await waitForNode(lane, 'run-optimize', 'config: the tab came from the section config');
+  } catch (error) {
+    fail('project round trip', error);
+  } finally {
+    lane?.close();
+  }
+}
+
 async function visitHidden(unit) {
   let lane = null;
   try {
@@ -500,6 +634,8 @@ try {
     log(`${units.length} sections (${cards.length} cards, ${hidden.length} hidden tools)`);
     await visitCards(cards);
     for (const unit of hidden) await visitHidden(unit);
+    // One window proves the whole round trip; a shard's other lanes are busy.
+    if (!only && shardIndex === 0) await visitProjectRoundTrip();
   }
 } catch (error) {
   failures += 1;

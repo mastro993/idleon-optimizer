@@ -21,6 +21,8 @@ mod field;
 
 /// The field's own state: the selected plot and the crop the later evolution
 /// features aim at, both kept alive across dashboard visits.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct State {
     pub selected_plot: usize,
     pub target_crop: u32,

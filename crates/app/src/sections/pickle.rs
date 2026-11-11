@@ -21,7 +21,8 @@ use gpui::{
 use idleon_core::pickle::{self, DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 
 /// The section's live inputs, kept in `AppState` while the window is open.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct State {
     /// Damage per second; zero means nothing has been entered yet.
     pub dps: f64,

@@ -16,5 +16,6 @@ gpui = { workspace = true }
 gpui_platform = { workspace = true }
 gpui-mcp = { workspace = true }
 anyhow = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 jiff = { workspace = true }

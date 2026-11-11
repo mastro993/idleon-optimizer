@@ -1,6 +1,7 @@
 //! Simulation state, its save-derived knobs, and the messages the optimizers take.
 
 use crate::data::game;
+use serde::{Deserialize, Serialize};
 
 /// Levels of the grid squares, indexed by cell.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -124,7 +125,8 @@ impl Observations {
 /// Shapes the upstream save context and `simTotalExpWith` read: the fields
 /// named after `js/save/context.js` keep that meaning here. Every value is
 /// decoded from the save by `save::account`; none is guessed.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct SimContext {
     /// The save's research level, kept so the mastery forecast can advance it.
     pub research_level: u32,
@@ -355,7 +357,8 @@ pub enum Target {
 }
 
 /// How hard the optimizers search.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Effort {
     /// Greedy placement only: instant, good enough while dragging.
     Quick,

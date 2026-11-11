@@ -14,7 +14,8 @@ pub const CORAL_KID_UNLOCK_LEVELS: [f64; 6] = [0.0, 600.0, 900.0, 1200.0, 1500.0
 const MINEHEAD_BONUS_QTY_9: f64 = 80.0;
 
 /// The planner objective, `GOALS` upstream.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Goal {
     #[default]
     Balanced,
@@ -95,7 +96,8 @@ pub struct SaveInputs {
 }
 
 /// Every upstream planner input plus the save's current Coral Kid level.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Inputs {
     pub goal: Goal,
     pub budget: f64,

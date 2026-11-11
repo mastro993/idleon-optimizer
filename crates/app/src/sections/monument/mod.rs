@@ -18,7 +18,8 @@ use gpui::{
 use idleon_core::monument::Snapshot;
 
 /// The upstream monument tab strip.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Tab {
     #[default]
     Bravery,
@@ -54,7 +55,8 @@ impl Tab {
 }
 
 /// The monument section's live inputs; the save supplies the rest.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct State {
     pub tab: Tab,
     /// The enemy number, 1 for the first enemy; the upstream wave is one less.
