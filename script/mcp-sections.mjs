@@ -518,6 +518,20 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jar-missing', 'jar: the unbought types are flagged');
     await lane.call('click_element', { id: 'production' });
     await waitForNode(lane, 'jar-production', 'jar: the production tab opens');
+    await lane.call('click_element', { id: 'rupie' });
+    await waitForNode(lane, 'jar-rupies', 'jar: the rupie value tab opens');
+    await waitForNode(lane, 'jar-rupies-breakdown', 'jar: the rupie breakdown renders');
+    const payout = labelOf(await lane.tree(), 'jar-kpi-rupies-break') ?? '';
+    if (payout === '') throw new Error('jar: the rupie payout reads nothing');
+    await lane.call('click_element', { id: 'jar-tier-toggle-2' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jar-kpi-rupies-break') ?? '') !== payout,
+      'jar: switching the tier changes the rupies a break pays',
+    );
+    await lane.call('click_element', { id: 'chances' });
+    await waitForNode(lane, 'jar-chances', 'jar: the chances tab opens');
+    await waitForNode(lane, 'jar-chance-opal', 'jar: the chance cards render');
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },

@@ -189,6 +189,10 @@ pub struct AppState {
     pub endgame: endgame::State,
     /// The jar section's active tab, kept across dashboard visits.
     pub jar_tab: JarTab,
+    /// The tier the rupie value tab projects its income for.
+    pub jar_tier: u32,
+    /// The rupie value breakdown tree on the jar section.
+    pub jar_breakdown: Entity<ui::formula::FormulaTree>,
     /// The Jar Cavern the loaded save carries, if it has one.
     pub jar: Option<Jar>,
     /// The ladle optimizer's save-derived roster and counts.
@@ -560,6 +564,7 @@ impl AppState {
             cx.new(|cx| ui::formula::FormulaTree::new("cooking-mastery-formula", window, cx));
         let fountain_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("fountain-formula", window, cx));
+        let jar_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("jar-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -591,6 +596,8 @@ impl AppState {
             clamworks_multikill: 0.0,
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
+            jar_tier: 0,
+            jar_breakdown,
             jar: None,
             ladle: None,
             ladle_state,
@@ -1406,6 +1413,12 @@ impl AppState {
 
     pub fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
         self.jar_tab = tab;
+        cx.notify();
+    }
+
+    /// Switch the tier the rupie value tab projects, clamped to the six tiers.
+    pub fn set_jar_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
+        self.jar_tier = tier.min(idleon_core::jar::INCOME_TIERS - 1);
         cx.notify();
     }
 
