@@ -229,6 +229,7 @@ docs/roadmap.md                     generated progress table
 docs/sections/<section>.md          generated full specification per section
 script/roadmap.mjs                  validate, render and sync GitHub milestones/issues
 script/import-upstream-assets.mjs   copy upstream assets from a local checkout
+script/extract-account-data.mjs     extract the account tables the multiplier tree reads
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files

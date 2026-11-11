@@ -185,7 +185,8 @@ against this app. Every control in the UI carries a stable id for that purpose (
 
 ```
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
-  data/research.json  extracted from the upstream repo
+  data/research.json  research grid, shapes and observations from upstream
+  data/account.json   account tables for the save-derived multiplier tree
   data/clamworks.json Clamworks upgrade, Scurge and promotion tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
   src/sections/      the registry plus one module per section (`research/`, `clamworks/`)
@@ -208,6 +209,12 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. The same run
 writes `crates/core/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
 the twelve promotion rewards. Re-run it when the upstream tables move.
+
+`crates/core/data/account.json` is the account side of the same port:
+`node script/extract-account-data.mjs <path-to-upstream-repo>` writes the event-shop encoding,
+RoG/minehead/jelly tables, equipment UQ stats, lab and tome tables the multiplier tree reads.
+[`docs/research-multipliers.md`](docs/research-multipliers.md) lists every term, the save field it
+comes from and the two upstream steps that are still omitted.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the

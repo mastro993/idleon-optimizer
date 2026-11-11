@@ -496,6 +496,7 @@ impl AppState {
             return;
         };
         // The canvas draws one data pixel at CELL_PX / 30 logical pixels.
+        self.simulation.saved_overlay = None;
         let scale = 30.0 / crate::sections::research::grid::CELL_PX as f64;
         let dx = f64::from(pointer.0 - drag.start_pointer.0) * scale;
         let dy = f64::from(pointer.1 - drag.start_pointer.1) * scale;
@@ -669,6 +670,7 @@ impl AppState {
             .or_else(|| self.simulation.grid.live_cells().next())
             .unwrap_or(0);
         let [x, y] = shape::cell_origin(cell);
+        self.simulation.saved_overlay = None;
         self.simulation.placements.push(Placement {
             shape: shape.id,
             x: shape::snap(x - shape.dims[0] / 2.0),
@@ -685,6 +687,7 @@ impl AppState {
 
     /// Turn a shape a step, keeping it on the lattice.
     pub fn rotate_shape(&mut self, index: usize, delta: f64, cx: &mut Context<Self>) {
+        self.simulation.saved_overlay = None;
         if let Some(placement) = self.simulation.placements.get_mut(index) {
             placement.rot = (placement.rot + delta).rem_euclid(360.0);
         }
@@ -693,6 +696,7 @@ impl AppState {
 
     /// Move a shape by whole steps of the placement lattice.
     pub fn nudge_shape(&mut self, index: usize, dx: f64, dy: f64, cx: &mut Context<Self>) {
+        self.simulation.saved_overlay = None;
         if let Some(placement) = self.simulation.placements.get_mut(index) {
             placement.x = shape::snap(placement.x + dx);
             placement.y = shape::snap(placement.y + dy);
@@ -701,6 +705,7 @@ impl AppState {
     }
 
     pub fn remove_shape(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.simulation.saved_overlay = None;
         if index < self.simulation.placements.len() {
             self.simulation.placements.remove(index);
         }
