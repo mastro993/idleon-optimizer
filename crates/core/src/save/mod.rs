@@ -18,6 +18,11 @@
 //! which shape it read in `Imported::format`, so a caller can preview a save and
 //! apply it in a second step without parsing twice.
 //!
+//! The same save carries the sailing fleet (`Boats`, `Captains`), the artifact
+//! tiers and island progress in `Sailing`, and the account fields the route
+//! model reads. Account-wide sailing loot, speed and artifact multipliers that
+//! need the full account tree stay neutral, as they do for research.
+//!
 //! Deliberately unsupported, because the save does not carry the inputs the
 //! upstream needs: the additive account research bonus tree (`extra_pct`, read
 //! from `cachedExtPctExSticker` when the object has it) and the true
@@ -27,11 +32,13 @@
 mod account;
 mod json;
 mod research;
+mod sailing;
 mod shadow;
 
 pub use shadow::{Shadow, ShadowVerdict};
 
 use crate::model::{SimContext, Simulation};
+use crate::sailing::{Fleet, RouteContext};
 use serde_json::{Map, Value};
 
 /// The shape the imported text had, as the upstream loader detects it
@@ -63,6 +70,10 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The active sailing fleet and its artifact tiers.
+    pub fleet: Fleet,
+    /// The account fields the sailing route model reads.
+    pub sailing: RouteContext,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -117,6 +128,7 @@ struct Character {
     research_level: Option<u32>,
     research_exp: Option<f64>,
     divinity: Option<u32>,
+    sailing_level: Option<u32>,
 }
 
 /// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
@@ -168,10 +180,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.placements = research::placements(save, &rows, &mut warnings);
 
     let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
 
     Ok(Imported {
         simulation,
         context,
+        fleet: sailing.fleet,
+        sailing: sailing.context,
         format,
         characters: roster,
         warnings,
@@ -228,6 +243,10 @@ fn characters(save: &Map<String, Value>) -> Vec<Character> {
             .map(|level| level.max(0.0).round() as u32);
         characters[index].divinity = cells
             .and_then(|cells| cells.get(14))
+            .and_then(json::number)
+            .map(|level| level.max(0.0).round() as u32);
+        characters[index].sailing_level = cells
+            .and_then(|cells| cells.get(13))
             .and_then(json::number)
             .map(|level| level.max(0.0).round() as u32);
         characters[index].research_exp = json::parsed_field(save, &format!("Exp0_{index}"))

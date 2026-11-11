@@ -2,6 +2,7 @@
 
 use crate::assets::Manifest;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
+use crate::sections::sailing::State as SailingState;
 use crate::sections::{self, Section};
 use crate::ui;
 use crate::ui::import::{self, Import};
@@ -12,6 +13,7 @@ use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
 use idleon_core::{game, optimize, save, shape, sim};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -136,6 +138,11 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The sailing fleet imported from the save, and the route context.
+    pub fleet: Fleet,
+    pub sailing: RouteContext,
+    /// The sailing section's own state, kept alive across dashboard visits.
+    pub sailing_state: SailingState,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -228,6 +235,9 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            fleet: Fleet::default(),
+            sailing: RouteContext::default(),
+            sailing_state: SailingState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -377,7 +387,18 @@ impl AppState {
         let message = import::applied(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.fleet = imported.fleet;
+        self.sailing = imported.sailing;
         self.research.selected_cell = None;
+        self.sailing_state.island = self
+            .fleet
+            .boats
+            .first()
+            .and_then(|boat| boat.target_island)
+            .filter(|island| *island < self.fleet.available_islands())
+            .unwrap_or(0);
+        self.sailing_state.mode = AssignmentMode::Optimized;
+        self.sailing_state.goal = Goal::Treasure;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
         self.shadow = imported.shadow;
@@ -390,6 +411,37 @@ impl AppState {
     /// Empty the dashboard search; Escape calls this.
     pub fn clear_search(&mut self, cx: &mut Context<Self>) {
         self.search.update(cx, |search, cx| search.set_text("", cx));
+        cx.notify();
+    }
+
+    /// The sailing fleet comparison for the section's current island and goal.
+    pub fn fleet_comparison(&self) -> FleetComparison {
+        compare(
+            &self.fleet,
+            self.sailing_state.island,
+            self.sailing_state.goal,
+            &self.sailing,
+        )
+    }
+
+    pub fn set_fleet_mode(&mut self, mode: AssignmentMode, cx: &mut Context<Self>) {
+        self.sailing_state.mode = mode;
+        cx.notify();
+    }
+
+    pub fn set_fleet_island(&mut self, island: usize, cx: &mut Context<Self>) {
+        let total = self.fleet.available_islands().max(1);
+        self.sailing_state.island = island.min(total - 1);
+        cx.notify();
+    }
+
+    pub fn set_fleet_goal(&mut self, goal: Goal, cx: &mut Context<Self>) {
+        self.sailing_state.goal = goal;
+        cx.notify();
+    }
+
+    pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
+        self.sailing.minimum_tier = tier.min(5);
         cx.notify();
     }
 

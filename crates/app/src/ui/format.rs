@@ -3,9 +3,16 @@
 use gpui::{Hsla, rgb};
 use idleon_core::game;
 
-/// A rate as `1.23M` or `845K`, in EXP per hour.
+/// A rate as `1.23M`, `845K`, `3.10T` or `2.00Q`, in EXP per hour.
 pub fn rate(value: f64) -> String {
-    if value >= 1e9 {
+    if value == 0.0 {
+        return "0".into();
+    }
+    if value >= 1e15 {
+        format!("{:.2}Q", value / 1e15)
+    } else if value >= 1e12 {
+        format!("{:.2}T", value / 1e12)
+    } else if value >= 1e9 {
         format!("{:.2}B", value / 1e9)
     } else if value >= 1e6 {
         format!("{:.2}M", value / 1e6)
@@ -84,5 +91,17 @@ mod tests {
         assert_eq!(hours(f64::INFINITY), "—");
         assert_eq!(hours(1.1e19), "—");
         assert_eq!(hours(26.0), "1d 2h");
+    }
+
+    #[test]
+    fn a_negative_zero_rate_reads_as_zero() {
+        assert_eq!(rate(-0.0), "0");
+        assert_eq!(rate(0.0), "0");
+    }
+
+    #[test]
+    fn large_rates_read_in_trillions_and_quadrillions() {
+        assert_eq!(rate(3.1e12), "3.10T");
+        assert_eq!(rate(3.1e15), "3.10Q");
     }
 }

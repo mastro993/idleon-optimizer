@@ -1,7 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, 29 sections planned.** The live breakdown is
-[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
+Status: **foundation in progress, research and sailing partial, shadow done, 27 sections
+planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
+[`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
 ## 1. Product goal

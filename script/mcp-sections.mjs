@@ -97,6 +97,21 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
   },
+  sailing: async (lane) => {
+    await waitForNode(lane, 'fleet-mode', 'sailing: the assignment controls render');
+    await lane.call('click_element', { id: 'fleet-mode-saved' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'fleet-mode') ?? '').includes('Current save'),
+      'sailing: the current-save pairings show',
+    );
+    await lane.call('click_element', { id: 'fleet-mode-optimized' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'fleet-mode') ?? '').includes('Optimized'),
+      'sailing: the optimized pairings show',
+    );
+  },
 };
 
 const prefix = shardCount > 1 ? `[${shardIndex + 1}/${shardCount}] ` : '';

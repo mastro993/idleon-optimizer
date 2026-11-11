@@ -187,6 +187,10 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. Re-run it when
 the upstream tables move.
 
+`crates/core/data/sailing.json` is generated from the same checkout by
+`node script/extract-sailing-data.mjs <path-to-upstream-repo>`: 41 artifacts with base odds, base
+bonuses and tier bonuses, 17 island distances and artifact counts, and the five captain bonus names.
+
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). It is test input only: game formulas and save
 decoding stay ports of the upstream repo, never inferred from the fixture. See
@@ -211,9 +215,14 @@ the upstream author.
 
 ## Scope
 
-The current build covers the dashboard, the research grid, its optimizers and save import. The
-roadmap covers all remaining upstream sections (combat sim, sailing, cooking, royal guardian, …);
-their cards open planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid, its optimizers, save import and the
+sailing fleet assignment. The roadmap covers all remaining upstream sections (combat sim, cooking,
+royal guardian, …); their cards open planned-section placeholders until those milestones land.
+
+Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
+cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.
+Account-wide loot, speed and artifact multipliers that need the full account tree stay neutral
+until SL-02 and SL-03 fill them, which makes the displayed absolute rates a lower bound.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. Save-specific multipliers
 collapse into `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their

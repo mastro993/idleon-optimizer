@@ -5,7 +5,7 @@
 - Milestone: `M19`
 - Section key: `sailing`
 - Group: `w5`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.

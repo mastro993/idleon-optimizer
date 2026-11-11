@@ -61,9 +61,10 @@ impl Import {
 /// The line under the preview: what applying would load.
 pub fn summary(import: &Imported) -> String {
     format!(
-        "Ready to apply: {} · research level {} · {} character(s) · {} warning(s).",
+        "Ready to apply: {} · research level {}{} · {} character(s) · {} warning(s).",
         import.format.label(),
         import.simulation.research_level,
+        fleet(import),
         import.characters,
         import.warnings.len()
     )
@@ -72,11 +73,21 @@ pub fn summary(import: &Imported) -> String {
 /// The line the dialog keeps once the save is applied.
 pub fn applied(import: &Imported) -> String {
     format!(
-        "Applied {} · research level {} · {} character(s).",
+        "Applied {} · research level {}{} · {} character(s).",
         import.format.label(),
         import.simulation.research_level,
+        fleet(import),
         import.characters
     )
+}
+
+/// The fleet count when the save carries one, so a sailing user knows it loaded.
+fn fleet(import: &Imported) -> String {
+    if import.fleet.boats.is_empty() {
+        String::new()
+    } else {
+        format!(" · {} boat(s)", import.fleet.boats.len())
+    }
 }
 
 /// The import dialog, rendered on top of the shell while it is open.
@@ -314,6 +325,8 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
+            fleet: Default::default(),
+            sailing: Default::default(),
             format,
             characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
