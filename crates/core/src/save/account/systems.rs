@@ -275,6 +275,11 @@ impl Decoder<'_> {
         }
     }
 
+    /// Whether a companion is in the roster, whatever its bonus.
+    pub(super) fn companion_owned(&self, index: usize) -> bool {
+        self.companions().iter().any(|(id, _)| *id == index as u32)
+    }
+
     /// `companionLevel2`.
     pub(super) fn companion_level2(&self, index: usize) -> bool {
         self.companions()
@@ -412,12 +417,21 @@ impl Decoder<'_> {
         self.ola(641) * 1.0
     }
 
-    /// `Fountain_BonTOT(2,16)`.
+    /// `Fountain_BonTOT(2,16)`, the Research EXP fountain upgrade.
     pub(super) fn fountain_2_16(&self) -> f64 {
-        let level = fields::at(self.save, "Holes", &[31, 2, 16])
+        self.fountain(2, 16)
+    }
+
+    /// `Fountain_BonTOT(water, upgrade)`: `marbleBon(master) × level × perLv`.
+    ///
+    /// The two upgrades the sections read (Pen N Paper and Cook Maxxing) both
+    /// carry a per-level of 1, so the product is the marble bonus times the
+    /// level, rounded.
+    pub(super) fn fountain(&self, water: usize, upgrade: usize) -> f64 {
+        let level = fields::at(self.save, "Holes", &[31, water, upgrade])
             .unwrap_or(0.0)
             .max(0.0);
-        let master_level = fields::at(self.save, "Holes", &[32, 2, 16]).unwrap_or(0.0);
+        let master_level = fields::at(self.save, "Holes", &[32, water, upgrade]).unwrap_or(0.0);
         let master = if master_level <= 0.0 {
             1.0
         } else {

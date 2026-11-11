@@ -18,6 +18,7 @@ pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
 pub mod combat;
+pub mod cooking_mastery;
 pub mod coral;
 pub mod dashboard;
 pub mod data;
@@ -45,6 +46,7 @@ pub mod worship;
 
 pub use cglunko::Cglunko;
 pub use clamworks::Clamworks;
+pub use cooking_mastery::{External, Mastery, Upgrade};
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use farming::{CropValue, Farm, Plot, PlotMetrics, Snapshot};
 pub use fishing::{

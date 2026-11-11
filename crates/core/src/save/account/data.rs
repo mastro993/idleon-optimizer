@@ -108,6 +108,26 @@ pub struct AccountData {
     #[serde(rename = "arcaneNoMulti")]
     pub arcane_no_multi: Vec<u32>,
     pub bubbles: Bubbles,
+    /// `RandoListo2[8]`: the per-level bonus of each Cooking Mastery upgrade.
+    #[serde(rename = "cookingMasteryPerLv")]
+    pub cooking_mastery_per_lv: Vec<f64>,
+    /// `SaltLicks[t][3]`: the bonus per purchased salt lick level.
+    #[serde(rename = "saltLicks")]
+    pub salt_licks: Vec<f64>,
+    /// The Canteen Read vial: its `CauldronInfo[4]` slot and its curve.
+    #[serde(rename = "cookingMasteryVial")]
+    pub cooking_mastery_vial: Option<VialParam>,
+}
+
+/// The one alchemy vial that boosts Cooking Mastery EXP.
+#[derive(Debug, Deserialize)]
+pub struct VialParam {
+    /// The vial's slot in `CauldronInfo[4]`.
+    pub index: usize,
+    /// The game formula the vial's description names (`add`).
+    pub kind: String,
+    pub x1: f64,
+    pub x2: f64,
 }
 
 /// One gaming palette's curve.
@@ -204,5 +224,17 @@ mod tests {
         assert!(data.arcade(59).is_some(), "arcade 59");
         assert!(!data.items.is_empty());
         assert!(data.set_bonus("PREHISTORIC_SET") > 0.0);
+        assert_eq!(
+            data.cooking_mastery_per_lv,
+            [200.0, 1.0, 30.0, 10.0, 2.0, 20.0]
+        );
+        assert_eq!(data.salt_licks.len(), 11);
+        assert!(data.arcade(69).is_some(), "arcade 69, Cooking Mastery EXP");
+        let vial = data
+            .cooking_mastery_vial
+            .as_ref()
+            .expect("the Canteen Read vial is extracted");
+        assert_eq!(vial.index, 85);
+        assert_eq!(vial.kind, "add");
     }
 }

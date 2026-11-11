@@ -128,6 +128,8 @@ pub struct Imported {
     pub coral: crate::coral::SaveInputs,
     /// The Worship TD simulator's save-derived inputs.
     pub worship: crate::worship::Inputs,
+    /// The Cooking Mastery state, when the save carries `CookMaster`.
+    pub mastery: Option<crate::cooking_mastery::Mastery>,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -292,6 +294,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.saved_overlay = research::shape_overlay(save, &rows);
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
+    let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);
     let coral = coral::inputs(save, root, &characters, &rows);
     let statues = statue::read(save, root, &mut warnings);
     let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
@@ -343,6 +346,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         statues,
         coral,
         worship,
+        mastery,
         format,
         characters: roster,
         named_characters,

@@ -37,9 +37,14 @@ pub fn eval(kind: &str, x1: f64, x2: f64, lv: f64) -> f64 {
     }
 }
 
-/// `getLOG`: the game's truncated `log10`.
+/// `getLOG`: `ln(max(x, 1)) / 2.30259`.
+///
+/// The game divides by a five-decimal truncation of `ln 10`, not the constant,
+/// so a value keeps the game's own fifth digit. The same helper is inlined in
+/// `jar.rs` and `monument/mod.rs`.
+#[allow(clippy::approx_constant)]
 pub fn log(value: f64) -> f64 {
-    value.max(1.0).ln() / std::f64::consts::LN_10
+    value.max(1.0).ln() / 2.30259
 }
 
 #[cfg(test)]
@@ -56,6 +61,10 @@ mod tests {
     #[test]
     fn log_is_truncated_log10() {
         assert!((log(1000.0) - 3.0).abs() < 1e-3);
-        assert!(log(0.0).abs() < 1e-12);
+        assert_eq!(log(0.0), 0.0, "the game floors at one before the log");
+        // The truncated constant, not `ln 10`: 2.30259 is what the game uses.
+        #[allow(clippy::approx_constant)]
+        let game_ln_10 = 2.30259;
+        assert_eq!(log(100.0), 100f64.ln() / game_ln_10);
     }
 }

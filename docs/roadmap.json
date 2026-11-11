@@ -1682,11 +1682,11 @@
       "key": "cooking-mastery",
       "title": "Cooking Mastery",
       "group": "w4",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.",
       "upstream": [
         "cooking-mastery-calc.html",
-        "js/stats/systems/w4/cooking.js",
+        "js/stats/systems/common/cooking.js",
         "js/stats/systems/common/meal-impact.js"
       ],
       "ui": [
