@@ -2,10 +2,15 @@
 //! paste the JSON, preview what it detected, then apply it.
 //!
 //! Ported from the upstream `js/ui/save-loader.js`, which loads a file or a paste
-//! into `js/state.js` and reports the load in the bar it injects. The dialog adds
-//! the preview the upstream lacks: the detected format, the research level, the
-//! character count and the warnings are shown before anything is applied, and a
-//! failed parse only replaces the message, never the loaded run.
+//! into `js/state.js` and reports the load in the bar it injects, and from
+//! `js/ui/state-io.js`, whose state box reads the gzip+base64 `ROv2:` string.
+//! The dialog adds the preview the upstream lacks: the detected format, the
+//! research level, the section count and the warnings are shown before anything
+//! is applied, and a failed parse only replaces the message, never the loaded
+//! run.
+//!
+//! Four documents go through it: a raw decoded save, a research state, a whole
+//! project file and one section's config.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -17,16 +22,77 @@ use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
     div, px,
 };
-use idleon_core::save::{Format, Imported};
+use idleon_core::project;
+use idleon_core::save::Imported;
 use std::path::Path;
 
 /// How many warnings the preview lists before it counts the rest.
 const SHOWN_WARNINGS: usize = 3;
 
+/// What a parsed import text turned out to be, waiting for Apply.
+#[derive(Clone, Debug)]
+pub enum Pending {
+    /// A raw decoded save or a research state, as the save importer reads it.
+    Save(Box<Imported>),
+    /// A whole project document: the save, the research state and every config.
+    Project(Box<project::Project>),
+    /// One section's config document.
+    Section(project::SectionConfig),
+}
+
+impl Pending {
+    /// The warnings the preview counts and lists.
+    pub fn warnings(&self) -> &[String] {
+        match self {
+            Pending::Save(imported) => &imported.warnings,
+            Pending::Project(project) => &project.warnings,
+            Pending::Section(section) => &section.warnings,
+        }
+    }
+
+    /// The format the preview names.
+    pub fn format(&self) -> String {
+        match self {
+            Pending::Save(imported) => imported.format.label().to_string(),
+            Pending::Project(project) => match project.origin {
+                project::Origin::Project => "project".into(),
+                project::Origin::UpstreamState => "upstream state".into(),
+            },
+            Pending::Section(_) => "section config".into(),
+        }
+    }
+
+    /// The research level the document carries, when it carries one.
+    fn level(&self) -> Option<u32> {
+        match self {
+            Pending::Save(imported) => Some(imported.simulation.research_level),
+            Pending::Project(project) => Some(project.simulation.research_level),
+            Pending::Section(_) => None,
+        }
+    }
+
+    /// The section a config document targets, for the summary line.
+    fn section(&self) -> Option<&str> {
+        match self {
+            Pending::Section(section) => Some(&section.section),
+            _ => None,
+        }
+    }
+
+    /// How many section configs the document carries.
+    fn sections(&self) -> usize {
+        match self {
+            Pending::Project(project) => project.sections.len(),
+            Pending::Section(_) => 1,
+            Pending::Save(_) => 0,
+        }
+    }
+}
+
 /// What the dialog is holding while it is open.
 pub struct Import {
     pub open: bool,
-    /// The pasted JSON.
+    /// The pasted JSON or state string.
     pub input: Entity<TextInput>,
     /// Where the previewed text came from: the paste box, or a dropped file.
     pub source: String,
@@ -34,9 +100,9 @@ pub struct Import {
     pub message: String,
     /// Whether the last parse succeeded.
     pub ok: bool,
-    /// The parsed save waiting for Apply. A failed parse leaves it empty, so a
-    /// failure can never replace the loaded run.
-    pub pending: Option<Imported>,
+    /// The parsed document waiting for Apply. A failed parse leaves it empty, so
+    /// a failure can never replace the loaded run.
+    pub pending: Option<Pending>,
 }
 
 impl Import {
@@ -44,14 +110,15 @@ impl Import {
         let input = cx.new(|cx| {
             TextInput::new(window, cx)
                 .multi_line(4, 10)
-                .placeholder("Paste it.json or save.json contents…")
-                .label("Save JSON")
+                .placeholder("Paste it.json, save.json, a project file or an ROv2 state string…")
+                .label("Import JSON")
         });
         Self {
             open: false,
             input,
             source: "pasted text".into(),
-            message: "Paste a decoded save, or drop a JSON file.".into(),
+            message: "Paste a decoded save, a project file, an ROv2 state string, or drop one."
+                .into(),
             ok: true,
             pending: None,
         }
@@ -59,15 +126,37 @@ impl Import {
 }
 
 /// The line under the preview: what applying would load.
-pub fn summary(import: &Imported) -> String {
+pub fn summary(pending: &Pending) -> String {
+    let format = pending.format();
+    let level = pending
+        .level()
+        .map(|level| format!(" · research level {level}"))
+        .unwrap_or_default();
+    let section = pending
+        .section()
+        .map(|id| format!(" · {}", section_title(id)))
+        .unwrap_or_default();
+    let sections = match pending {
+        Pending::Project(project) if !project.sections.is_empty() => {
+            format!(" · {} section config(s)", pending.sections())
+        }
+        _ => String::new(),
+    };
+    let characters = match pending {
+        Pending::Save(imported) => format!(" · {} character(s)", imported.characters),
+        _ => String::new(),
+    };
+    let fleet = match pending {
+        Pending::Save(imported) => fleet(imported),
+        _ => String::new(),
+    };
+    let farming = match pending {
+        Pending::Save(imported) => farming_suffix(imported),
+        _ => String::new(),
+    };
+    let warnings = pending.warnings().len();
     format!(
-        "Ready to apply: {} · research level {}{}{} · {} character(s) · {} warning(s).",
-        import.format.label(),
-        import.simulation.research_level,
-        fleet(import),
-        farming_suffix(import),
-        import.characters,
-        import.warnings.len()
+        "Ready to apply: {format}{section}{level}{fleet}{farming}{characters}{sections} · {warnings} warning(s)."
     )
 }
 
@@ -80,16 +169,42 @@ fn farming_suffix(import: &Imported) -> String {
     }
 }
 
-/// The line the dialog keeps once the save is applied.
-pub fn applied(import: &Imported) -> String {
-    format!(
-        "Applied {} · research level {}{}{} · {} character(s).",
-        import.format.label(),
-        import.simulation.research_level,
-        fleet(import),
-        farming_suffix(import),
-        import.characters
-    )
+/// The line the dialog keeps once the document is applied.
+pub fn applied(pending: &Pending) -> String {
+    match pending {
+        Pending::Save(imported) => format!(
+            "Applied {} · research level {}{}{} · {} character(s).",
+            imported.format.label(),
+            imported.simulation.research_level,
+            fleet(imported),
+            farming_suffix(imported),
+            imported.characters
+        ),
+        Pending::Project(project) => format!(
+            "Applied the {} · research level {}{} · {} section config(s).",
+            match project.origin {
+                project::Origin::Project => "project",
+                project::Origin::UpstreamState => "upstream state",
+            },
+            project.simulation.research_level,
+            if project.save.is_some() {
+                " · save included"
+            } else {
+                ""
+            },
+            project.sections.len()
+        ),
+        Pending::Section(section) => {
+            format!("Applied the {} config.", section_title(&section.section))
+        }
+    }
+}
+
+/// A section id's registry title, or the id itself when the build lacks it.
+fn section_title(id: &str) -> String {
+    crate::sections::find(id)
+        .map(|section| section.title.to_string())
+        .unwrap_or_else(|| id.to_string())
 }
 
 /// The fleet count when the save carries one, so a sailing user knows it loaded.
@@ -112,8 +227,8 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     let dropped = entity.clone();
     let drop_zone = DropZone::new("import-drop")
-        .kinds(&["json"])
-        .hint("it.json, save.json or an app state export")
+        .kinds(&["json", "txt"])
+        .hint("it.json, save.json, a project file, a section config or an ROv2 state string")
         .on_drop(move |paths, _window, cx| {
             let Some(path) = paths.first() else {
                 return;
@@ -127,10 +242,14 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             }
         });
 
-    Dialog::new("import-dialog", "Import save", move |window, cx| {
-        close.update(cx, |state, cx| state.close_import(window, cx));
-    })
-    .detail("Drop a file, browse for one, or paste the decoded JSON.")
+    Dialog::new(
+        "import-dialog",
+        "Import save or project",
+        move |window, cx| {
+            close.update(cx, |state, cx| state.close_import(window, cx));
+        },
+    )
+    .detail("Drop a file, browse for one, or paste the JSON or state string.")
     .child(drop_zone)
     .child(
         div()
@@ -150,13 +269,13 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     .child(
         div()
             .id("import-input")
-            .aria_label("Save JSON")
+            .aria_label("Import JSON")
             .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
             .child(Input::new(&state.import.input).size(ControlSize::Sm)),
     )
     .child(preview(state, cx))
-    // While a save is pending the preview says everything; the line below it is
-    // for the prompt and for a parse that failed.
+    // While a document is pending the preview says everything; the line below it
+    // is for the prompt and for a parse that failed.
     .when(state.import.pending.is_none(), |dialog| {
         dialog.child(
             div()
@@ -192,12 +311,12 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     .into_any_element()
 }
 
-/// The detected format, research level, character count and warnings, or the
+/// The detected format, research level, section count and warnings, or the
 /// prompt to import something.
 fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let colors = &cx.theme().colors;
     let (muted, subtle, danger) = (colors.fg_muted, colors.fg_subtle, colors.danger);
-    let Some(import) = &state.import.pending else {
+    let Some(pending) = &state.import.pending else {
         return div()
             .id("import-preview")
             .role(Role::Label)
@@ -211,13 +330,11 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             })
             .into_any_element();
     };
-    let format: Format = import.format;
-    let level = import.simulation.research_level;
-    let characters = import.characters;
-    let shown = import.warnings.len().min(SHOWN_WARNINGS);
-    let mut warnings = div().flex().flex_col().gap_1();
-    for (index, warning) in import.warnings.iter().take(shown).enumerate() {
-        warnings = warnings.child(
+    let warnings = pending.warnings();
+    let shown = warnings.len().min(SHOWN_WARNINGS);
+    let mut list = div().flex().flex_col().gap_1();
+    for (index, warning) in warnings.iter().take(shown).enumerate() {
+        list = list.child(
             div()
                 .id(("import-warning", index))
                 .role(Role::Label)
@@ -227,47 +344,65 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .child(format!("· {warning}")),
         );
     }
-    let hidden = import.warnings.len() - shown;
+    let hidden = warnings.len() - shown;
+    let mut figures = div().flex().flex_wrap().gap_4().child(stat(
+        "import-format",
+        "Format",
+        &pending.format(),
+        subtle,
+    ));
+    match pending {
+        Pending::Save(imported) => {
+            figures = figures.child(stat(
+                "import-characters",
+                "Characters",
+                &imported.characters.to_string(),
+                subtle,
+            ));
+        }
+        Pending::Project(_) => {
+            figures = figures.child(stat(
+                "import-sections",
+                "Sections",
+                &pending.sections().to_string(),
+                subtle,
+            ));
+        }
+        Pending::Section(section) => {
+            figures = figures.child(stat(
+                "import-section",
+                "Section",
+                &section_title(&section.section),
+                subtle,
+            ));
+        }
+    }
+    if let Some(level) = pending.level() {
+        figures = figures.child(stat(
+            "import-level",
+            "Research level",
+            &level.to_string(),
+            subtle,
+        ));
+    }
+    figures = figures.child(stat(
+        "import-warnings",
+        "Warnings",
+        &warnings.len().to_string(),
+        if warnings.is_empty() { subtle } else { danger },
+    ));
     div()
         .id("import-preview")
         .role(Role::Group)
         .aria_label(format!(
-            "{} · research level {level} · {characters} characters · {} warnings",
-            format.label(),
-            import.warnings.len()
+            "{} · {} warning(s)",
+            pending.format(),
+            warnings.len()
         ))
         .flex()
         .flex_col()
         .gap_2()
-        .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_4()
-                .child(stat("import-format", "Format", format.label(), subtle))
-                .child(stat(
-                    "import-level",
-                    "Research level",
-                    &level.to_string(),
-                    subtle,
-                ))
-                .child(stat(
-                    "import-characters",
-                    "Characters",
-                    &characters.to_string(),
-                    subtle,
-                ))
-                .child(stat(
-                    "import-warnings",
-                    "Warnings",
-                    &import.warnings.len().to_string(),
-                    if import.warnings.is_empty() {
-                        subtle
-                    } else {
-                        danger
-                    },
-                )),
-        )
+        .child(figures)
         .child(
             div()
                 .id("import-source")
@@ -277,8 +412,8 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .text_color(muted)
                 .child(format!("From {}", state.import.source)),
         )
-        .when(!import.warnings.is_empty(), |preview| {
-            preview.child(warnings).when(hidden > 0, |preview| {
+        .when(!warnings.is_empty(), |preview| {
+            preview.child(list).when(hidden > 0, |preview| {
                 preview.child(
                     div()
                         .id("import-warnings-more")
@@ -328,9 +463,10 @@ fn file_name(path: &Path) -> String {
 mod tests {
     use super::*;
     use idleon_core::model::Simulation;
+    use idleon_core::save::Format;
 
-    fn imported(format: Format, characters: usize, warnings: &[&str]) -> Imported {
-        Imported {
+    fn imported(format: Format, characters: usize, warnings: &[&str]) -> Pending {
+        Pending::Save(Box::new(Imported {
             simulation: Simulation {
                 research_level: 122,
                 ..Simulation::default()
@@ -351,7 +487,34 @@ mod tests {
             named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
             shadow: Default::default(),
-        }
+        }))
+    }
+
+    fn project(warnings: &[&str]) -> Pending {
+        Pending::Project(Box::new(project::Project {
+            version: project::VERSION,
+            section: Some("killroy".into()),
+            save: Some(serde_json::json!({})),
+            simulation: Simulation {
+                research_level: 140,
+                ..Simulation::default()
+            },
+            context: Default::default(),
+            sections: [("killroy".to_string(), serde_json::json!({ "weeks": 12 }))]
+                .into_iter()
+                .collect(),
+            warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
+            origin: project::Origin::UpstreamState,
+        }))
+    }
+
+    fn section() -> Pending {
+        Pending::Section(project::SectionConfig {
+            version: project::VERSION,
+            section: "killroy".into(),
+            config: serde_json::json!({ "weeks": 12 }),
+            warnings: Vec::new(),
+        })
     }
 
     #[test]
@@ -369,9 +532,11 @@ mod tests {
 
     #[test]
     fn the_summary_names_the_farm_plots_when_the_save_carries_any() {
-        let mut import = imported(Format::SaveJson, 1, &[]);
+        let Pending::Save(mut import) = imported(Format::SaveJson, 1, &[]) else {
+            unreachable!()
+        };
         import.farming.plots[0].seed_family = 0;
-        let line = summary(&import);
+        let line = summary(&Pending::Save(import));
         assert!(line.contains("36 plots"), "{line}");
 
         let farmless = imported(Format::SaveJson, 1, &[]);
@@ -384,6 +549,30 @@ mod tests {
         assert!(line.contains("research state"), "{line}");
         assert!(line.contains("100"), "{line}");
         assert!(!line.contains("warning"), "{line}");
+    }
+
+    #[test]
+    fn a_project_summary_names_the_upstream_state_and_its_sections() {
+        let line = summary(&project(&["a"]));
+        assert!(line.contains("upstream state"), "{line}");
+        assert!(line.contains("research level 140"), "{line}");
+        assert!(line.contains("1 section config"), "{line}");
+        assert!(line.contains("1 warning"), "{line}");
+        let line = applied(&project(&[]));
+        assert!(line.contains("upstream state"), "{line}");
+        assert!(line.contains("save included"), "{line}");
+    }
+
+    #[test]
+    fn a_section_config_summary_names_the_section() {
+        let line = summary(&section());
+        assert!(line.contains("section config"), "{line}");
+        assert!(line.contains("Killroy Calculator"), "{line}");
+        assert!(line.contains("0 warning"), "{line}");
+        assert_eq!(
+            applied(&section()),
+            "Applied the Killroy Calculator config."
+        );
     }
 
     #[test]

@@ -32,8 +32,9 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   Damage, Drop Rate, Coin Multiplier, BoneJoePickle) are registered without cards and open with
   `--section <id>`.
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
-  import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
-  1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
+  export, import), Ely tab strip, cards, tables and form controls, with the upstream dark palette.
+  Below 1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays
+  usable.
 - **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
   overgrowth, plot rank, evolution chance and growth time. Clicking a plot opens its saved row: crop
   and evolution depth, growth progress and remaining time, the next evolution and overgrowth rolls,
@@ -76,13 +77,22 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   reasons and the save's monster records. The rotation, unlocks and records stay at the imported
   snapshot; kills and skulls belong to the combat runs in later issues.
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
-  drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
-  format, research level, farm plots, character count and warnings before Apply; the grid levels,
-  shape positions, magnifiers, insight, research level/EXP, each character's statue levels/EXP and
-  names, farm plots, ranks, crops, market levels, server scale, all-bonus multiplier, flat grid
-  points and the decodable true multipliers are read from it. The same decoded save keeps the
-  Monument rows the Bravery tab reads. Fields the app cannot model are reported as warnings instead
-  of guessed; a save that cannot be read only replaces the message and leaves the run untouched.
+  drop a file, browse for one, or paste the JSON, a project file, an upstream `ROv2:` state string or
+  one section's config. It previews the detected format, research level, sections, farm plots,
+  character count and warnings before Apply; the grid levels, shape positions, magnifiers, insight,
+  research level/EXP, each character's statue levels/EXP and names, farm plots, ranks, crops, market
+  levels, server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are
+  read from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app
+  cannot model are reported as warnings instead of guessed; a document that cannot be read only
+  replaces the message and leaves the run untouched.
+- **Project export and import** — Export in the same header writes the whole window state as one
+  versioned JSON document (`format` + `version`): the decoded save, the research state, the
+  supplements and one config object per section. Copying it and pasting it back into Import
+  reproduces every section's visible state, including which section was open. The dialog also takes
+  one section's config (`idleon-optimizer-section`) on its own and the upstream optimizer's
+  gzip+base64 `ROv2:` state string, which is decompressed and migrated; fields this build does not
+  model are named in a warning instead of failing the document, while an unknown version or format
+  gets its own message.
 - **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
@@ -189,8 +199,10 @@ reads the registry from the binary, opens every dashboard card and every hidden 
 section root and shared header, drives one interaction (the statue table's search and sort, the
 research grid's tabs) and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`.
 `--baseline` compares those captures with a previous run (pixels, not bytes), and `--parallel N`
-proves the lanes stay isolated by checking shards in N windows at once. These scripts need the
-`gpui-mcp` binary
+proves the lanes stay isolated by checking shards in N windows at once. The section gate also proves
+the project round trip in one lane: Export opens over the window state, then a project document, an
+`ROv2:` state string and a research section config each preview, apply and leave a visible mark.
+These scripts need the `gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)
 and a running app.
 
@@ -284,12 +296,12 @@ source references and the credit note stays with the images.
 ## Scope
 
 The current build covers the dashboard, the research grid and its optimizers, the statue table, the
-sailing fleet assignment, the farming field, the Clamworks overview and upgrades, save import, the
-shadow-ban and endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery tab and the
-Coral God Rank planner's inputs and current-state summary. The rest of the statue milestone (STARTUE
-bubble, time estimates, batch apply and farming breakdown) and the remaining upstream sections
-(combat sim, cooking, royal guardian, …) are planned; their cards open planned-section placeholders
-until those milestones land.
+sailing fleet assignment, the farming field, the Clamworks overview and upgrades, save import,
+project and section-config export/import, the shadow-ban and endgame checks, the hidden
+BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank planner's inputs and
+current-state summary. The rest of the statue milestone (STARTUE bubble, time estimates, batch apply
+and farming breakdown) and the remaining upstream sections (combat sim, cooking, royal guardian, …)
+are planned; their cards open planned-section placeholders until those milestones land.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.

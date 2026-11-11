@@ -18,7 +18,8 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
 
 /// The Clamworks tabs this build implements.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Tab {
     /// Summary, rates and the pearl value breakdown.
     #[default]

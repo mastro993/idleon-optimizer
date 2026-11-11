@@ -14,7 +14,8 @@ use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, Window, div, px};
 
 /// The research page's three upstream tabs.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Tab {
     /// Grid canvas, shape list and node inspector.
     #[default]

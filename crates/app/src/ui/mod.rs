@@ -3,6 +3,7 @@
 pub mod assets;
 pub mod bridge;
 pub mod dashboard;
+pub mod export;
 pub mod format;
 pub mod formula;
 pub mod import;

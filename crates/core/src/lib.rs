@@ -23,6 +23,7 @@ pub mod model;
 pub mod monument;
 pub mod optimize;
 pub mod pickle;
+pub mod project;
 pub mod sailing;
 pub mod save;
 pub mod shape;

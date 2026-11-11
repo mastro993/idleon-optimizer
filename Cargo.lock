@@ -3370,6 +3370,8 @@ dependencies = [
 name = "idleon-core"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
+ "flate2",
  "rayon",
  "serde",
  "serde_json",
@@ -3386,6 +3388,7 @@ dependencies = [
  "gpui-pre-platform",
  "idleon-core",
  "jiff",
+ "serde",
  "serde_json",
 ]
 

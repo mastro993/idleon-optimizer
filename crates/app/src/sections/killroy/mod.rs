@@ -23,7 +23,8 @@ use gpui::{
 use idleon_core::killroy::{self, Encounter, Forecast, ForecastWeek};
 
 /// The section's live state: how many upcoming weeks the forecast covers.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct State {
     pub weeks: usize,
 }

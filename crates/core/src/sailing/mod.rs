@@ -243,7 +243,8 @@ pub struct RouteContext {
 }
 
 /// What the optimizer maximises.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Goal {
     /// Direct treasure value per hour.
     #[default]
@@ -279,7 +280,8 @@ impl Goal {
 }
 
 /// Whether the table shows the save's pairings or the optimizer's.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum AssignmentMode {
     #[default]
     Optimized,

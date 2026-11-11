@@ -280,3 +280,38 @@ fn the_fixture_farming_state_imports_into_the_field() {
     assert!(first.next_overgrowth_chance > 0.0);
     assert!(first.farming_exp > 0.0);
 }
+
+#[test]
+fn the_fixture_survives_a_project_export_and_import() {
+    use idleon_core::project::{self, Document, Origin, Project};
+
+    let imported = imported();
+    let document = Project {
+        version: project::VERSION,
+        section: Some("research".into()),
+        save: Some(serde_json::from_str(&fixture()).expect("the fixture is JSON")),
+        simulation: imported.simulation.clone(),
+        context: imported.context.clone(),
+        sections: Default::default(),
+        warnings: Vec::new(),
+        origin: Origin::Project,
+    };
+    let text = project::write(&document);
+    let Document::Project(back) = project::read(&text).expect("the export reads back") else {
+        panic!("an export is a project document");
+    };
+    assert_eq!(back.version, project::VERSION);
+    assert_eq!(back.origin, Origin::Project);
+    assert_eq!(back.simulation, imported.simulation);
+    assert_eq!(back.context, imported.context);
+    assert!(back.warnings.is_empty(), "{:?}", back.warnings);
+
+    // The embedded save still imports into the same run every section reads.
+    let save = back.save.as_ref().expect("the project embeds the save");
+    let reread = import(&save.to_string()).expect("the embedded save imports");
+    assert_eq!(reread.simulation, imported.simulation);
+    assert_eq!(reread.context, imported.context);
+    let before = sim::exp_rate(&imported.simulation, &imported.context);
+    let after = sim::exp_rate(&reread.simulation, &reread.context);
+    assert_eq!(before.total, after.total);
+}

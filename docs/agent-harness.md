@@ -110,7 +110,10 @@ node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-secti
 dashboard card through the search field, opens each hidden tool through its own `--section` lane,
 asserts the section root and shared header ids, drives one interaction and writes
 `target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
-fails loudly; add one to `INTERACTIONS` in the script.
+fails loudly; add one to `INTERACTIONS` in the script. After the sections, one extra window proves
+the project round trip: Export opens over the window state and names its size and sections, then a
+project document, an `ROv2:` state string and a research section config each preview, apply and
+leave a visible mark.
 
 ```console
 node script/mcp-sections.mjs                      # all 30 sections

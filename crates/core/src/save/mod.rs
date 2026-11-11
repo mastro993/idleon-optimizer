@@ -43,7 +43,7 @@ mod coral;
 mod farming;
 mod formula;
 pub(crate) mod json;
-mod research;
+pub(crate) mod research;
 mod sailing;
 mod shadow;
 mod statue;
@@ -171,7 +171,7 @@ const RESEARCH_FIELDS: [&str; 11] = [
 
 /// One character's progress, from `Lv0_<n>` and `Exp0_<n>`.
 #[derive(Clone, Debug, Default)]
-struct Character {
+pub(crate) struct Character {
     /// The `Lv0_<n>` row: level 0, skills 1..21, divinity at 14, research at 20.
     levels: Vec<Option<f64>>,
     research_exp: Option<f64>,

@@ -25,7 +25,8 @@ use idleon_core::statue::{self, NextLevel, Progress, StatueInfo, StatueSave, Una
 use std::cmp::Ordering;
 
 /// How the table is ordered when it is not in game order.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Sort {
     #[default]
     Game,

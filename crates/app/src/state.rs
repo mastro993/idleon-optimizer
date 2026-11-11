@@ -15,7 +15,8 @@ use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::{self, Section};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
 use crate::ui;
-use crate::ui::import::{self, Import};
+use crate::ui::export::Export;
+use crate::ui::import::{self, Import, Pending};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
@@ -27,7 +28,7 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
-use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
+use idleon_core::{Clamworks, Jar, game, monument, optimize, project, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -165,6 +166,8 @@ pub struct AppState {
     pub supplements_open: bool,
     /// The shared import dialog every section's header opens.
     pub import: Import,
+    /// The shared export dialog: the whole window state as one JSON document.
+    pub export: Export,
     /// Whether the loaded save left fields out and reported warnings.
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
@@ -307,6 +310,7 @@ impl AppState {
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             import,
+            export: Export::default(),
             save_partial: false,
             save_loaded: false,
             optimizer,
@@ -433,15 +437,45 @@ impl AppState {
         if text.trim().is_empty() {
             self.import.pending = None;
             self.import.ok = true;
-            self.import.message = "Paste a decoded save, or drop a JSON file.".into();
+            self.import.message =
+                "Paste a decoded save, a project file, an ROv2 state string, or drop one.".into();
             return cx.notify();
         }
-        match save::import(text) {
-            Ok(imported) => {
-                self.import.message = import::summary(&imported);
-                self.import.pending = Some(imported);
+        // A project, a section config or an upstream state string is a document of
+        // its own; anything else goes through the raw save importer, which also
+        // reads a top-level research state.
+        match project::read(text) {
+            Ok(project::Document::Project(mut document)) => {
+                let mut ids: Vec<&str> = document.sections.keys().map(String::as_str).collect();
+                if let Some(id) = document.section.as_deref()
+                    && !ids.contains(&id)
+                {
+                    ids.push(id);
+                }
+                for id in ids {
+                    warn_unknown_sections(&mut document.warnings, Some(id));
+                }
+                let pending = Pending::Project(document);
+                self.import.message = import::summary(&pending);
+                self.import.pending = Some(pending);
                 self.import.ok = true;
             }
+            Ok(project::Document::Section(mut section)) => {
+                warn_unknown_sections(&mut section.warnings, Some(&section.section));
+                let pending = Pending::Section(section);
+                self.import.message = import::summary(&pending);
+                self.import.pending = Some(pending);
+                self.import.ok = true;
+            }
+            Err(error) if error.is_not_document() => match save::import(text) {
+                Ok(imported) => {
+                    let pending = Pending::Save(Box::new(imported));
+                    self.import.message = import::summary(&pending);
+                    self.import.pending = Some(pending);
+                    self.import.ok = true;
+                }
+                Err(error) => self.fail_import(source, &error.to_string(), cx),
+            },
             Err(error) => self.fail_import(source, &error.to_string(), cx),
         }
         cx.notify();
@@ -456,12 +490,47 @@ impl AppState {
         cx.notify();
     }
 
-    /// Apply the previewed save; a dialog with nothing pending changes nothing.
+    /// Apply the previewed document; a dialog with nothing pending changes
+    /// nothing.
     pub fn apply_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(imported) = self.import.pending.take() else {
+        let Some(pending) = self.import.pending.take() else {
             return;
         };
-        let message = import::applied(&imported);
+        let mut message = import::applied(&pending);
+        match pending {
+            Pending::Save(imported) => {
+                self.load_imported(*imported);
+                self.import.ok = true;
+            }
+            Pending::Project(document) => {
+                let mut warnings = document.warnings.clone();
+                crate::project::apply(self, *document, &mut warnings);
+                self.save_partial |= !warnings.is_empty();
+                message = format!("{message} {}", warnings_line(&warnings));
+            }
+            Pending::Section(section) => {
+                let mut warnings = section.warnings.clone();
+                if !crate::project::apply_section(
+                    self,
+                    &section.section,
+                    &section.config,
+                    &mut warnings,
+                ) {
+                    warnings.push(format!(
+                        "{} is not a section this build declares",
+                        section.section
+                    ));
+                }
+                message = format!("{message} {}", warnings_line(&warnings));
+            }
+        }
+        self.import.message = message.clone();
+        self.status = message;
+        self.close_import(window, cx);
+    }
+
+    /// Take a save the importer already read into every section that reads it.
+    pub(crate) fn load_imported(&mut self, imported: save::Imported) {
         self.monument_save = Some(monument::Save::from_parts(
             &imported.save,
             imported.companion.as_ref(),
@@ -490,10 +559,34 @@ impl AppState {
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
         self.shadow = imported.shadow;
-        self.import.ok = true;
-        self.import.message = message.clone();
-        self.status = message;
-        self.close_import(window, cx);
+    }
+
+    /// Open the export dialog over a freshly written project document.
+    pub fn open_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.export = Export::open(self);
+        self.status = format!(
+            "Exporting the project: {} bytes, ready to copy.",
+            self.export.bytes()
+        );
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Close the export dialog without touching the project.
+    pub fn close_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.export.open = false;
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Put the whole project document on the clipboard.
+    pub fn copy_export(&mut self, cx: &mut Context<Self>) {
+        crate::ui::export::copy(self, cx);
+        self.status = format!(
+            "Copied the project JSON to the clipboard ({} bytes).",
+            self.export.bytes()
+        );
+        cx.notify();
     }
 
     /// Set how many upcoming weeks the Killroy forecast covers.
@@ -1076,6 +1169,28 @@ impl AppState {
     }
 }
 
+/// A warning count worth the status line, naming the first one.
+fn warnings_line(warnings: &[String]) -> String {
+    match warnings.first() {
+        None => "No warnings.".into(),
+        Some(first) if warnings.len() == 1 => first.clone(),
+        Some(first) => format!("{first} (and {} more warnings)", warnings.len() - 1),
+    }
+}
+
+/// Name a section id the registry does not declare, in the preview's warnings,
+/// and leave a declared id alone.
+fn warn_unknown_sections(warnings: &mut Vec<String>, id: Option<&str>) {
+    let Some(id) = id else {
+        return;
+    };
+    if crate::sections::find(id).is_none() {
+        warnings.push(format!(
+            "section: {id} is not a section this build declares"
+        ));
+    }
+}
+
 fn kind_label(kind: MagKind) -> &'static str {
     match kind {
         MagKind::Regular => "magnifying glass",
@@ -1132,6 +1247,18 @@ mod tests {
         assert_eq!(step_cell(Some(19), 1, 0), 19);
         assert_eq!(step_cell(Some(0), -1, -1), 0);
         assert_eq!(step_cell(None, 1, 0), 0);
+    }
+
+    #[test]
+    fn an_unknown_section_id_warns_and_a_declared_one_does_not() {
+        let mut warnings = Vec::new();
+        warn_unknown_sections(&mut warnings, Some("research"));
+        assert!(warnings.is_empty(), "{warnings:?}");
+        warn_unknown_sections(&mut warnings, Some("no-such-section"));
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("no-such-section"), "{warnings:?}");
+        warn_unknown_sections(&mut warnings, None);
+        assert_eq!(warnings.len(), 1);
     }
 
     #[test]
