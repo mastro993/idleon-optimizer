@@ -1,8 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming and Clamworks partial,
-shadow-ban, endgame and BoneJoePickle done, Monument Bravery built, 21 sections planned.** The live
-breakdown is
+Status: **foundation in progress, research, statue, jar, sailing, farming, Clamworks and the combat
+simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery
+built, 21 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -279,6 +279,15 @@ rewards and Scurge combat. Details: [`docs/sections/clamworks.md`](sections/clam
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
 tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
+
+The Combat Simulator's loadout editor is built (CS-01): the character picker, the 16 armor and 7 tool
+slots with their saved `EMm` upgrade deltas, the talent table from `SL_<n>`/`SM_<n>`, and named
+loadout presets in the project JSON. The item catalog is extracted from the upstream `ITEMS` table by
+`script/extract-combat-data.mjs`, and every edit recomputes the gear totals the header shows. Missing
+or invalid items are flagged: an unknown key, the wrong slot family, a level or class requirement the
+character misses, and a saved talent above its maximum. Mechanics overrides (CS-02), the encounter run
+and its results (CS-03 to CS-06) and replays (CS-07) stay on the roadmap.
+Details: [`docs/sections/combat-sim.md`](sections/combat-sim.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).

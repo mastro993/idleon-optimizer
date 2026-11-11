@@ -2,6 +2,7 @@
 
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
@@ -165,6 +166,8 @@ pub struct AppState {
     pub pickle: PickleState,
     /// The statue section's saved rows, character and table controls.
     pub statue: StatueState,
+    /// The combat simulator's working loadout and named presets.
+    pub combat: CombatState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -203,6 +206,8 @@ pub struct AppState {
     bridge: BridgeHandle,
     _search_subscription: Subscription,
     _statue_search_subscription: Subscription,
+    _combat_name_subscription: Subscription,
+    _combat_talent_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
     _worship_plan_subscription: Subscription,
@@ -257,6 +262,23 @@ impl AppState {
         let statue_search = statue.search.clone();
         let statue_search_subscription =
             cx.subscribe(&statue_search, |_state, _search, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            });
+        // The loadout editor's name field and talent filter redraw the page on
+        // every keystroke, like the statue search does.
+        let combat = CombatState::new(window, cx);
+        let combat_name = combat.name.clone();
+        let combat_name_subscription =
+            cx.subscribe(&combat_name, |_state, _input, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            });
+        let combat_talent = combat.talent_search.clone();
+        let combat_talent_subscription =
+            cx.subscribe(&combat_talent, |_state, _input, event: &InputEvent, cx| {
                 if *event == InputEvent::Changed {
                     cx.notify();
                 }
@@ -393,6 +415,7 @@ impl AppState {
             jar: None,
             pickle: PickleState::default(),
             statue,
+            combat,
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -414,6 +437,8 @@ impl AppState {
             bridge,
             _search_subscription: search_subscription,
             _statue_search_subscription: statue_search_subscription,
+            _combat_name_subscription: combat_name_subscription,
+            _combat_talent_subscription: combat_talent_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
             _worship_plan_subscription: worship_plan_subscription,
@@ -710,6 +735,12 @@ impl AppState {
         self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        let combat_character = if self.combat.character < imported.save.character_count() {
+            self.combat.character
+        } else {
+            0
+        };
+        self.combat.load(&imported.save, combat_character);
         self.save = Some(imported.save);
         self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
@@ -1081,6 +1112,85 @@ impl AppState {
     pub fn set_statue_sort(&mut self, sort: StatueSort, cx: &mut Context<Self>) {
         self.statue.sort = sort;
         cx.notify();
+    }
+
+    /// Pick the loadout editor's tab.
+    pub fn set_combat_tab(&mut self, tab: CombatTab, cx: &mut Context<Self>) {
+        self.combat.tab = tab;
+        cx.notify();
+    }
+
+    /// Switch the loadout editor to another character of the loaded save.
+    pub fn set_combat_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        let Some(save) = self.save.as_ref() else {
+            return;
+        };
+        if character >= save.character_count() {
+            return;
+        }
+        self.combat.load(save, character);
+        self.status = format!("Editing {}.", self.combat.loadout.character.name);
+        cx.notify();
+    }
+
+    /// Select the equipment slot the detail panel edits.
+    pub fn set_combat_slot(&mut self, slot: usize, cx: &mut Context<Self>) {
+        if slot < self.combat.loadout.slots.len() {
+            self.combat.selected = slot;
+            cx.notify();
+        }
+    }
+
+    /// Equip an item in one slot; an empty key unequips it.
+    pub fn set_combat_item(&mut self, row: usize, slot: usize, key: &str, cx: &mut Context<Self>) {
+        self.combat.loadout.set_item(row, slot, key);
+        if let Some(entry) = self.combat.loadout.slot(row, slot) {
+            self.status = format!("{}: {}.", entry.name(), entry.item_name());
+        }
+        cx.notify();
+    }
+
+    /// Set one talent's level, clamped to its saved maximum.
+    pub fn set_combat_talent(&mut self, id: u32, level: u32, cx: &mut Context<Self>) {
+        self.combat.loadout.set_talent(id, level);
+        cx.notify();
+    }
+
+    /// Put every slot and talent back to the imported save.
+    pub fn reset_combat_loadout(&mut self, cx: &mut Context<Self>) {
+        self.combat.loadout.reset();
+        self.status = "Loadout reset to the save.".into();
+        cx.notify();
+    }
+
+    /// Save the working loadout under the typed name, replacing one with the
+    /// same name for the same character, like the upstream storage key does.
+    pub fn save_combat_preset(&mut self, cx: &mut Context<Self>) {
+        let name = self.combat.preset_name(cx);
+        match self.combat.presets.store(&self.combat.loadout, &name) {
+            Ok(message) => {
+                self.combat
+                    .name
+                    .update(cx, |input, cx| input.set_text("", cx));
+                self.status = message;
+            }
+            Err(message) => self.status = message,
+        }
+        cx.notify();
+    }
+
+    /// Apply a named loadout to its character.
+    pub fn load_combat_preset(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.status = self.combat.presets.apply(index, &mut self.combat.loadout);
+        cx.notify();
+    }
+
+    /// Forget one named loadout.
+    pub fn delete_combat_preset(&mut self, index: usize, cx: &mut Context<Self>) {
+        if let Some(preset) = self.combat.presets.delete(index) {
+            self.status = format!("Deleted the loadout “{}”.", preset.name);
+            cx.notify();
+        }
     }
 
     pub fn set_effort(&mut self, effort: Effort, cx: &mut Context<Self>) {

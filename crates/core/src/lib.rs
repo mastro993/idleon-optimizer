@@ -14,6 +14,7 @@
 
 pub mod breakdown;
 pub mod clamworks;
+pub mod combat;
 pub mod coral;
 pub mod data;
 pub mod endgame;

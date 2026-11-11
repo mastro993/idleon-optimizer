@@ -11,6 +11,7 @@
 //! the harness can still open them by id.
 
 pub mod clamworks;
+pub mod combat_sim;
 pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
@@ -179,9 +180,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::General,
         description: "Active combat, AFK gains, loadout comparisons, and replays",
         spec: "docs/sections/combat-sim.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: combat_sim::view,
         keys: no_keys,
     },
     Section {

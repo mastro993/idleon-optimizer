@@ -11,6 +11,7 @@
 
 use crate::sections;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::combat_sim::Tab as CombatTab;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::killroy::State as KillroyState;
@@ -21,6 +22,7 @@ use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
+use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
 use idleon_core::game;
 use idleon_core::import as pipeline;
@@ -113,6 +115,17 @@ pub struct JarConfig {
     tab: JarTab,
 }
 
+/// The combat simulator's config: the selected character, its tab and the named
+/// loadouts. The working loadout itself comes from the save; presets are what
+/// the project keeps.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct CombatConfig {
+    character: usize,
+    tab: CombatTab,
+    presets: Vec<CombatPreset>,
+}
+
 /// The statue section's config: selected character and sort. The search text is
 /// a filter, not state, and the statue rows come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
@@ -178,6 +191,14 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         value(&StatueConfig {
             character: state.statue.character,
             sort: state.statue.sort,
+        }),
+    );
+    insert(
+        "combat-sim",
+        value(&CombatConfig {
+            character: state.combat.character,
+            tab: state.combat.tab,
+            presets: state.combat.presets.items.clone(),
         }),
     );
     insert("monument", value(&state.monument));
@@ -274,6 +295,7 @@ pub enum Config {
     Sailing(SailingConfig),
     Farming(FarmingState),
     Statue(StatueConfig),
+    Combat(CombatConfig),
     Monument(MonumentState),
     Pickle(PickleState),
     Clamworks(ClamworksConfig),
@@ -377,6 +399,33 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
                 target_crop: config.target_crop,
             };
         }
+        Config::Combat(config) => {
+            state.combat.tab = config.tab;
+            state.combat.presets.items = config
+                .presets
+                .into_iter()
+                .filter(|preset| !preset.name.trim().is_empty())
+                .take(crate::sections::combat_sim::presets::Presets::MAX)
+                .collect();
+            let character = if let Some(save) = state.save.as_ref() {
+                if config.character < save.character_count() {
+                    config.character
+                } else {
+                    warnings.push(format!(
+                        "combat-sim: character {} is not in the save; the editor keeps character {}",
+                        config.character + 1,
+                        state.combat.character + 1
+                    ));
+                    state.combat.character
+                }
+            } else {
+                config.character
+            };
+            state.combat.character = character;
+            if let Some(save) = state.save.as_ref() {
+                state.combat.loadout = idleon_core::combat::Loadout::from_save(save, character);
+            }
+        }
         Config::Statue(config) => {
             state.statue.sort = config.sort;
             if state.statue.save.has_character(config.character) {
@@ -468,6 +517,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "sailing" => decode!(Sailing, SailingConfig),
         "farming" => decode!(Farming, FarmingState),
         "statue" => decode!(Statue, StatueConfig),
+        "combat-sim" => decode!(Combat, CombatConfig),
         "monument" => decode!(Monument, MonumentState),
         "pickle" => decode!(Pickle, PickleState),
         "clamworks" => decode!(Clamworks, ClamworksConfig),
@@ -721,6 +771,24 @@ mod tests {
         });
         assert_eq!(statue.character, 4);
         assert_eq!(statue.sort, StatueSort::Remaining);
+        let combat = round_trip(&CombatConfig {
+            character: 2,
+            tab: CombatTab::Talents,
+            presets: vec![CombatPreset {
+                name: "Bossing".into(),
+                character: 2,
+                items: vec!["Blank".into(); idleon_core::combat::SLOT_COUNT],
+                talents: [("0".to_string(), 5u32)].into_iter().collect(),
+            }],
+        });
+        assert_eq!(combat.character, 2);
+        assert_eq!(combat.tab, CombatTab::Talents);
+        assert_eq!(combat.presets.len(), 1);
+        assert_eq!(combat.presets[0].name, "Bossing");
+        assert_eq!(
+            combat.presets[0].items.len(),
+            idleon_core::combat::SLOT_COUNT
+        );
         let coral = round_trip(&coral::Inputs {
             goal: CoralGoal::DivinityPoints,
             budget: 250.0,
@@ -905,6 +973,7 @@ mod tests {
                 "jar",
                 "coral-god-rank",
                 "worship-td",
+                "combat-sim",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);
