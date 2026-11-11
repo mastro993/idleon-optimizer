@@ -1,0 +1,103 @@
+{
+ "upgrades": [
+  {
+   "name": "Opal Find",
+   "perLv": 1
+  },
+  {
+   "name": "Slop Drop",
+   "perLv": 15
+  },
+  {
+   "name": "Reslime",
+   "perLv": 2
+  },
+  {
+   "name": "Droplier",
+   "perLv": 8
+  },
+  {
+   "name": "Killionaire",
+   "perLv": 3
+  },
+  {
+   "name": "Insta-Ribbon",
+   "perLv": 1
+  },
+  {
+   "name": "Big Hit Multkill",
+   "perLv": 1
+  },
+  {
+   "name": "Active Drops",
+   "perLv": 3
+  },
+  {
+   "name": "Sleepy Drops",
+   "perLv": 1
+  },
+  {
+   "name": "One Big Blue",
+   "perLv": 10
+  },
+  {
+   "name": "Blue Collector",
+   "perLv": 1
+  },
+  {
+   "name": "Researchy",
+   "perLv": 1
+  },
+  {
+   "name": "Droplier+",
+   "perLv": 25
+  },
+  {
+   "name": "Sleepy Drops+",
+   "perLv": 3
+  },
+  {
+   "name": "Cavernicus",
+   "perLv": 10
+  },
+  {
+   "name": "Multikill",
+   "perLv": 100
+  },
+  {
+   "name": "One Big Purp",
+   "perLv": 10
+  },
+  {
+   "name": "Slop Drop+",
+   "perLv": 25
+  },
+  {
+   "name": "Rich Get Rich",
+   "perLv": 2
+  },
+  {
+   "name": "DeEmGe",
+   "perLv": 1
+  },
+  {
+   "name": "Grandioso",
+   "perLv": 5
+  },
+  {
+   "name": "Slop Drop++",
+   "perLv": 150
+  },
+  {
+   "name": "Purp Collector",
+   "perLv": 2
+  },
+  {
+   "name": "IDK Broh",
+   "perLv": 1
+  }
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer"
+ }
+}

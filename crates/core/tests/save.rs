@@ -293,6 +293,21 @@ fn equipment_uq_stats_feed_the_research_multiplier() {
 }
 
 #[test]
+fn a_save_without_the_cove_rows_reads_zero_and_warns() {
+    let imported = import(&minimal_save().to_string()).expect("the minimal save imports");
+    assert_eq!(imported.cglunko, idleon_core::Cglunko::default());
+    assert!(
+        imported
+            .warnings
+            .iter()
+            .any(|warning| warning
+                .starts_with("OptLacc: not in the save; Cglunko values kept at zero")),
+        "{:?}",
+        imported.warnings
+    );
+}
+
+#[test]
 fn garbage_and_a_json_array_are_rejected() {
     assert!(matches!(
         import("this is not json"),

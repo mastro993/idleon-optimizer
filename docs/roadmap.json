@@ -2060,7 +2060,7 @@
       "key": "cglunko",
       "title": "Cglunko Calculator",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.",
       "upstream": [
         "cglunko-calc.html",

@@ -259,6 +259,40 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(clamworks.scurge_upgrades, [18, 2, 3, 18, 27, 54, 0, 0, 0]);
     let pearl_value = clamworks.pearl_value(1234.5);
     assert!((pearl_value - 379.647_08).abs() < 1e-3);
+
+    // The Cglunko overview from the same `OptLacc` row, against the upstream
+    // `cglunko.js` values for this save.
+    let cglunko = &imported.cglunko;
+    assert!(cglunko.saved);
+    assert_eq!(
+        cglunko.upgrades,
+        [
+            5, 26, 10, 17, 13, 3, 6, 5, 4, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ]
+    );
+    assert_eq!(cglunko.blue_stones, [3400.1, 959.1, 50.1, 11.0, 5.1, 1.1]);
+    assert_eq!(cglunko.purple_stones, [0.0; 6]);
+    assert_eq!(cglunko.blue_digits(), 13);
+    assert_eq!(cglunko.purple_digits(), 0);
+    assert_eq!(cglunko.kill_digits(), 9);
+    assert_eq!(cglunko.normal_dr_digits(), 4);
+    assert!((cglunko.dr() - 58.933_613_2).abs() < 1e-7);
+    assert!((cglunko.afk_gains() - 0.14).abs() < 1e-12);
+    assert_eq!(cglunko.mk_tier(), 6.0);
+    assert_eq!(cglunko.mk_base(), 0.0);
+    assert_eq!(cglunko.respawn(), 20.0);
+    assert_eq!(cglunko.cavern_currency(), 0.0);
+    assert_eq!(cglunko.research_exp(), 0.0);
+    assert_eq!(cglunko.total_dmg(), 0.0);
+    assert_eq!(cglunko.grand_discovery(), 0.0);
+    assert!(
+        !imported
+            .warnings
+            .iter()
+            .any(|warning| warning.contains("Cglunko")),
+        "the fixture carries the Cglunko rows: {:?}",
+        imported.warnings
+    );
 }
 
 #[test]

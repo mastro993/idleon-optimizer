@@ -10,6 +10,7 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
+pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
 pub mod combat_sim;
@@ -364,9 +365,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Cglunko upgrades, optimizer, stone focus, drop rate breakdown",
         spec: "docs/sections/cglunko.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: cglunko::view,
         keys: no_keys,
     },
     Section {

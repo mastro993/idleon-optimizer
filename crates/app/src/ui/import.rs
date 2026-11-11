@@ -530,6 +530,7 @@ mod tests {
             sailing: Default::default(),
             farming: Default::default(),
             tree: Default::default(),
+            cglunko: Default::default(),
             clamworks: Default::default(),
             cog: Default::default(),
             jar: None,

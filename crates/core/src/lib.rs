@@ -4,15 +4,17 @@
 //! <https://github.com/Corgan/idleon-research-optimizer>. Game constants are
 //! extracted from that repo by `script/extract-research-data.mjs`,
 //! `script/extract-statue-data.mjs`, `script/extract-farming-data.mjs`,
-//! `script/extract-clamworks-data.mjs`, `script/extract-worship-td-data.mjs` and
-//! `script/extract-stats-data.mjs`; the maths follow
-//! `js/stats/systems/w7/research-math.js`,
+//! `script/extract-clamworks-data.mjs`, `script/extract-worship-td-data.mjs`,
+//! `script/extract-stats-data.mjs` and `script/extract-cglunko-data.mjs`; the
+//! maths follow `js/stats/systems/w7/research-math.js`,
 //! `js/stats/systems/common/statue-leveling.js`,
 //! `js/stats/systems/w6/farming-planner.js`,
-//! `js/stats/systems/w7/clamworks.js` and
-//! `js/stats/systems/w3/worship-td.js`.
+//! `js/stats/systems/w7/clamworks.js`,
+//! `js/stats/systems/w3/worship-td.js` and
+//! `js/stats/systems/w5/cglunko.js`.
 
 pub mod breakdown;
+pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
 pub mod combat;
@@ -40,6 +42,7 @@ pub mod stats;
 pub mod statue;
 pub mod worship;
 
+pub use cglunko::Cglunko;
 pub use clamworks::Clamworks;
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use farming::{CropValue, Farm, Plot, PlotMetrics, Snapshot};
