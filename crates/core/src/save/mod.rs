@@ -40,6 +40,7 @@ pub use value::{Save, at, number, row_values};
 
 use crate::clamworks::Clamworks;
 use crate::farming::Farm;
+use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
 pub use account::{BonusTerm, BonusTree};
 pub use formula::log as game_log;
@@ -83,6 +84,8 @@ pub struct Imported {
     pub tree: BonusTree,
     /// The Clamworks state the save carries, or the zero state when it has none.
     pub clamworks: Clamworks,
+    /// The Jar Cavern state, when the save carries its `Holes` rows.
+    pub jar: Option<Jar>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
     /// sections can read raw fields and audit it.
     pub save: Save,
@@ -248,6 +251,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let clamworks = Clamworks::from_save(save, &mut warnings);
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
+    let jar = Jar::from_save(save);
+    if jar.is_none() {
+        warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
+    }
 
     Ok(Imported {
         simulation,
@@ -255,6 +262,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         farming,
         tree,
         clamworks,
+        jar,
         save: Save::new(parsed),
         companion,
         format,
