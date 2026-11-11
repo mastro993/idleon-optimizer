@@ -120,35 +120,173 @@ impl Observations {
 }
 
 /// Save-derived multipliers that are not on the grid.
+///
+/// Shapes the upstream save context and `simTotalExpWith` read: the fields
+/// named after `js/save/context.js` keep that meaning here. Every value is
+/// decoded from the save by `save::account`; none is guessed.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SimContext {
+    /// The save's research level, kept so the mastery forecast can advance it.
+    pub research_level: u32,
     /// Save constant scaling the research EXP curve.
     pub server_var_res_xp: f64,
     /// The all-bonus multiplier every grid square gets (`1.0` is none).
     pub all_bonus_multi: f64,
-    /// Account multipliers outside the grid, as a percentage.
+    /// Additive account bonuses the grid does not provide, as a percentage.
+    /// Upstream calls this `extPctExSticker`: the additive pool with the
+    /// sticker, grid and mastery terms removed.
     pub extra_pct: f64,
-    /// Account multipliers outside the grid, multiplicative.
-    pub extra_multiplier: f64,
-    /// Flat grid points from companions, artifacts and the like.
+    /// Companion 52's bonus, already folded with companion 153's.
+    pub companion_52: f64,
+    /// The sticker bonus before the crown multiplier.
+    pub sticker_fixed: f64,
+    /// Rat King crowns found, which scale the sticker.
+    pub boony_count: f64,
+    /// Event shop 37, a flat sticker bonus.
+    pub event_shop_37: f64,
+    /// Button slot 0's bonus.
+    pub button0: f64,
+    /// Button slot 0 without grid 125, so the simulator can apply it live.
+    pub button_base_no_grid: f64,
+    /// Killroy bonus 5.
+    pub killroy5: f64,
+    /// Nonstop Studies levels (`Dream[14]`).
+    pub dream14: f64,
+    /// Cglunko research upgrade 11.
+    pub cglunko11: f64,
+    /// Fountain Pen N Paper (`Holes[31][2][16]`), rounded.
+    pub fountain_2_16: f64,
+    /// Companion 54's second level, worth another +50%.
+    pub companion_54_level2: f64,
+    /// Whether companion 153 is owned (one extra magnifier).
+    pub companion_153: bool,
+    /// Royal Guardian research focus.
+    pub royal_research: f64,
+    /// Whether Menagerie unlock 22 moved the sticker to its own multiplier.
+    pub sticker_multiplicative: bool,
+    /// Arcade upgrade 63.
+    pub arcade63: f64,
+    /// Clam Works promotion 9.
+    pub clam_work9: f64,
+    /// Menagerie boost 3.
+    pub menagerie_b3: f64,
+    /// Equipment research EXP, capped at 15x.
+    pub research_equipment_multi: f64,
+    /// Jelly rewards 0, 23, 46 and 54 as one factor.
+    pub jelly_research_multi: f64,
+    /// Jelly reward 7.
+    pub jelly_insight_pct: f64,
+    /// Jelly reward 25.
+    pub jelly_kalei_pct: f64,
+    /// Ring of Glory bonuses by index, zero when locked.
+    pub rog: Vec<f64>,
+    /// Research skill mastery's additive bonus.
+    pub mastery_additive_pct: f64,
+    /// Research skill mastery's multiplier.
+    pub mastery_exp_multi: f64,
+    /// Event shop items owned, by index.
+    pub event_shop: Vec<u8>,
+    /// Superbits owned, by index.
+    pub superbits: Vec<u8>,
+    /// Ninja emporium bonuses owned, by index.
+    pub emporium: Vec<u8>,
+    /// Minehead floor bonuses, by index.
+    pub minehead: Vec<f64>,
+    /// Flat grid points from companions, artifacts, tasks and bundles.
     pub bonus_grid_points: u32,
-    /// Shapes owned beyond the research level's own grants.
+    /// Whether the `ban_m` bundle is owned (one extra shape).
+    pub bundle_ban_m: bool,
+    /// Whether the `ban_k` bundle is owned (five grid points).
+    pub bundle_ban_k: bool,
+    /// Sailing artifact 37, capped at ten grid points.
+    pub sailing_art37: f64,
+    /// W7 task board research grid points.
+    pub task_grid_points: f64,
+    /// Jelly rewards 4 and 57, flat grid points.
+    pub jelly_grid_points: f64,
+    /// Spelunking upgrade 7, which unlocks shape count with the level.
+    pub spellunky_upg7: f64,
+    /// A user supplement on the account multiplier; `1.0` is none.
+    pub extra_multiplier: f64,
+    /// A user supplement on the owned shape count.
     pub extra_shapes: u32,
-    /// Magnifiers owned beyond the grid's own grants.
+    /// A user supplement on the owned magnifier count.
     pub extra_magnifiers: u32,
 }
 
 impl Default for SimContext {
     fn default() -> Self {
         Self {
-            server_var_res_xp: 1.0,
+            research_level: 1,
+            server_var_res_xp: 1.01,
             all_bonus_multi: 1.0,
             extra_pct: 0.0,
-            extra_multiplier: 1.0,
+            companion_52: 1.0,
+            sticker_fixed: 0.0,
+            boony_count: 0.0,
+            event_shop_37: 0.0,
+            button0: 0.0,
+            button_base_no_grid: 0.0,
+            killroy5: 1.0,
+            dream14: 0.0,
+            cglunko11: 0.0,
+            fountain_2_16: 0.0,
+            companion_54_level2: 0.0,
+            companion_153: false,
+            royal_research: 1.0,
+            sticker_multiplicative: false,
+            arcade63: 0.0,
+            clam_work9: 0.0,
+            menagerie_b3: 0.0,
+            research_equipment_multi: 1.0,
+            jelly_research_multi: 1.0,
+            jelly_insight_pct: 0.0,
+            jelly_kalei_pct: 0.0,
+            rog: Vec::new(),
+            mastery_additive_pct: 0.0,
+            mastery_exp_multi: 1.0,
+            event_shop: Vec::new(),
+            superbits: Vec::new(),
+            emporium: Vec::new(),
+            minehead: Vec::new(),
             bonus_grid_points: 0,
+            bundle_ban_m: false,
+            bundle_ban_k: false,
+            sailing_art37: 0.0,
+            task_grid_points: 0.0,
+            jelly_grid_points: 0.0,
+            spellunky_upg7: 0.0,
+            extra_multiplier: 1.0,
             extra_shapes: 0,
             extra_magnifiers: 0,
         }
+    }
+}
+
+impl SimContext {
+    /// The Ring of Glory bonus at `index`.
+    pub fn rog(&self, index: usize) -> f64 {
+        self.rog.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// The event shop item at `index`.
+    pub fn event_shop(&self, index: usize) -> f64 {
+        self.event_shop.get(index).copied().unwrap_or(0) as f64
+    }
+
+    /// The minehead bonus at `index`.
+    pub fn minehead(&self, index: usize) -> f64 {
+        self.minehead.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// The emporium bonus at `index`.
+    pub fn emporium(&self, index: usize) -> f64 {
+        self.emporium.get(index).copied().unwrap_or(0) as f64
+    }
+
+    /// The superbit at `index`.
+    pub fn superbit(&self, index: usize) -> f64 {
+        self.superbits.get(index).copied().unwrap_or(0) as f64
     }
 }
 
@@ -161,6 +299,10 @@ pub struct Simulation {
     pub observations: Observations,
     pub mags: Vec<Mag>,
     pub placements: Vec<Placement>,
+    /// The save's own shape overlay. It can disagree with what `placements`
+    /// reproduces, and the game's grid bonuses use it, so it wins until the
+    /// shapes are edited.
+    pub saved_overlay: Option<Vec<i32>>,
     /// Preset whose priority drives shape placement (`"_none"` maximises EXP).
     pub preset: String,
 }
@@ -174,6 +316,7 @@ impl Default for Simulation {
             observations: Observations::default(),
             mags: Vec::new(),
             placements: Vec::new(),
+            saved_overlay: None,
             preset: "_none".into(),
         }
     }
@@ -182,7 +325,9 @@ impl Default for Simulation {
 impl Simulation {
     /// Shape index covering each cell, `-1` where none does.
     pub fn overlay(&self) -> Vec<i32> {
-        crate::shape::overlay(&self.placements)
+        self.saved_overlay
+            .clone()
+            .unwrap_or_else(|| crate::shape::overlay(&self.placements))
     }
 
     /// The preset this run optimises for, falling back to Res EXP.

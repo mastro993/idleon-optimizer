@@ -60,6 +60,39 @@ pub fn scale(value: f64) -> (f64, &'static str) {
     }
 }
 
+/// A game value as `1.23M`, `845.0` or `0.0`, matching the upstream `fmtVal`.
+pub fn value(value: f64) -> String {
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        format!("{value:.2e}")
+    } else if magnitude >= 1e21 {
+        format!("{:.2}QQQ", value / 1e21)
+    } else if magnitude >= 1e18 {
+        format!("{:.2}QQ", value / 1e18)
+    } else if magnitude >= 1e15 {
+        format!("{:.2}Q", value / 1e15)
+    } else if magnitude >= 1e12 {
+        format!("{:.2}T", value / 1e12)
+    } else if magnitude >= 1e9 {
+        format!("{:.2}B", value / 1e9)
+    } else if magnitude >= 1e6 {
+        format!("{:.2}M", value / 1e6)
+    } else if magnitude >= 1e3 {
+        format!("{:.1}K", value / 1e3)
+    } else {
+        format!("{value:.1}")
+    }
+}
+
+/// A probability as a percentage with three decimals.
+pub fn percent(value: f64) -> String {
+    if value > 0.0 && value < 0.000001 {
+        "<0.0001%".into()
+    } else {
+        format!("{:.3}%", 100.0 * value)
+    }
+}
+
 /// A count with thousands separators.
 pub fn count(value: u64) -> String {
     group(&value.to_string())
@@ -184,6 +217,16 @@ pub fn shape_color(shape: usize) -> Hsla {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn values_and_percentages_follow_the_upstream_display() {
+        assert_eq!(value(0.0), "0.0");
+        assert_eq!(value(845.0), "845.0");
+        assert_eq!(value(121_945.0), "121.9K");
+        assert_eq!(value(73_598_959.0), "73.60M");
+        assert_eq!(percent(0.018_089_4), "1.809%");
+        assert_eq!(percent(0.0000001), "<0.0001%");
+    }
 
     #[test]
     fn absurd_hours_read_as_a_dash() {

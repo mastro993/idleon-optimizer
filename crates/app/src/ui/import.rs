@@ -314,9 +314,11 @@ mod tests {
                 ..Simulation::default()
             },
             context: Default::default(),
+            tree: Default::default(),
             clamworks: Default::default(),
             jar: None,
             save: serde_json::Value::Null,
+            companion: None,
             format,
             characters,
             named_characters: characters,
