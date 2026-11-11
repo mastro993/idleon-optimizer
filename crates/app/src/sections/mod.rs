@@ -12,6 +12,7 @@
 
 pub mod clamworks;
 pub mod endgame;
+pub mod farming;
 pub mod monument;
 pub mod pickle;
 pub mod research;
@@ -412,9 +413,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W6,
         description: "Full plot grid, Land Rank allocation, evolution, overgrowth, beans, markets, and stickers",
         spec: "docs/sections/farming.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: farming::view,
         keys: no_keys,
     },
     Section {

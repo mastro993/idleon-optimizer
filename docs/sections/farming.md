@@ -5,7 +5,7 @@
 - Milestone: `M25`
 - Section key: `farming`
 - Group: `w6`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.
