@@ -1,0 +1,1816 @@
+{
+  "source": "Corgan/idleon-research-optimizer js/stats/systems/w2/fishing.js",
+  "depths": [
+    {
+      "toolkit": {
+        "D0": 0,
+        "D1": 0,
+        "D2": 0,
+        "D3": 0
+      },
+      "equipment": [
+        0,
+        0,
+        0
+      ],
+      "spot": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected": {
+        "D0": 0,
+        "D1": 0,
+        "D2": 0,
+        "D3": 0
+      }
+    },
+    {
+      "toolkit": {
+        "D0": 2,
+        "D1": 1,
+        "D2": 0,
+        "D3": 0
+      },
+      "equipment": [
+        0,
+        0,
+        0
+      ],
+      "spot": [
+        0,
+        25,
+        5,
+        0
+      ],
+      "expected": {
+        "D0": 2,
+        "D1": 25.3333333333,
+        "D2": 4.3333333333,
+        "D3": 0
+      }
+    },
+    {
+      "toolkit": {
+        "D0": 10,
+        "D1": 20,
+        "D2": 30,
+        "D3": 40
+      },
+      "equipment": [
+        1,
+        2,
+        3
+      ],
+      "spot": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "expected": {
+        "D0": 10,
+        "D1": 17.6666666667,
+        "D2": 28.6666666667,
+        "D3": 39.6666666667
+      }
+    },
+    {
+      "toolkit": {
+        "D0": 12,
+        "D1": 12,
+        "D2": 0,
+        "D3": 0
+      },
+      "equipment": [
+        40,
+        30,
+        20
+      ],
+      "spot": [
+        0,
+        0,
+        35,
+        0
+      ],
+      "expected": {
+        "D0": 12,
+        "D1": 48,
+        "D2": 61,
+        "D3": 16
+      }
+    },
+    {
+      "toolkit": {
+        "D0": 0,
+        "D1": 0,
+        "D2": 35,
+        "D3": 10
+      },
+      "equipment": [
+        0,
+        0,
+        0
+      ],
+      "spot": [
+        0,
+        0,
+        45,
+        70
+      ],
+      "expected": {
+        "D0": 0,
+        "D1": 0,
+        "D2": 80,
+        "D3": 80
+      }
+    }
+  ],
+  "shares": [
+    {
+      "efficiency": 0,
+      "depths": {
+        "D1": 0,
+        "D2": 0,
+        "D3": 0
+      },
+      "effReqs": [
+        50,
+        200,
+        400
+      ],
+      "expected": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "efficiency": 49.99,
+      "depths": {
+        "D1": 0,
+        "D2": 0,
+        "D3": 0
+      },
+      "effReqs": [
+        50,
+        200,
+        400
+      ],
+      "expected": [
+        100,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "efficiency": 50,
+      "depths": {
+        "D1": 0,
+        "D2": 0,
+        "D3": 0
+      },
+      "effReqs": [
+        50,
+        200,
+        400
+      ],
+      "expected": [
+        75,
+        25,
+        0,
+        0
+      ]
+    },
+    {
+      "efficiency": 5000,
+      "depths": {
+        "D1": 20,
+        "D2": 30,
+        "D3": 40
+      },
+      "effReqs": [
+        50,
+        200,
+        400
+      ],
+      "expected": [
+        45.15,
+        33.56,
+        15.75,
+        5.54
+      ]
+    },
+    {
+      "efficiency": 10000,
+      "depths": {
+        "D1": 5,
+        "D2": 15,
+        "D3": 54
+      },
+      "effReqs": [
+        10000,
+        50000,
+        200000
+      ],
+      "expected": [
+        67.18,
+        32.82,
+        0,
+        0
+      ]
+    },
+    {
+      "efficiency": 2000000,
+      "depths": {
+        "D1": 1,
+        "D2": 33.666666666666664,
+        "D3": 39.666666666666664
+      },
+      "effReqs": [
+        10000,
+        11000,
+        12000
+      ],
+      "expected": [
+        53.12,
+        23.72,
+        16.76,
+        6.4
+      ]
+    },
+    {
+      "efficiency": 1000000000,
+      "depths": {
+        "D1": 1000000,
+        "D2": 1000000,
+        "D3": 1000000
+      },
+      "effReqs": [
+        1000000,
+        5000000,
+        30000000
+      ],
+      "expected": [
+        -23.97,
+        75.99,
+        32.99,
+        14.99
+      ]
+    }
+  ],
+  "oreValue": [
+    {
+      "efficiency": 0,
+      "effReq": 400,
+      "prowess": 0,
+      "expected": 1
+    },
+    {
+      "efficiency": 50,
+      "effReq": 400,
+      "prowess": 0,
+      "expected": 1
+    },
+    {
+      "efficiency": 10000,
+      "effReq": 400,
+      "prowess": 0.25,
+      "expected": 5
+    },
+    {
+      "efficiency": 2000000,
+      "effReq": 12000,
+      "prowess": 0.1,
+      "expected": 5
+    },
+    {
+      "efficiency": 1000000000,
+      "effReq": 30000000,
+      "prowess": 1,
+      "expected": 80
+    }
+  ],
+  "multiFish": [
+    {
+      "inputs": {
+        "power": 0,
+        "level": 0,
+        "stamp": 0,
+        "bubble": 0,
+        "starSign": 0,
+        "cosmo": 0
+      },
+      "expected": {
+        "value": 0,
+        "raw": 0,
+        "cap": 100
+      }
+    },
+    {
+      "inputs": {
+        "power": 1200,
+        "level": 100,
+        "stamp": 25,
+        "bubble": 19,
+        "starSign": 5,
+        "cosmo": 0
+      },
+      "expected": {
+        "value": 78.08523896237627,
+        "raw": 78.08523896237627,
+        "cap": 100
+      }
+    },
+    {
+      "inputs": {
+        "power": 1200,
+        "level": 100,
+        "stamp": 25,
+        "bubble": 20,
+        "starSign": 5,
+        "cosmo": 10
+      },
+      "expected": {
+        "value": 79.08523896237627,
+        "raw": 79.08523896237627,
+        "cap": 310
+      }
+    },
+    {
+      "inputs": {
+        "power": 999999,
+        "level": 500,
+        "stamp": 1000,
+        "bubble": 200,
+        "starSign": 100,
+        "cosmo": 100
+      },
+      "expected": {
+        "value": 400,
+        "raw": 1338.5802467611643,
+        "cap": 400
+      }
+    }
+  ],
+  "speed": [
+    {
+      "inputs": {
+        "efficiency": 0,
+        "level": 0,
+        "rodSpeed": 0,
+        "speedBonusPct": 0
+      },
+      "expected": 402.1818985854947
+    },
+    {
+      "inputs": {
+        "efficiency": 5000,
+        "level": 100,
+        "rodSpeed": 3,
+        "speedBonusPct": 20
+      },
+      "expected": 24.198912724462183
+    },
+    {
+      "inputs": {
+        "efficiency": 12000,
+        "level": 250,
+        "rodSpeed": 8,
+        "speedBonusPct": 120
+      },
+      "expected": 3.886363636363636
+    },
+    {
+      "inputs": {
+        "efficiency": 1000000,
+        "level": 1000,
+        "rodSpeed": 10,
+        "speedBonusPct": 500
+      },
+      "expected": 1.4249999999999998
+    }
+  ],
+  "catches": [
+    {
+      "speed": 0,
+      "attackFactor": 0,
+      "expected": 9000
+    },
+    {
+      "speed": 2.5,
+      "attackFactor": 1,
+      "expected": 1241
+    },
+    {
+      "speed": 1.2,
+      "attackFactor": 2.4,
+      "expected": 5400
+    },
+    {
+      "speed": 0.57,
+      "attackFactor": 5,
+      "expected": 11134
+    }
+  ],
+  "outcomes": [
+    {
+      "pool": "FishSmall",
+      "inputs": {
+        "efficiency": 5000,
+        "depths": {
+          "D0": 2,
+          "D1": 22,
+          "D2": 5,
+          "D3": 1
+        },
+        "prowess": 0.12,
+        "catchesPerHour": 220,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "expMulti": 2.5
+      },
+      "hours": 1,
+      "expected": {
+        "hours": 1,
+        "shares": [
+          49.06,
+          36.16,
+          12.1,
+          2.68
+        ],
+        "shareTotal": 100,
+        "oreValue": 2,
+        "catches": 92.39999999999999,
+        "fishPerCatch": 2.56,
+        "fishTotal": 235,
+        "rolledFishTotal": 235,
+        "overwrittenFish": 0,
+        "exp": 1503,
+        "expPerCatch": 6.506493506493507,
+        "panelCatchesPerHour": 118,
+        "panelExpPerHour": 1386,
+        "panelOreValue": 2,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish1",
+            "share": 49.06,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 116,
+            "exp": 453.3144,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 116
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish2",
+            "share": 36.16,
+            "active": true,
+            "unlocked": true,
+            "effReq": 50,
+            "count": 85,
+            "exp": 584.7072,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 85
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish3",
+            "share": 12.1,
+            "active": true,
+            "unlocked": true,
+            "effReq": 200,
+            "count": 28,
+            "exp": 335.412,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 28
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish4",
+            "share": 2.68,
+            "active": true,
+            "unlocked": true,
+            "effReq": 400,
+            "count": 6,
+            "exp": 130.0068,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 6
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishSmall",
+      "inputs": {
+        "efficiency": 2000000,
+        "depths": {
+          "D0": 12,
+          "D1": 0,
+          "D2": 33.666666666666664,
+          "D3": 39.666666666666664
+        },
+        "prowess": 0.31,
+        "catchesPerHour": 310,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "expMulti": 6.25
+      },
+      "hours": 2,
+      "expected": {
+        "hours": 2,
+        "shares": [
+          53.7,
+          23.13,
+          16.76,
+          6.4
+        ],
+        "shareTotal": 99.99000000000001,
+        "oreValue": 117,
+        "catches": 558,
+        "fishPerCatch": 257.40000000000003,
+        "fishTotal": 143613,
+        "rolledFishTotal": 143613,
+        "overwrittenFish": 0,
+        "exp": 24839,
+        "expPerCatch": 7.122293906810036,
+        "panelCatchesPerHour": 613,
+        "panelExpPerHour": 10462.5,
+        "panelOreValue": 117,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish1",
+            "share": 53.7,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 77128,
+            "exp": 7491.150000000001,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 77128
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish2",
+            "share": 23.13,
+            "active": true,
+            "unlocked": true,
+            "effReq": 50,
+            "count": 33221,
+            "exp": 5646.611249999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 33221
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish3",
+            "share": 16.76,
+            "active": true,
+            "unlocked": true,
+            "effReq": 200,
+            "count": 24072,
+            "exp": 7014.06,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 24072
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish4",
+            "share": 6.4,
+            "active": true,
+            "unlocked": true,
+            "effReq": 400,
+            "count": 9192,
+            "exp": 4687.2,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 9192
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishSmall",
+      "inputs": {
+        "efficiency": 1000000000,
+        "depths": {
+          "D0": 0,
+          "D1": 1000,
+          "D2": 2000,
+          "D3": 3000
+        },
+        "prowess": 1,
+        "catchesPerHour": 400,
+        "afkRate": 1,
+        "multiFish": 350,
+        "expMulti": 10
+      },
+      "hours": 8,
+      "expected": {
+        "hours": 8,
+        "shares": [
+          -17.53,
+          70.98,
+          31.93,
+          14.61
+        ],
+        "shareTotal": 117.52,
+        "oreValue": 99408841,
+        "catches": 3200,
+        "fishPerCatch": 447339784.5,
+        "fishTotal": 1682283887180,
+        "rolledFishTotal": 1682283887180,
+        "overwrittenFish": 0,
+        "exp": 379785,
+        "expPerCatch": 11.86828125,
+        "panelCatchesPerHour": 1800,
+        "panelExpPerHour": 24000,
+        "panelOreValue": 99408841,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish1",
+            "share": -17.53,
+            "active": false,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish2",
+            "share": 70.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 50,
+            "count": 1016069692921,
+            "exp": 158995.2,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 1016069692921
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish3",
+            "share": 31.93,
+            "active": true,
+            "unlocked": true,
+            "effReq": 200,
+            "count": 457073898210,
+            "exp": 122611.19999999998,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 457073898210
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish4",
+            "share": 14.61,
+            "active": true,
+            "unlocked": true,
+            "effReq": 400,
+            "count": 209140296049,
+            "exp": 98179.2,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 209140296049
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishMed",
+      "inputs": {
+        "efficiency": 5000,
+        "depths": {
+          "D0": 2,
+          "D1": 22,
+          "D2": 5,
+          "D3": 1
+        },
+        "prowess": 0.12,
+        "catchesPerHour": 220,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "expMulti": 2.5
+      },
+      "hours": 1,
+      "expected": {
+        "hours": 1,
+        "shares": [
+          100,
+          0,
+          0,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 92.39999999999999,
+        "fishPerCatch": 1.28,
+        "fishTotal": 118,
+        "rolledFishTotal": 118,
+        "overwrittenFish": 0,
+        "exp": 8084,
+        "expPerCatch": 34.995670995671,
+        "panelCatchesPerHour": 118,
+        "panelExpPerHour": 11550,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish5",
+            "share": 100,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 118,
+            "exp": 8084.999999999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 118
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish6",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 10000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish7",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 50000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish8",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 200000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishMed",
+      "inputs": {
+        "efficiency": 2000000,
+        "depths": {
+          "D0": 12,
+          "D1": 0,
+          "D2": 33.666666666666664,
+          "D3": 39.666666666666664
+        },
+        "prowess": 0.31,
+        "catchesPerHour": 310,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "expMulti": 6.25
+      },
+      "hours": 2,
+      "expected": {
+        "hours": 2,
+        "shares": [
+          53.7,
+          23.13,
+          16.76,
+          6.4
+        ],
+        "shareTotal": 99.99000000000001,
+        "oreValue": 3,
+        "catches": 558,
+        "fishPerCatch": 6.6000000000000005,
+        "fishTotal": 3680,
+        "rolledFishTotal": 3680,
+        "overwrittenFish": 0,
+        "exp": 201201,
+        "expPerCatch": 57.69204301075269,
+        "panelCatchesPerHour": 613,
+        "panelExpPerHour": 87187.5,
+        "panelOreValue": 3,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish5",
+            "share": 53.7,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 1977,
+            "exp": 65547.5625,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 1977
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish6",
+            "share": 23.13,
+            "active": true,
+            "unlocked": true,
+            "effReq": 10000,
+            "count": 851,
+            "exp": 48399.524999999994,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 851
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish7",
+            "share": 16.76,
+            "active": true,
+            "unlocked": true,
+            "effReq": 50000,
+            "count": 617,
+            "exp": 53774.460000000014,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 617
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish8",
+            "share": 6.4,
+            "active": true,
+            "unlocked": true,
+            "effReq": 200000,
+            "count": 235,
+            "exp": 33480,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 235
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishMed",
+      "inputs": {
+        "efficiency": 1000000000,
+        "depths": {
+          "D0": 0,
+          "D1": 1000,
+          "D2": 2000,
+          "D3": 3000
+        },
+        "prowess": 1,
+        "catchesPerHour": 400,
+        "afkRate": 1,
+        "multiFish": 350,
+        "expMulti": 10
+      },
+      "hours": 8,
+      "expected": {
+        "hours": 8,
+        "shares": [
+          -17.53,
+          70.98,
+          31.93,
+          14.61
+        ],
+        "shareTotal": 117.52,
+        "oreValue": 42044,
+        "catches": 3200,
+        "fishPerCatch": 189198,
+        "fishTotal": 711505565,
+        "rolledFishTotal": 711505565,
+        "overwrittenFish": 0,
+        "exp": 3004115,
+        "expPerCatch": 93.87859375,
+        "panelCatchesPerHour": 1800,
+        "panelExpPerHour": 200000,
+        "panelOreValue": 42044,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish5",
+            "share": -17.53,
+            "active": false,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish6",
+            "share": 70.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 10000,
+            "count": 429736769,
+            "exp": 1362816,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 429736769
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish7",
+            "share": 31.93,
+            "active": true,
+            "unlocked": true,
+            "effReq": 50000,
+            "count": 193314948,
+            "exp": 940019.2,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 193314948
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish8",
+            "share": 14.61,
+            "active": true,
+            "unlocked": true,
+            "effReq": 200000,
+            "count": 88453848,
+            "exp": 701280,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 88453848
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishBig",
+      "inputs": {
+        "efficiency": 5000,
+        "depths": {
+          "D0": 2,
+          "D1": 22,
+          "D2": 5,
+          "D3": 1
+        },
+        "prowess": 0.12,
+        "catchesPerHour": 220,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "expMulti": 2.5
+      },
+      "hours": 1,
+      "expected": {
+        "hours": 1,
+        "shares": [
+          100,
+          0,
+          0,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 92.39999999999999,
+        "fishPerCatch": 1.28,
+        "fishTotal": 118,
+        "rolledFishTotal": 118,
+        "overwrittenFish": 0,
+        "exp": 103949,
+        "expPerCatch": 449.99567099567105,
+        "panelCatchesPerHour": 118,
+        "panelExpPerHour": 404249.99999999994,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish9",
+            "share": 100,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 118,
+            "exp": 103949.99999999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 118
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish10",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 1000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish11",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 5000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish12",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 30000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishBig",
+      "inputs": {
+        "efficiency": 2000000,
+        "depths": {
+          "D0": 12,
+          "D1": 0,
+          "D2": 33.666666666666664,
+          "D3": 39.666666666666664
+        },
+        "prowess": 0.31,
+        "catchesPerHour": 310,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "expMulti": 6.25
+      },
+      "hours": 2,
+      "expected": {
+        "hours": 2,
+        "shares": [
+          70.01,
+          29.99,
+          0,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 558,
+        "fishPerCatch": 2.2,
+        "fishTotal": 1227,
+        "rolledFishTotal": 1227,
+        "overwrittenFish": 0,
+        "exp": 2772161,
+        "expPerCatch": 794.8848745519713,
+        "panelCatchesPerHour": 613,
+        "panelExpPerHour": 3051562.5,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish9",
+            "share": 70.01,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 859,
+            "exp": 1098719.4375,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 859
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish10",
+            "share": 29.99,
+            "active": true,
+            "unlocked": true,
+            "effReq": 1000000,
+            "count": 368,
+            "exp": 1673441.9999999998,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 368
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish11",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 5000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish12",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 30000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishBig",
+      "inputs": {
+        "efficiency": 1000000000,
+        "depths": {
+          "D0": 0,
+          "D1": 1000,
+          "D2": 2000,
+          "D3": 3000
+        },
+        "prowess": 1,
+        "catchesPerHour": 400,
+        "afkRate": 1,
+        "multiFish": 350,
+        "expMulti": 10
+      },
+      "hours": 8,
+      "expected": {
+        "hours": 8,
+        "shares": [
+          -17.53,
+          70.98,
+          31.93,
+          14.61
+        ],
+        "shareTotal": 117.52,
+        "oreValue": 80,
+        "catches": 3200,
+        "fishPerCatch": 360,
+        "fishTotal": 1353829,
+        "rolledFishTotal": 1353829,
+        "overwrittenFish": 0,
+        "exp": 212359360,
+        "expPerCatch": 6636.23,
+        "panelCatchesPerHour": 1800,
+        "panelExpPerHour": 7000000,
+        "panelOreValue": 80,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish9",
+            "share": -17.53,
+            "active": false,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish10",
+            "share": 70.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 1000000,
+            "count": 817689,
+            "exp": 36341760,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 817689
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish11",
+            "share": 31.93,
+            "active": true,
+            "unlocked": true,
+            "effReq": 5000000,
+            "count": 367833,
+            "exp": 35761599.99999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 367833
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish12",
+            "share": 14.61,
+            "active": true,
+            "unlocked": true,
+            "effReq": 30000000,
+            "count": 168307,
+            "exp": 140256000,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 168307
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishEquinox",
+      "inputs": {
+        "efficiency": 5000,
+        "depths": {
+          "D0": 2,
+          "D1": 22,
+          "D2": 5,
+          "D3": 1
+        },
+        "prowess": 0.12,
+        "catchesPerHour": 220,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "expMulti": 2.5
+      },
+      "hours": 1,
+      "expected": {
+        "hours": 1,
+        "shares": [
+          100,
+          0,
+          0,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 92.39999999999999,
+        "fishPerCatch": 1.28,
+        "fishTotal": 118,
+        "rolledFishTotal": 118,
+        "overwrittenFish": 0,
+        "exp": 461999,
+        "expPerCatch": 1999.9956709956712,
+        "panelCatchesPerHour": 118,
+        "panelExpPerHour": 404249.99999999994,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish13",
+            "share": 100,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 118,
+            "exp": 461999.99999999994,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 118
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish13",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 400000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish13",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 2000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish13",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 12000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishEquinox",
+      "inputs": {
+        "efficiency": 2000000,
+        "depths": {
+          "D0": 12,
+          "D1": 0,
+          "D2": 33.666666666666664,
+          "D3": 39.666666666666664
+        },
+        "prowess": 0.31,
+        "catchesPerHour": 310,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "expMulti": 6.25
+      },
+      "hours": 2,
+      "expected": {
+        "hours": 2,
+        "shares": [
+          57.98,
+          23.98,
+          18.04,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 558,
+        "fishPerCatch": 2.2,
+        "fishTotal": 221,
+        "rolledFishTotal": 1226,
+        "overwrittenFish": 1005,
+        "exp": 6975000,
+        "expPerCatch": 2000,
+        "panelCatchesPerHour": 613,
+        "panelExpPerHour": 3051562.5,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish13",
+            "share": 57.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 711,
+            "exp": 4044104.9999999995,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish13",
+            "share": 23.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 400000,
+            "count": 294,
+            "exp": 1672605,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish13",
+            "share": 18.04,
+            "active": true,
+            "unlocked": true,
+            "effReq": 2000000,
+            "count": 221,
+            "exp": 1258290,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 221
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish13",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 12000000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "FishEquinox",
+      "inputs": {
+        "efficiency": 1000000000,
+        "depths": {
+          "D0": 0,
+          "D1": 1000,
+          "D2": 2000,
+          "D3": 3000
+        },
+        "prowess": 1,
+        "catchesPerHour": 400,
+        "afkRate": 1,
+        "multiFish": 350,
+        "expMulti": 10
+      },
+      "hours": 8,
+      "expected": {
+        "hours": 8,
+        "shares": [
+          -17.53,
+          70.98,
+          31.93,
+          14.61
+        ],
+        "shareTotal": 117.52,
+        "oreValue": 251,
+        "catches": 3200,
+        "fishPerCatch": 1129.5,
+        "fishTotal": 528063,
+        "rolledFishTotal": 4247641,
+        "overwrittenFish": 3719578,
+        "exp": 75212800,
+        "expPerCatch": 2350.4,
+        "panelCatchesPerHour": 1800,
+        "panelExpPerHour": 7000000,
+        "panelOreValue": 251,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish13",
+            "share": -17.53,
+            "active": false,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish13",
+            "share": 70.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 400000,
+            "count": 2565501,
+            "exp": 45427200,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish13",
+            "share": 31.93,
+            "active": true,
+            "unlocked": true,
+            "effReq": 2000000,
+            "count": 1154077,
+            "exp": 20435199.999999996,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish13",
+            "share": 14.61,
+            "active": true,
+            "unlocked": true,
+            "effReq": 12000000,
+            "count": 528063,
+            "exp": 9350400,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 528063
+          }
+        ]
+      }
+    },
+    {
+      "pool": "MotherlodeFISH",
+      "inputs": {
+        "efficiency": 5000,
+        "depths": {
+          "D0": 2,
+          "D1": 22,
+          "D2": 5,
+          "D3": 1
+        },
+        "prowess": 0.12,
+        "catchesPerHour": 220,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "expMulti": 2.5
+      },
+      "hours": 1,
+      "expected": {
+        "hours": 1,
+        "shares": [
+          100,
+          0,
+          0,
+          0
+        ],
+        "shareTotal": 100,
+        "oreValue": 1,
+        "catches": 92.39999999999999,
+        "fishPerCatch": 1.28,
+        "fishTotal": 118,
+        "rolledFishTotal": 118,
+        "overwrittenFish": 0,
+        "exp": 115499,
+        "expPerCatch": 499.99567099567105,
+        "panelCatchesPerHour": 118,
+        "panelExpPerHour": 404249.99999999994,
+        "panelOreValue": 1,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish14",
+            "share": 100,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 118,
+            "exp": 115499.99999999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 118
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish14",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 10000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish14",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 11000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish14",
+            "share": 0,
+            "active": false,
+            "unlocked": false,
+            "effReq": 12000,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "pool": "MotherlodeFISH",
+      "inputs": {
+        "efficiency": 2000000,
+        "depths": {
+          "D0": 12,
+          "D1": 0,
+          "D2": 33.666666666666664,
+          "D3": 39.666666666666664
+        },
+        "prowess": 0.31,
+        "catchesPerHour": 310,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "expMulti": 6.25
+      },
+      "hours": 2,
+      "expected": {
+        "hours": 2,
+        "shares": [
+          53.7,
+          23.13,
+          16.76,
+          6.4
+        ],
+        "shareTotal": 99.99000000000001,
+        "oreValue": 17,
+        "catches": 558,
+        "fishPerCatch": 37.400000000000006,
+        "fishTotal": 1335,
+        "rolledFishTotal": 20865,
+        "overwrittenFish": 19530,
+        "exp": 1746220,
+        "expPerCatch": 500.7082437275986,
+        "panelCatchesPerHour": 613,
+        "panelExpPerHour": 3051562.5,
+        "panelOreValue": 17,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish14",
+            "share": 53.7,
+            "active": true,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 11206,
+            "exp": 936393.75,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish14",
+            "share": 23.13,
+            "active": true,
+            "unlocked": true,
+            "effReq": 10000,
+            "count": 4827,
+            "exp": 404136.03375,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish14",
+            "share": 16.76,
+            "active": true,
+            "unlocked": true,
+            "effReq": 11000,
+            "count": 3497,
+            "exp": 293421.51,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish14",
+            "share": 6.4,
+            "active": true,
+            "unlocked": true,
+            "effReq": 12000,
+            "count": 1335,
+            "exp": 112269.59999999999,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 1335
+          }
+        ]
+      }
+    },
+    {
+      "pool": "MotherlodeFISH",
+      "inputs": {
+        "efficiency": 1000000000,
+        "depths": {
+          "D0": 0,
+          "D1": 1000,
+          "D2": 2000,
+          "D3": 3000
+        },
+        "prowess": 1,
+        "catchesPerHour": 400,
+        "afkRate": 1,
+        "multiFish": 350,
+        "expMulti": 10
+      },
+      "hours": 8,
+      "expected": {
+        "hours": 8,
+        "shares": [
+          -17.53,
+          70.98,
+          31.93,
+          14.61
+        ],
+        "shareTotal": 117.52,
+        "oreValue": 1415870,
+        "catches": 3200,
+        "fishPerCatch": 6371415,
+        "fishTotal": 2978763940,
+        "rolledFishTotal": 23960598104,
+        "overwrittenFish": 20981834164,
+        "exp": 18860374,
+        "expPerCatch": 589.3866875,
+        "panelCatchesPerHour": 1800,
+        "panelExpPerHour": 7000000,
+        "panelOreValue": 1415870,
+        "fish": [
+          {
+            "slot": 0,
+            "itemKey": "Fish14",
+            "share": -17.53,
+            "active": false,
+            "unlocked": true,
+            "effReq": 0,
+            "count": 0,
+            "exp": 0,
+            "credited": false,
+            "overwritten": false,
+            "creditedCount": 0
+          },
+          {
+            "slot": 1,
+            "itemKey": "Fish14",
+            "share": 70.98,
+            "active": true,
+            "unlocked": true,
+            "effReq": 10000,
+            "count": 14471777174,
+            "exp": 11379513.599999998,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 2,
+            "itemKey": "Fish14",
+            "share": 31.93,
+            "active": true,
+            "unlocked": true,
+            "effReq": 11000,
+            "count": 6510056990,
+            "exp": 5129235.199999999,
+            "credited": false,
+            "overwritten": true,
+            "creditedCount": 0
+          },
+          {
+            "slot": 3,
+            "itemKey": "Fish14",
+            "share": 14.61,
+            "active": true,
+            "unlocked": true,
+            "effReq": 12000,
+            "count": 2978763940,
+            "exp": 2351625.6,
+            "credited": true,
+            "overwritten": false,
+            "creditedCount": 2978763940
+          }
+        ]
+      }
+    }
+  ]
+}

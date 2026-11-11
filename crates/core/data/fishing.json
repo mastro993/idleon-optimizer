@@ -1,0 +1,860 @@
+{
+ "pools": [
+  {
+   "key": "FishSmall",
+   "name": "Small Fish",
+   "panelExpPerCatch": 6,
+   "expType": 4,
+   "effReqs": [
+    50,
+    200,
+    400
+   ],
+   "fish": [
+    {
+     "slot": 0,
+     "itemKey": "Fish1",
+     "name": "Goldfish",
+     "expPerCatch": 4,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 0.002
+    },
+    {
+     "slot": 1,
+     "itemKey": "Fish2",
+     "name": "Hermit Can",
+     "expPerCatch": 7,
+     "bonusItem": "CardsC9",
+     "bonusOdds": 0.0018
+    },
+    {
+     "slot": 2,
+     "itemKey": "Fish3",
+     "name": "Jellyfish",
+     "expPerCatch": 12,
+     "bonusItem": "CardsC10",
+     "bonusOdds": 0.0016
+    },
+    {
+     "slot": 3,
+     "itemKey": "Fish4",
+     "name": "Bloach",
+     "expPerCatch": 21,
+     "bonusItem": "CardsD11",
+     "bonusOdds": 0.0014
+    }
+   ]
+  },
+  {
+   "key": "FishMed",
+   "name": "Medium Fish",
+   "panelExpPerCatch": 50,
+   "expType": 4,
+   "effReqs": [
+    10000,
+    50000,
+    200000
+   ],
+   "fish": [
+    {
+     "slot": 0,
+     "itemKey": "Fish5",
+     "name": "Skelefish",
+     "expPerCatch": 35,
+     "bonusItem": "CardsF20",
+     "bonusOdds": 0.001
+    },
+    {
+     "slot": 1,
+     "itemKey": "Fish6",
+     "name": "Sand Shark",
+     "expPerCatch": 60,
+     "bonusItem": "CardsF21",
+     "bonusOdds": 0.0004
+    },
+    {
+     "slot": 2,
+     "itemKey": "Fish7",
+     "name": "Manta Ray",
+     "expPerCatch": 92,
+     "bonusItem": "CardsF22",
+     "bonusOdds": 0.0001
+    },
+    {
+     "slot": 3,
+     "itemKey": "Fish8",
+     "name": "Kraken",
+     "expPerCatch": 150,
+     "bonusItem": "CardsF23",
+     "bonusOdds": 0.000025
+    }
+   ]
+  },
+  {
+   "key": "FishBig",
+   "name": "Large Fish",
+   "panelExpPerCatch": 1750,
+   "expType": 4,
+   "effReqs": [
+    1000000,
+    5000000,
+    30000000
+   ],
+   "fish": [
+    {
+     "slot": 0,
+     "itemKey": "Fish9",
+     "name": "Icefish",
+     "expPerCatch": 450,
+     "bonusItem": "CardsF30",
+     "bonusOdds": 0.001
+    },
+    {
+     "slot": 1,
+     "itemKey": "Fish10",
+     "name": "Shellfish",
+     "expPerCatch": 1600,
+     "bonusItem": "CardsF31",
+     "bonusOdds": 0.0004
+    },
+    {
+     "slot": 2,
+     "itemKey": "Fish11",
+     "name": "Jumbo Shrimp",
+     "expPerCatch": 3500,
+     "bonusItem": "CardsF32",
+     "bonusOdds": 0.0001
+    },
+    {
+     "slot": 3,
+     "itemKey": "Fish12",
+     "name": "Caulifish",
+     "expPerCatch": 30000,
+     "bonusItem": "CardsF33",
+     "bonusOdds": 0.000025
+    }
+   ]
+  },
+  {
+   "key": "FishEquinox",
+   "name": "Equinox Fish",
+   "panelExpPerCatch": 1750,
+   "expType": 4,
+   "effReqs": [
+    400000,
+    2000000,
+    12000000
+   ],
+   "fish": [
+    {
+     "slot": 0,
+     "itemKey": "Fish13",
+     "name": "Equinox Fish",
+     "expPerCatch": 2000,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 1,
+     "itemKey": "Fish13",
+     "name": "Equinox Fish",
+     "expPerCatch": 2000,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 2,
+     "itemKey": "Fish13",
+     "name": "Equinox Fish",
+     "expPerCatch": 2000,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 3,
+     "itemKey": "Fish13",
+     "name": "Equinox Fish",
+     "expPerCatch": 2000,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    }
+   ]
+  },
+  {
+   "key": "MotherlodeFISH",
+   "name": "Trench Fish",
+   "panelExpPerCatch": 1750,
+   "expType": 4,
+   "effReqs": [
+    10000,
+    11000,
+    12000
+   ],
+   "fish": [
+    {
+     "slot": 0,
+     "itemKey": "Fish14",
+     "name": "Trench fish",
+     "expPerCatch": 500,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 1,
+     "itemKey": "Fish14",
+     "name": "Trench fish",
+     "expPerCatch": 501,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 2,
+     "itemKey": "Fish14",
+     "name": "Trench fish",
+     "expPerCatch": 502,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    },
+    {
+     "slot": 3,
+     "itemKey": "Fish14",
+     "name": "Trench fish",
+     "expPerCatch": 503,
+     "bonusItem": "CardsC8",
+     "bonusOdds": 1e-8
+    }
+   ]
+  }
+ ],
+ "lures": [
+  {
+   "idx": 0,
+   "name": "Fly",
+   "stats": {
+    "D0": 2,
+    "D1": 1,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 1,
+   "name": "Wormie",
+   "stats": {
+    "D0": 0,
+    "D1": 15,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 5,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 2,
+   "name": "Iron Hook",
+   "stats": {
+    "D0": 3,
+    "D1": 2,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 3,
+    "POW": 1
+   }
+  },
+  {
+   "idx": 3,
+   "name": "Basic Bobber",
+   "stats": {
+    "D0": 0,
+    "D1": 3,
+    "D2": 3,
+    "D3": 0,
+    "EXP": 4,
+    "SPEED": 4,
+    "POW": 1
+   }
+  },
+  {
+   "idx": 4,
+   "name": "Dualhook Prongs",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 4,
+    "D3": 4,
+    "EXP": 0,
+    "SPEED": 8,
+    "POW": 3
+   }
+  },
+  {
+   "idx": 5,
+   "name": "Pound of Steel",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 30,
+    "EXP": 2,
+    "SPEED": 2,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 6,
+   "name": "Pound of Feathers",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 35,
+    "D3": 10,
+    "EXP": 0,
+    "SPEED": 5,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 7,
+   "name": "Massless Unit",
+   "stats": {
+    "D0": 20,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 10,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 8,
+   "name": "Literal Elephant",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 20,
+    "D3": 60,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 6
+   }
+  },
+  {
+   "idx": 9,
+   "name": "Valve Circles",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 40,
+    "EXP": 5,
+    "SPEED": 10,
+    "POW": 5
+   }
+  },
+  {
+   "idx": 10,
+   "name": "Dynamite",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 10,
+    "D3": 20,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 2
+   }
+  },
+  {
+   "idx": 11,
+   "name": "Not Dynamite",
+   "stats": {
+    "D0": 12,
+    "D1": 12,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 4
+   }
+  },
+  {
+   "idx": 12,
+   "name": "Triple Threat",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 6,
+    "SPEED": 6,
+    "POW": 6
+   }
+  },
+  {
+   "idx": 13,
+   "name": "Crash Box",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 11,
+    "EXP": 0,
+    "SPEED": 12,
+    "POW": 5
+   }
+  },
+  {
+   "idx": 14,
+   "name": "Fat Albert",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 10,
+    "SPEED": 0,
+    "POW": 19
+   }
+  }
+ ],
+ "lines": [
+  {
+   "idx": 0,
+   "name": "Fishing Twine",
+   "stats": {
+    "D0": 0,
+    "D1": 3,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 1,
+   "name": "Copper Twine",
+   "stats": {
+    "D0": 0,
+    "D1": 3,
+    "D2": 5,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 3,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 2,
+   "name": "Silver Twine",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 20,
+    "D3": 0,
+    "EXP": 15,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 3,
+   "name": "Gold Twine",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 8,
+    "D3": 20,
+    "EXP": 22,
+    "SPEED": 6,
+    "POW": 2
+   }
+  },
+  {
+   "idx": 4,
+   "name": "Platinum Twine",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 30,
+    "D3": 30,
+    "EXP": 35,
+    "SPEED": 12,
+    "POW": 5
+   }
+  },
+  {
+   "idx": 5,
+   "name": "Leafy Vines",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 10,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 0,
+    "POW": 2
+   }
+  },
+  {
+   "idx": 6,
+   "name": "Fun Flags",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 8,
+    "D3": 8,
+    "EXP": 0,
+    "SPEED": 1,
+    "POW": 3
+   }
+  },
+  {
+   "idx": 7,
+   "name": "Electrical Wire",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 5,
+    "D3": 20,
+    "EXP": 0,
+    "SPEED": 2,
+    "POW": 5
+   }
+  },
+  {
+   "idx": 8,
+   "name": "Wiener Links",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 17,
+    "D3": 5,
+    "EXP": 0,
+    "SPEED": 3,
+    "POW": 10
+   }
+  },
+  {
+   "idx": 9,
+   "name": "Zeus Gon Fishin",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 30,
+    "EXP": 0,
+    "SPEED": 5,
+    "POW": 20
+   }
+  },
+  {
+   "idx": 10,
+   "name": "Needledrop",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 5,
+    "D3": 10,
+    "EXP": 5,
+    "SPEED": 0,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 11,
+   "name": "Spoons Lol",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 15,
+    "EXP": 9,
+    "SPEED": 2,
+    "POW": 1
+   }
+  },
+  {
+   "idx": 12,
+   "name": "Its a Boy",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 0,
+    "SPEED": 15,
+    "POW": 5
+   }
+  },
+  {
+   "idx": 13,
+   "name": "Its a Girl",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 15,
+    "SPEED": 5,
+    "POW": 0
+   }
+  },
+  {
+   "idx": 14,
+   "name": "Its Alright",
+   "stats": {
+    "D0": 0,
+    "D1": 0,
+    "D2": 0,
+    "D3": 0,
+    "EXP": 8,
+    "SPEED": 8,
+    "POW": 8
+   }
+  }
+ ],
+ "locations": [
+  {
+   "id": "54:0",
+   "mapIdx": 54,
+   "spotIdx": 0,
+   "poolKey": "FishSmall",
+   "poolName": "Small Fish",
+   "mapName": "Salty Shores",
+   "label": "Salty Shores — spot 1",
+   "bonus": [
+    0,
+    25,
+    5,
+    0
+   ]
+  },
+  {
+   "id": "54:1",
+   "mapIdx": 54,
+   "spotIdx": 1,
+   "poolKey": "FishSmall",
+   "poolName": "Small Fish",
+   "mapName": "Salty Shores",
+   "label": "Salty Shores — spot 2",
+   "bonus": [
+    30,
+    5,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "55:0",
+   "mapIdx": 55,
+   "spotIdx": 0,
+   "poolKey": "FishSmall",
+   "poolName": "Small Fish",
+   "mapName": "Faraway Piers",
+   "label": "Faraway Piers — spot 1",
+   "bonus": [
+    0,
+    0,
+    0,
+    40
+   ]
+  },
+  {
+   "id": "55:1",
+   "mapIdx": 55,
+   "spotIdx": 1,
+   "poolKey": "FishSmall",
+   "poolName": "Small Fish",
+   "mapName": "Faraway Piers",
+   "label": "Faraway Piers — spot 2",
+   "bonus": [
+    0,
+    0,
+    15,
+    30
+   ]
+  },
+  {
+   "id": "55:2",
+   "mapIdx": 55,
+   "spotIdx": 2,
+   "poolKey": "FishSmall",
+   "poolName": "Small Fish",
+   "mapName": "Faraway Piers",
+   "label": "Faraway Piers — spot 3",
+   "bonus": [
+    0,
+    0,
+    35,
+    0
+   ]
+  },
+  {
+   "id": "61:0",
+   "mapIdx": 61,
+   "spotIdx": 0,
+   "poolKey": "FishMed",
+   "poolName": "Medium Fish",
+   "mapName": "Deepwater Docks",
+   "label": "Deepwater Docks — spot 1",
+   "bonus": [
+    0,
+    0,
+    0,
+    70
+   ]
+  },
+  {
+   "id": "61:1",
+   "mapIdx": 61,
+   "spotIdx": 1,
+   "poolKey": "FishMed",
+   "poolName": "Medium Fish",
+   "mapName": "Deepwater Docks",
+   "label": "Deepwater Docks — spot 2",
+   "bonus": [
+    0,
+    0,
+    0,
+    54
+   ]
+  },
+  {
+   "id": "61:2",
+   "mapIdx": 61,
+   "spotIdx": 2,
+   "poolKey": "FishMed",
+   "poolName": "Medium Fish",
+   "mapName": "Deepwater Docks",
+   "label": "Deepwater Docks — spot 3",
+   "bonus": [
+    0,
+    0,
+    45,
+    0
+   ]
+  },
+  {
+   "id": "72:FishBig",
+   "mapIdx": 72,
+   "spotIdx": null,
+   "poolKey": "FishBig",
+   "poolName": "Large Fish",
+   "mapName": "Seasalt Island",
+   "label": "Seasalt Island — any of 3 spots",
+   "bonus": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "x:FishEquinox",
+   "mapIdx": null,
+   "spotIdx": null,
+   "poolKey": "FishEquinox",
+   "poolName": "Equinox Fish",
+   "mapName": "Equinox Fish",
+   "label": "Equinox Fish",
+   "bonus": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "id": "x:MotherlodeFISH",
+   "mapIdx": null,
+   "spotIdx": null,
+   "poolKey": "MotherlodeFISH",
+   "poolName": "Trench Fish",
+   "mapName": "Trench Fish",
+   "label": "Trench Fish",
+   "bonus": [
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ ],
+ "rods": [
+  {
+   "key": "FishingRod1",
+   "name": "Wood Fishing Rod",
+   "speed": 3
+  },
+  {
+   "key": "FishingRod2",
+   "name": "Copper Fish Rod",
+   "speed": 3
+  },
+  {
+   "key": "FishingRod3",
+   "name": "Iron Fishing Rod",
+   "speed": 4
+  },
+  {
+   "key": "FishingRod4",
+   "name": "Gold Fishing Rod",
+   "speed": 4
+  },
+  {
+   "key": "FishingRod5",
+   "name": "Plat Fishing Rod",
+   "speed": 5
+  },
+  {
+   "key": "FishingRod6",
+   "name": "Dementia Rod for Fishing",
+   "speed": 5
+  },
+  {
+   "key": "FishingRod7",
+   "name": "Void Imperium Rod",
+   "speed": 5
+  },
+  {
+   "key": "FishingRod8",
+   "name": "Lustre Rod",
+   "speed": 6
+  },
+  {
+   "key": "FishingRod9",
+   "name": "Starfire Rod",
+   "speed": 6
+  },
+  {
+   "key": "FishingRod10",
+   "name": "Dreadlo Rod",
+   "speed": 7
+  },
+  {
+   "key": "FishingRod11",
+   "name": "Marbiglass Rod",
+   "speed": 7
+  },
+  {
+   "key": "FishingRod12",
+   "name": "Angler of the Iliunne",
+   "speed": 8
+  },
+  {
+   "key": "FishingRod13",
+   "name": "Prehistoric Rod",
+   "speed": 8
+  }
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer"
+ }
+}

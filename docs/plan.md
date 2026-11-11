@@ -1,10 +1,10 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming, Clamworks and the combat
-simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery
-built, 21 sections planned.** The live breakdown is
-[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
-each section's full specification is under [`docs/sections/`](sections/).
+Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, Clamworks and
+the combat simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument
+Bravery built, 16 sections planned.**
+The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
+[`docs/roadmap.json`](roadmap.json); each section's full specification is under [`docs/sections/`](sections/).
 
 ## 1. Product goal
 
@@ -272,6 +272,16 @@ lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observat
 Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy comparison,
 complete save-derived multipliers, state export/import and undo.
 Details: [`docs/sections/research.md`](sections/research.md).
+
+The Fishing section implements FI-01: the character/toolkit/location toolbar, an
+every-location table that switches the selected pool, the selected pool's fish split,
+real-versus-panel EXP and the shared formula tree. The pure formulas are pinned against
+an oracle fixture evaluated from the upstream JS; the save supplies the character, rod,
+saved toolkit, spot and AFK target, while the account skill values (efficiency, EXP
+multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are
+entered in the account card until the stats dashboard decodes them. Missing: the
+best lure/line ranking (FI-02) and the Trench depth projection with other characters
+(FI-03). Details: [`docs/sections/fishing.md`](sections/fishing.md).
 
 The Clamworks section implements CW-01: the overview with the pearl-value breakdown, every pearl
 upgrade and the upstream priority ranking, plus save decoding for pearl balance, upgrade levels,

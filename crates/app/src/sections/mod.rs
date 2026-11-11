@@ -15,6 +15,7 @@ pub mod combat_sim;
 pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
+pub mod fishing;
 pub mod jar;
 pub mod killroy;
 pub mod monument;
@@ -240,9 +241,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W2,
         description: "AFK catches, fish split, real vs panel EXP, best lure + line per pool",
         spec: "docs/sections/fishing.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: fishing::view,
         keys: no_keys,
     },
     Section {

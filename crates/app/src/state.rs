@@ -6,6 +6,7 @@ use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
+use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
@@ -24,6 +25,7 @@ use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::farming::Farm;
+use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
 use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
@@ -146,6 +148,10 @@ pub struct AppState {
     pub farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
     pub farming: FarmingState,
+    /// The fishing characters, rod and saved toolkit the last import carried.
+    pub fishing_save: FishingSave,
+    /// The fishing section's character, toolkit, pool and account values.
+    pub fishing: FishingState,
     /// The monument section's own state, kept alive across dashboard visits.
     pub monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
@@ -201,6 +207,8 @@ pub struct AppState {
     pub research_trees: crate::sections::research::Trees,
     /// The shared formula tree on the Clamworks overview.
     pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared formula tree on the Fishing calculator.
+    pub fishing_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     pub focus: FocusHandle,
@@ -389,6 +397,8 @@ impl AppState {
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
+        let fishing_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("fishing-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -408,6 +418,8 @@ impl AppState {
             sailing_state: SailingState::default(),
             farm: Farm::default(),
             farming: FarmingState::default(),
+            fishing_save: FishingSave::default(),
+            fishing: FishingState::default(),
             monument: MonumentState::default(),
             monument_save: None,
             clamworks: Clamworks::default(),
@@ -436,6 +448,7 @@ impl AppState {
             breakdown,
             research_trees,
             clamworks_breakdown,
+            fishing_breakdown,
             shadow: Shadow::default(),
             focus,
             bridge,
@@ -737,6 +750,8 @@ impl AppState {
             imported.companion.as_ref(),
         ));
         self.endgame = endgame::State::audit(&imported);
+        self.fishing_save = FishingSave::from_save(&imported.save);
+        self.fishing.adopt(&self.fishing_save);
         self.simulation = imported.simulation;
         self.context = imported.context;
         let combat_character = if self.combat.character < imported.save.character_count() {
@@ -837,6 +852,60 @@ impl AppState {
 
     pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
         self.sailing.minimum_tier = tier.min(5);
+        cx.notify();
+    }
+
+    /// Reset the fishing toolkit and location to the selected character's save.
+    pub fn fishing_reset(&mut self, cx: &mut Context<Self>) {
+        self.fishing.character_defaults(&self.fishing_save);
+        cx.notify();
+    }
+
+    /// Select a fishing character and take that character's saved toolkit/spot.
+    pub fn set_fishing_character(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.fishing.character = index.min(self.fishing_save.characters.len().saturating_sub(1));
+        self.fishing.character_defaults(&self.fishing_save);
+        cx.notify();
+    }
+
+    /// Select a lure index, clamped to the upstream list.
+    pub fn set_fishing_lure(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.fishing.lure = index.min(idleon_core::fishing::data().lures.len().saturating_sub(1));
+        cx.notify();
+    }
+
+    /// Select a line index, clamped to the upstream list.
+    pub fn set_fishing_line(&mut self, index: usize, cx: &mut Context<Self>) {
+        self.fishing.line = index.min(idleon_core::fishing::data().lines.len().saturating_sub(1));
+        cx.notify();
+    }
+
+    /// Switch the selected pool by its location id.
+    pub fn set_fishing_location(&mut self, id: String, cx: &mut Context<Self>) {
+        if idleon_core::fishing::data().location(&id).is_some() {
+            self.fishing.location = id;
+            cx.notify();
+        }
+    }
+
+    /// Set the AFK claim length in hours.
+    pub fn set_fishing_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
+        self.fishing.hours = if hours.is_finite() {
+            hours.clamp(0.04, 10_000.0)
+        } else {
+            1.0
+        };
+        cx.notify();
+    }
+
+    /// Edit one account value the fishing evaluator reads.
+    pub fn set_fishing_account(
+        &mut self,
+        change: impl FnOnce(&mut AccountInputs),
+        cx: &mut Context<Self>,
+    ) {
+        change(&mut self.fishing.account);
+        self.fishing.clamp(&self.fishing_save);
         cx.notify();
     }
 

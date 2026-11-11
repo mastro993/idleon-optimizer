@@ -137,6 +137,26 @@ const combatSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying one fishing character on the Deepwater
+/// Docks spot, with a saved toolkit unless `toolkit: false`, so the fishing
+/// section can open on a real pool and flag a missing toolkit key.
+const fishingSave = ({ toolkit = true } = {}) => {
+  const levels = Array(30).fill(0);
+  levels[4] = 100;
+  const tools = [];
+  tools[1] = { 2: 'FishingRod13' };
+  const save = {
+    Research: '[]',
+    Lv0_0: JSON.stringify(levels),
+    EquipOrder_0: JSON.stringify(tools),
+    PVFishingSpotIndex_0: 1,
+    CurrentMap_0: 61,
+    AFKtarget_0: 'FishMed',
+  };
+  if (toolkit) save.PVFishingToolkit_0 = JSON.stringify([8, 4]);
+  return JSON.stringify(save);
+};
+
 /// A project document as the app writes it: the research state, the
 /// supplements, one config per section and the section the window was on.
 const projectDocument = () =>
@@ -226,6 +246,37 @@ const INTERACTIONS = {
       lane,
       (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
       'farming: the plot selection survives the dashboard round-trip'
+    );
+  },
+  fishing: async (lane) => {
+    const importSave = async (text, ready, message) => {
+      await lane.call('click_element', { id: 'header-import' });
+      await waitForNode(lane, 'import-input', `${message}: the import dialog opens`);
+      await lane.call('click_element', { id: 'import-input' });
+      await lane.call('keyboard', { keystroke: 'secondary-a' });
+      await lane.call('type_text', { text });
+      await waitForNode(lane, 'import-format', `${message}: the save previews`);
+      await lane.call('click_element', { id: 'import-apply' });
+      await waitForNode(lane, ready, `${message}: ${ready} after Apply`);
+    };
+    await importSave(fishingSave(), 'fishing-summary', 'fishing');
+    const saved = labelOf(await lane.tree(), 'fishing-summary') ?? '';
+    if (!saved.includes('Deepwater Docks')) {
+      throw new Error(`fishing: the saved spot reads ${saved}`);
+    }
+    await lane.call('click_element', { id: 'fishing-location-54-0' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'fishing-summary') ?? '').includes('Salty Shores'),
+      'fishing: clicking a location switches the pool'
+    );
+    const detail = labelOf(await lane.tree(), 'fishing-detail') ?? '';
+    if (!detail.includes('Small Fish')) throw new Error(`fishing: the split reads ${detail}`);
+    // A save without PVFishingToolkit_0 defaults to Fly + Fishing Twine and says so.
+    await importSave(
+      fishingSave({ toolkit: false }),
+      'fishing-toolkit-missing',
+      'fishing'
     );
   },
   endgame: async (lane) => {
