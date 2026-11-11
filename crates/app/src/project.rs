@@ -20,6 +20,7 @@ use crate::sections::monument::State as MonumentState;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
+use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
@@ -213,6 +214,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert("jar", value(&JarConfig { tab: state.jar_tab }));
+    insert("stats-all", value(&state.stats_all.context));
     insert("coral-god-rank", value(&state.coral.inputs));
     insert(
         "worship-td",
@@ -305,6 +307,7 @@ pub enum Config {
     Jar(JarConfig),
     Coral(coral::Inputs),
     Worship(WorshipConfig),
+    StatsAll(idleon_core::stats::Context),
 }
 
 /// What decoding one section config found.
@@ -481,6 +484,7 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
         Config::Coral(config) => {
             state.coral.inputs = config;
         }
+        Config::StatsAll(context) => stats_all::restore(state, context, warnings),
         Config::Worship(config) => {
             let last_trial = idleon_core::worship::data().trials.len().saturating_sub(1);
             state.worship.trial = config.trial.min(last_trial);
@@ -531,6 +535,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "clamworks" => decode!(Clamworks, ClamworksConfig),
         "jar" => decode!(Jar, JarConfig),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
+        "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
         "worship-td" => decode!(Worship, WorshipConfig),
         _ => Decoded::Unknown,
     }
@@ -773,6 +778,24 @@ mod tests {
             tab: JarTab::Production,
         });
         assert_eq!(jar.tab, JarTab::Production);
+        let stats = round_trip(&idleon_core::stats::Context {
+            character: 2,
+            map: 120,
+            map_visibility: idleon_core::stats::MapVisibility::Advanced,
+            skill: idleon_core::stats::Skill::Divinity,
+            construction: idleon_core::stats::ConstructionMode::Inactive,
+        });
+        assert_eq!(stats.character, 2);
+        assert_eq!(stats.map, 120);
+        assert_eq!(
+            stats.map_visibility,
+            idleon_core::stats::MapVisibility::Advanced
+        );
+        assert_eq!(stats.skill, idleon_core::stats::Skill::Divinity);
+        assert_eq!(
+            stats.construction,
+            idleon_core::stats::ConstructionMode::Inactive
+        );
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,
@@ -855,6 +878,41 @@ mod tests {
             configs[0],
             Config::Killroy(KillroyState { weeks: 20 })
         ));
+    }
+
+    #[test]
+    fn prepare_decodes_the_stats_context_from_a_project() {
+        let text = json!({
+            "format": idleon_core::project::FORMAT,
+            "version": idleon_core::project::VERSION,
+            "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
+            "sections": {
+                "stats-all": {
+                    "character": 2,
+                    "map": 120,
+                    "mapVisibility": "all",
+                    "skill": "divinity",
+                    "construction": "inactive",
+                },
+            },
+        })
+        .to_string();
+        let mut document = pipeline::read(&text).expect("the project reads");
+        let configs = prepare(&mut document).expect("the context config fits");
+        let Config::StatsAll(context) = &configs[0] else {
+            panic!("the config is a stats context");
+        };
+        assert_eq!(context.character, 2);
+        assert_eq!(context.map, 120);
+        assert_eq!(
+            context.map_visibility,
+            idleon_core::stats::MapVisibility::All
+        );
+        assert_eq!(context.skill, idleon_core::stats::Skill::Divinity);
+        assert_eq!(
+            context.construction,
+            idleon_core::stats::ConstructionMode::Inactive
+        );
     }
 
     /// A project document carrying one killroy config, for the prepare tests.
@@ -983,6 +1041,7 @@ mod tests {
                 "coral-god-rank",
                 "worship-td",
                 "combat-sim",
+                "stats-all",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);

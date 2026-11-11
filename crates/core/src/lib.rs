@@ -4,8 +4,8 @@
 //! <https://github.com/Corgan/idleon-research-optimizer>. Game constants are
 //! extracted from that repo by `script/extract-research-data.mjs`,
 //! `script/extract-statue-data.mjs`, `script/extract-farming-data.mjs`,
-//! `script/extract-clamworks-data.mjs` and
-//! `script/extract-worship-td-data.mjs`; the maths follow
+//! `script/extract-clamworks-data.mjs`, `script/extract-worship-td-data.mjs` and
+//! `script/extract-stats-data.mjs`; the maths follow
 //! `js/stats/systems/w7/research-math.js`,
 //! `js/stats/systems/common/statue-leveling.js`,
 //! `js/stats/systems/w6/farming-planner.js`,
@@ -34,6 +34,7 @@ pub mod sailing;
 pub mod save;
 pub mod shape;
 pub mod sim;
+pub mod stats;
 pub mod statue;
 pub mod worship;
 

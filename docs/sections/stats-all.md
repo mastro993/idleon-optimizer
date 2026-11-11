@@ -5,7 +5,7 @@
 - Milestone: `M3`
 - Section key: `stats-all`
 - Group: `general`
-- Status: `planned`
+- Status: `in-progress`
 - Depends on: `foundation`
 
 Port the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.

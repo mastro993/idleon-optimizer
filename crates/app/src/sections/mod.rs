@@ -23,6 +23,7 @@ pub mod pickle;
 pub mod research;
 pub mod sailing;
 pub mod shadow;
+pub mod stats_all;
 pub mod statue;
 pub mod worship_td;
 
@@ -229,9 +230,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::General,
         description: "Map-aware character and account stats with breakdowns and a formula explorer",
         spec: "docs/sections/stats-all.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: false,
-        view: PLACEHOLDER,
+        view: stats_all::view,
         keys: no_keys,
     },
     Section {

@@ -13,6 +13,7 @@ use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
+use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
 use crate::sections::{self, Section};
@@ -34,6 +35,7 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
+use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
 use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
@@ -174,6 +176,8 @@ pub struct AppState {
     pub statue: StatueState,
     /// The combat simulator's working loadout and named presets.
     pub combat: CombatState,
+    /// The All Stats Dashboard's calculation context and its save slice.
+    pub stats_all: StatsAllState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -431,6 +435,7 @@ impl AppState {
             pickle: PickleState::default(),
             statue,
             combat,
+            stats_all: StatsAllState::default(),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -760,6 +765,7 @@ impl AppState {
             0
         };
         self.combat.load(&imported.save, combat_character);
+        self.stats_all.load(&imported.save);
         self.save = Some(imported.save);
         self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
@@ -1184,6 +1190,76 @@ impl AppState {
             seconds.clamp(MIN_TTK, MAX_TTK)
         } else {
             DEFAULT_TTK
+        };
+        cx.notify();
+    }
+
+    /// Pick the stats context's character; the map follows its current map and
+    /// then the map list, exactly like an upstream character switch.
+    pub fn set_stats_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        let Some(snapshot) = self.stats_all.snapshot.clone() else {
+            return;
+        };
+        if character >= snapshot.characters() {
+            return;
+        }
+        self.stats_all
+            .context
+            .select_character(character, &snapshot);
+        self.stats_context_changed(cx);
+    }
+
+    /// Pick the stats context's map, from the current map list.
+    pub fn set_stats_map(&mut self, map: usize, cx: &mut Context<Self>) {
+        if !self
+            .stats_all
+            .options()
+            .iter()
+            .any(|option| option.class.map == map)
+        {
+            return;
+        }
+        self.stats_all.context.map = map;
+        self.stats_context_changed(cx);
+    }
+
+    /// Switch the map list level; the selected map follows it when it can.
+    pub fn set_stats_map_visibility(&mut self, level: MapVisibility, cx: &mut Context<Self>) {
+        self.stats_all.context.map_visibility = level;
+        self.stats_all.clamp(&mut Vec::new());
+        self.stats_context_changed(cx);
+    }
+
+    /// Switch the skill the skill-scoped descriptors read.
+    pub fn set_stats_skill(&mut self, skill: Skill, cx: &mut Context<Self>) {
+        self.stats_all.context.skill = skill;
+        self.stats_context_changed(cx);
+    }
+
+    /// Switch construction mode on or off.
+    pub fn set_stats_construction(&mut self, mode: ConstructionMode, cx: &mut Context<Self>) {
+        self.stats_all.context.construction = mode;
+        self.stats_context_changed(cx);
+    }
+
+    /// A context change refreshes every value the page derives from it.
+    fn stats_context_changed(&mut self, cx: &mut Context<Self>) {
+        let class = idleon_core::stats::classify(self.stats_all.context.map);
+        let character = self
+            .stats_all
+            .snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.name(self.stats_all.context.character))
+            .unwrap_or_default();
+        self.status = if character.is_empty() {
+            "Load a save to resolve the stats context.".into()
+        } else {
+            format!(
+                "Stats context: {character} · {} · {} · Construction {}",
+                class.name,
+                self.stats_all.context.skill.label(),
+                self.stats_all.context.construction.label()
+            )
         };
         cx.notify();
     }

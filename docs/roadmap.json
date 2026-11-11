@@ -644,7 +644,7 @@
       "key": "stats-all",
       "title": "All Stats Dashboard",
       "group": "general",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Port the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.",
       "upstream": [
         "stats-all.html",

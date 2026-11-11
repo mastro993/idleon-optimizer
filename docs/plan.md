@@ -2,7 +2,7 @@
 
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, Clamworks and
 the combat simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument
-Bravery built, 16 sections planned.**
+Bravery and the All Stats context built, 16 sections planned.**
 The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
 [`docs/roadmap.json`](roadmap.json); each section's full specification is under [`docs/sections/`](sections/).
 
@@ -241,6 +241,7 @@ docs/sections/<section>.md          generated full specification per section
 script/roadmap.mjs                  validate, render and sync GitHub milestones/issues
 script/import-upstream-assets.mjs   copy upstream assets from a local checkout
 script/extract-account-data.mjs     extract the account tables the multiplier tree reads
+script/extract-stats-data.mjs       extract the map and class tables the stats context reads
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -315,6 +316,12 @@ uses the fixture in `crates/core/tests/statue-requirements.json`. Details:
 The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
 save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
 Details: [`docs/sections/endgame.md`](sections/endgame.md).
+
+The All Stats Dashboard's calculation context is built (SA-01): the character, map, map-list, skill
+and construction-mode selectors, their save defaults (character one and its current map) and the map
+access walk ported from `js/stats/systems/common/map-access.js`. The breakdowns (SA-02), the formula
+explorer (SA-03) and the input ledger (SA-04) resolve against the same context. Details:
+[`docs/sections/stats-all.md`](sections/stats-all.md).
 
 The Monument section's Bravery tab is built (MN-01): Paying Respect training and sources, saved
 Bravery stats, sword odds for the entered run state, milestones and permanent reward levels. The
