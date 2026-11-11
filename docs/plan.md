@@ -1,9 +1,9 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research partial, shadow-ban and BoneJoePickle done, 27 sections
-planned.** The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
-[`docs/roadmap.json`](roadmap.json); each section's full specification is under
-[`docs/sections/`](sections/).
+Status: **foundation in progress, research partial, shadow-ban, endgame and BoneJoePickle done,
+Monument Bravery built, 27 sections planned.** The live breakdown is
+[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
+each section's full specification is under [`docs/sections/`](sections/).
 
 ## 1. Product goal
 
@@ -252,12 +252,12 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Section status
 
-Research, shadow and endgame are implemented; research is still partial. Done: grid, shapes,
-magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import, projection
-chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the five extra
-tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi
-Station), target-aware simulation, strategy comparison, complete save-derived multipliers, state
-export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
+Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: grid,
+shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements, save import,
+projection chart, keyboard, canvas dragging and the shared searchable EXP formula tree. Missing: the
+five extra tabs (Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead,
+Sushi Station), target-aware simulation, strategy comparison, complete save-derived multipliers,
+state export/import and undo. Details: [`docs/sections/research.md`](sections/research.md).
 
 The Clamworks section implements CW-01: the overview with the pearl-value breakdown, every pearl
 upgrade and the upstream priority ranking, plus save decoding for pearl balance, upgrade levels,
@@ -271,6 +271,16 @@ tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](se
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
+
+The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
+save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
+Details: [`docs/sections/endgame.md`](sections/endgame.md).
+
+The Monument section's Bravery tab is built (MN-01): Paying Respect training and sources, saved
+Bravery stats, sword odds for the entered run state, milestones and permanent reward levels. The
+Justice and Wisdom tabs and the full permanent/charge summaries stay on the roadmap as MN-02 to
+MN-04. Formulas are tested against the committed fixture; `script/extract-monument-data.mjs`
+extracts the tables the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
 
 ## 10. Verification
 

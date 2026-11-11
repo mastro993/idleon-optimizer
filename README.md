@@ -8,9 +8,9 @@ runs them in a local Rust core, so a shape, magnifier and grid-point pass costs 
 afford a real search instead of a heuristic.
 
 The current build opens on the dashboard and implements the research section, the Clamworks overview
-and upgrades, the shadow-ban and endgame checks and the hidden BoneJoePickle calculator. The plan
-covers the full upstream suite: a dashboard that opens every calculator, with one milestone per
-section and one issue per feature
+and upgrades, the shadow-ban and endgame checks, the hidden BoneJoePickle calculator and the Bravery
+tab of the Monument calculator. The plan covers the full upstream suite: a dashboard that opens every
+calculator, with one milestone per section and one issue per feature
 ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
@@ -65,9 +65,14 @@ section and one issue per feature
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
   format, research level, character count and warnings before Apply; the grid levels, shape
   positions, magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid
-  points and the decodable true multipliers are read from it. Fields the app cannot model are
+  points and the decodable true multipliers are read from it. The same decoded save keeps the
+  Monument rows the Bravery tab reads. Fields the app cannot model are
   reported as warnings instead of guessed; a save that cannot be read only replaces the message and
   leaves the run untouched.
+- **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
+  kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
+  milestones with one-character ETAs, and the ten permanent reward levels with their current and
+  next effects. Missing companion or Minehead rows are warned about instead of guessed.
 - **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
   any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
   page shows the save status and the flag it read under the verdict, so it never guesses.
@@ -242,10 +247,11 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid and its optimizers, the Clamworks
-overview and upgrades, save import and the shadow-ban and endgame checks. The roadmap covers all
-remaining upstream sections (combat sim, sailing, cooking, royal guardian, …); their cards open
-planned-section placeholders until those milestones land.
+The current build covers the dashboard, the research grid and its optimizers, the Clamworks overview
+and upgrades, save import, the shadow-ban and endgame checks, the hidden BoneJoePickle calculator and
+the Monument Bravery tab. The roadmap covers all remaining upstream sections (combat sim, sailing,
+cooking, royal guardian, …); their cards open planned-section placeholders until those milestones
+land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
 are ports of `js/stats/systems/w7/clamworks.js`. Save-specific multipliers collapse into

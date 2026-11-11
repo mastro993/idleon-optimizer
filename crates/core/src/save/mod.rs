@@ -73,6 +73,8 @@ pub struct Imported {
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
+    /// The `it.json` wrapper's companion roster, beside the save.
+    pub companion: Option<Value>,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -83,6 +85,11 @@ pub struct Imported {
     pub warnings: Vec<String>,
     /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
     pub shadow: Shadow,
+}
+
+/// A save field that may be a JSON value or a string holding one.
+pub(crate) fn parsed(value: &Value, key: &str) -> Option<Value> {
+    json::parsed_field(value.as_object()?, key)
 }
 
 /// Why an import could not be read.
@@ -216,6 +223,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         tree,
         clamworks,
         save: Value::Object(save.clone()),
+        companion: root.get("companion").cloned(),
         format,
         characters: roster,
         named_characters,
