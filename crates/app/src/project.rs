@@ -25,6 +25,7 @@ use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
+use idleon_core::cog::Goal as CogGoal;
 use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
 use idleon_core::game;
@@ -128,6 +129,14 @@ pub struct LadleConfig {
     split: bool,
 }
 
+/// The cog board section's config: the objective. The board itself comes from
+/// the save, so it is never part of a project document.
+#[derive(Clone, Copy, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct CogConfig {
+    goal: CogGoal,
+}
+
 /// The Jar section's config: its tab.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -229,6 +238,12 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         value(&ClamworksConfig {
             tab: state.clamworks_tab,
             multikill: state.clamworks_multikill,
+        }),
+    );
+    insert(
+        "cog",
+        value(&CogConfig {
+            goal: state.cog.goal,
         }),
     );
     insert("jar", value(&JarConfig { tab: state.jar_tab }));
@@ -336,6 +351,7 @@ pub enum Config {
     Monument(MonumentState),
     Pickle(PickleState),
     Clamworks(ClamworksConfig),
+    Cog(CogConfig),
     Jar(JarConfig),
     Ladle(LadleConfig),
     Coral(coral::Inputs),
@@ -509,6 +525,9 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
                 0.0
             };
         }
+        Config::Cog(config) => {
+            state.cog.goal = config.goal;
+        }
         Config::Jar(config) => {
             state.jar_tab = config.tab;
         }
@@ -592,6 +611,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "monument" => decode!(Monument, MonumentState),
         "pickle" => decode!(Pickle, PickleState),
         "clamworks" => decode!(Clamworks, ClamworksConfig),
+        "cog" => decode!(Cog, CogConfig),
         "jar" => decode!(Jar, JarConfig),
         "ladle" => decode!(Ladle, LadleConfig),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
@@ -843,6 +863,10 @@ mod tests {
         });
         assert_eq!(clamworks.tab, ClamworksTab::Upgrades);
         assert_eq!(clamworks.multikill, 7.0);
+        let cog = round_trip(&CogConfig {
+            goal: CogGoal::Flaggy,
+        });
+        assert_eq!(cog.goal, CogGoal::Flaggy);
         let jar = round_trip(&JarConfig {
             tab: JarTab::Production,
         });
@@ -1133,6 +1157,7 @@ mod tests {
                 "monument",
                 "pickle",
                 "clamworks",
+                "cog",
                 "jar",
                 "ladle",
                 "coral-god-rank",

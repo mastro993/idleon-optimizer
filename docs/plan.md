@@ -1,8 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks
-and the combat simulator's loadout editor partial, shadow-ban, endgame and BoneJoePickle done,
-Monument Bravery and the All Stats context built, 14 sections planned.**
+Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
+the combat simulator's loadout editor and the cog board optimizer partial, shadow-ban, endgame and
+BoneJoePickle done, Monument Bravery and the All Stats context built, 14 sections planned.**
 The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
 [`docs/roadmap.json`](roadmap.json); each section's full specification is under [`docs/sections/`](sections/).
 
@@ -337,6 +337,16 @@ Bravery stats, sword odds for the entered run state, milestones and permanent re
 Justice and Wisdom tabs and the full permanent/charge summaries stay on the roadmap as MN-02 to
 MN-04. Formulas are tested against the committed fixture; `script/extract-monument-data.mjs`
 extracts the tables the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
+
+The Cog Board Optimizer implements CG-01: the saved 12×8 board and shelf decode from `CogO` and
+`CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate) run through
+the shared task runner with progress and cancel, the optimized placement renders cell by cell, and
+Reset restores the save board. The optimizer is the upstream greedy-construction, simulated-
+annealing and greedy-finish port, with a seeded random source; invariant tests prove it never
+returns a board worse than its input and that its swap list rebuilds the result. Weighted
+objectives, the perfect board, insights, the shelf view, roll ranges and the step-by-step swap
+walkthrough stay on the roadmap as CG-02 to CG-04. Details:
+[`docs/sections/cog.md`](sections/cog.md).
 
 ## 10. Verification
 

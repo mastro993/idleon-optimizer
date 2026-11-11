@@ -11,6 +11,7 @@
 //! the harness can still open them by id.
 
 pub mod clamworks;
+pub mod cog;
 pub mod combat_sim;
 pub mod coral_god_rank;
 pub mod endgame;
@@ -279,9 +280,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W3,
         description: "Optimize cog placement for construction bonuses",
         spec: "docs/sections/cog.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: cog::view,
         keys: no_keys,
     },
     Section {

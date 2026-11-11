@@ -159,6 +159,38 @@ const ladleSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying a cog board and shelf, so the optimizer has
+/// a player to surround, one mis-placed surround and a stronger shelf cog to
+/// place. Construction level 42 comes from `Lv0_0[8]`.
+const cogSave = () => {
+  const order = Array(252).fill('Blank');
+  order[14] = 'Player_Ana';
+  order[13] = 'Cog3A00';
+  order[15] = 'CogCry1';
+  order[89] = 'Cog3cr';
+  order[90] = 'Cog3le';
+  order[108] = 'CogCry2';
+  order[109] = 'Cog3ri';
+  const map = {
+    14: { a: 100000, b: 1000, c: 5000 },
+    13: { d: 10, a: 100 },
+    15: { d: 5 },
+    89: { h: 'around', f: 80, d: 30 },
+    90: { h: 'left', f: 20, d: 20 },
+    108: { d: 200 },
+    109: { h: 'right', f: 60, d: 40 },
+  };
+  const level = Array(30).fill(0);
+  level[8] = 42;
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(level),
+    CogO: JSON.stringify(order),
+    CogM: JSON.stringify(map),
+
+  });
+};
+
 /// A small flat `save.json` carrying worship tower levels and a best-wave table,
 /// so the simulator has every type unlocked and a run to play.
 const worshipSave = () => {
@@ -733,6 +765,26 @@ const INTERACTIONS = {
     await waitForNode(lane, 'monument-pane-sources', 'monument: the bonus sources tab opens');
     await lane.call('click_element', { id: 'bravery' });
     await waitForNode(lane, 'monument-pane-bravery', 'monument: the bravery tab reopens');
+  },
+  cog: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'cog: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: cogSave() });
+    await waitForNode(lane, 'import-format', 'cog: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'cog-board', 'cog: the board renders after Apply');
+    await lane.call('click_element', { id: 'cog-optimize' });
+    await waitForNode(lane, 'cog-result', 'cog: optimize produces a result', 60000);
+    const result = labelOf(await lane.tree(), 'cog-result') ?? '';
+    check('cog: the result names its swaps', result.includes('swaps'), result);
+    await lane.call('click_element', { id: 'cog-reset' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cog-result') && has(nodes, 'cog-board'),
+      'cog: reset restores the save board and drops the result',
+    );
   },
   'worship-td': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

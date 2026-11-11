@@ -2,6 +2,7 @@
 
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
@@ -26,6 +27,9 @@ use crate::ui::import::{self, Import, Pending};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::cog::{
+    CogResult, Goal as CogGoal, OptimizeOptions, optimize as optimize_cog_board,
+};
 use idleon_core::farming::Farm;
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
@@ -163,6 +167,8 @@ pub struct AppState {
     pub monument_save: Option<monument::Save>,
     /// The Clamworks state the last imported save carried.
     pub clamworks: Clamworks,
+    /// The cog board section: the decoded save and the board on screen.
+    pub cog: CogState,
     /// The Clamworks tab the section was left on.
     pub clamworks_tab: ClamworksTab,
     /// The multikill total Multi-Scalping reads, until the combat sim lands.
@@ -210,6 +216,8 @@ pub struct AppState {
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
+    /// The shared runner for the cog board optimizer.
+    pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
@@ -234,6 +242,7 @@ pub struct AppState {
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
     _killroy_run_subscription: Subscription,
+    _cog_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
     _session_subscription: Option<Subscription>,
@@ -344,6 +353,36 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The cog board optimizer reports through the same runner; the section
+        // reads its stored board as the placement on screen.
+        let cog_run = cx.new(|_| TaskRunner::<CogResult, CogRunInputs>::new());
+        let cog_subscription = cx.subscribe(&cog_run, |state, runner, event: &TaskEvent, cx| {
+            match event {
+                TaskEvent::Progress(progress) => {
+                    state.status = format!(
+                        "Optimizing the cog board… {:.0}%",
+                        progress.fraction * 100.0
+                    );
+                }
+                TaskEvent::Finished { cancelled: true } => {
+                    state.status = if runner.read(cx).result().is_some() {
+                        "Cog run cancelled; the previous result is unchanged.".into()
+                    } else {
+                        "Cog run cancelled; the board is unchanged.".into()
+                    };
+                }
+                TaskEvent::Finished { cancelled: false } => {
+                    if let Some(result) = runner.read(cx).result() {
+                        state.status = format!(
+                            "Cog board optimized: {:+.2}% with {} swaps.",
+                            result.improvement_pct,
+                            result.swaps.len()
+                        );
+                    }
+                }
+            }
+            cx.notify();
+        });
         // A plan run is a whole game run off the UI thread: the status line
         // carries its progress and its result stays in the runner for the pane.
         let worship_plan = cx.new(|_| TaskRunner::<WorshipRunResult, PlanRunInputs>::new());
@@ -464,6 +503,7 @@ impl AppState {
             fishing: FishingState::default(),
             monument: MonumentState::default(),
             monument_save: None,
+            cog: CogState::default(),
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
@@ -489,6 +529,7 @@ impl AppState {
             save_loaded: false,
             optimizer,
             killroy_run,
+            cog_run,
             worship_plan,
             worship_optimize,
             breakdown,
@@ -505,6 +546,7 @@ impl AppState {
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
             _killroy_run_subscription: killroy_run_subscription,
+            _cog_subscription: cog_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
             _session_subscription: None,
@@ -737,6 +779,7 @@ impl AppState {
         let mut warnings = document.warnings().to_vec();
         let mut message = import::applied(&document);
         let before_configs = crate::project::configs(self);
+        let before_cog = self.cog.save.clone();
         let mut changes = Vec::new();
         match document {
             pipeline::Document::Save(imported) => {
@@ -764,6 +807,12 @@ impl AppState {
                     crate::project::assign(self, config, &mut warnings);
                 }
             }
+        }
+        if self.cog.save != before_cog {
+            self.cog_run.update(cx, |runner, _| {
+                runner.cancel();
+                runner.clear();
+            });
         }
         changes.extend(crate::project::config_changes(
             &before_configs,
@@ -815,6 +864,7 @@ impl AppState {
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
         self.farm = imported.farming;
+        self.cog.load(imported.cog);
         self.clamworks = imported.clamworks;
         self.jar = imported.jar;
         self.ladle_state
@@ -1213,6 +1263,64 @@ impl AppState {
 
     pub fn set_clamworks_multikill(&mut self, multikill: f64, cx: &mut Context<Self>) {
         self.clamworks_multikill = multikill.max(0.0);
+        cx.notify();
+    }
+
+    /// The cog optimizer's run: running, progress, result and staleness.
+    pub fn cog_task(&self, cx: &App) -> TaskState<CogResult> {
+        self.cog_run.read(cx).state(&self.cog.inputs())
+    }
+
+    /// Change the objective; a stored result becomes stale until it reruns.
+    pub fn set_cog_goal(&mut self, goal: CogGoal, cx: &mut Context<Self>) {
+        if self.cog.goal != goal {
+            self.cog.goal = goal;
+            self.status = format!("Cog objective: {}.", goal.label());
+            cx.notify();
+        }
+    }
+
+    /// Optimize the board off the UI thread through the shared task runner.
+    pub fn optimize_cog(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.cog.inputs();
+        if inputs.board.iter().all(Option::is_none) {
+            self.status = "Cog board: no cogs to place.".into();
+            cx.notify();
+            return;
+        }
+        let started = self.cog_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                optimize_cog_board(
+                    &inputs.board,
+                    &inputs.shelf,
+                    inputs.goal,
+                    &OptimizeOptions::default(),
+                    report,
+                )
+            })
+        });
+        if started {
+            self.status = "Optimizing the cog board…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running cog optimization to stop at its next report.
+    pub fn cancel_cog(&mut self, cx: &mut Context<Self>) {
+        if self.cog_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the cog optimization…".into();
+            cx.notify();
+        }
+    }
+
+    /// Restore the save board and drop the stored result.
+    pub fn reset_cog(&mut self, cx: &mut Context<Self>) {
+        self.cog.reset();
+        self.cog_run.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
+        self.status = "Cog board reset to the save state.".into();
         cx.notify();
     }
 
