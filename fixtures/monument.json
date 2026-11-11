@@ -1,0 +1,452 @@
+{
+  "source": "fixtures/data.json",
+  "calculator": "js/stats/systems/w5/monument.js",
+  "character": 0,
+  "snapshot": {
+    "available": true,
+    "notes": [
+      "Companion ownership is missing; reward levels and companion-dependent sources are partial."
+    ],
+    "training": {
+      "sources": [
+        {
+          "name": "Bravery: All Monument AFK Gain",
+          "value": 105.9
+        },
+        {
+          "name": "Justice: All Monument AFK Gain",
+          "value": 98.10000000000001
+        },
+        {
+          "name": "Wisdom: All Monument AFK Gain",
+          "value": 98
+        },
+        {
+          "name": "Summoning victories",
+          "value": 438.633
+        },
+        {
+          "name": "Jar collectible: Monument AFK gain",
+          "value": 360
+        },
+        {
+          "name": "Rock Smart",
+          "value": 20
+        },
+        {
+          "name": "Monument AFK measurement",
+          "value": 167.2147111111111
+        },
+        {
+          "name": "Arcade: Monument AFK gain",
+          "value": 50
+        },
+        {
+          "name": "Hug from Timmy",
+          "value": 10
+        },
+        {
+          "name": "Compass: Monument AFK gain",
+          "value": 200
+        }
+      ],
+      "pct": 1547.847711111111,
+      "multi": 1.25,
+      "rate": 20.59809638888889,
+      "perDay": 494
+    },
+    "stats": {
+      "hours": 121945,
+      "milestones": 8,
+      "opalChance": 0.018089404296875,
+      "minDmg": 73598959.22863999,
+      "maxDmg": 229933225.71449995,
+      "rerolls": 15,
+      "maxRerolls": 15,
+      "boosts": 0,
+      "swords": 8,
+      "retellings": 1,
+      "rightmost": true,
+      "autoKill": true
+    },
+    "milestones": [
+      {
+        "hours": 1,
+        "text": "Swords_deal_{~}_damage",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 80,
+        "text": "+2_additional_Sword",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 300,
+        "text": "You_can_Re-Throw_5_swords_per_story",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 750,
+        "text": "+1_additional_Sword",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 2000,
+        "text": "You_get_1_Retelling_per_story",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 5000,
+        "text": "+1_additional_Sword",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 10000,
+        "text": "+10_Re-Throws_per_story",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 24000,
+        "text": "+1_additional_Sword",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      }
+    ],
+    "bonuses": [
+      {
+        "level": 14686,
+        "text": "+{%|Mining|Efficiency",
+        "value": 63443.520000000004,
+        "next": 63447.840000000004
+      },
+      {
+        "level": 12594,
+        "text": "}x_Bucket|Fill_Rate",
+        "value": 108812.16,
+        "next": 108820.8
+      },
+      {
+        "level": 13284,
+        "text": "}x|Cooking_Speed",
+        "value": 286934.4,
+        "next": 286956
+      },
+      {
+        "level": 15428,
+        "text": "+{%_EXP|Gain_for|Villagers",
+        "value": 33324.48,
+        "next": 33326.64
+      },
+      {
+        "level": 14059,
+        "text": "}x|Gaming_Bits|Gain",
+        "value": 242939.52000000002,
+        "next": 242956.80000000002
+      },
+      {
+        "level": 13698,
+        "text": "+{%_Chance|for_Bravery|Opals",
+        "value": 59175.36,
+        "next": 59179.68
+      },
+      {
+        "level": 16084,
+        "text": "+{%_DMG|for_all|Characters",
+        "value": 34741.44,
+        "next": 34743.600000000006
+      },
+      {
+        "level": 12026,
+        "text": "}x_Bell_Ring|&_Ping_Rate",
+        "value": 25976.160000000003,
+        "next": 25978.320000000003
+      },
+      {
+        "level": 12122,
+        "text": "+{%|All_Monument|AFK_Gain",
+        "value": 105.9,
+        "next": 105.9
+      },
+      {
+        "level": 0,
+        "text": "}x_Bravery|Bonuses_Multi",
+        "value": 0,
+        "next": 1.1
+      }
+    ]
+  },
+  "odds": [
+    {
+      "label": "fresh story",
+      "wave": 0,
+      "runtime": {},
+      "remainingHp": null,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 73598959.22863999,
+          "maxDmg": 229933225.71449995,
+          "rerolls": 15,
+          "maxRerolls": 15,
+          "boosts": 0,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 0,
+        "hp": 10,
+        "automatic": true,
+        "kill": 1,
+        "boostChance": 1,
+        "lastSwordChance": null,
+        "nextDamageFactor": 1.1
+      }
+    },
+    {
+      "label": "boosted stacks",
+      "wave": 100,
+      "runtime": {
+        "boosts": 10
+      },
+      "remainingHp": null,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 147177591.45727998,
+          "maxDmg": 459866451.4289999,
+          "rerolls": 15,
+          "maxRerolls": 15,
+          "boosts": 10,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 100,
+        "hp": 374379601755863.1,
+        "automatic": false,
+        "kill": 0,
+        "boostChance": 0,
+        "lastSwordChance": null,
+        "nextDamageFactor": 1.05
+      }
+    },
+    {
+      "label": "no rethrows left",
+      "wave": 1000,
+      "runtime": {
+        "rerolls": 0
+      },
+      "remainingHp": null,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 29451779.891455993,
+          "maxDmg": 91973290.28579998,
+          "rerolls": 0,
+          "maxRerolls": 15,
+          "boosts": 0,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 1000,
+        "hp": 1.317446533493369e+118,
+        "automatic": false,
+        "kill": 0,
+        "boostChance": 0,
+        "lastSwordChance": null,
+        "nextDamageFactor": 1.1
+      }
+    },
+    {
+      "label": "boosted mid story",
+      "wave": 7,
+      "runtime": {
+        "boosts": 4,
+        "rerolls": 0
+      },
+      "remainingHp": null,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 41224361.048038386,
+          "maxDmg": 128762606.40011996,
+          "rerolls": 0,
+          "maxRerolls": 15,
+          "boosts": 4,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 7,
+        "hp": 721.6079455000003,
+        "automatic": true,
+        "kill": 1,
+        "boostChance": 1,
+        "lastSwordChance": null,
+        "nextDamageFactor": 1.0714285714285714
+      }
+    },
+    {
+      "label": "late wave, many boosts",
+      "wave": 999,
+      "runtime": {
+        "boosts": 200,
+        "rerolls": 5
+      },
+      "remainingHp": null,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 927111093.0808638,
+          "maxDmg": 2897158644.0026994,
+          "rerolls": 5,
+          "maxRerolls": 15,
+          "boosts": 200,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 999,
+        "hp": 1.012407665132633e+118,
+        "automatic": false,
+        "kill": 0,
+        "boostChance": 0,
+        "lastSwordChance": null,
+        "nextDamageFactor": 1.0047619047619047
+      }
+    },
+    {
+      "label": "last-sword HP entered",
+      "wave": 52,
+      "runtime": {},
+      "remainingHp": 150000000,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 73598959.22863999,
+          "maxDmg": 229933225.71449995,
+          "rerolls": 15,
+          "maxRerolls": 15,
+          "boosts": 0,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 52,
+        "hp": 664785305.5994337,
+        "automatic": false,
+        "kill": 0.9999999226850222,
+        "boostChance": 0.00014565665380301065,
+        "lastSwordChance": 0.5112968993379945,
+        "nextDamageFactor": 1.1
+      }
+    },
+    {
+      "label": "boosted with last-sword HP",
+      "wave": 50,
+      "runtime": {
+        "boosts": 3
+      },
+      "remainingHp": 100000,
+      "result": {
+        "stats": {
+          "hours": 121945,
+          "milestones": 8,
+          "opalChance": 0.018089404296875,
+          "minDmg": 95672548.89723198,
+          "maxDmg": 298913193.42884994,
+          "rerolls": 15,
+          "maxRerolls": 15,
+          "boosts": 3,
+          "swords": 8,
+          "retellings": 1,
+          "rightmost": true,
+          "autoKill": true
+        },
+        "wave": 50,
+        "hp": 378426209.46413726,
+        "automatic": false,
+        "kill": 1,
+        "boostChance": 0,
+        "lastSwordChance": 1,
+        "nextDamageFactor": 1.0769230769230769
+      }
+    }
+  ],
+  "errors": [
+    {
+      "label": "too many enemies",
+      "wave": 1001,
+      "runtime": {},
+      "remainingHp": null,
+      "message": "Enemies defeated must be at most 1000."
+    },
+    {
+      "label": "rethrows over the maximum",
+      "wave": 0,
+      "runtime": {
+        "rerolls": 16
+      },
+      "remainingHp": null,
+      "message": "Remaining rethrows exceed the saved maximum."
+    },
+    {
+      "label": "too many rethrows and no HP",
+      "wave": 0,
+      "runtime": {
+        "rerolls": 16
+      },
+      "remainingHp": 0,
+      "message": "Remaining rethrows exceed the saved maximum."
+    },
+    {
+      "label": "non-positive HP",
+      "wave": 0,
+      "runtime": {},
+      "remainingHp": 0,
+      "message": "Remaining HP must be greater than zero."
+    }
+  ]
+}

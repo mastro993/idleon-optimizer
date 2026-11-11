@@ -123,6 +123,23 @@ const jarSave = () => {
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
 
+/// A small flat save carrying the three Monument rows Bravery reads: 600 saved
+/// training hours and two unlocked milestones, so the run-state odds have a
+/// damage range for a boost stack to move.
+const monumentSave = () => {
+  const zeros = (length) => Array(length).fill(0);
+  const holes = Array.from({ length: 33 }, () => []);
+  holes[7] = zeros(4);
+  holes[11] = zeros(70);
+  holes[13] = zeros(100);
+  holes[14] = [600, 2];
+  holes[15] = zeros(30);
+  holes[22] = zeros(20);
+  holes[24] = zeros(40);
+  holes[26] = zeros(30);
+  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+};
+
 /// A small flat `save.json` with three characters, one of them away from Cooking,
 /// a Prayer 2 charge and a Post Office 19c roll, so the ladle rates have inputs.
 const ladleSave = () => {
@@ -867,6 +884,26 @@ const INTERACTIONS = {
     await waitForNode(lane, 'monument-pane-sources', 'monument: the bonus sources tab opens');
     await lane.call('click_element', { id: 'bravery' });
     await waitForNode(lane, 'monument-pane-bravery', 'monument: the bravery tab reopens');
+    // A save with the Monument rows fills the Bravery cards and the odds.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'monument: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: monumentSave() });
+    await waitForNode(lane, 'import-format', 'monument: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'monument-controls', 'monument: the run state opens after Apply');
+    const damage = labelOf(await lane.tree(), 'monument-odds-damage') ?? '';
+    if (!damage.includes('3.0 - 25.0')) {
+      throw new Error(`monument: the roll damage reads ${damage}`);
+    }
+    // A damage boost multiplies the roll, so the odds card follows the stepper.
+    await lane.call('click_element', { id: 'monument-boosts-up' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'monument-odds-damage') ?? '').includes('3.0 - 27.5'),
+      'monument: a boost stack updates the odds',
+    );
   },
   cog: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

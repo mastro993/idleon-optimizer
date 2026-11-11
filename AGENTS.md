@@ -6,7 +6,9 @@ Game formulas, save decoding and optimizer behaviour are ported from the upstrea
 [`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer) JS. When
 changing maths or save handling, read the upstream implementation first (clone it and point
 `script/extract-research-data.mjs` or `script/extract-monument-data.mjs` at the checkout); do not
-infer rules from the test fixture.
+infer rules from the test fixture. Where a section has an oracle script (`script/killroy-oracle.mjs`,
+`script/monument-oracle.mjs`, `script/sailing-oracle.mjs`, …), regenerate its fixture from the same
+checkout so the port is compared against the upstream calculator's own output.
 
 ## Test data
 

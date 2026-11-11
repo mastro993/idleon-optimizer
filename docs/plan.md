@@ -353,8 +353,11 @@ Details: [`docs/sections/prisma.md`](sections/prisma.md).
 The Monument section's Bravery tab is built (MN-01): Paying Respect training and sources, saved
 Bravery stats, sword odds for the entered run state, milestones and permanent reward levels. The
 Justice and Wisdom tabs and the full permanent/charge summaries stay on the roadmap as MN-02 to
-MN-04. Formulas are tested against the committed fixture; `script/extract-monument-data.mjs`
-extracts the tables the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
+MN-04. `fixtures/monument.json` is the upstream calculator's own output for the committed save,
+including seven run states (boost stacks, spent rethrows, an entered last-sword HP) and the
+rejected inputs, so `crates/core/tests/monument.rs` compares the port field for field; regenerate
+it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs` extracts the tables
+the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
 
 The Cog Board Optimizer implements CG-01: the saved 12×8 board and shelf decode from `CogO` and
 `CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate) run through

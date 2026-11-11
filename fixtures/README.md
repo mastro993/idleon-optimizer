@@ -23,3 +23,10 @@ instead of editing this one; regenerating it means updating the fixture test on 
 `serverVars.KillroySwap = 7`. Regenerate it with `node script/killroy-oracle.mjs <upstream-repo> 2`
 after changing the wrap or the horizon; `crates/core/tests/killroy.rs` compares the port field for
 field. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+
+`monument.json` is the upstream Monument Bravery calculator's own output for `data.json`: the
+saved snapshot (training sources, stats, milestones and permanent reward rows), seven run states
+covering boost stacks, spent rethrows and an entered last-sword HP, and the inputs it rejects with
+their messages. Regenerate it with `node script/monument-oracle.mjs <upstream-repo>`;
+`crates/core/tests/monument.rs` compares the port field for field. Treat it as frozen for the same
+reason: it is the oracle's output, not this app's.
