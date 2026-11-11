@@ -17,6 +17,7 @@ pub mod data;
 pub mod endgame;
 pub mod farming;
 pub mod formula;
+pub mod import;
 pub mod jar;
 pub mod killroy;
 pub mod model;

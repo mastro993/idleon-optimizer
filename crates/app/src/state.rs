@@ -21,6 +21,7 @@ use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_core::farming::Farm;
+use idleon_core::import as pipeline;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
@@ -28,7 +29,7 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
-use idleon_core::{Clamworks, Jar, game, monument, optimize, project, save, shape, sim};
+use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -431,7 +432,8 @@ impl AppState {
     }
 
     /// Parse `text` into a pending import and describe it. Nothing is applied
-    /// here: a failed parse only replaces the message and the preview.
+    /// here: the core pipeline decodes everything the document needs, so a
+    /// failure only replaces the message and Apply cannot fail halfway.
     pub fn check_import(&mut self, text: &str, source: &str, cx: &mut Context<Self>) {
         self.import.source = source.to_string();
         if text.trim().is_empty() {
@@ -441,41 +443,33 @@ impl AppState {
                 "Paste a decoded save, a project file, an ROv2 state string, or drop one.".into();
             return cx.notify();
         }
-        // A project, a section config or an upstream state string is a document of
-        // its own; anything else goes through the raw save importer, which also
-        // reads a top-level research state.
-        match project::read(text) {
-            Ok(project::Document::Project(mut document)) => {
-                let mut ids: Vec<&str> = document.sections.keys().map(String::as_str).collect();
-                if let Some(id) = document.section.as_deref()
-                    && !ids.contains(&id)
-                {
-                    ids.push(id);
-                }
+        match pipeline::read(text) {
+            Ok(mut document) => {
+                let ids: Vec<String> = match &document {
+                    pipeline::Document::Project(project) => project
+                        .document
+                        .sections
+                        .keys()
+                        .chain(project.document.section.iter())
+                        .cloned()
+                        .collect(),
+                    pipeline::Document::Section(section) => vec![section.section.clone()],
+                    pipeline::Document::Save(_) => Vec::new(),
+                };
                 for id in ids {
-                    warn_unknown_sections(&mut document.warnings, Some(id));
+                    warn_unknown_sections(document.warnings_mut(), Some(&id));
                 }
-                let pending = Pending::Project(document);
-                self.import.message = import::summary(&pending);
-                self.import.pending = Some(pending);
-                self.import.ok = true;
-            }
-            Ok(project::Document::Section(mut section)) => {
-                warn_unknown_sections(&mut section.warnings, Some(&section.section));
-                let pending = Pending::Section(section);
-                self.import.message = import::summary(&pending);
-                self.import.pending = Some(pending);
-                self.import.ok = true;
-            }
-            Err(error) if error.is_not_document() => match save::import(text) {
-                Ok(imported) => {
-                    let pending = Pending::Save(Box::new(imported));
-                    self.import.message = import::summary(&pending);
-                    self.import.pending = Some(pending);
-                    self.import.ok = true;
+                // Decode every section config now: a document that cannot be
+                // applied whole never becomes pending.
+                match crate::project::prepare(&mut document) {
+                    Ok(configs) => {
+                        self.import.message = import::summary(&document);
+                        self.import.pending = Some(Pending { document, configs });
+                        self.import.ok = true;
+                    }
+                    Err(error) => self.fail_import(source, &error, cx),
                 }
-                Err(error) => self.fail_import(source, &error.to_string(), cx),
-            },
+            }
             Err(error) => self.fail_import(source, &error.to_string(), cx),
         }
         cx.notify();
@@ -491,39 +485,56 @@ impl AppState {
     }
 
     /// Apply the previewed document; a dialog with nothing pending changes
-    /// nothing.
+    /// nothing. Everything was decoded while previewing, so this only assigns:
+    /// a document either applies whole or never becomes pending. Every change
+    /// is logged.
     pub fn apply_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(pending) = self.import.pending.take() else {
+        let Some(Pending { document, configs }) = self.import.pending.take() else {
             return;
         };
-        let mut message = import::applied(&pending);
-        match pending {
-            Pending::Save(imported) => {
+        let mut warnings = document.warnings().to_vec();
+        let mut message = import::applied(&document);
+        let before_configs = crate::project::configs(self);
+        let mut changes = Vec::new();
+        match document {
+            pipeline::Document::Save(imported) => {
+                changes.push(format!(
+                    "save: {} · {} character(s)",
+                    imported.format.label(),
+                    imported.characters
+                ));
+                changes.extend(crate::project::research_changes(
+                    &self.simulation,
+                    &imported.simulation,
+                ));
+                changes.extend(crate::project::supplement_changes(
+                    &self.context,
+                    &imported.context,
+                ));
                 self.load_imported(*imported);
-                self.import.ok = true;
             }
-            Pending::Project(document) => {
-                let mut warnings = document.warnings.clone();
-                crate::project::apply(self, *document, &mut warnings);
+            pipeline::Document::Project(project) => {
+                crate::project::apply(self, *project, configs, &mut warnings, &mut changes);
                 self.save_partial |= !warnings.is_empty();
-                message = format!("{message} {}", warnings_line(&warnings));
             }
-            Pending::Section(section) => {
-                let mut warnings = section.warnings.clone();
-                if !crate::project::apply_section(
-                    self,
-                    &section.section,
-                    &section.config,
-                    &mut warnings,
-                ) {
-                    warnings.push(format!(
-                        "{} is not a section this build declares",
-                        section.section
-                    ));
+            pipeline::Document::Section(_) => {
+                for config in configs {
+                    crate::project::assign(self, config, &mut warnings);
                 }
-                message = format!("{message} {}", warnings_line(&warnings));
             }
         }
+        changes.extend(crate::project::config_changes(
+            &before_configs,
+            &crate::project::configs(self),
+        ));
+        if !changes.is_empty() {
+            message = format!("{message} {}", crate::project::change_line(&changes));
+        }
+        if !warnings.is_empty() {
+            message = format!("{message} {}", warnings_line(&warnings));
+        }
+        self.import.ok = true;
+        self.import.changes = changes;
         self.import.message = message.clone();
         self.status = message;
         self.close_import(window, cx);

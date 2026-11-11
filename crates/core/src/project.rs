@@ -32,10 +32,12 @@
 //!   "config": { "weeks": 12 } }
 //! ```
 //!
-//! `read` never guesses: a version it does not know is an error, a format it
-//! does not recognize is [`Error::NotADocument`] so the caller can try the raw
-//! save importer, and fields this build does not model are named in a warning
-//! instead of failing the document.
+//! `read` never guesses: a version it does not know is an error naming the
+//! version and the one this build reads, a `format` marker it does not know is
+//! an error naming the marker and the ones it reads, and text with no marker at
+//! all is [`Error::NotADocument`] so [`crate::import`] can try the raw save
+//! importer. Fields this build does not model are named in a warning instead of
+//! failing the document.
 
 use crate::data::game;
 use crate::model::{MagKind, SimContext, Simulation};
@@ -116,20 +118,14 @@ pub enum Error {
     NotADocument,
     /// A document with a format marker this build does not know.
     Format(String),
+    /// A state string whose payload names a format this build does not know.
+    StateFormat(String),
     /// A version this build cannot migrate.
     Version(String),
     /// A document whose top level is not the object it must be.
     Shape(String),
     /// A section config with no section id to apply it to.
     Section(String),
-}
-
-impl Error {
-    /// Whether the text is simply not one of this module's documents, so the
-    /// caller should try the raw save importer instead.
-    pub fn is_not_document(&self) -> bool {
-        matches!(self, Error::NotADocument)
-    }
 }
 
 impl std::fmt::Display for Error {
@@ -142,7 +138,14 @@ impl std::fmt::Display for Error {
                 formatter,
                 "neither a project file, a section config nor an ROv2 state string"
             ),
-            Error::Format(detail) => write!(formatter, "unknown document format: {detail}"),
+            Error::Format(found) => write!(
+                formatter,
+                "unknown format \"{found}\"; this build reads \"{FORMAT}\", \"{SECTION_FORMAT}\" or a decoded save"
+            ),
+            Error::StateFormat(found) => write!(
+                formatter,
+                "the state string's format is \"{found}\"; expected \"{UPSTREAM_FORMAT}\""
+            ),
             Error::Version(detail) => write!(formatter, "unsupported version: {detail}"),
             Error::Shape(detail) => write!(formatter, "not a document object: {detail}"),
             Error::Section(detail) => write!(formatter, "no section to apply: {detail}"),
@@ -168,9 +171,12 @@ pub fn read(text: &str) -> Result<Document, Error> {
     let Some(object) = parsed.as_object() else {
         return Err(Error::NotADocument);
     };
-    match object.get("format").and_then(Value::as_str) {
-        Some(FORMAT) => project(object),
-        Some(SECTION_FORMAT) => section(object),
+    match object.get("format") {
+        Some(Value::String(format)) if format == FORMAT => project(object),
+        Some(Value::String(format)) if format == SECTION_FORMAT => section(object),
+        // A marker this build does not know is a wrong format, not a save: say
+        // which marker it found instead of falling through to `no save fields`.
+        Some(Value::String(format)) => Err(Error::Format(format.clone())),
         _ => Err(Error::NotADocument),
     }
 }
@@ -436,7 +442,7 @@ fn upstream_state(payload: &str) -> Result<Project, Error> {
         .ok_or_else(|| Error::Shape("the state string is not an object".into()))?;
     let format = object.get("_format").and_then(Value::as_str);
     if format != Some(UPSTREAM_FORMAT) {
-        return Err(Error::Format(format.unwrap_or("none").to_string()));
+        return Err(Error::StateFormat(format.unwrap_or("none").to_string()));
     }
     let version = object
         .get("_version")
@@ -686,16 +692,22 @@ mod tests {
 
     #[test]
     fn text_that_is_not_a_document_falls_through_to_the_save_importer() {
-        assert!(
-            read("{\"Research\":\"[]\"}")
-                .expect_err("a save is not a document")
-                .is_not_document()
-        );
-        assert!(
-            read("not json")
-                .expect_err("garbage is not a document")
-                .is_not_document()
-        );
+        assert!(matches!(
+            read("{\"Research\":\"[]\"}"),
+            Err(Error::NotADocument)
+        ));
+        assert!(matches!(read("not json"), Err(Error::NotADocument)));
+    }
+
+    #[test]
+    fn a_format_marker_this_build_does_not_know_names_the_marker() {
+        let error = read(r#"{ "format": "some-other-tool", "version": 1 }"#)
+            .expect_err("an unknown marker is not a save");
+        assert!(matches!(error, Error::Format(_)), "{error:?}");
+        let message = error.to_string();
+        assert!(message.contains("some-other-tool"), "{message}");
+        assert!(message.contains(FORMAT), "{message}");
+        assert!(message.contains(SECTION_FORMAT), "{message}");
     }
 
     #[test]
@@ -800,7 +812,7 @@ mod tests {
         let wrong_version = encode(json!({ "_format": "research-optimizer-state", "_version": 7 }));
         assert!(matches!(read(&wrong_version), Err(Error::Version(_))));
         let wrong_format = encode(json!({ "_format": "something-else", "_version": 2 }));
-        assert!(matches!(read(&wrong_format), Err(Error::Format(_))));
+        assert!(matches!(read(&wrong_format), Err(Error::StateFormat(_))));
         assert!(matches!(read("ROv2:not-base64!"), Err(Error::Base64(_))));
     }
 
