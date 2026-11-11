@@ -375,6 +375,45 @@ const INTERACTIONS = {
         labelOf(nodes, 'worship-wave') === 'Wave 0' && !has(nodes, 'worship-tower-3-561'),
       'worship-td: restart clears the run and the towers',
     );
+    // No towers on the restarted run, so the base totem falls and the replay
+    // it recorded loads by itself.
+    await lane.call('click_element', { id: 'worship-speed-300' });
+    await lane.call('click_element', { id: 'worship-play' });
+    await waitForNode(
+      lane,
+      'worship-replay',
+      'worship-td: the replay loads when the run ends',
+      30000,
+    );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'worship-map') ?? '').includes('replay'),
+      'worship-td: the map switches to the replay',
+    );
+    await lane.call('focus_element', { id: 'thumb-0' });
+    await lane.call('keyboard', { keystroke: 'home' });
+    await waitFor(
+      lane,
+      (nodes) => /Replay frame 0 of \d+/.test(labelOf(nodes, 'worship-replay') ?? ''),
+      'worship-td: the scrubber seeks the start of the timeline',
+    );
+    await lane.call('focus_element', { id: 'thumb-0' });
+    await lane.call('keyboard', { keystroke: 'end' });
+    await waitFor(
+      lane,
+      (nodes) => /Replay frame (\d+) of \1 at/.test(labelOf(nodes, 'worship-replay') ?? ''),
+      'worship-td: the scrubber reaches the last frame',
+    );
+    await lane.call('click_element', { id: 'worship-replay-speed-100' });
+    await lane.call('click_element', { id: 'worship-replay-play' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const match = /Replay frame (\d+) of/.exec(labelOf(nodes, 'worship-replay') ?? '');
+        return match !== null && Number(match[1]) > 0;
+      },
+      'worship-td: replay playback advances after play',
+    );
     await lane.call('click_element', { id: 'worship-plan-tab' });
     await waitForNode(lane, 'worship-plan-body', 'worship-td: the plan pane opens');
     await lane.call('click_element', { id: 'worship-plan-simulate' });
@@ -383,6 +422,7 @@ const INTERACTIONS = {
     await waitForNode(lane, 'worship-assumptions', 'worship-td: the model assumptions list');
     await lane.call('click_element', { id: 'worship-simulator-tab' });
     await waitForNode(lane, 'worship-map', 'worship-td: the simulator tab returns');
+
   },
   clamworks: async (lane) => {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });

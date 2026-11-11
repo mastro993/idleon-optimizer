@@ -10,10 +10,11 @@
 //! Two upstream runtime choices are explicit assumptions here, as they are
 //! there: wizards scan on 100 ms ticks with a 300 ms popup after each cooldown,
 //! and a pulse volley rolls one critical for all of its hits. Build plans,
-//! phases and their staged layouts live in [`plan`]; the strategy optimizer is
-//! a later feature issue.
+//! phases and their staged layouts live in [`plan`]; a run's recorded timeline
+//! lives in [`replay`]. The strategy optimizer is a later feature issue.
 
 mod plan;
+mod replay;
 mod sim;
 
 pub use plan::{
@@ -21,9 +22,10 @@ pub use plan::{
     PlanStage, PlanTower, RootPolicy, SkipPolicy, guide_preset, guide_presets_for_trial,
     heuristic_plan, plan_issues, plan_stages, tower_upgrade_access,
 };
+pub use replay::{Replay, ReplayConfig, ReplayFrame};
 pub use sim::{
-    EffectKind, EndReason, Inputs, MobView, PhaseLog, Placed, PlanFailure, Run, RunError,
-    RunResult, RunView, TowerView,
+    CloudView, EffectKind, EndReason, Inputs, KrakenView, MobView, PhaseLog, Placed, PlanFailure,
+    Run, RunError, RunResult, RunView, TowerView,
 };
 
 /// The modelling choices and neutral inputs the simulator and plans make.

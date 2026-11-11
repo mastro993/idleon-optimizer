@@ -1,10 +1,12 @@
-//! Worship Tower Defense: the live simulator, its plan and the model notes.
+//! Worship Tower Defense: the live simulator, its replay, plan and model panes.
 //!
 //! The simulator core is `idleon_core::worship`; this module owns the live run,
 //! the tick pump, the map and the Plan and Model panes. Tower placement is
 //! direct: pick a type from the palette, then a highlighted platform slot.
 //! Clicking a standing tower selects it for a one-level upgrade or a 60% refund
-//! sale. The Plan pane runs a build plan through the same simulator engine.
+//! sale. A finished run loads its replay: the map shows recorded frames and the
+//! sidebar scrubs, plays and changes their speed. The Plan pane runs a build
+//! plan through the same simulator engine.
 
 mod map;
 mod model;
@@ -17,7 +19,7 @@ use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::data_display::Tone;
-use ely_gpui_component::forms::{Choice, Select};
+use ely_gpui_component::forms::{Choice, Select, Slider};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
@@ -70,6 +72,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     state.worship_ensure();
     state.worship_ensure_plan();
     state.worship_pump(cx);
+    state.worship_replay_pump(cx);
     let muted = cx.theme().colors.fg_muted;
     let tab = state.worship.tab;
     div()
@@ -192,6 +195,131 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             }
         });
 
+    let replaying = state.worship.replaying();
+    let done = state.worship.run.as_ref().is_some_and(|run| run.done());
+    let has_replay = state.worship.replay.is_some();
+    let mut run_controls = div()
+        .id("worship-run-controls")
+        .flex()
+        .items_center()
+        .flex_wrap()
+        .gap_1();
+    if replaying {
+        let live = entity.clone();
+        let restart = entity.clone();
+        run_controls = run_controls
+            .child(Badge::new("Replay").tone(Tone::Info))
+            .child(
+                Button::new("worship-live-view", "Live view")
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        live.update(cx, |state, cx| state.worship_replay_close(cx));
+                    }),
+            )
+            .child(
+                Button::new("worship-restart", "Restart")
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        restart.update(cx, |state, cx| state.worship_restart(cx));
+                    }),
+            );
+    } else {
+        let playing = state.worship.playing;
+        let play = entity.clone();
+        let step = entity.clone();
+        let skip = entity.clone();
+        let restart = entity.clone();
+        let speed = state.worship.speed;
+        let speeds: Vec<AnyElement> = [0.5, 1.0, 2.0, 5.0, 10.0, 30.0]
+            .into_iter()
+            .map(|value| {
+                let picked = entity.clone();
+                Button::new(
+                    ("worship-speed", (value * 10.0) as u32),
+                    format!("{value}×"),
+                )
+                .variant(if (speed - value).abs() < f64::EPSILON {
+                    ButtonVariant::Primary
+                } else {
+                    ButtonVariant::Subtle
+                })
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    picked.update(cx, |state, cx| state.worship_set_speed(value, cx));
+                })
+                .into_any_element()
+            })
+            .collect();
+        let ranges = entity.clone();
+        let ranges_on = state.worship.ranges;
+        run_controls = run_controls
+            .child(
+                Button::new("worship-play", if playing { "Pause" } else { "Play" })
+                    .variant(ButtonVariant::Primary)
+                    .size(ControlSize::Sm)
+                    .disabled(done)
+                    .on_click(move |_event, _window, cx| {
+                        play.update(cx, |state, cx| {
+                            let next = !state.worship.playing;
+                            state.worship_set_playing(next, cx);
+                        });
+                    }),
+            )
+            .child(
+                Button::new("worship-step", "Step")
+                    .size(ControlSize::Sm)
+                    .disabled(done)
+                    .on_click(move |_event, _window, cx| {
+                        step.update(cx, |state, cx| state.worship_step(cx));
+                    }),
+            )
+            .child(
+                Button::new("worship-skip", "Next wave")
+                    .size(ControlSize::Sm)
+                    .disabled(done)
+                    .on_click(move |_event, _window, cx| {
+                        skip.update(cx, |state, cx| state.worship_skip(cx));
+                    }),
+            )
+            .child(
+                Button::new("worship-restart", "Restart")
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        restart.update(cx, |state, cx| state.worship_restart(cx));
+                    }),
+            )
+            .child(div().w(px(8.0)));
+        for button in speeds {
+            run_controls = run_controls.child(button);
+        }
+        run_controls = run_controls.child(div().w(px(8.0))).child(
+            Button::new("worship-ranges", "Ranges")
+                .variant(if ranges_on {
+                    ButtonVariant::Primary
+                } else {
+                    ButtonVariant::Subtle
+                })
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    ranges.update(cx, |state, cx| {
+                        state.worship.ranges = !state.worship.ranges;
+                        cx.notify();
+                    });
+                }),
+        );
+        if has_replay {
+            let open = entity.clone();
+            run_controls = run_controls.child(
+                Button::new("worship-open-replay", "Replay")
+                    .variant(ButtonVariant::Subtle)
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        open.update(cx, |state, cx| state.worship_replay_open(cx));
+                    }),
+            );
+        }
+    }
+
     let tower = state.worship.tower;
     let levels = state.worship_inputs.tower_levels;
     let placed = state
@@ -231,92 +359,6 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         })
         .collect();
 
-    let playing = state.worship.playing;
-    let play = entity.clone();
-    let step = entity.clone();
-    let skip = entity.clone();
-    let restart = entity.clone();
-    let speed = state.worship.speed;
-    let speeds: Vec<AnyElement> = [0.5, 1.0, 2.0, 5.0]
-        .into_iter()
-        .map(|value| {
-            let picked = entity.clone();
-            Button::new(
-                ("worship-speed", (value * 10.0) as u32),
-                format!("{value}×"),
-            )
-            .variant(if (speed - value).abs() < f64::EPSILON {
-                ButtonVariant::Primary
-            } else {
-                ButtonVariant::Subtle
-            })
-            .size(ControlSize::Sm)
-            .on_click(move |_event, _window, cx| {
-                picked.update(cx, |state, cx| state.worship_set_speed(value, cx));
-            })
-            .into_any_element()
-        })
-        .collect();
-    let ranges = entity.clone();
-    let ranges_on = state.worship.ranges;
-
-    let mut run_controls = div()
-        .id("worship-run-controls")
-        .flex()
-        .items_center()
-        .gap_1()
-        .child(
-            Button::new("worship-play", if playing { "Pause" } else { "Play" })
-                .variant(ButtonVariant::Primary)
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    play.update(cx, |state, cx| {
-                        let next = !state.worship.playing;
-                        state.worship_set_playing(next, cx);
-                    });
-                }),
-        )
-        .child(
-            Button::new("worship-step", "Step")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    step.update(cx, |state, cx| state.worship_step(cx));
-                }),
-        )
-        .child(
-            Button::new("worship-skip", "Next wave")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    skip.update(cx, |state, cx| state.worship_skip(cx));
-                }),
-        )
-        .child(
-            Button::new("worship-restart", "Restart")
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    restart.update(cx, |state, cx| state.worship_restart(cx));
-                }),
-        )
-        .child(div().w(px(8.0)));
-    for button in speeds {
-        run_controls = run_controls.child(button);
-    }
-    run_controls = run_controls.child(div().w(px(8.0))).child(
-        Button::new("worship-ranges", "Ranges")
-            .variant(if ranges_on {
-                ButtonVariant::Primary
-            } else {
-                ButtonVariant::Subtle
-            })
-            .size(ControlSize::Sm)
-            .on_click(move |_event, _window, cx| {
-                ranges.update(cx, |state, cx| {
-                    state.worship.ranges = !state.worship.ranges;
-                    cx.notify();
-                });
-            }),
-    );
-
     let selected = state.worship.selected.and_then(|id| {
         state
             .worship
@@ -328,9 +370,11 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .cloned()
     });
     let mut card = Card::new()
-        .header(CardHeader::new("Simulator").description(
-            "Pick a tower, then a slot on the map. A standing tower can be upgraded or sold.",
-        ))
+        .header(CardHeader::new("Simulator").description(if replaying {
+            "A recorded run plays back here. Live view returns to the field it ended on."
+        } else {
+            "Pick a tower, then a slot on the map. A standing tower can be upgraded or sold."
+        }))
         .child(
             div()
                 .id("worship-controls-row")
@@ -341,8 +385,14 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .p_3()
                 .child(div().w(px(200.0)).child(trial_select))
                 .child(run_controls),
-        )
-        .child(
+        );
+    if replaying {
+        card =
+            card.child(div().id("worship-palette").px_3().pb_3().child(
+                Caption::new("Replay loaded · restart to build another run").text_color(muted),
+            ));
+    } else {
+        card = card.child(
             div()
                 .id("worship-palette")
                 .flex()
@@ -363,7 +413,8 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 )
                 .children(palette),
         );
-    if let Some(tower) = selected {
+    }
+    if let Some(tower) = selected.filter(|_| !replaying) {
         let upgrade = entity.clone();
         let sell = entity.clone();
         let clear = entity.clone();
@@ -443,11 +494,7 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 fn hud(state: &AppState, muted: gpui::Hsla) -> AnyElement {
-    let view = state
-        .worship
-        .view
-        .clone()
-        .unwrap_or_else(idleon_core::worship::RunView::empty);
+    let view = state.worship.display_view();
     let best = state
         .worship_inputs
         .best_waves
@@ -558,11 +605,7 @@ fn hud_value(
 
 fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let view = state
-        .worship
-        .view
-        .clone()
-        .unwrap_or_else(idleon_core::worship::RunView::empty);
+    let view = state.worship.display_view();
     let mut column = div()
         .flex()
         .flex_col()
@@ -640,6 +683,9 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             }))
             .child(body),
     );
+    if state.worship.replay.is_some() {
+        column = column.child(replay_card(state, cx));
+    }
     column = column.child(
         div()
             .id("worship-notes")
@@ -649,7 +695,7 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .px_1()
             .child(
                 Caption::new(
-                    "The Plan tab runs a build plan through this engine; the Model tab lists every assumption and missing input.",
+                    "The Plan tab runs a build plan through this engine; the Model tab lists every assumption and missing input. A finished run opens its replay in the sidebar.",
                 )
                 .text_color(muted),
             ),
@@ -664,6 +710,113 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_3()
         .child(column)
         .into_any_element()
+}
+
+fn replay_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let Some(replay) = state.worship.replay.as_ref() else {
+        return div().into_any_element();
+    };
+    let entity = cx.entity();
+    let muted = cx.theme().colors.fg_muted;
+    let len = replay.len();
+    let last = len.saturating_sub(1);
+    let index = state.worship.replay_index();
+    let time = replay.frame(index).map(|frame| frame.t).unwrap_or(0.0);
+    let wave = replay.frame(index).map(|frame| frame.wave).unwrap_or(0);
+    let interval = replay.interval_sec();
+    let playing = state.worship.replay_playing;
+    let speed = state.worship.replay_speed;
+    let position = format!("frame {index}/{last} · {} · wave {wave}", format_time(time));
+    let play = entity.clone();
+    let mut card = Card::new()
+        .header(
+            CardHeader::new("Replay").description(format!(
+                "Recorded every {interval:.1} s of game time · {len} frames · speeds are game seconds per second."
+            )),
+        )
+        .child(
+            div()
+                .id("worship-replay")
+                .role(gpui::Role::Label)
+                .aria_label(format!(
+                    "Replay frame {index} of {last} at {} · wave {wave}",
+                    format_time(time)
+                ))
+                .flex()
+                .flex_col()
+                .gap_2()
+                .p_3()
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_2()
+                        .child(
+                            Button::new(
+                                "worship-replay-play",
+                                if playing { "Pause" } else { "Play" },
+                            )
+                            .variant(ButtonVariant::Primary)
+                            .size(ControlSize::Sm)
+                            .disabled(len < 2)
+                            .on_click(move |_event, _window, cx| {
+                                play.update(cx, |state, cx| {
+                                    let next = !state.worship.replay_playing;
+                                    state.worship_replay_set_playing(next, cx);
+                                });
+                            }),
+                        )
+                        .child(Caption::new(position).text_color(muted)),
+                )
+                .child(
+                    div()
+                        .id("worship-replay-speeds")
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .child(Caption::new("Speed").text_color(muted))
+                        .children([1.0, 2.0, 5.0, 10.0, 30.0].into_iter().map(|value| {
+                            let picked = entity.clone();
+                            Button::new(
+                                ("worship-replay-speed", (value * 10.0) as u32),
+                                format!("{value}×"),
+                            )
+                            .variant(if (speed - value).abs() < f64::EPSILON {
+                                ButtonVariant::Primary
+                            } else {
+                                ButtonVariant::Subtle
+                            })
+                            .size(ControlSize::Sm)
+                            .on_click(move |_event, _window, cx| {
+                                picked.update(cx, |state, cx| {
+                                    state.worship_replay_set_speed(value, cx);
+                                });
+                            })
+                            .into_any_element()
+                        })),
+                )
+                .when(last > 0, |card| {
+                    let scrub = entity.clone();
+                    card.child(
+                        Slider::new("worship-replay-scrub", index as f64)
+                            .range(0.0, last as f64)
+                            .step(1.0)
+                            .label("Replay position")
+                            .on_change(move |value, _window, cx| {
+                                scrub.update(cx, |state, cx| state.worship_replay_seek(value, cx));
+                            }),
+                    )
+                }),
+        );
+    card = card.child(
+        div().px_3().pb_3().child(
+            Caption::new(format!(
+                "Scrub through {len} recorded frames; a frame is the live field at that tick."
+            ))
+            .text_color(muted),
+        ),
+    );
+    card.into_any_element()
 }
 
 fn kv(label: &'static str, value: String, muted: gpui::Hsla) -> AnyElement {

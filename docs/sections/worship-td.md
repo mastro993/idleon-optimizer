@@ -16,8 +16,9 @@ Port tower layouts, live wave simulation, replays, plan/model tabs and the strat
 - Tower placement spends TD points through `validatePlacement`; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.
 - The Plan tab ports `heuristicPlan`, the Glublin 230 guide preset and `planPlacementLayouts`: plans place towers in order through `validatePlacement`, each phase sells and rebuilds, and the pane warns about locked types, refused placements and neutral roots. A plan simulation runs the same `Run` engine off the UI thread with weight-per-point upgrades, phase conditions and the plan's skip policy; its final towers carry each tower's damage share. The Model pane lists the modelling assumptions, missing inputs and the exact save values the run reads.
 - Ranges and every HUD value read the same `RunView`, so the panel cannot disagree with the field. Restart rebuilds the run from the same trial and seed.
+- Every run records a replay at one frame per second. The recorder follows the upstream rules: a tower set per layout change, 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.
 - Save inputs decoded: `Tower` trial levels, `TotemInfo` best waves, `Dream[7]`, `SaltLick[6]`, Menagerie boost 15 and unlock 18, and super bits 6/15 for totem HP.
-- Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots. Replays and the optimizer remain WT-02 and WT-04.
+- Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots. The optimizer remains WT-04.
 
 ## Upstream sources
 
