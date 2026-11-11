@@ -558,17 +558,17 @@ pub struct Run {
 type AuraSource = (usize, Vec<(bool, f64, usize)>, f64, f64, f64);
 
 /// Mulberry32, the upstream seeded generator.
-struct Rng {
+pub(crate) struct Rng {
     a: u32,
 }
 
 impl Rng {
-    fn new(seed: u64) -> Self {
+    pub(crate) fn new(seed: u64) -> Self {
         let scaled = (seed as f64 * 2_654_435_761.0).rem_euclid(4_294_967_296.0) as u32;
         Self { a: scaled }
     }
 
-    fn next(&mut self) -> f64 {
+    pub(crate) fn next(&mut self) -> f64 {
         self.a = self.a.wrapping_add(0x6D2B_79F5);
         let mut t = self.a;
         t = (t ^ (t >> 15)).wrapping_mul(t | 1);
@@ -776,6 +776,13 @@ impl Run {
         run.plan_entries = plan.towers.clone();
         run.plan = Some(plan);
         run
+    }
+
+    /// Cap the run: stop once this wave starts, or after this many seconds.
+    pub fn with_limits(mut self, max_wave: u32, max_time_sec: f64) -> Self {
+        self.max_wave = max_wave.max(1);
+        self.max_ticks = (max_time_sec.max(0.0) * TICKS_PER_SECOND) as u64;
+        self
     }
 
     /// The trial this run plays.

@@ -65,6 +65,56 @@ pub struct PlanRunInputs {
     pub plan: Plan,
 }
 
+/// What the optimizer search runs with: the mode's budget, how many runs each
+/// candidate is screened on, the seed the whole search derives from, and the
+/// wave a simulated run stops at.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct OptimizeConfig {
+    pub mode: worship::Mode,
+    /// Screening runs per candidate.
+    pub seeds: usize,
+    /// The seed the whole search derives from; two runs with it agree.
+    pub base_seed: u64,
+    /// Stop a simulated run once it starts this wave.
+    pub max_wave: u32,
+}
+
+impl Default for OptimizeConfig {
+    fn default() -> Self {
+        Self {
+            mode: worship::Mode::Standard,
+            seeds: 2,
+            base_seed: 12_345,
+            max_wave: 240,
+        }
+    }
+}
+
+impl OptimizeConfig {
+    /// The options a run started now would search with.
+    pub(crate) fn options(&self, trial: usize, seed_plan: Option<Plan>) -> worship::Options {
+        worship::Options {
+            trial,
+            mode: self.mode,
+            seeds: self.seeds,
+            base_seed: self.base_seed,
+            max_wave: self.max_wave,
+            seed_plan,
+            ..worship::Options::default()
+        }
+    }
+}
+
+/// The inputs a stored optimizer result was produced from: the search settings
+/// and the account values, not the plan the search compares against.
+#[derive(Clone, Debug, PartialEq)]
+pub struct OptimizeRunInputs {
+    pub trial: usize,
+    pub config: OptimizeConfig,
+    pub inputs: Inputs,
+}
+
 /// The default plan source for a trial: the guide when one ships, else the
 /// coverage heuristic.
 fn default_plan_source(trial: usize) -> PlanSource {
@@ -87,6 +137,10 @@ pub struct State {
     pub tab: super::Tab,
     /// Where the build plan comes from.
     pub plan_source: PlanSource,
+    /// Whether the plan on screen is the optimizer's recommendation.
+    pub plan_from_optimizer: bool,
+    /// What the strategy optimizer searches with.
+    pub optimize: OptimizeConfig,
     /// The palette's selected tower type.
     pub tower: usize,
     pub ranges: bool,
@@ -146,6 +200,8 @@ impl Default for State {
             trial: 0,
             tab: super::Tab::Simulator,
             plan_source: PlanSource::Guide,
+            plan_from_optimizer: false,
+            optimize: OptimizeConfig::default(),
             plan: None,
             plan_stages: Vec::new(),
             plan_issues: Vec::new(),
@@ -356,6 +412,7 @@ impl AppState {
         .unwrap_or_else(|| heuristic_plan(&self.worship_inputs, trial_data));
         self.worship.plan_stages = plan_stages(trial_data, &plan);
         self.worship.plan_issues = plan_issues(&self.worship_inputs, trial_data, &plan);
+        self.worship.plan_from_optimizer = false;
         self.worship.plan = Some(plan);
     }
 
@@ -366,6 +423,7 @@ impl AppState {
             return;
         }
         self.worship.plan_source = source;
+        self.worship.plan_from_optimizer = false;
         self.worship.plan = None;
         self.worship_ensure_plan();
         self.worship_plan.update(cx, |runner, _| {
@@ -379,6 +437,7 @@ impl AppState {
     pub(crate) fn worship_adopt(&mut self, inputs: Inputs) {
         self.worship_inputs = inputs;
         self.worship.plan = None;
+        self.worship.plan_from_optimizer = false;
         self.worship.plan_source = default_plan_source(self.worship.trial);
         self.worship.generation += 1;
         self.worship.playing = false;
@@ -408,6 +467,7 @@ impl AppState {
         let last = worship::data().trials.len().saturating_sub(1);
         self.worship.trial = trial.min(last);
         self.worship.plan = None;
+        self.worship.plan_from_optimizer = false;
         self.worship.plan_source = default_plan_source(self.worship.trial);
         self.worship_plan.update(cx, |runner, _| {
             runner.cancel();
@@ -436,6 +496,30 @@ impl AppState {
     /// Set the playback speed.
     pub fn worship_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
         self.worship.speed = speed;
+        cx.notify();
+    }
+
+    /// Set the optimizer's search budget.
+    pub fn worship_set_optimize_mode(&mut self, mode: worship::Mode, cx: &mut Context<Self>) {
+        self.worship.optimize.mode = mode;
+        cx.notify();
+    }
+
+    /// Set how many runs screen each candidate.
+    pub fn worship_set_optimize_seeds(&mut self, seeds: f64, cx: &mut Context<Self>) {
+        self.worship.optimize.seeds = (seeds as usize).clamp(1, 6);
+        cx.notify();
+    }
+
+    /// Set the seed the whole search derives from.
+    pub fn worship_set_optimize_seed(&mut self, seed: f64, cx: &mut Context<Self>) {
+        self.worship.optimize.base_seed = (seed.max(0.0) as u64).min(999_999);
+        cx.notify();
+    }
+
+    /// Set the wave a simulated run stops at.
+    pub fn worship_set_optimize_wave(&mut self, wave: f64, cx: &mut Context<Self>) {
+        self.worship.optimize.max_wave = (wave.max(0.0) as u32).clamp(10, 1000);
         cx.notify();
     }
 

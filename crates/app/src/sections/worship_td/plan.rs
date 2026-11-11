@@ -10,6 +10,7 @@ use super::{PlanSource, format_time};
 use crate::state::AppState;
 use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
+use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::{IconName, Severity};
@@ -88,6 +89,15 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_3()
         .child(source)
         .child(run);
+    if state.worship.plan_from_optimizer {
+        controls = controls.child(
+            div()
+                .id("worship-plan-optimized")
+                .role(gpui::Role::Label)
+                .aria_label("Optimizer plan")
+                .child(Badge::new("Optimizer plan").tone(Tone::Success)),
+        );
+    }
     if running {
         controls = controls.child(cancel);
     }
@@ -102,6 +112,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .text_color(muted),
     );
     if state.worship.plan_source == PlanSource::Guide
+        && !state.worship.plan_from_optimizer
         && let Some(preset) = worship::guide_presets_for_trial(trial_index).next()
     {
         controls = controls.child(
@@ -439,7 +450,7 @@ fn result_card(result: &RunResult, muted: gpui::Hsla, stale: bool) -> AnyElement
             div()
                 .px_3()
                 .pb_3()
-                .child(task::stale_banner("worship-plan-result")),
+                .child(task::stale_banner("worship-plan-stale")),
         );
     }
     card.into_any_element()

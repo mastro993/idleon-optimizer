@@ -244,7 +244,7 @@ fn path_samples(trial: &Trial, spacing: f64) -> Vec<(f64, f64)> {
 }
 
 /// How many path samples a tower's range covers.
-fn slot_coverage(trial: &Trial, spot: Spot, range: f64) -> usize {
+pub(super) fn slot_coverage(trial: &Trial, spot: Spot, range: f64) -> usize {
     let centers = tower_centers(trial, spot.node, spot.x);
     path_samples(trial, 20.0)
         .into_iter()
@@ -296,7 +296,12 @@ pub fn tower_upgrade_access(trial: &Trial, node: usize, x: f64) -> bool {
 
 /// The game's placement, plus the planning checks: camera-independent spawn and
 /// exit slots, and a reachable upgrade click.
-fn validate_planning_placement(trial: &Trial, existing: &[Spot], node: usize, x: f64) -> Placement {
+pub(super) fn validate_planning_placement(
+    trial: &Trial,
+    existing: &[Spot],
+    node: usize,
+    x: f64,
+) -> Placement {
     let placement = validate_placement(trial, existing, node, x, 0.0);
     if !placement.ok {
         return placement;
@@ -322,7 +327,7 @@ fn validate_planning_placement(trial: &Trial, existing: &[Spot], node: usize, x:
 }
 
 /// Every planning-legal slot, walking each band in `step` increments.
-fn plan_slots(trial: &Trial, step: f64) -> Vec<Spot> {
+pub(super) fn legal_plan_slots(trial: &Trial, step: f64) -> Vec<Spot> {
     let mut out = Vec::new();
     for (node, spans) in placement_bands(trial).iter().enumerate() {
         for (a, b) in spans {
@@ -552,7 +557,7 @@ pub fn heuristic_plan(inputs: &Inputs, trial: &Trial) -> Plan {
     if types.is_empty() {
         return Plan::default();
     }
-    let mut slots: Vec<(Spot, usize)> = plan_slots(trial, 20.0)
+    let mut slots: Vec<(Spot, usize)> = legal_plan_slots(trial, 20.0)
         .into_iter()
         .map(|spot| (spot, slot_coverage(trial, spot, 160.0)))
         .collect();

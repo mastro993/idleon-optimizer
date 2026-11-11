@@ -81,6 +81,7 @@ pub struct WorshipConfig {
     ranges: bool,
     tab: WorshipTab,
     plan_source: PlanSource,
+    optimize: crate::sections::worship_td::OptimizeConfig,
 }
 
 impl Default for WorshipConfig {
@@ -92,6 +93,7 @@ impl Default for WorshipConfig {
             ranges: true,
             tab: WorshipTab::Simulator,
             plan_source: PlanSource::Guide,
+            optimize: crate::sections::worship_td::OptimizeConfig::default(),
         }
     }
 }
@@ -198,6 +200,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             ranges: state.worship.ranges,
             tab: state.worship.tab,
             plan_source: state.worship.plan_source,
+            optimize: state.worship.optimize,
         }),
     );
     configs
@@ -430,7 +433,14 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
             state.worship.ranges = config.ranges;
             state.worship.tab = config.tab;
             state.worship.plan_source = config.plan_source;
+            state.worship.optimize = crate::sections::worship_td::OptimizeConfig {
+                mode: config.optimize.mode,
+                seeds: config.optimize.seeds.clamp(1, 6),
+                base_seed: config.optimize.base_seed.min(999_999),
+                max_wave: config.optimize.max_wave.clamp(10, 1000),
+            };
             state.worship.plan = None;
+            state.worship.plan_from_optimizer = false;
             state.worship.run = None;
             state.worship.view = None;
             state.worship.selected = None;

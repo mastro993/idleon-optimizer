@@ -6,14 +6,16 @@
 //! Clicking a standing tower selects it for a one-level upgrade or a 60% refund
 //! sale. A finished run loads its replay: the map shows recorded frames and the
 //! sidebar scrubs, plays and changes their speed. The Plan pane runs a build
-//! plan through the same simulator engine.
+//! plan through the same simulator engine, and the Optimizer pane searches
+//! strategies with that engine before recommending one.
 
 mod map;
 mod model;
+mod optimizer;
 mod plan;
 mod state;
 
-pub use state::{PlanRunInputs, PlanSource, State};
+pub use state::{OptimizeConfig, OptimizeRunInputs, PlanRunInputs, PlanSource, State};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -30,7 +32,7 @@ use gpui::{
 };
 use idleon_core::worship;
 
-/// The section's three panes.
+/// The section's four panes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Tab {
@@ -41,16 +43,19 @@ pub enum Tab {
     Plan,
     /// The modelling assumptions and missing inputs.
     Model,
+    /// The strategy search and its recommended plan.
+    Optimizer,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Simulator, Tab::Plan, Tab::Model];
+    pub const ALL: [Tab; 4] = [Tab::Simulator, Tab::Plan, Tab::Model, Tab::Optimizer];
 
     pub fn id(self) -> &'static str {
         match self {
             Tab::Simulator => "worship-simulator-tab",
             Tab::Plan => "worship-plan-tab",
             Tab::Model => "worship-model-tab",
+            Tab::Optimizer => "worship-optimizer-tab",
         }
     }
 
@@ -59,6 +64,7 @@ impl Tab {
             Tab::Simulator => "Simulator",
             Tab::Plan => "Plan",
             Tab::Model => "Model",
+            Tab::Optimizer => "Optimizer",
         }
     }
 
@@ -88,6 +94,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             Tab::Simulator => simulator(state, window, cx),
             Tab::Plan => plan::pane(state, cx),
             Tab::Model => model::pane(state, cx),
+            Tab::Optimizer => optimizer::pane(state, cx),
         })
         .into_any_element()
 }

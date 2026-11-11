@@ -11,12 +11,17 @@
 //! there: wizards scan on 100 ms ticks with a 300 ms popup after each cooldown,
 //! and a pulse volley rolls one critical for all of its hits. Build plans,
 //! phases and their staged layouts live in [`plan`]; a run's recorded timeline
-//! lives in [`replay`]. The strategy optimizer is a later feature issue.
+//! lives in [`replay`]. The strategy search lives in [`optimize`]: it reports
+//! progress and stops when the reporter asks, so a section can cancel it.
 
+mod optimize;
 mod plan;
 mod replay;
 mod sim;
 
+pub use optimize::{
+    Finalist, Mode, Options, Outcome, Score, Search, Trials, optimize, simulate_trials,
+};
 pub use plan::{
     GuidePreset, PhaseSell, PhaseWhen, Plan, PlanIssue, PlanPhase, PlanPlacement, PlanReject,
     PlanStage, PlanTower, RootPolicy, SkipPolicy, guide_preset, guide_presets_for_trial,
@@ -51,6 +56,8 @@ pub const ASSUMPTIONS: &[&str] = &[
     "Manual upgrades use an all-A trait recipe; a plan uses its own trait string.",
     "Root casts, account start points beyond the base 5, kill-point meals and Meritocracy are neutral this build.",
     "Plan points, kills and EXP come from the simulator. Souls per hour, charge and claim rewards are not simulated here.",
+    "The optimizer is a bounded best-found search over seeded plans, not a global optimum. It screens plans on the mode's budget, then compares the finalists, the coverage heuristic and the guide presets on shared fresh seeds.",
+    "The optimizer's hold-template layout search and its souls-per-hour objective are neutral this build; it searches the strategy and tower plans only.",
 ];
 
 use serde::Deserialize;
