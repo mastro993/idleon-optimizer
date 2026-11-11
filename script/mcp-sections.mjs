@@ -157,6 +157,25 @@ const fishingSave = ({ toolkit = true } = {}) => {
   return JSON.stringify(save);
 };
 
+/// A small flat `save.json` with two named characters standing on different
+/// maps, so the stats context's character and map selectors have save defaults
+/// to follow and a portal to read.
+const statsSave = () => {
+  const kla = Array.from({ length: 60 }, () => [0]);
+  return JSON.stringify({
+    charNames: ['Ana', 'Bo'],
+    Research: '[]',
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+    Lv0_1: JSON.stringify(Array(30).fill(0)),
+    CharacterClass_0: 1,
+    CharacterClass_1: 7,
+    CurrentMap_0: 0,
+    CurrentMap_1: 50,
+    KLA_0: JSON.stringify(kla),
+    KLA_1: JSON.stringify(kla),
+  });
+};
+
 /// A project document as the app writes it: the research state, the
 /// supplements, one config per section and the section the window was on.
 const projectDocument = () =>
@@ -479,6 +498,110 @@ const INTERACTIONS = {
       (nodes) => nodes.find((node) => node.id === 'statue-sort')?.value?.value === 'Game order',
       'statue: sort returns to game order',
     );
+  },
+  'stats-all': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'stats-all: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: statsSave() });
+    await waitForNode(lane, 'import-format', 'stats-all: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-context-note') ?? '') ===
+        'Ana · Blunder Hills · Mining · Construction Active',
+      'stats-all: the save defaults open on character one and its current map',
+    );
+    const count = (nodes) => Number(/^(\d+) maps/.exec(labelOf(nodes, 'stats-map-count') ?? '')?.[1]);
+    const accessible = count(await lane.tree());
+    if (!(accessible > 0)) throw new Error(`stats-all: the accessible list reads ${accessible}`);
+
+    // Character two follows its own current map.
+    await lane.call('focus_element', { id: 'stats-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-context-note') ?? '') ===
+        'Bo · YumYum Grotto · Mining · Construction Active',
+      'stats-all: the character selector switches to that character\'s current map',
+    );
+
+    // The map list level widens the map selector and refreshes the summary.
+    await lane.call('focus_element', { id: 'stats-map-visibility' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const label = labelOf(nodes, 'stats-map-count') ?? '';
+        return label.includes('All Valid Maps') && count(nodes) > accessible;
+      },
+      'stats-all: the map list level refreshes the map summary',
+    );
+
+    // Skill and construction mode follow their selectors.
+    await lane.call('focus_element', { id: 'stats-skill' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await lane.call('focus_element', { id: 'stats-construction' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-context-note') ?? '') ===
+        'Bo · YumYum Grotto · Choppin · Construction Inactive',
+      'stats-all: the skill and construction selectors refresh the context',
+    );
+
+    // A project document restores the whole context.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'stats-all: the import dialog reopens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', {
+      text: JSON.stringify({
+        format: 'idleon-optimizer-project',
+        version: 1,
+        section: 'stats-all',
+        research: {
+          researchLevel: 100,
+          gridLevels: Array(240).fill(0),
+          occFound: Array(80).fill(0),
+          insightLvs: Array(80).fill(0),
+          insightProgress: Array(80).fill(0),
+          magData: [],
+          shapePositions: [],
+        },
+        sections: {
+          'stats-all': {
+            character: 1,
+            map: 50,
+            mapVisibility: 'all',
+            skill: 'spelunking',
+            construction: 'inactive',
+          },
+        },
+      }),
+    });
+    await waitForNode(lane, 'import-format', 'stats-all: the project previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-context-note') ?? '') ===
+        'Bo · YumYum Grotto · Spelunking · Construction Inactive',
+      'stats-all: the project document restores the calculation context',
+    );
+    const restored = await lane.tree();
+    if (!(labelOf(restored, 'stats-map-count') ?? '').includes('All Valid Maps')) {
+      throw new Error('stats-all: the restored map list level is not All');
+    }
   },
   sailing: async (lane) => {
     await waitForNode(lane, 'fleet-mode', 'sailing: the assignment controls render');
