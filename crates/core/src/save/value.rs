@@ -36,6 +36,11 @@ impl Save {
         Self { root }
     }
 
+    /// The top-level value: the `it.json` wrapper, or the flat save.
+    pub fn root(&self) -> &Value {
+        &self.root
+    }
+
     /// Read one key, decoding it the way upstream does.
     pub fn get(&self, key: &str) -> Option<Value> {
         let root = self.root.as_object()?;

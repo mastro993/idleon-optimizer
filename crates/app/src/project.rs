@@ -16,6 +16,7 @@ use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::killroy::State as KillroyState;
+use crate::sections::ladle::Tab as LadleTab;
 use crate::sections::monument::State as MonumentState;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
@@ -28,6 +29,7 @@ use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
 use idleon_core::game;
 use idleon_core::import as pipeline;
+use idleon_core::ladle::Panel as LadlePanel;
 use idleon_core::model::{Effort, SimContext, Simulation};
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::project;
@@ -108,6 +110,22 @@ impl Default for WorshipConfig {
 pub struct ClamworksConfig {
     tab: ClamworksTab,
     multikill: f64,
+}
+
+/// The Ladle section's config: its tab, selectors, panel inputs and the checked
+/// characters.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LadleConfig {
+    tab: LadleTab,
+    ladle_character: usize,
+    breakdown_character: usize,
+    claim_hours: f64,
+    panel: LadlePanel,
+    assigned: Vec<usize>,
+    balloon: usize,
+    target_level: u32,
+    split: bool,
 }
 
 /// The Jar section's config: its tab.
@@ -215,6 +233,20 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     );
     insert("jar", value(&JarConfig { tab: state.jar_tab }));
     insert("stats-all", value(&state.stats_all.context));
+    insert(
+        "ladle",
+        value(&LadleConfig {
+            tab: state.ladle_state.tab,
+            ladle_character: state.ladle_state.ladle_character,
+            breakdown_character: state.ladle_state.breakdown_character,
+            claim_hours: state.ladle_state.claim_hours,
+            panel: state.ladle_state.panel,
+            assigned: state.ladle_state.assigned.clone(),
+            balloon: state.ladle_state.balloon,
+            target_level: state.ladle_state.target_level,
+            split: state.ladle_state.split,
+        }),
+    );
     insert("coral-god-rank", value(&state.coral.inputs));
     insert(
         "worship-td",
@@ -305,6 +337,7 @@ pub enum Config {
     Pickle(PickleState),
     Clamworks(ClamworksConfig),
     Jar(JarConfig),
+    Ladle(LadleConfig),
     Coral(coral::Inputs),
     Worship(WorshipConfig),
     StatsAll(idleon_core::stats::Context),
@@ -481,6 +514,34 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
         Config::Jar(config) => {
             state.jar_tab = config.tab;
         }
+        Config::Ladle(config) => {
+            let characters = state
+                .ladle
+                .as_ref()
+                .map(|ladle| ladle.characters.len())
+                .unwrap_or(0);
+            state.ladle_state.tab = config.tab;
+            state.ladle_state.ladle_character =
+                config.ladle_character.min(characters.saturating_sub(1));
+            state.ladle_state.breakdown_character =
+                config.breakdown_character.min(characters.saturating_sub(1));
+            state.ladle_state.claim_hours = if config.claim_hours.is_finite() {
+                config.claim_hours.clamp(0.1, 24.0)
+            } else {
+                24.0
+            };
+            state.ladle_state.panel = config.panel;
+            state.ladle_state.assigned = config
+                .assigned
+                .into_iter()
+                .filter(|index| *index < characters)
+                .collect();
+            state.ladle_state.balloon = config
+                .balloon
+                .min(idleon_core::ladle::EXP_BALLOONS.len() - 1);
+            state.ladle_state.target_level = config.target_level.min(1000);
+            state.ladle_state.split = config.split;
+        }
         Config::Coral(config) => {
             state.coral.inputs = config;
         }
@@ -534,6 +595,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "pickle" => decode!(Pickle, PickleState),
         "clamworks" => decode!(Clamworks, ClamworksConfig),
         "jar" => decode!(Jar, JarConfig),
+        "ladle" => decode!(Ladle, LadleConfig),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
         "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
         "worship-td" => decode!(Worship, WorshipConfig),
@@ -796,6 +858,33 @@ mod tests {
             stats.construction,
             idleon_core::stats::ConstructionMode::Inactive
         );
+        let ladle = round_trip(&LadleConfig {
+            tab: LadleTab::Exp,
+            ladle_character: 3,
+            breakdown_character: 2,
+            claim_hours: 12.0,
+            panel: LadlePanel {
+                efficiency: 12_345.6,
+                afk: 1.35,
+                exp_multi: 2.75,
+                prowess: 0.02,
+                talent_148: 25.0,
+            },
+            assigned: vec![0, 2],
+            balloon: 1,
+            target_level: 60,
+            split: true,
+        });
+        assert_eq!(ladle.tab, LadleTab::Exp);
+        assert_eq!(ladle.ladle_character, 3);
+        assert_eq!(ladle.breakdown_character, 2);
+        assert_eq!(ladle.claim_hours, 12.0);
+        assert_eq!(ladle.panel.efficiency, 12_345.6);
+        assert_eq!(ladle.panel.talent_148, 25.0);
+        assert_eq!(ladle.assigned, vec![0, 2]);
+        assert_eq!(ladle.balloon, 1);
+        assert_eq!(ladle.target_level, 60);
+        assert!(ladle.split);
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,
@@ -1038,6 +1127,7 @@ mod tests {
                 "pickle",
                 "clamworks",
                 "jar",
+                "ladle",
                 "coral-god-rank",
                 "worship-td",
                 "combat-sim",

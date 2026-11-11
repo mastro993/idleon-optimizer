@@ -99,6 +99,42 @@ const jarSave = () => {
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
 
+/// A small flat `save.json` with three characters, one of them away from Cooking,
+/// a Prayer 2 charge and a Post Office 19c roll, so the ladle rates have inputs.
+const ladleSave = () => {
+  const row = (index, value) => {
+    const cells = Array(30).fill(0);
+    cells[index] = value;
+    return cells;
+  };
+  const postOffice = Array(36).fill(0);
+  postOffice[19] = 400;
+  return JSON.stringify({
+    Research: '[]',
+    charNames: ['Ana', 'Bo', 'Cy'],
+    Lv0_0: row(10, 42),
+    Lv0_1: row(10, 30),
+    Lv0_2: row(10, 60),
+    Exp0_0: row(10, 123456789),
+    Exp0_1: row(10, 0),
+    Exp0_2: row(10, 5e9),
+    AFKtarget_0: 'Cooking',
+    AFKtarget_1: 'Fighting',
+    AFKtarget_2: 'Cooking',
+    PTimeAway_0: 986.4,
+    TimeAway: JSON.stringify({ GlobalTime: 1000000, ShopRestock: 27000, Player: 986400 }),
+    POu_0: postOffice,
+    POu_1: postOffice,
+    POu_2: postOffice,
+    PrayOwned: [0, 0, 25],
+    Prayers_2: [2],
+    ChestOrder: ['Ladle'],
+    ChestQuantity: [120],
+    InventoryOrder_0: ['ExpBalloon1'],
+    ItemQTY_0: [7],
+  });
+};
+
 /// A small flat `save.json` carrying worship tower levels and a best-wave table,
 /// so the simulator has every type unlocked and a run to play.
 const worshipSave = () => {
@@ -468,6 +504,37 @@ const INTERACTIONS = {
       'coral: the unlock state follows the assumption checkbox',
     );
     await lane.call('click_element', { id: 'coral-assume-unlocked' });
+  },
+  ladle: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'ladle: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: ladleSave() });
+    await waitForNode(lane, 'import-format', 'ladle: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'ladle-section', 'ladle: the section opens after Apply');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'ladle-characters') ?? '').includes('2 checked'),
+      'ladle: the two Cooking characters are counted',
+    );
+
+    await lane.call('focus_element', { id: 'ladle-breakdown-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'ladle-breakdown-character') === 'Breakdowns for Bo',
+      'ladle: the breakdown follows the character selector',
+    );
+
+    await lane.call('click_element', { id: 'exp' });
+    await waitForNode(lane, 'ladle-exp-pane', 'ladle: the Cooking EXP tab opens');
+    await lane.call('click_element', { id: 'ladle-split' });
+    await waitForNode(lane, 'ladle-exp-table', 'ladle: the split keeps the table rendered');
+    await lane.call('click_element', { id: 'ladles' });
+    await waitForNode(lane, 'ladle-breakdowns', 'ladle: the Ladles tab reopens');
   },
   statue: async (lane) => {
     await lane.call('click_element', { id: 'statue-search' });

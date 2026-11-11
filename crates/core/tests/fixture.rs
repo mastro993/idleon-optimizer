@@ -359,3 +359,39 @@ fn the_fixture_survives_a_project_export_and_import() {
     let after = sim::exp_rate(&reread.simulation, &reread.context);
     assert_eq!(before.total, after.total);
 }
+
+#[test]
+fn the_fixture_carries_the_ladle_roster() {
+    // The ladle section reads the roster, the Cooking rows, the Post Office 19c
+    // chance and the counts; upstream's `characterCount` and `itemCount` answer
+    // the same from this save.
+    let ladle = imported()
+        .ladle
+        .expect("the fixture carries a character roster");
+    assert_eq!(ladle.characters.len(), 11);
+    assert_eq!(ladle.characters[0].name, "Character 1");
+    assert_eq!(ladle.characters[0].level, 142.0);
+    assert_eq!(ladle.characters[0].exp, 369943639032.185);
+    // No character is AFK-ing Cooking in the fixture, so no ladles are counted.
+    assert!(ladle.cooking_characters().is_empty());
+    assert!(ladle.characters[0].pending_hours.is_none());
+    // `POu_<n>[19]` is 400 everywhere: decay(88, 200, 400 - 99.9) = 52.8.
+    assert!(ladle.characters.iter().all(|row| row.double_chance == 52.8));
+    // No prayer 2 is equipped, and its passive is not paid on the cost the cap
+    // reads, so the ten-hour cap never applies here.
+    assert!(!ladle.characters.iter().any(|row| row.claim_capped));
+    assert_eq!(ladle.ladles.value, 0.0);
+    assert!(!ladle.ladles.partial);
+    assert_eq!(
+        ladle
+            .balloons
+            .iter()
+            .map(|count| count.value)
+            .collect::<Vec<f64>>(),
+        vec![585599.0, 50.0, 96187.0]
+    );
+    let reset = ladle
+        .reset_hours
+        .expect("TimeAway.ShopRestock is in the save");
+    assert!((reset - 17.227732320030555).abs() < 1e-9, "{reset}");
+}
