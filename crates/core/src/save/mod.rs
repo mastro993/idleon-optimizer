@@ -43,7 +43,7 @@
 mod account;
 mod coral;
 mod farming;
-mod formula;
+pub(crate) mod formula;
 pub(crate) mod json;
 pub(crate) mod research;
 mod sailing;
@@ -62,6 +62,7 @@ use crate::farming::Farm;
 use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
 use crate::sailing::{Fleet, RouteContext};
+pub(crate) use account::prisma_multiplier;
 pub use account::{BonusTerm, BonusTree};
 pub use formula::log as game_log;
 use serde_json::{Map, Value};

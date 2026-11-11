@@ -68,6 +68,28 @@ impl Default for ResearchConfig {
     }
 }
 
+/// The Prisma section's config: its character, cauldron, AFK claim and metric.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct PrismaConfig {
+    character: usize,
+    /// The cauldron tab id: `power`, `quicc`, `high-iq` or `kazam`.
+    cauldron: String,
+    afk_hours: f64,
+    metric: Option<String>,
+}
+
+impl Default for PrismaConfig {
+    fn default() -> Self {
+        Self {
+            character: 0,
+            cauldron: idleon_core::prisma::Cauldron::default().id().to_string(),
+            afk_hours: 1.0,
+            metric: None,
+        }
+    }
+}
+
 /// The sailing section's config: its tab, pairings mode, island, goal and the
 /// chest tier floor that lives on the route context.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
@@ -239,6 +261,15 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     insert("monument", value(&state.monument));
     insert("pickle", value(&state.pickle));
     insert(
+        "prisma",
+        value(&PrismaConfig {
+            character: state.prisma.character,
+            cauldron: state.prisma.cauldron.id().to_string(),
+            afk_hours: state.prisma.afk_hours,
+            metric: state.prisma.metric.clone(),
+        }),
+    );
+    insert(
         "clamworks",
         value(&ClamworksConfig {
             tab: state.clamworks_tab,
@@ -355,6 +386,7 @@ pub enum Config {
     Combat(CombatConfig),
     Monument(MonumentState),
     Pickle(PickleState),
+    Prisma(PrismaConfig),
     Clamworks(ClamworksConfig),
     Cog(CogConfig),
     Jar(JarConfig),
@@ -524,6 +556,28 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
                 },
             };
         }
+        Config::Prisma(config) => {
+            state.prisma.character = config.character;
+            state.prisma.cauldron = idleon_core::prisma::Cauldron::from_id(&config.cauldron)
+                .unwrap_or_else(|| {
+                    warnings.push(format!(
+                        "prisma: cauldron {:?} is not a tab id; the section keeps {}",
+                        config.cauldron,
+                        state.prisma.cauldron.label()
+                    ));
+                    state.prisma.cauldron
+                });
+            state.prisma.afk_hours = if config.afk_hours.is_finite() {
+                config.afk_hours.clamp(
+                    crate::sections::prisma::MIN_HOURS,
+                    crate::sections::prisma::MAX_HOURS,
+                )
+            } else {
+                state.prisma.afk_hours
+            };
+            state.prisma.metric = config.metric.filter(|metric| !metric.trim().is_empty());
+            state.prisma.adopt(state.save.as_ref());
+        }
         Config::Clamworks(config) => {
             state.clamworks_tab = config.tab;
             state.clamworks_multikill = if config.multikill.is_finite() {
@@ -617,6 +671,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "combat-sim" => decode!(Combat, CombatConfig),
         "monument" => decode!(Monument, MonumentState),
         "pickle" => decode!(Pickle, PickleState),
+        "prisma" => decode!(Prisma, PrismaConfig),
         "clamworks" => decode!(Clamworks, ClamworksConfig),
         "cog" => decode!(Cog, CogConfig),
         "jar" => decode!(Jar, JarConfig),
@@ -882,6 +937,16 @@ mod tests {
             tab: JarTab::Production,
         });
         assert_eq!(jar.tab, JarTab::Production);
+        let prism = round_trip(&PrismaConfig {
+            character: 2,
+            cauldron: "kazam".into(),
+            afk_hours: 8.5,
+            metric: Some("bubble-bonus:0:0".into()),
+        });
+        assert_eq!(prism.character, 2);
+        assert_eq!(prism.cauldron, "kazam");
+        assert_eq!(prism.afk_hours, 8.5);
+        assert_eq!(prism.metric.as_deref(), Some("bubble-bonus:0:0"));
         let stats = round_trip(&idleon_core::stats::Context {
             character: 2,
             map: 120,
@@ -1169,6 +1234,7 @@ mod tests {
                 "statue",
                 "monument",
                 "pickle",
+                "prisma",
                 "clamworks",
                 "cog",
                 "jar",

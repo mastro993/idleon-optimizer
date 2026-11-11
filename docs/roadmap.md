@@ -23,7 +23,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M8 | Endgame Check | General | 1 | done | foundation | [endgame](sections/endgame.md) |
 | M9 | Statue Calculator | General | 3 | partial | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | partial | foundation | [fishing](sections/fishing.md) |
-| M11 | Prisma Calculator | World 2 | 2 | planned | foundation | [prisma](sections/prisma.md) |
+| M11 | Prisma Calculator | World 2 | 2 | partial | foundation | [prisma](sections/prisma.md) |
 | M12 | Killroy Calculator | World 2 | 3 | partial | foundation | [killroy](sections/killroy.md) |
 | M13 | Cog Board Optimizer | World 3 | 4 | partial | foundation | [cog](sections/cog.md) |
 | M14 | Worship Tower Defense | World 3 | 4 | partial | foundation | [worship-td](sections/worship-td.md) |

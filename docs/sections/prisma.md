@@ -5,7 +5,7 @@
 - Milestone: `M11`
 - Section key: `prisma`
 - Group: `w2`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.

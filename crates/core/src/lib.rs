@@ -33,6 +33,7 @@ pub mod model;
 pub mod monument;
 pub mod optimize;
 pub mod pickle;
+pub mod prisma;
 pub mod project;
 pub mod sailing;
 pub mod save;

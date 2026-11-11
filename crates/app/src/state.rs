@@ -13,6 +13,7 @@ use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
+use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
@@ -41,6 +42,7 @@ use idleon_core::model::{
     SimContext, Simulation, Target,
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
+use idleon_core::prisma::Outcome as PrismaOutcome;
 use idleon_core::sailing::{
     AssignmentMode, Fleet, FleetComparison, FleetPlan, Goal, RouteContext, compare, optimize, saved,
 };
@@ -190,6 +192,8 @@ pub struct AppState {
     pub ladle_state: LadleSectionState,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
+    /// The Prisma calculator's controls and the plan for the save.
+    pub prisma: PrismaState,
     /// The statue section's saved rows, character and table controls.
     pub statue: StatueState,
     /// The combat simulator's working loadout and named presets.
@@ -217,6 +221,8 @@ pub struct AppState {
     pub save_partial: bool,
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
+    /// How many saves this window has applied; a Prisma run captures it.
+    save_revision: u64,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
@@ -227,6 +233,8 @@ pub struct AppState {
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
     pub(crate) worship_optimize: Entity<TaskRunner<SearchOutcome, OptimizeRunInputs>>,
+    /// The shared runner for the Prisma bubble search.
+    prisma_run: Entity<TaskRunner<PrismaOutcome, PrismaRunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The research dashboard's four breakdown trees.
@@ -244,6 +252,7 @@ pub struct AppState {
     bridge: BridgeHandle,
     _search_subscription: Subscription,
     _statue_search_subscription: Subscription,
+    _prisma_search_subscription: Subscription,
     _combat_name_subscription: Subscription,
     _combat_talent_subscription: Subscription,
     _import_subscription: Subscription,
@@ -252,6 +261,7 @@ pub struct AppState {
     _cog_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
+    _prisma_run_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -302,6 +312,14 @@ impl AppState {
         let statue_search = statue.search.clone();
         let statue_search_subscription =
             cx.subscribe(&statue_search, |_state, _search, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            });
+        let prisma = PrismaState::new(window, cx);
+        let prisma_search = prisma.search.clone();
+        let prisma_search_subscription =
+            cx.subscribe(&prisma_search, |_state, _search, event: &InputEvent, cx| {
                 if *event == InputEvent::Changed {
                     cx.notify();
                 }
@@ -480,6 +498,41 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The Prisma search compares one bubble per report, so it uses the same
+        // runner as every other streamed job.
+        let prisma_run = cx.new(|_| TaskRunner::<PrismaOutcome, PrismaRunInputs>::new());
+        let prisma_run_subscription =
+            cx.subscribe(&prisma_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!(
+                            "Comparing Prisma bubbles… {:.0}%",
+                            progress.fraction * 100.0
+                        );
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Prisma run cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Prisma run cancelled; nothing was compared.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            let changed = result
+                                .results
+                                .iter()
+                                .filter(|row| !row.changes.is_empty())
+                                .count();
+                            state.status = format!(
+                                "Compared {} Prisma bubbles; {changed} changed.",
+                                result.results.len()
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let ladle_state = LadleSectionState::new(window, cx);
@@ -523,6 +576,7 @@ impl AppState {
             ladle: None,
             ladle_state,
             pickle: PickleState::default(),
+            prisma,
             statue,
             combat,
             stats_all: StatsAllState::default(),
@@ -537,11 +591,13 @@ impl AppState {
             export: Export::default(),
             save_partial: false,
             save_loaded: false,
+            save_revision: 0,
             optimizer,
             killroy_run,
             cog_run,
             worship_plan,
             worship_optimize,
+            prisma_run,
             breakdown,
             research_trees,
             cglunko_breakdown,
@@ -552,6 +608,7 @@ impl AppState {
             bridge,
             _search_subscription: search_subscription,
             _statue_search_subscription: statue_search_subscription,
+            _prisma_search_subscription: prisma_search_subscription,
             _combat_name_subscription: combat_name_subscription,
             _combat_talent_subscription: combat_talent_subscription,
             _import_subscription: import_subscription,
@@ -560,6 +617,7 @@ impl AppState {
             _cog_subscription: cog_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
+            _prisma_run_subscription: prisma_run_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -869,6 +927,8 @@ impl AppState {
         self.combat.load(&imported.save, combat_character);
         self.stats_all.load(&imported.save);
         self.save = Some(imported.save);
+        self.save_revision = self.save_revision.wrapping_add(1);
+        self.prisma.adopt(self.save.as_ref());
         self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
         self.worship_adopt(imported.worship);
@@ -926,6 +986,94 @@ impl AppState {
             self.export.bytes()
         );
         cx.notify();
+    }
+
+    /// The inputs a Prisma run started now would use.
+    pub fn prisma_inputs(&self) -> PrismaRunInputs {
+        PrismaRunInputs {
+            save_revision: self.save_revision,
+            character: self.prisma.character,
+            cauldron: self.prisma.cauldron.index(),
+            afk_seconds: if crate::sections::prisma::valid_hours(self.prisma.afk_hours) {
+                (self.prisma.afk_hours * 3600.0).round() as u64
+            } else {
+                0
+            },
+        }
+    }
+
+    /// The Prisma run: running, progress, result and staleness.
+    pub fn prisma_task(&self, cx: &App) -> TaskState<PrismaOutcome> {
+        self.prisma_run.read(cx).state(&self.prisma_inputs())
+    }
+
+    /// Select the character the plan reads its Prisma state for.
+    pub fn set_prisma_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        self.prisma.character = character;
+        self.prisma.adopt(self.save.as_ref());
+        cx.notify();
+    }
+
+    /// Switch cauldron, which rebuilds the plan and its eligible rows.
+    pub fn set_prisma_cauldron(
+        &mut self,
+        cauldron: idleon_core::prisma::Cauldron,
+        cx: &mut Context<Self>,
+    ) {
+        self.prisma.cauldron = cauldron;
+        // Metric ids carry the cauldron, so a new cauldron cannot keep the old one.
+        self.prisma.metric = None;
+        self.prisma.adopt(self.save.as_ref());
+        cx.notify();
+    }
+
+    /// Set the AFK claim the run captures.
+    pub fn set_prisma_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
+        if hours.is_finite() {
+            self.prisma.afk_hours = hours.clamp(
+                crate::sections::prisma::MIN_HOURS,
+                crate::sections::prisma::MAX_HOURS,
+            );
+        }
+        cx.notify();
+    }
+
+    /// Select the metric the rows rank by; empty is the bubble order.
+    pub fn set_prisma_metric(&mut self, metric: &str, cx: &mut Context<Self>) {
+        self.prisma.metric = (!metric.is_empty()).then(|| metric.to_string());
+        cx.notify();
+    }
+
+    /// Run the bubble comparison off the UI thread through the shared task runner.
+    pub fn run_prisma(&mut self, cx: &mut Context<Self>) {
+        if !crate::sections::prisma::valid_hours(self.prisma.afk_hours) {
+            self.status = "Enter AFK claim hours above 2 minutes and at most 55,555.".into();
+            cx.notify();
+            return;
+        }
+        let Some(plan) = self.prisma.plan.clone() else {
+            self.status = "Import a save to compare Prisma bubbles.".into();
+            cx.notify();
+            return;
+        };
+        let inputs = self.prisma_inputs();
+        let started = self.prisma_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_inputs, report| {
+                idleon_core::prisma::run(&plan, report)
+            })
+        });
+        if started {
+            self.status = "Comparing Prisma bubbles…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running Prisma comparison to stop; the previous result stays.
+    pub fn cancel_prisma(&mut self, cx: &mut Context<Self>) {
+        if self.prisma_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Prisma run…".into();
+            cx.notify();
+        }
     }
 
     /// Empty the dashboard search; Escape calls this.

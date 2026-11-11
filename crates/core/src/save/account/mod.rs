@@ -24,6 +24,7 @@ mod tome_high;
 mod tree;
 
 use super::Character;
+use super::value::Save;
 use crate::data::game;
 use crate::model::{GridState, SimContext, Simulation};
 use data::{AccountData, account_data};
@@ -245,4 +246,31 @@ impl Decoder<'_> {
             self.mastery().grid_points as f64,
         ]
     }
+}
+
+/// `getPrismaBonusMult` for the imported save, with no grid or character state.
+///
+/// The Prisma calculator needs the multiplier the game applies to every
+/// Prisma-ed bubble; every term it sums comes from account fields, so this
+/// reads them without building a full simulation.
+pub(crate) fn prisma_multiplier(save: &Save) -> f64 {
+    let Some((fields, root)) = save.parts() else {
+        return 1.0;
+    };
+    let simulation = Simulation::default();
+    let overlay = simulation.overlay();
+    let mut warnings = Vec::new();
+    let decoder = Decoder {
+        save: fields,
+        root,
+        data: account_data(),
+        characters: &[],
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings: &mut warnings,
+    };
+    decoder.prisma_bonus_multi().max(1.0)
 }
