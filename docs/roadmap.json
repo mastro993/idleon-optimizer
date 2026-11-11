@@ -1294,7 +1294,8 @@
       "upstream": [
         "killroy-calc.html",
         "js/ui/killroy.js",
-        "js/stats/systems/w2/killroy.js"
+        "js/stats/systems/common/killroy-planner.js",
+        "js/stats/data/w2/killroy.js"
       ],
       "ui": [
         "Settings and forecast weeks",

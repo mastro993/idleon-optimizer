@@ -356,7 +356,8 @@ mod tests {
         assert!(matches!(
             restore.configs.as_slice(),
             [Config::Killroy(crate::sections::killroy::State {
-                weeks: 20
+                weeks: 20,
+                ..
             })]
         ));
         assert_eq!(restored.recent.len(), 1);

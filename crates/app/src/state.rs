@@ -8,7 +8,7 @@ use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
-use crate::sections::killroy::State as KillroyState;
+use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
@@ -29,6 +29,7 @@ use gpui_mcp::BridgeHandle;
 use idleon_core::farming::Farm;
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
+use idleon_core::killroy::Plan as KillroyPlan;
 use idleon_core::ladle::Ladle;
 use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
@@ -207,6 +208,8 @@ pub struct AppState {
     pub save_loaded: bool,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shared runner for the Killroy comparison's trials.
+    pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
@@ -230,6 +233,7 @@ pub struct AppState {
     _combat_talent_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
+    _killroy_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
     _session_subscription: Option<Subscription>,
@@ -371,6 +375,33 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The Killroy comparison averages a few short trials per configuration.
+        let killroy_run = cx.new(|_| TaskRunner::<KillroyOutcome, KillroyPlan>::new());
+        let killroy_run_subscription =
+            cx.subscribe(&killroy_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Running Killroy trials… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Killroy run cancelled; the previous comparison is unchanged.".into()
+                        } else {
+                            "Killroy run cancelled; nothing was applied.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(rows) = runner.read(cx).result() {
+                            let best = rows.iter().filter(|row| row.best).count();
+                            state.status = format!(
+                                "Killroy trials finished: {} configurations, {best} best.",
+                                rows.len()
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // The strategy search screens dozens of whole runs, so it reports
         // progress and can be cancelled like the plan run.
         let worship_optimize = cx.new(|_| TaskRunner::<SearchOutcome, OptimizeRunInputs>::new());
@@ -457,6 +488,7 @@ impl AppState {
             save_partial: false,
             save_loaded: false,
             optimizer,
+            killroy_run,
             worship_plan,
             worship_optimize,
             breakdown,
@@ -472,6 +504,7 @@ impl AppState {
             _combat_talent_subscription: combat_talent_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
+            _killroy_run_subscription: killroy_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
             _session_subscription: None,
@@ -800,6 +833,9 @@ impl AppState {
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
         self.shadow = imported.shadow;
+        // The stored comparison stays; a save that changes the plan marks it
+        // stale through the runner's own input check.
+        self.killroy_default_selection();
     }
 
     /// Open the export dialog over a freshly written project document.
@@ -827,12 +863,6 @@ impl AppState {
             "Copied the project JSON to the clipboard ({} bytes).",
             self.export.bytes()
         );
-        cx.notify();
-    }
-
-    /// Set how many upcoming weeks the Killroy forecast covers.
-    pub fn set_killroy_weeks(&mut self, value: f64, cx: &mut Context<Self>) {
-        self.killroy.weeks = value.round().clamp(1.0, 52.0) as usize;
         cx.notify();
     }
 

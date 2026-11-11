@@ -38,7 +38,9 @@ const harnessSave = () => {
     CharacterClass_0: 24,
     CharacterClass_1: 10,
     TimeAway: JSON.stringify({ GlobalTime: 1794296810.952, ShopRestock: 62019.836 }),
-    OptLacc: sparse(228, { 39: 5, 113: 3, 203: 2768292, 204: 3735, 205: 2453, 206: 3692, 227: 1 }),
+    OptLacc: sparse(228, { 39: 5, 106: 155, 107: 11, 108: 281, 109: 28, 110: 1, 111: 2,
+      112: 400, 113: 3, 114: 137, 203: 2768292, 204: 3735, 205: 2453, 206: 3692, 227: 1 }),
+    Dream: sparse(24, { 4: 3 }),
     KLA_0: portals(),
     KLA_1: portals(),
     Summon: summon,
@@ -383,6 +385,25 @@ try {
     (current) => has(current, 'killroy-week-2') && !has(current, 'killroy-week-3'),
     'the week range updates the forecast',
   );
+
+  // The upgrade comparison: the queue preview, the trials and the best option.
+  await call('click_element', { id: 'upgrades' });
+  await waitForNode('killroy-upgrades', 'the upgrade comparisons tab opens');
+  await waitForNode('killroy-preview', 'the selection preview lists the queue');
+  await call('click_element', { id: 'killroy-run' });
+  await waitForNode('killroy-comparison', 'the comparison runs and renders its rows');
+  await waitFor(
+    (current) => current.some((node) => node.id?.startsWith('killroy-best-')),
+    'the best option is highlighted',
+  );
+  nodes = await tree();
+  check(
+    'the comparison names the +1 upgrade',
+    (labelOf(nodes, 'killroy-preview') ?? '').includes('Queue:'),
+    String(labelOf(nodes, 'killroy-preview')),
+  );
+  await call('click_element', { id: 'baseline' });
+  await waitForNode('killroy-forecast', 'the baseline tab reopens');
 
   // Back to the research rates pane for the failed-import checks.
   await call('click_element', { id: 'back-to-dashboard' });

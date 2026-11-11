@@ -90,6 +90,30 @@ const shadowSave = () => {
 /// A small flat `save.json` carrying a cavern: three jar types bought and one
 /// slot filling an Opal jar, so the jar calculator has something to read. Rows
 /// stay as short as the cells the jar reads.
+/// A small flat save with a wrapped Killroy rotation, two eligible characters
+/// and every upgrade unlocked, so the comparison has rows to run.
+const killroySave = () => {
+  const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const portals = () => sparse(251, { 100: [0], 150: [0], 200: [0], 250: [0] });
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+    Lv0_1: JSON.stringify(sparse(30, { 20: 30 })),
+    CharacterClass_0: 10,
+    CharacterClass_1: 31,
+    TimeAway: JSON.stringify({ GlobalTime: 1794296810.952, ShopRestock: 62019.836 }),
+    OptLacc: sparse(228, {
+      39: 5, 106: 155, 107: 11, 108: 281, 109: 28, 110: 1, 111: 2, 112: 400, 113: 0, 114: 137, 227: 1,
+    }),
+    Dream: JSON.stringify(sparse(24, { 4: 3 })),
+    KLA_0: portals(),
+    KLA_1: portals(),
+    Summon: sparse(4, { 3: sparse(3, { 2: 5 }) }),
+    KRbest: { ratB: 2240, thermostat: 2356 },
+    serverVars: { KillroySwap: 7 },
+  });
+};
+
 const jarSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   const holes = Array.from({ length: 35 }, () => []);
@@ -268,6 +292,25 @@ const INTERACTIONS = {
     await waitForNode(lane, 'import-drop', 'killroy: the empty state opens the import');
     await lane.call('click_element', { id: 'import-cancel' });
     await waitFor(lane, (nodes) => !has(nodes, 'import-drop'), 'killroy: cancel closes the import');
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'killroy: the header import opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: killroySave() });
+    await waitForNode(lane, 'import-format', 'killroy: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'killroy-forecast', 'killroy: the forecast opens after Apply');
+    await lane.call('click_element', { id: 'upgrades' });
+    await waitForNode(lane, 'killroy-upgrades', 'killroy: the upgrade list opens');
+    await lane.call('click_element', { id: 'killroy-run' });
+    await waitForNode(lane, 'killroy-comparison', 'killroy: the comparison runs');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('killroy-best-')),
+      'killroy: the best option is marked',
+    );
+    await lane.call('click_element', { id: 'baseline' });
+    await waitForNode(lane, 'killroy-forecast', 'killroy: the baseline tab reopens');
   },
   jar: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

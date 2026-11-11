@@ -1,5 +1,5 @@
-// Extracts the Killroy encounter pools the Rust app ships from the upstream JS
-// repo, matching `killroyRoom` in js/stats/data/w2/killroy.js.
+// Extracts the Killroy encounter pools and upgrade list the Rust app ships from
+// the upstream JS repo, matching js/stats/data/w2/killroy.js.
 // Usage: node script/extract-killroy-data.mjs <path-to-idleon-research-optimizer>
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -43,7 +43,10 @@ const pools = Object.fromEntries(
   })
 );
 
-const data = { families: killroy.KILLROY_FAMILIES, pools };
+// The six upgrades the comparison offers, with the effect each one buys.
+const upgrades = killroy.KILLROY_UPGRADES.map(({ name, effect }) => ({ name, effect }));
+
+const data = { families: killroy.KILLROY_FAMILIES, upgrades, pools };
 writeFileSync(
   join(import.meta.dirname, '../crates/core/data/killroy.json'),
   `${JSON.stringify(data, null, 2)}\n`
