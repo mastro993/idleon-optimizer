@@ -20,13 +20,13 @@
 //! which shape it read in `Imported::format`, so a caller can preview a save and
 //! apply it in a second step without parsing twice.
 //!
-//! Deliberately unsupported, because the save does not carry the inputs the
-//! upstream needs: the additive account research bonus tree (`extra_pct`, read
-//! from `cachedExtPctExSticker` when the object has it) and the true
-//! multipliers from The Button, the arcade, Clam Works, equipment, Menagerie,
-//! Jelly and the Royal Guardian outpost. Warned about when the field is absent.
+//! Every account multiplier the research simulator reads is decoded from the
+//! save by [`account`], which also reports the tree it built. A term whose
+//! save field is missing is left out and warned about by that field's name;
+//! nothing is guessed.
 
 mod account;
+mod formula;
 pub(crate) mod json;
 mod research;
 mod shadow;
@@ -36,6 +36,8 @@ pub use shadow::{Shadow, ShadowVerdict};
 
 use crate::clamworks::Clamworks;
 use crate::model::{SimContext, Simulation};
+pub use account::{BonusTerm, BonusTree};
+pub use formula::log as game_log;
 use serde_json::{Map, Value};
 
 /// The shape the imported text had, as the upstream loader detects it
@@ -67,11 +69,15 @@ impl Format {
 pub struct Imported {
     pub simulation: Simulation,
     pub context: SimContext,
+    /// The save-derived multiplier tree behind [`Self::context`].
+    pub tree: BonusTree,
     /// The Clamworks state the save carries, or the zero state when it has none.
     pub clamworks: Clamworks,
     /// The decoded save object (`data` in an `it.json`, the object itself in a
     /// flat save), kept whole so read-only sections can audit it.
     pub save: Value,
+    /// The `it.json` wrapper's companion roster, beside the save.
+    pub companion: Option<Value>,
     /// The per-character statue levels and EXP the save carries.
     pub statues: crate::statue::StatueSave,
     /// Which shape the text had.
@@ -84,6 +90,11 @@ pub struct Imported {
     pub warnings: Vec<String>,
     /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
     pub shadow: Shadow,
+}
+
+/// A save field that may be a JSON value or a string holding one.
+pub(crate) fn parsed(value: &Value, key: &str) -> Option<Value> {
+    json::parsed_field(value.as_object()?, key)
 }
 
 /// Why an import could not be read.
@@ -124,12 +135,35 @@ const RESEARCH_FIELDS: [&str; 11] = [
     "magData",
 ];
 
-/// One character's research progress, from `Lv0_<n>` and `Exp0_<n>`.
-#[derive(Clone, Copy, Debug, Default)]
+/// One character's progress, from `Lv0_<n>` and `Exp0_<n>`.
+#[derive(Clone, Debug, Default)]
 struct Character {
-    research_level: Option<u32>,
+    /// The `Lv0_<n>` row: level 0, skills 1..21, divinity at 14, research at 20.
+    levels: Vec<Option<f64>>,
     research_exp: Option<f64>,
-    divinity: Option<u32>,
+}
+
+impl Character {
+    fn research_level(&self) -> Option<u32> {
+        self.levels
+            .get(20)
+            .copied()
+            .flatten()
+            .map(|level| level.max(0.0).round() as u32)
+    }
+
+    fn divinity(&self) -> Option<u32> {
+        self.levels
+            .get(14)
+            .copied()
+            .flatten()
+            .map(|level| level.max(0.0).round() as u32)
+    }
+
+    /// The summed skill level at `skill` (0 = the first skill row).
+    fn skill(&self, skill: usize) -> f64 {
+        self.levels.get(skill + 1).copied().flatten().unwrap_or(0.0)
+    }
 }
 
 /// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
@@ -183,16 +217,19 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.observations = research::observations(save, &rows, &mut warnings);
     simulation.mags = research::mags(save, &rows, &mut warnings);
     simulation.placements = research::placements(save, &rows, &mut warnings);
+    simulation.saved_overlay = research::shape_overlay(save, &rows);
 
-    let context = account::account(save, root, &characters, &simulation, &mut warnings);
+    let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let statues = statue::read(save, root, &mut warnings);
     let clamworks = Clamworks::from_save(save, &mut warnings);
 
     Ok(Imported {
         simulation,
         context,
+        tree,
         clamworks,
         save: Value::Object(save.clone()),
+        companion: root.get("companion").cloned(),
         statues,
         format,
         characters: roster,
@@ -244,15 +281,11 @@ fn characters(save: &Map<String, Value>) -> Vec<Character> {
             characters.resize(index + 1, Character::default());
         }
         let row = json::parsed_field(save, key);
-        let cells = row.as_ref().and_then(Value::as_array);
-        characters[index].research_level = cells
-            .and_then(|cells| cells.get(20))
-            .and_then(json::number)
-            .map(|level| level.max(0.0).round() as u32);
-        characters[index].divinity = cells
-            .and_then(|cells| cells.get(14))
-            .and_then(json::number)
-            .map(|level| level.max(0.0).round() as u32);
+        characters[index].levels = row
+            .as_ref()
+            .and_then(Value::as_array)
+            .map(|cells| cells.iter().map(json::number).collect())
+            .unwrap_or_default();
         characters[index].research_exp = json::parsed_field(save, &format!("Exp0_{index}"))
             .as_ref()
             .and_then(Value::as_array)

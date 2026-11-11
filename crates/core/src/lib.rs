@@ -14,6 +14,7 @@ pub mod data;
 pub mod endgame;
 pub mod formula;
 pub mod model;
+pub mod monument;
 pub mod optimize;
 pub mod pickle;
 pub mod save;

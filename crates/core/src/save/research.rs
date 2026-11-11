@@ -55,7 +55,7 @@ pub(crate) fn research_level(save: &Map<String, Value>, characters: &[Character]
         .or_else(|| {
             characters
                 .iter()
-                .filter_map(|character| character.research_level)
+                .filter_map(|character| character.research_level())
                 .max()
         })
 }
@@ -73,7 +73,7 @@ pub(crate) fn research_exp(
         .or_else(|| {
             characters
                 .iter()
-                .filter(|character| character.research_level == Some(research_level))
+                .filter(|character| character.research_level() == Some(research_level))
                 .filter_map(|character| character.research_exp)
                 .max_by(f64::total_cmp)
         })
@@ -86,6 +86,20 @@ pub(crate) fn grid_levels(
     rows: &[Vec<Value>],
 ) -> Option<Vec<Option<f64>>> {
     field_array(save, "gridLevels", rows, 0)
+}
+
+/// The save's own per-cell shape overlay: the decoded `shapeOverlay`, else
+/// `Research` row 1. The game's grid bonuses read this row, not the shape
+/// positions, so an importer must keep it.
+pub(crate) fn shape_overlay(save: &Map<String, Value>, rows: &[Vec<Value>]) -> Option<Vec<i32>> {
+    let values = field_array(save, "shapeOverlay", rows, 1)?;
+    Some(
+        values
+            .iter()
+            .take(game().cells())
+            .map(|value| value.map(|index| index.round() as i32).unwrap_or(-1))
+            .collect(),
+    )
 }
 
 /// Build the grid, padding short arrays and trimming long ones.

@@ -197,6 +197,12 @@ const INTERACTIONS = {
       'statue: sort returns to game order',
     );
   },
+  monument: async (lane) => {
+    await lane.call('click_element', { id: 'sources' });
+    await waitForNode(lane, 'monument-pane-sources', 'monument: the bonus sources tab opens');
+    await lane.call('click_element', { id: 'bravery' });
+    await waitForNode(lane, 'monument-pane-bravery', 'monument: the bravery tab reopens');
+  },
   clamworks: async (lane) => {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
     await lane.call('click_element', { id: 'upgrades' });
