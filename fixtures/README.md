@@ -30,3 +30,11 @@ covering boost stacks, spent rethrows and an entered last-sword HP, and the inpu
 their messages. Regenerate it with `node script/monument-oracle.mjs <upstream-repo>`;
 `crates/core/tests/monument.rs` compares the port field for field. Treat it as frozen for the same
 reason: it is the oracle's output, not this app's.
+
+`coral-plan.json` is the upstream Coral God Rank planner's own output for `data.json`: the
+section's defaults, four beam-search cases (the fixture plan at the default and a one-state beam,
+plus a small crafted plan where a wide beam has to beat a narrow one) and the offering model at
+eight God Ranks. Regenerate it with
+`node script/coral-god-rank-oracle.mjs <upstream-repo>`; `crates/core/tests/coral_plan.rs` compares
+the port action by action. Treat it as frozen for the same reason: it is the oracle's output, not
+this app's.

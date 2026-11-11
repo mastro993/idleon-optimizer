@@ -398,6 +398,23 @@ const projectDocument = () =>
 /// The synthetic account the sailing tabs read: boats, captains and balances.
 const sailingSave = () => readFileSync(join(process.cwd(), 'fixtures/data.json'), 'utf8');
 
+/// A small flat save with a Divinity budget, a God Rank, offer tier 1, Coral Kid
+/// levels and the account rows the planner reads, so a run has actions to list.
+const coralSave = () => {
+  const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const research = Array.from({ length: 9 }, () => sparse(240));
+  research[7][4] = 5;
+  return JSON.stringify({
+    Research: JSON.stringify(research),
+    Lv0_0: JSON.stringify(sparse(30, { 14: 2000, 20: 42 })),
+    Divinity: JSON.stringify(sparse(30, { 24: 1e12, 25: 12, 26: 1 })),
+    OptLacc: JSON.stringify(
+      sparse(700, { 427: 20, 428: 10, 429: 10, 430: 10, 431: 10, 432: 10, 616: 5, 617: 5 }),
+    ),
+    UpgVault: JSON.stringify(sparse(80, { 76: 40 })),
+  });
+};
+
 /// The upstream optimizer's state string: gzip+base64 behind `ROv2:`.
 const upstreamState = () => {
   const state = {
@@ -794,6 +811,31 @@ const INTERACTIONS = {
       'coral: the unlock state follows the assumption checkbox',
     );
     await lane.call('click_element', { id: 'coral-assume-unlocked' });
+
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'coral: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: coralSave() });
+    await waitForNode(lane, 'import-format', 'coral: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'coral-plan', 'coral: the plan card opens after Apply');
+    await lane.call('click_element', { id: 'coral-run' });
+    await waitForNode(lane, 'coral-projection', 'coral: the run projects the coral state');
+    await waitForNode(lane, 'coral-actions', 'coral: the run lists the plan actions');
+    const summary = labelOf(await lane.tree(), 'coral-plan-summary') ?? '';
+    if (!summary.includes('actions')) throw new Error(`coral: the plan summary reads ${summary}`);
+
+    // An edited input keeps the plan on screen but marks it stale; putting the
+    // input back marks it current again.
+    await lane.call('click_element', { id: 'coral-assume-unlocked' });
+    await waitForNode(lane, 'coral-stale', 'coral: an input change marks the plan stale');
+    await lane.call('click_element', { id: 'coral-assume-unlocked' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'coral-stale'),
+      'coral: restoring the input clears the stale marker',
+    );
   },
   ladle: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

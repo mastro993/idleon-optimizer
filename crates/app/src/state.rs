@@ -34,6 +34,7 @@ use idleon_core::cog::{
     CogResult, Goal as CogGoal, OptimizeOptions, optimize as optimize_cog_board,
 };
 use idleon_core::cooking_mastery::Mastery;
+use idleon_core::coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_core::farming::Farm;
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
@@ -240,6 +241,8 @@ pub struct AppState {
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
+    /// The shared runner for the coral god rank beam search.
+    pub(crate) coral_run: Entity<TaskRunner<CoralPlan, CoralInputs>>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for a Worship TD plan simulation.
@@ -275,6 +278,7 @@ pub struct AppState {
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
     _killroy_run_subscription: Subscription,
+    _coral_run_subscription: Subscription,
     _cog_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
@@ -483,6 +487,38 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The coral beam search is bounded but budget-sized, so it reports each
+        // step and can be cancelled like the other optimizers.
+        let coral_run = cx.new(|_| TaskRunner::<CoralPlan, CoralInputs>::new());
+        let coral_run_subscription =
+            cx.subscribe(&coral_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Planning Coral Kid upgrades… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Coral plan cancelled; the previous plan is unchanged.".into()
+                        } else {
+                            "Coral plan cancelled; nothing was planned.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(plan) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Coral plan ready: {} actions, {:.0}% budget committed.",
+                                plan.actions.len(),
+                                if plan.budget > 0.0 {
+                                    plan.spent / plan.budget * 100.0
+                                } else {
+                                    0.0
+                                }
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // The strategy search screens dozens of whole runs, so it reports
         // progress and can be cancelled like the plan run.
         let worship_optimize = cx.new(|_| TaskRunner::<SearchOutcome, OptimizeRunInputs>::new());
@@ -622,6 +658,7 @@ impl AppState {
             save_revision: 0,
             optimizer,
             killroy_run,
+            coral_run,
             cog_run,
             worship_plan,
             worship_optimize,
@@ -644,6 +681,7 @@ impl AppState {
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
             _killroy_run_subscription: killroy_run_subscription,
+            _coral_run_subscription: coral_run_subscription,
             _cog_subscription: cog_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
