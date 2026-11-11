@@ -4,6 +4,7 @@ use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::endgame;
 use crate::sections::farming::State as FarmingState;
+use crate::sections::jar::Tab as JarTab;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
@@ -23,7 +24,7 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
-use idleon_core::{Clamworks, game, monument, optimize, save, shape, sim};
+use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -140,6 +141,10 @@ pub struct AppState {
     pub clamworks_multikill: f64,
     /// The endgame section's audit of the last applied save.
     pub endgame: endgame::State,
+    /// The jar section's active tab, kept across dashboard visits.
+    pub jar_tab: JarTab,
+    /// The Jar Cavern the loaded save carries, if it has one.
+    pub jar: Option<Jar>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The dashboard search field.
@@ -271,6 +276,8 @@ impl AppState {
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
             endgame: endgame::State::default(),
+            jar_tab: JarTab::default(),
+            jar: None,
             pickle: PickleState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
@@ -441,6 +448,7 @@ impl AppState {
         self.sailing = imported.sailing;
         self.farm = imported.farming;
         self.clamworks = imported.clamworks;
+        self.jar = imported.jar;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet
@@ -660,6 +668,11 @@ impl AppState {
 
     pub fn set_tab(&mut self, tab: Tab, cx: &mut Context<Self>) {
         self.research.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_jar_tab(&mut self, tab: JarTab, cx: &mut Context<Self>) {
+        self.jar_tab = tab;
         cx.notify();
     }
 

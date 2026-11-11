@@ -85,9 +85,39 @@ const shadowSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying a cavern: three jar types bought and one
+/// slot filling an Opal jar, so the jar calculator has something to read. Rows
+/// stay as short as the cells the jar reads.
+const jarSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const holes = Array.from({ length: 35 }, () => []);
+  holes[9] = row(21, { 20: 500 });
+  holes[11] = row(38, { 37: 2 });
+  holes[25] = [1, 0, 0, 250];
+  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+};
+
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
+  jar: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'jar: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    // The paste box keeps whatever the last import typed into it.
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: jarSave() });
+    await waitForNode(lane, 'import-format', 'jar: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'jar-overview', 'jar: the cavern opens after Apply');
+    const summary = labelOf(await lane.tree(), 'jar-summary-line') ?? '';
+    if (!summary.includes('3 / 10')) throw new Error(`jar: the summary reads ${summary}`);
+    await waitForNode(lane, 'jar-missing', 'jar: the unbought types are flagged');
+    await lane.call('click_element', { id: 'production' });
+    await waitForNode(lane, 'jar-production', 'jar: the production tab opens');
+    await lane.call('click_element', { id: 'overview' });
+    await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
+  },
   farming: async (lane) => {
     await lane.call('click_element', { id: 'plot-1' });
     await waitFor(
