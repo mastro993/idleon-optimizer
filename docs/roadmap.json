@@ -1133,8 +1133,12 @@
       "key": "fishing",
       "title": "Fishing Calculator",
       "group": "w2",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.",
+      "build": [
+        "FI-01 AFK catches and fish split: the character/toolkit/location toolbar, the every-location table, the selected pool split, real-versus-panel EXP and the shared formula tree, with the upstream pure formulas pinned against an oracle fixture.",
+        "The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target."
+      ],
       "upstream": [
         "fishing-calc.html",
         "js/stats/systems/w2/fishing.js",

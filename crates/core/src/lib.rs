@@ -20,6 +20,7 @@ pub mod dashboard;
 pub mod data;
 pub mod endgame;
 pub mod farming;
+pub mod fishing;
 pub mod formula;
 pub mod import;
 pub mod jar;
@@ -39,6 +40,9 @@ pub mod worship;
 pub use clamworks::Clamworks;
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use farming::{CropValue, Farm, Plot, PlotMetrics, Snapshot};
+pub use fishing::{
+    AccountInputs, Character, Evaluation, FishRow, FishingSave, Location, Pool, PoolOutcome,
+};
 pub use formula::{FormulaNode, ValueFormat};
 pub use jar::Jar;
 pub use model::{

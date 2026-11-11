@@ -13,6 +13,7 @@ use crate::sections;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::combat_sim::Tab as CombatTab;
 use crate::sections::farming::State as FarmingState;
+use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::monument::State as MonumentState;
@@ -186,6 +187,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert("farming", value(&state.farming));
+    insert("fishing", value(&state.fishing));
     insert(
         "statue",
         value(&StatueConfig {
@@ -294,6 +296,7 @@ pub enum Config {
     Killroy(KillroyState),
     Sailing(SailingConfig),
     Farming(FarmingState),
+    Fishing(FishingState),
     Statue(StatueConfig),
     Combat(CombatConfig),
     Monument(MonumentState),
@@ -426,6 +429,10 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
                 state.combat.loadout = idleon_core::combat::Loadout::from_save(save, character);
             }
         }
+        Config::Fishing(config) => {
+            state.fishing = config;
+            state.fishing.clamp(&state.fishing_save);
+        }
         Config::Statue(config) => {
             state.statue.sort = config.sort;
             if state.statue.save.has_character(config.character) {
@@ -516,6 +523,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "killroy" => decode!(Killroy, KillroyState),
         "sailing" => decode!(Sailing, SailingConfig),
         "farming" => decode!(Farming, FarmingState),
+        "fishing" => decode!(Fishing, FishingState),
         "statue" => decode!(Statue, StatueConfig),
         "combat-sim" => decode!(Combat, CombatConfig),
         "monument" => decode!(Monument, MonumentState),
@@ -966,6 +974,7 @@ mod tests {
                 "killroy",
                 "sailing",
                 "farming",
+                "fishing",
                 "statue",
                 "monument",
                 "pickle",

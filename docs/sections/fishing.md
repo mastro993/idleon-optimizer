@@ -5,10 +5,15 @@
 - Milestone: `M10`
 - Section key: `fishing`
 - Group: `w2`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.
+
+## Current build
+
+- FI-01 AFK catches and fish split: the character/toolkit/location toolbar, the every-location table, the selected pool split, real-versus-panel EXP and the shared formula tree, with the upstream pure formulas pinned against an oracle fixture.
+- The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target.
 
 ## Upstream sources
 
