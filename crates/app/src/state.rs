@@ -52,7 +52,7 @@ use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::statue::Estimate as StatueEstimate;
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
-use idleon_core::{Cglunko, Clamworks, Jar, game, monument, optimize, save, shape, sim};
+use idleon_core::{Cglunko, Clamworks, Fountain, Jar, game, monument, optimize, save, shape, sim};
 
 /// What a strategy search stored: its recommendation, or why it could not run.
 pub type SearchOutcome = Result<worship::Search, String>;
@@ -194,6 +194,8 @@ pub struct AppState {
     pub ladle_state: LadleSectionState,
     /// The Cooking Mastery state the last imported save carried.
     pub mastery: Option<Mastery>,
+    /// The Fountain Cavern the loaded save carries, if it has one.
+    pub fountain: Option<Fountain>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -251,6 +253,8 @@ pub struct AppState {
     pub fishing_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared EXP rate tree on the Mastery EXP tab.
     pub mastery_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared formula tree on the Fountain overview.
+    pub fountain_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     pub focus: FocusHandle,
@@ -550,6 +554,8 @@ impl AppState {
             cx.new(|cx| ui::formula::FormulaTree::new("fishing-formula", window, cx));
         let mastery_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("cooking-mastery-formula", window, cx));
+        let fountain_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("fountain-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -584,6 +590,7 @@ impl AppState {
             ladle: None,
             ladle_state,
             mastery: None,
+            fountain: None,
             pickle: PickleState::default(),
             prisma,
             statue,
@@ -613,6 +620,7 @@ impl AppState {
             clamworks_breakdown,
             fishing_breakdown,
             mastery_breakdown,
+            fountain_breakdown,
             shadow: Shadow::default(),
             focus,
             bridge,
@@ -954,6 +962,7 @@ impl AppState {
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
+        self.fountain = imported.fountain;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet

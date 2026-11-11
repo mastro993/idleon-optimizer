@@ -1,11 +1,11 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
-the Cglunko overview, the Prisma calculator, Cooking Mastery, the combat simulator's loadout editor
-and the cog board optimizer partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and
-the All Stats context built, 10 sections planned.**
-The live breakdown is [`docs/roadmap.md`](roadmap.md); the machine-readable source is
-[`docs/roadmap.json`](roadmap.json); each section's full specification is under [`docs/sections/`](sections/).
+the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the combat simulator's
+loadout editor and the cog board optimizer partial, shadow-ban, endgame and BoneJoePickle done,
+Monument Bravery and the All Stats context built, 9 sections planned.** The live breakdown is
+[`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
+each section's full specification is under [`docs/sections/`](sections/).
 
 ## 1. Product goal
 
@@ -245,6 +245,7 @@ script/extract-account-data.mjs     extract the account tables the multiplier tr
 script/extract-stats-data.mjs       extract the map and class tables the stats context reads
 script/extract-prisma-data.mjs      extract the bubble table the Prisma calculator reads
 script/prisma-oracle.mjs            regenerate the Prisma plan and bonus oracle fixture
+script/extract-fountain-data.mjs    extract the fountain upgrade table and its account rows
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -337,6 +338,13 @@ and construction-mode selectors, their save defaults (character one and its curr
 access walk ported from `js/stats/systems/common/map-access.js`. The breakdowns (SA-02), the formula
 explorer (SA-03) and the input ledger (SA-04) resolve against the same context. Details:
 [`docs/sections/stats-all.md`](sections/stats-all.md).
+The Fountain section has its overview (FN-01): the fountain summary, the fill and income rates per
+currency, lucky coins and rubber ducks, the ground coin stacks, the eighteen cross-system bonuses and
+the level planner. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus
+source the save does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
+`fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
+the currency tab, upgrade list, planner, marble planner and simulator (FN-02 to FN-04).
+Details: [`docs/sections/fountain.md`](sections/fountain.md).
 
 The Prisma section implements PR-01: the plan for one character and cauldron (every bubble's saved
 level, its saved Prisma ownership and the four statuses upstream distinguishes), the save's Prisma

@@ -26,6 +26,7 @@ pub mod endgame;
 pub mod farming;
 pub mod fishing;
 pub mod formula;
+pub mod fountain;
 pub mod import;
 pub mod jar;
 pub mod killroy;
@@ -53,6 +54,7 @@ pub use fishing::{
     AccountInputs, Character, Evaluation, FishRow, FishingSave, Location, Pool, PoolOutcome,
 };
 pub use formula::{FormulaNode, ValueFormat};
+pub use fountain::Fountain;
 pub use jar::Jar;
 pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,

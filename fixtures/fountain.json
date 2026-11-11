@@ -1,0 +1,457 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/systems/w5/fountain.js",
+   "JavaScript copied from the fountain-calc.html overview inline rates"
+  ],
+  "save": "fixtures/data.json wrapped as { data: save } with no companion roster"
+ },
+ "summary": {
+  "fountainLevel": 10,
+  "waterType": 2,
+  "nextLevelCost": 23686527755.50208,
+  "watersOwned": 3,
+  "spaces": 4,
+  "maxStack": 20,
+  "maxCoins": 80,
+  "marble": 217402,
+  "marbleBarUnlocked": true,
+  "marblePerFill": 1911.0000000000005,
+  "fillTime": 2127.7346506704303,
+  "marbleFillTime": 36000,
+  "activeSpeed": 8.1,
+  "activeSpeedDisplay": 7.1,
+  "barSpeed": 3.383880597014926,
+  "totalMulti": 11861.031784890069,
+  "fountainMulti": 88.43535999999999,
+  "externalMulti": 134.1209193346425,
+  "royalChance": 0.005,
+  "royalMulti": 12.25,
+  "desireMulti": 4.75,
+  "keep": 0.28152866242038216,
+  "sizeBonus": 10,
+  "optimalStacksPerHr": 0.06820910535476479,
+  "royalStackTime": 52778.87726683868,
+  "averageFillsPerRoyal": 200.9220960549235,
+  "flushTime": 211115.50906735472,
+  "stackFillTime": 5253.66580412452,
+  "allStacksFillTime": 21014.66321649808,
+  "afkStackFillTime": 42554.69301340861,
+  "afkAllStacksFillTime": 170218.77205363443,
+  "redeemTotal": 281545799952.7014,
+  "redeemByType": [
+   3381165584.6014943,
+   5872714757.204665,
+   31509403123.01951,
+   58040594238.5254,
+   43971039106.689705,
+   138770883142.66068,
+   0,
+   0,
+   0
+  ]
+ },
+ "income": {
+  "marblePerHr": 1547.9100000000003,
+  "marblePerHrAfk": 191.10000000000005,
+  "fillsPerHrActive": 13.704716417910447,
+  "fillsPerHrAfk": 1.691940298507463,
+  "activeTypes": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "rows": [
+   {
+    "type": 0,
+    "value": 20968468.741714697,
+    "single": 55647406.274270125,
+    "singleAfk": 6870050.157317299,
+    "full": 151765653.47528213,
+    "fullAfk": 18736500.42904718,
+    "optimal": 175204460.4576345,
+    "optimalAfk": 21630180.30341167
+   },
+   {
+    "type": 1,
+    "value": 53632098.23931201,
+    "single": 142332146.27290455,
+    "singleAfk": 17571869.91023513,
+    "full": 388178580.74428505,
+    "fullAfk": 47923281.57336853,
+    "optimal": 448129186.3022852,
+    "optimalAfk": 55324590.90151669
+   },
+   {
+    "type": 2,
+    "value": 160967576.61823502,
+    "single": 427185611.0904136,
+    "singleAfk": 52738964.332149826,
+    "full": 1165051666.6102188,
+    "fullAfk": 143833539.08768132,
+    "optimal": 1344983163.0511596,
+    "optimalAfk": 166047304.0803901
+   },
+   {
+    "type": 3,
+    "value": 442214051.34114593,
+    "single": 1173574726.8095157,
+    "singleAfk": 144885768.74191552,
+    "full": 3200658345.8441334,
+    "fullAfk": 395143005.6597696,
+    "optimal": 3694970540.117484,
+    "optimalAfk": 456169202.48364
+   },
+   {
+    "type": 4,
+    "value": 244283550.59272057,
+    "single": 648294644.3729068,
+    "singleAfk": 80036375.84850702,
+    "full": 1768076302.8352003,
+    "fullAfk": 218281025.04138273,
+    "optimal": 2041139398.754824,
+    "optimalAfk": 251992518.3647931
+   },
+   {
+    "type": 5,
+    "value": 1011081115.7935205,
+    "single": 2683268974.9477334,
+    "singleAfk": 331267774.6849054,
+    "full": 7318006295.312,
+    "fullAfk": 903457567.3224692,
+    "optimal": 8448204947.798238,
+    "optimalAfk": 1042988265.1602763
+   }
+  ],
+  "totals": {
+   "single": 5130303509.767744,
+   "singleAfk": 633370803.6750302,
+   "full": 13991736844.821121,
+   "fullAfk": 1727374919.1137185,
+   "optimal": 16152631696.481625,
+   "optimalAfk": 1994152061.2940278
+  }
+ },
+ "lucky": {
+  "counts": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "baseChance": 0,
+  "valuePer": 25
+ },
+ "duck": {
+  "unlocked": true,
+  "count": 3,
+  "chance": 0.003333333333333334,
+  "multi": 1,
+  "progress": 63825.4576080368,
+  "fillTime": 90000
+ },
+ "cross": [
+  [
+   "Bravery Monument",
+   8
+  ],
+  [
+   "Justice Monument",
+   0
+  ],
+  [
+   "Wisdom Monument",
+   0
+  ],
+  [
+   "Cosmo EXP",
+   71
+  ],
+  [
+   "Golden Bucket",
+   250
+  ],
+  [
+   "Class EXP",
+   50
+  ],
+  [
+   "Sailing Treasure",
+   60
+  ],
+  [
+   "Orion Feathers",
+   100
+  ],
+  [
+   "All Damage",
+   206
+  ],
+  [
+   "Bolaia Study",
+   168
+  ],
+  [
+   "Harp EXP",
+   86
+  ],
+  [
+   "Summoning Essence",
+   747
+  ],
+  [
+   "Poppy Fish",
+   0
+  ],
+  [
+   "Minau's Costs",
+   0
+  ],
+  [
+   "Jar Enchant",
+   0
+  ],
+  [
+   "Research EXP",
+   0
+  ],
+  [
+   "Cooking Mastery",
+   0
+  ],
+  [
+   "Bubba Meat",
+   0
+  ]
+ ],
+ "stacks": [
+  {
+   "slot": 0,
+   "count": 20,
+   "coins": [
+    3,
+    0,
+    4,
+    4,
+    0,
+    1,
+    2,
+    2,
+    0,
+    2,
+    2,
+    4,
+    5,
+    4,
+    1,
+    3,
+    5,
+    5,
+    2,
+    3
+   ],
+   "royal": true,
+   "redeem": 231966999216.69104
+  },
+  {
+   "slot": 1,
+   "count": 20,
+   "coins": [
+    1,
+    4,
+    0,
+    3,
+    5,
+    0,
+    3,
+    4,
+    0,
+    1,
+    4,
+    1,
+    0,
+    0,
+    0,
+    0,
+    4,
+    1,
+    0,
+    0
+   ],
+   "royal": false,
+   "redeem": 9827664097.43812
+  },
+  {
+   "slot": 2,
+   "count": 20,
+   "coins": [
+    1,
+    5,
+    1,
+    2,
+    5,
+    0,
+    0,
+    3,
+    4,
+    1,
+    5,
+    1,
+    5,
+    2,
+    0,
+    4,
+    0,
+    5,
+    4,
+    0
+   ],
+   "royal": false,
+   "redeem": 20615328515.9676
+  },
+  {
+   "slot": 3,
+   "count": 20,
+   "coins": [
+    4,
+    3,
+    1,
+    4,
+    4,
+    1,
+    3,
+    5,
+    0,
+    5,
+    4,
+    2,
+    3,
+    2,
+    3,
+    0,
+    5,
+    1,
+    1,
+    0
+   ],
+   "royal": false,
+   "redeem": 19135808122.60467
+  }
+ ],
+ "levels": [
+  {
+   "level": 10,
+   "cost": 23686527755.50208,
+   "currency": 2,
+   "cumulative": 23686527755.50208,
+   "affordable": true
+  },
+  {
+   "level": 11,
+   "cost": 129546439207.56274,
+   "currency": 2,
+   "cumulative": 153232966963.06482,
+   "affordable": false
+  },
+  {
+   "level": 12,
+   "cost": 701148286410.7532,
+   "currency": 2,
+   "cumulative": 854381253373.818,
+   "affordable": false
+  },
+  {
+   "level": 13,
+   "cost": 3761214826460.096,
+   "currency": 2,
+   "cumulative": 4615596079833.914,
+   "affordable": false
+  },
+  {
+   "level": 14,
+   "cost": 20022311414786.98,
+   "currency": 2,
+   "cumulative": 24637907494620.895,
+   "affordable": false
+  },
+  {
+   "level": 15,
+   "cost": 105876246066583.73,
+   "currency": 3,
+   "cumulative": 105876246066583.73,
+   "affordable": false
+  },
+  {
+   "level": 16,
+   "cost": 556587155864924.1,
+   "currency": 3,
+   "cumulative": 662463401931507.9,
+   "affordable": false
+  },
+  {
+   "level": 17,
+   "cost": 2910782753462788,
+   "currency": 3,
+   "cumulative": 3573246155394296,
+   "affordable": false
+  },
+  {
+   "level": 18,
+   "cost": 15152094637150464,
+   "currency": 3,
+   "cumulative": 18725340792544760,
+   "affordable": false
+  },
+  {
+   "level": 19,
+   "cost": 78546801278965570,
+   "currency": 3,
+   "cumulative": 97272142071510340,
+   "affordable": false
+  },
+  {
+   "level": 20,
+   "cost": 405652063586703000,
+   "currency": 4,
+   "cumulative": 405652063586703000,
+   "affordable": false
+  },
+  {
+   "level": 21,
+   "cost": 2087853424001874700,
+   "currency": 4,
+   "cumulative": 2493505487588578000,
+   "affordable": false
+  },
+  {
+   "level": 22,
+   "cost": 10712700820225104000,
+   "currency": 4,
+   "cumulative": 13206206307813681000,
+   "affordable": false
+  },
+  {
+   "level": 23,
+   "cost": 54810696671185910000,
+   "currency": 4,
+   "cumulative": 68016902978999590000,
+   "affordable": false
+  },
+  {
+   "level": 24,
+   "cost": 279704665189312460000,
+   "currency": 4,
+   "cumulative": 347721568168312050000,
+   "affordable": false
+  }
+ ]
+}
