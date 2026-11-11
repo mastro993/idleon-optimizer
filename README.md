@@ -35,6 +35,12 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   export, import), Ely tab strip, cards, tables and form controls, with the upstream dark palette.
   Below 1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays
   usable.
+- **The last session comes back** — the active section, the decoded save, the research state and
+  every section config are written to one app-data session file after a short debounce, then
+  restored on the next launch. The import dialog lists the recent imports with their format and
+  local time. A file that cannot be read is renamed to `session.json.corrupt-<timestamp>` and the
+  app starts on a clean dashboard; `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR` moves the file for
+  tests and separate profiles.
 - **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
   overgrowth, plot rank, evolution chance and growth time. Clicking a plot opens its saved row: crop
   and evolution depth, growth progress and remaining time, the next evolution and overgrowth rolls,

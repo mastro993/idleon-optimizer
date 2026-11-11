@@ -3382,6 +3382,7 @@ name = "idleon-optimizer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "directories",
  "ely-gpui-component",
  "gpui-mcp",
  "gpui-pre",

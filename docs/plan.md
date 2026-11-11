@@ -64,8 +64,8 @@ Section shell:
 - Back to dashboard, section title, world badge, save status, import/export actions.
 - The section owns its upstream tab strip and content; the shell owns only window chrome, status
   bar and global import.
-- Per-section state survives tab switches and dashboard visits for the session, and persists when
-  the project is saved.
+- Per-section state survives tab switches and dashboard visits for the session, and persists across
+  launches in the local session file with the imported save and the active section.
 
 Section registry (`crates/app/src/sections/mod.rs`): one entry per section with id, title, group,
 icon, description, spec link, status, dashboard card flag, view factory and key bindings. The
@@ -140,7 +140,10 @@ that share a tree renderer reuse the formula-tree component.
 - `Account`: account multipliers, companions, currencies and cross-system bonuses derived from the
   save, with provenance for every field.
 - `ProjectState`: versioned app state: active section, per-section config, imported save metadata,
-  recent imports and UI preferences.
+  recent imports and UI preferences. The app writes it to the platform app-data directory as
+  `session.json` (override with `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR`): the project document
+  plus the last applied imports. A corrupt file is renamed to
+  `session.json.corrupt-<timestamp>` and the app starts clean.
 - `SectionState`: serializable state owned by one section (targets, filters, custom presets, replay
   seeds, plans).
 
@@ -168,7 +171,8 @@ expected. `crates/core/src/import.rs` is the one pipeline every accepted format 
    config), then apply atomically: either the whole import succeeds or the previous state stays
    intact. Log every applied field change as `field: old → new`, summarise it in the status bar and
    keep the list in the dialog.
-6. Persist the imported save metadata and add it to recent imports.
+6. Persist the imported save metadata and add it to recent imports; the session file keeps the
+   whole project so the next launch restores the section, save and section configs together.
 
 Errors name the failing field and the expected shape. Examples: `not valid JSON: expected value at
 line 1 column 2`, `unknown format "some-other-tool"; this build reads "idleon-optimizer-project",

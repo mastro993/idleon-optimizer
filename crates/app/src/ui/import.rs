@@ -32,6 +32,8 @@ use std::path::Path;
 const SHOWN_WARNINGS: usize = 3;
 /// How many change-log lines the dialog lists before it counts the rest.
 const SHOWN_CHANGES: usize = 6;
+/// How many recent imports the dialog lists before it counts the rest.
+const SHOWN_RECENT: usize = 5;
 
 /// The document waiting for Apply.
 ///
@@ -239,6 +241,9 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .child(state.import.message.clone()),
         )
     })
+    .when(!state.session.recent.is_empty(), |dialog| {
+        dialog.child(recent(state, cx))
+    })
     .when(
         state.import.pending.is_none() && !state.import.changes.is_empty(),
         |dialog| dialog.child(change_log(state, cx)),
@@ -374,6 +379,55 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .child(format!("…and {hidden} more")),
                 )
             })
+        })
+        .into_any_element()
+}
+
+/// The applied imports the dialog remembers, newest first, each naming its
+/// format, local time and source.
+fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let colors = &cx.theme().colors;
+    let (muted, subtle) = (colors.fg_muted, colors.fg_subtle);
+    let entries = &state.session.recent;
+    let shown = entries.len().min(SHOWN_RECENT);
+    let mut list = div().flex().flex_col().gap_1();
+    for (index, entry) in entries.iter().take(shown).enumerate() {
+        let line = entry.line();
+        list = list.child(
+            div()
+                .id(("recent-import", index))
+                .role(Role::Label)
+                .aria_label(line.clone())
+                .text_size(px(11.0))
+                .text_color(muted)
+                .child(format!("· {line}")),
+        );
+    }
+    let hidden = entries.len() - shown;
+    div()
+        .id("import-recent")
+        .role(Role::Group)
+        .aria_label(format!("Recent imports: {}", entries.len()))
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child(
+            div()
+                .text_size(px(10.0))
+                .text_color(subtle)
+                .child("Recent imports"),
+        )
+        .child(list)
+        .when(hidden > 0, |recent| {
+            recent.child(
+                div()
+                    .id("import-recent-more")
+                    .role(Role::Label)
+                    .aria_label(format!("and {hidden} older imports"))
+                    .text_size(px(11.0))
+                    .text_color(muted)
+                    .child(format!("…and {hidden} older")),
+            )
         })
         .into_any_element()
 }

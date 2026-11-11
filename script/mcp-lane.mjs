@@ -47,16 +47,22 @@ export class McpLane {
     attach = false,
     keep = false,
     section = null,
+    stateDir = null,
     serverBin = 'gpui-mcp',
   } = {}) {
     let endpointDir = null;
+    let laneStateDir = null;
     let appProcess = null;
     if (!attach) {
       if (!existsSync(appBin)) {
         throw new Error(`no app binary at ${appBin}; run cargo build -p idleon-optimizer first`);
       }
       endpointDir = mkdtempSync(join(tmpdir(), 'idleon-lane-'));
-      const appArgs = ['--endpoint-dir', endpointDir];
+      // A private session directory keeps one lane's restored section or save
+      // out of the next lane's tree, and keeps harness runs out of the user's
+      // real app-data file.
+      laneStateDir = stateDir ?? mkdtempSync(join(tmpdir(), 'idleon-state-'));
+      const appArgs = ['--endpoint-dir', endpointDir, '--state-dir', laneStateDir];
       if (section) appArgs.push('--section', section);
       appProcess = spawn(appBin, appArgs, { stdio: 'ignore' });
       const deadline = Date.now() + 30000;
@@ -73,7 +79,7 @@ export class McpLane {
     const child = spawn(serverBin, endpointDir ? ['--endpoint-dir', endpointDir] : [], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
-    const lane = new McpLane({ appId, endpointDir, appProcess, child, keep });
+    const lane = new McpLane({ appId, endpointDir, stateDir: laneStateDir, appProcess, child, keep });
     lane.#wire();
     try {
       await lane.#initialize();
@@ -87,9 +93,10 @@ export class McpLane {
     }
   }
 
-  constructor({ appId, endpointDir, appProcess, child, keep }) {
+  constructor({ appId, endpointDir, stateDir, appProcess, child, keep }) {
     this.appId = appId;
     this.endpointDir = endpointDir;
+    this.stateDir = stateDir;
     this.appProcess = appProcess;
     this.child = child;
     this.keep = keep;
