@@ -1,17 +1,18 @@
 //! The deterministic 100 ms Worship TD run.
 //!
 //! A port of `createWorshipTdRun` in
-//! `js/stats/systems/w3/worship-td.js`, reduced to what the live simulator
-//! needs: wave countdowns, spawns, mob timers, tower firing, projectiles and
-//! the totem. Plans, phases and the strategy search are later issues.
+//! `js/stats/systems/w3/worship-td.js`, covering wave countdowns, spawns, mob
+//! timers, tower firing, projectiles, the totem, the build-plan policy the Plan
+//! pane runs and the replay recorder the Replay pane reads. The strategy search
+//! is a later feature issue.
 
-use super::{Replay, ReplayConfig, ReplayFrame};
 use super::{
-    TICKS_PER_SECOND, Trial, Wave, atom5_bonus, aura_applies, data, distance, geometry, hp_multi,
-    kill_credit, kill_exp, new_tower_cost, placement_bands, skip_reward, tower_atkcd,
-    tower_centers, tower_damage, tower_damage_multi, tower_range, tower_upgrade_cost,
-    validate_placement, wave_row,
+    PhaseWhen, Plan, PlanTower, SkipPolicy, TICKS_PER_SECOND, Trial, Wave, atom5_bonus,
+    aura_applies, data, distance, geometry, hp_multi, kill_credit, kill_exp, new_tower_cost,
+    placement_bands, skip_reward, tower_atkcd, tower_centers, tower_damage, tower_damage_multi,
+    tower_range, tower_upgrade_access, tower_upgrade_cost, validate_placement, wave_row,
 };
+use super::{Replay, ReplayConfig, ReplayFrame};
 
 /// A seeded run's inputs: the save-derived account values the simulator reads.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -144,6 +145,10 @@ pub struct TowerView {
     pub cd_max: f64,
     pub range: f64,
     pub last_fire: Option<u64>,
+    /// Damage this tower dealt over the run.
+    pub damage: f64,
+    /// The plan entry this tower came from, when a plan built it.
+    pub plan_index: Option<usize>,
 }
 
 /// A live mob as described to the renderer.
@@ -290,6 +295,26 @@ pub struct RunView {
     pub effects: Vec<Effect>,
 }
 
+/// One plan action the simulator refused, with the game's reason.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PlanFailure {
+    pub plan_index: Option<usize>,
+    pub reason: String,
+}
+
+/// A plan phase that fired, and what it sold and queued.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PhaseLog {
+    pub phase: usize,
+    pub label: String,
+    pub t: f64,
+    pub wave: u32,
+    pub alive: usize,
+    pub sold: usize,
+    pub refund: f64,
+    pub queued: usize,
+}
+
 /// A completed run's totals.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RunResult {
@@ -305,6 +330,7 @@ pub struct RunResult {
     pub spent: f64,
     pub kill_pts: f64,
     pub skip_pts: f64,
+    pub sell_pts: f64,
     pub kills: u64,
     pub exp: f64,
     pub totem_damage: u32,
@@ -312,6 +338,8 @@ pub struct RunResult {
     pub leaks: u32,
     pub end_pending_frac: f64,
     pub towers: Vec<TowerView>,
+    pub phases: Vec<PhaseLog>,
+    pub placement_fails: Vec<PlanFailure>,
 }
 
 #[derive(Clone, Debug)]
@@ -337,6 +365,7 @@ struct Tower {
     underlings: i64,
     shots: u64,
     damage: f64,
+    plan_index: Option<usize>,
 }
 
 impl Tower {
@@ -498,6 +527,7 @@ pub struct Run {
     leaks: u32,
     spent: f64,
     skip_pts: f64,
+    sell_pts: f64,
     kill_pts: f64,
     best_cleared: u32,
     best_cleared_tick: Option<u64>,
@@ -514,6 +544,14 @@ pub struct Run {
     tower_version: u64,
     replay: Option<Recorder>,
     result: Option<RunResult>,
+    /// The live plan, when this run builds one.
+    plan: Option<Plan>,
+    /// The initial list plus every phase appended so far, as the sim's queue.
+    plan_entries: Vec<PlanTower>,
+    next_plan: usize,
+    phase_index: usize,
+    phase_log: Vec<PhaseLog>,
+    placement_fails: Vec<PlanFailure>,
 }
 
 /// One tower's aura pass: type, sides, range and centre.
@@ -703,6 +741,7 @@ impl Run {
             leaks: 0,
             spent: 0.0,
             skip_pts: 0.0,
+            sell_pts: 0.0,
             kill_pts: 0.0,
             best_cleared: 0,
             best_cleared_tick: None,
@@ -719,7 +758,24 @@ impl Run {
             tower_version: 0,
             replay: replay.map(Recorder::new),
             result: None,
+            plan: None,
+            plan_entries: Vec::new(),
+            next_plan: 0,
+            phase_index: 0,
+            phase_log: Vec::new(),
+            placement_fails: Vec::new(),
         }
+    }
+
+    /// A fresh run that follows a build plan: towers are placed in order and
+    /// upgraded by weight per point, phases sell and rebuild, and the plan's
+    /// skip policy presses Next Wave.
+    pub fn with_plan(inputs: Inputs, trial_index: usize, seed: u64, plan: Plan) -> Self {
+        let plan = plan.normalized();
+        let mut run = Self::new(inputs, trial_index, seed);
+        run.plan_entries = plan.towers.clone();
+        run.plan = Some(plan);
+        run
     }
 
     /// The trial this run plays.
@@ -735,6 +791,16 @@ impl Run {
     /// The current tick.
     pub fn tick(&self) -> u64 {
         self.tick
+    }
+
+    /// The current 1-based wave.
+    pub fn wave(&self) -> u32 {
+        self.wave
+    }
+
+    /// The run's tick limit (four game hours).
+    pub fn max_ticks(&self) -> u64 {
+        self.max_ticks
     }
 
     /// The points on hand.
@@ -788,14 +854,27 @@ impl Run {
         if self.pts < cost {
             return Err(RunError::Cost);
         }
-        let centers = tower_centers(trial, node, check.x);
+        let id = self.install_tower(type_index, node, check.x, cost, None);
+        Ok(Placed { id, cost })
+    }
+
+    /// Add one tower after its cost and placement have been checked.
+    fn install_tower(
+        &mut self,
+        type_index: usize,
+        node: usize,
+        x: f64,
+        cost: f64,
+        plan_index: Option<usize>,
+    ) -> u64 {
+        let centers = tower_centers(self.trial(), node, x);
         let id = self.next_tower + 1;
         self.next_tower = id;
         self.towers.push(Tower {
             id,
             type_index,
             node,
-            x: check.x,
+            x,
             level: 1,
             traits: String::new(),
             cd: 0.0,
@@ -813,12 +892,13 @@ impl Run {
             underlings: 0,
             shots: 0,
             damage: 0.0,
+            plan_index,
         });
         self.pts -= cost;
         self.spent += cost;
         self.apply_traits();
         self.tower_version += 1;
-        Ok(Placed { id, cost })
+        id
     }
 
     /// What selling a tower refunds.
@@ -856,6 +936,12 @@ impl Run {
         if self.pts < cost {
             return Err(RunError::Cost);
         }
+        self.buy_upgrade(index, cost, TRAIT_RECIPE);
+        Ok(Placed { id, cost })
+    }
+
+    /// Buy one level on a standing tower and learn the next trait from `recipe`.
+    fn buy_upgrade(&mut self, index: usize, cost: f64, recipe: &str) {
         self.pts -= cost;
         self.spent += cost;
         let trial_level = self.trial_level(self.towers[index].type_index);
@@ -866,7 +952,7 @@ impl Run {
         let earned = (tower.level / 5) as usize;
         let mut learned = false;
         while tower.traits.len() < earned {
-            let next = TRAIT_RECIPE.chars().nth(tower.traits.len()).unwrap_or('A');
+            let next = recipe.chars().nth(tower.traits.len()).unwrap_or('A');
             tower.traits.push(next);
             learned = true;
         }
@@ -874,7 +960,6 @@ impl Run {
             self.apply_traits();
         }
         self.tower_version += 1;
-        Ok(Placed { id, cost })
     }
 
     /// Sell a tower, refunding 60% of everything spent on it.
@@ -902,6 +987,250 @@ impl Run {
         self.skip_pts += reward;
         self.countdown = 0.0;
         reward
+    }
+
+    /// Place and upgrade from the plan until points run out.
+    fn run_plan_policy(&mut self) {
+        enum Action {
+            Place(usize),
+            Upgrade(usize),
+        }
+        if self.plan.is_none() {
+            return;
+        }
+        for _ in 0..200 {
+            let mut best: Option<(f64, Action)> = None;
+            if let Some(entry) = self.plan_entries.get(self.next_plan) {
+                if !self.inputs.unlocked(entry.type_index) {
+                    self.placement_fails.push(PlanFailure {
+                        plan_index: Some(self.next_plan),
+                        reason: "Tower type locked".into(),
+                    });
+                    self.next_plan += 1;
+                    continue;
+                }
+                let cost = new_tower_cost(entry.type_index, self.towers.len());
+                let score = 2.0 * entry.weight / cost.max(1.0);
+                best = Some((score, Action::Place(self.next_plan)));
+            }
+            for (index, tower) in self.towers.iter().enumerate() {
+                let Some(plan_index) = tower.plan_index else {
+                    continue;
+                };
+                let Some(entry) = self.plan_entries.get(plan_index) else {
+                    continue;
+                };
+                if tower.level >= entry.level_cap() {
+                    continue;
+                }
+                let cost = tower_upgrade_cost(
+                    tower.type_index,
+                    tower.level,
+                    self.trial_level(tower.type_index),
+                );
+                let score = entry.weight / cost.max(1.0);
+                if best.as_ref().is_none_or(|(current, _)| score > *current) {
+                    best = Some((score, Action::Upgrade(index)));
+                }
+            }
+            let Some((_, action)) = best else {
+                break;
+            };
+            match action {
+                Action::Place(plan_index) => {
+                    let entry = self.plan_entries[plan_index].clone();
+                    let cost = new_tower_cost(entry.type_index, self.towers.len());
+                    if self.pts < cost {
+                        break;
+                    }
+                    let existing: Vec<super::Spot> = self
+                        .towers
+                        .iter()
+                        .map(|tower| super::Spot {
+                            node: tower.node,
+                            x: tower.x,
+                        })
+                        .collect();
+                    let check = validate_placement(
+                        self.trial(),
+                        &existing,
+                        entry.slot.node,
+                        entry.slot.x,
+                        0.0,
+                    );
+                    if !check.ok {
+                        self.placement_fails.push(PlanFailure {
+                            plan_index: Some(plan_index),
+                            reason: check.reason.into(),
+                        });
+                        self.next_plan += 1;
+                        continue;
+                    }
+                    self.install_tower(
+                        entry.type_index,
+                        entry.slot.node,
+                        check.x,
+                        cost,
+                        Some(plan_index),
+                    );
+                    if !tower_upgrade_access(self.trial(), entry.slot.node, check.x) {
+                        self.placement_fails.push(PlanFailure {
+                            plan_index: Some(plan_index),
+                            reason: "Placed at level 1, but NPC blocks upgrade clicks".into(),
+                        });
+                    }
+                    self.next_plan += 1;
+                }
+                Action::Upgrade(index) => {
+                    let Some(plan_index) = self.towers[index].plan_index else {
+                        break;
+                    };
+                    let cost = tower_upgrade_cost(
+                        self.towers[index].type_index,
+                        self.towers[index].level,
+                        self.trial_level(self.towers[index].type_index),
+                    );
+                    if self.pts < cost {
+                        break;
+                    }
+                    let recipe = self
+                        .plan_entries
+                        .get(plan_index)
+                        .map(|entry| entry.traits.clone())
+                        .unwrap_or_default();
+                    self.buy_upgrade(index, cost, &recipe);
+                }
+            }
+        }
+    }
+
+    /// The highest HP fraction among live bosses, or `None` when none is alive.
+    fn boss_hp_frac(&self) -> Option<f64> {
+        self.mobs
+            .iter()
+            .filter(|mob| !mob.dead && mob.size >= 3.0)
+            .map(|mob| mob.hp / mob.max_hp)
+            .max_by(f64::total_cmp)
+    }
+
+    /// Whether every trigger a phase declares holds on this tick.
+    fn phase_ready(&self, when: &PhaseWhen, alive: usize) -> bool {
+        if when.min_wave.is_some_and(|wave| self.wave < wave) {
+            return false;
+        }
+        if when
+            .boss_hold
+            .is_some_and(|hold| (self.countdown > 999.0) != hold)
+        {
+            return false;
+        }
+        if when.alive_max.is_some_and(|max| alive > max as usize) {
+            return false;
+        }
+        if when
+            .min_time_sec
+            .is_some_and(|min| self.tick as f64 / TICKS_PER_SECOND < min)
+        {
+            return false;
+        }
+        if let Some(max) = when.boss_hp_frac_max {
+            let Some(frac) = self.boss_hp_frac() else {
+                return false;
+            };
+            if frac > max {
+                return false;
+            }
+        }
+        true
+    }
+
+    /// Sell and rebuild for every phase whose conditions hold, in order.
+    fn check_phases(&mut self, alive: usize) {
+        loop {
+            let Some(phase) = self
+                .plan
+                .as_ref()
+                .and_then(|plan| plan.phases.get(self.phase_index))
+                .cloned()
+            else {
+                return;
+            };
+            if !self.phase_ready(&phase.when, alive) {
+                return;
+            }
+            let trial = self.trial();
+            let mut keep = Vec::with_capacity(self.towers.len());
+            let mut sold = 0;
+            let mut refund = 0.0;
+            for tower in std::mem::take(&mut self.towers) {
+                let matches = if phase.sell.all {
+                    !phase.sell.keep_types.contains(&tower.type_index)
+                } else {
+                    phase.sell.types.contains(&tower.type_index)
+                        || tower
+                            .plan_index
+                            .is_some_and(|index| phase.sell.plan_idx.contains(&index))
+                };
+                if !matches {
+                    keep.push(tower);
+                } else if !tower_upgrade_access(trial, tower.node, tower.x) {
+                    self.placement_fails.push(PlanFailure {
+                        plan_index: tower.plan_index,
+                        reason: "NPC blocks the requested tower sale".into(),
+                    });
+                    keep.push(tower);
+                } else {
+                    sold += 1;
+                    refund += tower.refund;
+                }
+            }
+            self.towers = keep;
+            if sold > 0 {
+                self.pts = (self.pts + refund).round();
+                self.sell_pts += refund;
+                self.apply_traits();
+            }
+            let start = self.plan_entries.len();
+            self.plan_entries.extend(phase.towers.clone());
+            if phase.skip_remaining {
+                self.next_plan = start;
+            }
+            self.phase_log.push(PhaseLog {
+                phase: self.phase_index,
+                label: phase.label.clone(),
+                t: self.tick as f64 / TICKS_PER_SECOND,
+                wave: self.wave,
+                alive,
+                sold,
+                refund,
+                queued: phase.towers.len(),
+            });
+            self.phase_index += 1;
+        }
+    }
+
+    /// Press Next Wave according to the plan's skip policy.
+    fn plan_skip(&mut self) {
+        let Some(policy) = self.plan.as_ref().map(|plan| plan.skip_policy) else {
+            return;
+        };
+        if self.countdown > 999.0 {
+            return;
+        }
+        let clear = self.mobs.iter().all(|mob| mob.dead)
+            && self.spawns.is_empty()
+            && self.pending_hp + self.alive_hp() <= 0.5;
+        let skip = match policy {
+            SkipPolicy::Never => false,
+            SkipPolicy::WhenClear => clear,
+            SkipPolicy::Spam => true,
+        };
+        if skip {
+            let reward = skip_reward(self.countdown, self.wave);
+            self.pts += reward;
+            self.skip_pts += reward;
+            self.countdown = 0.0;
+        }
     }
 
     /// Rebuild every tower's trait map and cooldown, as the game's trait pass does.
@@ -1648,6 +1977,9 @@ impl Run {
             if self.countdown > 999.0 && pending <= 0.0 {
                 self.countdown = 20.0;
             }
+            if self.plan.is_some() {
+                self.check_phases(alive);
+            }
             if alive == 0
                 && self.spawns.is_empty()
                 && pending <= 0.5
@@ -1674,6 +2006,9 @@ impl Run {
                 self.stall_min = f64::INFINITY;
                 self.stall_tick = self.tick;
             }
+            if self.plan.is_some() {
+                self.plan_skip();
+            }
         }
         if !self.spawns.is_empty() {
             let due: Vec<Spawn> = self
@@ -1686,6 +2021,9 @@ impl Run {
             for spawn in due {
                 self.spawn(spawn.wave);
             }
+        }
+        if self.plan.is_some() {
+            self.run_plan_policy();
         }
         self.mob_timers();
         // Mob movement and leaks.
@@ -2142,6 +2480,8 @@ impl Run {
                 self.trial_level(tower.type_index),
             ),
             last_fire: tower.last_fire,
+            damage: tower.damage,
+            plan_index: tower.plan_index,
         }
     }
 
@@ -2173,6 +2513,7 @@ impl Run {
             spent: self.spent,
             kill_pts: self.kill_pts,
             skip_pts: self.skip_pts,
+            sell_pts: self.sell_pts,
             kills: self.kills,
             exp: self.exp,
             totem_damage: self.totem_damage,
@@ -2184,6 +2525,8 @@ impl Run {
                 .iter()
                 .map(|tower| self.tower_view(tower))
                 .collect(),
+            phases: self.phase_log.clone(),
+            placement_fails: self.placement_fails.clone(),
         };
         if self.finished {
             self.result = Some(result.clone());

@@ -19,6 +19,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::Sort as StatueSort;
+use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
 use idleon_core::coral;
 use idleon_core::game;
@@ -78,6 +79,8 @@ pub struct WorshipConfig {
     tower: usize,
     speed: f64,
     ranges: bool,
+    tab: WorshipTab,
+    plan_source: PlanSource,
 }
 
 impl Default for WorshipConfig {
@@ -87,6 +90,8 @@ impl Default for WorshipConfig {
             tower: 0,
             speed: 1.0,
             ranges: true,
+            tab: WorshipTab::Simulator,
+            plan_source: PlanSource::Guide,
         }
     }
 }
@@ -191,6 +196,8 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             tower: state.worship.tower,
             speed: state.worship.speed,
             ranges: state.worship.ranges,
+            tab: state.worship.tab,
+            plan_source: state.worship.plan_source,
         }),
     );
     configs
@@ -421,6 +428,9 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
             state.worship.tower = config.tower.min(idleon_core::worship::TOWER_COUNT - 1);
             state.worship.speed = config.speed.clamp(0.5, 5.0);
             state.worship.ranges = config.ranges;
+            state.worship.tab = config.tab;
+            state.worship.plan_source = config.plan_source;
+            state.worship.plan = None;
             state.worship.run = None;
             state.worship.view = None;
             state.worship.selected = None;

@@ -1,16 +1,19 @@
-//! Worship Tower Defense: the live simulator, its replay, HUD and build controls.
+//! Worship Tower Defense: the live simulator, its replay, plan and model panes.
 //!
 //! The simulator core is `idleon_core::worship`; this module owns the live run,
-//! the tick pump and the map. Tower placement is direct: pick a type from the
-//! palette, then a highlighted platform slot. Clicking a standing tower selects
-//! it for a one-level upgrade or a 60% refund sale. A finished run loads its
-//! replay: the map shows recorded frames and the sidebar scrubs, plays and
-//! changes their speed.
+//! the tick pump, the map and the Plan and Model panes. Tower placement is
+//! direct: pick a type from the palette, then a highlighted platform slot.
+//! Clicking a standing tower selects it for a one-level upgrade or a 60% refund
+//! sale. A finished run loads its replay: the map shows recorded frames and the
+//! sidebar scrubs, plays and changes their speed. The Plan pane runs a build
+//! plan through the same simulator engine.
 
 mod map;
+mod model;
+mod plan;
 mod state;
 
-pub use state::State;
+pub use state::{PlanRunInputs, PlanSource, State};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -18,18 +21,60 @@ use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::data_display::Tone;
 use ely_gpui_component::forms::{Choice, Select, Slider};
 use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
 use idleon_core::worship;
+
+/// The section's three panes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Tab {
+    /// The live run, its palette, map and HUD.
+    #[default]
+    Simulator,
+    /// The build plan, its stages and the plan run's final towers.
+    Plan,
+    /// The modelling assumptions and missing inputs.
+    Model,
+}
+
+impl Tab {
+    pub const ALL: [Tab; 3] = [Tab::Simulator, Tab::Plan, Tab::Model];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Tab::Simulator => "worship-simulator-tab",
+            Tab::Plan => "worship-plan-tab",
+            Tab::Model => "worship-model-tab",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Tab::Simulator => "Simulator",
+            Tab::Plan => "Plan",
+            Tab::Model => "Model",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.id() == id)
+    }
+}
 
 /// The section's view.
 pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     state.worship_ensure();
+    state.worship_ensure_plan();
     state.worship_pump(cx);
     state.worship_replay_pump(cx);
     let muted = cx.theme().colors.fg_muted;
+    let tab = state.worship.tab;
     div()
         .id("worship-section")
         .flex()
@@ -38,6 +83,36 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .min_h_0()
         .gap_3()
         .child(header(state, muted))
+        .child(tabs(state, cx))
+        .child(match tab {
+            Tab::Simulator => simulator(state, window, cx),
+            Tab::Plan => plan::pane(state, cx),
+            Tab::Model => model::pane(state, cx),
+        })
+        .into_any_element()
+}
+
+fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let entity = cx.entity();
+    let mut tabs = TabBar::new("worship-tabs").selected(SharedString::from(state.worship.tab.id()));
+    for tab in Tab::ALL {
+        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
+    }
+    tabs.on_select(move |id, _window, cx| {
+        if let Some(tab) = Tab::from_id(id.as_ref()) {
+            entity.update(cx, |state, cx| state.worship_set_tab(tab, cx));
+        }
+    })
+}
+
+fn simulator(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    div()
+        .id("worship-simulator-pane")
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_h_0()
+        .gap_3()
         .child(controls(state, cx))
         .child(
             div()
@@ -619,10 +694,11 @@ fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .gap_1()
             .px_1()
             .child(
-                Caption::new("Model notes · plans and the optimizer arrive in WT-03 to WT-04.")
-                    .text_color(muted),
-            )
-            .child(Caption::new(ASSUMPTIONS).text_color(muted)),
+                Caption::new(
+                    "The Plan tab runs a build plan through this engine; the Model tab lists every assumption and missing input. A finished run opens its replay in the sidebar.",
+                )
+                .text_color(muted),
+            ),
     );
     div()
         .id("worship-sidebar")
@@ -764,10 +840,3 @@ fn format_time(seconds: f64) -> String {
         format!("{minutes}:{rest:02}")
     }
 }
-
-/// The assumptions the live simulator makes, shown beside the run.
-const ASSUMPTIONS: &str = "Wizards scan on 100 ms ticks and a 300 ms popup follows each cooldown. \
-Pulse volleys roll one critical for all hits. Trait passes follow the game, but manual \
-upgrades take an all-A trait recipe. Account start points beyond the base 5, kill-point \
-meals and Meritocracy stay neutral this build. Elites, roots and boss holds are not modelled. \
-Replays record the live field every second; the rate halves when the 4000-frame cap fills.";

@@ -12,7 +12,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
-use crate::sections::worship_td::State as WorshipState;
+use crate::sections::worship_td::{PlanRunInputs, State as WorshipState};
 use crate::sections::{self, Section};
 use crate::session::{self, RecentImport, Session};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
@@ -25,13 +25,14 @@ use gpui_mcp::BridgeHandle;
 use idleon_core::farming::Farm;
 use idleon_core::import as pipeline;
 use idleon_core::model::{
-    Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
-    Target,
+    Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
+    SimContext, Simulation, Target,
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
 use idleon_core::worship::Inputs as WorshipInputs;
+use idleon_core::worship::{Run, RunResult as WorshipRunResult};
 use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
@@ -184,6 +185,8 @@ pub struct AppState {
     pub save_loaded: bool,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shared runner for a Worship TD plan simulation.
+    pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Clamworks overview.
@@ -197,6 +200,7 @@ pub struct AppState {
     _statue_search_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
+    _worship_plan_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -288,6 +292,37 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // A plan run is a whole game run off the UI thread: the status line
+        // carries its progress and its result stays in the runner for the pane.
+        let worship_plan = cx.new(|_| TaskRunner::<WorshipRunResult, PlanRunInputs>::new());
+        let worship_plan_subscription =
+            cx.subscribe(&worship_plan, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!(
+                            "Simulating the Worship TD plan… {:.0}%",
+                            progress.fraction * 100.0
+                        );
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Plan run cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Plan run cancelled; nothing was applied.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Plan simulated: best wave {}, {} towers.",
+                                result.best_wave,
+                                result.towers.len()
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
@@ -332,6 +367,7 @@ impl AppState {
             save_partial: false,
             save_loaded: false,
             optimizer,
+            worship_plan,
             breakdown,
             clamworks_breakdown,
             shadow: Shadow::default(),
@@ -341,6 +377,7 @@ impl AppState {
             _statue_search_subscription: statue_search_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
+            _worship_plan_subscription: worship_plan_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -1260,6 +1297,59 @@ impl AppState {
         });
         if started {
             self.status = "Optimizing…".into();
+            cx.notify();
+        }
+    }
+
+    /// The Worship plan run: running, progress, result and staleness.
+    pub fn worship_plan_task(&self, cx: &App) -> TaskState<WorshipRunResult> {
+        self.worship_plan
+            .read(cx)
+            .state(&self.worship_plan_inputs())
+    }
+
+    /// The inputs a plan run started now would use.
+    pub fn worship_plan_inputs(&self) -> PlanRunInputs {
+        PlanRunInputs {
+            trial: self.worship.trial,
+            source: self.worship.plan_source,
+            seed: self.worship.seed,
+            inputs: self.worship_inputs.clone(),
+            plan: self.worship.plan.clone().unwrap_or_default(),
+        }
+    }
+
+    /// Simulate the plan to the end off the UI thread.
+    pub fn simulate_worship_plan(&mut self, cx: &mut Context<Self>) {
+        self.worship_ensure_plan();
+        let inputs = self.worship_plan_inputs();
+        let started = self.worship_plan.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                let mut run = Run::with_plan(inputs.inputs, inputs.trial, inputs.seed, inputs.plan);
+                let max_ticks = run.max_ticks().max(1);
+                while !run.done() {
+                    run.step(500);
+                    let progress = Progress {
+                        fraction: (run.tick() as f64 / max_ticks as f64).min(0.99) as f32,
+                        message: format!("Simulating plan · wave {}", run.wave()),
+                    };
+                    if report(progress) == Control::Stop {
+                        return None;
+                    }
+                }
+                Some(run.result())
+            })
+        });
+        if started {
+            self.status = "Simulating the Worship TD plan…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running plan simulation to stop at its next report.
+    pub fn cancel_worship_plan(&mut self, cx: &mut Context<Self>) {
+        if self.worship_plan.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the plan run…".into();
             cx.notify();
         }
     }

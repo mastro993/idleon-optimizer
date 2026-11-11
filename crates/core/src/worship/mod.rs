@@ -9,17 +9,49 @@
 //!
 //! Two upstream runtime choices are explicit assumptions here, as they are
 //! there: wizards scan on 100 ms ticks with a 300 ms popup after each cooldown,
-//! and a pulse volley rolls one critical for all of its hits. Plans, phases and
-//! the strategy optimizer belong to later feature issues.
+//! and a pulse volley rolls one critical for all of its hits. Build plans,
+//! phases and their staged layouts live in [`plan`]; a run's recorded timeline
+//! lives in [`replay`]. The strategy optimizer is a later feature issue.
 
+mod plan;
 mod replay;
 mod sim;
 
+pub use plan::{
+    GuidePreset, PhaseSell, PhaseWhen, Plan, PlanIssue, PlanPhase, PlanPlacement, PlanReject,
+    PlanStage, PlanTower, RootPolicy, SkipPolicy, guide_preset, guide_presets_for_trial,
+    heuristic_plan, plan_issues, plan_stages, tower_upgrade_access,
+};
 pub use replay::{Replay, ReplayConfig, ReplayFrame};
 pub use sim::{
-    CloudView, EffectKind, EndReason, Inputs, KrakenView, MobView, Placed, Run, RunError, RunView,
-    TowerView,
+    CloudView, EffectKind, EndReason, Inputs, KrakenView, MobView, PhaseLog, Placed, PlanFailure,
+    Run, RunError, RunResult, RunView, TowerView,
 };
+
+/// The modelling choices and neutral inputs the simulator and plans make.
+///
+/// These are assumptions, not game rules: each one describes timing the source
+/// leaves to animation frames, a plan check the game applies on screen, or an
+/// account bonus this build does not decode yet. The Model pane lists them.
+pub const ASSUMPTIONS: &[&str] = &[
+    "Wizards scan on 100 ms ticks. After a shot the cooldown runs, then a 300 ms popup precedes the ready frame, so the period is ceil(cooldown / 0.1) + 3 ticks; a failed scan keeps the wizard ready.",
+    "Pulse, Frozone and Void hit when they fire; Storm bolts land 300 ms later.",
+    "Fireballs land 1.8 s after firing, and the second fireball lands 0.5 s later.",
+    "Kraken underlings move 3 px per tick. Their 200 ms, 1 s and 2 s timers start at spawn, and the 1 s wander roll lands on a 100 ms tick boundary.",
+    "Kraken knockback tweens override velocity for 0.6 s, sampled on 100 ms ticks.",
+    "A Kraken hit on an already-dead acquired target deals no damage but still consumes the hit and applies knockback.",
+    "Sprite centres use the unscaled frame size.",
+    "The 1 s wave timer ticks on the first 100 ms tick of each second.",
+    "After an upgrade a tower keeps its raw cooldown until the next trait pass, matching the source quirk.",
+    "Poisonic clouds are centred on the target at NodeY - 24.",
+    "The map-100 TrialType override is ignored.",
+    "Each direct hit rolls its own critical, except a Pulse volley, which rolls once for all of its hits.",
+    "Planning excludes off-scene cursor zones, NPC-obscured upgrade clicks, and spawn or exit placements that change with the camera position. Bloo Radley's pre-quest click zone is reserved.",
+    "Frozone fires only while its target is on the side the wizard faces; its ring then hits every mob in range.",
+    "Manual upgrades use an all-A trait recipe; a plan uses its own trait string.",
+    "Root casts, account start points beyond the base 5, kill-point meals and Meritocracy are neutral this build.",
+    "Plan points, kills and EXP come from the simulator. Souls per hour, charge and claim rewards are not simulated here.",
+];
 
 use serde::Deserialize;
 use std::sync::OnceLock;
