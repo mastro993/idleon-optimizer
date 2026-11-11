@@ -14,6 +14,7 @@ pub mod clamworks;
 pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
+pub mod jar;
 pub mod monument;
 pub mod pickle;
 pub mod research;
@@ -330,9 +331,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Production rates, rupie value, chances, collectibles",
         spec: "docs/sections/jar.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: jar::view,
         keys: no_keys,
     },
     Section {

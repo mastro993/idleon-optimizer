@@ -1,7 +1,30 @@
 //! Formatting and palette helpers shared by the panes.
 
+use ely_gpui_component::typography::format::{DurationStyle, duration as ely_duration};
 use gpui::{Hsla, rgb};
 use idleon_core::game;
+
+/// A projected span of hours as `6h 17m`, `4m 5s`, or a dash when it is endless:
+/// the upstream `fmtTimeFull` the jar tier columns print, where [`duration`] is
+/// the coarse `6.28h` style.
+pub fn projection(hours: f64) -> String {
+    if !hours.is_finite() || hours <= 0.0 {
+        return "—".into();
+    }
+    ely_duration((hours * 3600.0).round() as u64, DurationStyle::Compact)
+}
+
+/// A `#rgb` or `#rrggbb` colour from the upstream data as a theme colour.
+pub fn hex(color: &str) -> Hsla {
+    let digits = color.trim_start_matches('#');
+    // The upstream data writes both shorthands; `#f44` is `#ff4444`.
+    let expanded: String = match digits.len() {
+        3 => digits.chars().flat_map(|digit| [digit, digit]).collect(),
+        _ => digits.to_string(),
+    };
+    let value = u32::from_str_radix(&expanded, 16).unwrap_or(0x88_88_88);
+    rgb(value).into()
+}
 
 /// A rate as `1.23M` or `845K`, in EXP per hour.
 pub fn rate(value: f64) -> String {
@@ -83,11 +106,35 @@ pub fn stat_value(value: Option<f64>) -> String {
 /// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
 pub fn fmt_val(value: f64) -> String {
     let magnitude = value.abs();
-    let (scaled, suffix) = scaled(value);
-    if magnitude >= 1e6 {
-        format!("{scaled:.2}{suffix}")
+    let (divisor, suffix) = if magnitude >= 1e24 {
+        // `toExponential(2)` prints a signed exponent.
+        let exponent = magnitude.log10().floor() as i32;
+        let mantissa = value / 10_f64.powi(exponent);
+        return format!(
+            "{mantissa:.2}e{}{exponent}",
+            if exponent < 0 { "-" } else { "+" }
+        );
+    } else if magnitude >= 1e21 {
+        (1e21, "QQQ")
+    } else if magnitude >= 1e18 {
+        (1e18, "QQ")
+    } else if magnitude >= 1e15 {
+        (1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (1e12, "T")
+    } else if magnitude >= 1e9 {
+        (1e9, "B")
+    } else if magnitude >= 1e6 {
+        (1e6, "M")
+    } else if magnitude >= 1e3 {
+        (1e3, "K")
     } else {
-        format!("{scaled:.1}{suffix}")
+        return format!("{value:.1}");
+    };
+    if magnitude >= 1e6 {
+        format!("{:.2}{suffix}", value / divisor)
+    } else {
+        format!("{:.1}{suffix}", value / divisor)
     }
 }
 
@@ -179,9 +226,7 @@ pub fn shape_color(shape: usize) -> Hsla {
     let Some(def) = game().shapes.get(shape) else {
         return fallback.into();
     };
-    let hex = def.color.trim_start_matches('#');
-    let value = u32::from_str_radix(hex, 16).unwrap_or(0x88_88_88);
-    rgb(value).into()
+    hex(&def.color)
 }
 
 /// A large number as `1.23M`, `4.56T` or `7.89QQ`, matching the upstream
@@ -283,6 +328,41 @@ mod tests {
         assert_eq!(hours(f64::INFINITY), "—");
         assert_eq!(hours(1.1e19), "—");
         assert_eq!(hours(26.0), "1d 2h");
+    }
+
+    #[test]
+    fn large_figures_keep_the_games_short_suffixes() {
+        assert_eq!(value(544_159_529_207.887), "544.16B");
+        assert_eq!(value(8_715_286_155_646.38), "8.72T");
+        assert_eq!(value(2.572_064_456_133_22e20), "257.21QQ");
+        assert_eq!(value(2.5e21), "2.50QQQ");
+        assert_eq!(value(1e24), "1.00e24");
+        assert_eq!(value(-1_500_000.0), "-1.50M");
+        assert_eq!(value(845.24), "845.2");
+        assert_eq!(value(0.0), "0.0");
+    }
+
+    #[test]
+    fn jar_counts_stay_whole_below_a_thousand() {
+        assert_eq!(number(21.0), "21");
+        assert_eq!(number(503_476.0), "503.5K");
+        assert_eq!(number(36_000.0), "36.0K");
+        assert_eq!(number(0.0), "0");
+    }
+
+    #[test]
+    fn both_hex_shorthands_expand() {
+        assert_eq!(hex("#f44"), rgb(0xff_44_44).into());
+        assert_eq!(hex("#4488ff"), rgb(0x44_88_ff).into());
+        assert_eq!(hex("nonsense"), rgb(0x88_88_88).into());
+    }
+
+    #[test]
+    fn a_projection_reads_as_days_hours_minutes_and_seconds() {
+        assert_eq!(projection(0.000_85), "3s");
+        assert_eq!(projection(6.285_905_338_846_417), "6h 17m");
+        assert_eq!(projection(f64::INFINITY), "—");
+        assert_eq!(projection(0.0), "—");
     }
 
     #[test]

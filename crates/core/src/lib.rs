@@ -15,6 +15,7 @@ pub mod data;
 pub mod endgame;
 pub mod farming;
 pub mod formula;
+pub mod jar;
 pub mod model;
 pub mod monument;
 pub mod optimize;
@@ -27,6 +28,7 @@ pub use clamworks::Clamworks;
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use farming::{CropValue, Farm, Plot, PlotMetrics, Snapshot};
 pub use formula::{FormulaNode, ValueFormat};
+pub use jar::Jar;
 pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,

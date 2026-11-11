@@ -328,6 +328,7 @@ mod tests {
             farming: Default::default(),
             tree: Default::default(),
             clamworks: Default::default(),
+            jar: None,
             save: serde_json::Value::Null,
             companion: None,
             coral: Default::default(),
