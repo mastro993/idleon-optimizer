@@ -7,8 +7,72 @@
 
 use crate::state::AppState;
 use gpui::Context;
-use idleon_core::worship::{self, Inputs, Run, RunView};
+use idleon_core::worship::{
+    self, Inputs, Plan, PlanIssue, PlanStage, Run, RunView, guide_presets_for_trial,
+    heuristic_plan, plan_issues, plan_stages,
+};
 use std::time::{Duration, Instant};
+
+/// Where a build plan comes from.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PlanSource {
+    /// The community guide preset for this trial, when one ships.
+    #[default]
+    Guide,
+    /// The coverage heuristic over the save's unlocked tower types.
+    Heuristic,
+}
+
+impl PlanSource {
+    pub fn id(self) -> &'static str {
+        match self {
+            PlanSource::Guide => "guide",
+            PlanSource::Heuristic => "heuristic",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            PlanSource::Guide => "Guide preset",
+            PlanSource::Heuristic => "Coverage heuristic",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        [PlanSource::Guide, PlanSource::Heuristic]
+            .into_iter()
+            .find(|source| source.id() == id)
+    }
+
+    /// Whether this source has a plan for `trial`.
+    pub fn available(self, trial: usize) -> bool {
+        match self {
+            PlanSource::Guide => guide_presets_for_trial(trial).next().is_some(),
+            PlanSource::Heuristic => true,
+        }
+    }
+}
+
+/// The inputs a stored plan result was produced from.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PlanRunInputs {
+    pub trial: usize,
+    pub source: PlanSource,
+    pub seed: u64,
+    pub inputs: Inputs,
+    pub plan: Plan,
+}
+
+/// The default plan source for a trial: the guide when one ships, else the
+/// coverage heuristic.
+fn default_plan_source(trial: usize) -> PlanSource {
+    if PlanSource::Guide.available(trial) {
+        PlanSource::Guide
+    } else {
+        PlanSource::Heuristic
+    }
+}
 
 /// How often the play loop wakes; the run's own tick is 100 ms.
 const FRAME: Duration = Duration::from_millis(16);
@@ -18,10 +82,23 @@ const FRAME: Duration = Duration::from_millis(16);
 #[serde(rename_all = "camelCase", default)]
 pub struct State {
     pub trial: usize,
+    /// The simulator, Plan or Model pane the section shows.
+    pub tab: super::Tab,
+    /// Where the build plan comes from.
+    pub plan_source: PlanSource,
     /// The palette's selected tower type.
     pub tower: usize,
     pub ranges: bool,
     pub speed: f64,
+    /// The current plan, regenerated when the trial or source changes.
+    #[serde(skip)]
+    pub plan: Option<Plan>,
+    /// The plan's staged layout, cached with the plan.
+    #[serde(skip)]
+    pub plan_stages: Vec<PlanStage>,
+    /// The plan's missing inputs and refused actions, cached with the plan.
+    #[serde(skip)]
+    pub plan_issues: Vec<PlanIssue>,
     #[serde(skip)]
     pub run: Option<Run>,
     #[serde(skip)]
@@ -48,6 +125,11 @@ impl Default for State {
     fn default() -> Self {
         Self {
             trial: 0,
+            tab: super::Tab::Simulator,
+            plan_source: PlanSource::Guide,
+            plan: None,
+            plan_stages: Vec::new(),
+            plan_issues: Vec::new(),
             tower: 0,
             ranges: true,
             speed: 1.0,
@@ -175,9 +257,52 @@ impl AppState {
         cx.notify();
     }
 
+    /// Build the plan the Plan pane renders, if the section has none yet.
+    pub(crate) fn worship_ensure_plan(&mut self) {
+        if self.worship.plan.is_some() {
+            return;
+        }
+        let trial = self
+            .worship
+            .trial
+            .min(worship::data().trials.len().saturating_sub(1));
+        if !self.worship.plan_source.available(trial) {
+            self.worship.plan_source = PlanSource::Heuristic;
+        }
+        let trial_data = worship::trial(trial).expect("the section's trial exists");
+        let plan = match self.worship.plan_source {
+            PlanSource::Guide => guide_presets_for_trial(trial)
+                .next()
+                .map(|preset| preset.plan()),
+            PlanSource::Heuristic => None,
+        }
+        .unwrap_or_else(|| heuristic_plan(&self.worship_inputs, trial_data));
+        self.worship.plan_stages = plan_stages(trial_data, &plan);
+        self.worship.plan_issues = plan_issues(&self.worship_inputs, trial_data, &plan);
+        self.worship.plan = Some(plan);
+    }
+
+    /// Switch the build plan's source and drop the previous plan run.
+    pub fn worship_set_plan_source(&mut self, source: PlanSource, cx: &mut Context<Self>) {
+        let trial = self.worship.trial;
+        if !source.available(trial) {
+            return;
+        }
+        self.worship.plan_source = source;
+        self.worship.plan = None;
+        self.worship_ensure_plan();
+        self.worship_plan.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
+        cx.notify();
+    }
+
     /// Adopt a save's inputs and restart so its tower levels apply.
     pub(crate) fn worship_adopt(&mut self, inputs: Inputs) {
         self.worship_inputs = inputs;
+        self.worship.plan = None;
+        self.worship.plan_source = default_plan_source(self.worship.trial);
         self.worship.generation += 1;
         self.worship.playing = false;
         self.worship.pumping = false;
@@ -193,7 +318,23 @@ impl AppState {
     pub fn worship_set_trial(&mut self, trial: usize, cx: &mut Context<Self>) {
         let last = worship::data().trials.len().saturating_sub(1);
         self.worship.trial = trial.min(last);
+        self.worship.plan = None;
+        self.worship.plan_source = default_plan_source(self.worship.trial);
+        self.worship_plan.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
         self.worship_restart(cx);
+    }
+
+    /// Switch the section's pane.
+    pub fn worship_set_tab(&mut self, tab: super::Tab, cx: &mut Context<Self>) {
+        self.worship.tab = tab;
+        if tab != super::Tab::Simulator {
+            self.worship.playing = false;
+            self.worship.pumping = false;
+        }
+        cx.notify();
     }
 
     /// Select a tower type from the palette.

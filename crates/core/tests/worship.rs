@@ -217,3 +217,153 @@ fn the_glublin_run_matches_the_upstream_digest() {
     assert!((result.time_sec - 57.8).abs() < 1e-9);
     assert_eq!(result.end_reason, EndReason::Totem);
 }
+
+/// A plan with plenty of points, so placement is not what limits a test.
+fn rich() -> Inputs {
+    Inputs {
+        start_pts: 1_000_000_000_000.0,
+        ..unlocked()
+    }
+}
+
+#[test]
+fn a_plan_run_places_its_stage_layout() {
+    let trial = worship::trial(0).expect("trial 0");
+    let mut plan = worship::heuristic_plan(&rich(), trial);
+    // Cap every tower so the policy's upgrade bids cannot starve the queue.
+    for tower in &mut plan.towers {
+        tower.max_level = Some(1);
+    }
+    let stage = worship::plan_stages(trial, &plan)
+        .into_iter()
+        .next()
+        .expect("the initial stage");
+    assert!(stage.rejected.is_empty(), "{:?}", stage.rejected);
+
+    let mut run = Run::with_plan(rich(), 0, 7, plan);
+    run.step(1);
+    let placed: Vec<(usize, i64)> = run
+        .view()
+        .towers
+        .iter()
+        .map(|tower| (tower.node, (tower.x * 100.0) as i64))
+        .collect();
+    let expected: Vec<(usize, i64)> = stage
+        .towers
+        .iter()
+        .map(|tower| (tower.node, (tower.x * 100.0) as i64))
+        .collect();
+    assert_eq!(placed, expected, "the run did not place the stage layout");
+}
+
+#[test]
+fn a_plan_phase_sells_and_rebuilds() {
+    let (node, x) = first_spot(&Run::new(rich(), 0, 1));
+    let plan = worship::Plan {
+        towers: vec![worship::PlanTower {
+            type_index: 0,
+            slot: worship::Spot { node, x },
+            weight: 1.0,
+            traits: String::new(),
+            max_level: Some(1),
+        }],
+        phases: vec![worship::PlanPhase {
+            label: "Boss DPS".into(),
+            when: worship::PhaseWhen {
+                min_wave: Some(1),
+                ..worship::PhaseWhen::default()
+            },
+            sell: worship::PhaseSell {
+                types: vec![0],
+                ..worship::PhaseSell::default()
+            },
+            towers: vec![worship::PlanTower {
+                type_index: 1,
+                slot: worship::Spot { node, x },
+                weight: 1.0,
+                traits: String::new(),
+                max_level: Some(1),
+            }],
+            skip_remaining: true,
+        }],
+        skip_policy: worship::SkipPolicy::Never,
+        roots: worship::RootPolicy::Off,
+    };
+    let mut run = Run::with_plan(rich(), 0, 3, plan);
+    run.step(200);
+    let result = run.result();
+    assert_eq!(result.phases.len(), 1, "the phase did not fire");
+    assert_eq!(result.phases[0].sold, 1);
+    assert!(result.phases[0].refund > 0.0);
+    assert_eq!(result.phases[0].queued, 1);
+    let towers = run.view().towers;
+    assert_eq!(towers.len(), 1, "the phase did not rebuild");
+    assert_eq!(
+        towers[0].type_index, 1,
+        "the rebuilt tower is not a Fireball"
+    );
+    assert_eq!(towers[0].plan_index, Some(1));
+}
+
+#[test]
+fn a_plan_run_only_places_stage_positions() {
+    let trial = worship::trial(0).expect("trial 0");
+    let plan = worship::guide_preset("gublin-230")
+        .expect("the guide preset")
+        .plan();
+    let stages = worship::plan_stages(trial, &plan);
+    let positions: Vec<(usize, usize, i64)> = stages
+        .iter()
+        .flat_map(|stage| stage.towers.iter())
+        .map(|tower| (tower.plan_index, tower.node, (tower.x * 100.0) as i64))
+        .collect();
+
+    let mut run = Run::with_plan(rich(), 0, 5, plan);
+    run.step(600);
+    let view = run.view();
+    assert!(!view.towers.is_empty(), "the plan placed nothing");
+    for tower in &view.towers {
+        let plan_index = tower.plan_index.expect("a plan-built tower");
+        let position = positions
+            .iter()
+            .find(|(index, _, _)| *index == plan_index)
+            .unwrap_or_else(|| panic!("plan #{plan_index} has no stage position"));
+        assert_eq!(
+            (position.1, position.2),
+            (tower.node, (tower.x * 100.0) as i64),
+            "plan #{plan_index} stands somewhere the stage does not"
+        );
+    }
+}
+
+#[test]
+fn a_plan_run_is_deterministic() {
+    let plan = worship::guide_preset("gublin-230")
+        .expect("the guide preset")
+        .plan();
+    let play = || {
+        let mut run = Run::with_plan(unlocked(), 0, 11, plan.clone());
+        run.step(1_200);
+        let view = run.view();
+        (
+            view.wave,
+            view.pts,
+            view.totem,
+            view.towers
+                .iter()
+                .map(|tower| (tower.type_index, tower.level, (tower.x * 100.0) as i64))
+                .collect::<Vec<_>>(),
+        )
+    };
+    assert_eq!(play(), play(), "the same plan and seed diverged");
+}
+
+#[test]
+fn the_assumptions_are_listed_and_not_empty() {
+    assert!(worship::ASSUMPTIONS.len() >= 10);
+    assert!(
+        worship::ASSUMPTIONS
+            .iter()
+            .all(|line| !line.trim().is_empty())
+    );
+}

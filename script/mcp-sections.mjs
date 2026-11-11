@@ -375,6 +375,14 @@ const INTERACTIONS = {
         labelOf(nodes, 'worship-wave') === 'Wave 0' && !has(nodes, 'worship-tower-3-561'),
       'worship-td: restart clears the run and the towers',
     );
+    await lane.call('click_element', { id: 'worship-plan-tab' });
+    await waitForNode(lane, 'worship-plan-body', 'worship-td: the plan pane opens');
+    await lane.call('click_element', { id: 'worship-plan-simulate' });
+    await waitForNode(lane, 'worship-plan-final', 'worship-td: the plan run reports final towers');
+    await lane.call('click_element', { id: 'worship-model-tab' });
+    await waitForNode(lane, 'worship-assumptions', 'worship-td: the model assumptions list');
+    await lane.call('click_element', { id: 'worship-simulator-tab' });
+    await waitForNode(lane, 'worship-map', 'worship-td: the simulator tab returns');
   },
   clamworks: async (lane) => {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
