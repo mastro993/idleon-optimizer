@@ -12,22 +12,38 @@
 //! one-captain-per-boat maximum-weight matching be exact.
 
 mod assign;
+mod captain;
 pub mod data;
 mod metrics;
+mod replacement;
+mod upgrade;
 
 pub use assign::{FleetComparison, FleetPlan, compare, optimize, saved};
+pub use captain::{
+    CaptainExpMultiplier, CaptainLevelTime, RollBounds, RollQuality, exp_multiplier, exp_per_trip,
+    exp_requirement, level_time, roll_bounds, roll_quality,
+};
 pub use data::{
     artifact, artifact_base, artifact_base_odds, artifact_count, artifact_tier_bonus,
-    captain_bonus_name, island, island_artifact_count, island_artifact_offset,
+    captain_bonus_name, island, island_artifact_count, island_artifact_offset, island_captain_exp,
     island_cloud_required, island_count, island_distance, sailing,
 };
 pub use metrics::{
     ArtifactMultiplier, ArtifactOdds, ArtifactOutcome, ChestDistribution, ChestTier, LootValue,
     RouteMetrics, RouteTiming, SpeedValue, TierRow, TreasureShares, artifact_odds_denominator,
     artifact_tier_unlocked, boat_artifact_multiplier, boat_base_loot, boat_base_speed,
-    boat_loot_value, boat_speed, captain_bonus, chest_loot_rolls, chest_rarity_scale,
-    chest_tier_distribution, davey_jones_bonus, island_artifact_odds, minimum_travel_details,
-    route_metrics, route_timing,
+    boat_loot_value, boat_speed, captain_bonus, chest_loot_multiplier, chest_loot_rolls,
+    chest_rarity_scale, chest_tier_distribution, davey_jones_bonus, island_artifact_odds,
+    minimum_travel_details, route_metrics, route_timing,
+};
+pub use replacement::{
+    ReplacementOutcome, ReplacementThreshold, compare_strength, overflow_upgrade_chance, ranked,
+    replacement_outcome, replacement_threshold, strongest,
+};
+pub use upgrade::{
+    Currency, CurrencyShare, UpgradeBreakpoint, UpgradeCost, UpgradeEta, UpgradeStat, currency,
+    currency_rate, next_breakpoint, upgrade_breakpoint, upgrade_cost, upgrade_cost_at_level,
+    upgrade_cost_type, upgrade_eta,
 };
 
 /// A captain as the save stores one.
@@ -38,6 +54,8 @@ pub struct Captain {
     /// The two bonus types the captain rolled; negative means none.
     pub bonus_types: [i32; 2],
     pub level: u32,
+    /// Experience banked toward the next level.
+    pub exp: f64,
     /// The rolled value for each bonus type, as a percentage.
     pub rolls: [f64; 2],
 }
@@ -70,6 +88,8 @@ pub struct Fleet {
     pub artifact_tiers: Vec<u32>,
     /// `Sailing[0]`: each island's cloud progress; negative means discovered.
     pub island_progress: Vec<f64>,
+    /// `Sailing[1]`: the banked amount of each upgrade currency.
+    pub currency_balances: Vec<f64>,
 }
 
 impl Fleet {
@@ -86,6 +106,11 @@ impl Fleet {
     /// The artifact tier for `idx`, or zero when the save lacks it.
     pub fn artifact_tier(&self, idx: usize) -> u32 {
         self.artifact_tiers.get(idx).copied().unwrap_or(0)
+    }
+
+    /// The banked amount of upgrade currency `kind`, or zero when the save lacks it.
+    pub fn currency_balance(&self, kind: usize) -> f64 {
+        self.currency_balances.get(kind).copied().unwrap_or(0.0)
     }
 
     /// How many islands the save has unlocked, matching upstream
@@ -173,6 +198,25 @@ impl Default for SpeedBonuses {
     }
 }
 
+/// Account-wide captain-EXP bonuses, split the way upstream sums and
+/// multiplies them.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CaptainExpBonuses {
+    /// Talents, achievements, shiny pets and the vault, in percent.
+    pub additive: f64,
+    /// The product of the vote, companion, sushi and Nightmariner factors.
+    pub multiplier: f64,
+}
+
+impl Default for CaptainExpBonuses {
+    fn default() -> Self {
+        Self {
+            additive: 0.0,
+            multiplier: 1.0,
+        }
+    }
+}
+
 /// Account-wide artifact-find bonuses, split the way upstream sums and
 /// multiplies them.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -240,6 +284,11 @@ pub struct RouteContext {
     pub davey_unlocked: bool,
     /// Extra chest loot rolls from achievement 300.
     pub chest_rolls: u32,
+    pub captain_exp: CaptainExpBonuses,
+    /// Unending Loot Search (talent 325) as a percentage. It scales chest
+    /// loot, and zero turns near-full replacement off as upstream does
+    /// without the talent.
+    pub unending_loot_search: f64,
 }
 
 /// What the optimizer maximises.

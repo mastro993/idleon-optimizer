@@ -321,6 +321,9 @@ const projectDocument = () =>
     sections: { killroy: { weeks: 5 } },
   });
 
+/// The synthetic account the sailing tabs read: boats, captains and balances.
+const sailingSave = () => readFileSync(join(process.cwd(), 'fixtures/data.json'), 'utf8');
+
 /// The upstream optimizer's state string: gzip+base64 behind `ROv2:`.
 const upstreamState = () => {
   const state = {
@@ -778,7 +781,16 @@ const INTERACTIONS = {
     }
   },
   sailing: async (lane) => {
-    await waitForNode(lane, 'fleet-mode', 'sailing: the assignment controls render');
+    await waitForNode(lane, 'fleet-empty', 'sailing: the empty state offers the import');
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'sailing: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    // The paste box keeps whatever the last import typed into it.
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: sailingSave() });
+    await waitForNode(lane, 'import-format', 'sailing: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'fleet-mode', 'sailing: the fleet assignment opens after Apply');
     await lane.call('click_element', { id: 'fleet-mode-saved' });
     await waitFor(
       lane,
@@ -791,6 +803,30 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'fleet-mode') ?? '').includes('Optimized'),
       'sailing: the optimized pairings show',
     );
+    await lane.call('click_element', { id: 'ships' });
+    await waitForNode(lane, 'ships-table', 'sailing: the ship breakpoints open');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('ships-target-')),
+      'sailing: the breakpoint rows render',
+    );
+    await lane.call('click_element', { id: 'ships-sort-eta' });
+    await lane.call('click_element', { id: 'captains' });
+    await waitForNode(lane, 'captains-missing', 'sailing: the captain flags open');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'captains-missing') ?? '').length > 0,
+      'sailing: the crew card names the missing captains',
+    );
+    await lane.call('click_element', { id: 'replacements' });
+    await waitForNode(lane, 'replacements-strongest', 'sailing: the replacement matrix opens');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('replacements-cell-')),
+      'sailing: the matrix cells render',
+    );
+    await lane.call('click_element', { id: 'fleet' });
+    await waitForNode(lane, 'fleet-table', 'sailing: the fleet table reopens');
   },
   monument: async (lane) => {
     await lane.call('click_element', { id: 'sources' });

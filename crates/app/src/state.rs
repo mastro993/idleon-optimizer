@@ -15,6 +15,7 @@ use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
+use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
@@ -40,7 +41,9 @@ use idleon_core::model::{
     SimContext, Simulation, Target,
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
-use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
+use idleon_core::sailing::{
+    AssignmentMode, Fleet, FleetComparison, FleetPlan, Goal, RouteContext, compare, optimize, saved,
+};
 use idleon_core::save::Shadow;
 use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::worship::Inputs as WorshipInputs;
@@ -939,6 +942,30 @@ impl AppState {
             self.sailing_state.goal,
             &self.sailing,
         )
+    }
+
+    /// One island's plan under the selected assignment mode.
+    pub fn fleet_plan(&self, island: usize, goal: Goal) -> FleetPlan {
+        match self.sailing_state.mode {
+            AssignmentMode::Optimized => optimize(&self.fleet, island, goal, &self.sailing),
+            AssignmentMode::Saved => saved(&self.fleet, island, goal, &self.sailing),
+        }
+    }
+
+    pub fn set_sailing_tab(&mut self, tab: SailingTab, cx: &mut Context<Self>) {
+        self.sailing_state.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_sailing_sort_by_eta(&mut self, sorted: bool, cx: &mut Context<Self>) {
+        self.sailing_state.sort_by_eta = sorted;
+        cx.notify();
+    }
+
+    /// The Unending Loot Search talent percentage the replacement matrix reads.
+    pub fn set_unending_loot_search(&mut self, percent: f64, cx: &mut Context<Self>) {
+        self.sailing.unending_loot_search = percent.clamp(0.0, 100.0);
+        cx.notify();
     }
 
     pub fn set_fleet_mode(&mut self, mode: AssignmentMode, cx: &mut Context<Self>) {

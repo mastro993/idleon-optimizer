@@ -212,7 +212,11 @@ pub fn boat_loot_value(
     let captain = captain_bonus(fleet, captain, 1);
     let legendary = 25.0 * fleet.legendary_captains() as f64;
     let additive = context.loot.additive + legendary;
-    let multiplier = (1.0 + additive / 100.0) * context.loot.multiplier;
+    // Unending Loot Search (talent 325) is also a passive chest-loot bonus, so
+    // it multiplies the boat value beside the account's own factors.
+    let multiplier = (1.0 + additive / 100.0)
+        * context.loot.multiplier
+        * (1.0 + context.unending_loot_search / 100.0);
     let davey = davey_jones_bonus(boat, context);
     LootValue {
         value: base * (1.0 + captain / 100.0) * davey * multiplier,
@@ -369,6 +373,11 @@ pub fn chest_tier_distribution(fleet: &Fleet, captain: Option<usize>) -> ChestDi
 /// How many loot rolls a chest of `tier` makes.
 pub fn chest_loot_rolls(tier: usize, context: &RouteContext) -> u32 {
     1 + tier.min(4) as u32 + context.chest_rolls
+}
+
+/// The stored-value multiplier a chest of `tier` applies, `1` for tier zero.
+pub fn chest_loot_multiplier(tier: usize) -> f64 {
+    CHEST_LOOT_MULTIS.get(tier).copied().unwrap_or(0.0)
 }
 
 /// A boat's artifact-find multiplier, matching upstream `boatArtifactMultiplier`.
@@ -627,11 +636,13 @@ mod tests {
                 rarity: 3,
                 bonus_types: [0, 1],
                 level: 10,
+                exp: 0.0,
                 rolls: [20.0, 10.0],
             }],
             sailing_level: 5,
             artifact_tiers: vec![0; artifact_count()],
             island_progress: Vec::new(),
+            currency_balances: Vec::new(),
         }
     }
 
@@ -643,6 +654,7 @@ mod tests {
                     rarity: 6,
                     bonus_types: [4, -1],
                     level: 100,
+                    exp: 0.0,
                     rolls: [roll, 0.0],
                 }],
                 ..fleet()
