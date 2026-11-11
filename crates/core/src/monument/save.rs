@@ -68,7 +68,7 @@ impl Save {
         } else {
             options
         };
-        let (companions, enhanced_companions, companion_available) = companions(companion);
+        let roster = imported_save::companion::read(companion);
         Self {
             holes: array(save, "Holes"),
             state_r7_available: state_r7.is_some(),
@@ -88,9 +88,9 @@ impl Save {
             equipment: rows(save, "EquipOrder_"),
             achievements: array(save, "AchieveReg").iter().map(number).collect(),
             bundles: imported_save::parsed(save, "BundlesReceived"),
-            companions,
-            enhanced_companions,
-            companion_available,
+            companions: roster.owned,
+            enhanced_companions: roster.enhanced,
+            companion_available: roster.available,
         }
     }
 }
@@ -284,46 +284,6 @@ fn task_groups(save: &Value) -> Vec<Value> {
     (0..=5)
         .map(|group| imported_save::parsed(save, &format!("TaskZZ{group}")).unwrap_or(Value::Null))
         .collect()
-}
-
-/// The companion roster: ids owned, ids at level two, and whether it exists.
-fn companions(companion: Option<&Value>) -> (BTreeSet<u32>, BTreeSet<u32>, bool) {
-    let Some(list) = companion.and_then(|root| at_key(root, "l")) else {
-        return (BTreeSet::new(), BTreeSet::new(), false);
-    };
-    let entries: Vec<String> = match list {
-        Value::Array(items) => items
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::to_owned)
-            .collect(),
-        Value::Object(fields) => {
-            let mut keys: Vec<&String> = fields.keys().collect();
-            keys.sort_by_key(|key| key.parse::<u64>().unwrap_or(u64::MAX));
-            keys.into_iter()
-                .filter_map(|key| fields.get(key).and_then(Value::as_str))
-                .map(str::to_owned)
-                .collect()
-        }
-        _ => return (BTreeSet::new(), BTreeSet::new(), false),
-    };
-    let mut owned = BTreeSet::new();
-    let mut enhanced = BTreeSet::new();
-    for entry in entries {
-        let fields: Vec<&str> = entry.split(',').collect();
-        let Some(id) = fields.first().and_then(|id| id.trim().parse::<u32>().ok()) else {
-            continue;
-        };
-        owned.insert(id);
-        let level_two = fields
-            .get(4)
-            .and_then(|flag| flag.trim().parse::<f64>().ok())
-            .unwrap_or(0.0);
-        if level_two >= 1.0 {
-            enhanced.insert(id);
-        }
-    }
-    (owned, enhanced, true)
 }
 
 /// Index into an array, or a numeric string key in an object.

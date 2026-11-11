@@ -1765,7 +1765,7 @@
       "key": "fountain",
       "title": "Fountain Calculator",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.",
       "upstream": [
         "fountain-calc.html",

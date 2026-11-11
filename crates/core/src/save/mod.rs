@@ -41,6 +41,7 @@
 //! the route model does not read stay neutral.
 
 mod account;
+pub(crate) mod companion;
 mod coral;
 mod farming;
 pub(crate) mod formula;
@@ -52,6 +53,7 @@ mod statue;
 mod value;
 mod worship;
 
+pub use companion::Roster;
 pub use shadow::{Shadow, ShadowVerdict};
 pub use value::{Save, at, number, row_values};
 
@@ -59,6 +61,7 @@ use crate::cglunko::Cglunko;
 use crate::clamworks::Clamworks;
 use crate::cog::CogSave;
 use crate::farming::Farm;
+use crate::fountain::Fountain;
 use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
 use crate::sailing::{Fleet, RouteContext};
@@ -117,6 +120,8 @@ pub struct Imported {
     pub jar: Option<Jar>,
     /// The ladle optimizer's per-character Cooking state and counts.
     pub ladle: Option<crate::ladle::Ladle>,
+    /// The Fountain Cavern state, when the save carries its `Holes` rows.
+    pub fountain: Option<Fountain>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
     /// sections can read raw fields and audit it.
     pub save: Save,
@@ -319,6 +324,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
+    let fountain = Fountain::from_save(save, companion::read(companion.as_ref()));
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
     }
@@ -326,6 +332,11 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     if ladle.is_none() {
         warnings.push(
             "Lv0_<n>: no character rows in the save; the ladle optimizer has no roster".into(),
+        );
+    }
+    if fountain.is_none() {
+        warnings.push(
+            "Holes: not in the save; the fountain calculator has no cavern state to read".into(),
         );
     }
 
@@ -341,6 +352,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         cog,
         jar,
         ladle,
+        fountain,
         save: document,
         companion,
         statues,

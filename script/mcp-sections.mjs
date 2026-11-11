@@ -401,6 +401,37 @@ const sectionConfig = (id, config) =>
 
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
+/// A small flat `save.json` carrying a cavern: a level-10 fountain with the
+/// upgrade levels that unlock six currencies, a coin stack and a duck bar, so
+/// the overview has rates, stacks and a bonus warning to read.
+const fountainSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const holes = Array.from({ length: 35 }, () => []);
+  holes[7] = row(30, { 15: 10 });
+  holes[9] = row(36, { 30: 1e6, 31: 1e6, 32: 1e9 });
+  holes[11] = row(100, { 81: 5000, 82: 0 });
+  holes[13] = row(150, { 94: 1, 95: 1, 97: 1 });
+  holes[17] = row(12, { 6: 100 });
+  holes[21] = row(15, { 7: 10 });
+  holes[22] = row(40, { 16: 10 });
+  holes[26] = row(30, { 15: 10 });
+  holes[29] = [[0, 1, 2, 3, 4, 5]];
+  holes[30] = row(30, {});
+  const upgrades = row(20, {
+    0: 1, 1: 10, 2: 10, 3: 10, 4: 10, 5: 10,
+    6: 10, 7: 10, 8: 10, 9: 10, 10: 10, 11: 10, 12: 10,
+  });
+  holes[31] = [
+    upgrades,
+    row(20, { 10: 10, 12: 10 }),
+    row(20, { 10: 1, 12: 1 }),
+  ];
+  holes[32] = [row(20), row(20), row(20)];
+  holes[33] = [0, 0, 45000];
+  holes[34] = [1];
+  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+};
+
 const INTERACTIONS = {
   killroy: async (lane) => {
     await lane.call('click_element', { id: 'killroy-import' });
@@ -463,6 +494,25 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jar-production', 'jar: the production tab opens');
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
+  },
+
+  fountain: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'fountain: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: fountainSave() });
+    await waitForNode(lane, 'import-format', 'fountain: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'fountain-overview', 'fountain: the cavern opens after Apply');
+    const summary = labelOf(await lane.tree(), 'fountain-summary-line') ?? '';
+    if (!summary.includes('Fountain level 10')) {
+      throw new Error(`fountain: the summary reads ${summary}`);
+    }
+    await waitForNode(lane, 'fountain-income', 'fountain: the income table renders');
+    await waitForNode(lane, 'fountain-missing', 'fountain: the missing bonuses are warned');
+    await waitForNode(lane, 'fountain-levels', 'fountain: the level planner renders');
+    await waitForNode(lane, 'fountain-stacks', 'fountain: the ground stack renders');
   },
   farming: async (lane) => {
     await lane.call('click_element', { id: 'plot-1' });

@@ -19,6 +19,7 @@ pub mod coral_god_rank;
 pub mod endgame;
 pub mod farming;
 pub mod fishing;
+pub mod fountain;
 pub mod jar;
 pub mod killroy;
 pub mod ladle;
@@ -331,9 +332,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Currency values, earn rates, upgrades, marble bonuses",
         spec: "docs/sections/fountain.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: fountain::view,
         keys: no_keys,
     },
     Section {

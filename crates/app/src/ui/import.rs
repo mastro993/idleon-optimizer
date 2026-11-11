@@ -535,6 +535,7 @@ mod tests {
             cog: Default::default(),
             jar: None,
             ladle: None,
+            fountain: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),
             companion: None,
             statues: Default::default(),
