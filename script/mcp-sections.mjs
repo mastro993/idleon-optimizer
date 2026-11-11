@@ -99,6 +99,24 @@ const jarSave = () => {
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
 
+/// A small flat `save.json` carrying worship tower levels and a best-wave table,
+/// so the simulator has every type unlocked and a run to play.
+const worshipSave = () => {
+  const tower = Array(30).fill(0);
+  for (let index = 9; index <= 17; index += 1) tower[index] = 1;
+  const best = Array(8).fill(0);
+  best[0] = 3;
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+    Tower: JSON.stringify(tower),
+    TotemInfo: JSON.stringify([best, Array(8).fill(0), Array(8).fill(0)]),
+    Dream: JSON.stringify(Array(24).fill(0)),
+    SaltLick: JSON.stringify(Array(25).fill(0)),
+    Menagerie: JSON.stringify([[], [], [], []]),
+  });
+};
+
 /// A project document as the app writes it: the research state, the
 /// supplements, one config per section and the section the window was on.
 const projectDocument = () =>
@@ -330,6 +348,33 @@ const INTERACTIONS = {
     await waitForNode(lane, 'monument-pane-sources', 'monument: the bonus sources tab opens');
     await lane.call('click_element', { id: 'bravery' });
     await waitForNode(lane, 'monument-pane-bravery', 'monument: the bravery tab reopens');
+  },
+  'worship-td': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'worship-td: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: worshipSave() });
+    await waitForNode(lane, 'import-format', 'worship-td: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'worship-map', 'worship-td: the map renders after Apply');
+    await lane.call('click_element', { id: 'worship-tower-0' });
+    await lane.call('click_element', { id: 'worship-slot-3-561' });
+    await waitForNode(lane, 'worship-tower-3-561', 'worship-td: the tower stands on the map');
+    await lane.call('click_element', { id: 'worship-speed-50' });
+    await lane.call('click_element', { id: 'worship-play' });
+    await waitFor(
+      lane,
+      (nodes) => /^Wave [1-9]/.test(labelOf(nodes, 'worship-wave') ?? ''),
+      'worship-td: playback advances the wave',
+    );
+    await lane.call('click_element', { id: 'worship-restart' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        labelOf(nodes, 'worship-wave') === 'Wave 0' && !has(nodes, 'worship-tower-3-561'),
+      'worship-td: restart clears the run and the towers',
+    );
   },
   clamworks: async (lane) => {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });

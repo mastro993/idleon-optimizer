@@ -536,6 +536,7 @@ mod tests {
             companion: None,
             statues: Default::default(),
             coral: Default::default(),
+            worship: Default::default(),
             format,
             characters,
             named_characters: characters,

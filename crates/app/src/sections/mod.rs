@@ -22,6 +22,7 @@ pub mod research;
 pub mod sailing;
 pub mod shadow;
 pub mod statue;
+pub mod worship_td;
 
 use crate::state::AppState;
 use crate::ui::section;
@@ -286,9 +287,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W3,
         description: "Tower layouts, wave simulation, strategy search, and replays",
         spec: "docs/sections/worship-td.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: worship_td::view,
         keys: no_keys,
     },
     Section {

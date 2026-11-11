@@ -1,0 +1,621 @@
+//! Worship Tower Defense: the live simulator, its HUD and build controls.
+//!
+//! The simulator core is `idleon_core::worship`; this module owns the live run,
+//! the tick pump and the map. Tower placement is direct: pick a type from the
+//! palette, then a highlighted platform slot. Clicking a standing tower selects
+//! it for a one-level upgrade or a 60% refund sale.
+
+mod map;
+mod state;
+
+pub use state::State;
+
+use crate::state::AppState;
+use ely_gpui_component::buttons::{Button, ButtonVariant};
+use ely_gpui_component::data_display::Badge;
+use ely_gpui_component::data_display::Tone;
+use ely_gpui_component::forms::{Choice, Select};
+use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
+use ely_gpui_component::typography::Caption;
+use gpui::prelude::*;
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use idleon_core::worship;
+
+/// The section's view.
+pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    state.worship_ensure();
+    state.worship_pump(cx);
+    let muted = cx.theme().colors.fg_muted;
+    div()
+        .id("worship-section")
+        .flex()
+        .flex_col()
+        .size_full()
+        .min_h_0()
+        .gap_3()
+        .child(header(state, muted))
+        .child(controls(state, cx))
+        .child(
+            div()
+                .id("worship-body")
+                .flex()
+                .flex_1()
+                .min_h_0()
+                .gap_3()
+                .child(map::map(state, window, cx))
+                .child(sidebar(state, cx)),
+        )
+        .into_any_element()
+}
+
+fn header(state: &AppState, muted: gpui::Hsla) -> AnyElement {
+    let trial = worship::trial(state.worship.trial);
+    let name = trial
+        .map(|trial| trial.mob_def.name.clone())
+        .unwrap_or_default();
+    let map = trial.map(|trial| trial.map).unwrap_or(0);
+    let best = state
+        .worship_inputs
+        .best_waves
+        .get(state.worship.trial)
+        .copied()
+        .unwrap_or(0);
+    let summary = format!(
+        "{name} · map {map} · best wave {best} · seed {}",
+        state.worship.seed
+    );
+    div()
+        .id("worship-header")
+        .flex()
+        .flex_none()
+        .items_center()
+        .gap_3()
+        .child(Badge::new("Worship TD").tone(Tone::Accent))
+        .child(
+            Caption::new(
+                "A seeded 100 ms run; tower placement, ranges and points follow the game.",
+            )
+            .text_color(muted),
+        )
+        .child(div().flex_1())
+        .child(
+            div()
+                .id("worship-summary")
+                .role(gpui::Role::Label)
+                .aria_label(summary.clone())
+                .child(Caption::new(summary).text_color(muted)),
+        )
+        .into_any_element()
+}
+
+fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let entity = cx.entity();
+    let muted = cx.theme().colors.fg_muted;
+    let trials: Vec<Choice> = worship::data()
+        .trials
+        .iter()
+        .map(|trial| {
+            Choice::new(
+                trial.trial.to_string(),
+                format!("{} · map {}", trial.mob_def.name, trial.map),
+            )
+            .note(format!(
+                "{} charge · requires {} efficiency",
+                trial.charge, trial.eff_req
+            ))
+        })
+        .collect();
+    let trial_entity = entity.clone();
+    let trial_select = Select::new("worship-trial", trials)
+        .label("Trial")
+        .selected(state.worship.trial.to_string())
+        .size(ControlSize::Sm)
+        .on_change(move |value, _window, cx| {
+            if let Ok(trial) = value.parse::<usize>() {
+                trial_entity.update(cx, |state, cx| state.worship_set_trial(trial, cx));
+            }
+        });
+
+    let tower = state.worship.tower;
+    let levels = state.worship_inputs.tower_levels;
+    let placed = state
+        .worship
+        .view
+        .as_ref()
+        .map(|view| view.towers.len())
+        .unwrap_or(0);
+    let palette: Vec<AnyElement> = worship::data()
+        .towers
+        .iter()
+        .enumerate()
+        .map(|(index, def)| {
+            let selected = index == tower;
+            let unlocked = levels[index] >= 1;
+            let cost = worship::new_tower_cost(index, placed) as u32;
+            let picked = entity.clone();
+            Button::new(
+                ("worship-tower", index),
+                if unlocked {
+                    format!("{} · {cost}", def.name)
+                } else {
+                    format!("{} · locked", def.name)
+                },
+            )
+            .variant(if selected {
+                ButtonVariant::Primary
+            } else {
+                ButtonVariant::Subtle
+            })
+            .size(ControlSize::Sm)
+            .disabled(!unlocked)
+            .on_click(move |_event, _window, cx| {
+                picked.update(cx, |state, cx| state.worship_set_tower(index, cx));
+            })
+            .into_any_element()
+        })
+        .collect();
+
+    let playing = state.worship.playing;
+    let play = entity.clone();
+    let step = entity.clone();
+    let skip = entity.clone();
+    let restart = entity.clone();
+    let speed = state.worship.speed;
+    let speeds: Vec<AnyElement> = [0.5, 1.0, 2.0, 5.0]
+        .into_iter()
+        .map(|value| {
+            let picked = entity.clone();
+            Button::new(
+                ("worship-speed", (value * 10.0) as u32),
+                format!("{value}×"),
+            )
+            .variant(if (speed - value).abs() < f64::EPSILON {
+                ButtonVariant::Primary
+            } else {
+                ButtonVariant::Subtle
+            })
+            .size(ControlSize::Sm)
+            .on_click(move |_event, _window, cx| {
+                picked.update(cx, |state, cx| state.worship_set_speed(value, cx));
+            })
+            .into_any_element()
+        })
+        .collect();
+    let ranges = entity.clone();
+    let ranges_on = state.worship.ranges;
+
+    let mut run_controls = div()
+        .id("worship-run-controls")
+        .flex()
+        .items_center()
+        .gap_1()
+        .child(
+            Button::new("worship-play", if playing { "Pause" } else { "Play" })
+                .variant(ButtonVariant::Primary)
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    play.update(cx, |state, cx| {
+                        let next = !state.worship.playing;
+                        state.worship_set_playing(next, cx);
+                    });
+                }),
+        )
+        .child(
+            Button::new("worship-step", "Step")
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    step.update(cx, |state, cx| state.worship_step(cx));
+                }),
+        )
+        .child(
+            Button::new("worship-skip", "Next wave")
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    skip.update(cx, |state, cx| state.worship_skip(cx));
+                }),
+        )
+        .child(
+            Button::new("worship-restart", "Restart")
+                .size(ControlSize::Sm)
+                .on_click(move |_event, _window, cx| {
+                    restart.update(cx, |state, cx| state.worship_restart(cx));
+                }),
+        )
+        .child(div().w(px(8.0)));
+    for button in speeds {
+        run_controls = run_controls.child(button);
+    }
+    run_controls = run_controls.child(div().w(px(8.0))).child(
+        Button::new("worship-ranges", "Ranges")
+            .variant(if ranges_on {
+                ButtonVariant::Primary
+            } else {
+                ButtonVariant::Subtle
+            })
+            .size(ControlSize::Sm)
+            .on_click(move |_event, _window, cx| {
+                ranges.update(cx, |state, cx| {
+                    state.worship.ranges = !state.worship.ranges;
+                    cx.notify();
+                });
+            }),
+    );
+
+    let selected = state.worship.selected.and_then(|id| {
+        state
+            .worship
+            .view
+            .as_ref()?
+            .towers
+            .iter()
+            .find(|tower| tower.id == id)
+            .cloned()
+    });
+    let mut card = Card::new()
+        .header(CardHeader::new("Simulator").description(
+            "Pick a tower, then a slot on the map. A standing tower can be upgraded or sold.",
+        ))
+        .child(
+            div()
+                .id("worship-controls-row")
+                .flex()
+                .flex_wrap()
+                .items_end()
+                .gap_3()
+                .p_3()
+                .child(div().w(px(200.0)).child(trial_select))
+                .child(run_controls),
+        )
+        .child(
+            div()
+                .id("worship-palette")
+                .flex()
+                .flex_wrap()
+                .gap_1()
+                .px_3()
+                .pb_3()
+                .child(
+                    Caption::new(if levels.iter().any(|level| *level >= 1) {
+                        format!(
+                            "Tower palette · {} types unlocked",
+                            levels.iter().filter(|level| **level >= 1).count()
+                        )
+                    } else {
+                        "Import a save to unlock tower types".to_string()
+                    })
+                    .text_color(muted),
+                )
+                .children(palette),
+        );
+    if let Some(tower) = selected {
+        let upgrade = entity.clone();
+        let sell = entity.clone();
+        let clear = entity.clone();
+        let cost = state
+            .worship
+            .run
+            .as_ref()
+            .and_then(|run| run.upgrade_cost(tower.id))
+            .map(|cost| format!("Upgrade · {cost:.0}"))
+            .unwrap_or_else(|| "Upgrade".into());
+        let refund = state
+            .worship
+            .run
+            .as_ref()
+            .map(|run| run.refund(tower.id))
+            .unwrap_or(0.0);
+        card = card.child(
+            div()
+                .id("worship-selected")
+                .flex()
+                .items_center()
+                .gap_2()
+                .px_3()
+                .pb_3()
+                .child(
+                    Caption::new(format!(
+                        "{} · level {} · platform {} · x {:.0} · {}",
+                        worship::data().towers[tower.type_index].name,
+                        tower.level,
+                        tower.node,
+                        tower.x,
+                        if tower.traits.is_empty() {
+                            "no traits".to_string()
+                        } else {
+                            format!("traits {}", tower.traits)
+                        }
+                    ))
+                    .text_color(muted),
+                )
+                .child(div().flex_1())
+                .child(
+                    Button::new("worship-upgrade", cost)
+                        .size(ControlSize::Sm)
+                        .on_click(move |_event, _window, cx| {
+                            upgrade.update(cx, |state, cx| state.worship_upgrade(cx));
+                        }),
+                )
+                .child(
+                    Button::new("worship-sell", format!("Sell · {refund:.0}"))
+                        .size(ControlSize::Sm)
+                        .on_click(move |_event, _window, cx| {
+                            sell.update(cx, |state, cx| state.worship_sell(cx));
+                        }),
+                )
+                .child(
+                    Button::new("worship-deselect", "Clear")
+                        .variant(ButtonVariant::Subtle)
+                        .size(ControlSize::Sm)
+                        .on_click(move |_event, _window, cx| {
+                            clear.update(cx, |state, cx| state.worship_select(None, cx));
+                        }),
+                ),
+        );
+    }
+    if let Some(message) = &state.worship.message {
+        card = card.child(
+            div()
+                .id("worship-message")
+                .role(gpui::Role::Label)
+                .aria_label(message.clone())
+                .px_3()
+                .pb_3()
+                .child(Caption::new(message.clone()).text_color(cx.theme().colors.danger)),
+        );
+    }
+    card.into_any_element()
+}
+
+fn hud(state: &AppState, muted: gpui::Hsla) -> AnyElement {
+    let view = state
+        .worship
+        .view
+        .clone()
+        .unwrap_or_else(idleon_core::worship::RunView::empty);
+    let best = state
+        .worship_inputs
+        .best_waves
+        .get(state.worship.trial)
+        .copied()
+        .unwrap_or(0);
+    let total = state
+        .worship
+        .view
+        .as_ref()
+        .map(|view| view.towers.len())
+        .unwrap_or(0);
+    let countdown = if view.countdown > 999.0 {
+        "boss hold".to_string()
+    } else {
+        format!("{:.0}s", view.countdown.max(0.0))
+    };
+    let summary = format!(
+        "time {:.1}s · wave {} · alive {} · points {:.0} · totem {:.0} · towers {}",
+        view.t,
+        view.wave,
+        view.mobs.len(),
+        view.pts,
+        view.totem,
+        total,
+    );
+    div()
+        .id("worship-hud")
+        .role(gpui::Role::Label)
+        .aria_label(summary)
+        .flex()
+        .flex_wrap()
+        .items_center()
+        .gap_4()
+        .px_3()
+        .py_2()
+        .child(hud_value(
+            "worship-time",
+            "Time",
+            format_time(view.t),
+            muted,
+        ))
+        .child(hud_value(
+            "worship-wave",
+            "Wave",
+            format!("{}", view.wave),
+            muted,
+        ))
+        .child(hud_value(
+            "worship-countdown",
+            "Next wave",
+            countdown,
+            muted,
+        ))
+        .child(hud_value(
+            "worship-alive",
+            "Alive",
+            format!("{}", view.mobs.len()),
+            muted,
+        ))
+        .child(hud_value(
+            "worship-points",
+            "Points",
+            format!("{:.0}", view.pts),
+            muted,
+        ))
+        .child(hud_value(
+            "worship-totem",
+            "Totem",
+            format!("{:.0}", view.totem),
+            muted,
+        ))
+        .child(hud_value(
+            "worship-towers",
+            "Towers",
+            format!("{total}"),
+            muted,
+        ))
+        .child(hud_value("worship-best", "Best", format!("{best}"), muted))
+        .when_some(view.end_reason, |row, reason| {
+            row.child(hud_value(
+                "worship-ended",
+                "Ended",
+                reason.label().to_string(),
+                muted,
+            ))
+        })
+        .into_any_element()
+}
+
+fn hud_value(
+    id: &'static str,
+    label: &'static str,
+    value: String,
+    muted: gpui::Hsla,
+) -> AnyElement {
+    div()
+        .id(id)
+        .role(gpui::Role::Label)
+        .aria_label(format!("{label} {value}"))
+        .flex()
+        .items_center()
+        .gap_1()
+        .child(Caption::new(label).text_color(muted))
+        .child(div().text_size(px(13.0)).child(value))
+        .into_any_element()
+}
+
+fn sidebar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let view = state
+        .worship
+        .view
+        .clone()
+        .unwrap_or_else(idleon_core::worship::RunView::empty);
+    let mut column = div()
+        .flex()
+        .flex_col()
+        .w(px(320.0))
+        .gap_3()
+        .child(hud(state, muted));
+    let done = state.worship.run.as_ref().is_some_and(|run| run.done());
+    let body = if done {
+        let result = state
+            .worship
+            .run
+            .as_mut()
+            .map(|run| run.result())
+            .expect("a done run exists");
+        div()
+            .id("worship-result")
+            .role(gpui::Role::Label)
+            .aria_label(format!(
+                "ended {} · wave {} · best wave {} · kills {} · exp {:.0} · leaks {}",
+                result.end_reason.label(),
+                result.highest_wave,
+                result.best_wave,
+                result.kills,
+                result.exp,
+                result.leaks
+            ))
+            .flex()
+            .flex_wrap()
+            .gap_3()
+            .p_3()
+            .child(kv("Ended", result.end_reason.label().to_string(), muted))
+            .child(kv("Time", format_time(result.time_sec), muted))
+            .child(kv("Waves", result.highest_wave.to_string(), muted))
+            .child(kv("Best", result.best_wave.to_string(), muted))
+            .child(kv("Kills", result.kills.to_string(), muted))
+            .child(kv("EXP", format!("{:.0}", result.exp), muted))
+            .child(kv("Leaks", result.leaks.to_string(), muted))
+            .child(kv("Spent", format!("{:.0}", result.spent), muted))
+            .child(kv(
+                "Totem",
+                format!(
+                    "{:.0} / {:.0}",
+                    result.totem_left, state.worship_inputs.totem_hp
+                ),
+                muted,
+            ))
+    } else {
+        div()
+            .id("worship-result")
+            .role(gpui::Role::Label)
+            .aria_label(format!(
+                "running · wave {} · alive {} · towers {} · points {:.0}",
+                view.wave,
+                view.mobs.len(),
+                view.towers.len(),
+                view.pts
+            ))
+            .flex()
+            .flex_wrap()
+            .gap_3()
+            .p_3()
+            .child(kv("Time", format_time(view.t), muted))
+            .child(kv("Wave", view.wave.to_string(), muted))
+            .child(kv("Alive", view.mobs.len().to_string(), muted))
+            .child(kv("Towers", view.towers.len().to_string(), muted))
+            .child(kv("Points", format!("{:.0}", view.pts), muted))
+            .child(kv("Totem", format!("{:.0}", view.totem), muted))
+    };
+    column = column.child(
+        Card::new()
+            .header(CardHeader::new(if done {
+                "Run totals"
+            } else {
+                "Run so far"
+            }))
+            .child(body),
+    );
+    column = column.child(
+        div()
+            .id("worship-notes")
+            .flex()
+            .flex_col()
+            .gap_1()
+            .px_1()
+            .child(
+                Caption::new(
+                    "Model notes · replay, plans and the optimizer arrive in WT-02 to WT-04.",
+                )
+                .text_color(muted),
+            )
+            .child(Caption::new(ASSUMPTIONS).text_color(muted)),
+    );
+    div()
+        .id("worship-sidebar")
+        .flex()
+        .flex_col()
+        .flex_none()
+        .w(px(320.0))
+        .min_h_0()
+        .gap_3()
+        .child(column)
+        .into_any_element()
+}
+
+fn kv(label: &'static str, value: String, muted: gpui::Hsla) -> AnyElement {
+    div()
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child(Caption::new(label).text_color(muted))
+        .child(div().child(value))
+        .into_any_element()
+}
+
+fn format_time(seconds: f64) -> String {
+    let seconds = seconds.max(0.0);
+    let hours = (seconds / 3600.0).floor() as u32;
+    let minutes = ((seconds - f64::from(hours) * 3600.0) / 60.0).floor() as u32;
+    let rest = (seconds - f64::from(hours) * 3600.0 - f64::from(minutes) * 60.0).floor() as u32;
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{rest:02}")
+    } else {
+        format!("{minutes}:{rest:02}")
+    }
+}
+
+/// The assumptions the live simulator makes, shown beside the run.
+const ASSUMPTIONS: &str = "Wizards scan on 100 ms ticks and a 300 ms popup follows each cooldown. \
+Pulse volleys roll one critical for all hits. Trait passes follow the game, but manual \
+upgrades take an all-A trait recipe. Account start points beyond the base 5, kill-point \
+meals and Meritocracy stay neutral this build. Elites, roots and boss holds are not modelled.";

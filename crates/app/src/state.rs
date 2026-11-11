@@ -12,6 +12,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
+use crate::sections::worship_td::State as WorshipState;
 use crate::sections::{self, Section};
 use crate::session::{self, RecentImport, Session};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
@@ -30,6 +31,7 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
+use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
@@ -161,6 +163,10 @@ pub struct AppState {
     pub statue: StatueState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
+    /// The Worship TD simulator's config and live run.
+    pub worship: WorshipState,
+    /// The tower trial levels and account values the live run reads.
+    pub worship_inputs: WorshipInputs,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
     pub status: String,
@@ -315,6 +321,8 @@ impl AppState {
             pickle: PickleState::default(),
             statue,
             coral: CoralState::default(),
+            worship: WorshipState::default(),
+            worship_inputs: WorshipInputs::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
@@ -628,6 +636,7 @@ impl AppState {
         self.save = Some(imported.save);
         self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
+        self.worship_adopt(imported.worship);
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
         self.farm = imported.farming;

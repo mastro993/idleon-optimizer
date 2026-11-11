@@ -70,6 +70,27 @@ pub struct SailingConfig {
     minimum_tier: u32,
 }
 
+/// The Worship TD section's config: its trial, palette and playback.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct WorshipConfig {
+    trial: usize,
+    tower: usize,
+    speed: f64,
+    ranges: bool,
+}
+
+impl Default for WorshipConfig {
+    fn default() -> Self {
+        Self {
+            trial: 0,
+            tower: 0,
+            speed: 1.0,
+            ranges: true,
+        }
+    }
+}
+
 /// The Clamworks section's config: its tab and the entered multikill total.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -163,6 +184,15 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     );
     insert("jar", value(&JarConfig { tab: state.jar_tab }));
     insert("coral-god-rank", value(&state.coral.inputs));
+    insert(
+        "worship-td",
+        value(&WorshipConfig {
+            trial: state.worship.trial,
+            tower: state.worship.tower,
+            speed: state.worship.speed,
+            ranges: state.worship.ranges,
+        }),
+    );
     configs
 }
 
@@ -239,6 +269,7 @@ pub enum Config {
     Clamworks(ClamworksConfig),
     Jar(JarConfig),
     Coral(coral::Inputs),
+    Worship(WorshipConfig),
 }
 
 /// What decoding one section config found.
@@ -384,6 +415,19 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
         Config::Coral(config) => {
             state.coral.inputs = config;
         }
+        Config::Worship(config) => {
+            let last_trial = idleon_core::worship::data().trials.len().saturating_sub(1);
+            state.worship.trial = config.trial.min(last_trial);
+            state.worship.tower = config.tower.min(idleon_core::worship::TOWER_COUNT - 1);
+            state.worship.speed = config.speed.clamp(0.5, 5.0);
+            state.worship.ranges = config.ranges;
+            state.worship.run = None;
+            state.worship.view = None;
+            state.worship.selected = None;
+            state.worship.playing = false;
+            state.worship.pumping = false;
+            state.worship.generation += 1;
+        }
     }
 }
 
@@ -409,6 +453,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "clamworks" => decode!(Clamworks, ClamworksConfig),
         "jar" => decode!(Jar, JarConfig),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
+        "worship-td" => decode!(Worship, WorshipConfig),
         _ => Decoded::Unknown,
     }
 }
@@ -839,6 +884,7 @@ mod tests {
                 "clamworks",
                 "jar",
                 "coral-god-rank",
+                "worship-td",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);

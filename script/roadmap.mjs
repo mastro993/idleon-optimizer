@@ -145,6 +145,9 @@ function sectionDoc(milestone) {
     '',
     milestone.summary,
     '',
+    ...(milestone.build?.length
+      ? ['## Current build', '', list(milestone.build), '']
+      : []),
     '## Upstream sources',
     '',
     list(milestone.upstream) || '- none',

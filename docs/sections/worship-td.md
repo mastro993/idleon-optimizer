@@ -5,10 +5,18 @@
 - Milestone: `M14`
 - Section key: `worship-td`
 - Group: `w3`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.
+
+## Current build
+
+- The live simulator ports `createWorshipTdRun`: a seeded mulberry32 stream, 100 ms ticks, wave countdowns, the tower state machine, mob modifiers, projectiles and the totem. The Glublin fixture is parity-checked against the upstream view tick for tick.
+- Tower placement spends TD points through `validatePlacement`; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.
+- Ranges and every HUD value read the same `RunView`, so the panel cannot disagree with the field. Restart rebuilds the run from the same trial and seed.
+- Save inputs decoded: `Tower` trial levels, `TotemInfo` best waves, `Dream[7]`, `SaltLick[6]`, Menagerie boost 15 and unlock 18, and super bits 6/15 for totem HP.
+- Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots. Replays, plan phases and the optimizer remain WT-02 to WT-04.
 
 ## Upstream sources
 

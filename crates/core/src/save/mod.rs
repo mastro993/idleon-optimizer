@@ -48,6 +48,7 @@ mod sailing;
 mod shadow;
 mod statue;
 mod value;
+mod worship;
 
 pub use shadow::{Shadow, ShadowVerdict};
 pub use value::{Save, at, number, row_values};
@@ -114,6 +115,8 @@ pub struct Imported {
     pub statues: crate::statue::StatueSave,
     /// The coral god rank planner's save-derived inputs.
     pub coral: crate::coral::SaveInputs,
+    /// The Worship TD simulator's save-derived inputs.
+    pub worship: crate::worship::Inputs,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -283,6 +286,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .unwrap_or(0);
     let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
     let clamworks = Clamworks::from_save(save, &mut warnings);
+    let worship = worship::inputs(save, &mut warnings);
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
@@ -303,6 +307,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         companion,
         statues,
         coral,
+        worship,
         format,
         characters: roster,
         named_characters,
