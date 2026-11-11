@@ -15,7 +15,9 @@ mod assign;
 mod captain;
 pub mod data;
 mod metrics;
+mod outcome;
 mod replacement;
+mod tree;
 mod upgrade;
 
 pub use assign::{FleetComparison, FleetPlan, compare, optimize, saved};
@@ -32,14 +34,20 @@ pub use metrics::{
     ArtifactMultiplier, ArtifactOdds, ArtifactOutcome, ChestDistribution, ChestTier, LootValue,
     RouteMetrics, RouteTiming, SpeedValue, TierRow, TreasureShares, artifact_odds_denominator,
     artifact_tier_unlocked, boat_artifact_multiplier, boat_base_loot, boat_base_speed,
-    boat_loot_value, boat_speed, captain_bonus, chest_loot_multiplier, chest_loot_rolls,
-    chest_rarity_scale, chest_tier_distribution, davey_jones_bonus, island_artifact_odds,
-    minimum_travel_details, route_metrics, route_timing,
+    boat_loot_value, boat_speed, captain_bonus, chest_artifact_multiplier, chest_loot_multiplier,
+    chest_loot_rolls, chest_rarity_scale, chest_tier_distribution, davey_jones_bonus,
+    island_artifact_odds, minimum_travel_details, route_metrics, route_timing,
+};
+pub use outcome::{
+    ChestPayoutBreakdown, CurrencyPayout, CurrencyPayouts, FleetChestOutcomes, FleetChestTier,
+    MAX_ARTIFACT_TIER, NearFullTier, aggregate_fleet_tiers, fleet_chest_payout_breakdown,
+    incomplete_artifacts, max_artifact_tier, near_full_pile,
 };
 pub use replacement::{
     ReplacementOutcome, ReplacementThreshold, compare_strength, overflow_upgrade_chance, ranked,
     replacement_outcome, replacement_threshold, strongest,
 };
+pub use tree::{artifact_tree, chest_tree, loot_tree, speed_tree};
 pub use upgrade::{
     Currency, CurrencyShare, UpgradeBreakpoint, UpgradeCost, UpgradeEta, UpgradeStat, currency,
     currency_rate, next_breakpoint, upgrade_breakpoint, upgrade_cost, upgrade_cost_at_level,

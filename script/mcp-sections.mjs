@@ -1035,6 +1035,24 @@ const INTERACTIONS = {
       (nodes) => nodes.some((node) => node.id?.startsWith('replacements-cell-')),
       'sailing: the matrix cells render',
     );
+    await lane.call('click_element', { id: 'odds' });
+    await waitForNode(lane, 'odds-fleet-table', 'sailing: the chest outcomes open');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('odds-tier-')),
+      'sailing: the fleet chest tier rows render',
+    );
+    await waitForNode(lane, 'odds-pile-table', 'sailing: the near-full pile transitions render');
+    await lane.call('click_element', { id: 'artifacts' });
+    await waitForNode(lane, 'artifacts-island-table', 'sailing: the artifact ranking opens');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('artifact-name-')),
+      'sailing: the selected island artifacts render',
+    );
+    await lane.call('click_element', { id: 'formula' });
+    await waitForNode(lane, 'sailing-breakdown-loot', 'sailing: the formula breakdowns open');
+    await waitForNode(lane, 'sailing-breakdown-chest', 'sailing: the chest tree renders');
     await lane.call('click_element', { id: 'fleet' });
     await waitForNode(lane, 'fleet-table', 'sailing: the fleet table reopens');
   },

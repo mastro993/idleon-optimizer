@@ -5,7 +5,7 @@
 //! there. The plan for that island always optimises direct loot value, as the
 //! upstream levels tab does.
 
-use super::{gain, hours_or_ready};
+use super::{gain, hours_or_ready, text_kpi};
 use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::forms::Checkbox;
@@ -13,7 +13,6 @@ use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div};
 use idleon_core::sailing::{
@@ -145,30 +144,6 @@ fn kpis(state: &AppState, rows: &[Row], cx: &mut Context<AppState>) -> AnyElemen
                 )),
         )
         .child(sort_checkbox)
-        .into_any_element()
-}
-
-fn text_kpi(
-    id: &'static str,
-    label: &'static str,
-    value: &str,
-    caption: &str,
-    muted: gpui::Hsla,
-) -> AnyElement {
-    Card::new()
-        .child(
-            div()
-                .id(id)
-                .role(gpui::Role::Label)
-                .aria_label(value.to_string())
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
-                .child(div().text_size(gpui::px(20.0)).child(value.to_string()))
-                .child(Caption::new(caption.to_string()).text_color(muted)),
-        )
         .into_any_element()
 }
 

@@ -90,6 +90,10 @@ pub struct ArtifactMultiplier {
     pub value: f64,
     pub captain: f64,
     pub additive: f64,
+    /// `max(1, 1 + (additive + captain) / 100)`, before the account factors.
+    pub additive_factor: f64,
+    /// The product of the multiplicative account sources.
+    pub multiplier: f64,
 }
 
 /// One artifact's odds on an island.
@@ -135,6 +139,17 @@ pub struct TreasureShares {
     pub rare: f64,
 }
 
+impl Default for TreasureShares {
+    /// Below Sailing level 5 every payout is gold bars, as upstream splits it.
+    fn default() -> Self {
+        Self {
+            gold: 1.0,
+            primary: 0.0,
+            rare: 0.0,
+        }
+    }
+}
+
 /// Everything one boat/captain pairing on one island produces.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RouteMetrics {
@@ -143,6 +158,8 @@ pub struct RouteMetrics {
     pub island: usize,
     pub minimum_tier: u32,
     pub timing: RouteTiming,
+    /// The raw speed and the factors behind it.
+    pub speed: SpeedValue,
     pub loot: LootValue,
     pub rarity: ChestDistribution,
     pub artifact_base: ArtifactMultiplier,
@@ -380,6 +397,11 @@ pub fn chest_loot_multiplier(tier: usize) -> f64 {
     CHEST_LOOT_MULTIS.get(tier).copied().unwrap_or(0.0)
 }
 
+/// The artifact-find multiplier a chest of `tier` applies, `1` for tier zero.
+pub fn chest_artifact_multiplier(tier: usize) -> f64 {
+    CHEST_ARTIFACT_MULTIS.get(tier).copied().unwrap_or(0.0)
+}
+
 /// A boat's artifact-find multiplier, matching upstream `boatArtifactMultiplier`.
 pub fn boat_artifact_multiplier(
     fleet: &Fleet,
@@ -391,10 +413,13 @@ pub fn boat_artifact_multiplier(
     let captain = captain_bonus(fleet, captain, 3);
     let legendary = 25.0 * fleet.legendary_captains() as f64;
     let additive = context.artifact.additive + legendary;
+    let additive_factor = (1.0 + (additive + captain) / 100.0).max(1.0);
     ArtifactMultiplier {
-        value: (1.0 + (additive + captain) / 100.0).max(1.0) * context.artifact.multiplier,
+        value: additive_factor * context.artifact.multiplier,
         captain,
         additive,
+        additive_factor,
+        multiplier: context.artifact.multiplier,
     }
 }
 
@@ -536,6 +561,7 @@ pub fn route_metrics(
 ) -> RouteMetrics {
     let minimum_tier = context.minimum_tier.min(5);
     let loot = boat_loot_value(fleet, boat_idx, captain, context);
+    let speed = boat_speed(fleet, boat_idx, captain, context);
     let timing = route_timing(fleet, boat_idx, island, captain, context);
     let rarity = chest_tier_distribution(fleet, captain);
     let artifact_base = boat_artifact_multiplier(fleet, boat_idx, captain, context);
@@ -599,6 +625,7 @@ pub fn route_metrics(
         island,
         minimum_tier,
         timing,
+        speed,
         loot,
         rarity,
         artifact_base,

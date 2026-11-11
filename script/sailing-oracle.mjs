@@ -20,14 +20,26 @@ writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 const { loadSaveData } = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const {
+  CHEST_ARTIFACT_MULTIS,
+  CHEST_LOOT_MULTIS,
+  availableIslandCount,
   boatUpgradeBreakpoint,
   captainLevelTime,
   captainRollQuality,
+  chestLootRolls,
   chestReplacementOutcome,
+  fleetChestPayoutBreakdown,
+  islandArtifactOdds,
   optimizeCaptainAssignment,
+  overflowUpgradeChance,
+  routeMetrics,
   sailingCurrencyMeta,
   unendingLootSearch,
 } = await import(join(source, 'js/stats/systems/w5/sailing-chests.js'));
+const { maxArtifactTier } = await import(join(source, 'js/stats/systems/w5/sailing.js'));
+const { islandArtifactCount, islandArtifactOffset } = await import(
+  join(source, 'js/stats/data/w5/sailing.js')
+);
 
 // One purpose-built account: three boats, three captains, no account bonuses,
 // Unending Loot Search active so the replacement matrix exercises both paths.
@@ -38,7 +50,11 @@ lv0[13] = 10;
 const sailing = [new Array(20).fill(-1), new Array(31).fill(0), [2, 2], new Array(41).fill(0)];
 sailing[1][0] = 5000;
 sailing[1][1] = 250;
+// Artifact 9's tier feeds the chest rarity scale; artifacts 0 and 1 exercise an
+// upgradeable and a capped artifact on the first island.
 sailing[3][9] = 2;
+sailing[3][0] = 1;
+sailing[3][1] = 6;
 const save = {
   Research: JSON.stringify(
     Array.from({ length: 48 }, (_, index) => (index === 0 ? new Array(240).fill(0) : [])),
@@ -204,4 +220,150 @@ writeFileSync(
 );
 console.log(
   `wrote ${breakpoints.length} breakpoints, ${captains.length} captains and ${replacement.length} replacement cells`,
+);
+// ==================== CHEST, ARTIFACT AND LOOT OUTCOMES ====================
+
+// `aggregateFleetTiers` in sailing-calc.html: each boat's exact-tier chest rate
+// weights its captain's tier odds.
+const generatedPerHour = fleet.reduce((sum, row) => sum + row.generatedChestsPerHour, 0);
+const fleetTiers = [];
+for (let tier = 0; tier < 6; tier++) {
+  let exact = 0;
+  let cumulative = 0;
+  for (const row of fleet) {
+    exact += row.generatedChestsPerHour * row.rarity.tiers[tier].probability;
+    cumulative += row.generatedChestsPerHour * row.rarity.tiers[tier].cumulative;
+  }
+  fleetTiers.push({
+    tier,
+    probability: generatedPerHour > 0 ? exact / generatedPerHour : 0,
+    cumulative: generatedPerHour > 0 ? cumulative / generatedPerHour : 0,
+    expectedPerHour: exact,
+  });
+}
+
+const payoutRows = fleetTiers.map(({ tier }) => {
+  const breakdown = fleetChestPayoutBreakdown(fleet, tier, saveData);
+  return {
+    tier,
+    multiplier: breakdown.multiplier,
+    payouts: breakdown.payouts,
+    chestRate: breakdown.chestRate,
+    averageStoredValue: breakdown.averageStoredValue,
+    totalValuePerChest: breakdown.totalValuePerChest,
+    currencies: Object.fromEntries(
+      Object.entries(breakdown.currencies).map(([key, currency]) => [
+        key,
+        {
+          chancePerPayout: currency.chancePerPayout,
+          expectedPayoutsPerChest: currency.expectedPayoutsPerChest,
+          expectedValuePerChest: currency.expectedValuePerChest,
+          expectedValuePerHour: currency.expectedValuePerHour,
+        },
+      ]),
+    ),
+  };
+});
+
+// The near-full pile block in sailing-calc.html: tier four cannot promote to
+// Miracle, so only the four ordinary transitions are listed.
+const nearFull = [];
+for (let tier = 0; tier < 4; tier++) {
+  nearFull.push({
+    tier,
+    chance: overflowUpgradeChance(tier, saveData, 0),
+    lootMultiplier: CHEST_LOOT_MULTIS[tier],
+    nextLootMultiplier: CHEST_LOOT_MULTIS[tier + 1],
+    valueRatio:
+      (CHEST_LOOT_MULTIS[tier + 1] * chestLootRolls(tier + 1, saveData)) /
+      (CHEST_LOOT_MULTIS[tier] * chestLootRolls(tier, saveData)),
+    artifactMultiplier: CHEST_ARTIFACT_MULTIS[1],
+  });
+}
+
+// `breakdownRoute` picks the selected boat's route from the active plan.
+const breakdownRoute = fleet.find((row) => row.boatIdx === 0) || fleet[0];
+const artifactIslands = [];
+for (let island = 0; island < availableIslandCount(saveData); island++) {
+  const row = routeMetrics(breakdownRoute.boatIdx, island, saveData, {
+    ...options,
+    captainIdx: breakdownRoute.captainIdx,
+  });
+  const offset = islandArtifactOffset(island);
+  let incomplete = 0;
+  for (let index = 0; index < islandArtifactCount(island); index++) {
+    if (Number(saveData.sailingData?.[3]?.[offset + index]) < maxArtifactTier(saveData)) incomplete++;
+  }
+  artifactIslands.push({
+    island,
+    incomplete,
+    tripSeconds: row.timing.tripSeconds,
+    artifactChancePerTrip: row.artifactChancePerTrip,
+    artifactFindsPerHour: row.artifactFindsPerHour,
+  });
+}
+artifactIslands.sort((left, right) => right.artifactFindsPerHour - left.artifactFindsPerHour);
+
+// `artifactDetail` in sailing-calc.html sums the kept tiers' exact chances.
+const weighted = new Map();
+for (const tier of breakdownRoute.tiers) {
+  if (!tier.kept) continue;
+  const odds = islandArtifactOdds(breakdownRoute.islandIdx, tier.artifactMultiplier, saveData, {
+    serverVars: {},
+  });
+  for (const artifact of odds.artifacts) {
+    const row = weighted.get(artifact.artifactIdx) || {
+      artifact: artifact.artifactIdx,
+      name: artifact.name,
+      currentTier: artifact.currentTier,
+      // Upstream spells "never" as Infinity; the fixture keeps JSON's null.
+      denominator: Number.isFinite(artifact.denominator) ? artifact.denominator : null,
+      unlocked: artifact.unlocked,
+      chance: 0,
+    };
+    row.chance += tier.probability * artifact.exactChance;
+    weighted.set(artifact.artifactIdx, row);
+  }
+}
+
+const outcomes = {
+  source: 'purpose-built save in script/sailing-oracle.mjs',
+  modules: [
+    'sailing-calc.html',
+    'js/stats/systems/w5/sailing-chests.js',
+    'js/stats/systems/w5/sailing.js',
+  ],
+  save,
+  unendingLootSearch: talent,
+  island: breakdownRoute.islandIdx,
+  boat: breakdownRoute.boatIdx,
+  captain: breakdownRoute.captainIdx,
+  maxArtifactTier: maxArtifactTier(saveData),
+  routes: fleet.map((row) => ({
+    boat: row.boatIdx,
+    captain: row.captainIdx,
+    island: row.islandIdx,
+    generatedChestsPerHour: row.generatedChestsPerHour,
+    keptChestsPerHour: row.keptChestsPerHour,
+    lootValue: row.loot.value,
+    treasurePerHour: row.treasurePerHour,
+    artifactFindsPerHour: row.artifactFindsPerHour,
+    artifactChancePerTrip: row.artifactChancePerTrip,
+    artifactBase: row.artifactBase.value,
+    rarityScale: row.rarity.rarityScale,
+    treasureShares: row.treasureShares,
+  })),
+  fleet: { generatedPerHour, tiers: fleetTiers },
+  payouts: payoutRows,
+  nearFull,
+  islands: artifactIslands,
+  artifacts: [...weighted.values()],
+};
+
+writeFileSync(
+  join(root, 'fixtures/sailing-outcomes.json'),
+  `${JSON.stringify(outcomes, null, 2)}\n`,
+);
+console.log(
+  `wrote ${fleetTiers.length} fleet tiers, ${payoutRows.length} payout rows, ${nearFull.length} near-full rows, ${artifactIslands.length} islands and ${weighted.size} artifacts`,
 );

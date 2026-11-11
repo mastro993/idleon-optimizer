@@ -1,20 +1,26 @@
-//! The Sailing Calculator: the upstream fleet, ship, captain and replacement tabs.
+//! The Sailing Calculator: the upstream fleet, ship, captain, chest, artifact and
+//! breakdown tabs.
 //!
-//! The upstream `sailing-calc.html` has fleet, levels, captains, odds, artifacts,
-//! simulation and formula tabs. SL-01 built the fleet assignment, SL-02 adds the
-//! ship breakpoints, captain quality and replacement matrix; the chest, artifact,
-//! pile and formula tabs arrive with SL-03 and SL-04 and are added to [`Tab::ALL`]
-//! then, so the strip never offers a tab with nothing behind it.
+//! The upstream `sailing-calc.html` has fleet, levels, captains, odds, simulation,
+//! artifacts and formula tabs. SL-01 built the fleet assignment, SL-02 the ship
+//! breakpoints, captain quality and replacement matrix, and SL-03 the chest
+//! outcomes, the artifact ranking and the four breakdowns; the pile simulation
+//! arrives with SL-04 and joins [`Tab::ALL`] then, so the strip never offers a
+//! tab with nothing behind it.
 //!
 //! The assignment controls and the header stay above the strip because every tab
 //! reads the same island, goal and fleet mode, as upstream's own layout does.
 
+mod artifacts;
+mod breakdowns;
 mod captains;
 mod fleet;
+mod odds;
 mod replacements;
 mod ships;
 
 use crate::state::AppState;
+use crate::ui::formula::FormulaTree;
 use crate::ui::layout;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -26,7 +32,9 @@ use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
+};
 use idleon_core::sailing::{
     AssignmentMode, Goal, captain_bonus_name, island_artifact_count, island_distance,
 };
@@ -41,6 +49,8 @@ pub struct State {
     pub goal: Goal,
     /// Sort the ship tab by the lowest breakpoint ETA instead of by boat.
     pub sort_by_eta: bool,
+    /// The boat whose breakdowns the formula tab draws.
+    pub breakdown_boat: usize,
 }
 
 impl Default for State {
@@ -51,6 +61,28 @@ impl Default for State {
             island: 0,
             goal: Goal::Treasure,
             sort_by_eta: false,
+            breakdown_boat: 0,
+        }
+    }
+}
+
+/// The four formula trees the breakdowns tab owns.
+pub struct Trees {
+    pub loot: Entity<FormulaTree>,
+    pub speed: Entity<FormulaTree>,
+    pub artifact: Entity<FormulaTree>,
+    pub chest: Entity<FormulaTree>,
+}
+
+impl Trees {
+    /// Create the trees; the tab replaces their roots each render.
+    pub fn new(window: &mut Window, cx: &mut App) -> Self {
+        let mut tree = |id: &'static str| cx.new(|cx| FormulaTree::new(id, window, cx));
+        Self {
+            loot: tree("sailing-loot-formula"),
+            speed: tree("sailing-speed-formula"),
+            artifact: tree("sailing-artifact-formula"),
+            chest: tree("sailing-chest-formula"),
         }
     }
 }
@@ -68,10 +100,26 @@ pub enum Tab {
     Captains,
     /// The strongest-source replacement matrix.
     Replacements,
+    /// Fleet chest outcomes, per-boat tier chances and the near-full pile.
+    #[serde(rename = "odds")]
+    ChestOdds,
+    /// The artifact route ranking and the selected island's artifacts.
+    Artifacts,
+    /// The loot, trip, artifact and chest formula trees.
+    #[serde(rename = "formula")]
+    Breakdowns,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Fleet, Tab::Ships, Tab::Captains, Tab::Replacements];
+    pub const ALL: [Tab; 7] = [
+        Tab::Fleet,
+        Tab::Ships,
+        Tab::Captains,
+        Tab::Replacements,
+        Tab::ChestOdds,
+        Tab::Artifacts,
+        Tab::Breakdowns,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -79,6 +127,9 @@ impl Tab {
             Tab::Ships => "ships",
             Tab::Captains => "captains",
             Tab::Replacements => "replacements",
+            Tab::ChestOdds => "odds",
+            Tab::Artifacts => "artifacts",
+            Tab::Breakdowns => "formula",
         }
     }
 
@@ -88,6 +139,9 @@ impl Tab {
             Tab::Ships => "Ships",
             Tab::Captains => "Captains",
             Tab::Replacements => "Replacements",
+            Tab::ChestOdds => "Chest Odds",
+            Tab::Artifacts => "Artifacts",
+            Tab::Breakdowns => "Breakdowns",
         }
     }
 
@@ -108,6 +162,9 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         Tab::Ships => ships::ships_tab(state, table_height, cx),
         Tab::Captains => captains::captains_tab(state, table_height, cx),
         Tab::Replacements => replacements::replacements_tab(state, table_height, cx),
+        Tab::ChestOdds => odds::odds_tab(state, table_height, cx),
+        Tab::Artifacts => artifacts::artifacts_tab(state, table_height, cx),
+        Tab::Breakdowns => breakdowns::breakdowns_tab(state, table_height, cx),
     };
     div()
         .id("sailing-section")
@@ -163,10 +220,8 @@ fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_3()
         .child(Badge::new("Sailing").tone(Tone::Accent))
         .child(
-            Caption::new(
-                "Chest outcomes, artifacts and the pile simulation follow in SL-03/SL-04.",
-            )
-            .text_color(muted),
+            Caption::new("Chest outcomes, artifacts and breakdowns from the save fleet.")
+                .text_color(muted),
         )
         .child(div().flex_1())
         .child(
@@ -338,6 +393,31 @@ fn empty(cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
+/// One card holding a string value beside its label and caption.
+pub(super) fn text_kpi(
+    id: &'static str,
+    label: &'static str,
+    value: &str,
+    caption: &str,
+    muted: gpui::Hsla,
+) -> AnyElement {
+    Card::new()
+        .child(
+            div()
+                .id(id)
+                .role(gpui::Role::Label)
+                .aria_label(value.to_string())
+                .flex()
+                .flex_col()
+                .gap_1()
+                .p_3()
+                .child(Caption::new(label).text_color(muted))
+                .child(div().text_size(gpui::px(20.0)).child(value.to_string()))
+                .child(Caption::new(caption.to_string()).text_color(muted)),
+        )
+        .into_any_element()
+}
+
 /// A, B, … Z, AA, AB, … as upstream labels captains.
 pub(super) fn captain_code(index: usize) -> String {
     let mut value = index + 1;
@@ -380,6 +460,46 @@ pub(super) fn captain_details(state: &AppState, captain: usize) -> String {
             bonuses.join(" / ")
         )
     }
+}
+
+/// A percentage as the upstream `pct` prints it, three decimals.
+pub(super) fn percent(value: f64) -> String {
+    format!("{:.3}%", 100.0 * value)
+}
+
+/// The upstream `chestOdds`: never, a probability at its own precision, or a
+/// reciprocal when it is tiny.
+pub(super) fn chest_odds(probability: f64) -> String {
+    if probability <= 0.0 {
+        return "Never".into();
+    }
+    if probability < 0.00001 {
+        return format!("1 in {}", crate::ui::format::fmt_val(1.0 / probability));
+    }
+    let digits = if probability >= 0.1 {
+        1
+    } else if probability >= 0.01 {
+        2
+    } else if probability >= 0.0001 {
+        3
+    } else {
+        5
+    };
+    format!("{:.*}%", digits, 100.0 * probability)
+}
+
+/// The upstream `chance`: a percentage, or a reciprocal below a tenth of a percent.
+pub(super) fn chance(probability: f64) -> String {
+    if probability <= 0.0 {
+        return "—".into();
+    }
+    if probability >= 1.0 {
+        return "100%".into();
+    }
+    if probability >= 0.001 {
+        return percent(probability);
+    }
+    format!("1 in {}", crate::ui::format::fmt_val(1.0 / probability))
 }
 
 /// A trip time as seconds, minutes or hours.
@@ -450,6 +570,20 @@ mod tests {
         assert_eq!(trip(90.0), "1.5m");
         assert_eq!(trip(7200.0), "2.00h");
         assert_eq!(trip(f64::INFINITY), "—");
+    }
+
+    #[test]
+    fn chances_read_as_the_upstream_prints_them() {
+        assert_eq!(chance(0.0), "—");
+        assert_eq!(chance(1.0), "100%");
+        assert_eq!(chance(0.433), "43.300%");
+        assert_eq!(chance(8e-6), "1 in 125.0K");
+        assert_eq!(chest_odds(0.0), "Never");
+        assert_eq!(chest_odds(0.675), "67.5%");
+        assert_eq!(chest_odds(1.0), "100.0%");
+        assert_eq!(chest_odds(0.05525), "5.53%");
+        assert_eq!(chest_odds(0.0003737), "0.037%");
+        assert_eq!(chest_odds(0.00000001625), "1 in 61.54M");
     }
 
     #[test]
