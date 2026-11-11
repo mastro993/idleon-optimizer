@@ -31,7 +31,9 @@
 //!
 //! The coral god rank planner reads its own slice of the same object (`Divinity`,
 //! `OptLacc`, the Minehead row and `UpgVault`); [`Imported::coral`] carries it so
-//! the section never parses the save a second time.
+//! the section never parses the save a second time. The Cglunko overview reads
+//! `OptLacc[630..669]` and the account's highest drop rate at `OptLacc[200]`, and
+//! [`Imported::cglunko`] carries that slice.
 //!
 //! The same save carries the sailing fleet (`Boats`, `Captains`), the artifact
 //! tiers and island progress in `Sailing`, and the account fields the route
@@ -53,6 +55,7 @@ mod worship;
 pub use shadow::{Shadow, ShadowVerdict};
 pub use value::{Save, at, number, row_values};
 
+use crate::cglunko::Cglunko;
 use crate::clamworks::Clamworks;
 use crate::cog::CogSave;
 use crate::farming::Farm;
@@ -103,6 +106,8 @@ pub struct Imported {
     pub farming: Farm,
     /// The save-derived multiplier tree behind [`Self::context`].
     pub tree: BonusTree,
+    /// The Cglunko state the save carries, or the zero state when it has none.
+    pub cglunko: Cglunko,
     /// The Clamworks state the save carries, or the zero state when it has none.
     pub clamworks: Clamworks,
     /// The cog board and shelf the save carries.
@@ -294,6 +299,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .and_then(Character::farming_level)
         .unwrap_or(0);
     let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
+    let cglunko = Cglunko::from_save(save, &mut warnings);
     let clamworks = Clamworks::from_save(save, &mut warnings);
     let construction_level = characters
         .iter()
@@ -326,6 +332,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         sailing: sailing.context,
         farming,
         tree,
+        cglunko,
         clamworks,
         cog,
         jar,

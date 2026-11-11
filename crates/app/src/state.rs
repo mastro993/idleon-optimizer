@@ -45,7 +45,7 @@ use idleon_core::save::Shadow;
 use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
-use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
+use idleon_core::{Cglunko, Clamworks, Jar, game, monument, optimize, save, shape, sim};
 
 /// What a strategy search stored: its recommendation, or why it could not run.
 pub type SearchOutcome = Result<worship::Search, String>;
@@ -165,6 +165,8 @@ pub struct AppState {
     pub monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
     pub monument_save: Option<monument::Save>,
+    /// The Cglunko state the last imported save carried.
+    pub cglunko: Cglunko,
     /// The Clamworks state the last imported save carried.
     pub clamworks: Clamworks,
     /// The cog board section: the decoded save and the board on screen.
@@ -226,6 +228,8 @@ pub struct AppState {
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The research dashboard's four breakdown trees.
     pub research_trees: crate::sections::research::Trees,
+    /// The shared formula tree on the Cglunko overview.
+    pub cglunko_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Clamworks overview.
     pub clamworks_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Fishing calculator.
@@ -476,6 +480,8 @@ impl AppState {
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let ladle_state = LadleSectionState::new(window, cx);
+        let cglunko_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("cglunko-formula", window, cx));
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
         let fishing_breakdown =
@@ -504,6 +510,7 @@ impl AppState {
             monument: MonumentState::default(),
             monument_save: None,
             cog: CogState::default(),
+            cglunko: Cglunko::default(),
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
@@ -534,6 +541,7 @@ impl AppState {
             worship_optimize,
             breakdown,
             research_trees,
+            cglunko_breakdown,
             clamworks_breakdown,
             fishing_breakdown,
             shadow: Shadow::default(),
@@ -865,6 +873,7 @@ impl AppState {
         self.sailing = imported.sailing;
         self.farm = imported.farming;
         self.cog.load(imported.cog);
+        self.cglunko = imported.cglunko;
         self.clamworks = imported.clamworks;
         self.jar = imported.jar;
         self.ladle_state

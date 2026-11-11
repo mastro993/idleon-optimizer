@@ -191,6 +191,38 @@ const cogSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying the Cove's option rows: a few upgrade
+/// levels, five blue digits, 1K Glunko kills and a 100x normal drop rate, so the
+/// overview's DR tree multiplies out to 2.57712. `rows: false` shortens the row
+/// past index 630, which must read zero and warn.
+const cglunkoSave = ({ rows = true } = {}) => {
+  const options = Array(rows ? 669 : 30).fill(0);
+  if (rows) {
+    options[630] = 5; // Opal Find
+    options[631] = 2; // Slop Drop: 15 per level.
+    options[632] = 5; // Reslime: 2 per level.
+    options[633] = 5; // Droplier: 8 per level.
+    options[634] = 2; // Killionaire: 3 per level.
+    options[636] = 3; // Big Hit Multkill: 1 per level.
+    options[638] = 4; // Sleepy Drops: 1 per level.
+    options[640] = 4; // Blue Collector: 1 per level.
+    options[641] = 4; // Researchy: 1 per level.
+    options[644] = 3; // Cavernicus: 10 per level.
+    options[645] = 2; // Multikill: 100 per level.
+    options[649] = 6; // DeEmGe: 1 per level.
+    options[650] = 2; // Grandioso: 5 per level.
+    options[654] = 1000; // Blue shape 1: three digits.
+    options[655] = 100; // Blue shape 2: two digits.
+    options[668] = 1000; // Glunko kills: three digits.
+    options[200] = 100; // Normal DR: two digits.
+  }
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+    OptLacc: JSON.stringify(options),
+  });
+};
+
 /// A small flat `save.json` carrying worship tower levels and a best-wave table,
 /// so the simulator has every type unlocked and a run to play.
 const worshipSave = () => {
@@ -905,6 +937,42 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'worship-simulator-tab' });
     await waitForNode(lane, 'worship-map', 'worship-td: the simulator tab returns');
 
+  },
+  cglunko: async (lane) => {
+    const importSave = async (text, ready, message) => {
+      await lane.call('click_element', { id: 'header-import' });
+      await waitForNode(lane, 'import-input', `${message}: the import dialog opens`);
+      await lane.call('click_element', { id: 'import-input' });
+      await lane.call('keyboard', { keystroke: 'secondary-a' });
+      await lane.call('type_text', { text });
+      await waitForNode(lane, 'import-format', `${message}: the save previews`);
+      await lane.call('click_element', { id: 'import-apply' });
+      await waitForNode(lane, ready, `${message}: ${ready} after Apply`);
+    };
+    await importSave(cglunkoSave(), 'cglunko-overview', 'cglunko');
+    const summary = labelOf(await lane.tree(), 'cglunko-summary') ?? '';
+    if (!summary.includes('DR ×2.58') || !summary.includes('5 blue digits')) {
+      throw new Error(`cglunko: the summary reads ${summary}`);
+    }
+    // The shared tree opens on its root; collapsing hides the factors and
+    // expanding brings them back, with the additive group summing its three
+    // drop-rate upgrades to +30%.
+    await lane.call('click_element', { id: 'cglunko-formula-collapse' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'formula-node-root-0'),
+      'cglunko: collapse closes the tree',
+    );
+    await lane.call('click_element', { id: 'cglunko-formula-expand' });
+    await waitForNode(lane, 'formula-node-root-0-0', 'cglunko: expand reopens the additive group');
+    const additive = labelOf(await lane.tree(), 'formula-node-root-0-0') ?? '';
+    if (!additive.includes('+30%')) {
+      throw new Error(`cglunko: the additive group reads ${additive}`);
+    }
+    // A save without the Cove rows reads zero and names the missing field.
+    await importSave(cglunkoSave({ rows: false }), 'cglunko-missing', 'cglunko');
+    const empty = labelOf(await lane.tree(), 'cglunko-summary') ?? '';
+    if (!empty.includes('DR ×1.00')) throw new Error(`cglunko: the empty summary reads ${empty}`);
   },
   clamworks: async (lane) => {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
