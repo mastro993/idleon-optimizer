@@ -10,6 +10,7 @@ use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
+use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::{self, Section};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
 use crate::ui;
@@ -148,6 +149,8 @@ pub struct AppState {
     pub jar: Option<Jar>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
+    /// The statue section's saved rows, character and table controls.
+    pub statue: StatueState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The dashboard search field.
@@ -173,6 +176,7 @@ pub struct AppState {
     #[allow(dead_code)]
     bridge: BridgeHandle,
     _search_subscription: Subscription,
+    _statue_search_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
 }
@@ -213,6 +217,14 @@ impl AppState {
         });
         let search_subscription =
             cx.subscribe(&search, |_state, _search, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            });
+        let statue = StatueState::new(window, cx);
+        let statue_search = statue.search.clone();
+        let statue_search_subscription =
+            cx.subscribe(&statue_search, |_state, _search, event: &InputEvent, cx| {
                 if *event == InputEvent::Changed {
                     cx.notify();
                 }
@@ -282,6 +294,7 @@ impl AppState {
             jar_tab: JarTab::default(),
             jar: None,
             pickle: PickleState::default(),
+            statue,
             coral: CoralState::default(),
             search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
@@ -296,6 +309,7 @@ impl AppState {
             focus,
             bridge,
             _search_subscription: search_subscription,
+            _statue_search_subscription: statue_search_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
         };
@@ -448,6 +462,7 @@ impl AppState {
         self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.statue.load(imported.statues);
         self.coral.adopt(&imported.coral);
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
@@ -771,6 +786,20 @@ impl AppState {
         } else {
             DEFAULT_TTK
         };
+        cx.notify();
+    }
+
+    /// Pick a character for the statue table; characters without saved rows
+    /// cannot be selected, so the table always has a valid subject.
+    pub fn set_statue_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        if self.statue.save.has_character(character) {
+            self.statue.character = character;
+            cx.notify();
+        }
+    }
+
+    pub fn set_statue_sort(&mut self, sort: StatueSort, cx: &mut Context<Self>) {
+        self.statue.sort = sort;
         cx.notify();
     }
 

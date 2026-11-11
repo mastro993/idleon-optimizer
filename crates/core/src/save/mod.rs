@@ -13,6 +13,8 @@
 //!   groups of four numbers.
 //! - The research level is the highest `Lv0_<char>[20]` across characters, and
 //!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
+//! - Statue levels are `StatueLevels_<char>` JSON strings of `[level, exp]`
+//!   pairs in statue order; `charNames` supplies the selector's labels.
 //! - The farming side reads `FarmPlot`, `FarmRank`, `FarmUpg`, `FarmCrop`,
 //!   `Spelunk[50]` and `GemItemsPurchased`; the active character's Farming level
 //!   is `Lv0_<char>[16]`. A research-only save stays silent about farming.
@@ -44,6 +46,7 @@ pub(crate) mod json;
 mod research;
 mod sailing;
 mod shadow;
+mod statue;
 
 pub use shadow::{Shadow, ShadowVerdict};
 
@@ -105,6 +108,8 @@ pub struct Imported {
     pub save: Value,
     /// The `it.json` wrapper's companion roster, beside the save.
     pub companion: Option<Value>,
+    /// The per-character statue levels and EXP the save carries.
+    pub statues: crate::statue::StatueSave,
     /// The coral god rank planner's save-derived inputs.
     pub coral: crate::coral::SaveInputs,
     /// Which shape the text had.
@@ -268,6 +273,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let coral = coral::inputs(save, root, &characters, &rows);
+    let statues = statue::read(save, root, &mut warnings);
     let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
     let farm_level = characters
         .first()
@@ -291,6 +297,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         jar,
         save: Value::Object(save.clone()),
         companion: root.get("companion").cloned(),
+        statues,
         coral,
         format,
         characters: roster,

@@ -5,7 +5,7 @@
 - Milestone: `M9`
 - Section key: `statue`
 - Group: `general`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.
@@ -13,8 +13,9 @@ Port statue levels, requirements per level, STARTUE bubble, time estimates and b
 ## Upstream sources
 
 - statue-calc.html
-- js/stats/systems/w1/stamp.js
-- js/stats/systems/w1/statue.js
+- js/stats/systems/common/statue-leveling.js
+- js/stats/data/common/statues.js
+- js/save/loader.js
 
 ## UI
 

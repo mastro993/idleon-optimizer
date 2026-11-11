@@ -344,6 +344,7 @@ mod tests {
             jar: None,
             save: serde_json::Value::Null,
             companion: None,
+            statues: Default::default(),
             coral: Default::default(),
             format,
             characters,

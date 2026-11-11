@@ -1,0 +1,234 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "file": "js/stats/systems/common/statue-leveling.js",
+  "fixture": "fixtures/data.json"
+ },
+ "characters": 11,
+ "firstCharacter": [
+  {
+   "index": 0,
+   "level": 491,
+   "exp": 2969110882.35456,
+   "required": 3531452580.399741,
+   "nextRequired": 3647712322.6518664
+  },
+  {
+   "index": 1,
+   "level": 571,
+   "exp": 169180916317.767,
+   "required": 46486026743.157364,
+   "nextRequired": 48000406093.24919
+  },
+  {
+   "index": 2,
+   "level": 569,
+   "exp": 145380005247.662,
+   "required": 43598623616.53383,
+   "nextRequired": 45019263453.43149
+  },
+  {
+   "index": 3,
+   "level": 570,
+   "exp": 148462948289.051,
+   "required": 45019263453.43149,
+   "nextRequired": 46486026743.157364
+  },
+  {
+   "index": 4,
+   "level": 476,
+   "exp": 1182578772.3365,
+   "required": 2171138433.2456846,
+   "nextRequired": 2242783027.568849
+  },
+  {
+   "index": 5,
+   "level": 141,
+   "exp": 17992.9016821329,
+   "required": 22507,
+   "nextRequired": 23385
+  },
+  {
+   "index": 6,
+   "level": 511,
+   "exp": 20493388569.0205,
+   "required": 6743851884.860281,
+   "nextRequired": 6965219405.9630375
+  },
+  {
+   "index": 7,
+   "level": 475,
+   "exp": 1718205054.25554,
+   "required": 2101771636.8031056,
+   "nextRequired": 2171138433.2456846
+  },
+  {
+   "index": 8,
+   "level": 475,
+   "exp": 1761214694.94708,
+   "required": 2101771636.8031056,
+   "nextRequired": 2171138433.2456846
+  },
+  {
+   "index": 9,
+   "level": 475,
+   "exp": 1701310819.04464,
+   "required": 2101771636.8031056,
+   "nextRequired": 2171138433.2456846
+  },
+  {
+   "index": 10,
+   "level": 432,
+   "exp": 321531812.314775,
+   "required": 517529110.6743342,
+   "nextRequired": 534740423.1441751
+  },
+  {
+   "index": 11,
+   "level": 475,
+   "exp": 1753802330.07129,
+   "required": 2101771636.8031056,
+   "nextRequired": 2171138433.2456846
+  },
+  {
+   "index": 12,
+   "level": 444,
+   "exp": 587467429.868165,
+   "required": 766050493.6581583,
+   "nextRequired": 791469004.0047809
+  },
+  {
+   "index": 13,
+   "level": 511,
+   "exp": 17642753123.6559,
+   "required": 6743851884.860281,
+   "nextRequired": 6965219405.9630375
+  },
+  {
+   "index": 14,
+   "level": 491,
+   "exp": 13130956885.3163,
+   "required": 3531452580.399741,
+   "nextRequired": 3647712322.6518664
+  },
+  {
+   "index": 15,
+   "level": 624,
+   "exp": 191205536642.647,
+   "required": 253042298614.02808,
+   "nextRequired": 261240286413.42206
+  },
+  {
+   "index": 16,
+   "level": 659,
+   "exp": 497087008821.075,
+   "required": 771065512599.8295,
+   "nextRequired": 795967114661.0763
+  },
+  {
+   "index": 17,
+   "level": 487,
+   "exp": 13765926724.9871,
+   "required": 3102154405.7677174,
+   "nextRequired": 3204343713.386727
+  },
+  {
+   "index": 18,
+   "level": 391,
+   "exp": 133745455.36681,
+   "required": 134554168.7311408,
+   "nextRequired": 139068389.90470207
+  },
+  {
+   "index": 19,
+   "level": 249,
+   "exp": 1029568.2597122,
+   "required": 1119088.569185706,
+   "nextRequired": 1158602.3295088853
+  },
+  {
+   "index": 20,
+   "level": 241,
+   "exp": 834523.3736679,
+   "required": 847235.7502878604,
+   "nextRequired": 877286.9534735584
+  },
+  {
+   "index": 21,
+   "level": 231,
+   "exp": 351745.87569731,
+   "required": 597223.372884404,
+   "nextRequired": 618536.1311066736
+  },
+  {
+   "index": 22,
+   "level": 279,
+   "exp": 2100334.9819836,
+   "required": 3145351.58004169,
+   "nextRequired": 3254771.825772777
+  },
+  {
+   "index": 23,
+   "level": 202,
+   "exp": 117488.737677726,
+   "required": 213798.79699116916,
+   "nextRequired": 221588.80975709818
+  },
+  {
+   "index": 24,
+   "level": 261,
+   "exp": 1022000.33717474,
+   "required": 1695044.1225768805,
+   "nextRequired": 1754516.6459883216
+  },
+  {
+   "index": 25,
+   "level": 254,
+   "exp": 1201489.50217837,
+   "required": 1330863.4393054333,
+   "nextRequired": 1377727.8038086595
+  },
+  {
+   "index": 26,
+   "level": 231,
+   "exp": 591030.38759513,
+   "required": 597223.372884404,
+   "nextRequired": 618536.1311066736
+  },
+  {
+   "index": 27,
+   "level": 148,
+   "exp": 14710.2746900635,
+   "required": 29387.37259136815,
+   "nextRequired": 30522.163446645423
+  },
+  {
+   "index": 28,
+   "level": 139,
+   "exp": 14485.1844638951,
+   "required": 20844.31050842378,
+   "nextRequired": 21660.2074361699
+  },
+  {
+   "index": 29,
+   "level": 264,
+   "exp": 720358.906813174,
+   "required": 1879699.0145969263,
+   "nextRequired": 1945551.632162292
+  },
+  {
+   "index": 30,
+   "level": 410,
+   "exp": 202615628.304132,
+   "required": 251560021.04212824,
+   "nextRequired": 259963765.16462293
+  },
+  {
+   "index": 31,
+   "level": 261,
+   "exp": 1090119.54283485,
+   "required": 1695044.1225768805,
+   "nextRequired": 1754516.6459883216
+  }
+ ]
+}

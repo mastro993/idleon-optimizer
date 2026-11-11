@@ -1,7 +1,8 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research and sailing partial, shadow-ban, endgame and
-BoneJoePickle done, Monument Bravery built, 27 sections planned.** The live breakdown is
+Status: **foundation in progress, research, statue, jar, sailing, farming and Clamworks partial,
+shadow-ban, endgame and BoneJoePickle done, Monument Bravery built, 21 sections planned.** The live
+breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -271,6 +272,13 @@ tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](se
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
 UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
+
+The statue section has its table (ST-01). Done: the 32-row table, the saved level and EXP progress,
+the next-level requirement including the statue-1/2/3 rounding gates, per-row availability, the
+character selector and search/sort. Missing: the STARTUE EXP bubble and time estimates (ST-02) and
+batch set/apply with the statue-farming breakdown (ST-03). Formula parity against the upstream JS
+uses the fixture in `crates/core/tests/statue-requirements.json`. Details:
+[`docs/sections/statue.md`](sections/statue.md).
 
 The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
 save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
