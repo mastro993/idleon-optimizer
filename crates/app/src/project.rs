@@ -418,9 +418,7 @@ pub fn assign(state: &mut AppState, config: Config, warnings: &mut Vec<String>) 
             }
         }
         Config::Killroy(config) => {
-            state.killroy = KillroyState {
-                weeks: config.weeks.clamp(1, 52),
-            };
+            state.killroy = config.normalized();
         }
         Config::Sailing(config) => {
             state.sailing_state = SailingState {
@@ -780,8 +778,17 @@ mod tests {
 
     #[test]
     fn every_section_state_round_trips_through_its_config() {
-        let killroy = round_trip(&KillroyState { weeks: 20 });
+        let killroy = round_trip(&KillroyState {
+            weeks: 20,
+            trials: 5,
+            mode: crate::sections::killroy::Mode::Upgrades,
+            upgrades: vec![0, 3],
+            ..KillroyState::default()
+        });
         assert_eq!(killroy.weeks, 20);
+        assert_eq!(killroy.trials, 5);
+        assert_eq!(killroy.mode, crate::sections::killroy::Mode::Upgrades);
+        assert_eq!(killroy.upgrades, vec![0, 3]);
         let sailing = round_trip(&SailingState {
             mode: AssignmentMode::Saved,
             island: 3,
@@ -964,8 +971,8 @@ mod tests {
         let configs = prepare(&mut document).expect("the config fits");
         assert_eq!(configs.len(), 1);
         assert!(matches!(
-            configs[0],
-            Config::Killroy(KillroyState { weeks: 20 })
+            &configs[0],
+            Config::Killroy(KillroyState { weeks: 20, .. })
         ));
     }
 

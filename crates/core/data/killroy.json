@@ -5,6 +5,32 @@
     "Archer",
     "Mage"
   ],
+  "upgrades": [
+    {
+      "name": "Time",
+      "effect": "+1 second"
+    },
+    {
+      "name": "Talent points",
+      "effect": "Unlocks talent-point drops at level 1; +0.05 to their drop factor per level"
+    },
+    {
+      "name": "Skulls",
+      "effect": "+1% skull drop factor (native cap still applies)"
+    },
+    {
+      "name": "Respawns",
+      "effect": "+1% extra queued arrivals"
+    },
+    {
+      "name": "Dungeon credits",
+      "effect": "Unlocks credit drops at level 1; +0.01 to their drop factor per level"
+    },
+    {
+      "name": "Pearls",
+      "effect": "Unlocks pearl drops at level 1; +0.01 to their drop factor per level"
+    }
+  ],
   "pools": {
     "68": [
       {

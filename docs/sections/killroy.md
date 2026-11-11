@@ -14,7 +14,8 @@ Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgra
 
 - killroy-calc.html
 - js/ui/killroy.js
-- js/stats/systems/w2/killroy.js
+- js/stats/systems/common/killroy-planner.js
+- js/stats/data/w2/killroy.js
 
 ## UI
 

@@ -290,6 +290,15 @@ promotion and Scurge. Multi-Scalping takes a manual multikill total until the co
 lands. Missing: AFK claim and compare, the upgrade optimizer, promotion tracking, worker-class
 rewards and Scurge combat. Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
+The Killroy section implements KL-01 and KL-02: the weekly forecast with every character's three
+encounters and records, and the `+1` upgrade comparison with the Baseline and Upgrade tabs, the
+upgrade list, the selection queue preview, deterministic trials and the best-option highlight. The
+player's damage belongs to the combat simulator, so a trial takes the character's kills per second
+as an input until M2 lands; the arrival schedule, respawn bonus, `100 + Time` duration and the
+per-kill skull, talent-point, credit and pearl rolls are the game's own formulas. Missing: the full
+weekly results tables, saved buffs, unlimited inventory and the JSON export (KL-03). Details:
+[`docs/sections/killroy.md`](sections/killroy.md).
+
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
 tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
