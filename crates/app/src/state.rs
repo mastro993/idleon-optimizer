@@ -3,6 +3,7 @@
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::endgame;
+use crate::sections::farming::State as FarmingState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
@@ -14,6 +15,7 @@ use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::farming::Farm;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
@@ -122,6 +124,10 @@ pub struct AppState {
     pub sailing: RouteContext,
     /// The sailing section's own state, kept alive across dashboard visits.
     pub sailing_state: SailingState,
+    /// The farming field the last import carried.
+    pub farm: Farm,
+    /// The farming section's selection and crop target, kept alive too.
+    pub farming: FarmingState,
     /// The monument section's own state, kept alive across dashboard visits.
     pub monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
@@ -257,6 +263,8 @@ impl AppState {
             fleet: Fleet::default(),
             sailing: RouteContext::default(),
             sailing_state: SailingState::default(),
+            farm: Farm::default(),
+            farming: FarmingState::default(),
             monument: MonumentState::default(),
             monument_save: None,
             clamworks: Clamworks::default(),
@@ -431,6 +439,7 @@ impl AppState {
         self.context = imported.context;
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
+        self.farm = imported.farming;
         self.clamworks = imported.clamworks;
         self.research.selected_cell = None;
         self.sailing_state.island = self
@@ -485,6 +494,20 @@ impl AppState {
 
     pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
         self.sailing.minimum_tier = tier.min(5);
+        cx.notify();
+    }
+
+    /// Select a plot; the farming section keeps it across dashboard visits.
+    pub fn select_plot(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.farming.select(index);
+        self.status = format!("Plot {} selected.", self.farming.selected_plot + 1);
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Aim the later evolution features at a crop id, clamped to the families.
+    pub fn set_target_crop(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.farming.set_target_crop(value);
         cx.notify();
     }
 

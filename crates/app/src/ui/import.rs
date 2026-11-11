@@ -61,22 +61,33 @@ impl Import {
 /// The line under the preview: what applying would load.
 pub fn summary(import: &Imported) -> String {
     format!(
-        "Ready to apply: {} · research level {}{} · {} character(s) · {} warning(s).",
+        "Ready to apply: {} · research level {}{}{} · {} character(s) · {} warning(s).",
         import.format.label(),
         import.simulation.research_level,
         fleet(import),
+        farming_suffix(import),
         import.characters,
         import.warnings.len()
     )
 }
 
+/// The farm plots the import carries, when it carries any.
+fn farming_suffix(import: &Imported) -> String {
+    if import.farming.has_plots() {
+        format!(" · {} plots", import.farming.plots.len())
+    } else {
+        String::new()
+    }
+}
+
 /// The line the dialog keeps once the save is applied.
 pub fn applied(import: &Imported) -> String {
     format!(
-        "Applied {} · research level {}{} · {} character(s).",
+        "Applied {} · research level {}{}{} · {} character(s).",
         import.format.label(),
         import.simulation.research_level,
         fleet(import),
+        farming_suffix(import),
         import.characters
     )
 }
@@ -327,6 +338,7 @@ mod tests {
             context: Default::default(),
             fleet: Default::default(),
             sailing: Default::default(),
+            farming: Default::default(),
             tree: Default::default(),
             clamworks: Default::default(),
             save: serde_json::Value::Null,
@@ -350,6 +362,17 @@ mod tests {
         let clean = summary(&imported(Format::ItJson, 3, &[]));
         assert!(clean.contains("it.json"), "{clean}");
         assert!(clean.contains("0 warning"), "{clean}");
+    }
+
+    #[test]
+    fn the_summary_names_the_farm_plots_when_the_save_carries_any() {
+        let mut import = imported(Format::SaveJson, 1, &[]);
+        import.farming.plots[0].seed_family = 0;
+        let line = summary(&import);
+        assert!(line.contains("36 plots"), "{line}");
+
+        let farmless = imported(Format::SaveJson, 1, &[]);
+        assert!(!summary(&farmless).contains("plots"), "{farmless:?}");
     }
 
     #[test]
