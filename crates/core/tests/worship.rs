@@ -217,3 +217,113 @@ fn the_glublin_run_matches_the_upstream_digest() {
     assert!((result.time_sec - 57.8).abs() < 1e-9);
     assert_eq!(result.end_reason, EndReason::Totem);
 }
+
+#[test]
+fn a_replay_records_the_live_timeline() {
+    let inputs = unlocked();
+    let mut run = Run::new_with_replay(inputs.clone(), 0, 7, worship::ReplayConfig::default());
+    let (node, x) = first_spot(&run);
+    run.place(0, node, x).expect("a pulse tower fits");
+    run.step(601);
+    let replay = run.replay().expect("the run records frames");
+    assert_eq!(replay.frames().len(), 61, "one frame per recorded second");
+    assert_eq!(replay.interval_sec(), 1.0);
+
+    // Walk a second run to every recorded tick: each frame is the live view
+    // at exactly that time, so a scrub cannot show a different field.
+    let mut live = Run::new(inputs, 0, 7);
+    let (node, x) = first_spot(&live);
+    live.place(0, node, x).expect("the same spot is legal");
+    for (index, frame) in replay.frames().iter().enumerate() {
+        while live.tick() < frame.tick {
+            live.step(1);
+        }
+        let view = live.view();
+        assert_eq!(frame.tick, view.tick, "frame {index}");
+        assert_eq!(frame.t, view.t, "frame {index}");
+        assert_eq!(frame.wave, view.wave, "frame {index}");
+        assert_eq!(frame.countdown, view.countdown, "frame {index}");
+        assert_eq!(frame.pts, view.pts, "frame {index}");
+        assert_eq!(frame.totem, view.totem, "frame {index}");
+        assert_eq!(frame.mobs, view.mobs, "frame {index}");
+        assert_eq!(
+            replay.tower_set(frame).len(),
+            view.towers.len(),
+            "frame {index}"
+        );
+        let scrubbed = replay.view(index).expect("the frame renders");
+        assert_eq!(scrubbed.tick, frame.tick);
+        assert_eq!(scrubbed.mobs, view.mobs);
+        assert_eq!(scrubbed.towers.len(), view.towers.len());
+        for (recorded, live) in scrubbed.towers.iter().zip(&view.towers) {
+            assert_eq!(
+                (
+                    recorded.id,
+                    recorded.type_index,
+                    recorded.level,
+                    recorded.node,
+                    recorded.x,
+                    recorded.range
+                ),
+                (
+                    live.id,
+                    live.type_index,
+                    live.level,
+                    live.node,
+                    live.x,
+                    live.range
+                )
+            );
+        }
+        assert!(!scrubbed.done);
+    }
+}
+
+#[test]
+fn a_replay_is_deterministic_for_a_seed() {
+    let record = |seed: u64| {
+        let mut run = Run::new_with_replay(unlocked(), 0, seed, worship::ReplayConfig::default());
+        let (node, x) = first_spot(&run);
+        run.place(0, node, x).expect("a pulse tower fits");
+        run.step(900);
+        run.replay().expect("the run records frames")
+    };
+    assert_eq!(record(7), record(7), "the same seed produced a new replay");
+}
+
+#[test]
+fn a_finished_run_replays_its_last_frame() {
+    let mut run = Run::new_with_replay(Inputs::default(), 0, 1, worship::ReplayConfig::default());
+    run.step(20_000);
+    assert!(run.done(), "the totem ended the run");
+    let replay = run.replay().expect("the run records frames");
+    let result = run.result();
+    let last = replay.frames().last().expect("a finished run has frames");
+    assert_eq!(last.tick, (result.time_sec * 10.0).round() as u64);
+    assert_eq!(last.totem, result.totem_left);
+    let view = replay
+        .view(replay.len() - 1)
+        .expect("the last frame renders");
+    assert!(view.done);
+    assert_eq!(view.end_reason, Some(result.end_reason));
+    assert_eq!(view.totem, result.totem_left);
+}
+
+#[test]
+fn a_full_replay_halves_its_rate_instead_of_growing() {
+    let config = worship::ReplayConfig {
+        max_frames: 16,
+        ..worship::ReplayConfig::default()
+    };
+    let mut run = Run::new_with_replay(Inputs::default(), 0, 1, config);
+    run.step(400);
+    let replay = run.replay().expect("the run records frames");
+    assert!(
+        replay.frames().len() <= 16,
+        "{} frames",
+        replay.frames().len()
+    );
+    assert!(replay.interval_sec() >= 2.0, "the rate did not halve");
+    let ticks: Vec<u64> = replay.frames().iter().map(|frame| frame.tick).collect();
+    assert!(ticks.is_sorted(), "the timeline went backwards");
+}
