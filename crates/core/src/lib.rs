@@ -14,6 +14,7 @@
 
 pub mod breakdown;
 pub mod clamworks;
+pub mod cog;
 pub mod combat;
 pub mod coral;
 pub mod dashboard;

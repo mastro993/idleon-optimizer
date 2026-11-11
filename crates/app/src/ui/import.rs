@@ -531,6 +531,7 @@ mod tests {
             farming: Default::default(),
             tree: Default::default(),
             clamworks: Default::default(),
+            cog: Default::default(),
             jar: None,
             ladle: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),

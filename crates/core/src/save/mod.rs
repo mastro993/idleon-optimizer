@@ -54,6 +54,7 @@ pub use shadow::{Shadow, ShadowVerdict};
 pub use value::{Save, at, number, row_values};
 
 use crate::clamworks::Clamworks;
+use crate::cog::CogSave;
 use crate::farming::Farm;
 use crate::jar::Jar;
 use crate::model::{SimContext, Simulation};
@@ -104,6 +105,8 @@ pub struct Imported {
     pub tree: BonusTree,
     /// The Clamworks state the save carries, or the zero state when it has none.
     pub clamworks: Clamworks,
+    /// The cog board and shelf the save carries.
+    pub cog: CogSave,
     /// The Jar Cavern state, when the save carries its `Holes` rows.
     pub jar: Option<Jar>,
     /// The ladle optimizer's per-character Cooking state and counts.
@@ -244,10 +247,12 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .iter()
         .any(|field| save.contains_key(*field));
     let carries_farming = farming::has_farming(save);
-    let Some(format) = format.filter(|_| !rows.is_empty() || carries_research || carries_farming)
+    let carries_cog = crate::cog::has_cog(save);
+    let Some(format) =
+        format.filter(|_| !rows.is_empty() || carries_research || carries_farming || carries_cog)
     else {
         return Err(ImportError::NoSaveFields(format!(
-            "expected a research seed field ({}) or a farming field ({}) at the top level or in the Research rows",
+            "expected a research seed field ({}) or a farming field ({}) or cog fields (CogO, CogM) at the top level or in the Research rows",
             RESEARCH_FIELDS.join(", "),
             farming::FARMING_FIELDS.join(", ")
         )));
@@ -290,6 +295,16 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .unwrap_or(0);
     let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
     let clamworks = Clamworks::from_save(save, &mut warnings);
+    let construction_level = characters
+        .iter()
+        .filter_map(|character| character.levels.get(8).copied().flatten())
+        .fold(0.0, f64::max);
+    let construction_level = if construction_level > 0.0 {
+        construction_level.round() as u32
+    } else {
+        100
+    };
+    let cog = CogSave::from_save(save, construction_level, &mut warnings);
     let worship = worship::inputs(save, &mut warnings);
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
@@ -312,6 +327,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         farming,
         tree,
         clamworks,
+        cog,
         jar,
         ladle,
         save: document,
@@ -337,6 +353,7 @@ fn detect(root: &Map<String, Value>, save: &Map<String, Value>) -> Option<Format
         || farming::RAW_FARMING_FIELDS
             .iter()
             .any(|field| save.contains_key(*field))
+        || crate::cog::has_cog(save)
         || save
             .keys()
             .any(|key| key.starts_with("Lv0_") || key.starts_with("Exp0_"));

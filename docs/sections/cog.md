@@ -5,7 +5,7 @@
 - Milestone: `M13`
 - Section key: `cog`
 - Group: `w3`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.

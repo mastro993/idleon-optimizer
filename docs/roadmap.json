@@ -1374,7 +1374,7 @@
       "key": "cog",
       "title": "Cog Board Optimizer",
       "group": "w3",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.",
       "upstream": [
         "cog-optimizer.html",
