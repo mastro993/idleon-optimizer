@@ -47,7 +47,7 @@ pub(crate) fn import(
             .collect(),
         sailing_level: characters
             .first()
-            .and_then(|character| character.sailing_level)
+            .and_then(|character| character.sailing_level())
             .unwrap_or(0),
         artifact_tiers: sailing
             .get(3)

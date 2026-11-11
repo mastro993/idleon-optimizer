@@ -83,7 +83,7 @@
         "Import warnings and errors",
         "Persisted last session"
       ],
-      "assets": "assets/upstream is generated from a local upstream checkout; nothing is committed until permission is confirmed.",
+      "assets": "assets/upstream is imported from the upstream checkout into the repository; the manifest records the upstream commit and per-file hashes.",
       "features": [
         {
           "id": "FND-01",
@@ -152,10 +152,10 @@
         {
           "id": "FND-06",
           "title": "Upstream asset pipeline",
-          "description": "Script that copies the upstream assets tree from a local checkout into gitignored assets/upstream, writes a manifest and verifies referenced files. Requires explicit permission before any asset is committed or distributed.",
+          "description": "Script that copies the upstream assets tree from a local checkout into committed assets/upstream, writes a manifest and verifies referenced files. The images are game assets, free to use, not upstream-authored work; the credit lives in assets/upstream/README.md.",
           "acceptance": [
             "script/import-upstream-assets.mjs --from <checkout> --dry-run lists every file and total size.",
-            "Applying writes assets/upstream plus manifest with hashes; the app resolves images through the manifest.",
+            "Applying writes assets/upstream plus a manifest with per-file hashes and the upstream commit; the app resolves images through the manifest.",
             "Missing assets render a labelled placeholder, never a broken layout."
           ],
           "dependsOn": [
@@ -521,7 +521,7 @@
         "Replay data",
         "Warnings for unsupported mechanics"
       ],
-      "assets": "assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB, local-only until licensed.",
+      "assets": "assets/combat-sim (maps, mobs, player, bullets, items, UI); 38 MB of committed artwork.",
       "features": [
         {
           "id": "CS-01",
@@ -997,7 +997,7 @@
       "key": "endgame",
       "title": "Endgame Check",
       "group": "general",
-      "status": "planned",
+      "status": "done",
       "summary": "Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.",
       "upstream": [
         "endgame.html",
@@ -2595,7 +2595,7 @@
       "key": "clamworks",
       "title": "Clamworks Calculator",
       "group": "w7",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.",
       "upstream": [
         "clamworks-calc.html",
@@ -3016,28 +3016,30 @@
       "key": "pickle",
       "title": "BoneJoePickle Calculator",
       "group": "tools",
-      "status": "planned",
+      "status": "done",
       "summary": "Port the hidden DPS/TTK calculator.",
       "upstream": [
         "pickle-calc.html"
       ],
       "ui": [
-        "Inputs",
-        "DPS and TTK results"
+        "DPS and kill-time inputs",
+        "Miniboss pickle table"
       ],
       "inputs": [
-        "Pickle combat values"
+        "DPS",
+        "Max time to kill"
       ],
       "outputs": [
-        "DPS",
-        "TTK"
+        "Max pickles",
+        "Effective HP",
+        "Kill time"
       ],
       "assets": "None.",
       "features": [
         {
           "id": "PK-01",
           "title": "DPS and TTK",
-          "description": "Compute DPS and time-to-kill from the upstream inputs.",
+          "description": "Compute each miniboss's maximum pickles, effective HP and time-to-kill from DPS and a kill-time budget.",
           "acceptance": [
             "Values match upstream.",
             "Inputs validate.",

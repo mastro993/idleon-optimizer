@@ -85,3 +85,35 @@ const payload = {
 const out = new URL('../crates/core/data/research.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(`wrote ${nodes.length} nodes, ${shapes.length} shapes, ${observations.length} observations`);
+
+// Clamworks reads four Spelunky rows: the upgrade descriptions (27), per-level
+// values (28), cost bases (29) and the promotion reward descriptions (30). The
+// names are literals in `js/stats/systems/w7/clamworks.js`.
+const upgradeNames = ['PEARL VALUE', 'CLAM COMRADES', 'LUCKY DAY', 'MULTI-SCALPING',
+  'FRUGALITY', 'PURE PEARLS', 'ENCYSTATION UP', 'SHINIER PEARLS', 'ANTI INFLATION'];
+const scurgeNames = ['RECKONING', 'PEARL INFECTION', 'SELF AFFLICTION', 'COST DISSOLVING',
+  'EVEN BETTER', 'CROSS CULTING', 'GRAVESTART', 'SWARMING', 'TRUE SCURGE'];
+const scurgeUnlocks = [0, 5, 10, 25, 50, 100, 250, 500, 1000];
+
+const clamworks = {
+  upgrades: upgradeNames.map((name, i) => ({
+    name,
+    desc: game.Spelunky[27][i],
+    perLv: Number(game.Spelunky[28][i]),
+    costBase: Number(game.Spelunky[29][i]),
+  })),
+  scurge: scurgeNames.map((name, i) => ({
+    name,
+    desc: game.Spelunky[27][i + 9],
+    perLv: Number(game.Spelunky[28][i + 9]),
+    unlockLevel: scurgeUnlocks[i],
+  })),
+  promotion: game.Spelunky[30],
+  generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
+};
+
+writeFileSync(
+  new URL('../crates/core/data/clamworks.json', import.meta.url),
+  JSON.stringify(clamworks, null, 1)
+);
+console.log(`wrote ${clamworks.upgrades.length} Clamworks upgrades and ${clamworks.scurge.length} Scurge upgrades`);

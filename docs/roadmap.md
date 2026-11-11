@@ -20,7 +20,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M5 | Drop Rate Calculator | Tools | 2 | planned | foundation, stats-all | [drop-rate](sections/drop-rate.md) |
 | M6 | Coin Multiplier Calculator | Tools | 2 | planned | foundation, stats-all | [coin-multi](sections/coin-multi.md) |
 | M7 | Shadow Ban Check | General | 1 | done | foundation | [shadow](sections/shadow.md) |
-| M8 | Endgame Check | General | 1 | planned | foundation | [endgame](sections/endgame.md) |
+| M8 | Endgame Check | General | 1 | done | foundation | [endgame](sections/endgame.md) |
 | M9 | Statue Calculator | General | 3 | planned | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | planned | foundation | [fishing](sections/fishing.md) |
 | M11 | Prisma Calculator | World 2 | 2 | planned | foundation | [prisma](sections/prisma.md) |
@@ -38,11 +38,11 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M23 | Opal Optimizer | World 5 | 3 | planned | foundation | [opal](sections/opal.md) |
 | M24 | Sneaking Optimizer | World 6 | 4 | planned | foundation | [sneaking](sections/sneaking.md) |
 | M25 | Farming Planner | World 6 | 5 | planned | foundation | [farming](sections/farming.md) |
-| M26 | Clamworks Calculator | World 7 | 4 | planned | foundation, combat-sim | [clamworks](sections/clamworks.md) |
+| M26 | Clamworks Calculator | World 7 | 4 | partial | foundation, combat-sim | [clamworks](sections/clamworks.md) |
 | M27 | Royal Guardian Calculator | World 7 | 4 | planned | foundation | [royal-guardian](sections/royal-guardian.md) |
 | M28 | Spelunking Simulator | World 7 | 4 | planned | foundation | [spelunking](sections/spelunking.md) |
 | M29 | Jelly Operator Optimizer | World 7 | 5 | planned | foundation | [jelly-operator](sections/jelly-operator.md) |
-| M30 | BoneJoePickle Calculator | Tools | 1 | planned | foundation | [pickle](sections/pickle.md) |
+| M30 | BoneJoePickle Calculator | Tools | 1 | done | foundation | [pickle](sections/pickle.md) |
 
 ## Tracking
 

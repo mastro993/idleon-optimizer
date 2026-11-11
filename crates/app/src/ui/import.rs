@@ -327,8 +327,13 @@ mod tests {
             context: Default::default(),
             fleet: Default::default(),
             sailing: Default::default(),
+            tree: Default::default(),
+            clamworks: Default::default(),
+            save: serde_json::Value::Null,
+            companion: None,
             format,
             characters,
+            named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
             shadow: Default::default(),
         }
