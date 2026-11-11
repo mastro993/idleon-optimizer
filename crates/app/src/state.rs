@@ -3,6 +3,7 @@
 use crate::assets::Manifest;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::endgame;
+use crate::sections::farming::State as FarmingState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
@@ -14,6 +15,7 @@ use crate::ui::import::{self, Import};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::farming::Farm;
 use idleon_core::model::{
     Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, Simulation,
     Target,
@@ -116,6 +118,10 @@ pub struct AppState {
     pub last_section: Option<&'static str>,
     /// The research section's own state, kept alive across dashboard visits.
     pub research: ResearchState,
+    /// The farming field the last import carried.
+    pub farm: Farm,
+    /// The farming section's selection and crop target, kept alive too.
+    pub farming: FarmingState,
     /// The monument section's own state, kept alive across dashboard visits.
     pub monument: MonumentState,
     /// The imported save, narrowed to the Monument rows.
@@ -252,6 +258,8 @@ impl AppState {
             route: Route::Dashboard,
             last_section: None,
             research: ResearchState::default(),
+            farm: Farm::default(),
+            farming: FarmingState::default(),
             monument: MonumentState::default(),
             monument_save: None,
             clamworks: Clamworks::default(),
@@ -426,6 +434,7 @@ impl AppState {
         self.endgame = endgame::State::audit(&imported);
         self.simulation = imported.simulation;
         self.context = imported.context;
+        self.farm = imported.farming;
         self.clamworks = imported.clamworks;
         self.jar = imported.jar;
         self.research.selected_cell = None;
@@ -441,6 +450,20 @@ impl AppState {
     /// Empty the dashboard search; Escape calls this.
     pub fn clear_search(&mut self, cx: &mut Context<Self>) {
         self.search.update(cx, |search, cx| search.set_text("", cx));
+        cx.notify();
+    }
+
+    /// Select a plot; the farming section keeps it across dashboard visits.
+    pub fn select_plot(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        self.farming.select(index);
+        self.status = format!("Plot {} selected.", self.farming.selected_plot + 1);
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    /// Aim the later evolution features at a crop id, clamped to the families.
+    pub fn set_target_crop(&mut self, value: f64, cx: &mut Context<Self>) {
+        self.farming.set_target_crop(value);
         cx.notify();
     }
 

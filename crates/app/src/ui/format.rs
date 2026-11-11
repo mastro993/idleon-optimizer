@@ -1,24 +1,17 @@
 //! Formatting and palette helpers shared by the panes.
 
-use ely_gpui_component::typography::format::{DurationStyle, duration};
+use ely_gpui_component::typography::format::{DurationStyle, duration as ely_duration};
 use gpui::{Hsla, rgb};
 use idleon_core::game;
 
-/// A count in the game's short form, kept whole below a thousand: `21`, `40`,
-/// `503.5K` (the upstream `fmtNum`).
-pub fn whole(figure: f64) -> String {
-    if figure.fract() == 0.0 && figure.abs() < 1e3 {
-        return format!("{figure:.0}");
-    }
-    fmt_val(figure)
-}
-
-/// A projected span of hours as `3d 4h`, `4m 5s`, or a dash when it is endless.
+/// A projected span of hours as `6h 17m`, `4m 5s`, or a dash when it is endless:
+/// the upstream `fmtTimeFull` the jar tier columns print, where [`duration`] is
+/// the coarse `6.28h` style.
 pub fn projection(hours: f64) -> String {
     if !hours.is_finite() || hours <= 0.0 {
         return "—".into();
     }
-    duration((hours * 3600.0).round() as u64, DurationStyle::Compact)
+    ely_duration((hours * 3600.0).round() as u64, DurationStyle::Compact)
 }
 
 /// A `#rgb` or `#rrggbb` colour from the upstream data as a theme colour.
@@ -214,6 +207,84 @@ pub fn shape_color(shape: usize) -> Hsla {
     hex(&def.color)
 }
 
+/// A large number as `1.23M`, `4.56T` or `7.89QQ`, matching the upstream
+/// `fmtNum` tiers the farming page uses.
+pub fn number(value: f64) -> String {
+    let magnitude = value.abs();
+    if !value.is_finite() {
+        return "—".into();
+    }
+    let (divisor, suffix) = if magnitude >= 1e24 {
+        return format!("{value:.2e}");
+    } else if magnitude >= 1e21 {
+        (1e21, "QQQ")
+    } else if magnitude >= 1e18 {
+        (1e18, "QQ")
+    } else if magnitude >= 1e15 {
+        (1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (1e12, "T")
+    } else if magnitude >= 1e9 {
+        (1e9, "B")
+    } else if magnitude >= 1e6 {
+        (1e6, "M")
+    } else if magnitude >= 1e3 {
+        (1e3, "K")
+    } else {
+        (1.0, "")
+    };
+    if suffix.is_empty() {
+        format!("{value:.0}")
+    } else if divisor >= 1e6 {
+        format!("{:.2}{suffix}", value / divisor)
+    } else {
+        format!("{:.1}{suffix}", value / divisor)
+    }
+}
+
+/// A probability as a percentage, `1 in N`, `100%` or `Never`.
+pub fn chance(value: f64) -> String {
+    if !value.is_finite() || value <= 0.0 {
+        return "Never".into();
+    }
+    if value >= 1.0 {
+        return "100%".into();
+    }
+    if value >= 0.0001 {
+        return if value >= 0.01 {
+            format!("{:.2}%", value * 100.0)
+        } else {
+            format!("{:.4}%", value * 100.0)
+        };
+    }
+    format!("1 in {}", number(1.0 / value))
+}
+
+/// A duration in seconds as `0.50s`, `13m` or `2.5d`; `Never` when infinite.
+pub fn duration(seconds: f64) -> String {
+    if !seconds.is_finite() {
+        return "Never".into();
+    }
+    if seconds < 1.0 {
+        format!("{:.2}s", seconds.max(0.0))
+    } else if seconds < 60.0 {
+        format!("{seconds:.0}s")
+    } else if seconds < 3_600.0 {
+        format!("{:.1}m", seconds / 60.0)
+    } else if seconds < 86_400.0 {
+        format!("{:.2}h", seconds / 3_600.0)
+    } else if seconds < 31_557_600.0 {
+        let days = seconds / 86_400.0;
+        if seconds < 864_000.0 {
+            format!("{days:.2}d")
+        } else {
+            format!("{days:.1}d")
+        }
+    } else {
+        format!("{}y", number(seconds / 31_557_600.0))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -237,22 +308,22 @@ mod tests {
 
     #[test]
     fn large_figures_keep_the_games_short_suffixes() {
-        assert_eq!(fmt_val(544_159_529_207.887), "544.16B");
-        assert_eq!(fmt_val(8_715_286_155_646.38), "8.72T");
-        assert_eq!(fmt_val(2.572_064_456_133_22e20), "257.21QQ");
-        assert_eq!(fmt_val(2.5e21), "2.50QQQ");
-        assert_eq!(fmt_val(1e24), "1.00e+24");
-        assert_eq!(fmt_val(-1_500_000.0), "-1.50M");
-        assert_eq!(fmt_val(845.24), "845.2");
-        assert_eq!(fmt_val(0.0), "0.0");
+        assert_eq!(value(544_159_529_207.887), "544.16B");
+        assert_eq!(value(8_715_286_155_646.38), "8.72T");
+        assert_eq!(value(2.572_064_456_133_22e20), "257.21QQ");
+        assert_eq!(value(2.5e21), "2.50QQQ");
+        assert_eq!(value(1e24), "1.00e24");
+        assert_eq!(value(-1_500_000.0), "-1.50M");
+        assert_eq!(value(845.24), "845.2");
+        assert_eq!(value(0.0), "0.0");
     }
 
     #[test]
-    fn whole_counts_stay_whole_below_a_thousand() {
-        assert_eq!(whole(21.0), "21");
-        assert_eq!(whole(503_476.0), "503.5K");
-        assert_eq!(whole(36_000.0), "36.0K");
-        assert_eq!(whole(0.0), "0");
+    fn jar_counts_stay_whole_below_a_thousand() {
+        assert_eq!(number(21.0), "21");
+        assert_eq!(number(503_476.0), "503.5K");
+        assert_eq!(number(36_000.0), "36.0K");
+        assert_eq!(number(0.0), "0");
     }
 
     #[test]
@@ -268,6 +339,23 @@ mod tests {
         assert_eq!(projection(6.285_905_338_846_417), "6h 17m");
         assert_eq!(projection(f64::INFINITY), "—");
         assert_eq!(projection(0.0), "—");
+    }
+
+    #[test]
+    fn farming_numbers_chances_and_durations_read_like_upstream() {
+        assert_eq!(number(845.0), "845");
+        assert_eq!(number(12_345.0), "12.3K");
+        assert_eq!(number(4.5e9), "4.50B");
+        assert_eq!(number(1.2e15), "1.20Q");
+        assert_eq!(chance(0.0), "Never");
+        assert_eq!(chance(0.5), "50.00%");
+        assert_eq!(chance(0.0005), "0.0500%");
+        assert_eq!(chance(1e-6), "1 in 1.00M");
+        assert_eq!(chance(2.0), "100%");
+        assert_eq!(duration(f64::INFINITY), "Never");
+        assert_eq!(duration(0.5), "0.50s");
+        assert_eq!(duration(780.0), "13.0m");
+        assert_eq!(duration(86_400.0), "1.00d");
     }
 
     #[test]

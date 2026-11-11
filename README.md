@@ -7,10 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the Clamworks overview
-and upgrades, the shadow-ban and endgame checks, the hidden BoneJoePickle calculator and the Bravery
-tab of the Monument calculator. The plan covers the full upstream suite: a dashboard that opens every
-calculator, with one milestone per section and one issue per feature
+The current build opens on the dashboard and implements the research section, the farming field, the
+Clamworks overview and upgrades, the shadow-ban and endgame checks, the hidden BoneJoePickle
+calculator and the Bravery tab of the Monument calculator. The plan covers the full upstream suite:
+a dashboard that opens every calculator, with one milestone per section and one issue per feature
 ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
@@ -34,6 +34,11 @@ calculator, with one milestone per section and one issue per feature
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
   import), Ely tab strip, cards, tables and form controls, with the upstream dark palette. Below
   1360 px the side rails stack and tables scroll, so the 1080×680 minimum window stays usable.
+- **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
+  overgrowth, plot rank, evolution chance and growth time. Clicking a plot opens its saved row: crop
+  and evolution depth, growth progress and remaining time, the next evolution and overgrowth rolls,
+  expected harvest, Rank XP and Farming EXP per harvest. The selected plot and the target crop
+  persist across dashboard visits.
 - **Consistent states** — every section shows the shared no-save banner with its import action, the
   header names a partial import, and every long job goes through one shared task runner: it runs off
   the UI thread, reports progress, cancels without losing the previous result, and marks a result
@@ -63,12 +68,12 @@ calculator, with one milestone per section and one issue per feature
   magnifiers), editable in the Rates pane; the displayed rate follows each change.
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop an `it.json`/`save.json` file, browse for one, or paste the JSON. It previews the detected
-  format, research level, character count and warnings before Apply; the grid levels, shape
-  positions, magnifiers, insight, research level/EXP, server scale, all-bonus multiplier, flat grid
-  points and the decodable true multipliers are read from it. The same decoded save keeps the
-  Monument rows the Bravery tab reads. Fields the app cannot model are
-  reported as warnings instead of guessed; a save that cannot be read only replaces the message and
-  leaves the run untouched.
+  format, research level, farm plots, character count and warnings before Apply; the grid levels,
+  shape positions, magnifiers, insight, research level/EXP, farm plots, ranks, crops, market levels,
+  server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are read
+  from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app cannot
+  model are reported as warnings instead of guessed; a save that cannot be read only replaces the
+  message and leaves the run untouched.
 - **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
@@ -192,9 +197,10 @@ against this app. Every control in the UI carries a stable id for that purpose (
 crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
   data/research.json  research grid, shapes and observations from upstream
   data/account.json   account tables for the save-derived multiplier tree
+  data/farming.json   seed, market, exotic and rank tables
   data/clamworks.json Clamworks upgrade, Scurge and promotion tables
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`, `clamworks/`)
+  src/sections/      the registry plus one module per section (`research/`, `farming/`, `clamworks/`)
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
   src/state.rs       AppState, the route and each section's state
@@ -220,6 +226,13 @@ the twelve promotion rewards. Re-run it when the upstream tables move.
 RoG/minehead/jelly tables, equipment UQ stats, lab and tome tables the multiplier tree reads.
 [`docs/research-multipliers.md`](docs/research-multipliers.md) lists every term, the save field it
 comes from and the two upstream steps that are still omitted.
+
+`crates/core/data/farming.json` comes from `node script/extract-farming-data.mjs
+<path-to-upstream-repo>`: the seven seed families, both market pages, the 80 exotic rows, the twenty
+Land Rank names and unlock ranks, the Ninja Rank bases and the five GMO thresholds. Farming chances
+and values apply only the multipliers the save carries (market levels, Land Rank, exotics, crop
+counts, gem items and Spelunk organic labels); other account systems are named in an import warning
+rather than guessed.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
@@ -247,11 +260,11 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid and its optimizers, the Clamworks overview
-and upgrades, save import, the shadow-ban and endgame checks, the hidden BoneJoePickle calculator and
-the Monument Bravery tab. The roadmap covers all remaining upstream sections (combat sim, sailing,
-cooking, royal guardian, …); their cards open planned-section placeholders until those milestones
-land.
+The current build covers the dashboard, the research grid and its optimizers, the farming field, the
+Clamworks overview and upgrades, save import, the shadow-ban and endgame checks, the hidden
+BoneJoePickle calculator and the Monument Bravery tab. The roadmap covers all remaining upstream
+sections (combat sim, sailing, cooking, royal guardian, …); their cards open planned-section
+placeholders until those milestones land.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
 are ports of `js/stats/systems/w7/clamworks.js`. Save-specific multipliers collapse into

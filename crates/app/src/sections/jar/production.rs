@@ -76,14 +76,14 @@ fn multipliers(jar: &Jar) -> AnyElement {
     let mut table = Table::new(["Source", "Value"]).row([
         div().child("Base").into_any_element(),
         div()
-            .child(format!("{}/hr", format::whole(BASE_PRODUCTION_PER_HOUR)))
+            .child(format!("{}/hr", format::number(BASE_PRODUCTION_PER_HOUR)))
             .into_any_element(),
     ]);
     for term in jar.production_terms() {
         table = table.row([
             div().child(term.label).into_any_element(),
             div()
-                .child(format!("+{}%", format::whole(term.percent)))
+                .child(format!("+{}%", format::number(term.percent)))
                 .into_any_element(),
         ]);
     }
@@ -111,8 +111,8 @@ fn slots(jar: &Jar) -> AnyElement {
         let mut cells: Vec<AnyElement> = vec![
             div().child(format!("{}", slot + 1)).into_any_element(),
             jar_type_cell(jar_type, jar_type >= available),
-            div().child(format::whole(requirement)).into_any_element(),
-            div().child(format::whole(progress)).into_any_element(),
+            div().child(format::number(requirement)).into_any_element(),
+            div().child(format::number(progress)).into_any_element(),
             div()
                 .child(
                     // A full slot is the good end, so the meter never turns amber.
@@ -181,19 +181,19 @@ fn requirements(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         let (_, line) = jar.requirement_reduction(jar_type);
         let previous = jar.jars_produced(jar_type.saturating_sub(1));
         let line_cell = match line > 0.0 {
-            true => format!("-{}%", format::whole(line)),
+            true => format!("-{}%", format::number(line)),
             false => "—".into(),
         };
         table = table.row([
             div().child(*name).into_any_element(),
-            div().child(format::whole(base)).into_any_element(),
+            div().child(format::number(base)).into_any_element(),
             div()
-                .child(format::whole(jar.production_requirement(jar_type)))
+                .child(format::number(jar.production_requirement(jar_type)))
                 .into_any_element(),
             div()
-                .child(format::whole(jar.jars_produced(jar_type)))
+                .child(format::number(jar.jars_produced(jar_type)))
                 .into_any_element(),
-            div().child(format::whole(previous)).into_any_element(),
+            div().child(format::number(previous)).into_any_element(),
             div().child(line_cell).into_any_element(),
         ]);
     }

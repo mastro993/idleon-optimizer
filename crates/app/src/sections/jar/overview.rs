@@ -42,7 +42,7 @@ fn summary(jar: &Jar) -> AnyElement {
         jar.types_available(),
         TYPE_NAMES.len(),
         jar.production_slots(),
-        format::whole(jar.opals())
+        format::number(jar.opals())
     );
     div()
         .id("jar-summary-line")
@@ -94,7 +94,7 @@ fn next_type(jar: &Jar) -> SharedString {
     if jar.missing_types().next().is_none() {
         return format!("All {} types owned", TYPE_NAMES.len()).into();
     }
-    let cost = format::whole(jar.next_type_cost());
+    let cost = format::number(jar.next_type_cost());
     let rupie = RUPIE_NAMES[jar.types_purchased()];
     match jar.can_afford_next_type() {
         true => format!("Next: {cost} {rupie} — affordable").into(),
@@ -107,7 +107,7 @@ fn next_type(jar: &Jar) -> SharedString {
 fn missing(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let names: Vec<&str> = jar.missing_types().map(|index| TYPE_NAMES[index]).collect();
     let count = names.len();
-    let cost = format::whole(jar.next_type_cost());
+    let cost = format::number(jar.next_type_cost());
     let rupie = RUPIE_NAMES[jar.types_purchased()];
     let muted = cx.theme().colors.fg_muted;
     div()
@@ -150,7 +150,7 @@ fn balances(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
 fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
     let colors = &cx.theme().colors;
     let name = RUPIE_NAMES[index];
-    let shown = format::fmt_val(balance);
+    let shown = format::value(balance);
     div()
         .id(("jar-rupie", index))
         .role(Role::Label)
@@ -186,7 +186,7 @@ fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let doubler = jar.doubler_bonus();
     let gilded = match doubler > 0.0 {
         true => (
-            format!("+{}%", format::whole(doubler)),
+            format!("+{}%", format::number(doubler)),
             Tone::Success,
             "Applied to the next rupie break".to_owned(),
         ),
