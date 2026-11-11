@@ -29,7 +29,8 @@ pub struct Runtime {
 }
 
 /// One additive training source.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Source {
     pub name: String,
     pub value: f64,
@@ -37,7 +38,8 @@ pub struct Source {
 
 /// Paying Respect training: the additive pool, its Minehead multiplier and the
 /// hours a 24-hour claim grants.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Training {
     pub sources: Vec<Source>,
     pub pct: f64,
@@ -47,7 +49,8 @@ pub struct Training {
 }
 
 /// The Bravery tab's saved and run-dependent stats.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BraveryStats {
     pub hours: f64,
     pub milestones: u32,
@@ -64,7 +67,8 @@ pub struct BraveryStats {
 }
 
 /// The sword odds for one enemy and run state.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Odds {
     pub stats: BraveryStats,
     pub wave: u32,
@@ -77,7 +81,8 @@ pub struct Odds {
 }
 
 /// One Paying Respect milestone row.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Milestone {
     pub text: String,
     pub hours: f64,
@@ -88,7 +93,8 @@ pub struct Milestone {
 }
 
 /// One permanent reward level and its effect now and at the next level.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BonusRow {
     pub level: f64,
     pub text: String,
@@ -97,7 +103,8 @@ pub struct BonusRow {
 }
 
 /// Everything the Bravery tab renders for a save.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Snapshot {
     pub available: bool,
     pub notes: Vec<String>,
@@ -232,10 +239,12 @@ pub fn bravery_odds(
     if wave > 1000 {
         return Err(Error::WaveTooLarge);
     }
+    // The run stats come first so a run with two bad inputs reports the same
+    // error the upstream calculator does.
+    let stats = bravery_stats(save, runtime)?;
     if remaining_hp.is_some_and(|hp| !hp.is_finite() || hp <= 0.0) {
         return Err(Error::RemainingHp);
     }
-    let stats = bravery_stats(save, runtime)?;
     let hp = (10.0 + 15.0 * f64::from(wave)) * 1.3_f64.powi(wave as i32);
     let cdf = |threshold: f64, count: u32| sum_cdf(threshold, count, stats.min_dmg, stats.max_dmg);
     let automatic = stats.auto_kill && stats.min_dmg >= hp;

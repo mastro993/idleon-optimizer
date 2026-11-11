@@ -5,7 +5,7 @@
 - Milestone: `M22`
 - Section key: `monument`
 - Group: `w5`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.
