@@ -12,7 +12,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
-use crate::sections::worship_td::{PlanRunInputs, State as WorshipState};
+use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
 use crate::sections::{self, Section};
 use crate::session::{self, RecentImport, Session};
 use crate::task::{TaskEvent, TaskRunner, TaskState};
@@ -32,8 +32,11 @@ use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::sailing::{AssignmentMode, Fleet, FleetComparison, Goal, RouteContext, compare};
 use idleon_core::save::Shadow;
 use idleon_core::worship::Inputs as WorshipInputs;
-use idleon_core::worship::{Run, RunResult as WorshipRunResult};
+use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
 use idleon_core::{Clamworks, Jar, game, monument, optimize, save, shape, sim};
+
+/// What a strategy search stored: its recommendation, or why it could not run.
+pub type SearchOutcome = Result<worship::Search, String>;
 
 /// Where the window is: the landing dashboard, a registry section, or an id the
 /// registry does not declare.
@@ -187,6 +190,8 @@ pub struct AppState {
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
+    /// The shared runner for the Worship TD strategy search.
+    pub(crate) worship_optimize: Entity<TaskRunner<SearchOutcome, OptimizeRunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Clamworks overview.
@@ -201,6 +206,7 @@ pub struct AppState {
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
     _worship_plan_subscription: Subscription,
+    _worship_optimize_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -323,6 +329,38 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The strategy search screens dozens of whole runs, so it reports
+        // progress and can be cancelled like the plan run.
+        let worship_optimize = cx.new(|_| TaskRunner::<SearchOutcome, OptimizeRunInputs>::new());
+        let worship_optimize_subscription =
+            cx.subscribe(&worship_optimize, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!(
+                            "Searching Worship TD strategies… {:.0}%",
+                            progress.fraction * 100.0
+                        );
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Search cancelled; the previous recommendation is unchanged.".into()
+                        } else {
+                            "Search cancelled; nothing was recommended.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => match runner.read(cx).result() {
+                        Some(Ok(result)) => {
+                            state.status = format!(
+                                "Search finished: {} clears {:.1} waves.",
+                                result.label, result.score.primary
+                            );
+                        }
+                        Some(Err(reason)) => state.status = reason.clone(),
+                        None => {}
+                    },
+                }
+                cx.notify();
+            });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
         let clamworks_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("clamworks-formula", window, cx));
@@ -368,6 +406,7 @@ impl AppState {
             save_loaded: false,
             optimizer,
             worship_plan,
+            worship_optimize,
             breakdown,
             clamworks_breakdown,
             shadow: Shadow::default(),
@@ -378,6 +417,7 @@ impl AppState {
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
             _worship_plan_subscription: worship_plan_subscription,
+            _worship_optimize_subscription: worship_optimize_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -1352,6 +1392,91 @@ impl AppState {
             self.status = "Cancelling the plan run…".into();
             cx.notify();
         }
+    }
+
+    /// The strategy search: running, progress, result and staleness.
+    pub fn worship_optimize_task(&self, cx: &App) -> TaskState<SearchOutcome> {
+        self.worship_optimize
+            .read(cx)
+            .state(&self.worship_optimize_inputs())
+    }
+
+    /// The inputs a search started now would use.
+    pub fn worship_optimize_inputs(&self) -> OptimizeRunInputs {
+        OptimizeRunInputs {
+            trial: self.worship.trial,
+            config: self.worship.optimize,
+            inputs: self.worship_inputs.clone(),
+        }
+    }
+
+    /// Search strategies off the UI thread through the shared task runner.
+    pub fn optimize_worship(&mut self, cx: &mut Context<Self>) {
+        self.worship_ensure_plan();
+        let inputs = self.worship_optimize_inputs();
+        // The plan on screen is another baseline to beat, not part of the key:
+        // adopting a recommendation must not mark it stale.
+        let options = inputs
+            .config
+            .options(inputs.trial, self.worship.plan.clone());
+        let started = self.worship_optimize.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                match worship::optimize(&inputs.inputs, &options, report) {
+                    worship::Outcome::Found(search) => Some(Ok(*search)),
+                    worship::Outcome::Cancelled => None,
+                    worship::Outcome::Refused(reason) => Some(Err(reason.to_string())),
+                }
+            })
+        });
+        if started {
+            self.status = "Searching the Worship TD strategies…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running search to stop at its next report.
+    pub fn cancel_worship_optimize(&mut self, cx: &mut Context<Self>) {
+        if self
+            .worship_optimize
+            .update(cx, |runner, _| runner.cancel())
+        {
+            self.status = "Cancelling the strategy search…".into();
+            cx.notify();
+        }
+    }
+
+    /// Adopt the recommendation into the Plan pane and open it.
+    pub fn worship_use_optimized_plan(&mut self, cx: &mut Context<Self>) {
+        let Some(Ok(result)) = self.worship_optimize.read(cx).result().cloned() else {
+            return;
+        };
+        let trial = self
+            .worship
+            .trial
+            .min(worship::data().trials.len().saturating_sub(1));
+        if result.trial != trial {
+            // A recommendation for another trial cannot be placed here.
+            self.status = "That recommendation was searched on another trial.".into();
+            cx.notify();
+            return;
+        }
+        let Some(trial_data) = worship::trial(trial) else {
+            return;
+        };
+        self.worship.plan_stages = worship::plan_stages(trial_data, &result.plan);
+        self.worship.plan_issues =
+            worship::plan_issues(&self.worship_inputs, trial_data, &result.plan);
+        self.worship.plan = Some(result.plan);
+        self.worship.plan_from_optimizer = true;
+        self.worship_plan.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
+        self.status = format!(
+            "Using the recommended plan: {} clears {:.0} waves.",
+            result.label, result.score.primary
+        );
+        self.worship_set_tab(crate::sections::worship_td::Tab::Plan, cx);
     }
 }
 

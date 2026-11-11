@@ -1492,7 +1492,8 @@
         "Ranges and every HUD value read the same `RunView`, so the panel cannot disagree with the field. Restart rebuilds the run from the same trial and seed.",
         "Every run records a replay at one frame per second. The recorder follows the upstream rules: a tower set per layout change, 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.",
         "Save inputs decoded: `Tower` trial levels, `TotemInfo` best waves, `Dream[7]`, `SaltLick[6]`, Menagerie boost 15 and unlock 18, and super bits 6/15 for totem HP.",
-        "Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots. The optimizer remains WT-04."
+        "The Optimizer pane ports `optimizeWorshipTd` in free mode: a seeded diverse beam over plan edits (tower, group, type, weight, traits, level cap, phase), direct relocations of the lowest-damage towers, and whole-type trait recipes. Candidates are deduplicated by their exact plan, several families are refined in parallel, and the finalists, the coverage heuristic and the guide presets are compared on shared fresh seeds. The pane shows the recommendation, the baseline comparison and the recommended towers, and adopts the winner into the Plan pane. The search runs off the UI thread through the shared task runner, so it reports progress and can be cancelled; mode, runs per plan, seed and stop wave are its inputs.",
+        "Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots, hold-template layout search and the souls-per-hour objective."
       ],
       "features": [
         {

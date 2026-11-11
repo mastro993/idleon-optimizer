@@ -418,6 +418,51 @@ const INTERACTIONS = {
     await waitForNode(lane, 'worship-plan-body', 'worship-td: the plan pane opens');
     await lane.call('click_element', { id: 'worship-plan-simulate' });
     await waitForNode(lane, 'worship-plan-final', 'worship-td: the plan run reports final towers');
+    // The search screens dozens of whole runs: it reports progress, and the
+    // recommendation it keeps becomes the plan the Plan pane runs.
+    await lane.call('click_element', { id: 'worship-optimizer-tab' });
+    await waitForNode(lane, 'worship-optimizer-body', 'worship-td: the optimizer pane opens');
+    await lane.call('click_element', { id: 'worship-optimize-run' });
+    await waitForNode(
+      lane,
+      'worship-optimize-result',
+      'worship-td: the search recommends a plan',
+      120000,
+    );
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'worship-optimize-verdict') ?? '').startsWith('Recommended plan clears wave'),
+      'worship-td: the recommendation names the waves it clears',
+    );
+    await waitForNode(
+      lane,
+      'worship-optimize-baselines',
+      'worship-td: the baselines are compared',
+    );
+    await lane.call('click_element', { id: 'worship-optimize-use' });
+    await waitForNode(lane, 'worship-plan-body', 'worship-td: the recommendation opens the plan pane');
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'worship-plan-optimized') === 'Optimizer plan',
+      'worship-td: the plan pane adopts the recommendation',
+    );
+    // Adopting the plan is not an input change: the recommendation stays fresh.
+    await lane.call('click_element', { id: 'worship-optimizer-tab' });
+    await waitForNode(lane, 'worship-optimize-result', 'worship-td: the search reopens');
+    check(
+      'worship-td: the adopted recommendation is not stale',
+      !has(await lane.tree(), 'worship-optimize-stale-badge'),
+    );
+    // The adopted plan runs through the same engine the search used.
+    await lane.call('click_element', { id: 'worship-plan-tab' });
+    await lane.call('click_element', { id: 'worship-plan-simulate' });
+    await waitForNode(
+      lane,
+      'worship-plan-final',
+      'worship-td: the recommended plan simulates in the plan pane',
+      60000,
+    );
     await lane.call('click_element', { id: 'worship-model-tab' });
     await waitForNode(lane, 'worship-assumptions', 'worship-td: the model assumptions list');
     await lane.call('click_element', { id: 'worship-simulator-tab' });
