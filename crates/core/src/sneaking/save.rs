@@ -9,7 +9,8 @@
 //! Sneaking level; `OptLacc[231..242]` the mastery pair and the gemstone levels.
 //!
 //! Rows are read positionally: a cell the save leaves blank becomes zero, it
-//! never shifts the cells after it.
+//! never shifts the cells after it. The account-wide terms the breakdown trees
+//! multiply in are resolved by [`crate::save::account`] after the rows load.
 
 use super::{
     EMPORIUM_ROW, EQUIP_START, FLOOR_COUNT, INVENTORY_SCAN, INVENTORY_START, Item, KNOWLEDGE_ROW,
@@ -120,7 +121,7 @@ impl Loadout {
             missing.push("Menagerie: the Omni-Jade levels are read as zero".into());
         }
 
-        Some(Self::new(
+        let mut loadout = Self::new(
             twins,
             inventory,
             knowledge,
@@ -132,12 +133,30 @@ impl Loadout {
                 .map(|index| options.get(index).copied().unwrap_or(0.0))
                 .collect(),
             doors,
+            (0..players)
+                .map(|index| {
+                    save.get(&format!("Exp0_{index}"))
+                        .map(|row| row_values(&row))
+                        .and_then(|row| row.get(17).and_then(number))
+                        .unwrap_or(0.0)
+                })
+                .collect(),
+            rows.get(EMPORIUM_ROW)
+                .and_then(|row| row.get(10))
+                .and_then(number)
+                .map_or(0, |phase| phase.max(0.0).round() as u32),
             options.get(MASTERY).copied().unwrap_or(0.0).max(0.0) as u32,
             options.get(MASTERY + 1).copied().unwrap_or(0.0).max(0.0) as u32,
             charmed_perk(emporium),
             players,
             missing,
-        ))
+        );
+        loadout.account = crate::save::account::sneaking_account(save, &loadout);
+        let gold = loadout.gold_bonuses();
+        loadout.account.jade.gold_9 = gold.get(9);
+        loadout.account.jade.gold_23 = gold.get(23);
+        loadout.account.exp.gold_10 = gold.get(10);
+        Some(loadout)
     }
 
     /// The saved item of one twin's slot, for the slot's reset control.

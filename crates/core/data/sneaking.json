@@ -923,12 +923,63 @@
    3000000,
    10000000,
    20000000
+  ],
+  "jadeBase": [
+   0,
+   100,
+   300,
+   1500,
+   6000,
+   17500,
+   60000,
+   170000,
+   800000,
+   4000000,
+   15000000,
+   60000000
+  ],
+  "expBase": [
+   25,
+   40,
+   150,
+   1150,
+   2000,
+   14000,
+   25000,
+   170000,
+   200000,
+   2250000,
+   5000000,
+   25000000
+  ],
+  "farmRankPerLevel": [
+   250,
+   5,
+   25,
+   600,
+   2,
+   90,
+   200,
+   120,
+   100,
+   10,
+   3000,
+   340,
+   110,
+   520,
+   20,
+   40000,
+   220,
+   600,
+   1500,
+   5
   ]
  },
  "scales": {
   "detection": 20000000,
   "doorHp": 40000000000,
-  "jade": 60000000
+  "jade": 60000000,
+  "exp": 25000000
  },
  "charmBonusTypes": {
   "0": "Dodge %",
@@ -1010,13 +1061,1682 @@
   0,
   0
  ],
+ "account": {
+  "monumentInfo": [
+   2,
+   4,
+   10,
+   1,
+   8,
+   2,
+   1,
+   1,
+   50,
+   250,
+   2,
+   4,
+   500,
+   1,
+   5,
+   2,
+   1,
+   300,
+   50,
+   250,
+   2,
+   3,
+   2,
+   1,
+   4,
+   2,
+   100,
+   35,
+   50,
+   250,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "taskShopJadeBase": 3,
+  "guild14": {
+   "x1": 30,
+   "x2": 120,
+   "formula": "decay",
+   "name": "Skilley Skillet"
+  },
+  "msa": [
+   {
+    "gate": 0,
+    "gateIdx": 7,
+    "mult": 1,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 13,
+    "mult": 13,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 3,
+    "mult": 1,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 20,
+    "mult": 50,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 11,
+    "mult": 1.12,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 16,
+    "mult": 1,
+    "offset": 0
+   },
+   {
+    "gate": 1,
+    "gateIdx": 12,
+    "mult": 1.75,
+    "offset": 0
+   },
+   {
+    "gate": 1,
+    "gateIdx": 13,
+    "mult": 2,
+    "offset": 0
+   },
+   {
+    "gate": 1,
+    "gateIdx": 14,
+    "mult": 1.5,
+    "offset": 0
+   },
+   {
+    "gate": 0,
+    "gateIdx": 27,
+    "mult": 2.5,
+    "offset": 300
+   },
+   {
+    "gate": 0,
+    "gateIdx": 44,
+    "mult": 0.3,
+    "offset": 300
+   }
+  ],
+  "sigils": [
+   [
+    10,
+    20,
+    40,
+    100,
+    200
+   ],
+   [
+    10,
+    20,
+    40,
+    100,
+    200
+   ],
+   [
+    10,
+    20,
+    40,
+    100,
+    200
+   ],
+   [
+    10,
+    20,
+    40,
+    100,
+    200
+   ],
+   [
+    75,
+    225,
+    1000,
+    5000,
+    10000
+   ],
+   [
+    10,
+    20,
+    30,
+    50,
+    60
+   ],
+   [
+    12,
+    25,
+    40,
+    65,
+    75
+   ],
+   [
+    1,
+    2,
+    5,
+    10,
+    12
+   ],
+   [
+    6,
+    12,
+    20,
+    50,
+    70
+   ],
+   [
+    10,
+    25,
+    45,
+    100,
+    125
+   ],
+   [
+    10,
+    20,
+    30,
+    60,
+    75
+   ],
+   [
+    10,
+    20,
+    30,
+    100,
+    150
+   ],
+   [
+    25,
+    50,
+    100,
+    450,
+    600
+   ],
+   [
+    3,
+    6,
+    10,
+    15,
+    20
+   ],
+   [
+    10,
+    25,
+    40,
+    60,
+    80
+   ],
+   [
+    10,
+    25,
+    50,
+    100,
+    150
+   ],
+   [
+    1,
+    2,
+    4,
+    10,
+    15
+   ],
+   [
+    3,
+    7,
+    15,
+    25,
+    40
+   ],
+   [
+    15,
+    35,
+    60,
+    90,
+    95
+   ],
+   [
+    8,
+    20,
+    35,
+    70,
+    100
+   ],
+   [
+    15,
+    25,
+    35,
+    50,
+    65
+   ],
+   [
+    10,
+    20,
+    30,
+    60,
+    100
+   ],
+   [
+    10,
+    30,
+    50,
+    100,
+    150
+   ],
+   [
+    20,
+    50,
+    100,
+    250,
+    400
+   ]
+  ],
+  "vials": [
+   {
+    "index": 0,
+    "effect": "OrangeBrew",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 1,
+    "effect": "GreenBrew",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 2,
+    "effect": "YellowBrew",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 3,
+    "effect": "PurpleBrew",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 4,
+    "effect": "Liquid1Cap",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 5,
+    "effect": "MonsterCash",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 6,
+    "effect": "StatueDouble",
+    "kind": "add",
+    "x1": 2.5,
+    "x2": 0
+   },
+   {
+    "index": 7,
+    "effect": "ClassEXPconvert",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 8,
+    "effect": "LiquidRegen",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 9,
+    "effect": "AlchBubbleCost",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 10,
+    "effect": "CardDrop",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 11,
+    "effect": "Liquid2Cap",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 12,
+    "effect": "ShopSell",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 13,
+    "effect": "Tab1Pts",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 14,
+    "effect": "MultiKillPlay",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 15,
+    "effect": "WeaponPOW",
+    "kind": "add",
+    "x1": 0.5,
+    "x2": 0
+   },
+   {
+    "index": 16,
+    "effect": "baseACC",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 17,
+    "effect": "MonsterEXP",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 18,
+    "effect": "MatCostStamp",
+    "kind": "decay",
+    "x1": 30,
+    "x2": 7
+   },
+   {
+    "index": 19,
+    "effect": "BoxPoints",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 20,
+    "effect": "Nothing",
+    "kind": "add",
+    "x1": 50,
+    "x2": 0
+   },
+   {
+    "index": 21,
+    "effect": "Shiny1",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 22,
+    "effect": "Tab2Pts",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 23,
+    "effect": "TDpts",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 24,
+    "effect": "MinEff",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 25,
+    "effect": "RefSpd",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 26,
+    "effect": "CatchEff",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 27,
+    "effect": "ChopEff",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 28,
+    "effect": "TrapOvision",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 29,
+    "effect": "FishEff",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 30,
+    "effect": "TalBookSpd",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 31,
+    "effect": "CogInv",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 32,
+    "effect": "ConsExp",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 33,
+    "effect": "Shiny2",
+    "kind": "add",
+    "x1": 5,
+    "x2": 0
+   },
+   {
+    "index": 34,
+    "effect": "SampleSize",
+    "kind": "add",
+    "x1": 0.5,
+    "x2": 0
+   },
+   {
+    "index": 35,
+    "effect": "Overkill",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 36,
+    "effect": "CogSpd",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 37,
+    "effect": "Tab3Pts",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 38,
+    "effect": "Liquid3Cap",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 39,
+    "effect": "GiantMob",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 40,
+    "effect": "CritterBASED",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 41,
+    "effect": "arcadeBALLZ",
+    "kind": "add",
+    "x1": 25,
+    "x2": 0
+   },
+   {
+    "index": 42,
+    "effect": "BreedXP",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 43,
+    "effect": "NewPet",
+    "kind": "add",
+    "x1": 5,
+    "x2": 0
+   },
+   {
+    "index": 44,
+    "effect": "MealCook",
+    "kind": "add",
+    "x1": 6,
+    "x2": 0
+   },
+   {
+    "index": 45,
+    "effect": "RecCook",
+    "kind": "add",
+    "x1": 5,
+    "x2": 0
+   },
+   {
+    "index": 46,
+    "effect": "TDpts",
+    "kind": "add",
+    "x1": 11,
+    "x2": 0
+   },
+   {
+    "index": 47,
+    "effect": "LabXP",
+    "kind": "add",
+    "x1": 3,
+    "x2": 0
+   },
+   {
+    "index": 48,
+    "effect": "Kcosts",
+    "kind": "decay",
+    "x1": 50,
+    "x2": 7
+   },
+   {
+    "index": 49,
+    "effect": "AllStatPCT",
+    "kind": "add",
+    "x1": 0.5,
+    "x2": 0
+   },
+   {
+    "index": 50,
+    "effect": "WeaponPOW",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 51,
+    "effect": "PetDmg",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 52,
+    "effect": "Tab4Pts",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 53,
+    "effect": "DivXP",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 54,
+    "effect": "SailXP",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 55,
+    "effect": "MealCook",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 56,
+    "effect": "GameXP",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 57,
+    "effect": "SailSpd",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 58,
+    "effect": "GameBits",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 59,
+    "effect": "MatCostStamp",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 60,
+    "effect": "EqBar",
+    "kind": "add",
+    "x1": 5,
+    "x2": 0
+   },
+   {
+    "index": 61,
+    "effect": "SigSpd",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 62,
+    "effect": "Contspd",
+    "kind": "add",
+    "x1": 7,
+    "x2": 0
+   },
+   {
+    "index": 63,
+    "effect": "ShrineSpd",
+    "kind": "add",
+    "x1": 3.5,
+    "x2": 0
+   },
+   {
+    "index": 64,
+    "effect": "6FarmSpd",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 65,
+    "effect": "6WhiteEss",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 66,
+    "effect": "6FarmEvo",
+    "kind": "add",
+    "x1": 7,
+    "x2": 0
+   },
+   {
+    "index": 67,
+    "effect": "6Untie",
+    "kind": "add",
+    "x1": 1.5,
+    "x2": 0
+   },
+   {
+    "index": 68,
+    "effect": "6CookSpd",
+    "kind": "add",
+    "x1": 5,
+    "x2": 0
+   },
+   {
+    "index": 69,
+    "effect": "6SkillEff",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 70,
+    "effect": "6SneakEXP",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 71,
+    "effect": "6SummEXP",
+    "kind": "add",
+    "x1": 3.5,
+    "x2": 0
+   },
+   {
+    "index": 72,
+    "effect": "6FarmEXP",
+    "kind": "add",
+    "x1": 3.5,
+    "x2": 0
+   },
+   {
+    "index": 73,
+    "effect": "6Jade",
+    "kind": "add",
+    "x1": 3.5,
+    "x2": 0
+   },
+   {
+    "index": 74,
+    "effect": "6turtle",
+    "kind": "add",
+    "x1": 4,
+    "x2": 0
+   },
+   {
+    "index": 75,
+    "effect": "7dmg",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 76,
+    "effect": "7spelunkspd",
+    "kind": "add",
+    "x1": 0.5,
+    "x2": 0
+   },
+   {
+    "index": 77,
+    "effect": "7amber",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 78,
+    "effect": "7bits",
+    "kind": "add",
+    "x1": 10,
+    "x2": 0
+   },
+   {
+    "index": 79,
+    "effect": "7skillw7afk",
+    "kind": "add",
+    "x1": 0.2,
+    "x2": 0
+   },
+   {
+    "index": 80,
+    "effect": "7masta",
+    "kind": "add",
+    "x1": 1,
+    "x2": 0
+   },
+   {
+    "index": 81,
+    "effect": "7corale",
+    "kind": "add",
+    "x1": 0.1,
+    "x2": 0
+   },
+   {
+    "index": 82,
+    "effect": "7spelunkeff",
+    "kind": "add",
+    "x1": 2,
+    "x2": 0
+   },
+   {
+    "index": 83,
+    "effect": "7classexp",
+    "kind": "add",
+    "x1": 0.5,
+    "x2": 0
+   },
+   {
+    "index": 84,
+    "effect": "7drMulto",
+    "kind": "add",
+    "x1": 0.1,
+    "x2": 0
+   },
+   {
+    "index": 85,
+    "effect": "7cookmastery",
+    "kind": "add",
+    "x1": 0.2,
+    "x2": 0
+   },
+   {
+    "index": 86,
+    "effect": "7lumiadd",
+    "kind": "add",
+    "x1": 0.2,
+    "x2": 0
+   }
+  ],
+  "meals": [
+   {
+    "index": 0,
+    "name": "Turkey_of_Thank",
+    "perLevel": 2,
+    "effect": "TotDmg"
+   },
+   {
+    "index": 1,
+    "name": "Egg",
+    "perLevel": 5,
+    "effect": "Mcook"
+   },
+   {
+    "index": 2,
+    "name": "Salad",
+    "perLevel": 3,
+    "effect": "Cash"
+   },
+   {
+    "index": 3,
+    "name": "Pie",
+    "perLevel": 5,
+    "effect": "Rcook"
+   },
+   {
+    "index": 4,
+    "name": "Frenk_Fries",
+    "perLevel": 5,
+    "effect": "Npet"
+   },
+   {
+    "index": 5,
+    "name": "Spaghetti",
+    "perLevel": 4,
+    "effect": "BrExp"
+   },
+   {
+    "index": 6,
+    "name": "Corn",
+    "perLevel": 2,
+    "effect": "Seff"
+   },
+   {
+    "index": 7,
+    "name": "Garlic_Bread",
+    "perLevel": 4,
+    "effect": "VIP"
+   },
+   {
+    "index": 8,
+    "name": "Garlicles_Bread",
+    "perLevel": 2,
+    "effect": "Lexp"
+   },
+   {
+    "index": 9,
+    "name": "Pizza",
+    "perLevel": 9,
+    "effect": "Npet"
+   },
+   {
+    "index": 10,
+    "name": "Apple",
+    "perLevel": 5,
+    "effect": "Def"
+   },
+   {
+    "index": 11,
+    "name": "Pancakes",
+    "perLevel": 2,
+    "effect": "PxLine"
+   },
+   {
+    "index": 12,
+    "name": "Corndog",
+    "perLevel": 12,
+    "effect": "Mcook"
+   },
+   {
+    "index": 13,
+    "name": "Cabbage",
+    "perLevel": 5,
+    "effect": "KitchenEff"
+   },
+   {
+    "index": 14,
+    "name": "Potato_P_Pastry",
+    "perLevel": 1,
+    "effect": "TimeEgg"
+   },
+   {
+    "index": 15,
+    "name": "Dango",
+    "perLevel": 2,
+    "effect": "KitchC"
+   },
+   {
+    "index": 16,
+    "name": "Sourish_Fish",
+    "perLevel": 4,
+    "effect": "VIP"
+   },
+   {
+    "index": 17,
+    "name": "Octoplop",
+    "perLevel": 2,
+    "effect": "TotDmg"
+   },
+   {
+    "index": 18,
+    "name": "Croissant",
+    "perLevel": 1,
+    "effect": "PetDmg"
+   },
+   {
+    "index": 19,
+    "name": "Canopy",
+    "perLevel": 10,
+    "effect": "Rcook"
+   },
+   {
+    "index": 20,
+    "name": "Cannoli",
+    "perLevel": 1,
+    "effect": "TDpts"
+   },
+   {
+    "index": 21,
+    "name": "Cheese",
+    "perLevel": 5,
+    "effect": "CookExp"
+   },
+   {
+    "index": 22,
+    "name": "Sawdust",
+    "perLevel": 5,
+    "effect": "Lexp"
+   },
+   {
+    "index": 23,
+    "name": "Eggplant",
+    "perLevel": 5,
+    "effect": "Breed"
+   },
+   {
+    "index": 24,
+    "name": "Cheesy_Bread",
+    "perLevel": 1,
+    "effect": "TotAcc"
+   },
+   {
+    "index": 25,
+    "name": "Wild_Boar",
+    "perLevel": 2,
+    "effect": "PxLine"
+   },
+   {
+    "index": 26,
+    "name": "Donut",
+    "perLevel": 15,
+    "effect": "Npet"
+   },
+   {
+    "index": 27,
+    "name": "Riceball",
+    "perLevel": 3,
+    "effect": "Seff"
+   },
+   {
+    "index": 28,
+    "name": "Cauliflower",
+    "perLevel": 1,
+    "effect": "AtkSpd"
+   },
+   {
+    "index": 29,
+    "name": "Durian_Fruit",
+    "perLevel": 6,
+    "effect": "KitchC"
+   },
+   {
+    "index": 30,
+    "name": "Orange",
+    "perLevel": 3,
+    "effect": "VIP"
+   },
+   {
+    "index": 31,
+    "name": "Bunt_Cake",
+    "perLevel": 7,
+    "effect": "Cash"
+   },
+   {
+    "index": 32,
+    "name": "Chocala_Truffle",
+    "perLevel": 25,
+    "effect": "Npet"
+   },
+   {
+    "index": 33,
+    "name": "Leek",
+    "perLevel": 2,
+    "effect": "Sprow"
+   },
+   {
+    "index": 34,
+    "name": "Fortune_Cookie",
+    "perLevel": 4,
+    "effect": "Lib"
+   },
+   {
+    "index": 35,
+    "name": "Pretzel",
+    "perLevel": 7,
+    "effect": "Lexp"
+   },
+   {
+    "index": 36,
+    "name": "Sea_Urchin",
+    "perLevel": 1,
+    "effect": "Critter"
+   },
+   {
+    "index": 37,
+    "name": "Mashed_Potato",
+    "perLevel": 6,
+    "effect": "CookExp"
+   },
+   {
+    "index": 38,
+    "name": "Mutton",
+    "perLevel": 1,
+    "effect": "Crit"
+   },
+   {
+    "index": 39,
+    "name": "Wedding_Cake",
+    "perLevel": 2,
+    "effect": "PetDmg"
+   },
+   {
+    "index": 40,
+    "name": "Eel",
+    "perLevel": 1,
+    "effect": "LinePct"
+   },
+   {
+    "index": 41,
+    "name": "Whipped_Cocoa",
+    "perLevel": 4,
+    "effect": "Seff"
+   },
+   {
+    "index": 42,
+    "name": "Onion",
+    "perLevel": 3,
+    "effect": "TotDmg"
+   },
+   {
+    "index": 43,
+    "name": "Soda",
+    "perLevel": 20,
+    "effect": "Mcook"
+   },
+   {
+    "index": 44,
+    "name": "Sushi_Roll",
+    "perLevel": 7,
+    "effect": "VIP"
+   },
+   {
+    "index": 45,
+    "name": "Buncha_Banana",
+    "perLevel": 4,
+    "effect": "TPpete"
+   },
+   {
+    "index": 46,
+    "name": "Pumpkin",
+    "perLevel": 2,
+    "effect": "Liquid12"
+   },
+   {
+    "index": 47,
+    "name": "Cotton_Candy",
+    "perLevel": 2,
+    "effect": "DivExp"
+   },
+   {
+    "index": 48,
+    "name": "Massive_Fig",
+    "perLevel": 3,
+    "effect": "TotDmg"
+   },
+   {
+    "index": 49,
+    "name": "Chef_Geustloaf",
+    "perLevel": 4,
+    "effect": "GamingBits"
+   },
+   {
+    "index": 50,
+    "name": "Kiwi_Fruit",
+    "perLevel": 2,
+    "effect": "Liquid34"
+   },
+   {
+    "index": 51,
+    "name": "Popped_Corn",
+    "perLevel": 2,
+    "effect": "Sailing"
+   },
+   {
+    "index": 52,
+    "name": "Double_Cherry",
+    "perLevel": 30,
+    "effect": "Mcook"
+   },
+   {
+    "index": 53,
+    "name": "Ratatouey",
+    "perLevel": 8,
+    "effect": "KitchC"
+   },
+   {
+    "index": 54,
+    "name": "Giant_Tomato",
+    "perLevel": 5,
+    "effect": "GamingExp"
+   },
+   {
+    "index": 55,
+    "name": "Wrath_Grapes",
+    "perLevel": 4,
+    "effect": "DivExp"
+   },
+   {
+    "index": 56,
+    "name": "Sausy_Sausage",
+    "perLevel": 6,
+    "effect": "GamingBits"
+   },
+   {
+    "index": 57,
+    "name": "Seasoned_Marrow",
+    "perLevel": 3,
+    "effect": "zFarmExp"
+   },
+   {
+    "index": 58,
+    "name": "Sticky_Bun",
+    "perLevel": 5,
+    "effect": "zSumEss"
+   },
+   {
+    "index": 59,
+    "name": "Frazzleberry",
+    "perLevel": 2,
+    "effect": "zSneakExp"
+   },
+   {
+    "index": 60,
+    "name": "MrLoin_Steak",
+    "perLevel": 6,
+    "effect": "zJade"
+   },
+   {
+    "index": 61,
+    "name": "Large_Pohayoh",
+    "perLevel": 2,
+    "effect": "zSummonExp"
+   },
+   {
+    "index": 62,
+    "name": "Bill_Jack_Pep",
+    "perLevel": 5,
+    "effect": "zCropEvo"
+   },
+   {
+    "index": 63,
+    "name": "Burned_Mello",
+    "perLevel": 40,
+    "effect": "zMealFarm"
+   },
+   {
+    "index": 64,
+    "name": "Yumi_Peachring",
+    "perLevel": 2,
+    "effect": "zGoldFood"
+   },
+   {
+    "index": 65,
+    "name": "Plumpcakes",
+    "perLevel": 6,
+    "effect": "TotDmg"
+   },
+   {
+    "index": 66,
+    "name": "Nyanborgir",
+    "perLevel": 9,
+    "effect": "zCropEvoSumm"
+   },
+   {
+    "index": 67,
+    "name": "Tempura_Shrimp",
+    "perLevel": 0.07,
+    "effect": "SplkExp"
+   },
+   {
+    "index": 68,
+    "name": "Woahtermelon",
+    "perLevel": 0.03,
+    "effect": "SplkUpg"
+   },
+   {
+    "index": 69,
+    "name": "Cookies",
+    "perLevel": 0.3,
+    "effect": "SplkPOW"
+   },
+   {
+    "index": 70,
+    "name": "Singing_Seed",
+    "perLevel": 0.2,
+    "effect": "SplkAmb"
+   },
+   {
+    "index": 71,
+    "name": "Tasty_Treat",
+    "perLevel": 0.01,
+    "effect": "PolyRefSpd"
+   },
+   {
+    "index": 72,
+    "name": "Giga_Chip",
+    "perLevel": 0.01,
+    "effect": "ResearchXP"
+   },
+   {
+    "index": 73,
+    "name": "Divorce_Cake",
+    "perLevel": 0.02,
+    "effect": "MineCurr"
+   }
+  ],
+  "bubbles": {
+   "a10": {
+    "cauldron": 2,
+    "index": 10,
+    "x1": 40,
+    "x2": 50,
+    "formula": "decay",
+    "name": "MATTY_STAFFORD"
+   },
+   "y8": {
+    "cauldron": 3,
+    "index": 8,
+    "x1": 9.7,
+    "x2": 0.3,
+    "formula": "bigBase",
+    "name": "GRIND_TIME"
+   },
+   "y9": {
+    "cauldron": 3,
+    "index": 9,
+    "x1": 120,
+    "x2": 100,
+    "formula": "decay",
+    "name": "LAAARRRRYYYY"
+   }
+  },
+  "talents": {
+   "56": {
+    "x1": 200,
+    "x2": 200,
+    "formula": "decay"
+   },
+   "207": {
+    "x1": 2,
+    "x2": 200,
+    "formula": "decayMulti"
+   },
+   "431": {
+    "x1": 1,
+    "x2": 0.1,
+    "formula": "add"
+   },
+   "432": {
+    "x1": 3,
+    "x2": 300,
+    "formula": "decayMulti"
+   },
+   "talent431tab2": {
+    "x1": 10,
+    "x2": 400,
+    "formula": "decayMulti"
+   }
+  },
+  "votingBonuses": [
+   0,
+   25,
+   0,
+   0,
+   25,
+   0,
+   0,
+   15,
+   0,
+   0,
+   30,
+   0,
+   0,
+   30,
+   0,
+   0,
+   20,
+   0,
+   0,
+   15,
+   0,
+   0,
+   42,
+   0,
+   0,
+   50,
+   0,
+   0,
+   38,
+   0,
+   0,
+   46,
+   0,
+   0,
+   20,
+   3,
+   0,
+   25,
+   0,
+   0,
+   63,
+   4,
+   0,
+   50,
+   0,
+   0,
+   60,
+   0,
+   0,
+   50,
+   4,
+   0,
+   80,
+   4,
+   0,
+   40,
+   3,
+   0,
+   53,
+   3,
+   0,
+   31,
+   5,
+   0,
+   80,
+   5,
+   0,
+   75,
+   5,
+   0,
+   60,
+   5,
+   0,
+   50,
+   5,
+   0,
+   65,
+   6,
+   0,
+   30,
+   0,
+   0,
+   38,
+   0,
+   0,
+   40,
+   6,
+   0,
+   40,
+   6,
+   0,
+   54,
+   3,
+   0,
+   90,
+   4,
+   0,
+   40,
+   3,
+   0,
+   50,
+   3,
+   0,
+   52,
+   0
+  ],
+  "starSignNames": [
+   "The_Buff_Guy",
+   "Flexo_Bendo",
+   "The_Book_Worm",
+   "The_Fuzzy_Dice",
+   "Dwarfo_Beardus",
+   "Hipster_Logger",
+   "Pie_Seas",
+   "Shoe_Fly",
+   "Blue_Hedgehog",
+   "Gum_Drop",
+   "Activelius",
+   "Pack_Mule",
+   "Ned_Kelly",
+   "Robinhood",
+   "Pirate_Booty",
+   "Muscle_Man",
+   "Fast_Frog",
+   "Smart_Stooge",
+   "Lucky_Larry",
+   "Silly_Snoozer",
+   "The_Big_Comatose",
+   "Miniature_Game",
+   "Mount_Eaterest",
+   "Bob_Build_Guy",
+   "The_Big_Brain",
+   "The_OG_Skiller",
+   "Grim_Reaper",
+   "The_Fallen_Titan",
+   "The_Forsaken",
+   "Mr_No_Sleep",
+   "Sir_Savvy",
+   "All_Rounder",
+   "Fatty_Doodoo",
+   "Chronus_Cosmos",
+   "All_Rounderi",
+   "Centaurii",
+   "Murmollio",
+   "Strandissi",
+   "Agitagi",
+   "Wispommo",
+   "Lukiris",
+   "Pokaminni",
+   "Gor_Bowzor",
+   "Hydron_Cosmos",
+   "Trapezoidburg",
+   "Sawsaw_Salala",
+   "Preys_Bea",
+   "Cullingo",
+   "Gum_Drop_Major",
+   "Grim_Reaper_Major",
+   "Sir_Savvy_Major",
+   "The_Bulwark",
+   "Big_Brain_Major",
+   "The_Fiesty",
+   "The_Overachiever",
+   "Comatose_Major",
+   "S._Snoozer_Major",
+   "Breedabilli",
+   "Gordonius_Major",
+   "Power_Bowower",
+   "Scienscion",
+   "Artifosho",
+   "Divividov",
+   "C._Shanti_Minor",
+   "Muscle_Magnus",
+   "Cropiovo_Minor",
+   "Fabarmi",
+   "O.G._Signalais",
+   "Lightspeed_Frog",
+   "Beanbie_Major",
+   "Damarian_Major",
+   "Lotto_Larrinald",
+   "Intellostooge",
+   "S._Tealio",
+   "Sneekee_E._X.",
+   "Jadaciussi",
+   "Druipi_Major",
+   "Sumo_Magno",
+   "Killian_Maximus",
+   "Seraph_Cosmos",
+   "Glimmer_of_Beyond",
+   "Fillerz48",
+   "Fillerz49",
+   "Fillerz50",
+   "Fillerz51",
+   "Fillerz52",
+   "Fillerz53",
+   "Fillerz54",
+   "Fillerz55",
+   "Fillerz56",
+   "Fillerz57",
+   "Fillerz58",
+   "Fillerz59",
+   "Fillerz32"
+  ],
+  "starSignBonuses": {
+   "Stealth": {
+    "73": 12
+   },
+   "Jade": {
+    "75": 10
+   },
+   "SneakExp": {
+    "74": 15
+   }
+  },
+  "stampTypes": {
+   "SneakExp": [
+    {
+     "cat": 1,
+     "idx": 48,
+     "x1": 50,
+     "x2": 150,
+     "formula": "decay"
+    }
+   ],
+   "JadeCoin": [
+    {
+     "cat": 1,
+     "idx": 49,
+     "x1": 0.5,
+     "x2": 0,
+     "formula": "add"
+    }
+   ]
+  },
+  "riftRanks": [
+   150,
+   200,
+   300,
+   400,
+   500,
+   750,
+   1000
+  ],
+  "zenithPerLevel": 1
+ },
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer",
   "files": [
    "js/stats/data/game/customlists.js",
    "js/stats/data/game/custommaps.js",
    "js/stats/data/game/hardcoded.js",
-   "js/stats/systems/w6/sneaking-math.js"
+   "js/stats/systems/w6/sneaking-math.js",
+   "js/stats/data/w2/alchemy.js",
+   "js/stats/data/common/sigils.js",
+   "js/stats/data/common/guild.js",
+   "js/stats/data/common/talent.js",
+   "js/stats/data/w1/stamp.js",
+   "js/stats/data/w5/hole.js"
   ]
  }
 }

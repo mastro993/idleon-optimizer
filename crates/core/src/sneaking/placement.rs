@@ -26,7 +26,7 @@ impl Loadout {
 
     /// `captiveTargetForFloor`: the first untied-less twin whose captive waits
     /// on `floor`, or `None`.
-    fn captive_target(&self, floor: usize) -> Option<usize> {
+    pub(super) fn captive_target(&self, floor: usize) -> Option<usize> {
         self.twins
             .iter()
             .take(self.players.min(self.twins.len()))

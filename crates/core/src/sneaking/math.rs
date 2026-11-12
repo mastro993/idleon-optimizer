@@ -165,9 +165,8 @@ impl Loadout {
         self.flowers.get(floor).copied().unwrap_or(0.0) * self.ninja_bonus(21)
     }
 
-    /// The loadout's stealth: `stealthValue` with the loadout's own multiplier —
-    /// the level base, the charm stealth factors, the floor allies and the
-    /// flowers. The account-wide stack belongs to the breakdowns.
+    /// The twin's stealth: `stealthValue` with the level base, the charm stealth
+    /// factors, the account-wide stack, the floor allies and the flowers.
     pub fn stealth(&self, twin: usize) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
@@ -176,7 +175,7 @@ impl Loadout {
         let charm = (1.0 + bonuses.get(4) / 100.0)
             * (1.0 + bonuses.get(7) / 100.0)
             * (1.0 + bonuses.get(17) / 100.0);
-        let multi = charm * (1.0 + self.ally_stealth(twin));
+        let multi = charm * (1.0 + self.ally_stealth(twin)) * self.account_multi(twin);
         stealth_value(
             f64::from(entry.level),
             &self.knowledge,
@@ -184,6 +183,29 @@ impl Loadout {
             multi,
             self.funeral_percent(entry.floor),
         )
+    }
+
+    /// The other twins on this twin's floor, with the charm totals they add.
+    pub fn ally_contributions(&self, twin: usize) -> Vec<AllyContribution> {
+        let Some(entry) = self.twins.get(twin) else {
+            return Vec::new();
+        };
+        self.twins
+            .iter()
+            .take(self.players.min(self.twins.len()))
+            .filter(|other| other.index != twin && other.floor == entry.floor)
+            .map(|other| {
+                let bonuses = self.bonuses(other.index);
+                let type8 = bonuses.get(8);
+                let type16 = bonuses.get(16);
+                AllyContribution {
+                    name: other.name.clone(),
+                    total: type8 + type16,
+                    type8,
+                    type16,
+                }
+            })
+            .collect()
     }
 
     /// The other twins' floor-stealth charm totals on this twin's floor:
@@ -256,6 +278,15 @@ impl Loadout {
     }
 }
 
+/// One other twin's contribution to the ally stealth multiplier.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AllyContribution {
+    pub name: String,
+    pub total: f64,
+    pub type8: f64,
+    pub type16: f64,
+}
+
 /// `nkBonus`: `NinjaUpg[idx][5]` times the level, plus the Omni-Jade levels for
 /// the first seventeen upgrades. Index 99 is the game's constant one.
 pub fn ninja_bonus(knowledge: &[f64], omni: &[f64], index: usize) -> f64 {
@@ -312,7 +343,7 @@ pub fn stealth_for_detection(floor: usize, mastery: u32, target: f64) -> f64 {
 /// * (1 + funeralPct / 100) * (1 + NLbonuses(23) / 100)`.
 ///
 /// Upstream's extras also carry the fractal, emperor and sushi percentages; they
-/// are account terms, so this port's caller supplies the multiplier instead.
+/// are account terms, so the caller's multiplier folds them in.
 pub fn stealth_value(
     sneak_level: f64,
     knowledge: &[f64],
@@ -392,4 +423,280 @@ mod tests {
         let expected = 10.0 * gloves.damage() * ((100.0 + 10.0) / (100.0 + 40.0));
         assert!((weapon_stat("NjGl2", 100.0) - expected).abs() < 1e-9);
     }
+}
+/// `floorJadeBase`: the Jade a floor pays before the account multipliers.
+pub fn jade_base(floor: usize, mastery: u32) -> f64 {
+    let data = data::data();
+    let raw = data.info.jade_base.get(floor).copied().unwrap_or(0.0);
+    if mastery == 0 {
+        return raw;
+    }
+    0.1 * raw * data.scales.jade.powf(f64::from(mastery))
+}
+
+/// `floorExpMult`: the EXP a floor pays before the account multipliers.
+pub fn exp_base(floor: usize, mastery: u32) -> f64 {
+    let data = data::data();
+    let raw = data.info.exp_base.get(floor).copied().unwrap_or(0.0);
+    if mastery == 0 {
+        return raw;
+    }
+    let scale = data.info.exp_base.get(11).copied().unwrap_or(1.0);
+    0.1 * raw * scale.powf(f64::from(mastery))
+}
+
+/// `computeJadeActionsPerHour`'s result.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct JadeRate {
+    pub actions_per_hour: f64,
+    pub detection_cycles: f64,
+    pub hit_chance: f64,
+    pub ko_chance: f64,
+    pub dodge: f64,
+}
+
+/// `computeJadeActionsPerHour`.
+pub fn jade_actions_per_hour(
+    action_speed: f64,
+    detection: f64,
+    ko_time: f64,
+    dodge_pct: f64,
+) -> JadeRate {
+    let dodge = (dodge_pct / 100.0).min(0.9);
+    let hit_chance = (1.0 - detection).max(0.0);
+    let ko_chance = detection * (1.0 - dodge);
+    if detection >= 1.0 {
+        return JadeRate {
+            actions_per_hour: 0.0,
+            detection_cycles: f64::INFINITY,
+            hit_chance,
+            ko_chance,
+            dodge,
+        };
+    }
+    let detection_cycles = (1.0 / (1.0 - detection) - 1.0) * (1.0 - dodge);
+    JadeRate {
+        actions_per_hour: 3600.0 * action_speed / (3600.0 + detection_cycles * (3600.0 + ko_time)),
+        detection_cycles,
+        hit_chance,
+        ko_chance,
+        dodge,
+    }
+}
+
+/// `computeDoorHitsPerHour`'s result.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct DoorRate {
+    pub hits_per_hour: f64,
+    pub attempts_per_hour: f64,
+    pub hit_chance: f64,
+    pub ko_chance: f64,
+    pub dodge: f64,
+    pub progress_per_attempt: f64,
+    pub expected_ko_progress: f64,
+    pub taunt_target: Option<usize>,
+    pub taunting: bool,
+    pub coupled: bool,
+    pub flowers_per_hour: f64,
+}
+
+/// `computeDoorHitsPerHour`.
+pub fn door_hits_per_hour(
+    action_speed: f64,
+    detection: f64,
+    ko_time: f64,
+    dodge_pct: f64,
+) -> DoorRate {
+    let detection = detection.clamp(0.0, 1.0);
+    let dodge = (dodge_pct / 100.0).min(0.9);
+    let hit_chance = 1.0 - detection;
+    let ko_chance = detection * (1.0 - dodge);
+    let progress_per_attempt = 3600.0 + ko_chance * ko_time;
+    let attempts_per_hour = if progress_per_attempt > 0.0 {
+        3600.0 * action_speed / progress_per_attempt
+    } else {
+        0.0
+    };
+    DoorRate {
+        hits_per_hour: attempts_per_hour * hit_chance,
+        attempts_per_hour,
+        hit_chance,
+        ko_chance,
+        dodge,
+        progress_per_attempt,
+        expected_ko_progress: progress_per_attempt - 3600.0,
+        ..DoorRate::default()
+    }
+}
+
+/// One twin's input to the team door model.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct TeamMember {
+    pub action_speed: f64,
+    pub detection: f64,
+    pub ko_time: f64,
+    pub dodge_pct: f64,
+    pub taunting: bool,
+    /// `NK 30`'s flower gain, `1 + bonus / 100`.
+    pub flower_gain: f64,
+}
+
+/// `computeTeamDoorRates`: the Taunting Mark redirect loop's expected rates.
+pub fn team_door_rates(members: &[TeamMember]) -> Vec<DoorRate> {
+    let count = members.len();
+    if count == 0 {
+        return Vec::new();
+    }
+    let mut targets = vec![None; count];
+    let mut ko_chance = vec![0.0; count];
+    let mut matrix = vec![vec![0.0; count]; count];
+    let mut values = vec![0.0; count];
+    for (index, member) in members.iter().enumerate() {
+        for (other, candidate) in members.iter().enumerate() {
+            if other != index && candidate.taunting {
+                targets[index] = Some(other);
+                break;
+            }
+        }
+        let detection = member.detection.clamp(0.0, 1.0);
+        let dodge = (member.dodge_pct / 100.0).min(0.9);
+        ko_chance[index] = detection * (1.0 - dodge);
+        matrix[index][index] = 3600.0
+            + match targets[index] {
+                Some(_) => -ko_chance[index],
+                None => ko_chance[index] * member.ko_time,
+            };
+        values[index] = 3600.0 * member.action_speed;
+    }
+    for (victim, target) in targets.iter().enumerate() {
+        if let Some(taunter) = target {
+            matrix[*taunter][victim] +=
+                ko_chance[victim] * ko_chance[*taunter] * members[*taunter].ko_time;
+        }
+    }
+    let mut attempts = solve_linear(matrix.clone(), values.clone());
+    if attempts
+        .as_ref()
+        .is_none_or(|rows| rows.iter().any(|value| !value.is_finite() || *value < 0.0))
+    {
+        attempts = Some(
+            members
+                .iter()
+                .map(|member| {
+                    door_hits_per_hour(
+                        member.action_speed,
+                        member.detection,
+                        member.ko_time,
+                        member.dodge_pct,
+                    )
+                    .attempts_per_hour
+                })
+                .collect(),
+        );
+    }
+    let attempts = attempts.unwrap_or_else(|| vec![0.0; count]);
+    let mut rates: Vec<DoorRate> = members
+        .iter()
+        .enumerate()
+        .map(|(index, member)| {
+            let detection = member.detection.clamp(0.0, 1.0);
+            let dodge = (member.dodge_pct / 100.0).min(0.9);
+            let progress_per_attempt = if attempts[index] > 0.0 {
+                3600.0 * member.action_speed / attempts[index]
+            } else {
+                0.0
+            };
+            DoorRate {
+                attempts_per_hour: attempts[index],
+                hits_per_hour: attempts[index] * (1.0 - detection),
+                hit_chance: 1.0 - detection,
+                ko_chance: ko_chance[index],
+                dodge,
+                progress_per_attempt,
+                expected_ko_progress: progress_per_attempt - 3600.0,
+                taunt_target: targets[index],
+                taunting: member.taunting,
+                coupled: targets[index].is_some() || targets.contains(&Some(index)),
+                flowers_per_hour: 0.0,
+            }
+        })
+        .collect();
+    for (source, target) in targets.iter().enumerate() {
+        match target {
+            None => {
+                rates[source].flowers_per_hour +=
+                    attempts[source] * ko_chance[source] * members[source].flower_gain;
+            }
+            Some(target) => {
+                rates[*target].flowers_per_hour += attempts[source]
+                    * ko_chance[source]
+                    * (members[source].flower_gain - 1.0 + ko_chance[*target]);
+            }
+        }
+    }
+    rates
+}
+
+/// A small Gaussian elimination for the team model's linear system.
+#[allow(clippy::needless_range_loop)]
+fn solve_linear(mut matrix: Vec<Vec<f64>>, values: Vec<f64>) -> Option<Vec<f64>> {
+    let size = values.len();
+    for (row, value) in matrix.iter_mut().zip(&values) {
+        row.push(*value);
+    }
+    for column in 0..size {
+        let mut pivot = column;
+        for candidate in column + 1..size {
+            if matrix[candidate][column].abs() > matrix[pivot][column].abs() {
+                pivot = candidate;
+            }
+        }
+        if matrix[pivot][column].abs() < 1e-12 {
+            return None;
+        }
+        matrix.swap(column, pivot);
+        let divisor = matrix[column][column];
+        for cell in column..=size {
+            matrix[column][cell] /= divisor;
+        }
+        for row in 0..size {
+            if row == column {
+                continue;
+            }
+            let factor = matrix[row][column];
+            if factor == 0.0 {
+                continue;
+            }
+            for cell in column..=size {
+                matrix[row][cell] -= factor * matrix[column][cell];
+            }
+        }
+    }
+    Some(matrix.iter().map(|row| row[size]).collect())
+}
+
+/// `itemFindExpectedFromRate` without the probability-state batch: the rate
+/// model the tree uses when a save has no accumulated actions.
+pub fn item_find_per_hour(
+    nk14: f64,
+    equip_item_find: f64,
+    successful_per_hour: f64,
+    hours: f64,
+    bubble_y9: f64,
+    phase: f64,
+    omni: &[f64],
+) -> f64 {
+    let batch_hours = hours.max(0.01);
+    let expected = successful_per_hour.max(0.0) * batch_hours;
+    let probability_zero = (-expected).exp();
+    let fraction = match phase.round() as i64 {
+        0 => 1.0 - probability_zero,
+        1 => 0.4 * (1.0 - probability_zero),
+        _ if expected <= 0.0 => 0.0,
+        _ => expected / (expected + 50.0) - 50.0 * expected / (expected + 50.0).powi(3),
+    };
+    let ninja = ninja_bonus(&[], omni, 14) * 0.0 + nk14;
+    let bonus = 1.0 + (ninja + equip_item_find) / 100.0;
+    let y9 = 1.0 + (100.0 * (bubble_y9 - 1.0)).clamp(0.0, 100.0) / 100.0;
+    3.0 * fraction.clamp(0.0, 1.0) * bonus * y9
 }

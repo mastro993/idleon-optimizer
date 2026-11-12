@@ -11,28 +11,13 @@
 //! not own, and every value is recomputed from the slots, so a view that reads a
 //! twin after an edit never shows a stale figure.
 
+use super::Account;
 use super::data::{self, ItemDef};
 use super::{CHARMED_PERK, INVENTORY_SLOTS, Item, SLOT_COUNT, SlotKind};
 use super::{charm_stat, weapon_stat};
 
 /// The charm the game limits to one copy across the account: Scroll of Power.
 pub const SCROLL_OF_POWER: &str = "NjTr7";
-
-/// The account-side terms the loadout formulas need but the save does not carry
-/// in the `Ninja` rows.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Account {
-    /// The all-talent multiplier `maxTalentBonus(432)` that scales every
-    /// gemstone bonus: `max(1, value)`. One is the neutral multiplier the
-    /// gemstone formula already applies when the talent is unlearned.
-    pub talent_432: f64,
-}
-
-impl Default for Account {
-    fn default() -> Self {
-        Self { talent_432: 1.0 }
-    }
-}
 
 /// One twin: its saved placement, its four slots and the copy they started from.
 #[derive(Clone, Debug, PartialEq)]
@@ -316,6 +301,10 @@ pub struct Loadout {
     pub(super) legend_points: Vec<f64>,
     pub(super) gem_levels: Vec<f64>,
     pub(super) doors: Vec<f64>,
+    /// `Exp0_<n>[17]`, each twin's saved Sneaking EXP for the charm transfer.
+    pub(super) exp: Vec<f64>,
+    /// `Ninja[102][10]`, the item-find phase.
+    pub(super) item_find_phase: u32,
     pub(super) mastery: u32,
     pub(super) mastery_max: u32,
     pub(super) charmed: bool,
@@ -337,6 +326,8 @@ impl Loadout {
         legend_points: Vec<f64>,
         gem_levels: Vec<f64>,
         doors: Vec<f64>,
+        exp: Vec<f64>,
+        item_find_phase: u32,
         mastery: u32,
         mastery_max: u32,
         charmed: bool,
@@ -354,6 +345,8 @@ impl Loadout {
             legend_points,
             gem_levels,
             doors,
+            exp,
+            item_find_phase,
             mastery,
             mastery_max,
             charmed,

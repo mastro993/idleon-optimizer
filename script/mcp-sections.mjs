@@ -1122,6 +1122,24 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') === before,
       'sneaking: reset restores the saved charm'
     );
+    // The Breakdowns workspace: every formula tab renders through the shared
+    // tree, and the twin selector keeps the root on the chosen twin.
+    await lane.call('click_element', { id: 'sneaking-tab-breakdowns' });
+    await waitForNode(lane, 'formula-node-root', 'sneaking: the breakdown tree renders');
+    for (const [tab, root] of [
+      ['jade', 'Jade per Hour'],
+      ['exp', 'Sneaking EXP per Successful Action'],
+      ['door', 'Door Damage per Hour'],
+      ['runtime', 'Runtime'],
+      ['stealth', 'Stealth'],
+    ]) {
+      await lane.call('click_element', { id: `sneak-formula-${tab}` });
+      await waitFor(
+        lane,
+        (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes(root),
+        `sneaking: the ${tab} tree renders`
+      );
+    }
   },
   fountain: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

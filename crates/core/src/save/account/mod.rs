@@ -21,6 +21,7 @@ mod jelly;
 mod lab;
 mod mastery;
 mod opal;
+mod sneaking;
 mod statue;
 mod systems;
 mod tome;
@@ -274,6 +275,33 @@ pub(crate) fn opal(
         warnings: &mut warnings,
     };
     decoder.opal()
+}
+
+/// The account-wide terms the sneaking breakdown trees read.
+pub(crate) fn sneaking_account(
+    save: &Save,
+    loadout: &crate::sneaking::Loadout,
+) -> crate::sneaking::Account {
+    let Some((fields, root)) = save.parts() else {
+        return crate::sneaking::Account::default();
+    };
+    let characters = super::characters(fields);
+    let simulation = Simulation::default();
+    let overlay = simulation.overlay();
+    let mut warnings = Vec::new();
+    let mut decoder = Decoder {
+        save: fields,
+        root,
+        data: account_data(),
+        characters: &characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings: &mut warnings,
+    };
+    decoder.sneaking_account(loadout)
 }
 
 /// Decode the statue calculator's account inputs: the STARTUE EXP bubble, the

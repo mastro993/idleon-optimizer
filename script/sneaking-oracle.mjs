@@ -21,6 +21,8 @@ const { loadSaveData } = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const math = await import(join(source, 'js/stats/systems/w6/sneaking-math.js'));
 const stealth = await import(join(source, 'js/stats/systems/w6/sneaking-stealth.js'));
+const jade = await import(join(source, 'js/stats/systems/w6/sneaking-jade.js'));
+const exp = await import(join(source, 'js/stats/systems/w6/sneaking-exp.js'));
 const optimizer = await import(join(source, 'js/stats/systems/w6/sneaking-optimizer.js'));
 const talents = await import(join(source, 'js/stats/systems/common/talent.js'));
 const spelunking = await import(join(source, 'js/stats/systems/w7/spelunking.js'));
@@ -47,6 +49,84 @@ const knowledge = nd[103];
 const omni = S.menagerieData?.[7] || [];
 const gold = stealth.goldInventoryBonusDetails(nd, ola, spelunk, S, 0);
 const twins = math.parseTwinData(nd);
+
+// The account factors the breakdown trees show. The Rust test compares the
+// port's modelled terms against these; the tree roots are recorded for
+// reference because a few account systems are still explicit inputs.
+const factorMap = (node) =>
+  Object.fromEntries((node.children || []).map((child) => [child.name, child.val]));
+const allFactors = (node) => {
+  const map = { [node.name]: num(node.val) };
+  for (const child of node.children || []) Object.assign(map, allFactors(child));
+  return map;
+};
+const summarise = (node) => ({
+  name: node.name,
+  value: num(node.val),
+  children: node.children ? node.children.map(summarise) : [],
+});
+const floors = Array.from({ length: players }, (_, twin) =>
+  Number(nd[twin] && nd[twin][0]) || 0,
+);
+const twinName = (twin) => (S.charNames || [])[twin] || 'Twin ' + (twin + 1);
+const masteryLevel = Number(ola[231]) || 0;
+const stealthTree = (twin) =>
+  stealth.buildStealthBreakdown(twin, floors[twin], floors, S, 0);
+const jadeTree = (twin) => {
+  const action = stealth.computeActionSpeed(twin, S, 0);
+  const detection = math.detectionChance(
+    stealth.computeTwinStealth(twin, floors[twin], floors, S, 0).stealth,
+    floors[twin],
+    masteryLevel,
+  );
+  const ko = math.koDuration(S.ninjaData[103] || [], 0, S.menagerieData?.[7]);
+  const dodge = stealth.twinCharmBonuses(
+    twin,
+    nd,
+    S.spelunkData || [],
+    stealth.goldInventoryBonusDetails(nd, ola, S.spelunkData || [], S, 0).bonuses,
+  )[0] || 0;
+  return jade.buildJadeBreakdown(twin, S, {
+    activeCharIdx: 0,
+    floor: floors[twin],
+    mastery: masteryLevel,
+    twinFloors: floors,
+    detection,
+    actionSpeed: action,
+    koTime: ko,
+    dodgePct: dodge,
+  });
+};
+const expTree = (twin) =>
+  exp.buildSneakingExpBreakdown(twin, S, {
+    activeCharIdx: 0,
+    floor: floors[twin],
+    mastery: masteryLevel,
+    playerCount: players,
+  });
+const doorTree = (twin) => {
+  const action = stealth.computeActionSpeed(twin, S, 0);
+  const detection = math.detectionChance(
+    stealth.computeTwinStealth(twin, floors[twin], floors, S, 0).stealth,
+    floors[twin],
+    masteryLevel,
+  );
+  const ko = math.koDuration(S.ninjaData[103] || [], 0, S.menagerieData?.[7]);
+  const dodge = stealth.twinCharmBonuses(
+    twin,
+    nd,
+    S.spelunkData || [],
+    stealth.goldInventoryBonusDetails(nd, ola, S.spelunkData || [], S, 0).bonuses,
+  )[0] || 0;
+  return jade.buildDoorRateBreakdown(twin, S, {
+    activeCharIdx: 0,
+    actionSpeed: action,
+    detection,
+    koTime: ko,
+    dodgePct: dodge,
+    doorActive: false,
+  });
+};
 
 const equip = (twin) =>
   math.parseTwinEquip(nd, twin).map((item) =>
@@ -195,6 +275,29 @@ const payload = {
       if (charms.length === 0) throw new Error('the catalog has no charms');
       return pairs;
     })(),
+  },
+  breakdowns: {
+    stealthFactors: Object.fromEntries(
+      Object.entries(factorMap(stealthTree(0).children[1])).map(([name, value]) => [name, num(value)]),
+    ),
+    jadeFactors: Object.fromEntries(
+      Object.entries(allFactors(jadeTree(0).children[0].children[1])).map(([name, value]) => [name, num(value)]),
+    ),
+    expFactors: Object.fromEntries(
+      Object.entries(factorMap(expTree(0))).map(([name, value]) => [name, num(value)]),
+    ),
+    roots: {
+      stealth: Array.from({ length: players }, (_, twin) => num(stealthTree(twin).val)),
+      jade: Array.from({ length: players }, (_, twin) => num(jadeTree(twin).val)),
+      exp: Array.from({ length: players }, (_, twin) => num(expTree(twin).val)),
+      door: Array.from({ length: players }, (_, twin) => num(doorTree(twin).val)),
+    },
+    trees: {
+      stealth: summarise(stealthTree(0)),
+      jade: summarise(jadeTree(0)),
+      exp: summarise(expTree(0)),
+      door: summarise(doorTree(0)),
+    },
   },
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',

@@ -299,6 +299,8 @@ pub struct AppState {
     pub sneaking: Option<idleon_core::sneaking::Loadout>,
     /// The sneaking workspace's login context and selected slot.
     pub sneaking_state: crate::sections::sneaking::State,
+    /// The shared formula tree on the sneaking breakdowns workspace.
+    pub sneaking_breakdown: Entity<ui::formula::FormulaTree>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -1076,6 +1078,8 @@ impl AppState {
         let opal_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("opal-formula", window, cx));
         let stats_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("stats-formula", window, cx));
+        let sneaking_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("sneaking-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -1138,6 +1142,7 @@ impl AppState {
             opal_total: 0.0,
             sneaking: None,
             sneaking_state: Default::default(),
+            sneaking_breakdown,
             pickle: PickleState::default(),
             prisma,
             statue,
