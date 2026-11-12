@@ -220,5 +220,3734 @@
         "optBonus": 0
       }
     ]
+  },
+  "yellow": {
+    "budget": 29,
+    "budgetVariant": {
+      "eventShop": "肢",
+      "companionToken": "87",
+      "budget": 34
+    },
+    "cookMulti": 7.98792448,
+    "mealMulti": 1.8,
+    "ribbons": [
+      4.21,
+      3.88,
+      3.88,
+      2.5,
+      1.92,
+      2.5,
+      1.71,
+      1.97,
+      1.33,
+      1.92,
+      1.97,
+      1.92,
+      3.04,
+      2.5,
+      2.5,
+      1.97,
+      1.71,
+      1.97,
+      1.6600000000000001,
+      1.97,
+      1.6600000000000001,
+      1.51,
+      1.05,
+      1.51,
+      1.92,
+      1.51,
+      1.33,
+      1.33,
+      1.19,
+      1.1400000000000001,
+      1.05,
+      2.5,
+      1.1400000000000001,
+      1.97,
+      1.05,
+      2.77,
+      1.19,
+      1.1400000000000001,
+      1.19,
+      1.33,
+      1.92,
+      2.77,
+      1.6600000000000001,
+      3.88,
+      1.1400000000000001,
+      1.33,
+      1.6600000000000001,
+      1.51,
+      1.97,
+      1.33,
+      2.77,
+      1.6600000000000001,
+      2.8200000000000003,
+      1.92,
+      1.51,
+      1.71,
+      1.71,
+      1.92,
+      1.92,
+      1.97,
+      1.92,
+      2.5,
+      2.8200000000000003,
+      4.21,
+      3.04,
+      4.21,
+      3.54,
+      1.97,
+      2.8200000000000003,
+      5.25,
+      4.26,
+      3.54,
+      2.77,
+      3.04
+    ],
+    "characters": [
+      {
+        "name": "Character 1",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 220
+      },
+      {
+        "name": "Character 2",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 217
+      },
+      {
+        "name": "Character 3",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 217
+      },
+      {
+        "name": "Character 4",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 223
+      },
+      {
+        "name": "Character 5",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 482,
+        "summoningLv": 216
+      },
+      {
+        "name": "Character 6",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 216
+      },
+      {
+        "name": "Character 7",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 220
+      },
+      {
+        "name": "Character 8",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 219
+      },
+      {
+        "name": "Character 9",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 482,
+        "summoningLv": 217
+      },
+      {
+        "name": "Character 10",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 222
+      },
+      {
+        "name": "Character 11",
+        "farmSteps": 10,
+        "summonSteps": 5,
+        "farmingLv": 486,
+        "summoningLv": 222
+      }
+    ],
+    "kitchens": {
+      "count": 10,
+      "averageLevels": 1277.3,
+      "minSteps": 110,
+      "maxSteps": 180,
+      "mealSteps": 130.23565013666536,
+      "recipeSteps": 133.33107454017428
+    },
+    "goals": [
+      {
+        "id": "seff",
+        "name": "Skill Efficiency",
+        "categories": [
+          "Seff"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "seff",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 30729.7052330496,
+            "curGoalValue": 18262.3124631552,
+            "meals": [
+              {
+                "idx": 41,
+                "name": "Whipped Cocoa",
+                "cat": "Seff",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 10886.2629983232,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 6,
+                "name": "Corn",
+                "cat": "Seff",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 3551.431223808,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 27,
+                "name": "Riceball",
+                "cat": "Seff",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3824.618241024,
+                "curLv": 0,
+                "optLv": 7
+              }
+            ]
+          },
+          {
+            "goal": "seff",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 24934.785539788798,
+            "curGoalValue": 18262.3124631552,
+            "meals": [
+              {
+                "idx": 41,
+                "name": "Whipped Cocoa",
+                "cat": "Seff",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 10886.2629983232,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 6,
+                "name": "Corn",
+                "cat": "Seff",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 3551.431223808,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 27,
+                "name": "Riceball",
+                "cat": "Seff",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3824.618241024,
+                "curLv": 0,
+                "optLv": 1
+              }
+            ]
+          },
+          {
+            "goal": "seff",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 18262.3124631552,
+            "curGoalValue": 18262.3124631552,
+            "meals": [
+              {
+                "idx": 6,
+                "name": "Corn",
+                "cat": "Seff",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 3551.431223808,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 27,
+                "name": "Riceball",
+                "cat": "Seff",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3824.618241024,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 41,
+                "name": "Whipped Cocoa",
+                "cat": "Seff",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 10886.2629983232,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "seff",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 30729.7052330496,
+            "curGoalValue": 18262.3124631552,
+            "meals": [
+              {
+                "idx": 41,
+                "name": "Whipped Cocoa",
+                "cat": "Seff",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 10886.2629983232,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 6,
+                "name": "Corn",
+                "cat": "Seff",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 3551.431223808,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 27,
+                "name": "Riceball",
+                "cat": "Seff",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3824.618241024,
+                "curLv": 0,
+                "optLv": 7
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "lexp",
+        "name": "Lab EXP",
+        "categories": [
+          "Lexp"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "lexp",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 45642.01916026818,
+            "curGoalValue": 26654.3460425984,
+            "meals": [
+              {
+                "idx": 35,
+                "name": "Pretzel",
+                "cat": "Lexp",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 19050.9602470656,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 22,
+                "name": "Sawdust",
+                "cat": "Lexp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 5032.3924224,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 8,
+                "name": "Garlicles Bread",
+                "cat": "Lexp",
+                "mealLv": 121,
+                "base": 2,
+                "baseWeight": 2570.9933731328,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          },
+          {
+            "goal": "lexp",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 37884.51097503418,
+            "curGoalValue": 26654.3460425984,
+            "meals": [
+              {
+                "idx": 35,
+                "name": "Pretzel",
+                "cat": "Lexp",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 19050.9602470656,
+                "curLv": 0,
+                "optLv": 6
+              },
+              {
+                "idx": 22,
+                "name": "Sawdust",
+                "cat": "Lexp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 5032.3924224,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 8,
+                "name": "Garlicles Bread",
+                "cat": "Lexp",
+                "mealLv": 121,
+                "base": 2,
+                "baseWeight": 2570.9933731328,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "lexp",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 26654.3460425984,
+            "curGoalValue": 26654.3460425984,
+            "meals": [
+              {
+                "idx": 8,
+                "name": "Garlicles Bread",
+                "cat": "Lexp",
+                "mealLv": 121,
+                "base": 2,
+                "baseWeight": 2570.9933731328,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 22,
+                "name": "Sawdust",
+                "cat": "Lexp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 5032.3924224,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 35,
+                "name": "Pretzel",
+                "cat": "Lexp",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 19050.9602470656,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "lexp",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 45642.01916026818,
+            "curGoalValue": 26654.3460425984,
+            "meals": [
+              {
+                "idx": 35,
+                "name": "Pretzel",
+                "cat": "Lexp",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 19050.9602470656,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 22,
+                "name": "Sawdust",
+                "cat": "Lexp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 5032.3924224,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 8,
+                "name": "Garlicles Bread",
+                "cat": "Lexp",
+                "mealLv": 121,
+                "base": 2,
+                "baseWeight": 2570.9933731328,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "totdmg",
+        "name": "Total Damage",
+        "categories": [
+          "TotDmg"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "totdmg",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 76589.22993896983,
+            "curGoalValue": 48038.17963404799,
+            "meals": [
+              {
+                "idx": 65,
+                "name": "Plumpcakes",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 24818.321600870397,
+                "curLv": 0,
+                "optLv": 14
+              },
+              {
+                "idx": 0,
+                "name": "Turkey of Thank",
+                "cat": "TotDmg",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 8743.582135808,
+                "curLv": 0,
+                "optLv": 6
+              },
+              {
+                "idx": 48,
+                "name": "Massive Fig",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 5806.6619422464,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 42,
+                "name": "Onion",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 4892.923260979201,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 17,
+                "name": "Octoplop",
+                "cat": "TotDmg",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 2
+              }
+            ]
+          },
+          {
+            "goal": "totdmg",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 63032.70965109681,
+            "curGoalValue": 48038.17963404799,
+            "meals": [
+              {
+                "idx": 65,
+                "name": "Plumpcakes",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 24818.321600870397,
+                "curLv": 0,
+                "optLv": 6
+              },
+              {
+                "idx": 0,
+                "name": "Turkey of Thank",
+                "cat": "TotDmg",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 8743.582135808,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 17,
+                "name": "Octoplop",
+                "cat": "TotDmg",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 42,
+                "name": "Onion",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 4892.923260979201,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 48,
+                "name": "Massive Fig",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 5806.6619422464,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "totdmg",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 48038.17963404799,
+            "curGoalValue": 48038.17963404799,
+            "meals": [
+              {
+                "idx": 0,
+                "name": "Turkey of Thank",
+                "cat": "TotDmg",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 8743.582135808,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 17,
+                "name": "Octoplop",
+                "cat": "TotDmg",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 42,
+                "name": "Onion",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 4892.923260979201,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 48,
+                "name": "Massive Fig",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 5806.6619422464,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 65,
+                "name": "Plumpcakes",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 24818.321600870397,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "totdmg",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 76589.22993896983,
+            "curGoalValue": 48038.17963404799,
+            "meals": [
+              {
+                "idx": 65,
+                "name": "Plumpcakes",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 24818.321600870397,
+                "curLv": 0,
+                "optLv": 14
+              },
+              {
+                "idx": 0,
+                "name": "Turkey of Thank",
+                "cat": "TotDmg",
+                "mealLv": 130,
+                "base": 2,
+                "baseWeight": 8743.582135808,
+                "curLv": 0,
+                "optLv": 6
+              },
+              {
+                "idx": 48,
+                "name": "Massive Fig",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 5806.6619422464,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 42,
+                "name": "Onion",
+                "cat": "TotDmg",
+                "mealLv": 123,
+                "base": 3,
+                "baseWeight": 4892.923260979201,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 17,
+                "name": "Octoplop",
+                "cat": "TotDmg",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 2
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "mcook",
+        "name": "Meal Cooking Speed",
+        "categories": [
+          "Mcook",
+          "zMealFarm",
+          "KitchenEff"
+        ],
+        "unit": "multiplier",
+        "note": "Combines direct Meal Cooking Speed, Farming-scaled Burned Mello, and the summed Cabbage benefit across all unlocked kitchens.",
+        "plans": [
+          {
+            "goal": "mcook",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 2230312276099.6226,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 1108164495695.2761,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          }
+        ],
+        "characterPlans": [
+          {
+            "goal": "mcook",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 1,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 2,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 3,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 4,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 5,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 6,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 7,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 8,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 9,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "mcook",
+            "charIdx": 10,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 4183322604883.8716,
+            "curGoalValue": 1108164495695.2761,
+            "meals": [
+              {
+                "idx": 63,
+                "name": "Burned Mello",
+                "cat": "zMealFarm",
+                "mealLv": 123,
+                "base": 40,
+                "baseWeight": 165455.47733913598,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 52,
+                "name": "Double Cherry",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 30,
+                "baseWeight": 83120.744553984,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 43,
+                "name": "Soda",
+                "cat": "Mcook",
+                "mealLv": 123,
+                "base": 20,
+                "baseWeight": 76243.141576704,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 12,
+                "name": "Corndog",
+                "cat": "Mcook",
+                "mealLv": 120,
+                "base": 12,
+                "baseWeight": 34967.938203648,
+                "curLv": 0,
+                "optLv": 1
+              },
+              {
+                "idx": 1,
+                "name": "Egg",
+                "cat": "Mcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 20145.54553856,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rcook",
+        "name": "Recipe Cooking Speed",
+        "categories": [
+          "Rcook",
+          "KitchenEff"
+        ],
+        "unit": "multiplier",
+        "note": "Combines direct Recipe Cooking Speed with the summed Cabbage benefit across all unlocked kitchens.",
+        "plans": [
+          {
+            "goal": "rcook",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 14218137.933774771,
+            "curGoalValue": 5106726.452031191,
+            "meals": [
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 13
+              },
+              {
+                "idx": 19,
+                "name": "Canopy",
+                "cat": "Rcook",
+                "mealLv": 120,
+                "base": 10,
+                "baseWeight": 18883.45347072,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 3,
+                "name": "Pie",
+                "cat": "Rcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 12980.377280000002,
+                "curLv": 0,
+                "optLv": 7
+              }
+            ]
+          },
+          {
+            "goal": "rcook",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 9120542.106102642,
+            "curGoalValue": 5106726.452031191,
+            "meals": [
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 19,
+                "name": "Canopy",
+                "cat": "Rcook",
+                "mealLv": 120,
+                "base": 10,
+                "baseWeight": 18883.45347072,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 3,
+                "name": "Pie",
+                "cat": "Rcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 12980.377280000002,
+                "curLv": 0,
+                "optLv": 1
+              }
+            ]
+          },
+          {
+            "goal": "rcook",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 5106726.452031191,
+            "curGoalValue": 5106726.452031191,
+            "meals": [
+              {
+                "idx": 3,
+                "name": "Pie",
+                "cat": "Rcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 12980.377280000002,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 19,
+                "name": "Canopy",
+                "cat": "Rcook",
+                "mealLv": 120,
+                "base": 10,
+                "baseWeight": 18883.45347072,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "rcook",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 14218137.933774771,
+            "curGoalValue": 5106726.452031191,
+            "meals": [
+              {
+                "idx": 13,
+                "name": "Cabbage",
+                "cat": "KitchenEff",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 11981.886720000002,
+                "curLv": 0,
+                "optLv": 13
+              },
+              {
+                "idx": 19,
+                "name": "Canopy",
+                "cat": "Rcook",
+                "mealLv": 120,
+                "base": 10,
+                "baseWeight": 18883.45347072,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 3,
+                "name": "Pie",
+                "cat": "Rcook",
+                "mealLv": 130,
+                "base": 5,
+                "baseWeight": 12980.377280000002,
+                "curLv": 0,
+                "optLv": 7
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "kitchc",
+        "name": "Lower Kitchen Upgrade Costs",
+        "categories": [
+          "KitchC"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "kitchc",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 42846.405295630626,
+            "curGoalValue": 25424.6050689024,
+            "meals": [
+              {
+                "idx": 53,
+                "name": "Ratatouey",
+                "cat": "KitchC",
+                "mealLv": 123,
+                "base": 8,
+                "baseWeight": 15091.4259615744,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 29,
+                "name": "Durian Fruit",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 6,
+                "baseWeight": 6556.488413184002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 15,
+                "name": "Dango",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 5
+              }
+            ]
+          },
+          {
+            "goal": "kitchc",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 34843.600453456456,
+            "curGoalValue": 25424.6050689024,
+            "meals": [
+              {
+                "idx": 53,
+                "name": "Ratatouey",
+                "cat": "KitchC",
+                "mealLv": 123,
+                "base": 8,
+                "baseWeight": 15091.4259615744,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 29,
+                "name": "Durian Fruit",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 6,
+                "baseWeight": 6556.488413184002,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 15,
+                "name": "Dango",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "kitchc",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 25424.6050689024,
+            "curGoalValue": 25424.6050689024,
+            "meals": [
+              {
+                "idx": 15,
+                "name": "Dango",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 29,
+                "name": "Durian Fruit",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 6,
+                "baseWeight": 6556.488413184002,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 53,
+                "name": "Ratatouey",
+                "cat": "KitchC",
+                "mealLv": 123,
+                "base": 8,
+                "baseWeight": 15091.4259615744,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "kitchc",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 42846.405295630626,
+            "curGoalValue": 25424.6050689024,
+            "meals": [
+              {
+                "idx": 53,
+                "name": "Ratatouey",
+                "cat": "KitchC",
+                "mealLv": 123,
+                "base": 8,
+                "baseWeight": 15091.4259615744,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 29,
+                "name": "Durian Fruit",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 6,
+                "baseWeight": 6556.488413184002,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 15,
+                "name": "Dango",
+                "cat": "KitchC",
+                "mealLv": 120,
+                "base": 2,
+                "baseWeight": 3776.690694144,
+                "curLv": 0,
+                "optLv": 5
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "cookexp",
+        "name": "Cooking EXP",
+        "categories": [
+          "CookExp"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "cookexp",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 24337.129030195203,
+            "curGoalValue": 13957.4602023936,
+            "meals": [
+              {
+                "idx": 21,
+                "name": "Cheese",
+                "cat": "CookExp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 7237.05957888,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 37,
+                "name": "Mashed Potato",
+                "cat": "CookExp",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cookexp",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 19694.081360157867,
+            "curGoalValue": 13957.4602023936,
+            "meals": [
+              {
+                "idx": 21,
+                "name": "Cheese",
+                "cat": "CookExp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 7237.05957888,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 37,
+                "name": "Mashed Potato",
+                "cat": "CookExp",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 3
+              }
+            ]
+          },
+          {
+            "goal": "cookexp",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 13957.4602023936,
+            "curGoalValue": 13957.4602023936,
+            "meals": [
+              {
+                "idx": 21,
+                "name": "Cheese",
+                "cat": "CookExp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 7237.05957888,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 37,
+                "name": "Mashed Potato",
+                "cat": "CookExp",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "cookexp",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 24337.129030195203,
+            "curGoalValue": 13957.4602023936,
+            "meals": [
+              {
+                "idx": 21,
+                "name": "Cheese",
+                "cat": "CookExp",
+                "mealLv": 120,
+                "base": 5,
+                "baseWeight": 7237.05957888,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 37,
+                "name": "Mashed Potato",
+                "cat": "CookExp",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "npet",
+        "name": "New Mob Breed Odds",
+        "categories": [
+          "Npet"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "npet",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 117377.15121592584,
+            "curGoalValue": 73189.1982895104,
+            "meals": [
+              {
+                "idx": 32,
+                "name": "Chocala Truffle",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 25,
+                "baseWeight": 27318.701721600006,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 26,
+                "name": "Donut",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 15,
+                "baseWeight": 19123.09120512,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 9,
+                "name": "Pizza",
+                "cat": "Npet",
+                "mealLv": 121,
+                "base": 9,
+                "baseWeight": 16701.7915367424,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 4,
+                "name": "Frenk Fries",
+                "cat": "Npet",
+                "mealLv": 131,
+                "base": 5,
+                "baseWeight": 10045.613826048,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          },
+          {
+            "goal": "npet",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 93669.39221849966,
+            "curGoalValue": 73189.1982895104,
+            "meals": [
+              {
+                "idx": 32,
+                "name": "Chocala Truffle",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 25,
+                "baseWeight": 27318.701721600006,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 9,
+                "name": "Pizza",
+                "cat": "Npet",
+                "mealLv": 121,
+                "base": 9,
+                "baseWeight": 16701.7915367424,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 26,
+                "name": "Donut",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 15,
+                "baseWeight": 19123.09120512,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 4,
+                "name": "Frenk Fries",
+                "cat": "Npet",
+                "mealLv": 131,
+                "base": 5,
+                "baseWeight": 10045.613826048,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "npet",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 73189.1982895104,
+            "curGoalValue": 73189.1982895104,
+            "meals": [
+              {
+                "idx": 4,
+                "name": "Frenk Fries",
+                "cat": "Npet",
+                "mealLv": 131,
+                "base": 5,
+                "baseWeight": 10045.613826048,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 9,
+                "name": "Pizza",
+                "cat": "Npet",
+                "mealLv": 121,
+                "base": 9,
+                "baseWeight": 16701.7915367424,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 26,
+                "name": "Donut",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 15,
+                "baseWeight": 19123.09120512,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 32,
+                "name": "Chocala Truffle",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 25,
+                "baseWeight": 27318.701721600006,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "npet",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 117377.15121592584,
+            "curGoalValue": 73189.1982895104,
+            "meals": [
+              {
+                "idx": 32,
+                "name": "Chocala Truffle",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 25,
+                "baseWeight": 27318.701721600006,
+                "curLv": 0,
+                "optLv": 10
+              },
+              {
+                "idx": 26,
+                "name": "Donut",
+                "cat": "Npet",
+                "mealLv": 120,
+                "base": 15,
+                "baseWeight": 19123.09120512,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 9,
+                "name": "Pizza",
+                "cat": "Npet",
+                "mealLv": 121,
+                "base": 9,
+                "baseWeight": 16701.7915367424,
+                "curLv": 0,
+                "optLv": 7
+              },
+              {
+                "idx": 4,
+                "name": "Frenk Fries",
+                "cat": "Npet",
+                "mealLv": 131,
+                "base": 5,
+                "baseWeight": 10045.613826048,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "petdmg",
+        "name": "Mob Battle Damage",
+        "categories": [
+          "PetDmg"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "petdmg",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 7347.394174035646,
+            "curGoalValue": 4204.683687782401,
+            "meals": [
+              {
+                "idx": 39,
+                "name": "Wedding Cake",
+                "cat": "PetDmg",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2613.4891313664,
+                "curLv": 0,
+                "optLv": 17
+              },
+              {
+                "idx": 18,
+                "name": "Croissant",
+                "cat": "PetDmg",
+                "mealLv": 120,
+                "base": 1,
+                "baseWeight": 1591.1945564160003,
+                "curLv": 0,
+                "optLv": 12
+              }
+            ]
+          },
+          {
+            "goal": "petdmg",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 5966.055269584458,
+            "curGoalValue": 4204.683687782401,
+            "meals": [
+              {
+                "idx": 39,
+                "name": "Wedding Cake",
+                "cat": "PetDmg",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2613.4891313664,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 18,
+                "name": "Croissant",
+                "cat": "PetDmg",
+                "mealLv": 120,
+                "base": 1,
+                "baseWeight": 1591.1945564160003,
+                "curLv": 0,
+                "optLv": 2
+              }
+            ]
+          },
+          {
+            "goal": "petdmg",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 4204.683687782401,
+            "curGoalValue": 4204.683687782401,
+            "meals": [
+              {
+                "idx": 18,
+                "name": "Croissant",
+                "cat": "PetDmg",
+                "mealLv": 120,
+                "base": 1,
+                "baseWeight": 1591.1945564160003,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 39,
+                "name": "Wedding Cake",
+                "cat": "PetDmg",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2613.4891313664,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "petdmg",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 7347.394174035646,
+            "curGoalValue": 4204.683687782401,
+            "meals": [
+              {
+                "idx": 39,
+                "name": "Wedding Cake",
+                "cat": "PetDmg",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2613.4891313664,
+                "curLv": 0,
+                "optLv": 17
+              },
+              {
+                "idx": 18,
+                "name": "Croissant",
+                "cat": "PetDmg",
+                "mealLv": 120,
+                "base": 1,
+                "baseWeight": 1591.1945564160003,
+                "curLv": 0,
+                "optLv": 12
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "gamingbits",
+        "name": "Bits Gain",
+        "categories": [
+          "GamingBits"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "gamingbits",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 26790.292702974053,
+            "curGoalValue": 15307.5791980032,
+            "meals": [
+              {
+                "idx": 56,
+                "name": "Sausy Sausage",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 10080.6009352704,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 49,
+                "name": "Chef Geustloaf",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 5226.9782627328,
+                "curLv": 0,
+                "optLv": 11
+              }
+            ]
+          },
+          {
+            "goal": "gamingbits",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 21841.302026419202,
+            "curGoalValue": 15307.5791980032,
+            "meals": [
+              {
+                "idx": 56,
+                "name": "Sausy Sausage",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 10080.6009352704,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 49,
+                "name": "Chef Geustloaf",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 5226.9782627328,
+                "curLv": 0,
+                "optLv": 2
+              }
+            ]
+          },
+          {
+            "goal": "gamingbits",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 15307.5791980032,
+            "curGoalValue": 15307.5791980032,
+            "meals": [
+              {
+                "idx": 49,
+                "name": "Chef Geustloaf",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 5226.9782627328,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 56,
+                "name": "Sausy Sausage",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 10080.6009352704,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "gamingbits",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 26790.292702974053,
+            "curGoalValue": 15307.5791980032,
+            "meals": [
+              {
+                "idx": 56,
+                "name": "Sausy Sausage",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 6,
+                "baseWeight": 10080.6009352704,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 49,
+                "name": "Chef Geustloaf",
+                "cat": "GamingBits",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 5226.9782627328,
+                "curLv": 0,
+                "optLv": 11
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "divexp",
+        "name": "Divinity EXP",
+        "categories": [
+          "DivExp"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "divexp",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 16986.985185879235,
+            "curGoalValue": 9687.595050854401,
+            "meals": [
+              {
+                "idx": 55,
+                "name": "Wrath Grapes",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 47,
+                "name": "Cotton Candy",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2967.1944273408003,
+                "curLv": 0,
+                "optLv": 11
+              }
+            ]
+          },
+          {
+            "goal": "divexp",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 13895.565198994285,
+            "curGoalValue": 9687.595050854401,
+            "meals": [
+              {
+                "idx": 55,
+                "name": "Wrath Grapes",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 5
+              },
+              {
+                "idx": 47,
+                "name": "Cotton Candy",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2967.1944273408003,
+                "curLv": 0,
+                "optLv": 2
+              }
+            ]
+          },
+          {
+            "goal": "divexp",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 9687.595050854401,
+            "curGoalValue": 9687.595050854401,
+            "meals": [
+              {
+                "idx": 47,
+                "name": "Cotton Candy",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2967.1944273408003,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 55,
+                "name": "Wrath Grapes",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "divexp",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 16986.985185879235,
+            "curGoalValue": 9687.595050854401,
+            "meals": [
+              {
+                "idx": 55,
+                "name": "Wrath Grapes",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 4,
+                "baseWeight": 6720.4006235136,
+                "curLv": 0,
+                "optLv": 18
+              },
+              {
+                "idx": 47,
+                "name": "Cotton Candy",
+                "cat": "DivExp",
+                "mealLv": 123,
+                "base": 2,
+                "baseWeight": 2967.1944273408003,
+                "curLv": 0,
+                "optLv": 11
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "vip",
+        "name": "VIP Library Points",
+        "categories": [
+          "VIP"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "vip",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 40136.72136426535,
+            "curGoalValue": 25032.7174939136,
+            "meals": [
+              {
+                "idx": 44,
+                "name": "Sushi Roll",
+                "cat": "VIP",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 7840.467394099201,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 7,
+                "name": "Garlic Bread",
+                "cat": "VIP",
+                "mealLv": 121,
+                "base": 4,
+                "baseWeight": 7616.3262331904,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 16,
+                "name": "Sourish Fish",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 4,
+                "baseWeight": 6556.488413184,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 30,
+                "name": "Orange",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3019.43545344,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          },
+          {
+            "goal": "vip",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 32022.26837995063,
+            "curGoalValue": 25032.7174939136,
+            "meals": [
+              {
+                "idx": 44,
+                "name": "Sushi Roll",
+                "cat": "VIP",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 7840.467394099201,
+                "curLv": 0,
+                "optLv": 3
+              },
+              {
+                "idx": 7,
+                "name": "Garlic Bread",
+                "cat": "VIP",
+                "mealLv": 121,
+                "base": 4,
+                "baseWeight": 7616.3262331904,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 16,
+                "name": "Sourish Fish",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 4,
+                "baseWeight": 6556.488413184,
+                "curLv": 0,
+                "optLv": 2
+              },
+              {
+                "idx": 30,
+                "name": "Orange",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3019.43545344,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "vip",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 25032.7174939136,
+            "curGoalValue": 25032.7174939136,
+            "meals": [
+              {
+                "idx": 7,
+                "name": "Garlic Bread",
+                "cat": "VIP",
+                "mealLv": 121,
+                "base": 4,
+                "baseWeight": 7616.3262331904,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 16,
+                "name": "Sourish Fish",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 4,
+                "baseWeight": 6556.488413184,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 30,
+                "name": "Orange",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3019.43545344,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 44,
+                "name": "Sushi Roll",
+                "cat": "VIP",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 7840.467394099201,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "vip",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 40136.72136426535,
+            "curGoalValue": 25032.7174939136,
+            "meals": [
+              {
+                "idx": 44,
+                "name": "Sushi Roll",
+                "cat": "VIP",
+                "mealLv": 123,
+                "base": 7,
+                "baseWeight": 7840.467394099201,
+                "curLv": 0,
+                "optLv": 9
+              },
+              {
+                "idx": 7,
+                "name": "Garlic Bread",
+                "cat": "VIP",
+                "mealLv": 121,
+                "base": 4,
+                "baseWeight": 7616.3262331904,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 16,
+                "name": "Sourish Fish",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 4,
+                "baseWeight": 6556.488413184,
+                "curLv": 0,
+                "optLv": 8
+              },
+              {
+                "idx": 30,
+                "name": "Orange",
+                "cat": "VIP",
+                "mealLv": 120,
+                "base": 3,
+                "baseWeight": 3019.43545344,
+                "curLv": 0,
+                "optLv": 4
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      },
+      {
+        "id": "cropevo",
+        "name": "Crop Evolution Chance",
+        "categories": [
+          "zCropEvo",
+          "zCropEvoSumm"
+        ],
+        "unit": "multiplier",
+        "note": "Combines direct Crop Evolution Chance with Nyanborgir scaled by the selected character’s Summoning level.",
+        "plans": [
+          {
+            "goal": "cropevo",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 429574.88307249214,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 3
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 216755.961735352,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          }
+        ],
+        "characterPlans": [
+          {
+            "goal": "cropevo",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 1,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 2,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 3,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 4,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 5,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 6,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 7,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 8,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 9,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          },
+          {
+            "goal": "cropevo",
+            "charIdx": 10,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 656639.7363586562,
+            "curGoalValue": 216755.961735352,
+            "meals": [
+              {
+                "idx": 66,
+                "name": "Nyanborgir",
+                "cat": "zCropEvoSumm",
+                "mealLv": 122,
+                "base": 9,
+                "baseWeight": 31048.423419801602,
+                "curLv": 0,
+                "optLv": 15
+              },
+              {
+                "idx": 62,
+                "name": "Bill Jack Pep",
+                "cat": "zCropEvo",
+                "mealLv": 123,
+                "base": 5,
+                "baseWeight": 13853.457425664,
+                "curLv": 0,
+                "optLv": 14
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cash",
+        "name": "Cash from Monsters",
+        "categories": [
+          "Cash"
+        ],
+        "unit": "percent",
+        "note": "",
+        "plans": [
+          {
+            "goal": "cash",
+            "charIdx": 0,
+            "request": 29,
+            "spend": 29,
+            "goalValue": 50372.38429917867,
+            "curGoalValue": 28861.968731136003,
+            "meals": [
+              {
+                "idx": 31,
+                "name": "Bunt Cake",
+                "cat": "Cash",
+                "mealLv": 120,
+                "base": 7,
+                "baseWeight": 16774.641408000003,
+                "curLv": 0,
+                "optLv": 16
+              },
+              {
+                "idx": 2,
+                "name": "Salad",
+                "cat": "Cash",
+                "mealLv": 130,
+                "base": 3,
+                "baseWeight": 12087.327323136,
+                "curLv": 0,
+                "optLv": 13
+              }
+            ]
+          },
+          {
+            "goal": "cash",
+            "charIdx": 0,
+            "request": 7,
+            "spend": 7,
+            "goalValue": 40850.11265864533,
+            "curGoalValue": 28861.968731136003,
+            "meals": [
+              {
+                "idx": 31,
+                "name": "Bunt Cake",
+                "cat": "Cash",
+                "mealLv": 120,
+                "base": 7,
+                "baseWeight": 16774.641408000003,
+                "curLv": 0,
+                "optLv": 4
+              },
+              {
+                "idx": 2,
+                "name": "Salad",
+                "cat": "Cash",
+                "mealLv": 130,
+                "base": 3,
+                "baseWeight": 12087.327323136,
+                "curLv": 0,
+                "optLv": 3
+              }
+            ]
+          },
+          {
+            "goal": "cash",
+            "charIdx": 0,
+            "request": -3,
+            "spend": 0,
+            "goalValue": 28861.968731136003,
+            "curGoalValue": 28861.968731136003,
+            "meals": [
+              {
+                "idx": 2,
+                "name": "Salad",
+                "cat": "Cash",
+                "mealLv": 130,
+                "base": 3,
+                "baseWeight": 12087.327323136,
+                "curLv": 0,
+                "optLv": 0
+              },
+              {
+                "idx": 31,
+                "name": "Bunt Cake",
+                "cat": "Cash",
+                "mealLv": 120,
+                "base": 7,
+                "baseWeight": 16774.641408000003,
+                "curLv": 0,
+                "optLv": 0
+              }
+            ]
+          },
+          {
+            "goal": "cash",
+            "charIdx": 0,
+            "request": 35,
+            "spend": 29,
+            "goalValue": 50372.38429917867,
+            "curGoalValue": 28861.968731136003,
+            "meals": [
+              {
+                "idx": 31,
+                "name": "Bunt Cake",
+                "cat": "Cash",
+                "mealLv": 120,
+                "base": 7,
+                "baseWeight": 16774.641408000003,
+                "curLv": 0,
+                "optLv": 16
+              },
+              {
+                "idx": 2,
+                "name": "Salad",
+                "cat": "Cash",
+                "mealLv": 130,
+                "base": 3,
+                "baseWeight": 12087.327323136,
+                "curLv": 0,
+                "optLv": 13
+              }
+            ]
+          }
+        ],
+        "characterPlans": []
+      }
+    ]
   }
 }

@@ -18,6 +18,8 @@
 //!   factors as a formula tree, whose root is the rate the cards show.
 //! - [`Mastery::distribution`] is the page's `optimizeDistribution`: the daily
 //!   reset budget spent across the EXP upgrades, for a [`Goal`].
+//! - [`Yellow::allocation`] is the page's second tab, `optimizeForGoal`: the
+//!   yellow point budget spent across the meals of one meal goal.
 //!
 //! SMOKY (ribbon rank chance) is not an EXP upgrade upstream and is left out of
 //! the ranking and the tree, exactly as the page's `EXP_UPGRADES` list leaves it
@@ -28,9 +30,16 @@
 //! tests need no save.
 
 mod breakdown;
+mod data;
 mod distribution;
+mod yellow;
 
+pub use data::{Meal, meals};
 pub use distribution::{Goal, Plan, Row};
+pub use yellow::{
+    Allocation, GOALS, Kitchen, Kitchens, MealCharacter, MealRow, Unit, Value, Yellow, YellowGoal,
+    bonus_multi_cook, goal,
+};
 
 use idleon_common::formula::FormulaNode;
 

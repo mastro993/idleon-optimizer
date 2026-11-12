@@ -375,8 +375,17 @@ const masterySave = () => {
   return JSON.stringify({
     Research: '[]',
     Lv0_0: JSON.stringify(row(30, { 0: 200 })),
-    CookMaster: JSON.stringify([[], [18, 0, 0, 1000], [7, 3, 0, 0, 0, 0], [0, 0]]),
-    Meals: JSON.stringify([row(90, { 73: 150 })]),
+    // Row 0 is the yellow points each meal holds; rows 1 and 2 are the rank and
+    // the EXP upgrades. Turkey of Thank already holds two of them.
+    CookMaster: JSON.stringify([
+      row(90, { 0: 2 }),
+      [18, 0, 0, 1000],
+      [7, 3, 0, 0, 0, 0],
+      [0, 0],
+    ]),
+    // Two Skill Efficiency meals and two Total Damage meals, so both goals are
+    // offered and the select has a second option to switch to.
+    Meals: JSON.stringify([row(90, { 0: 100, 6: 100, 27: 100, 42: 100, 73: 150 })]),
     Ribbon: JSON.stringify(ribbons),
   });
 };
@@ -1840,6 +1849,54 @@ const INTERACTIONS = {
       'cooking-mastery-distribution-copy',
       'cooking-mastery: the plan offers a copy action'
     );
+    // CK-03: the yellow point allocator spends the account's points across the
+    // meals of one goal. Only the two goals with two leveled meals are offered,
+    // and the save's 19 points are the whole budget.
+    await lane.call('click_element', { id: 'cooking-mastery-tab-yellow' });
+    await waitForNode(lane, 'cooking-mastery-yellow', 'cooking-mastery: the allocator plans the meals');
+    const allocator = async () =>
+      labelOf(await lane.tree(), 'cooking-mastery-yellow') ?? '';
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-yellow') ?? '').includes('19 of 19 yellow points'),
+      'cooking-mastery: the allocator spends every point the account holds'
+    );
+    if (!(await allocator()).includes('Skill Efficiency')) {
+      throw new Error(`cooking-mastery: the allocator starts on ${await allocator()}`);
+    }
+    await waitForNode(lane, 'cooking-mastery-yellow-rows', 'cooking-mastery: the allocation table renders');
+    await waitForNode(
+      lane,
+      'cooking-mastery-yellow-character',
+      'cooking-mastery: the character context is offered'
+    );
+    // The goal switch re-plans: Total Damage is the select's second option.
+    await lane.call('focus_element', { id: 'cooking-mastery-yellow-goal' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-yellow') ?? '').includes('Total Damage'),
+      'cooking-mastery: the goal switch re-plans the meals'
+    );
+    // Turkey of Thank is one of the two Total Damage meals, and it holds the
+    // two yellow points the save already spent.
+    await bringIntoView(lane, 'cooking-mastery-yellow-row-0');
+    const turkey = labelOf(await lane.tree(), 'cooking-mastery-yellow-row-0') ?? '';
+    if (!turkey.includes('2 points now')) {
+      throw new Error(`cooking-mastery: the saved yellow points read ${turkey}`);
+    }
+    // The budget stepper spends less, and the plan says how much.
+    await lane.call('click_element', { id: 'cooking-mastery-yellow-budget-less' });
+    await lane.call('click_element', { id: 'cooking-mastery-yellow-budget-less' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-yellow') ?? '').includes('17 of 19 yellow points'),
+      'cooking-mastery: the budget stepper re-plans the allocation'
+    );
+    await lane.call('click_element', { id: 'cooking-mastery-tab-exp' });
+    await waitForNode(lane, 'cooking-mastery-summary', 'cooking-mastery: the EXP tab reopens');
   },
   shadow: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

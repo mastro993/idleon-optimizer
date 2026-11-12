@@ -1,21 +1,20 @@
-//! The Cooking Mastery section: the upstream Mastery EXP tab.
+//! The Cooking Mastery section: the upstream page's two tabs.
 //!
-//! CK-01 builds the tab's three blocks, ported from `cooking-mastery-calc.html`:
-//! the overview figures (mastery rank, free points, EXP rate, EXP to the next
-//! level and the hours that takes), the upgrade comparison ordered by what one
-//! more point buys, and the EXP rate breakdown in the shared formula tree.
-//!
-//! The section has no tab strip yet on purpose: the page's second tab is the
-//! yellow point allocator (CK-03), and the strip arrives with the pane behind it
-//! so it never offers a tab with nothing behind it. CK-02's daily distribution
-//! sits in this tab between the comparison and the breakdown.
+//! CK-01 builds the Mastery EXP tab's three blocks, ported from
+//! `cooking-mastery-calc.html`: the overview figures (mastery rank, free points,
+//! EXP rate, EXP to the next level and the hours that takes), the upgrade
+//! comparison ordered by what one more point buys, and the EXP rate breakdown in
+//! the shared formula tree. CK-02's daily distribution sits between the
+//! comparison and the breakdown, and CK-03 adds the page's second tab, the
+//! yellow point allocator.
 //!
 //! Every figure comes from the import; the only inputs are the distribution's
-//! goal and budget, which live in [`State`], so the
-//! section keeps no state beyond them and the shared tree.
+//! goal and budget and the allocator's goal, budget and character, which live in
+//! [`State`], so the section keeps no state beyond them and the shared tree.
 
 mod distribution;
 mod state;
+mod yellow;
 
 pub(crate) use state::State;
 
@@ -25,6 +24,7 @@ use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::{Callout, EmptyState};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::{IconName, Severity};
+use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
@@ -37,7 +37,40 @@ use idleon_cooking_mastery::{Mastery, RIBBON_CHANCE, UPGRADE_NAMES, Upgrade};
 use idleon_ui::format;
 use idleon_ui::formula::FormulaTree;
 
-/// The section: the mastery summary, the recommendation and the comparison.
+/// The page's two tabs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum Tab {
+    /// The mastery figures, the recommendation and the daily distribution.
+    #[default]
+    Exp,
+    /// The yellow point allocator.
+    Yellow,
+}
+
+impl Tab {
+    pub(crate) const ALL: [Tab; 2] = [Tab::Exp, Tab::Yellow];
+
+    pub(crate) fn id(self) -> &'static str {
+        match self {
+            Tab::Exp => "exp",
+            Tab::Yellow => "yellow",
+        }
+    }
+
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            Tab::Exp => "Mastery EXP",
+            Tab::Yellow => "Yellow Points",
+        }
+    }
+
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.id() == id)
+    }
+}
+
+/// The section: the tab strip and its pane.
 pub(crate) fn view(
     state: &mut AppState,
     _window: &mut Window,
@@ -46,32 +79,75 @@ pub(crate) fn view(
     let Some(mastery) = state.mastery.clone() else {
         return prompt(cx);
     };
-    let tree = state.mastery_breakdown.clone();
-    tree.update(cx, |tree, cx| tree.set_root(mastery.breakdown(), cx));
-    let body = div()
-        .id("cooking-mastery-pane")
+    let tab = state.mastery_plan.tab;
+    let entity = cx.entity();
+    let mut tabs = TabBar::new("cooking-mastery-tabs").selected(SharedString::from(format!(
+        "cooking-mastery-tab-{}",
+        tab.id()
+    )));
+    for entry in Tab::ALL {
+        tabs = tabs.tab(WindowTab::new(
+            format!("cooking-mastery-tab-{}", entry.id()),
+            entry.label(),
+        ));
+    }
+    let tabs = tabs.on_select(move |id, _window, cx| {
+        let tab = id
+            .as_ref()
+            .strip_prefix("cooking-mastery-tab-")
+            .and_then(Tab::from_id);
+        if let Some(tab) = tab {
+            let entity = entity.clone();
+            entity.update(cx, |state, cx| {
+                state.mastery_plan.tab = tab;
+                cx.notify();
+            });
+        }
+    });
+    let strip = div()
+        .id("cooking-mastery-tab-strip")
         .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
-        .child(summary(&mastery, cx))
-        .child(recommendation(&mastery, cx))
-        .child(comparison(&mastery, cx))
-        .child(distribution::card(state, &mastery, cx))
-        .child(formula_card(tree));
+        .items_center()
+        .px_3()
+        .pt_2()
+        .child(tabs);
+    let pane = match tab {
+        Tab::Exp => exp_pane(state, &mastery, cx),
+        Tab::Yellow => yellow::pane(state, cx),
+    };
     div()
         .id("cooking-mastery-section")
         .flex()
         .flex_col()
         .size_full()
         .min_h_0()
+        .child(strip)
         .child(
             ScrollArea::new("cooking-mastery-scroll")
                 .vertical()
                 .flex_1()
                 .min_h_0()
-                .child(body),
+                .child(pane),
         )
+        .into_any_element()
+}
+
+/// The Mastery EXP tab: the summary, the recommendation, the comparison, the
+/// daily distribution and the EXP rate breakdown.
+fn exp_pane(state: &AppState, mastery: &Mastery, cx: &mut Context<AppState>) -> AnyElement {
+    let tree = state.mastery_breakdown.clone();
+    tree.update(cx, |tree, cx| tree.set_root(mastery.breakdown(), cx));
+    div()
+        .id("cooking-mastery-pane")
+        .flex()
+        .flex_col()
+        .gap_3()
+        .p_3()
+        .child(summary(mastery, cx))
+        .child(recommendation(mastery, cx))
+        .child(comparison(mastery, cx))
+        .child(distribution::card(state, mastery, cx))
+        .child(formula_card(tree))
         .into_any_element()
 }
 

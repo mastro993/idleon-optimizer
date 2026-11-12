@@ -8,6 +8,7 @@ const CONSTRUCTION: usize = 8;
 const SAILING: usize = 13;
 const DIVINITY: usize = 14;
 const FARMING: usize = 16;
+const SUMMONING: usize = 18;
 const RESEARCH: usize = 20;
 
 #[derive(Clone, Debug, Default)]
@@ -41,6 +42,10 @@ impl Character {
 
     pub fn farming_level(&self) -> Option<u32> {
         self.whole(FARMING)
+    }
+
+    pub fn summoning_level(&self) -> Option<u32> {
+        self.whole(SUMMONING)
     }
 
     pub fn research_level(&self) -> Option<u32> {

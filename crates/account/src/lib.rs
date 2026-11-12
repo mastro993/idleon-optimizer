@@ -222,6 +222,30 @@ pub fn cooking_mastery(
     mastery
 }
 
+/// Decode the yellow point allocator's meal state.
+///
+/// The allocator reads one more row of the same section (the per-meal yellow
+/// points) plus the systems the decoder already owns: the per-meal ribbon
+/// bonus, the meal multiplier, the character levels the stat goals scale with
+/// and the kitchen rows.
+pub fn yellow(
+    save: &Map<String, Value>,
+    root: &Map<String, Value>,
+    characters: &[Character],
+    simulation: &Simulation,
+    warnings: &mut Vec<String>,
+) -> Option<idleon_cooking_mastery::Yellow> {
+    let mut decoder = Decoder::new(save, root, characters, simulation, warnings);
+    let yellow = decoder.yellow();
+    if yellow.is_none() {
+        decoder.warn(
+            "CookMaster",
+            "not in the save; the yellow point allocator has no meals to spend on",
+        );
+    }
+    yellow
+}
+
 /// Decode the Jelly Operator slice the section reads.
 ///
 /// The page also reads systems this decoder already owns (the research grid

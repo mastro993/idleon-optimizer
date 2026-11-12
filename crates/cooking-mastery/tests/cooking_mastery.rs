@@ -370,3 +370,350 @@ fn the_allocator_invariant_holds_on_the_fixture() {
         "SOUR takes points at rank 25"
     );
 }
+
+/// The imported fixture's meal state and the oracle's yellow block.
+fn imported_yellow() -> (idleon_cooking_mastery::Yellow, Value) {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/data.json");
+    let save = std::fs::read_to_string(path).expect("fixtures/data.json is committed");
+    let imported = import(&save).expect("the fixture imports");
+    (
+        imported.yellow.expect("the fixture carries CookMaster"),
+        fixture(),
+    )
+}
+
+/// The upstream unit id of a goal's value.
+fn unit_id(unit: idleon_cooking_mastery::Unit) -> &'static str {
+    use idleon_cooking_mastery::Unit;
+    match unit {
+        Unit::Percent => "percent",
+        Unit::Flat => "flat",
+        Unit::Levels => "levels",
+        Unit::Multiplier => "multiplier",
+    }
+}
+
+#[test]
+fn the_fixture_yellow_budget_and_context_match_upstream() {
+    let (yellow, oracle) = imported_yellow();
+    let upstream = &oracle["yellow"];
+    close(
+        yellow.budget,
+        number(upstream, "budget"),
+        "yellow point budget",
+    );
+    close(
+        yellow.cook_multi,
+        number(upstream, "cookMulti"),
+        "meal multiplier",
+    );
+    close(
+        idleon_cooking_mastery::bonus_multi_cook(20.0),
+        number(upstream, "mealMulti"),
+        "the mastery factor at 20 points",
+    );
+    let ribbons = upstream["ribbons"].as_array().expect("ribbons is an array");
+    assert_eq!(yellow.ribbons.len(), ribbons.len(), "one ribbon per meal");
+    for (meal, expected) in ribbons.iter().enumerate() {
+        close(
+            yellow.ribbons[meal],
+            expected.as_f64().unwrap_or_default(),
+            &format!("meal {meal} ribbon"),
+        );
+    }
+
+    let characters = upstream["characters"]
+        .as_array()
+        .expect("characters is an array");
+    assert_eq!(yellow.characters.len(), characters.len());
+    for (index, character) in characters.iter().enumerate() {
+        let port = &yellow.characters[index];
+        assert_eq!(
+            port.name,
+            character["name"].as_str().unwrap_or_default(),
+            "character {index} name"
+        );
+        close(
+            port.farming,
+            number(character, "farmingLv"),
+            &format!("character {index} farming"),
+        );
+        close(
+            port.summoning,
+            number(character, "summoningLv"),
+            &format!("character {index} summoning"),
+        );
+    }
+
+    let kitchens = &upstream["kitchens"];
+    let port = yellow.kitchens();
+    assert_eq!(
+        port.count as f64,
+        number(kitchens, "count"),
+        "unlocked kitchens"
+    );
+    close(
+        port.average_levels,
+        number(kitchens, "averageLevels"),
+        "average upgrade levels",
+    );
+    close(port.min_steps, number(kitchens, "minSteps"), "min steps");
+    close(port.max_steps, number(kitchens, "maxSteps"), "max steps");
+    close(
+        port.meal_steps,
+        number(kitchens, "mealSteps"),
+        "meal kitchen steps",
+    );
+    close(
+        port.recipe_steps,
+        number(kitchens, "recipeSteps"),
+        "recipe kitchen steps",
+    );
+}
+
+#[test]
+fn the_fixture_yellow_budget_counts_the_companion_and_the_event_shop() {
+    let (yellow, oracle) = imported_yellow();
+    // The fixture save already owns the event shop perk (`OptLacc[311]` holds
+    // its letter); the oracle's variant also owns the Rift Spooker, through the
+    // Pet Bonus Tokens at `OptLacc[606]`, which is worth five more points.
+    let variant = &oracle["yellow"]["budgetVariant"];
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/data.json");
+    let mut save: Value = serde_json::from_str(
+        &std::fs::read_to_string(path).expect("fixtures/data.json is committed"),
+    )
+    .expect("the fixture is JSON");
+    let event = variant["eventShop"]
+        .as_str()
+        .expect("eventShop is a string");
+    let companion = variant["companionToken"]
+        .as_str()
+        .expect("companionToken is a string");
+    let olalacc = save["OptLacc"].as_array_mut().expect("OptLacc is an array");
+    let tokens = olalacc[606]
+        .as_str()
+        .expect("the token list is a string")
+        .to_string();
+    olalacc[311] = Value::String(event.to_string());
+    olalacc[606] = Value::String(format!("{tokens},{companion}"));
+    let imported = import(&serde_json::to_string(&save).expect("the variant serialises"))
+        .expect("the variant imports");
+    let boosted = imported
+        .yellow
+        .expect("the variant carries CookMaster")
+        .budget;
+    close(
+        boosted,
+        number(variant, "budget"),
+        "the budget with the companion and the perk",
+    );
+    close(
+        boosted - yellow.budget,
+        5.0,
+        "the Rift Spooker's five points",
+    );
+}
+
+#[test]
+fn the_fixture_yellow_goal_table_matches_upstream() {
+    let (yellow, oracle) = imported_yellow();
+    let goals = oracle["yellow"]["goals"]
+        .as_array()
+        .expect("goals is an array");
+    let offered = yellow.goals();
+    assert_eq!(offered.len(), goals.len(), "the offered goals");
+    for (position, goal) in goals.iter().enumerate() {
+        let port = offered[position];
+        let id = goal["id"].as_str().unwrap_or_default();
+        assert_eq!(port.id, id, "goal {position}");
+        assert_eq!(port.name, goal["name"].as_str().unwrap_or_default(), "{id}");
+        let categories: Vec<&str> = goal["categories"]
+            .as_array()
+            .expect("categories is an array")
+            .iter()
+            .filter_map(Value::as_str)
+            .collect();
+        assert_eq!(port.categories, categories, "{id} categories");
+        assert_eq!(
+            unit_id(port.unit),
+            goal["unit"].as_str().unwrap_or_default(),
+            "{id} unit"
+        );
+        assert_eq!(port.note, goal["note"].as_str().unwrap_or_default(), "{id}");
+    }
+    // A goal with one leveled meal is not offered, and the page's own order is
+    // the order here.
+    assert!(yellow.goals().iter().all(|goal| goal.id != "crit"));
+    assert_eq!(offered[0].id, "seff");
+}
+
+/// Compare one upstream plan with the port's allocation.
+fn compare_plan(
+    yellow: &idleon_cooking_mastery::Yellow,
+    plan: &Value,
+    character: usize,
+    what: &str,
+) {
+    let goal = plan["goal"].as_str().expect("goal is a string");
+    let request = number(plan, "request");
+    let port = yellow
+        .allocation(goal, request, character)
+        .unwrap_or_else(|| panic!("{what}: {goal} has a plan"));
+    close(port.requested, request, &format!("{what}: requested"));
+    close(port.spent, number(plan, "spend"), &format!("{what}: spent"));
+    close(
+        port.value,
+        number(plan, "goalValue"),
+        &format!("{what}: value"),
+    );
+    close(
+        port.current_value,
+        number(plan, "curGoalValue"),
+        &format!("{what}: current value"),
+    );
+    let meals = plan["meals"].as_array().expect("meals is an array");
+    assert_eq!(port.rows.len(), meals.len(), "{what}: row count");
+    for (position, meal) in meals.iter().enumerate() {
+        let row = &port.rows[position];
+        let name = meal["name"].as_str().unwrap_or_default();
+        assert_eq!(
+            row.index as f64,
+            number(meal, "idx"),
+            "{what}: row {position} index"
+        );
+        assert_eq!(row.name, name, "{what}: row {position} name");
+        assert_eq!(
+            row.category,
+            meal["cat"].as_str().unwrap_or_default(),
+            "{what}: {name} category"
+        );
+        close(
+            row.level,
+            number(meal, "mealLv"),
+            &format!("{what}: {name} level"),
+        );
+        close(
+            row.bonus,
+            number(meal, "base"),
+            &format!("{what}: {name} base"),
+        );
+        close(
+            row.base_weight,
+            number(meal, "baseWeight"),
+            &format!("{what}: {name} base weight"),
+        );
+        close(
+            row.current,
+            number(meal, "curLv"),
+            &format!("{what}: {name} current"),
+        );
+        close(
+            row.allocated,
+            number(meal, "optLv"),
+            &format!("{what}: {name} allocated"),
+        );
+    }
+}
+
+#[test]
+fn the_fixture_yellow_allocation_matches_upstream() {
+    let (yellow, oracle) = imported_yellow();
+    for goal in oracle["yellow"]["goals"]
+        .as_array()
+        .expect("goals is an array")
+    {
+        let id = goal["id"].as_str().unwrap_or_default();
+        for plan in goal["plans"].as_array().expect("plans is an array") {
+            let request = number(plan, "request");
+            compare_plan(&yellow, plan, 0, &format!("{id} at {request}"));
+        }
+        for plan in goal["characterPlans"]
+            .as_array()
+            .expect("characterPlans is an array")
+        {
+            let character = number(plan, "charIdx") as usize;
+            compare_plan(
+                &yellow,
+                plan,
+                character,
+                &format!("{id} on character {character}"),
+            );
+        }
+    }
+}
+
+#[test]
+fn the_yellow_allocator_invariant_holds_on_the_fixture() {
+    let (yellow, oracle) = imported_yellow();
+    let budget = yellow.budget;
+    for goal in yellow.goals() {
+        let full = yellow
+            .allocation(goal.id, budget, 0)
+            .expect("an offered goal has a plan");
+        // The plan spends its budget and never more, whatever it was asked for.
+        close(
+            full.spent,
+            budget,
+            &format!("{} spends the budget", goal.id),
+        );
+        assert_eq!(
+            full.rows.iter().map(|row| row.allocated).sum::<f64>(),
+            full.spent,
+            "{}: the rows add up to the spend",
+            goal.id
+        );
+        assert!(full.rows.iter().all(|row| row.allocated >= 0.0));
+        assert!(
+            full.rows
+                .iter()
+                .all(|row| goal.categories.contains(&row.category.as_str())),
+            "{} only spends on its own categories",
+            goal.id
+        );
+        // The rows are ordered by the points they take.
+        assert!(
+            full.rows
+                .windows(2)
+                .all(|pair| pair[0].allocated >= pair[1].allocated),
+            "{}: the table is ordered by the allocation",
+            goal.id
+        );
+        // The plan is deterministic and never spends on a negative request.
+        assert_eq!(yellow.allocation(goal.id, budget, 0), Some(full.clone()));
+        let negative = yellow
+            .allocation(goal.id, -5.0, 0)
+            .expect("an offered goal has a plan");
+        assert_eq!(negative.spent, 0.0);
+        assert_eq!(negative.value, negative.current_value);
+        assert!(
+            negative.rejected(),
+            "{}: a negative budget is rejected",
+            goal.id
+        );
+        let over = yellow
+            .allocation(goal.id, budget + 10.0, 0)
+            .expect("an offered goal has a plan");
+        assert_eq!(over.spent, budget, "{}: the budget caps the spend", goal.id);
+        assert!(
+            over.rejected(),
+            "{}: an over-budget request is rejected",
+            goal.id
+        );
+    }
+    // Switching the goal re-plans on this save: the points land on other meals.
+    let first = yellow.allocation("seff", budget, 0).expect("seff");
+    let second = yellow.allocation("totdmg", budget, 0).expect("totdmg");
+    assert_ne!(first.rows, second.rows, "the goal switch changes the plan");
+    assert_ne!(first.value, second.value);
+    // The character context moves the stat goals that scale with a character.
+    let anna = yellow.allocation("mcook", budget, 0).expect("mcook");
+    let other = yellow.allocation("mcook", budget, 1).expect("mcook");
+    assert!(anna.value > 0.0 && other.value > 0.0);
+    assert_eq!(anna.character_name(&yellow), "Character 1");
+    assert!(
+        !oracle["yellow"]["characters"]
+            .as_array()
+            .expect("characters")
+            .is_empty()
+    );
+}

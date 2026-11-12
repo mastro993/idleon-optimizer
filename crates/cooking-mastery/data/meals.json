@@ -1,0 +1,454 @@
+{
+ "meals": [
+  {
+   "name": "Turkey of Thank",
+   "bonus": 2,
+   "category": "TotDmg",
+   "effect": "+% Total Damage"
+  },
+  {
+   "name": "Egg",
+   "bonus": 5,
+   "category": "Mcook",
+   "effect": "+% Meal Cooking Speed"
+  },
+  {
+   "name": "Salad",
+   "bonus": 3,
+   "category": "Cash",
+   "effect": "+% Cash from Monsters"
+  },
+  {
+   "name": "Pie",
+   "bonus": 5,
+   "category": "Rcook",
+   "effect": "+% Recipe Cooking Spd"
+  },
+  {
+   "name": "Frenk Fries",
+   "bonus": 5,
+   "category": "Npet",
+   "effect": "+% New Mob Breed Odds"
+  },
+  {
+   "name": "Spaghetti",
+   "bonus": 4,
+   "category": "BrExp",
+   "effect": "+% Breeding EXP"
+  },
+  {
+   "name": "Corn",
+   "bonus": 2,
+   "category": "Seff",
+   "effect": "+% Skill Efficiency"
+  },
+  {
+   "name": "Garlic Bread",
+   "bonus": 4,
+   "category": "VIP",
+   "effect": "+% VIP Library PTS"
+  },
+  {
+   "name": "Garlicles Bread",
+   "bonus": 2,
+   "category": "Lexp",
+   "effect": "+% Lab EXP"
+  },
+  {
+   "name": "Pizza",
+   "bonus": 9,
+   "category": "Npet",
+   "effect": "+% New Mob Breed Odds"
+  },
+  {
+   "name": "Apple",
+   "bonus": 5,
+   "category": "Def",
+   "effect": "+ Base DEF"
+  },
+  {
+   "name": "Pancakes",
+   "bonus": 2,
+   "category": "PxLine",
+   "effect": "+Px Line Width in Lab"
+  },
+  {
+   "name": "Corndog",
+   "bonus": 12,
+   "category": "Mcook",
+   "effect": "+% Meal Cooking Speed"
+  },
+  {
+   "name": "Cabbage",
+   "bonus": 5,
+   "category": "KitchenEff",
+   "effect": "+% Cooking Spd per Ten"
+  },
+  {
+   "name": "Potato P Pastry",
+   "bonus": 1,
+   "category": "TimeEgg",
+   "effect": "+% Lower Egg Creation Time"
+  },
+  {
+   "name": "Dango",
+   "bonus": 2,
+   "category": "KitchC",
+   "effect": "+% Lower Kitchen Costs"
+  },
+  {
+   "name": "Sourish Fish",
+   "bonus": 4,
+   "category": "VIP",
+   "effect": "+% VIP Library PTS"
+  },
+  {
+   "name": "Octoplop",
+   "bonus": 2,
+   "category": "TotDmg",
+   "effect": "+% Total Damage"
+  },
+  {
+   "name": "Croissant",
+   "bonus": 1,
+   "category": "PetDmg",
+   "effect": "+% Mob Fighting Damage"
+  },
+  {
+   "name": "Canopy",
+   "bonus": 10,
+   "category": "Rcook",
+   "effect": "+% Recipe Cooking Spd"
+  },
+  {
+   "name": "Cannoli",
+   "bonus": 1,
+   "category": "TDpts",
+   "effect": "+% PTS in Tower Defence"
+  },
+  {
+   "name": "Cheese",
+   "bonus": 5,
+   "category": "CookExp",
+   "effect": "+% Cooking EXP"
+  },
+  {
+   "name": "Sawdust",
+   "bonus": 5,
+   "category": "Lexp",
+   "effect": "+% Lab EXP"
+  },
+  {
+   "name": "Eggplant",
+   "bonus": 5,
+   "category": "Breed",
+   "effect": "+% Mob Breedability Rate"
+  },
+  {
+   "name": "Cheesy Bread",
+   "bonus": 1,
+   "category": "TotAcc",
+   "effect": "+% Total Accuracy"
+  },
+  {
+   "name": "Wild Boar",
+   "bonus": 2,
+   "category": "PxLine",
+   "effect": "+Px Line Width in Lab"
+  },
+  {
+   "name": "Donut",
+   "bonus": 15,
+   "category": "Npet",
+   "effect": "+% New Mob Breed Odds"
+  },
+  {
+   "name": "Riceball",
+   "bonus": 3,
+   "category": "Seff",
+   "effect": "+% Skill Efficiency"
+  },
+  {
+   "name": "Cauliflower",
+   "bonus": 1,
+   "category": "AtkSpd",
+   "effect": "+% Basic Atk Speed"
+  },
+  {
+   "name": "Durian Fruit",
+   "bonus": 6,
+   "category": "KitchC",
+   "effect": "+% Lower Kitchen costs"
+  },
+  {
+   "name": "Orange",
+   "bonus": 3,
+   "category": "VIP",
+   "effect": "+% VIP Library PTS"
+  },
+  {
+   "name": "Bunt Cake",
+   "bonus": 7,
+   "category": "Cash",
+   "effect": "+% Cash from Monsters"
+  },
+  {
+   "name": "Chocala Truffle",
+   "bonus": 25,
+   "category": "Npet",
+   "effect": "+% New Mob Breed Odds"
+  },
+  {
+   "name": "Leek",
+   "bonus": 2,
+   "category": "Sprow",
+   "effect": "+% skilling prowess"
+  },
+  {
+   "name": "Fortune Cookie",
+   "bonus": 4,
+   "category": "Lib",
+   "effect": "+% Library Checkout Spd"
+  },
+  {
+   "name": "Pretzel",
+   "bonus": 7,
+   "category": "Lexp",
+   "effect": "+% Lab EXP"
+  },
+  {
+   "name": "Sea Urchin",
+   "bonus": 1,
+   "category": "Critter",
+   "effect": "+% Critters from traps"
+  },
+  {
+   "name": "Mashed Potato",
+   "bonus": 6,
+   "category": "CookExp",
+   "effect": "+% Cooking EXP"
+  },
+  {
+   "name": "Mutton",
+   "bonus": 1,
+   "category": "Crit",
+   "effect": "+% Crit Chance"
+  },
+  {
+   "name": "Wedding Cake",
+   "bonus": 2,
+   "category": "PetDmg",
+   "effect": "+% Mob Fighting Damage"
+  },
+  {
+   "name": "Eel",
+   "bonus": 1,
+   "category": "LinePct",
+   "effect": "+% Line Width in Lab"
+  },
+  {
+   "name": "Whipped Cocoa",
+   "bonus": 4,
+   "category": "Seff",
+   "effect": "+% Skill Efficiency"
+  },
+  {
+   "name": "Onion",
+   "bonus": 3,
+   "category": "TotDmg",
+   "effect": "+% Total Damage"
+  },
+  {
+   "name": "Soda",
+   "bonus": 20,
+   "category": "Mcook",
+   "effect": "+% Meal Cooking Speed"
+  },
+  {
+   "name": "Sushi Roll",
+   "bonus": 7,
+   "category": "VIP",
+   "effect": "+% VIP Library PTS"
+  },
+  {
+   "name": "Buncha Banana",
+   "bonus": 4,
+   "category": "TPpete",
+   "effect": "+ Max LVs for TPPST"
+  },
+  {
+   "name": "Pumpkin",
+   "bonus": 2,
+   "category": "Liquid12",
+   "effect": "+% Liquid Cap"
+  },
+  {
+   "name": "Cotton Candy",
+   "bonus": 2,
+   "category": "DivExp",
+   "effect": "+% Divinity EXP"
+  },
+  {
+   "name": "Massive Fig",
+   "bonus": 3,
+   "category": "TotDmg",
+   "effect": "+% Total Damage"
+  },
+  {
+   "name": "Chef Geustloaf",
+   "bonus": 4,
+   "category": "GamingBits",
+   "effect": "+% Bits Gain in Gaming"
+  },
+  {
+   "name": "Kiwi Fruit",
+   "bonus": 2,
+   "category": "Liquid34",
+   "effect": "+% Liquid Cap"
+  },
+  {
+   "name": "Popped Corn",
+   "bonus": 2,
+   "category": "Sailing",
+   "effect": "+% Sailing Speed"
+  },
+  {
+   "name": "Double Cherry",
+   "bonus": 30,
+   "category": "Mcook",
+   "effect": "+% Meal Cooking Spd"
+  },
+  {
+   "name": "Ratatouey",
+   "bonus": 8,
+   "category": "KitchC",
+   "effect": "+% Lower Kitchen costs"
+  },
+  {
+   "name": "Giant Tomato",
+   "bonus": 5,
+   "category": "GamingExp",
+   "effect": "+% Gaming EXP"
+  },
+  {
+   "name": "Wrath Grapes",
+   "bonus": 4,
+   "category": "DivExp",
+   "effect": "+% Divinity EXP"
+  },
+  {
+   "name": "Sausy Sausage",
+   "bonus": 6,
+   "category": "GamingBits",
+   "effect": "+% Bits Gain in Gaming"
+  },
+  {
+   "name": "Seasoned Marrow",
+   "bonus": 3,
+   "category": "zFarmExp",
+   "effect": "+% Farming EXP"
+  },
+  {
+   "name": "Sticky Bun",
+   "bonus": 5,
+   "category": "zSumEss",
+   "effect": "+% Essence Gain"
+  },
+  {
+   "name": "Frazzleberry",
+   "bonus": 2,
+   "category": "zSneakExp",
+   "effect": "+% Sneaking EXP"
+  },
+  {
+   "name": "MrLoin Steak",
+   "bonus": 6,
+   "category": "zJade",
+   "effect": "+% Jade Gain"
+  },
+  {
+   "name": "Large Pohayoh",
+   "bonus": 2,
+   "category": "zSummonExp",
+   "effect": "+% Summoning EXP"
+  },
+  {
+   "name": "Bill Jack Pep",
+   "bonus": 5,
+   "category": "zCropEvo",
+   "effect": "+% Crop Evo Chance"
+  },
+  {
+   "name": "Burned Mello",
+   "bonus": 40,
+   "category": "zMealFarm",
+   "effect": "+% Meal Cooking Spd"
+  },
+  {
+   "name": "Yumi Peachring",
+   "bonus": 2,
+   "category": "zGoldFood",
+   "effect": "+% Gold Food bonus"
+  },
+  {
+   "name": "Plumpcakes",
+   "bonus": 6,
+   "category": "TotDmg",
+   "effect": "+% Total Damage"
+  },
+  {
+   "name": "Nyanborgir",
+   "bonus": 9,
+   "category": "zCropEvoSumm",
+   "effect": "+% Crop Evo Chance"
+  },
+  {
+   "name": "Tempura Shrimp",
+   "bonus": 0.07,
+   "category": "SplkExp",
+   "effect": "+% Spelunking EXP"
+  },
+  {
+   "name": "Woahtermelon",
+   "bonus": 0.03,
+   "category": "SplkUpg",
+   "effect": "+% lower Spelunk costs"
+  },
+  {
+   "name": "Cookies",
+   "bonus": 0.3,
+   "category": "SplkPOW",
+   "effect": "+% Spelunking POW"
+  },
+  {
+   "name": "Singing Seed",
+   "bonus": 0.2,
+   "category": "SplkAmb",
+   "effect": "+% Amber from Spelunking"
+  },
+  {
+   "name": "Tasty Treat",
+   "bonus": 0.01,
+   "category": "PolyRefSpd",
+   "effect": "+% Polymer Refinery Spd"
+  },
+  {
+   "name": "Giga Chip",
+   "bonus": 0.01,
+   "category": "ResearchXP",
+   "effect": "+% Research EXP"
+  },
+  {
+   "name": "Divorce Cake",
+   "bonus": 0.02,
+   "category": "MineCurr",
+   "effect": "+% Mine Currency gain"
+  }
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/data/game/customlists.js"
+  ]
+ }
+}

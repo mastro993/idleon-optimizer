@@ -236,7 +236,8 @@ impl AppState {
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
-        // The distribution's default budget is the new save's point total.
+        self.yellow = imported.yellow;
+        // Both budgets default to the new save's own point total.
         self.mastery_plan.adopt();
         self.jelly = imported.jelly;
         if let Some(jelly) = self.jelly.clone() {
