@@ -36,6 +36,7 @@ use idleon_core::clamworks::afk::Phase as ClaimPhase;
 use idleon_core::cog::Goal as CogGoal;
 use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
+use idleon_core::drop_rate;
 use idleon_core::game;
 use idleon_core::import as pipeline;
 use idleon_core::ladle::Panel as LadlePanel;
@@ -398,6 +399,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     );
     insert("sneaking", value(&state.sneaking_state));
     insert("stats-all", value(&state.stats_all.context));
+    insert("drop-rate", value(&state.drop_rate.selection));
     insert(
         "ladle",
         value(&LadleConfig {
@@ -516,6 +518,7 @@ pub enum Config {
     Coral(coral::Inputs),
     Worship(WorshipConfig),
     StatsAll(idleon_core::stats::Context),
+    DropRate(idleon_core::drop_rate::Selection),
 }
 
 /// What decoding one section config found.
@@ -868,6 +871,31 @@ pub fn assign(
             state.coral.inputs = config;
         }
         Config::StatsAll(context) => stats_all::restore(state, context, warnings),
+        Config::DropRate(selection) => {
+            state.drop_rate.selection = selection;
+            if let Some(snapshot) = state.drop_rate.snapshot.as_ref() {
+                let characters = snapshot.characters();
+                let mut selection = state.drop_rate.selection;
+                if selection.character >= characters {
+                    warnings.push(format!(
+                        "drop-rate: character {} is outside the {characters} the save carries; character 1 is used",
+                        selection.character + 1
+                    ));
+                    selection.character = 0;
+                }
+                if !drop_rate::maps(Some(snapshot), selection.character)
+                    .iter()
+                    .any(|row| row.map == selection.map)
+                {
+                    warnings.push(format!(
+                        "drop-rate: map {} is not in the selector; the character's current map is used",
+                        selection.map
+                    ));
+                    selection.map = snapshot.current_map(selection.character).unwrap_or(0);
+                }
+                state.drop_rate.selection = selection;
+            }
+        }
         Config::Worship(config) => {
             let last_trial = idleon_core::worship::data().trials.len().saturating_sub(1);
             state.worship.trial = config.trial.min(last_trial);
@@ -927,6 +955,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
         "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
+        "drop-rate" => decode!(DropRate, idleon_core::drop_rate::Selection),
         "worship-td" => decode!(Worship, WorshipConfig),
         _ => Decoded::Unknown,
     }
@@ -1280,6 +1309,12 @@ mod tests {
             stats.construction,
             idleon_core::stats::ConstructionMode::Inactive
         );
+        let drop_rate = round_trip(&idleon_core::drop_rate::Selection {
+            character: 3,
+            map: 118,
+        });
+        assert_eq!(drop_rate.character, 3);
+        assert_eq!(drop_rate.map, 118);
         let ladle = round_trip(&LadleConfig {
             tab: LadleTab::Exp,
             ladle_character: 3,
@@ -1458,6 +1493,24 @@ mod tests {
         );
     }
 
+    #[test]
+    fn prepare_decodes_the_drop_rate_selection_from_a_project() {
+        let text = json!({
+            "format": idleon_core::project::FORMAT,
+            "version": idleon_core::project::VERSION,
+            "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
+            "sections": { "drop-rate": { "character": 3, "map": 118 } },
+        })
+        .to_string();
+        let mut document = pipeline::read(&text).expect("the project reads");
+        let configs = prepare(&mut document).expect("the drop-rate config fits");
+        let Config::DropRate(selection) = &configs[0] else {
+            panic!("the config is a drop-rate selection");
+        };
+        assert_eq!(selection.character, 3);
+        assert_eq!(selection.map, 118);
+    }
+
     /// A project document carrying one killroy config, for the prepare tests.
     fn project_text(config: serde_json::Value) -> String {
         json!({
@@ -1634,6 +1687,7 @@ mod tests {
                 "stats-all",
                 "royal-guardian",
                 "sneaking",
+                "drop-rate",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);

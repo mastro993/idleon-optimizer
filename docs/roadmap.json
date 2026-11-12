@@ -831,7 +831,7 @@
       "key": "drop-rate",
       "title": "Drop Rate Calculator",
       "group": "tools",
-      "status": "planned",
+      "status": "in-progress",
       "summary": "Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.",
       "upstream": [
         "drop-rate-calc.html",

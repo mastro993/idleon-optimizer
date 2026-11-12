@@ -4,9 +4,10 @@ Status: **foundation in progress, research, statue, jar, sailing, farming, fishi
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
 estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor and
-mechanics overrides, the cog board optimizer, the Clamworks optimizer and the Jelly Operator
-overview and layout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and
-the All Stats context built, 5 sections planned.** The live breakdown is
+mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator overview
+and layout editor and the drop-rate inputs and dungeon total partial, shadow-ban, endgame and
+BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2 sections
+planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -383,6 +384,17 @@ they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capac
 upstream stats page exactly on the committed fixture; `crates/core/tests/stats.rs` pins the eight
 values and checks every category renders. Missing: the formula explorer (SA-03) and the input ledger
 (SA-04). Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
+
+The Drop Rate Calculator has its inputs and total (DR-01): the character and map selectors built the
+way `populateMapSel` builds them, the runtime panel that only a dungeon map shows, and the total
+card. A dungeon map's total ignores every saved term upstream, so it is
+`1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100` over the two live run values, and
+`script/drop-rate-oracle.mjs` pins it against the upstream calculator in `fixtures/drop-rate.json`;
+with either field blank the card shows the upstream reason. Every other map's total is the
+descriptor's whole pool chain, which is the shared stat pipeline the All Stats breakdowns (SA-02)
+still name as a gap, so the card names that gap instead of guessing a number. Missing: the formula
+tree (DR-02). Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
+
 The Fountain section has its overview (FN-01): the fountain summary, the fill and income rates per
 currency, lucky coins and rubber ducks, the ground coin stacks, the eighteen cross-system bonuses and
 the level planner. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus

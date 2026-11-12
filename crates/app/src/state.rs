@@ -5,6 +5,7 @@ use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
 use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
+use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::endgame;
 use crate::sections::farming::RunInputs as FarmingRunInputs;
 use crate::sections::farming::State as FarmingState;
@@ -270,6 +271,8 @@ pub struct AppState {
     pub stats_all: StatsAllState,
     /// The shared formula tree on the All Stats breakdown card.
     pub stats_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The Drop Rate Calculator's context, save slice and live dungeon fields.
+    pub drop_rate: DropRateState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -871,6 +874,7 @@ impl AppState {
             combat,
             stats_all: StatsAllState::default(),
             stats_breakdown,
+            drop_rate: DropRateState::new(window, cx),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -1238,6 +1242,7 @@ impl AppState {
         self.combat.load(&imported.save, combat_character);
         self.stats_all
             .load(&imported.save, &self.simulation, &self.context);
+        self.drop_rate.load(&imported.save);
         self.save = Some(imported.save);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
@@ -2363,6 +2368,52 @@ impl AppState {
                 self.stats_all.context.skill.label(),
                 self.stats_all.context.construction.label()
             )
+        };
+        cx.notify();
+    }
+
+    /// Pick a character and map for the drop-rate page, exactly like upstream
+    /// `switchChar`/`switchMap`.
+    pub fn set_drop_rate_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        let Some(snapshot) = self.drop_rate.snapshot.as_ref() else {
+            return;
+        };
+        let mut selection = self.drop_rate.selection;
+        selection.select_character(character, snapshot);
+        self.drop_rate.selection = selection;
+        self.drop_rate_changed(cx);
+    }
+
+    /// Pick the drop-rate page's map from the selector's rows.
+    pub fn set_drop_rate_map(&mut self, map: usize, cx: &mut Context<Self>) {
+        let Some(snapshot) = self.drop_rate.snapshot.as_ref() else {
+            return;
+        };
+        let mut selection = self.drop_rate.selection;
+        selection.select_map(map, snapshot);
+        self.drop_rate.selection = selection;
+        self.drop_rate_changed(cx);
+    }
+
+    /// A context change refreshes the total the page derives from it.
+    fn drop_rate_changed(&mut self, cx: &mut Context<Self>) {
+        let selection = self.drop_rate.selection;
+        let character = self
+            .drop_rate
+            .snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.name(selection.character))
+            .unwrap_or_default();
+        let map = idleon_core::stats::classify(selection.map);
+        let run = if idleon_core::drop_rate::is_dungeon_map(selection.map) {
+            " · live dungeon inputs"
+        } else {
+            ""
+        };
+        self.status = if character.is_empty() {
+            "Load a save to resolve the drop rate.".into()
+        } else {
+            format!("Drop rate: {character} · {}{run}", map.name)
         };
         cx.notify();
     }

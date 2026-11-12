@@ -381,6 +381,20 @@ const fishingSave = ({ toolkit = true } = {}) => {
   return JSON.stringify(save);
 };
 
+/// A small flat `save.json` with one character standing inside a dungeon, so
+/// the drop-rate page's runtime panel appears on its saved map.
+const dropRateSave = () => {
+  const kla = Array.from({ length: 60 }, () => [0]);
+  return JSON.stringify({
+    charNames: ['Ana'],
+    Research: '[]',
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+    CharacterClass_0: 1,
+    CurrentMap_0: 39,
+    KLA_0: JSON.stringify(kla),
+  });
+};
+
 /// A small flat `save.json` with two named characters standing on different
 /// maps, so the stats context's character and map selectors have save defaults
 /// to follow and a portal to read. The carry rows give the capacity tab a
@@ -1659,6 +1673,56 @@ const INTERACTIONS = {
     if (!(labelOf(restored, 'stats-map-count') ?? '').includes('All Valid Maps')) {
       throw new Error('stats-all: the restored map list level is not All');
     }
+  },
+  'drop-rate': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'drop-rate: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: dropRateSave() });
+    await waitForNode(lane, 'import-format', 'drop-rate: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    // The save stands inside a dungeon, so the runtime panel appears and the
+    // total waits for both live values.
+    await waitForNode(
+      lane,
+      'drop-rate-dungeon-runtime',
+      'drop-rate: the dungeon inputs appear on a dungeon map',
+    );
+    const note = labelOf(await lane.tree(), 'drop-rate-context-note') ?? '';
+    if (!note.includes('live dungeon inputs apply')) {
+      throw new Error(`drop-rate: the context note reads ${note}`);
+    }
+    const waiting = labelOf(await lane.tree(), 'drop-rate-total-value') ?? '';
+    if (waiting !== 'Unavailable') {
+      throw new Error(`drop-rate: the total without live values reads ${waiting}`);
+    }
+    await lane.call('click_element', { id: 'drop-rate-luk' });
+    await lane.call('type_text', { text: '1200' });
+    await lane.call('click_element', { id: 'drop-rate-drop' });
+    await lane.call('type_text', { text: '35' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'drop-rate-total-value') ?? '') === '13.35x',
+      'drop-rate: the total is the upstream dungeon formula',
+    );
+    // A normal map hides the runtime panel and names the missing engine.
+    await lane.call('focus_element', { id: 'drop-rate-map' });
+    for (let step = 0; step < 2; step++) await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'drop-rate-dungeon-runtime'),
+      'drop-rate: leaving the dungeon hides the live inputs',
+    );
+    await waitFor(
+      lane,
+      (nodes) => {
+        const label = labelOf(nodes, 'drop-rate-total-sub') ?? '';
+        return label.includes('shared stat pipeline');
+      },
+      'drop-rate: a normal map names the engine this build lacks',
+    );
   },
   sailing: async (lane) => {
     await waitForNode(lane, 'fleet-empty', 'sailing: the empty state offers the import');

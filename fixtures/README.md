@@ -65,3 +65,10 @@ bases and chances, stealth, door HP and the target-stealth inverse) over the sav
 over the whole `NjEQ` catalog. Regenerate it with `node script/sneaking-oracle.mjs <upstream-repo>`;
 `crates/core/tests/sneaking.rs` compares the port field for field. Treat it as frozen for the same
 reason: it is the oracle's output, not this app's.
+
+`drop-rate.json` is the upstream Drop Rate calculator's own output for `data.json`: seven dungeon
+totals over the two live run values, the reason a dungeon map gives when either is blank, and the
+reference total for the character's saved map, which needs the account stats engine. Regenerate it
+with `node script/drop-rate-oracle.mjs <upstream-repo>`; `crates/core/tests/drop_rate.rs` compares
+the port number for number. Treat it as frozen for the same reason: it is the oracle's output, not
+this app's.

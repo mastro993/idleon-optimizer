@@ -1,0 +1,59 @@
+{
+  "source": "fixtures/data.json through js/save/loader.js loadSaveData",
+  "descriptor": "js/stats/defs/drop-rate.js",
+  "formula": "js/stats/systems/w2/dungeon.js computeDungeonDropRate",
+  "cases": [
+    {
+      "map": 39,
+      "luk": 0,
+      "dropRate": 0,
+      "total": 1
+    },
+    {
+      "map": 39,
+      "luk": 1200,
+      "dropRate": 35,
+      "total": 13.35
+    },
+    {
+      "map": 40,
+      "luk": 25000,
+      "dropRate": 750.5,
+      "total": 258.505
+    },
+    {
+      "map": 70,
+      "luk": 3.5,
+      "dropRate": 0.25,
+      "total": 1.0375
+    },
+    {
+      "map": 71,
+      "luk": 999999,
+      "dropRate": 12345,
+      "total": 10124.44
+    },
+    {
+      "map": 118,
+      "luk": 12345.5,
+      "dropRate": 678.25,
+      "total": 131.2375
+    },
+    {
+      "map": 119,
+      "luk": 1,
+      "dropRate": 99,
+      "total": 2
+    }
+  ],
+  "missingInputs": {
+    "map": 39,
+    "reason": "Dungeon Drop Rate needs live dungeon Total LUK and Dungeon Drop Rate stat values, which are not stored in save JSON."
+  },
+  "nonDungeon": {
+    "note": "Needs the account stats engine (SA-02); recorded as the reference total.",
+    "character": 0,
+    "map": 0,
+    "total": 4950.2276698950145
+  }
+}

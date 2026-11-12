@@ -24,6 +24,7 @@ pub mod cooking_mastery;
 pub mod coral;
 pub mod dashboard;
 pub mod data;
+pub mod drop_rate;
 pub mod endgame;
 pub mod farming;
 pub mod fishing;
