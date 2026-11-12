@@ -266,6 +266,11 @@ fn the_charge_reads_the_meritoc_vote_and_warns_when_its_map_is_unknown() {
     save.kla = vec![json!({ "250": [3.0, 0.0] })];
     assert_eq!(reward_charge(&save, 2, 0, 0.0).map(|c| c.meritoc), Ok(0.0));
     assert_eq!(meritoc(&save, 7, 0), 0.0);
+
+    // An empty row reads as zero kills left, the upstream `Number(undefined) || 0`.
+    save.kla = vec![json!({ "250": [] })];
+    assert_eq!(save.kla_map(0, 250), Some(0.0));
+    close(meritoc(&save, 7, 0), 200.0 * 1.05);
 }
 
 #[test]

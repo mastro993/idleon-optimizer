@@ -236,11 +236,11 @@ impl Save {
 
     /// `klaData[character][map]`: a number, or a one-element row's first cell.
     /// A missing or null cell is `None`, as the upstream `map250 == null` check
-    /// treats both as unknown.
+    /// treats both as unknown; an empty row reads as zero kills left.
     pub fn kla_map(&self, character: usize, map: usize) -> Option<f64> {
         match self.kla.get(character).and_then(|row| at(row, map))? {
             Value::Null => None,
-            Value::Array(cells) => cells.first().map(number),
+            Value::Array(cells) => Some(cells.first().map(number).unwrap_or(0.0)),
             cell => Some(number(cell)),
         }
     }
