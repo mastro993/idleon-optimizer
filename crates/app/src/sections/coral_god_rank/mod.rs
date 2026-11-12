@@ -1,9 +1,13 @@
-//! The Coral God Rank section: upstream planner inputs and the current summary.
+//! The Coral God Rank section: upstream planner inputs, the current summary and
+//! the beam-search plan.
 //!
-//! The controls and summary land here; the beam search and offering fit are
-//! later feature issues and read the same [`idleon_core::coral::Inputs`].
+//! CR-01 landed the controls and the summary; this issue adds the shared task
+//! runner, the projected coral state and the ordered action list. The offering
+//! fit and its explanation are the next feature issue on the same plan.
 
 mod controls;
+mod plan;
+mod run;
 mod summary;
 
 use crate::state::AppState;
@@ -79,7 +83,7 @@ impl State {
     }
 }
 
-/// The section: the controls rail and the current-state summary.
+/// The section: the controls rail and the summary, plan and projection column.
 pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let controls = ScrollArea::new("coral-controls-scroll")
         .vertical()
@@ -87,14 +91,21 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .min_h_0()
         .child(controls::controls_pane(state, window, cx))
         .into_any_element();
-    let summary = div()
-        .id("coral-summary-column")
-        .flex()
-        .flex_col()
+    let summary = ScrollArea::new("coral-summary-scroll")
+        .vertical()
         .flex_1()
         .min_w_0()
         .min_h_0()
-        .child(summary::summary_pane(state, window, cx))
+        .child(
+            div()
+                .id("coral-summary-column")
+                .flex()
+                .flex_col()
+                .gap_3()
+                .child(summary::kpis(state))
+                .child(plan::plan_pane(state, cx))
+                .child(summary::current_pane(state, window, cx)),
+        )
         .into_any_element();
     div()
         .id("coral-god-rank")

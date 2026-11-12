@@ -1,0 +1,1085 @@
+{
+  "source": "Corgan/idleon-research-optimizer js/stats/systems/w5/coral-god-rank.js",
+  "cases": [
+    {
+      "name": "fixture",
+      "inputs": {
+        "goal": "balanced",
+        "budget": 2909587276919980000,
+        "maxLevels": 25,
+        "beamSize": 100,
+        "godRank": 31,
+        "y4": 0,
+        "divCostAfter3": 0,
+        "reefUpgradeCount": 53,
+        "mineFloor": 23,
+        "vault76Bonus": 40,
+        "tier": 1,
+        "planningConfidence": 0.9,
+        "assumeUnlocked": true,
+        "levels": [
+          154,
+          64,
+          124,
+          98,
+          100,
+          90
+        ],
+        "singularityLevels": [
+          49,
+          31,
+          0,
+          0,
+          0,
+          0
+        ],
+        "totalDivinityLevels": 4727
+      },
+      "plan": {
+        "goal": "balanced",
+        "current": {
+          "levels": [
+            154,
+            64,
+            124,
+            98,
+            100,
+            90
+          ],
+          "godRank": 31,
+          "divinityPoints": 5350,
+          "divinityExp": 16.4,
+          "classExp": 25.359084901759285,
+          "minorLinks": 1.98,
+          "blessingCap": 348,
+          "dailyReefCoral": 1.6923076923076923
+        },
+        "final": {
+          "levels": [
+            154,
+            64,
+            142,
+            98,
+            100,
+            90
+          ],
+          "godRank": 38,
+          "divinityPoints": 5350,
+          "divinityExp": 16.4,
+          "classExp": 81.2505801404057,
+          "minorLinks": 1.98,
+          "blessingCap": 348,
+          "dailyReefCoral": 1.6923076923076923
+        },
+        "actions": [
+          {
+            "type": "god-offering",
+            "fromRank": 31,
+            "toRank": 32,
+            "attempts": 45,
+            "expectedSpend": 2196905780950548.2,
+            "maxPaidSpend": 5488850734767838,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.9
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 32,
+            "toRank": 33,
+            "attempts": 45,
+            "expectedSpend": 5184299084055983,
+            "maxPaidSpend": 12952691955894782,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.81
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 33,
+            "toRank": 34,
+            "attempts": 45,
+            "expectedSpend": 12208645068451434,
+            "maxPaidSpend": 30502641959226470,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.7290000000000001
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 34,
+            "toRank": 35,
+            "attempts": 45,
+            "expectedSpend": 28694290789720228,
+            "maxPaidSpend": 71691139624864570,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.6561000000000001
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 35,
+            "toRank": 36,
+            "attempts": 45,
+            "expectedSpend": 67316509864456104,
+            "maxPaidSpend": 168186673199820500,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.5904900000000002
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 125,
+            "cost": 48864725156227.086
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 36,
+            "toRank": 37,
+            "attempts": 45,
+            "expectedSpend": 157648320210544900,
+            "maxPaidSpend": 393875834697001300,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.5314410000000002
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 37,
+            "toRank": 38,
+            "attempts": 45,
+            "expectedSpend": 368586050897533300,
+            "maxPaidSpend": 920892390486927900,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.47829690000000014
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 126,
+            "cost": 53751197671849.8
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 127,
+            "cost": 59126317439034.79
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 128,
+            "cost": 65038949182938.27
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 129,
+            "cost": 71542844101232.1
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 130,
+            "cost": 78697128511355.33
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 131,
+            "cost": 86566841362490.86
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 132,
+            "cost": 95223525498739.95
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 133,
+            "cost": 104745878048613.95
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 134,
+            "cost": 115220465853475.36
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 135,
+            "cost": 126742512438822.9
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 136,
+            "cost": 139416763682705.2
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 137,
+            "cost": 153358440050975.75
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 138,
+            "cost": 168694284056073.3
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 139,
+            "cost": 185563712461680.7
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 140,
+            "cost": 204120083707848.75
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 141,
+            "cost": 224532092078633.66
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 142,
+            "cost": 246985301286497.03
+          }
+        ],
+        "budget": 2909587276919980000,
+        "spent": 1605818413721091800,
+        "remaining": 1303768863198888200,
+        "partial": [],
+        "unlocks": [
+          {
+            "index": 0,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 1,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 2,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 3,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 4,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 5,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          }
+        ],
+        "wholePlanConfidence": 0.47829690000000014,
+        "dominancePruned": 2219
+      }
+    },
+    {
+      "name": "fixture-narrow-beam",
+      "inputs": {
+        "goal": "balanced",
+        "budget": 2909587276919980000,
+        "maxLevels": 25,
+        "beamSize": 1,
+        "godRank": 31,
+        "y4": 0,
+        "divCostAfter3": 0,
+        "reefUpgradeCount": 53,
+        "mineFloor": 23,
+        "vault76Bonus": 40,
+        "tier": 1,
+        "planningConfidence": 0.9,
+        "assumeUnlocked": true,
+        "levels": [
+          154,
+          64,
+          124,
+          98,
+          100,
+          90
+        ],
+        "singularityLevels": [
+          49,
+          31,
+          0,
+          0,
+          0,
+          0
+        ],
+        "totalDivinityLevels": 4727
+      },
+      "plan": {
+        "goal": "balanced",
+        "current": {
+          "levels": [
+            154,
+            64,
+            124,
+            98,
+            100,
+            90
+          ],
+          "godRank": 31,
+          "divinityPoints": 5350,
+          "divinityExp": 16.4,
+          "classExp": 25.359084901759285,
+          "minorLinks": 1.98,
+          "blessingCap": 348,
+          "dailyReefCoral": 1.6923076923076923
+        },
+        "final": {
+          "levels": [
+            154,
+            64,
+            142,
+            98,
+            100,
+            90
+          ],
+          "godRank": 38,
+          "divinityPoints": 5350,
+          "divinityExp": 16.4,
+          "classExp": 81.2505801404057,
+          "minorLinks": 1.98,
+          "blessingCap": 348,
+          "dailyReefCoral": 1.6923076923076923
+        },
+        "actions": [
+          {
+            "type": "god-offering",
+            "fromRank": 31,
+            "toRank": 32,
+            "attempts": 45,
+            "expectedSpend": 2196905780950548.2,
+            "maxPaidSpend": 5488850734767838,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.9
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 32,
+            "toRank": 33,
+            "attempts": 45,
+            "expectedSpend": 5184299084055983,
+            "maxPaidSpend": 12952691955894782,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.81
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 33,
+            "toRank": 34,
+            "attempts": 45,
+            "expectedSpend": 12208645068451434,
+            "maxPaidSpend": 30502641959226470,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.7290000000000001
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 34,
+            "toRank": 35,
+            "attempts": 45,
+            "expectedSpend": 28694290789720228,
+            "maxPaidSpend": 71691139624864570,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.6561000000000001
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 35,
+            "toRank": 36,
+            "attempts": 45,
+            "expectedSpend": 67316509864456104,
+            "maxPaidSpend": 168186673199820500,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.5904900000000002
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 36,
+            "toRank": 37,
+            "attempts": 45,
+            "expectedSpend": 157648320210544900,
+            "maxPaidSpend": 393875834697001300,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.5314410000000002
+          },
+          {
+            "type": "god-offering",
+            "fromRank": 37,
+            "toRank": 38,
+            "attempts": 45,
+            "expectedSpend": 368586050897533300,
+            "maxPaidSpend": 920892390486927900,
+            "confidence": 0.9,
+            "wholePlanConfidence": 0.47829690000000014
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 125,
+            "cost": 48864725156227.086
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 126,
+            "cost": 53751197671849.8
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 127,
+            "cost": 59126317439034.79
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 128,
+            "cost": 65038949182938.27
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 129,
+            "cost": 71542844101232.1
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 130,
+            "cost": 78697128511355.33
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 131,
+            "cost": 86566841362490.86
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 132,
+            "cost": 95223525498739.95
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 133,
+            "cost": 104745878048613.95
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 134,
+            "cost": 115220465853475.36
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 135,
+            "cost": 126742512438822.9
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 136,
+            "cost": 139416763682705.2
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 137,
+            "cost": 153358440050975.75
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 138,
+            "cost": 168694284056073.3
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 139,
+            "cost": 185563712461680.7
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 140,
+            "cost": 204120083707848.75
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 141,
+            "cost": 224532092078633.66
+          },
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 142,
+            "cost": 246985301286497.03
+          }
+        ],
+        "budget": 2909587276919980000,
+        "spent": 1605818413721092000,
+        "remaining": 1303768863198888000,
+        "partial": [],
+        "unlocks": [
+          {
+            "index": 0,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 1,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 2,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 3,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 4,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 5,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          }
+        ],
+        "wholePlanConfidence": 0.47829690000000014,
+        "dominancePruned": 0
+      }
+    },
+    {
+      "name": "narrow-probe-wide",
+      "inputs": {
+        "goal": "balanced",
+        "budget": 1000000000,
+        "maxLevels": 8,
+        "beamSize": 100,
+        "godRank": 31,
+        "y4": 0,
+        "divCostAfter3": 0,
+        "reefUpgradeCount": 10,
+        "mineFloor": 0,
+        "vault76Bonus": 0,
+        "tier": 0,
+        "planningConfidence": 0.9,
+        "assumeUnlocked": true,
+        "levels": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "singularityLevels": [
+          49,
+          31,
+          0,
+          0,
+          0,
+          0
+        ],
+        "totalDivinityLevels": 10000
+      },
+      "plan": {
+        "goal": "balanced",
+        "current": {
+          "levels": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "godRank": 31,
+          "divinityPoints": 150,
+          "divinityExp": 2,
+          "classExp": 3.2122347356477547,
+          "minorLinks": 1.1,
+          "blessingCap": 120,
+          "dailyReefCoral": 1.2
+        },
+        "final": {
+          "levels": [
+            18,
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "godRank": 31,
+          "divinityPoints": 150,
+          "divinityExp": 2.8,
+          "classExp": 3.2122347356477547,
+          "minorLinks": 1.1,
+          "blessingCap": 120,
+          "dailyReefCoral": 1.2
+        },
+        "actions": [
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 11,
+            "cost": 25937424.601000022
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 12,
+            "cost": 28531167.061100025
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 13,
+            "cost": 31384283.76721003
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 14,
+            "cost": 34522712.14393104
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 15,
+            "cost": 37974983.35832414
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 16,
+            "cost": 41772481.694156565
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 17,
+            "cost": 45949729.86357222
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 18,
+            "cost": 50544702.84992945
+          }
+        ],
+        "budget": 1000000000,
+        "spent": 296617485.3392235,
+        "remaining": 703382514.6607765,
+        "partial": [],
+        "unlocks": [
+          {
+            "index": 0,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 1,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 2,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 3,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 4,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 5,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          }
+        ],
+        "wholePlanConfidence": 1,
+        "dominancePruned": 0
+      }
+    },
+    {
+      "name": "narrow-probe-narrow",
+      "inputs": {
+        "goal": "balanced",
+        "budget": 1000000000,
+        "maxLevels": 8,
+        "beamSize": 1,
+        "godRank": 31,
+        "y4": 0,
+        "divCostAfter3": 0,
+        "reefUpgradeCount": 10,
+        "mineFloor": 0,
+        "vault76Bonus": 0,
+        "tier": 0,
+        "planningConfidence": 0.9,
+        "assumeUnlocked": true,
+        "levels": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ],
+        "singularityLevels": [
+          49,
+          31,
+          0,
+          0,
+          0,
+          0
+        ],
+        "totalDivinityLevels": 10000
+      },
+      "plan": {
+        "goal": "balanced",
+        "current": {
+          "levels": [
+            10,
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "godRank": 31,
+          "divinityPoints": 150,
+          "divinityExp": 2,
+          "classExp": 3.2122347356477547,
+          "minorLinks": 1.1,
+          "blessingCap": 120,
+          "dailyReefCoral": 1.2
+        },
+        "final": {
+          "levels": [
+            12,
+            10,
+            11,
+            10,
+            10,
+            10
+          ],
+          "godRank": 31,
+          "divinityPoints": 150,
+          "divinityExp": 2.2,
+          "classExp": 3.4751864084060347,
+          "minorLinks": 1.1,
+          "blessingCap": 120,
+          "dailyReefCoral": 1.2
+        },
+        "actions": [
+          {
+            "type": "coral-kid",
+            "index": 2,
+            "level": 11,
+            "cost": 933747285.6360009
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 11,
+            "cost": 25937424.601000022
+          },
+          {
+            "type": "coral-kid",
+            "index": 0,
+            "level": 12,
+            "cost": 28531167.061100025
+          }
+        ],
+        "budget": 1000000000,
+        "spent": 988215877.298101,
+        "remaining": 11784122.701899052,
+        "partial": [],
+        "unlocks": [
+          {
+            "index": 0,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 1,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 2,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 3,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 4,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          },
+          {
+            "index": 5,
+            "unlocked": true,
+            "known": true,
+            "reason": null
+          }
+        ],
+        "wholePlanConfidence": 1,
+        "dominancePruned": 0
+      }
+    }
+  ],
+  "offering": [
+    {
+      "godRank": 0,
+      "odds": 0.05,
+      "cost": 5,
+      "expectedSpendForOneSuccess": 100,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 51.232502088447056,
+          "maxPaidSpend": 70
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 90.05597430129076,
+          "maxPaidSpend": 225
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 95.15054747505768,
+          "maxPaidSpend": 295
+        }
+      }
+    },
+    {
+      "godRank": 1,
+      "odds": 0.05,
+      "cost": 18,
+      "expectedSpendForOneSuccess": 360,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 184.4370075184094,
+          "maxPaidSpend": 252
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 324.20150748464675,
+          "maxPaidSpend": 810
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 342.5419709102077,
+          "maxPaidSpend": 1062
+        }
+      }
+    },
+    {
+      "godRank": 5,
+      "odds": 0.05,
+      "cost": 3557,
+      "expectedSpendForOneSuccess": 71140,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 36446.80198572123,
+          "maxPaidSpend": 49798
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 64065.82011793825,
+          "maxPaidSpend": 160065
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 67690.09947375602,
+          "maxPaidSpend": 209863
+        }
+      }
+    },
+    {
+      "godRank": 10,
+      "odds": 0.05,
+      "cost": 701955,
+      "expectedSpendForOneSuccess": 14039100,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 7192582.20069917,
+          "maxPaidSpend": 9827370
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 12643048.288132513,
+          "maxPaidSpend": 31587975
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 13358280.510570822,
+          "maxPaidSpend": 41415345
+        }
+      }
+    },
+    {
+      "godRank": 31,
+      "odds": 0.05,
+      "cost": 121974460772618.62,
+      "expectedSpendForOneSuccess": 2439489215452372.5,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 1249811363254077.2,
+          "maxPaidSpend": 1707642450816660.8
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 2196905780950548.2,
+          "maxPaidSpend": 5488850734767838
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 2321187344097922,
+          "maxPaidSpend": 7196493185584499
+        }
+      }
+    },
+    {
+      "godRank": 32,
+      "odds": 0.05,
+      "cost": 287837599019884.06,
+      "expectedSpendForOneSuccess": 5756751980397681,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 2949328078583958.5,
+          "maxPaidSpend": 4029726386278377
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 5184299084055983,
+          "maxPaidSpend": 12952691955894782
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 5477581026129619,
+          "maxPaidSpend": 16982418342173160
+        }
+      }
+    },
+    {
+      "godRank": 38,
+      "odds": 0.05,
+      "cost": 47771044499732130,
+      "expectedSpendForOneSuccess": 955420889994642600,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 489486027419964600,
+          "maxPaidSpend": 668794622996249900
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 860413591162738800,
+          "maxPaidSpend": 2149697002487945700
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 909088207520971000,
+          "maxPaidSpend": 2818491625484195300
+        }
+      }
+    },
+    {
+      "godRank": 99,
+      "odds": 0.05,
+      "cost": 3.1830066601645777e+38,
+      "expectedSpendForOneSuccess": 6.366013320329155e+39,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 3.261467907288452e+39,
+          "maxPaidSpend": 4.456209324230409e+39
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 5.732975319772372e+39,
+          "maxPaidSpend": 1.43235299707406e+40
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 6.057296526628289e+39,
+          "maxPaidSpend": 1.8779739294971007e+40
+        }
+      }
+    }
+  ]
+}

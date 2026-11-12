@@ -1,9 +1,19 @@
-//! Coral Kid upgrades and the God Rank offering planner's inputs and state.
+//! Coral Kid upgrades and the God Rank offering planner.
 //!
 //! Ported from `js/stats/systems/w5/coral-god-rank.js` in
 //! <https://github.com/Corgan/idleon-research-optimizer>. This module owns the
-//! formulas and the planner inputs; the app renders them and the beam search in
-//! a later feature issue consumes them.
+//! formulas and the planner inputs, the offering model and the bounded
+//! deterministic beam search that projects the best plan.
+
+mod offering;
+mod planner;
+#[cfg(test)]
+mod tests;
+
+pub use offering::{Offer, offer, offering_cost, offering_odds};
+pub use planner::{
+    Action, Plan, Projection, ProjectionKey, Snapshot, Unlock, plan, plan_with, project, unlocks,
+};
 
 /// Total Divinity LV across all players required per Coral Kid upgrade,
 /// `CORAL_KID_UNLOCK_LEVELS` upstream. The first upgrade of each page is always
@@ -175,13 +185,18 @@ impl Inputs {
 
     /// The current coral multipliers and account bonuses.
     pub fn metrics(&self) -> Metrics {
-        let levels: [f64; 6] = std::array::from_fn(|index| f64::from(self.levels[index]));
+        self.metrics_at(&self.levels, self.god_rank)
+    }
+
+    /// The metrics a plan state at `levels` and `god_rank` would have.
+    pub fn metrics_at(&self, levels: &[u32; 6], god_rank: u32) -> Metrics {
+        let levels: [f64; 6] = std::array::from_fn(|index| f64::from(levels[index]));
         let singularity: [f64; 6] =
             std::array::from_fn(|index| f64::from(self.singularity_levels[index]));
         metrics(
             &levels,
             &singularity,
-            f64::from(self.god_rank),
+            f64::from(god_rank),
             self.reef_upgrade_count,
             self.mine_floor,
             self.vault76_bonus,
@@ -391,151 +406,5 @@ pub fn metrics(
             + vault76_bonus)
             .round(),
         daily_reef_coral: 1.0 + upgrade_effect(5, levels[5]) / 100.0,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn fixture_inputs() -> Inputs {
-        Inputs {
-            budget: 2.909_587_276_919_98e18,
-            god_rank: 31,
-            reef_upgrade_count: 53.0,
-            mine_floor: 23.0,
-            vault76_bonus: 40.0,
-            levels: [154, 64, 124, 98, 100, 90],
-            singularity_levels: [49, 31, 0, 0, 0, 0],
-            ..Inputs::default()
-        }
-    }
-
-    #[test]
-    fn upgrade_values_match_upstream_at_the_fixture_levels() {
-        let expected = [
-            (1540.0, 23685006833599.492),
-            (128.0, 95585514667947.14),
-            (16.644_295_302_013_422, 48864725156227.086),
-            (98.0, 24600101366955.652),
-            (200.0, 178596735924098.06),
-            (69.230_769_230_769_23, 413140638297324.75),
-        ];
-        for (index, (effect, cost)) in expected.into_iter().enumerate() {
-            let level = f64::from(fixture_inputs().levels[index]);
-            assert!((upgrade_effect(index, level) - effect).abs() < 1e-9);
-            assert!((upgrade_cost(index, level) - cost).abs() < 1.0);
-        }
-    }
-
-    #[test]
-    fn metrics_match_upstream_for_the_fixture_levels() {
-        let metrics = fixture_inputs().metrics();
-        assert_eq!(metrics.divinity_exp, 16.4);
-        assert_eq!(metrics.divinity_points, 5350.0);
-        assert_eq!(metrics.blessing_cap, 348.0);
-        assert_eq!(metrics.minor_links, 1.98);
-        assert!((metrics.class_exp - 25.359_084_901_759_285).abs() < 1e-12);
-        assert!((metrics.daily_reef_coral - 1.692_307_692_307_692).abs() < 1e-12);
-    }
-
-    #[test]
-    fn the_singularity_upgrades_scale_points_and_exp() {
-        let inputs = Inputs {
-            singularity_levels: [0, 0, 0, 0, 0, 0],
-            ..fixture_inputs()
-        };
-        let metrics = inputs.metrics();
-        assert_eq!(metrics.divinity_points, 107.0);
-        assert_eq!(metrics.divinity_exp, 16.4);
-    }
-
-    #[test]
-    fn slots_follow_the_upgrade_page() {
-        assert_eq!(upgrade_slot(0), 427);
-        assert_eq!(upgrade_slot(5), 432);
-        assert_eq!(upgrade_slot(6), 616);
-        assert_eq!(upgrade_slot(11), 621);
-    }
-
-    #[test]
-    fn unlock_levels_decide_when_the_save_knows_them() {
-        let inputs = Inputs {
-            assume_unlocked: false,
-            total_divinity_levels: Some(1600),
-            ..Inputs::default()
-        };
-        assert_eq!(inputs.unlocked_count(), 5);
-        assert!(!inputs.upgrade_unlocked(5));
-        assert!(inputs.upgrade_unlocked(4));
-
-        let all = Inputs {
-            total_divinity_levels: Some(4727),
-            ..inputs
-        };
-        assert_eq!(all.unlocked_count(), 6);
-    }
-
-    #[test]
-    fn assume_unlocked_wins_over_the_save() {
-        let inputs = Inputs {
-            assume_unlocked: true,
-            total_divinity_levels: Some(0),
-            ..Inputs::default()
-        };
-        assert_eq!(inputs.unlocked_count(), 6);
-    }
-
-    #[test]
-    fn validation_rejects_impossible_inputs() {
-        let inputs = Inputs {
-            budget: -1.0,
-            beam_size: 0,
-            assume_unlocked: false,
-            total_divinity_levels: None,
-            ..Inputs::default()
-        };
-        let validation = inputs.validation();
-        assert!(!validation.ok());
-        assert!(
-            validation
-                .errors
-                .iter()
-                .any(|error| error.contains("Budget"))
-        );
-        assert!(
-            validation
-                .errors
-                .iter()
-                .any(|error| error.contains("Beam size"))
-        );
-        assert!(
-            validation
-                .errors
-                .iter()
-                .any(|error| error.contains("unlock state"))
-        );
-    }
-
-    #[test]
-    fn validation_accepts_the_fixture_defaults() {
-        let validation = fixture_inputs().validation();
-        assert!(validation.ok(), "{validation:?}");
-    }
-
-    #[test]
-    fn a_budget_below_the_cheapest_upgrade_is_a_warning() {
-        let inputs = Inputs {
-            budget: 1.0,
-            ..fixture_inputs()
-        };
-        let validation = inputs.validation();
-        assert!(validation.ok());
-        assert!(
-            validation
-                .warnings
-                .iter()
-                .any(|warning| warning.contains("Budget buys no"))
-        );
     }
 }
