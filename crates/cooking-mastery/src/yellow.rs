@@ -314,7 +314,7 @@ pub struct Kitchen {
 pub struct Kitchens {
     /// How many kitchens are unlocked.
     pub count: usize,
-    /// The summed Speed, Fire and Luck levels over the kitchens.
+    /// The average Speed, Fire and Luck levels over the kitchens.
     pub average_levels: f64,
     /// The least and most `steps` any one kitchen holds.
     pub min_steps: f64,
@@ -326,7 +326,7 @@ pub struct Kitchens {
 
 impl Kitchens {
     /// `kitchenCookingAggregate` for the given kitchens.
-    pub fn aggregate(kitchens: &[Kitchen]) -> Self {
+    fn aggregate(kitchens: &[Kitchen]) -> Self {
         let mut summary = Kitchens {
             count: kitchens.len(),
             min_steps: f64::INFINITY,
