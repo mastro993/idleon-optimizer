@@ -63,7 +63,8 @@ use idleon_core::statue::Estimate as StatueEstimate;
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
 use idleon_core::{
-    Cglunko, Clamworks, Fountain, Jar, RoyalGuardian, game, monument, optimize, save, shape, sim,
+    Cglunko, Clamworks, Fountain, Jar, Opal, RoyalGuardian, game, monument, optimize, save, shape,
+    sim,
 };
 
 /// What a strategy search stored: its recommendation, or why it could not run.
@@ -232,6 +233,10 @@ pub struct AppState {
     pub mastery: Option<Mastery>,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub fountain: Option<Fountain>,
+    /// The Opal Optimizer's villagers and account bonuses, when the save has them.
+    pub opal: Option<Opal>,
+    /// The villager the opal breakdown is switched to, or the total.
+    pub opal_selected: Option<usize>,
     /// The Royal Guardian rows the loaded save carries, if it has them.
     pub royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
@@ -303,6 +308,8 @@ pub struct AppState {
     pub mastery_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shared formula tree on the Fountain overview.
     pub fountain_breakdown: Entity<ui::formula::FormulaTree>,
+    /// The shared formula tree on the Opal overview.
+    pub opal_breakdown: Entity<ui::formula::FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub shadow: Shadow,
     pub focus: FocusHandle,
@@ -729,6 +736,7 @@ impl AppState {
         let fountain_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("fountain-formula", window, cx));
         let jar_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("jar-formula", window, cx));
+        let opal_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("opal-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -776,6 +784,8 @@ impl AppState {
             ladle_state,
             mastery: None,
             fountain: None,
+            opal: None,
+            opal_selected: None,
             pickle: PickleState::default(),
             prisma,
             statue,
@@ -810,6 +820,7 @@ impl AppState {
             fishing_breakdown,
             mastery_breakdown,
             fountain_breakdown,
+            opal_breakdown,
             shadow: Shadow::default(),
             focus,
             bridge,
@@ -1173,6 +1184,8 @@ impl AppState {
             self.jelly_state.adopt(&jelly);
         }
         self.fountain = imported.fountain;
+        self.opal = imported.opal;
+        self.opal_selected = None;
         self.royal = imported.royal;
         self.research.selected_cell = None;
         self.sailing_state.island = self
@@ -1398,6 +1411,22 @@ impl AppState {
         self.fishing.character = index.min(self.fishing_save.characters.len().saturating_sub(1));
         self.fishing.character_defaults(&self.fishing_save);
         cx.notify();
+    }
+
+    /// Switch the opal breakdown between the total and one villager.
+    ///
+    /// A locked villager (or no save) falls back to the total, so a stale
+    /// selection never points at a villager this save does not have.
+    pub fn set_opal_villager(&mut self, villager: Option<usize>, cx: &mut Context<Self>) {
+        let selected = villager.filter(|villager| {
+            self.opal
+                .as_ref()
+                .is_some_and(|opal| opal.unlocked(*villager))
+        });
+        if self.opal_selected != selected {
+            self.opal_selected = selected;
+            cx.notify();
+        }
     }
 
     /// Select a lure index, clamped to the upstream list.

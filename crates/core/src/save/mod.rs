@@ -124,6 +124,9 @@ pub struct Imported {
     pub ladle: Option<crate::ladle::Ladle>,
     /// The Fountain Cavern state, when the save carries its `Holes` rows.
     pub fountain: Option<Fountain>,
+    /// The Opal Optimizer's villagers and account bonuses, when the save
+    /// carries its `Holes` rows.
+    pub opal: Option<crate::opal::Opal>,
     /// The Royal Guardian rows, when the save carries `RoyalG` and `RoyalMaps`.
     pub royal: Option<crate::royal_guardian::RoyalGuardian>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
@@ -358,6 +361,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
     }
+    let opal = account::opal(save, root, &characters, &simulation);
     let ladle = crate::ladle::Ladle::from_save(&document);
     if ladle.is_none() {
         warnings.push(
@@ -366,7 +370,8 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     }
     if fountain.is_none() {
         warnings.push(
-            "Holes: not in the save; the fountain calculator has no cavern state to read".into(),
+            "Holes: not in the save; the fountain and opal calculators have no cavern state to read"
+                .into(),
         );
     }
 
@@ -384,6 +389,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         spelunking,
         ladle,
         fountain,
+        opal,
         royal,
         save: document,
         companion,

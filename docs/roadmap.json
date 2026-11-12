@@ -2326,7 +2326,7 @@
       "key": "opal",
       "title": "Opal Optimizer",
       "group": "w5",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.",
       "upstream": [
         "opal-calc.html",

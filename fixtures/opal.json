@@ -1,0 +1,130 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "opal-calc.html (inline module script)",
+   "JavaScript from the imported upstream systems"
+  ],
+  "save": "fixtures/data.json loaded through js/save/loader.js"
+ },
+ "villagers": [
+  {
+   "name": "Explorer",
+   "level": 22,
+   "opals": 100,
+   "stars": 1
+  },
+  {
+   "name": "Engineer",
+   "level": 58,
+   "opals": 24,
+   "stars": 1
+  },
+  {
+   "name": "Conjuror",
+   "level": 81,
+   "opals": 100,
+   "stars": 1
+  },
+  {
+   "name": "Measurer",
+   "level": 36,
+   "opals": 35,
+   "stars": 1
+  },
+  {
+   "name": "Librarian",
+   "level": 197,
+   "opals": 110,
+   "stars": 1
+  }
+ ],
+ "cosmo": {
+  "tier1": [
+   5,
+   4,
+   3,
+   4,
+   5,
+   4,
+   2,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "scholars": 99
+ },
+ "ext": {
+  "unlocked": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "numUnlocked": 5,
+  "starMul": [
+   2,
+   2,
+   2,
+   2,
+   2
+  ],
+  "cosmoBonus_1_0": 150,
+  "cosmoBonus_1_5": 8,
+  "additiveBase": 93676.26541374474,
+  "baseMulti": 1150295433.842554,
+  "holeozArr": [
+   1,
+   1,
+   1.71,
+   1,
+   1
+  ]
+ },
+ "terms": {
+  "basePlusUpg": 125,
+  "multiChain": 157537.17935393017,
+  "exotic51": 0,
+  "arcade38": 40.19900497512438,
+  "grimoire29": 225,
+  "arcane32": 1182,
+  "mon03": 33324.48,
+  "mon13": 33834,
+  "mon23": 24550,
+  "meas7": 87.74193548387096,
+  "meas0": 65.54347826086956,
+  "bUpg48": 60,
+  "cardCaveB": 28,
+  "bell1_0": 1248.5,
+  "summWin21": 0,
+  "vaultUpg73": 52,
+  "cosmoBonus_1_1": 4,
+  "cosSchBlt": 99,
+  "cosmoBonus_1_2": 30,
+  "compass59": 402,
+  "legend12": 300,
+  "pristine21": 40,
+  "comp13": 0,
+  "statue28": 2620.0643098496635,
+  "jarSum": 3150,
+  "evShop6": 1,
+  "loreEpi1": 238.08625600792996,
+  "bundleU": 1
+ },
+ "current": {
+  "minOpals": 24,
+  "equalSpread": 32,
+  "totalOpals": 369,
+  "rates": [
+   289333052075764.8,
+   68565339873924.4,
+   494759519049557.8,
+   100150551596603.66,
+   318767425974323.2
+  ],
+  "total": 1271575888570173.8
+ }
+}

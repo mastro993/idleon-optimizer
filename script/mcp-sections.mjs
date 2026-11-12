@@ -494,8 +494,6 @@ const sectionConfig = (id, config) =>
     config,
   });
 
-/// Section-specific interaction checks. Every ready section must own one; a
-/// planned section's interaction is the back action of its empty state.
 /// A small flat `save.json` carrying a cavern: a level-10 fountain with the
 /// upgrade levels that unlock six currencies, a coin stack and a duck bar, so
 /// the overview has rates, stacks and a bonus warning to read.
@@ -609,6 +607,28 @@ const royalSave = () => {
   });
 };
 
+/// A small flat `save.json` carrying three villagers and the `Holes` rows their
+/// EXP rates read: levels, invested opals, stars, cosmo levels, a schematic, a
+/// bell, two measurements, a monument slot and a fountain upgrade.
+const opalSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const holes = Array.from({ length: 33 }, () => []);
+  holes[1] = [5, 3, 0, 2, 0];
+  holes[3] = [100, 40, 0, 15, 0];
+  holes[4] = row(12, { 0: 4 });
+  holes[5] = row(12, { 0: 5, 1: 4, 2: 3, 3: 4, 5: 4 });
+  holes[11] = row(100, { 26: 6, 28: 1e6 });
+  holes[13] = row(120, { 0: 1, 1: 1, 2: 1 });
+  holes[15] = row(30, { 3: 500 });
+  holes[17] = row(12, { 1: 100 });
+  holes[22] = row(20, { 0: 10, 7: 10 });
+  holes[31] = [row(20, { 13: 10, 14: 10 })];
+  holes[32] = [row(20, {})];
+  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+};
+
+/// Section-specific interaction checks. Every ready section must own one; a
+/// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
   spelunking: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -770,6 +790,37 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },
 
+  opal: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'opal: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: opalSave() });
+    await waitForNode(lane, 'import-format', 'opal: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'opal-overview', 'opal: the villagers open after Apply');
+    const current = labelOf(await lane.tree(), 'opal-current-line') ?? '';
+    if (!current.includes('3 unlocked')) {
+      throw new Error(`opal: the current state reads ${current}`);
+    }
+    await waitForNode(lane, 'opal-terms', 'opal: every bonus term renders');
+    const total = labelOf(await lane.tree(), 'formula-node-root') ?? '';
+    if (!total.includes('Total EXP/hr')) {
+      throw new Error(`opal: the breakdown starts at the total, not ${total}`);
+    }
+    await lane.call('click_element', { id: 'opal-villager-0' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Explorer EXP/hr'),
+      'opal: picking a villager readdresses the tree',
+    );
+    await lane.call('click_element', { id: 'opal-villager-all' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Total EXP/hr'),
+      'opal: the total control readdresses the tree',
+    );
+  },
   fountain: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
     await waitForNode(lane, 'import-drop', 'fountain: the import dialog opens');

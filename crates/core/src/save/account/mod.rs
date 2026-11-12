@@ -20,6 +20,7 @@ mod fields;
 mod jelly;
 mod lab;
 mod mastery;
+mod opal;
 mod statue;
 mod systems;
 mod tome;
@@ -248,6 +249,31 @@ pub(crate) fn account(
     let mut context = decoder.context();
     let tree = decoder.tree(&mut context);
     (context, tree)
+}
+
+/// The Opal Optimizer's villagers and every account bonus their EXP rates
+/// apply, or `None` when the save carries no `Holes` rows.
+pub(crate) fn opal(
+    save: &Map<String, Value>,
+    root: &Map<String, Value>,
+    characters: &[Character],
+    simulation: &Simulation,
+) -> Option<crate::opal::Opal> {
+    let overlay = simulation.overlay();
+    let mut warnings = Vec::new();
+    let mut decoder = Decoder {
+        save,
+        root,
+        data: account_data(),
+        characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings: &mut warnings,
+    };
+    decoder.opal()
 }
 
 /// Decode the statue calculator's account inputs: the STARTUE EXP bubble, the

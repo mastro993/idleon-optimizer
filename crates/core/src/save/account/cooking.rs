@@ -96,7 +96,16 @@ impl Decoder<'_> {
 
     /// `computeWinBonus`.
     pub(super) fn win_bonus(&self, index: usize) -> f64 {
-        let wins = self.summon_wins();
+        self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize))
+    }
+
+    /// `computeWinBonus` when the caller passes no account options: the endless
+    /// wins are left out, as `computeSummWinBonus(save, null)` reads it.
+    pub(super) fn win_bonus_without_options(&self, index: usize) -> f64 {
+        self.win_bonus_from(index, self.summon_wins(0))
+    }
+
+    fn win_bonus_from(&self, index: usize, wins: Vec<f64>) -> f64 {
         let raw = wins.get(index).copied().unwrap_or(0.0);
         if raw <= 0.0 {
             return 0.0;
@@ -153,7 +162,7 @@ impl Decoder<'_> {
 
     /// `computeSummWinBonus`: normal wins repeat their bonus index, endless
     /// wins cycle through the 40-entry table.
-    fn summon_wins(&self) -> Vec<f64> {
+    fn summon_wins(&self, endless: usize) -> Vec<f64> {
         let mut bonus = vec![0.0; 32];
         if let Some(wins) = fields::field(self.save, "Summon").and_then(|rows| {
             super::super::json::index(&rows, &[1]).and_then(|row| row.as_array().cloned())
@@ -175,7 +184,6 @@ impl Decoder<'_> {
                 }
             }
         }
-        let endless = self.ola(319) as usize;
         for win in 0..endless {
             let slot = win % 40;
             let kind = self

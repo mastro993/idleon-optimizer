@@ -200,6 +200,14 @@ pub struct JarConfig {
     tier: u32,
 }
 
+/// The opal section's config: the villager the breakdown is switched to, or the
+/// total. The villagers themselves come from the save.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct OpalConfig {
+    selected: Option<usize>,
+}
+
 /// The combat simulator's config: the selected character, its tab and the named
 /// loadouts. The working loadout itself comes from the save; presets are what
 /// the project keeps.
@@ -354,6 +362,12 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             outpost: state.royal_state.outpost,
         }),
     );
+    insert(
+        "opal",
+        value(&OpalConfig {
+            selected: state.opal_selected,
+        }),
+    );
     insert("stats-all", value(&state.stats_all.context));
     insert(
         "ladle",
@@ -464,6 +478,7 @@ pub enum Config {
     Jelly(JellyConfig),
     Jar(JarConfig),
     Royal(RoyalConfig),
+    Opal(OpalConfig),
     Ladle(LadleConfig),
     Spelunking(SpelunkingState),
     Coral(coral::Inputs),
@@ -731,6 +746,9 @@ pub fn assign(
                 outpost: config.outpost,
             };
         }
+        Config::Opal(config) => {
+            state.set_opal_villager(config.selected, cx);
+        }
         Config::Ladle(config) => {
             let characters = state
                 .ladle
@@ -816,6 +834,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "jelly-operator" => decode!(Jelly, JellyConfig),
         "jar" => decode!(Jar, JarConfig),
         "royal-guardian" => decode!(Royal, RoyalConfig),
+        "opal" => decode!(Opal, OpalConfig),
         "ladle" => decode!(Ladle, LadleConfig),
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
@@ -1453,6 +1472,7 @@ mod tests {
                 "cog",
                 "jelly-operator",
                 "jar",
+                "opal",
                 "ladle",
                 "spelunking",
                 "coral-god-rank",

@@ -222,6 +222,38 @@ pub fn upgrade(water: usize, upgrade: usize) -> Option<&'static Upgrade> {
     data().upgrades.get(water)?.get(upgrade)
 }
 
+/// `HolesInfo[59]`: the bell bonus one level grants.
+pub(crate) fn bell_per_level(index: usize) -> f64 {
+    data()
+        .holes
+        .bell_per_level
+        .get(index)
+        .copied()
+        .unwrap_or(0.0)
+}
+
+/// `holesMeasBase`: a measurement's base value and whether it is a `TOT` row,
+/// whose bonus decays instead of scaling linearly.
+pub(crate) fn measurement(index: usize) -> Option<(f64, bool)> {
+    let text = data().holes.measurement_base.get(index)?;
+    Some((currency::leading_number(text), text.contains("TOT")))
+}
+
+/// `holesMeasType`: the account quantity a measurement counts.
+pub(crate) fn measurement_type(index: usize) -> u32 {
+    data()
+        .holes
+        .measurement_type
+        .get(index)
+        .copied()
+        .unwrap_or(0.0) as u32
+}
+
+/// `_cosmoBonus(1, 3)`'s base: the measurement multiplier each level grants.
+pub(crate) fn cosmo_measurement() -> f64 {
+    data().cosmo.measurement
+}
+
 /// The game's truncated `ln(10)`, which upstream writes out as a literal.
 #[allow(clippy::approx_constant)]
 const LN_10_TRUNCATED: f64 = 2.30259;
