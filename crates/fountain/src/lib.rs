@@ -8,17 +8,20 @@
 //! `Holes` field of an imported save, so every accessor below is a direct
 //! transcription of one upstream reader.
 //!
-//! The planner, marble planner and simulation are FN-03 and FN-04 and are not
-//! here yet. The external bonuses the overview reports read the same account
-//! systems upstream does, and a source the save does not carry is named by
-//! [`Fountain::missing_bonuses`] instead of silently reading zero.
+//! The planner and optimizer are FN-03; the marble planner and
+//! simulation are FN-04 and are not here yet. The external bonuses the overview
+//! reports read the same account systems upstream does, and a source the save
+//! does not carry is named by [`Fountain::missing_bonuses`] instead of silently
+//! reading zero.
 
 mod currency;
 mod data;
+mod planner;
 mod state;
 mod upgrades;
 
 pub use data::Upgrade;
+pub use planner::{Goal, OptimizerPlan, PlanGroup, PlanRequest, PlanStep, PlannerRow};
 
 use data::data;
 use idleon_save::Roster;

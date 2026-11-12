@@ -322,6 +322,200 @@ for (let w = 0; w < 3; w++) {
   upgradeRows.push(water);
 }
 
+// ----- Planner and optimizer -----
+// `_renderPlanner` and `_renderOptimizer` compute their candidates in the page
+// rather than in fountain.js, so the same loops are repeated here over the
+// exported helpers, returning the rows the page would render.
+function pctGainFrom(baseline, delta) {
+  if (!(delta > 0)) return 0;
+  return baseline > 0 ? (delta / baseline) * 100 : 100;
+}
+
+function planner(goal, options) {
+  const affordableOnly = options.affordable ?? false;
+  const normalize = options.normalize ?? false;
+  const perHr = options.perHr ?? false;
+  const desiredType = options.desired ?? desired;
+  const baseline = F.measureGoal(saveData, goal, uLvs, mLvs, desiredType);
+  const candidates = [];
+  for (let w = 0; w < F.WATERS_IMPLEMENTED; w++) {
+    for (let u = 0; u < 20; u++) {
+      if (!F.upgradeAccessible(uLvs, w, u)) continue;
+      const lv = uLvs[w][u] || 0;
+      const cost = F.upgCost(w, u, lv);
+      const type = F.UPG_DATA[w][u][3];
+      const available = F.fountCurrencyAvail(saveData, type);
+      const canAfford = available >= cost;
+      if (affordableOnly && !canAfford) continue;
+      const simLvs = F.cloneUpgLvs(uLvs);
+      simLvs[w][u] = lv + 1;
+      const newVal = F.measureGoal(saveData, goal, simLvs, mLvs, desiredType);
+      const delta = newVal - baseline;
+      if (delta <= 0) continue;
+      const pctGain = pctGainFrom(baseline, delta);
+      let efficiency;
+      if (perHr) {
+        const hrs = earnRates[type] > 0 ? cost / earnRates[type] : Infinity;
+        efficiency = hrs > 0 && hrs < Infinity ? pctGain / hrs : 0;
+      } else {
+        let normCost = cost;
+        if (normalize) {
+          const cv = F.currencyTotalValue(saveData, uLvs, mLvs, type, type);
+          normCost = cost / cv;
+        }
+        efficiency = normCost > 0 ? pctGain / normCost : 0;
+      }
+      const remaining = Math.max(0, cost - available);
+      const tta = remaining <= 0 ? 0 : (earnRates[type] > 0 ? (remaining / earnRates[type]) * 3600 : null);
+      const row = {
+        water: w, upgrade: u, level: lv, cost, currency: type,
+        affordable: canAfford, delta, pctGain, efficiency, seconds: tta,
+      };
+      if (goal === 'fill') {
+        row.fillDelta = F.barFillTime(saveData, uLvs, mLvs) / F.activeSpeedMulti(uLvs, mLvs)
+          - F.barFillTime(saveData, simLvs, mLvs) / F.activeSpeedMulti(simLvs, mLvs);
+        row.marbleFillDelta = F.marbleBarFillTime() / F.activeSpeedMulti(uLvs, mLvs)
+          - F.marbleBarFillTime() / F.activeSpeedMulti(simLvs, mLvs);
+      }
+      if (goal === 'royal') row.royalChance = F.royalChance(simLvs, mLvs);
+      if (goal === 'duck') row.duckChance = F.duckChance(saveData, simLvs, mLvs);
+      if (goal === 'optimal') {
+        const startStacks = F.optimalStacksPerHr(saveData, uLvs, mLvs);
+        const startValue = F.optimalStackValue(saveData, uLvs, mLvs, desiredType);
+        row.speedPct = startStacks > 0 ? (F.optimalStacksPerHr(saveData, simLvs, mLvs) / startStacks - 1) * 100 : 0;
+        row.valuePct = startValue > 0 ? (F.optimalStackValue(saveData, simLvs, mLvs, desiredType) / startValue - 1) * 100 : 0;
+      }
+      candidates.push(row);
+    }
+  }
+  candidates.sort((a, b) => b.efficiency - a.efficiency);
+  return { baseline, rows: candidates.slice(0, 8) };
+}
+
+const plannerGoals = [
+  'currency', 'fill', 'bronze', 'silver', 'golden', 'dollar', 'credit',
+  'treasury', 'royal', 'duck', 'lucky', 'marble-rate', 'optimal',
+];
+const planners = {};
+for (const goal of plannerGoals) planners[goal] = planner(goal, {});
+
+function optimizer(goal, options) {
+  const affordable = options.affordable ?? true;
+  const normalize = options.normalize ?? false;
+  const perHr = options.perHr ?? false;
+  const maxSteps = options.maxSteps ?? 50;
+  const desiredType = options.desired ?? desired;
+  const simLvs = F.cloneUpgLvs(uLvs);
+  const budgets = {};
+  for (let w = 0; w < F.WATERS_IMPLEMENTED; w++) {
+    for (let u = 0; u < 20; u++) {
+      const type = F.UPG_DATA[w][u][3];
+      if (!(type in budgets)) budgets[type] = F.fountCurrencyAvail(saveData, type);
+    }
+  }
+  const startValue = F.measureGoal(saveData, goal, uLvs, mLvs, desiredType);
+  let baseline = F.measureGoal(saveData, goal, simLvs, mLvs, desiredType);
+  const steps = [];
+  let clock = 0;
+  let optimizerDesired = desiredType;
+  const active = F.activeCurrencyTypes(saveData, uLvs, mLvs);
+  let optimizerFocus = F.ignoreUnlocked(uLvs, mLvs) && active.length === 1 ? active[0] : -1;
+  for (let step = 0; step < maxSteps; step++) {
+    const stepRates = F.earnRatesPerHr(saveData, simLvs, mLvs);
+    let best = null;
+    for (let w = 0; w < F.WATERS_IMPLEMENTED; w++) {
+      for (let u = 0; u < 20; u++) {
+        if (!F.upgradeAccessible(simLvs, w, u)) continue;
+        const lv = simLvs[w][u] || 0;
+        const cost = F.upgCost(w, u, lv);
+        const type = F.UPG_DATA[w][u][3];
+        if (affordable && (budgets[type] || 0) < cost) continue;
+        if (!affordable && (budgets[type] || 0) < cost && !(stepRates[type] > 0)) continue;
+        const tryLvs = F.cloneUpgLvs(simLvs);
+        tryLvs[w][u] = lv + 1;
+        const newVal = F.measureGoal(saveData, goal, tryLvs, mLvs, desiredType);
+        const delta = newVal - baseline;
+        if (delta <= 0) continue;
+        const pctGain = pctGainFrom(baseline, delta);
+        let eff;
+        if (perHr) {
+          const hrs = stepRates[type] > 0 ? cost / stepRates[type] : Infinity;
+          eff = hrs > 0 && hrs < Infinity ? pctGain / hrs : 0;
+        } else {
+          let normCost = cost;
+          if (normalize) {
+            const cv = F.currencyTotalValue(saveData, simLvs, mLvs, type, type);
+            normCost = cost / cv;
+          }
+          eff = normCost > 0 ? pctGain / normCost : 0;
+        }
+        if (best === null || eff > best.eff) best = { w, u, type, cost, delta, pctGain, eff };
+      }
+    }
+    if (!best) break;
+    if (!affordable && (budgets[best.type] || 0) < best.cost) {
+      const canChangeDesired = F.bonTOT(simLvs, mLvs, 1, 11) > 0;
+      const targetDesired = canChangeDesired ? best.type : optimizerDesired;
+      const targetFocus = F.ignoreUnlocked(simLvs, mLvs) ? best.type : optimizerFocus;
+      if (targetFocus !== optimizerFocus) {
+        const flushSec = F.flushTime(saveData, simLvs, mLvs);
+        const flushRates = F.activeEarnRatesPerHr(saveData, simLvs, mLvs, optimizerDesired, optimizerFocus);
+        for (let t = 0; t < 9; t++) budgets[t] = (budgets[t] || 0) + flushRates[t] * flushSec / 3600;
+        clock += flushSec;
+      }
+      optimizerDesired = targetDesired;
+      optimizerFocus = targetFocus;
+      const remainingCost = Math.max(0, best.cost - (budgets[best.type] || 0));
+      const targetRates = F.activeEarnRatesPerHr(saveData, simLvs, mLvs, optimizerDesired, optimizerFocus);
+      const waitSec = targetRates[best.type] > 0 ? remainingCost / targetRates[best.type] * 3600 : Infinity;
+      if (!isFinite(waitSec)) break;
+      for (let t = 0; t < 9; t++) budgets[t] = (budgets[t] || 0) + targetRates[t] * waitSec / 3600;
+      clock += waitSec;
+    }
+    budgets[best.type] = Math.max(0, (budgets[best.type] || 0) - best.cost);
+    simLvs[best.w][best.u] = (simLvs[best.w][best.u] || 0) + 1;
+    baseline += best.delta;
+    steps.push({
+      water: best.w, upgrade: best.u, name: F.UPG_DATA[best.w][best.u][0],
+      level: simLvs[best.w][best.u], cost: best.cost, currency: best.type,
+      delta: best.delta, pctGain: best.pctGain, value: baseline, cumulative: clock,
+    });
+  }
+  const groups = [];
+  for (const step of steps) {
+    const group = groups.find((g) => g.water === step.water && g.upgrade === step.upgrade);
+    if (group) {
+      group.count++;
+      group.totalCost += step.cost;
+      group.endLevel = step.level;
+      group.cumulative = step.cumulative;
+    } else {
+      groups.push({
+        water: step.water, upgrade: step.upgrade, name: step.name, count: 1,
+        startLevel: step.level - 1, endLevel: step.level,
+        totalCost: step.cost, currency: step.currency, cumulative: step.cumulative,
+      });
+    }
+  }
+  groups.sort((a, b) => a.cumulative - b.cumulative);
+  return {
+    goal,
+    startValue,
+    endValue: baseline,
+    totalGainPct: pctGainFrom(startValue, baseline - startValue),
+    steps,
+    groups,
+    remaining: budgets,
+  };
+}
+
+const optimizers = {
+  currency: optimizer('currency', { affordable: true, maxSteps: 50 }),
+  royal: optimizer('royal', { affordable: true, maxSteps: 50 }),
+  fillPerHr: optimizer('fill', { affordable: true, perHr: true, maxSteps: 25 }),
+  optimalUnaffordable: optimizer('optimal', { affordable: false, maxSteps: 50 }),
+};
+
 const payload = {
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
@@ -414,6 +608,8 @@ const payload = {
     earnRates,
     waters: upgradeRows,
   },
+  planners,
+  optimizers,
 };
 
 writeFileSync(

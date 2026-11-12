@@ -84,6 +84,15 @@ Rust port uses, so the upstream output is reproducible; regenerate it with
 `node script/sailing-simulation-oracle.mjs <upstream-repo>`. `crates/sailing/tests/sailing_simulation.rs`
 compares the port field for field.
 
+`fountain.json` is the upstream Fountain calculator's own output for `data.json`: the summary,
+income rows, lucky coins and ducks, cross bonuses, ground stacks, level plan, currency values,
+per-water multipliers, unlock tracker, upgrade rows and cost curves, plus the planner's ranked
+candidates for all thirteen goals and four optimizer plans (currency and royal affordable, fill
+ranked by hours, and optimal with waits for unearned currency). Regenerate it with
+`node script/fountain-oracle.mjs <upstream-repo>`; `crates/fountain/tests/fountain.rs` compares the
+port field for field. Treat it as frozen for the same reason: it is the oracle's output, not this
+app's.
+
 `coin-multi.json` is the upstream Coin Multiplier calculator's own output, from
 `js/stats/defs/coin-multi.js` run over `data.json` and over one purpose-built save whose unmodelled
 sources are all neutral. It carries every character's map, AFK target, monster HP, computed damage,

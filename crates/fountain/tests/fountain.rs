@@ -6,8 +6,9 @@
 //! formulas on `fixtures/data.json`, so a drift in either the port or the
 //! fixture fails here.
 
+use idleon_common::{Control, Progress};
 use idleon_fountain::Fountain;
-use idleon_fountain::{self as fountain, CoinStack};
+use idleon_fountain::{self as fountain, CoinStack, Goal, PlanRequest};
 use idleon_import::import;
 use serde_json::{Value, json};
 
@@ -672,4 +673,295 @@ fn every_upgrade_row_carries_its_cost_and_marble_rules() {
             }
         }
     }
+}
+
+/// The `seconds` cell: the page writes an unreachable time as `null`.
+fn seconds(value: &Value) -> f64 {
+    value.as_f64().unwrap_or(f64::INFINITY)
+}
+
+#[test]
+fn the_planner_matches_upstream_for_every_goal() {
+    let fountain = fountain();
+    let oracle = oracle();
+    for (id, expected) in oracle["planners"]
+        .as_object()
+        .expect("planners are an object")
+    {
+        let goal = Goal::from_id(id).unwrap_or_else(|| panic!("unknown goal {id}"));
+        close(
+            fountain.measure_goal(goal, fountain.desired_currency()),
+            at(expected, "baseline"),
+        );
+        let rows = fountain.planner(PlanRequest {
+            goal,
+            ..PlanRequest::default()
+        });
+        let expected_rows = expected["rows"].as_array().expect("rows");
+        assert!(
+            rows.len() >= expected_rows.len(),
+            "{id}: the planner lists {} rows, upstream {}",
+            rows.len(),
+            expected_rows.len()
+        );
+        for (row, expected) in rows.iter().zip(expected_rows) {
+            assert_eq!(
+                row.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                row.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            close(row.level, at(expected, "level"));
+            close(row.cost, at(expected, "cost"));
+            assert_eq!(
+                row.currency,
+                expected["currency"].as_u64().expect("currency") as usize
+            );
+            assert_eq!(
+                row.affordable,
+                expected["affordable"].as_bool().expect("affordable")
+            );
+            close(row.delta, at(expected, "delta"));
+            close(row.pct_gain, at(expected, "pctGain"));
+            close(row.efficiency, at(expected, "efficiency"));
+            close(row.seconds_to_afford, seconds(&expected["seconds"]));
+            if let Some(fill) = expected.get("fillDelta").and_then(Value::as_f64) {
+                close(row.fill_delta, fill);
+            }
+            if let Some(fill) = expected.get("marbleFillDelta").and_then(Value::as_f64) {
+                close(row.marble_fill_delta, fill);
+            }
+            if let Some(chance) = expected.get("royalChance").and_then(Value::as_f64) {
+                close(row.royal_chance, chance);
+            }
+            if let Some(chance) = expected.get("duckChance").and_then(Value::as_f64) {
+                close(row.duck_chance, chance);
+            }
+            if let Some(pct) = expected.get("speedPct").and_then(Value::as_f64) {
+                close(row.speed_pct, pct);
+            }
+            if let Some(pct) = expected.get("valuePct").and_then(Value::as_f64) {
+                close(row.value_pct, pct);
+            }
+        }
+    }
+}
+
+#[test]
+fn the_optimizer_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let optimizers = oracle["optimizers"].as_object().expect("optimizers");
+    for (id, expected) in optimizers {
+        let (goal, affordable, per_hr, max_steps) = match id.as_str() {
+            "currency" => (Goal::Currency, true, false, 50),
+            "royal" => (Goal::Royal, true, false, 50),
+            "fillPerHr" => (Goal::Fill, true, true, 25),
+            "optimalUnaffordable" => (Goal::Optimal, false, false, 50),
+            other => panic!("unknown optimizer fixture {other}"),
+        };
+        let plan = fountain.optimize(PlanRequest {
+            goal,
+            max_steps,
+            affordable,
+            per_hr,
+            ..PlanRequest::default()
+        });
+        assert_eq!(plan.goal, goal);
+        close(plan.start_value, at(expected, "startValue"));
+        close(plan.end_value, at(expected, "endValue"));
+        close(plan.gain_pct, at(expected, "totalGainPct"));
+        let expected_steps = expected["steps"].as_array().expect("steps");
+        assert_eq!(plan.steps.len(), expected_steps.len(), "{id}: steps");
+        for (step, expected) in plan.steps.iter().zip(expected_steps) {
+            assert_eq!(
+                step.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                step.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            assert_eq!(step.name, expected["name"].as_str().expect("name"));
+            close(step.level, at(expected, "level"));
+            close(step.cost, at(expected, "cost"));
+            assert_eq!(
+                step.currency,
+                expected["currency"].as_u64().expect("currency") as usize
+            );
+            close(step.delta, at(expected, "delta"));
+            close(step.pct_gain, at(expected, "pctGain"));
+            close(step.value, at(expected, "value"));
+            close(step.cumulative_seconds, at(expected, "cumulative"));
+        }
+        let expected_groups = expected["groups"].as_array().expect("groups");
+        assert_eq!(plan.groups.len(), expected_groups.len(), "{id}: groups");
+        for (group, expected) in plan.groups.iter().zip(expected_groups) {
+            assert_eq!(
+                group.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                group.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            assert_eq!(group.name, expected["name"].as_str().expect("name"));
+            assert_eq!(
+                group.count,
+                expected["count"].as_u64().expect("count") as usize
+            );
+            close(group.start_level, at(expected, "startLevel"));
+            close(group.end_level, at(expected, "endLevel"));
+            close(group.total_cost, at(expected, "totalCost"));
+            assert_eq!(
+                group.currency,
+                expected["currency"].as_u64().expect("currency") as usize
+            );
+            close(group.cumulative_seconds, at(expected, "cumulative"));
+        }
+        for (currency, expected) in expected["remaining"].as_object().expect("remaining") {
+            let currency = currency.parse::<usize>().expect("currency index");
+            close(
+                plan.remaining[currency],
+                expected.as_f64().expect("remaining"),
+            );
+        }
+    }
+}
+
+#[test]
+fn the_planner_ranks_by_the_unit_cost_of_the_gain() {
+    let fountain = fountain();
+    let rows = fountain.planner(PlanRequest::default());
+    assert!(rows.len() > 1);
+    for pair in rows.windows(2) {
+        assert!(
+            pair[0].efficiency >= pair[1].efficiency,
+            "{} ({}) ranks above {} ({})",
+            pair[1].name,
+            pair[1].efficiency,
+            pair[0].name,
+            pair[0].efficiency
+        );
+    }
+    let baseline = fountain.measure_goal(Goal::Currency, fountain.desired_currency());
+    for row in &rows {
+        assert!(row.delta > 0.0);
+        assert!((row.pct_gain - row.delta / baseline * 100.0).abs() < 1e-9);
+    }
+}
+
+#[test]
+fn switching_the_goal_changes_the_ranking() {
+    let fountain = fountain();
+    let currency = fountain.planner(PlanRequest::default());
+    let royal = fountain.planner(PlanRequest {
+        goal: Goal::Royal,
+        ..PlanRequest::default()
+    });
+    let fill = fountain.planner(PlanRequest {
+        goal: Goal::Fill,
+        ..PlanRequest::default()
+    });
+    let top =
+        |rows: &[idleon_fountain::PlannerRow]| rows.first().map(|row| (row.water, row.upgrade));
+    assert!(top(&currency).is_some());
+    assert!(top(&royal).is_some());
+    assert!(top(&fill).is_some());
+    assert_ne!(
+        top(&currency),
+        top(&royal),
+        "the royal goal ranks a different upgrade first"
+    );
+    assert_ne!(
+        top(&currency),
+        top(&fill),
+        "the fill goal ranks a different upgrade first"
+    );
+}
+
+#[test]
+fn the_optimizer_respects_its_budget_and_lists_its_steps() {
+    let fountain = fountain();
+    let plan = fountain.optimize(PlanRequest {
+        max_steps: 50,
+        affordable: true,
+        ..PlanRequest::default()
+    });
+    assert!(!plan.steps.is_empty());
+    let mut spent = [0.0; fountain::CURRENCIES];
+    let mut levels = [[0.0; 20]; 3];
+    for (water, upgrade) in (0..3).flat_map(|water| (0..20).map(move |upgrade| (water, upgrade))) {
+        levels[water][upgrade] = fountain.upgrade_level(water, upgrade);
+    }
+    for step in &plan.steps {
+        spent[step.currency] += step.cost;
+        assert!(
+            spent[step.currency] <= fountain.level_currency_balance(step.currency),
+            "{} spends {} of {} {} but the save holds {}",
+            step.name,
+            spent[step.currency],
+            step.currency,
+            step.cost,
+            fountain.level_currency_balance(step.currency)
+        );
+        assert_eq!(
+            step.level,
+            levels[step.water][step.upgrade] + 1.0,
+            "{} levels one at a time",
+            step.name
+        );
+        levels[step.water][step.upgrade] = step.level;
+    }
+    let grouped: usize = plan.groups.iter().map(|group| group.count).sum();
+    assert_eq!(grouped, plan.steps.len(), "every step is in one group");
+    for group in &plan.groups {
+        assert!(group.end_level - group.start_level + 1.0 >= group.count as f64);
+    }
+    for (currency, left) in plan.remaining.iter().enumerate() {
+        close(
+            *left,
+            fountain.level_currency_balance(currency) - spent[currency],
+        );
+    }
+}
+
+#[test]
+fn the_optimizer_reports_progress_and_honours_cancel() {
+    let fountain = fountain();
+    let mut reports: Vec<Progress> = Vec::new();
+    let outcome = fountain.optimize_with(
+        PlanRequest {
+            max_steps: 50,
+            affordable: true,
+            ..PlanRequest::default()
+        },
+        |progress| {
+            reports.push(progress);
+            if reports.len() == 2 {
+                Control::Stop
+            } else {
+                Control::Continue
+            }
+        },
+    );
+    assert!(outcome.is_none(), "a cancelled plan stores nothing");
+    assert_eq!(reports.len(), 2, "the job stops at the second report");
+    assert_eq!(reports[0].fraction, 1.0 / 50.0);
+    assert!(reports[1].fraction > reports[0].fraction);
+    assert!(reports[0].message.contains("Step 1 of 50"));
+
+    let plan = fountain
+        .optimize_with(
+            PlanRequest {
+                max_steps: 5,
+                affordable: true,
+                ..PlanRequest::default()
+            },
+            |_| Control::Continue,
+        )
+        .expect("a report that never stops finishes");
+    assert!(!plan.steps.is_empty());
 }
