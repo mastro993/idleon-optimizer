@@ -10,6 +10,18 @@ use super::context::MapVisibility;
 use super::data::{data, map_count};
 use super::snapshot::Snapshot;
 
+/// A map's `MapDispName` entry, or `None` where upstream leaves it blank.
+///
+/// The drop-rate selector lists only named maps; the All Stats list classifies
+/// blank ones as internal instead.
+pub fn display_name(map: usize) -> Option<&'static str> {
+    data()
+        .maps
+        .get(map)
+        .map(|row| row.display_name.as_str())
+        .filter(|name| !name.is_empty())
+}
+
 /// Maps whose representative target is not the whole map's content.
 const TOWN_MAPS: [usize; 7] = [0, 50, 100, 150, 200, 250, 300];
 const BOSS_MAPS: [usize; 6] = [29, 66, 114, 165, 214, 266];

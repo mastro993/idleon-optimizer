@@ -16,6 +16,7 @@ pub mod cog;
 pub mod combat_sim;
 pub mod cooking_mastery;
 pub mod coral_god_rank;
+pub mod drop_rate;
 pub mod endgame;
 pub mod farming;
 pub mod fishing;
@@ -517,9 +518,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::Tools,
         description: "Dungeon runtime, luck and drop-rate inputs with the formula breakdown",
         spec: "docs/sections/drop-rate.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: false,
-        view: PLACEHOLDER,
+        view: drop_rate::view,
         keys: no_keys,
     },
     Section {

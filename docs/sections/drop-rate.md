@@ -5,7 +5,7 @@
 - Milestone: `M5`
 - Section key: `drop-rate`
 - Group: `tools`
-- Status: `planned`
+- Status: `in-progress`
 - Depends on: `foundation`, `stats-all`
 
 Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.

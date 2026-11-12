@@ -22,5 +22,6 @@ pub use context::{ConstructionMode, Context, MapVisibility, Skill};
 pub use data::{class_name, map_count};
 pub use maps::{
     Category, ClassVisibility, MapClass, MapOption, arcane_multi, build_options, classify,
+    display_name,
 };
 pub use snapshot::Snapshot;
