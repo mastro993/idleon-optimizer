@@ -1,7 +1,7 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
 use crate::assets::Manifest;
-use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
 use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
@@ -207,6 +207,8 @@ pub struct AppState {
     pub clamworks_budget: f64,
     /// The levels the applied plan previews; `None` shows the saved levels.
     pub clamworks_projection: Option<[u32; 9]>,
+    /// The AFK claim's character, stand-ins, hours and pearl table.
+    pub clamworks_claim: ClamworksState,
     /// The endgame section's audit of the last applied save.
     pub endgame: endgame::State,
     /// The Jelly Operator board the last imported save carried.
@@ -771,6 +773,7 @@ impl AppState {
             clamworks_multikill: 0.0,
             clamworks_budget: 0.0,
             clamworks_projection: None,
+            clamworks_claim: sections::clamworks::State::new(window, cx),
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar_tier: 0,
@@ -1148,6 +1151,7 @@ impl AppState {
         } else {
             0
         };
+        let character_count = imported.save.character_count();
         self.combat.load(&imported.save, combat_character);
         self.stats_all.load(&imported.save);
         self.save = Some(imported.save);
@@ -1167,6 +1171,7 @@ impl AppState {
         // the previous save no longer describes this one.
         self.clamworks_budget = self.clamworks.pearl_balance;
         self.clamworks_projection = None;
+        self.clamworks_claim.load(character_count);
         self.jar = imported.jar;
         self.spelunking_save = imported.spelunking;
         if let Some(save) = self.spelunking_save.as_ref() {
@@ -1914,6 +1919,60 @@ impl AppState {
         }
     }
 
+    /// Pick the character the AFK claim and its comparison run for.
+    pub fn set_clamworks_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        let count = self.save.as_ref().map_or(0, |save| save.character_count());
+        self.clamworks_claim.set_character(character, count);
+        cx.notify();
+    }
+
+    pub fn set_clamworks_phase(
+        &mut self,
+        phase: idleon_core::clamworks::afk::Phase,
+        cx: &mut Context<Self>,
+    ) {
+        self.clamworks_claim.set_phase(phase);
+        cx.notify();
+    }
+
+    /// The selected character's kills per hour, the combat simulator's stand-in.
+    pub fn set_clamworks_kills_per_hour(&mut self, kills: f64, cx: &mut Context<Self>) {
+        let character = self.clamworks_claim.character;
+        self.clamworks_claim
+            .set_stand_in(character, |stand_in| stand_in.kills_per_hour = kills);
+        cx.notify();
+    }
+
+    /// The selected character's drop-rate multiplier, the same stand-in.
+    pub fn set_clamworks_drop_rate(&mut self, drop_rate: f64, cx: &mut Context<Self>) {
+        let character = self.clamworks_claim.character;
+        self.clamworks_claim
+            .set_stand_in(character, |stand_in| stand_in.drop_rate = drop_rate);
+        cx.notify();
+    }
+
+    /// Read the typed hours and let the claim accept or refuse them.
+    pub fn calculate_clamworks_claim(&mut self, cx: &mut Context<Self>) {
+        let text = self.clamworks_claim.hours_text(cx);
+        self.clamworks_claim.commit_hours(&text);
+        if let Some(error) = self.clamworks_claim.error {
+            self.status = format!("Clamworks claim: {}", error.message());
+        } else {
+            let multikill = self.clamworks_multikill;
+            self.status = match self
+                .clamworks_view()
+                .afk_claim(self.clamworks_claim.inputs(), multikill)
+            {
+                Ok(claim) => format!(
+                    "Clamworks claim: {} pearls, {} drop rolls.",
+                    crate::ui::format::number(claim.expected_pearls),
+                    claim.rolls
+                ),
+                Err(error) => format!("Clamworks claim: {}", error.message()),
+            };
+        }
+        cx.notify();
+    }
     /// The cog optimizer's run: running, progress, result and staleness.
     pub fn cog_task(&self, cx: &App) -> TaskState<CogResult> {
         self.cog_run.read(cx).state(&self.cog.inputs())

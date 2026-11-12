@@ -232,7 +232,7 @@ crates/app                          GPUI + Ely
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
     research/                       the research section's state, tab strip and panes
-    clamworks/                      the Clamworks overview, upgrades, plan and promotion
+    clamworks/                      the Clamworks overview, upgrades, claim, plan and promotion
   ui/                               shell (window, router, shortcuts), dashboard, section states
   ui/task.rs                        shared progress card, cancelled notice and stale marker
   task.rs                           TaskRunner: off-thread job, progress, cancel, stale inputs
@@ -252,6 +252,7 @@ script/extract-opal-data.mjs       extract the opal tables (cosmo, compass, stat
 script/opal-oracle.mjs             regenerate the villager EXP oracle fixture from opal-calc.html
 script/extract-fountain-data.mjs    extract the fountain upgrade table and its account rows
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
+script/clamworks-afk-oracle.mjs     regenerate the AFK claim and comparison oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and shop tables
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles and rejections
 script/extract-royal-data.mjs       extract the Royal Guardian armory, resource and map tables
@@ -301,15 +302,20 @@ entered in the account card until the stats dashboard decodes them. Missing: the
 best lure/line ranking (FI-02) and the Trench depth projection with other characters
 (FI-03). Details: [`docs/sections/fishing.md`](sections/fishing.md).
 
-The Clamworks section implements CW-01 and CW-03: the overview with the pearl-value breakdown,
-every pearl upgrade, the upstream priority ranking, the budgeted upgrade plan (a greedy pass over
-the same ranking, priced at the levels each purchase reaches and run through the shared task runner,
-with progress, cancel, a stale marker and an applied projection), the promotion tracker and all
-twelve worker-class rewards, plus save decoding for pearl balance, upgrade levels, promotion and
-Scurge. `script/clamworks-oracle.mjs` regenerates `crates/core/tests/clamworks-oracle.json` from the
-upstream module, so the tracker, the rewards and the plans are compared with the source of truth.
-Multi-Scalping takes a manual multikill total until the combat simulator lands. Missing: AFK claim
-and compare, and Scurge combat. Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
+The Clamworks section implements CW-01, CW-02 and CW-03: the overview with the pearl-value
+breakdown, every pearl upgrade, the upstream priority ranking, the AFK claim with its drop
+distribution, payout and `+1` comparison, the budgeted upgrade plan (a greedy pass over the same
+ranking, priced at the levels each purchase reaches and run through the shared task runner, with
+progress, cancel, a stale marker and an applied projection), the promotion tracker and all twelve
+worker-class rewards, plus save decoding for pearl balance, upgrade levels, unlock progress,
+promotion and Scurge. `script/clamworks-oracle.mjs` regenerates
+`crates/core/tests/clamworks-oracle.json` from the upstream module, so the tracker, the rewards and
+the plans are compared with the source of truth, and `script/clamworks-afk-oracle.mjs` regenerates
+`fixtures/clamworks-afk.json` for the claim. Multi-Scalping takes a manual multikill total, and the
+claim takes the character's kills per hour and drop rate, until the combat simulator lands. The
+claim does not carry the upstream reroll-for-pure-pearls policy, which needs the talent and guild
+bonuses the stats context resolves. Missing: Scurge combat.
+Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
 The Killroy section implements KL-01 and KL-02: the weekly forecast with every character's three
 encounters and records, and the `+1` upgrade comparison with the Baseline and Upgrade tabs, the

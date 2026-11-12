@@ -285,6 +285,7 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(clamworks.pearl_balance, 2_960_058_875.172_09);
     assert_eq!(clamworks.promotion_level, 6);
     assert_eq!(clamworks.upgrades, [123, 12, 30, 43, 79, 33, 9, 0, 0]);
+    assert_eq!(clamworks.unlocked, 6);
     assert_eq!(clamworks.scurge_level, 122);
     assert_eq!(clamworks.scurge_upgrades, [18, 2, 3, 18, 27, 54, 0, 0, 0]);
     let pearl_value = clamworks.pearl_value(1234.5);

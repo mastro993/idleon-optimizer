@@ -1,17 +1,20 @@
-//! Clamworks (W7): pearl value, upgrade costs, upgrade priority, the budgeted
-//! upgrade plan and the promotion tracker.
+//! Clamworks (W7): pearl value, upgrade costs, upgrade priority, the AFK claim,
+//! the budgeted upgrade plan and the promotion tracker.
 //!
 //! Ports `js/stats/systems/w7/clamworks.js` from the upstream calculators. Save
 //! fields: `OptionsListAccount` (or `OptLacc`) index 454 is the pearl balance,
-//! 455..=463 are the nine upgrade levels and 464 the promotion level;
-//! `Menagerie[5]` holds the Scurge upgrade levels and `Menagerie[0][8]` the
-//! Scurge level.
+//! 455..=463 are the nine upgrade levels, 464 the promotion level and 465 how
+//! far the pearl upgrades have unlocked; `Menagerie[5]` holds the Scurge upgrade
+//! levels and `Menagerie[0][8]` the Scurge level.
 //!
 //! Multi-Scalping's bonus depends on the character's multikill total, which the
 //! upstream derives from its combat simulator. Until that lands here the total
 //! is an input; the formulas are the same for any value, and 0 leaves the bonus
 //! at zero.
+//!
+//! [`afk`] ports the claim itself and the `+1` comparison beside it.
 
+pub mod afk;
 pub mod plan;
 pub mod promotion;
 
@@ -31,6 +34,7 @@ const SCURGE_COUNT: usize = 9;
 const PEARL_BALANCE: usize = 454;
 const UPGRADE_BASE: usize = 455;
 const PROMOTION_LEVEL: usize = 464;
+const UNLOCK_PROGRESS: usize = 465;
 /// Multi-Scalping (index 3) is the one upgrade whose bonus scales with multikill.
 const MULTI_SCALPING: usize = 3;
 /// Pure Pearls (index 5) gates the black-pearl drop rate.
@@ -42,6 +46,8 @@ pub struct Clamworks {
     pub pearl_balance: f64,
     pub promotion_level: u32,
     pub upgrades: [u32; UPGRADE_COUNT],
+    /// How many pearl upgrades the save has unlocked, `OptLacc[465]`.
+    pub unlocked: u32,
     pub scurge_level: u32,
     pub scurge_upgrades: [u32; SCURGE_COUNT],
 }
@@ -122,6 +128,7 @@ impl Clamworks {
             pearl_balance: number(PEARL_BALANCE).unwrap_or(0.0),
             promotion_level: saved_level(PROMOTION_LEVEL),
             upgrades: std::array::from_fn(|index| saved_level(UPGRADE_BASE + index)),
+            unlocked: saved_level(UNLOCK_PROGRESS),
             ..Self::default()
         };
         if let Some(menagerie) = json::parsed_field(save, "Menagerie") {
