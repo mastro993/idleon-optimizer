@@ -3,13 +3,18 @@
 //!
 //! Ported from `prismaChanges`, `prismaOutcome` and the row loop in
 //! `js/stats/prisma.js`. Every candidate is the saved state with one bubble's
-//! Prisma flag toggled; the metrics are the cauldron's processed bubble
-//! bonuses, so a change is exactly what Prisma does to that bonus.
+//! Prisma flag toggled; the measured scope is every purchased bubble's bonus
+//! (an intermediate) plus the downstream outcome families this build models. Today that is one: `statue-retention`, the Statue EXP the STARTUE EXP
+//! bubble buys (`statueLevelingInputs` in
+//! `js/stats/systems/common/statue-leveling.js`).
 //!
-//! The downstream outcome families (damage, stats, skills and account totals)
-//! arrive with PR-02: this module reports which effects still have no model in
-//! [`Coverage`], so the section never presents a bonus as a downstream gain.
+//! Every other effect keeps reporting the bonus as an intermediate only.
+//! [`Coverage`] names the native systems upstream's audit
+//! (`js/stats/data/prisma-source-coverage.js`) found reading each effect and
+//! whether this build computes a downstream metric for it, so a bubble bonus is
+//! never presented as a stat, skill or damage gain it is not.
 
+use super::data::Consumer;
 use super::plan::{Plan, Row};
 use crate::model::{Control, Progress};
 
@@ -18,10 +23,36 @@ fn bonus_id(row: &Row) -> String {
     format!("bubble-bonus:{}", row.id)
 }
 
-/// The metric label a bubble's processed bonus carries.
+/// The metric name a bubble's processed bonus carries.
 fn bonus_name(row: &Row) -> String {
     format!("Bubble bonus · {}", row.name)
 }
+
+/// One downstream outcome family the build models for a bubble effect.
+struct Model {
+    /// The effect key the bubble carries.
+    effect: &'static str,
+    /// The upstream metric id.
+    id: &'static str,
+    /// The upstream metric name.
+    name: &'static str,
+    /// The metric's value from the effect's processed bonus.
+    outcome: fn(f64) -> f64,
+}
+
+/// The downstream outcomes this build models, in display order.
+///
+/// Upstream's evaluator covers thousands of metrics; the port measures the one
+/// whose whole formula is already here. `statue-retention` is
+/// `statueLevelingInputs(...).retentionPct`, which reads only the STARTUE EXP
+/// bubble: the bubble keeps half the EXP a statue level consumes, so the metric
+/// is `(1 - max(.5, 1 - pct/100)) × 100`.
+const MODELS: [Model; 1] = [Model {
+    effect: "StatueStartEXP",
+    id: "statue-retention",
+    name: "Statue EXP retained on level-up",
+    outcome: |pct| crate::statue::Leveling::new(pct, 0.0, 0, 0, Vec::new(), false).retention_pct,
+}];
 
 /// One evaluated metric: a value, or why it has none.
 #[derive(Clone, Debug, PartialEq)]
@@ -29,7 +60,7 @@ pub struct Metric {
     pub id: String,
     pub name: String,
     pub value: Option<f64>,
-    /// Processed bonuses are intermediates, never downstream outcomes.
+    /// Processed bonuses and other inputs are intermediates, never outcomes.
     pub intermediate: bool,
     pub lower_is_better: bool,
     /// Why the value is missing, when it is.
@@ -37,19 +68,26 @@ pub struct Metric {
 }
 
 impl Metric {
-    fn available(id: String, name: String, value: f64) -> Self {
+    fn available(id: String, name: String, value: f64, intermediate: bool) -> Self {
         Self {
             id,
             name,
             value: Some(value),
-            intermediate: true,
+            intermediate,
             lower_is_better: false,
             reason: String::new(),
         }
     }
+
+    fn with_value(&self, value: f64) -> Self {
+        Self {
+            value: Some(value),
+            ..self.clone()
+        }
+    }
 }
 
-/// One metric's change between the saved state and one candidate's variant.
+/// One metric's change between two evaluated scopes.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Change {
     pub id: String,
@@ -57,7 +95,7 @@ pub struct Change {
     pub before: f64,
     pub after: f64,
     pub delta: f64,
-    /// `delta / |before| * 100`; `None` when the saved value is zero.
+    /// `delta / |before| * 100`; `None` when the starting value is zero.
     pub percent: Option<f64>,
     pub intermediate: bool,
     pub lower_is_better: bool,
@@ -72,27 +110,83 @@ impl Change {
     }
 }
 
+/// Which state the save is in for one candidate's bubble.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Comparison {
+    /// The bubble is not Prisma-ed: the row previews adding it.
+    Added,
+    /// The bubble is already Prisma-ed: the row measures the benefit it keeps.
+    Retained,
+}
+
+impl Comparison {
+    /// The upstream comparison id.
+    pub fn id(self) -> &'static str {
+        match self {
+            Comparison::Added => "added",
+            Comparison::Retained => "retained",
+        }
+    }
+
+    /// The row's direction, in the upstream detail wording.
+    pub fn label(self) -> &'static str {
+        match self {
+            Comparison::Added => "Potential gain",
+            Comparison::Retained => "Benefit retained",
+        }
+    }
+}
+
 /// One candidate's comparison against the saved state.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RowResult {
     pub row: Row,
-    /// The saved scope: every purchased bubble in the cauldron.
+    /// Whether the candidate's Prisma is already in the save.
+    pub comparison: Comparison,
+    /// The same scope without this candidate's Prisma.
     pub before: Vec<Metric>,
-    /// The same scope with this candidate's Prisma flag toggled.
+    /// The same scope with it: the state the row measures.
     pub after: Vec<Metric>,
-    /// The metrics that moved. Empty when Prisma changes nothing measurable.
+    /// The downstream outcomes that moved.
     pub changes: Vec<Change>,
+    /// The processed bubble bonuses that moved.
+    pub intermediates: Vec<Change>,
 }
 
 impl RowResult {
-    /// A metric's value in this variant, changed or not, as `prismaOutcome` reads it.
+    /// A metric's value in the measured state, changed or not, as
+    /// `prismaOutcome` reads it.
     pub fn outcome(&self, metric: &str) -> Option<&Metric> {
         self.after.iter().find(|entry| entry.id == metric)
     }
 
-    /// The change a metric carries in this result, when it moved.
+    /// The change a metric carries in this result, downstream or intermediate,
+    /// when it moved.
     pub fn change(&self, metric: &str) -> Option<&Change> {
-        self.changes.iter().find(|change| change.id == metric)
+        self.changes
+            .iter()
+            .chain(&self.intermediates)
+            .find(|change| change.id == metric)
+    }
+
+    /// The metric's comparison for display: its change when it moved, else the
+    /// measured value with a zero delta, as `prismaOutcome` returns it.
+    pub fn view(&self, metric: &str) -> Option<Change> {
+        if let Some(change) = self.change(metric) {
+            return Some(change.clone());
+        }
+        let entry = self.outcome(metric)?;
+        let value = entry.value?;
+        Some(Change {
+            id: entry.id.clone(),
+            name: entry.name.clone(),
+            before: value,
+            after: value,
+            delta: 0.0,
+            percent: (value != 0.0).then_some(0.0),
+            intermediate: entry.intermediate,
+            lower_is_better: entry.lower_is_better,
+        })
     }
 
     /// What the ranking sort uses for one metric, matching `prismaOutcome`: a
@@ -117,6 +211,7 @@ impl RowResult {
             self.row.reason,
             self.changes
                 .iter()
+                .chain(&self.intermediates)
                 .map(|change| change.name.as_str())
                 .collect::<Vec<_>>()
                 .join(" ")
@@ -125,14 +220,24 @@ impl RowResult {
     }
 }
 
-/// One bubble effect and whether a downstream model reads it.
+/// One bubble effect, its bubbles, the native systems that read it and whether
+/// this build computes a downstream metric for it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CoverageEntry {
     pub effect: String,
     /// The bubbles that carry the effect.
     pub bubbles: Vec<String>,
+    /// The direct native references upstream's audit traced for the effect.
+    pub consumers: Vec<Consumer>,
+    /// The downstream metric ids this build computes for the effect.
+    pub metrics: Vec<String>,
+}
+
+impl CoverageEntry {
     /// Whether this build models a downstream outcome for the effect.
-    pub modelled: bool,
+    pub fn modelled(&self) -> bool {
+        !self.metrics.is_empty()
+    }
 }
 
 /// Which of the cauldron's effects have a downstream model in this build.
@@ -147,7 +252,7 @@ impl Coverage {
     }
 
     pub fn modelled(&self) -> usize {
-        self.effects.iter().filter(|entry| entry.modelled).count()
+        self.effects.iter().filter(|entry| entry.modelled()).count()
     }
 
     pub fn missing(&self) -> usize {
@@ -197,95 +302,143 @@ impl Outcome {
         self.results.iter().collect()
     }
 
-    /// The metric ids the filters offer, in plan order.
+    /// The metric ids the filters offer: the downstream outcomes first, then
+    /// the processed bonuses.
     pub fn metrics(&self) -> Vec<&Metric> {
         self.baseline.iter().collect()
     }
 }
 
-/// The saved scope: every purchased bubble in the one cauldron.
-fn baseline(plan: &Plan) -> Vec<Metric> {
+/// The purchased bubbles, which are the ones with a value to compare.
+fn purchased(plan: &Plan) -> impl Iterator<Item = &Row> {
     plan.rows
         .iter()
         .filter(|row| row.level.is_some_and(|level| level > 0.0))
-        .map(|row| {
-            let value = if row.prisma {
-                row.with_prisma(plan.multiplier)
-            } else {
-                row.bonus
-            };
-            Metric::available(bonus_id(row), bonus_name(row), value)
-        })
-        .collect()
 }
 
-/// The candidate's scope: the saved scope with its own Prisma flag toggled.
-fn variant(plan: &Plan, candidate: &Row, baseline: &[Metric]) -> Vec<Metric> {
-    baseline
-        .iter()
-        .map(|metric| {
-            if metric.id != bonus_id(candidate) {
-                return metric.clone();
-            }
-            let value = if candidate.prisma {
-                candidate.bonus
-            } else {
-                candidate.with_prisma(plan.multiplier)
-            };
-            Metric::available(metric.id.clone(), metric.name.clone(), value)
-        })
-        .collect()
-}
-
-/// The differences between the saved scope and one candidate's variant.
-fn compare(plan: &Plan, candidate: &Row, baseline: &[Metric]) -> RowResult {
-    let after = variant(plan, candidate, baseline);
-    let changes = baseline
-        .iter()
-        .filter_map(|before| {
-            let now = after.iter().find(|metric| metric.id == before.id)?;
-            let (Some(old), Some(new)) = (before.value, now.value) else {
-                return None;
-            };
-            if old == new {
-                return None;
-            }
-            let delta = new - old;
-            Some(Change {
-                id: before.id.clone(),
-                name: before.name.clone(),
-                before: old,
-                after: new,
-                delta,
-                percent: (old != 0.0).then(|| delta / old.abs() * 100.0),
-                intermediate: before.intermediate,
-                lower_is_better: before.lower_is_better,
-            })
-        })
-        .collect();
-    RowResult {
-        row: candidate.clone(),
-        before: baseline.to_vec(),
-        after,
-        changes,
+/// A bubble's bonus in the saved state: the curve at its level, times the
+/// Prisma multiplier when the save marks it.
+fn saved_value(row: &Row, plan: &Plan) -> f64 {
+    if row.prisma {
+        row.with_prisma(plan.multiplier)
+    } else {
+        row.bonus
     }
 }
 
-/// Which effects the cauldron's purchased bubbles carry, and whether a model reads them.
+fn bonus_metric(row: &Row, value: f64) -> Metric {
+    Metric::available(bonus_id(row), bonus_name(row), value, true)
+}
+
+fn outcome_metric(model: &Model, value: f64) -> Metric {
+    Metric::available(
+        model.id.to_string(),
+        model.name.to_string(),
+        (model.outcome)(value),
+        false,
+    )
+}
+
+/// The saved scope: the modelled downstream outcomes, then every purchased
+/// bubble's processed bonus.
+fn baseline(plan: &Plan) -> Vec<Metric> {
+    let mut metrics: Vec<Metric> = MODELS
+        .iter()
+        .filter_map(|model| {
+            let row = purchased(plan).find(|row| row.effect == model.effect)?;
+            Some(outcome_metric(model, saved_value(row, plan)))
+        })
+        .collect();
+    for row in purchased(plan) {
+        metrics.push(bonus_metric(row, saved_value(row, plan)));
+    }
+    metrics
+}
+
+/// The saved scope with one candidate's bubble set to `value`, and every
+/// outcome that reads the bubble recomputed from it.
+fn variant(candidate: &Row, baseline: &[Metric], value: f64) -> Vec<Metric> {
+    baseline
+        .iter()
+        .map(|metric| {
+            if metric.id == bonus_id(candidate) {
+                return metric.with_value(value);
+            }
+            if let Some(model) = MODELS
+                .iter()
+                .find(|model| model.id == metric.id && model.effect == candidate.effect)
+            {
+                return metric.with_value((model.outcome)(value));
+            }
+            metric.clone()
+        })
+        .collect()
+}
+
+/// The differences between two evaluated scopes.
+fn compare(plan: &Plan, candidate: &Row, baseline: &[Metric]) -> RowResult {
+    // A ready bubble is previewed with Prisma; a retained one measures the
+    // benefit the save keeps. Either way `before` is the state without this
+    // bubble's Prisma and `after` the state with it, so a change is always the
+    // benefit adding Prisma (or keeping it) buys.
+    let before = variant(candidate, baseline, candidate.bonus);
+    let after = variant(candidate, baseline, candidate.with_prisma(plan.multiplier));
+    let mut changes = Vec::new();
+    let mut intermediates = Vec::new();
+    for (old, new) in before.iter().zip(&after) {
+        let (Some(old_value), Some(new_value)) = (old.value, new.value) else {
+            continue;
+        };
+        if old_value == new_value {
+            continue;
+        }
+        let delta = new_value - old_value;
+        let change = Change {
+            id: old.id.clone(),
+            name: old.name.clone(),
+            before: old_value,
+            after: new_value,
+            delta,
+            percent: (old_value != 0.0).then(|| delta / old_value.abs() * 100.0),
+            intermediate: old.intermediate,
+            lower_is_better: old.lower_is_better,
+        };
+        if old.intermediate {
+            intermediates.push(change);
+        } else {
+            changes.push(change);
+        }
+    }
+    RowResult {
+        row: candidate.clone(),
+        comparison: if candidate.prisma {
+            Comparison::Retained
+        } else {
+            Comparison::Added
+        },
+        before,
+        after,
+        changes,
+        intermediates,
+    }
+}
+
+/// Which effects the cauldron's purchased bubbles carry, the native systems
+/// that read each, and whether this build models a downstream outcome.
 fn coverage(plan: &Plan) -> Coverage {
     let mut effects: Vec<CoverageEntry> = Vec::new();
-    for row in plan
-        .rows
-        .iter()
-        .filter(|row| row.level.is_some_and(|level| level > 0.0))
-    {
+    for row in purchased(plan) {
         match effects.iter_mut().find(|entry| entry.effect == row.effect) {
             Some(entry) => entry.bubbles.push(row.name.clone()),
             None => effects.push(CoverageEntry {
                 effect: row.effect.clone(),
                 bubbles: vec![row.name.clone()],
-                // No downstream outcome family is ported yet (PR-02).
-                modelled: false,
+                consumers: super::data::consumers(&row.effect).cloned().collect(),
+                metrics: MODELS
+                    .iter()
+                    .filter(|model| model.effect == row.effect)
+                    .map(|model| model.id.to_string())
+                    .collect(),
             }),
         }
     }
@@ -356,9 +509,35 @@ mod tests {
         plan(&save, 0, 0).expect("the tiny save plans")
     }
 
-    fn finish() -> Outcome {
+    /// A save where the STARTUE EXP bubble is the tested outcome: one character,
+    /// the bubble at a known level, and Prisma either absent or already present.
+    fn outcomes(prismad: bool) -> Plan {
+        let prisma = if prismad { "c2," } else { "" };
+        let mut options = vec![serde_json::json!(0); 385];
+        options[383] = serde_json::json!(120);
+        options[384] = serde_json::json!(prisma);
+        let save = crate::save::Save::new(serde_json::json!({
+            "Lv0_0": "[100]",
+            "CharacterClass_0": 1,
+            "CurrentMap_0": 5,
+            // DropRate at 10 and STARTUE EXP at 25: two comparable bubbles.
+            "CauldronInfo": [[], [], [], [0, 10, 25]],
+            "OptLacc": serde_json::Value::Array(options),
+        }));
+        plan(&save, 0, 3).expect("the outcome save plans")
+    }
+
+    fn statue(outcome: &Outcome) -> &RowResult {
+        outcome
+            .results
+            .iter()
+            .find(|result| result.row.id == "3:2")
+            .expect("the STARTUE EXP candidate")
+    }
+
+    fn finish(plan: &Plan) -> Outcome {
         let mut report = |_progress: Progress| Control::Continue;
-        run(&tiny(), &mut report).expect("the run finishes")
+        run(plan, &mut report).expect("the run finishes")
     }
 
     #[test]
@@ -382,13 +561,14 @@ mod tests {
     }
 
     #[test]
-    fn a_ready_bubble_gains_the_prisma_multiplier_and_an_already_bubble_loses_it() {
-        let outcome = finish();
+    fn every_row_measures_adding_prisma_even_when_the_save_keeps_it() {
+        let outcome = finish(&tiny());
         let ready = outcome
             .results
             .iter()
             .find(|result| result.row.id == "0:2")
             .expect("the ready candidate");
+        assert_eq!(ready.comparison, Comparison::Added);
         let change = ready.change("bubble-bonus:0:2").expect("the bonus moved");
         assert_eq!(
             (change.before, change.after, change.delta),
@@ -400,23 +580,63 @@ mod tests {
             .iter()
             .find(|result| result.row.id == "0:0")
             .expect("the already candidate");
+        assert_eq!(already.comparison, Comparison::Retained);
         let change = already.change("bubble-bonus:0:0").expect("the bonus moved");
         assert_eq!(
             (change.before, change.after, change.delta),
-            (20.0, 10.0, -10.0)
+            (10.0, 20.0, 10.0),
+            "a retained bubble shows the benefit the save keeps"
         );
-        assert_eq!(change.percent, Some(-50.0));
+        assert_eq!(change.percent, Some(100.0));
+        assert!(ready.changes.is_empty(), "the bonus is an intermediate");
+        assert_eq!(ready.intermediates.len(), 1);
+    }
+
+    #[test]
+    fn the_statue_retention_outcome_moves_with_the_startue_bubble() {
+        let outcome = finish(&outcomes(false));
+        let result = statue(&outcome);
+        assert_eq!(result.row.effect, "StatueStartEXP");
+        assert_eq!(result.changes.len(), 1);
+        let change = result
+            .change("statue-retention")
+            .expect("the downstream outcome moved");
+        // decay(25, 60, 25) = 7.3529, so half the EXP level costs is retained.
+        assert!((change.before - 7.352_941_176_470_588).abs() <= 1e-9);
+        assert!((change.after - 14.705_882_352_941_176).abs() <= 1e-9);
+        assert!((change.delta - change.before).abs() <= 1e-9);
+        assert!(
+            change
+                .percent
+                .is_some_and(|percent| (percent - 100.0).abs() <= 1e-9)
+        );
+        assert_eq!(change.name, "Statue EXP retained on level-up");
+        assert!(!change.intermediate);
+        assert_eq!(result.intermediates.len(), 1);
+        assert_eq!(result.intermediates[0].id, "bubble-bonus:3:2");
+
+        let retained = finish(&outcomes(true));
+        let change = statue(&retained)
+            .change("statue-retention")
+            .expect("the retained outcome");
+        assert_eq!(statue(&retained).comparison, Comparison::Retained);
+        assert!((change.before - 7.352_941_176_470_588).abs() <= 1e-9);
+        assert!((change.after - 14.705_882_352_941_176).abs() <= 1e-9);
     }
 
     #[test]
     fn the_ranking_sorts_by_the_selected_metric() {
-        let outcome = finish();
+        let outcome = finish(&tiny());
         let ranked: Vec<&str> = outcome
             .rank("bubble-bonus:0:2")
             .iter()
             .map(|result| result.row.id.as_str())
             .collect();
-        assert_eq!(ranked, ["0:2", "0:0"], "the bubble that gains 100% leads");
+        assert_eq!(
+            ranked,
+            ["0:2", "0:0"],
+            "the row that moves the metric leads"
+        );
         let ranked: Vec<&str> = outcome
             .rank("bubble-bonus:0:0")
             .iter()
@@ -424,14 +644,40 @@ mod tests {
             .collect();
         assert_eq!(
             ranked,
-            ["0:2", "0:0"],
-            "the unchanged row scores zero and stays ahead of the -50% row"
+            ["0:0", "0:2"],
+            "the unchanged row scores zero behind the moved metric"
+        );
+
+        let outcome = finish(&outcomes(false));
+        let order: Vec<&str> = outcome
+            .rank("statue-retention")
+            .iter()
+            .map(|result| result.row.id.as_str())
+            .collect();
+        assert_eq!(
+            order,
+            ["3:2", "3:1"],
+            "the measured outcome outranks the unchanged row"
         );
     }
 
     #[test]
+    fn a_selected_metric_shows_a_zero_delta_when_it_did_not_move() {
+        let outcome = finish(&outcomes(false));
+        let result = statue(&outcome);
+        let view = result
+            .view("bubble-bonus:3:1")
+            .expect("an unchanged metric still has a view");
+        assert_eq!(view.delta, 0.0);
+        assert_eq!(view.percent, Some(0.0));
+        assert_eq!(view.before, view.after);
+        assert!(view.intermediate);
+        assert!(result.view("nope").is_none());
+    }
+
+    #[test]
     fn the_search_matches_names_effects_and_changed_metrics() {
-        let outcome = finish();
+        let outcome = finish(&tiny());
         let ids = |query: &str| -> Vec<String> {
             outcome
                 .search(query)
@@ -444,6 +690,17 @@ mod tests {
         assert_eq!(ids("bubble bonus"), ["0:0", "0:2"]);
         assert_eq!(ids("nope"), Vec::<String>::new());
         assert_eq!(ids("  "), ["0:0", "0:2"]);
+
+        let outcome = finish(&outcomes(false));
+        let ids = |query: &str| -> Vec<String> {
+            outcome
+                .search(query)
+                .iter()
+                .map(|result| result.row.id.clone())
+                .collect()
+        };
+        assert_eq!(ids("startue"), ["3:2"]);
+        assert_eq!(ids("retained"), ["3:2"]);
     }
 
     #[test]
@@ -459,8 +716,8 @@ mod tests {
     }
 
     #[test]
-    fn every_effect_lists_whether_a_downstream_model_reads_it() {
-        let outcome = finish();
+    fn every_effect_lists_its_native_consumers_and_whether_a_model_reads_it() {
+        let outcome = finish(&tiny());
         let coverage = &outcome.coverage;
         assert_eq!(coverage.total(), 3);
         assert_eq!(coverage.modelled(), 0);
@@ -471,6 +728,33 @@ mod tests {
             .find(|entry| entry.effect == "TotalSTR")
             .expect("the strength effect");
         assert_eq!(strength.bubbles, ["Roid Ragin"]);
-        assert!(!strength.modelled);
+        assert!(!strength.modelled());
+        assert!(
+            strength
+                .consumers
+                .iter()
+                .any(|consumer| consumer.method == "_customBlock_TotalStats"),
+            "upstream traces TotalStats reading TotalSTR"
+        );
+
+        let outcome = finish(&outcomes(false));
+        let coverage = &outcome.coverage;
+        assert_eq!(coverage.total(), 2);
+        assert_eq!(coverage.modelled(), 1);
+        assert_eq!(coverage.missing(), 1);
+        let statue = coverage
+            .effects
+            .iter()
+            .find(|entry| entry.effect == "StatueStartEXP")
+            .expect("the statue effect");
+        assert!(statue.modelled());
+        assert_eq!(statue.metrics, ["statue-retention"]);
+        assert!(
+            statue
+                .consumers
+                .iter()
+                .any(|consumer| consumer.method == "_event_StatueBars"),
+            "upstream traces the statue bar event reading the effect"
+        );
     }
 }

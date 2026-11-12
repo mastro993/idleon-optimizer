@@ -302,7 +302,8 @@ const clamworksSave = () => {
 
 /// A small flat `save.json` carrying two cauldrons of bubbles: one already
 /// Prisma-ed, one ready to add Prisma to, one unpurchased and one large bubble,
-/// so every status the plan knows is on screen.
+/// so every status the plan knows is on screen. Kazam carries the STARTUE EXP
+/// bubble, the one effect with a downstream model in this build.
 const prismaSave = () => {
   const options = Array(385).fill(0);
   options[383] = 120; // fragments
@@ -311,7 +312,7 @@ const prismaSave = () => {
     Research: '[]',
     Lv0_0: JSON.stringify([100]),
     CurrentMap_0: 5,
-    CauldronInfo: JSON.stringify([[10, 0, 25, 5], [40], [7], [12]]),
+    CauldronInfo: JSON.stringify([[10, 0, 25, 5], [40], [7], [12, 0, 25]]),
     OptLacc: JSON.stringify(options),
   });
 };
@@ -851,11 +852,48 @@ const INTERACTIONS = {
     await waitForNode(lane, 'prisma-row-0-2', 'prisma: the run lists the comparable bubbles');
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'prisma-change-0-2') ?? '').includes('+10'),
+      (nodes) => (labelOf(nodes, 'prisma-bonus-0-2') ?? '').includes('10 → 20'),
       'prisma: the ready bubble gains the Prisma multiplier'
+    );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'prisma-bonus-0-0') ?? '').includes('10 → 20'),
+      'prisma: the already-Prisma row shows the benefit it retains'
+    );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'prisma-change-0-2') ?? '').includes('No measured change'),
+      'prisma: the bubble bonus stays an intermediate, not a downstream outcome'
+    );
+    await waitFor(
+      lane,
+      (nodes) => {
+        const consumers = labelOf(nodes, 'prisma-coverage-consumers-TotalSTR') ?? '';
+        const model = labelOf(nodes, 'prisma-coverage-model-TotalSTR') ?? '';
+        return consumers.includes('TotalStats') && model.includes('Missing');
+      },
+      'prisma: coverage names the native consumers and the missing model'
     );
     const coverage = labelOf(await lane.tree(), 'prisma-coverage-count') ?? '';
     if (!coverage.includes('missing')) throw new Error(`prisma: coverage reads ${coverage}`);
+    // Kazam carries the STARTUE EXP bubble: its row ranks by a real downstream
+    // metric and the coverage table marks it modelled.
+    await lane.call('click_element', { id: 'segment-3' });
+    await waitForNode(lane, 'prisma-cauldron', 'prisma: the Kazam tab opens');
+    await lane.call('click_element', { id: 'prisma-run' });
+    await waitForNode(lane, 'prisma-row-3-2', 'prisma: the Kazam run lists the STARTUE EXP row');
+    await waitFor(
+      lane,
+      (nodes) => {
+        const change = labelOf(nodes, 'prisma-change-3-2') ?? '';
+        const model = labelOf(nodes, 'prisma-coverage-model-StatueStartEXP') ?? '';
+        return change.includes('Statue EXP retained on level-up')
+          && change.includes('+7.35')
+          && model.includes('Modelled')
+          && model.includes('Statue EXP retained on level-up');
+      },
+      'prisma: the STARTUE EXP row shows its retained statue EXP and coverage marks it modelled'
+    );
   },
   jar: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

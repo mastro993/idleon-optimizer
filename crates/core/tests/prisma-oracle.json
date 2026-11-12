@@ -3,11 +3,13 @@
   "repo": "Corgan/idleon-research-optimizer",
   "files": [
    "js/stats/prisma.js",
-   "js/stats/systems/w2/alchemy.js"
+   "js/stats/systems/w2/alchemy.js",
+   "js/stats/systems/common/statue-leveling.js"
   ],
   "saves": [
    "fixtures/data.json",
-   "crates/core/tests/prisma-save.json"
+   "crates/core/tests/prisma-save.json",
+   "crates/core/tests/prisma-outcomes-save.json"
   ]
  },
  "saves": {
@@ -1558,6 +1560,206 @@
       }
      ]
     }
+   },
+   "comparisons": {
+    "3": [
+     {
+      "id": "3:0",
+      "comparison": "retained",
+      "base": 81592.60759120862,
+      "withPrisma": 223792.04548458772,
+      "changes": []
+     },
+     {
+      "id": "3:1",
+      "comparison": "retained",
+      "base": 39.860647986861096,
+      "withPrisma": 109.32970780899417,
+      "changes": []
+     },
+     {
+      "id": "3:2",
+      "comparison": "retained",
+      "base": 24.925280199252803,
+      "withPrisma": 68.36501007559782,
+      "changes": [
+       {
+        "id": "statue-retention",
+        "name": "Statue EXP retained on level-up",
+        "before": 24.925280199252796,
+        "after": 50,
+        "delta": 25.074719800747204,
+        "percent": 100.5995503372471
+       }
+      ]
+     },
+     {
+      "id": "3:4",
+      "comparison": "retained",
+      "base": 2.4956791012530606,
+      "withPrisma": 6.845143787299895,
+      "changes": []
+     },
+     {
+      "id": "3:5",
+      "comparison": "retained",
+      "base": 20018,
+      "withPrisma": 54905.33148487303,
+      "changes": []
+     },
+     {
+      "id": "3:6",
+      "comparison": "retained",
+      "base": 39.860647986861096,
+      "withPrisma": 109.32970780899417,
+      "changes": []
+     },
+     {
+      "id": "3:7",
+      "comparison": "retained",
+      "base": 29.850857568978373,
+      "withPrisma": 81.8748741099255,
+      "changes": []
+     },
+     {
+      "id": "3:9",
+      "comparison": "retained",
+      "error": "This bubble is not Prisma-ed."
+     },
+     {
+      "id": "3:10",
+      "comparison": "retained",
+      "base": 80076,
+      "withPrisma": 219632.2971317161,
+      "changes": []
+     },
+     {
+      "id": "3:11",
+      "comparison": "retained",
+      "base": 11.976075362607785,
+      "withPrisma": 32.84795622298938,
+      "changes": []
+     },
+     {
+      "id": "3:13",
+      "comparison": "retained",
+      "base": 99.70150738769216,
+      "withPrisma": 273.4611006425595,
+      "changes": []
+     },
+     {
+      "id": "3:14",
+      "comparison": "retained",
+      "base": 39.97605865629208,
+      "withPrisma": 109.64625596875037,
+      "changes": []
+     },
+     {
+      "id": "3:16",
+      "comparison": "retained",
+      "base": 39.920259157737355,
+      "withPrisma": 109.49320921258906,
+      "changes": []
+     },
+     {
+      "id": "3:17",
+      "comparison": "retained",
+      "base": 1.299805282340606,
+      "withPrisma": 3.5651034015735816,
+      "changes": []
+     },
+     {
+      "id": "3:18",
+      "comparison": "retained",
+      "base": 99.80088605704614,
+      "withPrisma": 273.73367626367076,
+      "changes": []
+     },
+     {
+      "id": "3:19",
+      "comparison": "retained",
+      "base": 14.962654981825425,
+      "withPrisma": 41.03954099664861,
+      "changes": []
+     },
+     {
+      "id": "3:20",
+      "comparison": "retained",
+      "base": 134.52989752263457,
+      "withPrisma": 368.9883413980543,
+      "changes": []
+     },
+     {
+      "id": "3:22",
+      "comparison": "retained",
+      "base": 49.82587064676617,
+      "withPrisma": 136.66230114812177,
+      "changes": []
+     },
+     {
+      "id": "3:23",
+      "comparison": "retained",
+      "base": 39.88050784167289,
+      "withPrisma": 109.38417938016427,
+      "changes": []
+     },
+     {
+      "id": "3:24",
+      "comparison": "retained",
+      "base": 13.97211849639034,
+      "withPrisma": 38.322699450006866,
+      "changes": []
+     },
+     {
+      "id": "3:25",
+      "comparison": "retained",
+      "base": 4.9825853318738185,
+      "withPrisma": 13.66622536208403,
+      "changes": []
+     },
+     {
+      "id": "3:26",
+      "comparison": "retained",
+      "base": 49.85058272736328,
+      "withPrisma": 136.73008139474308,
+      "changes": []
+     },
+     {
+      "id": "3:27",
+      "comparison": "retained",
+      "base": 99.6515332536838,
+      "withPrisma": 273.32403168495136,
+      "changes": []
+     },
+     {
+      "id": "3:29",
+      "comparison": "retained",
+      "base": 98.80269058295964,
+      "withPrisma": 270.99582765784504,
+      "changes": []
+     },
+     {
+      "id": "3:30",
+      "comparison": "retained",
+      "base": 19.900626055848157,
+      "withPrisma": 54.5833984590291,
+      "changes": []
+     },
+     {
+      "id": "3:31",
+      "comparison": "retained",
+      "base": 39.40973930152484,
+      "withPrisma": 108.09295634342341,
+      "changes": []
+     },
+     {
+      "id": "3:32",
+      "comparison": "retained",
+      "base": 4.878463782207097,
+      "withPrisma": 13.380640978071142,
+      "changes": []
+     }
+    ]
    }
   },
   "tiny": {
@@ -3057,6 +3259,432 @@
       }
      ]
     }
+   },
+   "comparisons": {
+    "0": [
+     {
+      "id": "0:0",
+      "comparison": "retained",
+      "base": 10,
+      "withPrisma": 20,
+      "changes": []
+     },
+     {
+      "id": "0:2",
+      "comparison": "added",
+      "base": 10,
+      "withPrisma": 20,
+      "changes": []
+     }
+    ]
+   }
+  },
+  "outcomes": {
+   "characters": [
+    {
+     "ci": 0,
+     "name": "Character 1",
+     "className": "Beginner"
+    }
+   ],
+   "multiplier": 2,
+   "cauldrons": {
+    "3": {
+     "fragments": 120,
+     "map": 5,
+     "rows": [
+      {
+       "id": "3:0",
+       "name": "Lotto Skills",
+       "effect": "TotalLUK",
+       "level": 0,
+       "status": "unpurchased",
+       "comparable": false,
+       "reason": "Purchase this bubble first.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:1",
+       "name": "Droppin Loads",
+       "effect": "DropRate",
+       "level": 10,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 5,
+       "withPrisma": 10
+      },
+      {
+       "id": "3:2",
+       "name": "Startue Exp",
+       "effect": "StatueStartEXP",
+       "level": 25,
+       "status": "ready",
+       "comparable": true,
+       "reason": "",
+       "base": 7.352941176470588,
+       "withPrisma": 14.705882352941176
+      },
+      {
+       "id": "3:3",
+       "name": "Level Up Gift",
+       "effect": "LevelUpACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:4",
+       "name": "Prowesessary",
+       "effect": "ProwessMulti",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:5",
+       "name": "Stamp Tramp",
+       "effect": "TPpostage",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:6",
+       "name": "Undeveloped Costs",
+       "effect": "BubbleCost",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:7",
+       "name": "Da Daily Drip",
+       "effect": "LqdCap",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:8",
+       "name": "Grind Time",
+       "effect": "expACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:9",
+       "name": "Laaarrrryyyy",
+       "effect": "DoubleBubbleUpg",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:10",
+       "name": "Cogs For Hands",
+       "effect": "CogMakeSpd",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:11",
+       "name": "Sample It",
+       "effect": "SampleSize",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:12",
+       "name": "Big Game Hunter",
+       "effect": "GiantsACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:13",
+       "name": "Ignore Overdues",
+       "effect": "booksSpeed",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:14",
+       "name": "Yellow Bargain",
+       "effect": "BubbleCostYe",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:15",
+       "name": "Mr Massacre",
+       "effect": "MKtierACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:16",
+       "name": "Egg Ink",
+       "effect": "EggInc",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:17",
+       "name": "Diamond Chef",
+       "effect": "MealSpdz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:18",
+       "name": "Card Champ",
+       "effect": "CardDropz",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:19",
+       "name": "Petting The Rift",
+       "effect": "NewPetRift",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:20",
+       "name": "Boaty Bubble",
+       "effect": "Y1",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:21",
+       "name": "Big P",
+       "effect": "Y2ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:22",
+       "name": "Bit By Bit",
+       "effect": "Y3",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:23",
+       "name": "Gifts Abound",
+       "effect": "Y4",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:24",
+       "name": "Atom Split",
+       "effect": "Y5",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:25",
+       "name": "Cropius Mapper",
+       "effect": "Y6",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:26",
+       "name": "Essence Boost",
+       "effect": "Y7",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:27",
+       "name": "Hinge Buster",
+       "effect": "Y8",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:28",
+       "name": "Ninja Looter",
+       "effect": "Y9ACTIVE",
+       "level": null,
+       "status": "ineligible",
+       "comparable": false,
+       "reason": "Large bubbles cannot receive Prisma.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:29",
+       "name": "Lo Cost Mo Jade",
+       "effect": "Y10",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:30",
+       "name": "Faster Nrg",
+       "effect": "Y11",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:31",
+       "name": "Kattle Da Goat",
+       "effect": "Y12",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      },
+      {
+       "id": "3:32",
+       "name": "Codfrey Rulz Ok",
+       "effect": "Y13",
+       "level": null,
+       "status": "unavailable",
+       "comparable": false,
+       "reason": "Saved bubble level or Prisma ownership is missing or invalid.",
+       "base": 0,
+       "withPrisma": 0
+      }
+     ]
+    }
+   },
+   "comparisons": {
+    "3": [
+     {
+      "id": "3:1",
+      "comparison": "added",
+      "base": 5,
+      "withPrisma": 10,
+      "changes": []
+     },
+     {
+      "id": "3:2",
+      "comparison": "added",
+      "base": 7.352941176470588,
+      "withPrisma": 14.705882352941176,
+      "changes": [
+       {
+        "id": "statue-retention",
+        "name": "Statue EXP retained on level-up",
+        "before": 7.352941176470584,
+        "after": 14.70588235294118,
+        "delta": 7.352941176470595,
+        "percent": 100.00000000000016
+       }
+      ]
+     }
+    ]
    }
   }
  }

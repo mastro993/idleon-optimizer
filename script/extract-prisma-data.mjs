@@ -3,7 +3,9 @@
 //
 // Source: `js/stats/data/w2/alchemy.js` (`bubbleDefinitions`) reads
 // `AlchemyDescription` from `js/stats/data/game/customlists.js`; the bubble
-// ownership code letter table `N2L` comes from `js/stats/data/game/hardcoded.js`.
+// ownership code letter table `N2L` comes from `js/stats/data/game/hardcoded.js`;
+// the native consumer audit comes from `js/stats/data/prisma-source-coverage.js`,
+// which `_tools/prisma-coverage.mjs` generates from the game source.
 import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,6 +25,9 @@ const { bubbleDefinitions, bubbleParams } = await import(
 );
 const { N2L } = await import(join(source, 'js/stats/data/common/encoding.js'));
 const { entityName } = await import(join(source, 'js/stats/entity-names.js'));
+const { PRISMA_SOURCE_COVERAGE } = await import(
+  join(source, 'js/stats/data/prisma-source-coverage.js')
+);
 
 const bubbles = bubbleDefinitions().map((bubble) => {
   const params = bubbleParams(bubble.cauldron, bubble.index);
@@ -43,12 +48,20 @@ const bubbles = bubbleDefinitions().map((bubble) => {
 const payload = {
   letters: N2L,
   bubbles,
+  // The direct native references upstream's audit traced for each effect.
+  coverage: {
+    sourceHash: PRISMA_SOURCE_COVERAGE.sourceHash,
+    scope: PRISMA_SOURCE_COVERAGE.scope,
+    reads: PRISMA_SOURCE_COVERAGE.reads,
+    unresolved: PRISMA_SOURCE_COVERAGE.unresolved.length,
+  },
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
     files: [
       'js/stats/data/w2/alchemy.js',
       'js/stats/data/common/encoding.js',
       'js/stats/entity-names.js',
+      'js/stats/data/prisma-source-coverage.js',
     ],
   },
 };

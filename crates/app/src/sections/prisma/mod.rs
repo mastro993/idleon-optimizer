@@ -5,10 +5,12 @@
 //! cancelled; cancelling keeps the result already on screen, and changing the
 //! save, character, cauldron or AFK hours marks it stale.
 //!
-//! The ranked rows and the full coverage table arrive with PR-02. This pane
-//! shows what the port measures today: each bubble's processed bonus at the
-//! saved level, the same bonus with Prisma toggled, and every effect that still
-//! has no downstream model in this build.
+//! Each row compares the saved scope without this bubble's Prisma with the
+//! scope with it, so the columns are per-metric deltas: the bubble's own bonus
+//! (an intermediate) and every downstream outcome the build models, today the
+//! Statue EXP retention the STARTUE EXP bubble buys. The coverage table names
+//! every effect, the native systems upstream's source audit traced for it and
+//! whether this build computes a downstream metric for it.
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
@@ -27,7 +29,7 @@ use gpui::{
     AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Role, SharedString,
     Styled, Window, div, px,
 };
-use idleon_core::prisma::{self, Cauldron, Change, Outcome, Plan, RowResult, Status};
+use idleon_core::prisma::{self, Cauldron, Change, Consumer, Outcome, Plan, RowResult, Status};
 
 /// The AFK claim range upstream validates, in hours.
 pub const MIN_HOURS: f64 = 0.034;
@@ -366,10 +368,18 @@ fn summary_card(plan: &Plan, outcome: Option<&Outcome>, muted: gpui::Hsla) -> An
         )
         .child(
             div().px_3().pb_3().child(
-                Caption::new(
-                    "The covered family is the processed bubble bonus: it is an intermediate, not a \
-                     downstream stat gain. The outcome families still missing are named under Coverage.",
-                )
+                Caption::new(match outcome {
+                    Some(outcome) => format!(
+                        "{} of {} effects have a downstream model in this build. The bubble bonus \
+                         is always an intermediate; Coverage names the rest and the native systems \
+                         that read them.",
+                        outcome.coverage.modelled(),
+                        outcome.coverage.total()
+                    ),
+                    None => "Each row measures the bubble bonus (an intermediate) and any \
+                             downstream outcome this build models. Coverage names the rest."
+                        .to_string(),
+                })
                 .text_color(muted),
             ),
         )
@@ -400,11 +410,11 @@ fn results_card(
                 .map(|metric| Choice::new(metric.id.clone(), metric.name.clone())),
         );
     }
-    let selected = state.prisma.metric.clone().unwrap_or_default();
+    let chosen = state.prisma.metric.clone().unwrap_or_default();
     let metric_entity = entity.clone();
     let metric = Select::new("prisma-metric", metrics)
         .label("Rank by")
-        .selected(selected.clone())
+        .selected(chosen.clone())
         .size(ControlSize::Sm)
         .on_change(move |value, _window, cx| {
             let value = value.to_string();
@@ -424,29 +434,35 @@ fn results_card(
         ));
 
     let rows: Vec<&RowResult> = match outcome {
-        Some(outcome) if selected.is_empty() => outcome
+        Some(outcome) if chosen.is_empty() => outcome
             .bubbles()
             .into_iter()
             .filter(|result| result.matches(query))
             .collect(),
-        Some(outcome) if !selected.is_empty() => outcome
-            .rank(&selected)
+        Some(outcome) => outcome
+            .rank(&chosen)
             .into_iter()
             .filter(|result| result.matches(query))
             .collect(),
-        Some(outcome) => outcome.search(query),
         None => Vec::new(),
     };
 
+    let selected_metric = (!chosen.is_empty()).then_some(chosen.as_str());
     let table = rows.iter().fold(
-        Table::new(["Bubble", "Level", "Status", "Prisma bonus", "Change"]),
+        Table::new([
+            "Bubble",
+            "Level",
+            "Status",
+            "Bubble bonus",
+            "Downstream change",
+        ]),
         |table, result| {
             table.row([
                 bubble_cell(result),
                 level_cell(result),
                 status_cell(result.row.status),
                 bonus_cell(result),
-                change_cell(result, compact),
+                change_cell(result, selected_metric, compact),
             ])
         },
     );
@@ -490,7 +506,7 @@ fn results_card(
         .unwrap_or(0);
     let description = if outcome.is_some() {
         format!(
-            "{compared} bubbles compared · {changed} changed · {} shown",
+            "{compared} bubbles compared · {changed} with a downstream change · {} shown",
             rows.len()
         )
     } else {
@@ -535,9 +551,10 @@ fn results_card(
                     .text_size(px(11.0))
                     .text_color(muted)
                     .child(format!(
-                        "Unowned rows compare the current save with Prisma; already-Prisma rows \
-                             compare without it. Gains are independent and the bonus values are \
-                             intermediates. {compared} compared, {changed} changed."
+                        "Every row compares without → with this bubble's Prisma, so a ready row \
+                             previews the gain and an already-Prisma row measures the benefit it \
+                             retains. Bubble bonuses are intermediates; only the downstream change \
+                             is an outcome. {compared} compared, {changed} moved a downstream metric."
                     )),
             ),
         )
@@ -551,7 +568,12 @@ fn bubble_cell(result: &RowResult) -> AnyElement {
             result.row.cauldron, result.row.index
         )))
         .role(Role::Label)
-        .aria_label(format!("{} · {}", result.row.name, result.row.effect))
+        .aria_label(format!(
+            "{} · {} · {}",
+            result.row.name,
+            result.row.effect,
+            result.comparison.label()
+        ))
         .flex()
         .flex_col()
         .gap_0p5()
@@ -595,20 +617,27 @@ fn status_cell(status: Status) -> AnyElement {
         .into_any_element()
 }
 
-/// The bubble's own processed bonus: the saved value and the variant's value.
+/// The bubble's own processed bonus: the value without this bubble's Prisma and
+/// the value with it, plus the delta the flip buys.
 fn bonus_cell(result: &RowResult) -> AnyElement {
     let metric = format!("bubble-bonus:{}", result.row.id);
-    let before = result
-        .before
-        .iter()
-        .find(|entry| entry.id == metric)
-        .and_then(|entry| entry.value);
-    let after = result.outcome(&metric).and_then(|entry| entry.value);
-    let label = match (before, after) {
-        (Some(before), Some(after)) => {
-            format!("{} → {}", format::number(before), format::number(after))
-        }
-        _ => "unavailable".into(),
+    let change = result
+        .intermediates
+        .first()
+        .cloned()
+        .or_else(|| result.view(&metric));
+    let label = match &change {
+        Some(change) => format!(
+            "{} → {}",
+            format::number(change.before),
+            format::number(change.after)
+        ),
+        None => "unavailable".into(),
+    };
+    let delta = change.map(|change| change_text(&change, true));
+    let spoken = match &delta {
+        Some(delta) => format!("{label} ({delta})"),
+        None => label.clone(),
     };
     div()
         .id(SharedString::from(format!(
@@ -616,20 +645,37 @@ fn bonus_cell(result: &RowResult) -> AnyElement {
             result.row.cauldron, result.row.index
         )))
         .role(Role::Label)
-        .text_size(px(13.0))
-        .child(label)
+        .aria_label(spoken)
+        .flex()
+        .flex_col()
+        .gap_0p5()
+        .child(div().text_size(px(13.0)).child(label))
+        .children(delta.map(Caption::new))
         .into_any_element()
 }
 
-fn change_cell(result: &RowResult, compact: bool) -> AnyElement {
-    let label = match result.changes.first() {
-        Some(change) => change_text(change, compact),
-        None => "No measured change".to_string(),
+/// One row's downstream delta: the selected metric when one ranks the rows,
+/// else the first measured change the build found.
+fn change_cell(result: &RowResult, metric: Option<&str>, compact: bool) -> AnyElement {
+    let change = match metric {
+        Some(metric) => result.view(metric),
+        None => result.changes.first().cloned(),
     };
-    let tone = match result.changes.first() {
+    let tone = match &change {
         Some(change) if change.delta > 0.0 => Tone::Success,
         Some(change) if change.delta < 0.0 => Tone::Warning,
         _ => Tone::Neutral,
+    };
+    let (label, name) = match &change {
+        Some(change) => (
+            change_text(change, compact),
+            metric.is_none().then(|| change.name.clone()),
+        ),
+        None => ("No measured change".to_string(), None),
+    };
+    let spoken = match &name {
+        Some(name) => format!("{label} · {name}"),
+        None => label.clone(),
     };
     div()
         .id(SharedString::from(format!(
@@ -637,7 +683,12 @@ fn change_cell(result: &RowResult, compact: bool) -> AnyElement {
             result.row.cauldron, result.row.index
         )))
         .role(Role::Label)
+        .aria_label(spoken)
+        .flex()
+        .flex_col()
+        .gap_0p5()
         .child(Badge::new(label).tone(tone))
+        .children(name.map(Caption::new))
         .into_any_element()
 }
 
@@ -658,7 +709,35 @@ fn change_text(change: &Change, compact: bool) -> String {
     }
 }
 
-/// Every effect in the cauldron and whether a downstream model reads it.
+/// The native reference a consumer row names, trimmed the way the upstream
+/// detail list prints it.
+fn consumer_text(consumer: &Consumer) -> String {
+    let method = consumer
+        .method
+        .replace("_customBlock_", "")
+        .replace("_customEvent_", "")
+        .replace("_event_", "");
+    match &consumer.mode {
+        Some(mode) => format!("{method} · {}", mode.label()),
+        None => method,
+    }
+}
+
+/// The first few consumers, with the rest counted.
+fn consumer_summary(consumers: &[Consumer]) -> String {
+    const SHOWN: usize = 3;
+    if consumers.is_empty() {
+        return "No direct native reference".into();
+    }
+    let mut parts: Vec<String> = consumers.iter().take(SHOWN).map(consumer_text).collect();
+    if consumers.len() > SHOWN {
+        parts.push(format!("+{} more", consumers.len() - SHOWN));
+    }
+    parts.join(", ")
+}
+
+/// Every effect in the cauldron, the native systems that read it and whether a
+/// downstream model in this build reads it too.
 fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
     let Some(outcome) = outcome else {
         return div().into_any_element();
@@ -670,8 +749,30 @@ fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
         coverage.total()
     );
     let table = coverage.effects.iter().fold(
-        Table::new(["Effect", "Bubbles", "Downstream model"]),
+        Table::new(["Effect", "Bubbles", "Native consumers", "Downstream model"]),
         |table, entry| {
+            let models = if entry.modelled() {
+                entry
+                    .metrics
+                    .iter()
+                    .map(|id| {
+                        outcome
+                            .metrics()
+                            .iter()
+                            .find(|metric| metric.id == *id)
+                            .map(|metric| metric.name.clone())
+                            .unwrap_or_else(|| id.clone())
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                String::new()
+            };
+            let spoken = if entry.modelled() {
+                format!("Modelled · {models}")
+            } else {
+                "Missing".to_string()
+            };
             table.row([
                 div()
                     .id(SharedString::from(format!(
@@ -688,15 +789,31 @@ fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
                     .into_any_element(),
                 div()
                     .id(SharedString::from(format!(
+                        "prisma-coverage-consumers-{}",
+                        entry.effect
+                    )))
+                    .role(Role::Label)
+                    .aria_label(consumer_summary(&entry.consumers))
+                    .text_size(px(12.0))
+                    .text_color(muted)
+                    .child(consumer_summary(&entry.consumers))
+                    .into_any_element(),
+                div()
+                    .id(SharedString::from(format!(
                         "prisma-coverage-model-{}",
                         entry.effect
                     )))
                     .role(Role::Label)
-                    .child(if entry.modelled {
+                    .aria_label(spoken)
+                    .flex()
+                    .flex_col()
+                    .gap_0p5()
+                    .child(if entry.modelled() {
                         Badge::new("Modelled").tone(Tone::Success)
                     } else {
                         Badge::new("Missing").tone(Tone::Warning)
                     })
+                    .children((!models.is_empty()).then(|| Caption::new(models).text_color(muted)))
                     .into_any_element(),
             ])
         },
@@ -707,6 +824,7 @@ fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
                 div()
                     .id("prisma-coverage-count")
                     .role(Role::Label)
+                    .aria_label(format!("{} missing", coverage.missing()))
                     .text_size(px(12.0))
                     .text_color(muted)
                     .child(format!("{} missing", coverage.missing())),
@@ -723,8 +841,10 @@ fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
         .child(
             div().px_3().pb_3().child(
                 Caption::new(
-                    "No measured downstream change does not mean no effect: only the chosen metric \
-                     ranks, and the outcome families for these effects are still on the roadmap.",
+                    "Native consumers are the game scripts upstream's audit traced for each effect; \
+                     they do not mean this build computes them. A missing effect has no damage, \
+                     stats, skills or account-total outcome yet: its bubble bonus is only an \
+                     intermediate.",
                 )
                 .text_color(muted),
             ),
