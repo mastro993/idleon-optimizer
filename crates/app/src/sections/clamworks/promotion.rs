@@ -6,7 +6,6 @@
 
 use super::kpi;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
@@ -14,8 +13,9 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use idleon_ui::format;
 
-pub fn promotion_pane(
+pub(crate) fn promotion_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -125,7 +125,7 @@ pub fn promotion_pane(
 }
 
 /// Every worker-class reward with the level that unlocks it.
-fn reward_table(promotion: &idleon_core::clamworks::Promotion) -> AnyElement {
+fn reward_table(promotion: &idleon_clamworks::Promotion) -> AnyElement {
     let mut table = Table::new(["Worker Class Level", "Reward", "Status"]);
     for reward in &promotion.rewards {
         let (label, tone) = if reward.unlocked {

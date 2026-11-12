@@ -2,7 +2,6 @@
 //! requirement of each jar type.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, KpiCard, Meter, Statistic, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
@@ -10,13 +9,14 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::Jar;
-use idleon_core::jar::{BASE_PRODUCTION_PER_HOUR, TYPE_CATEGORIES, TYPE_NAMES, TypeCategory};
+use idleon_jar::Jar;
+use idleon_jar::{BASE_PRODUCTION_PER_HOUR, TYPE_CATEGORIES, TYPE_NAMES, TypeCategory};
+use idleon_ui::format;
 
 /// The tier columns the slot table shows.
 const TIERS: u32 = 6;
 
-pub fn production(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn production(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()

@@ -26,7 +26,11 @@ use gpui::{
 const ROW_CAP: usize = 60;
 
 /// The talents pane: the search field and one editable row per talent.
-pub fn pane(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let query = state.combat.talent_query(cx);
     let muted = cx.theme().colors.fg_muted;
     let total = state.combat.loadout.talents.len();

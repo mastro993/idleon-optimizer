@@ -1,7 +1,6 @@
 //! The current opal state: the six overview cards and the villagers table.
 
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -11,12 +10,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div};
-use idleon_core::Opal;
-use idleon_core::opal::{NAMES, VILLAGERS};
+use idleon_opal::Opal;
+use idleon_opal::{NAMES, VILLAGERS};
+use idleon_ui::format;
 
 /// The overview row: unlocked villagers, the opal totals and the two cosmo
 /// bonuses, then the total EXP the save earns.
-pub fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
     let opals = opal.opals();
     let total_opals = opal.total_opals();
     let min_opals = opal.min_opals(&opals);
@@ -97,7 +97,7 @@ pub fn current_state(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
 ///
 /// An unlocked villager's row switches the breakdown to that villager; the
 /// card's action switches it back to the total.
-pub fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let opals = opal.opals();
     let total = opal.total_exp_rate(&opals);

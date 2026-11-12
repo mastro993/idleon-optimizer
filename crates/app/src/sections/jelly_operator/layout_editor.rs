@@ -2,7 +2,6 @@
 
 use super::grid;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -11,10 +10,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::jelly::Jelly;
-use idleon_core::jelly::metrics::MetricOptions;
+use idleon_jelly::Jelly;
+use idleon_jelly::metrics::MetricOptions;
+use idleon_ui::format;
 
-pub fn layout_editor(
+pub(crate) fn layout_editor(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -52,7 +52,7 @@ pub fn layout_editor(
                         .description(format!(
                             "{} cells placed · {} slot(s) unlocked · the save's board, editable",
                             layout.len(),
-                            idleon_core::jelly::board::unlocked_count(jelly)
+                            idleon_jelly::board::unlocked_count(jelly)
                         ))
                         .action(reset),
                 )
@@ -68,7 +68,7 @@ pub fn layout_editor(
                             grid::BoardView {
                                 prefix: "jelly",
                                 layout: &layout,
-                                unlocked: &idleon_core::jelly::board::unlocked_slots(jelly),
+                                unlocked: &idleon_jelly::board::unlocked_slots(jelly),
                                 obstruction: jelly.progress.obstruction,
                                 selected: Some(state.jelly_state.selected),
                                 action: grid::BoardAction::Layout,
@@ -115,7 +115,7 @@ fn message(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The layout stats the page shows under the board (`layoutStats`).
-fn stats(metrics: &idleon_core::jelly::Metrics) -> AnyElement {
+fn stats(metrics: &idleon_jelly::Metrics) -> AnyElement {
     if !metrics.valid {
         return div()
             .id("jelly-layout-invalid")

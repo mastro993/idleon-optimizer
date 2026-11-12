@@ -1,4 +1,4 @@
-// Regenerates `crates/core/tests/prisma-oracle.json` from the upstream Prisma
+// Regenerates `crates/prisma/tests/prisma-oracle.json` from the upstream Prisma
 // plan and comparison, so the Rust port is tested against the source of truth
 // rather than hand-picked numbers.
 // Usage: node script/prisma-oracle.mjs <path-to-idleon-research-optimizer>
@@ -130,9 +130,9 @@ async function comparisons(raw, cauldrons) {
 }
 
 const fixture = read('fixtures/data.json');
-const tiny = read('crates/core/tests/prisma-save.json');
+const tiny = read('crates/prisma/tests/prisma-save.json');
 // The purpose-built save only needs its STARTUE EXP cauldron in the oracle.
-const outcomes = read('crates/core/tests/prisma-outcomes-save.json', [3]);
+const outcomes = read('crates/prisma/tests/prisma-outcomes-save.json', [3]);
 
 const payload = {
   generatedFrom: {
@@ -144,8 +144,8 @@ const payload = {
     ],
     saves: [
       'fixtures/data.json',
-      'crates/core/tests/prisma-save.json',
-      'crates/core/tests/prisma-outcomes-save.json',
+      'crates/prisma/tests/prisma-save.json',
+      'crates/prisma/tests/prisma-outcomes-save.json',
     ],
   },
   saves: {
@@ -155,7 +155,7 @@ const payload = {
   },
 };
 writeFileSync(
-  join(root, 'crates/core/tests/prisma-oracle.json'),
+  join(root, 'crates/prisma/tests/prisma-oracle.json'),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(

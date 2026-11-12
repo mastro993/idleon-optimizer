@@ -1,5 +1,5 @@
 // Writes the upstream Jelly Operator figures for the committed synthetic save,
-// so `crates/core/tests/jelly.rs` compares the Rust port against the JS.
+// so `crates/jelly/tests/jelly.rs` compares the Rust port against the JS.
 //
 // Usage: node script/jelly-oracle.mjs <path-to-idleon-research-optimizer>
 //

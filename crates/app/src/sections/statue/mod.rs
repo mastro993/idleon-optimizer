@@ -7,9 +7,10 @@
 //! the batch set/next-level actions with their undo step and the farming
 //! breakdown behind one statue's row.
 
+mod actions;
+
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
-use crate::ui::{format, layout};
+use crate::ui::layout;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::{Banner, EmptyState};
@@ -25,16 +26,18 @@ use gpui::{
     AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Role, SharedString,
     Styled, Subscription, Window, div, px,
 };
-use idleon_core::statue::{
-    self, Estimate, Leveling, NextLevel, Plan, Progress, RateError, StatueInfo, StatueSave,
-    TargetCost, Unavailable,
+use idleon_statue::{
+    self as statue, Estimate, Leveling, NextLevel, Plan, Progress, RateError, StatueInfo,
+    StatueSave, TargetCost, Unavailable,
 };
+use idleon_ui::format;
+use idleon_ui::formula::FormulaTree;
 use std::cmp::Ordering;
 
 /// How the table is ordered when it is not in game order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Sort {
+pub(crate) enum Sort {
     #[default]
     Game,
     /// Lowest saved level first; statues without a row stay last.
@@ -84,49 +87,35 @@ fn estimate_from_id(id: &str) -> Option<Estimate> {
 
 /// The section's own state: the imported statue rows, the account multipliers,
 /// the table controls and the plan the batch actions rewrite.
-pub struct State {
-    pub save: StatueSave,
-    pub character: usize,
-    pub sort: Sort,
-    pub estimate: Estimate,
+pub(crate) struct State {
+    pub(crate) save: StatueSave,
+    pub(crate) character: usize,
+    pub(crate) sort: Sort,
+    pub(crate) estimate: Estimate,
     /// The entered targets and raw rates, with the batch undo step.
-    pub plan: Plan,
+    pub(crate) plan: Plan,
     /// The statue the farming breakdown describes.
-    pub breakdown_statue: usize,
-    pub breakdown: Entity<FormulaTree>,
-    pub search: Entity<TextInput>,
+    pub(crate) breakdown_statue: usize,
+    pub(crate) breakdown: Entity<FormulaTree>,
+    pub(crate) search: Entity<TextInput>,
     /// One raw statues/hour field per statue, mirroring [`Plan::rates`].
-    pub rate_inputs: Vec<Entity<TextInput>>,
+    pub(crate) rate_inputs: Vec<Entity<TextInput>>,
     /// The Set all targets entry, read when its button is pressed.
-    pub batch_input: Entity<TextInput>,
+    pub(crate) batch_input: Entity<TextInput>,
     /// Why the last batch entry was rejected, or `None` when it applied.
-    pub batch_error: Option<String>,
+    pub(crate) batch_error: Option<String>,
     /// What the last batch action did, shown under its buttons.
-    pub batch_status: Option<String>,
+    pub(crate) batch_status: Option<String>,
     _rate_subscriptions: Vec<Subscription>,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let search = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Name or effect")
-                .label("Find a statue")
-        });
-        let batch_input = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Level")
-                .label("Set all targets")
-        });
-        let breakdown = cx.new(|cx| FormulaTree::new("statue-breakdown", window, cx));
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let search = crate::ui::text_input("Name or effect", "Find a statue", window, cx);
+        let batch_input = crate::ui::text_input("Level", "Set all targets", window, cx);
+        let breakdown = crate::ui::formula_tree("statue-breakdown", window, cx);
         let rate_inputs: Vec<Entity<TextInput>> = (0..statue::count())
-            .map(|_| {
-                cx.new(|cx| {
-                    TextInput::new(window, cx)
-                        .placeholder("e.g. 1M")
-                        .label("Raw statues per hour")
-                })
-            })
+            .map(|_| crate::ui::text_input("e.g. 1M", "Raw statues per hour", window, cx))
             .collect();
         let rate_subscriptions = rate_inputs
             .iter()
@@ -160,7 +149,7 @@ impl State {
 
     /// Replace the saved rows after an import, keeping the selected character
     /// when the new save still carries it and clearing the plan inputs.
-    pub fn load(&mut self, save: StatueSave, cx: &mut Context<AppState>) {
+    pub(crate) fn load(&mut self, save: StatueSave, cx: &mut Context<AppState>) {
         self.save = save;
         if !self.save.has_character(self.character) {
             self.character = self.save.first_character().unwrap_or(0);
@@ -174,7 +163,7 @@ impl State {
 
     /// Change the table's character and clear its plan inputs, as the upstream
     /// character switch does.
-    pub fn select_character(&mut self, character: usize, cx: &mut Context<AppState>) {
+    pub(crate) fn select_character(&mut self, character: usize, cx: &mut Context<AppState>) {
         self.character = character;
         self.clear_inputs(cx);
     }
@@ -190,7 +179,7 @@ impl State {
 
     /// Replace the plan inputs from a project config, keeping one entry per
     /// statue and syncing the fields on screen.
-    pub fn set_plan(
+    pub(crate) fn set_plan(
         &mut self,
         targets: Vec<Option<u32>>,
         rates: Vec<String>,
@@ -211,7 +200,7 @@ impl State {
 
     /// The target level for a statue: the entered target, else the saved level
     /// plus one.
-    pub fn target(&self, statue: usize) -> Option<u32> {
+    pub(crate) fn target(&self, statue: usize) -> Option<u32> {
         self.plan.target(statue).or_else(|| {
             self.save
                 .progress(self.character, statue)
@@ -219,26 +208,26 @@ impl State {
         })
     }
 
-    pub fn set_target(&mut self, statue: usize, target: u32) {
+    pub(crate) fn set_target(&mut self, statue: usize, target: u32) {
         self.plan.set_target(statue, target);
     }
 
     /// One statue's raw statues/hour entry, trimmed.
-    pub fn rate_text(&self, statue: usize) -> String {
+    pub(crate) fn rate_text(&self, statue: usize) -> String {
         self.plan.rate(statue).to_string()
     }
 
     /// The parsed rate the row and the breakdown farm at.
-    pub fn rate(&self, statue: usize) -> Result<f64, RateError> {
+    pub(crate) fn rate(&self, statue: usize) -> Result<f64, RateError> {
         statue::parse_rate(self.plan.rate(statue))
     }
 
     /// The statue the breakdown describes, kept inside the game's table.
-    pub fn breakdown_statue(&self) -> usize {
+    pub(crate) fn breakdown_statue(&self) -> usize {
         self.breakdown_statue.min(statue::count().saturating_sub(1))
     }
 
-    pub fn query(&self, cx: &App) -> String {
+    pub(crate) fn query(&self, cx: &App) -> String {
         self.search.read(cx).text().to_string()
     }
 }
@@ -345,7 +334,11 @@ fn sort_rows(rows: &mut [Row], sort: Sort) {
 }
 
 /// The Statue Calculator page.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let query = state.statue.query(cx);
     let save_empty = state.statue.save.is_empty();
     let all_rows = rows(&state.statue);

@@ -1,6 +1,6 @@
 //! Worship Tower Defense: the live simulator, its replay, plan and model panes.
 //!
-//! The simulator core is `idleon_core::worship`; this module owns the live run,
+//! The simulator core is `idleon_worship`; this module owns the live run,
 //! the tick pump, the map and the Plan and Model panes. Tower placement is
 //! direct: pick a type from the palette, then a highlighted platform slot.
 //! Clicking a standing tower selects it for a one-level upgrade or a 60% refund
@@ -9,13 +9,15 @@
 //! plan through the same simulator engine, and the Optimizer pane searches
 //! strategies with that engine before recommending one.
 
+mod actions;
+
 mod map;
 mod model;
 mod optimizer;
 mod plan;
 mod state;
 
-pub use state::{OptimizeConfig, OptimizeRunInputs, PlanRunInputs, PlanSource, State};
+pub(crate) use state::{OptimizeConfig, OptimizeRunInputs, PlanRunInputs, PlanSource, State};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -30,12 +32,12 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
-use idleon_core::worship;
+use idleon_worship as worship;
 
 /// The section's four panes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The live run, its palette, map and HUD.
     #[default]
     Simulator,
@@ -48,9 +50,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Simulator, Tab::Plan, Tab::Model, Tab::Optimizer];
+    pub(crate) const ALL: [Tab; 4] = [Tab::Simulator, Tab::Plan, Tab::Model, Tab::Optimizer];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Simulator => "worship-simulator-tab",
             Tab::Plan => "worship-plan-tab",
@@ -59,7 +61,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Simulator => "Simulator",
             Tab::Plan => "Plan",
@@ -68,13 +70,17 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The section's view.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     state.worship_ensure();
     state.worship_ensure_plan();
     state.worship_pump(cx);

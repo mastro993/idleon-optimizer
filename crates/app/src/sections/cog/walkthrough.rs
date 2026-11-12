@@ -15,10 +15,10 @@ use ely_gpui_component::theme::ControlSize;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::cog::{SwapStep, SwapWalkthrough, display_name};
+use idleon_cog::{SwapStep, SwapWalkthrough, display_name};
 
 /// The walkthrough card for an open run.
-pub fn card(walkthrough: &SwapWalkthrough, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(walkthrough: &SwapWalkthrough, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let previous = entity.clone();
     let next = entity.clone();

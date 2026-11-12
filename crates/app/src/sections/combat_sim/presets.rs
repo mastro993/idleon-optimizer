@@ -6,6 +6,7 @@
 //! preset holds item keys and talent levels; applying one is the same edit as
 //! equipping each slot by hand.
 
+use crate::sections::presets;
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::forms::Input;
@@ -14,56 +15,44 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use idleon_core::combat::{Loadout, Preset};
+use idleon_combat::{Loadout, Preset};
 
 /// The named loadouts: what the project JSON keeps and the bar edits.
 #[derive(Clone, Debug, Default)]
-pub struct Presets {
-    pub items: Vec<Preset>,
+pub(crate) struct Presets {
+    pub(crate) items: Vec<Preset>,
 }
 
 impl Presets {
-    /// How many loadouts one project keeps.
-    pub const MAX: usize = 40;
-    /// How long a loadout name may be.
-    const NAME_MAX: usize = 60;
-
     /// Save `loadout` under `name`, replacing a loadout of the same name for
     /// the same character, the way upstream's storage key does. Returns the
     /// status line the window shows.
-    pub fn store(&mut self, loadout: &Loadout, name: &str) -> Result<String, String> {
-        let name: String = name.trim().chars().take(Self::NAME_MAX).collect();
+    pub(crate) fn store(&mut self, loadout: &Loadout, name: &str) -> Result<String, String> {
+        let name = presets::clean_name(name);
         if name.is_empty() {
             return Err("Type a loadout name before saving.".into());
         }
         let preset = loadout.preset(&name);
-        let at_limit = self.items.len() >= Self::MAX;
-        let existing = self
-            .items
-            .iter_mut()
-            .find(|entry| entry.name == preset.name && entry.character == preset.character);
-        match existing {
-            Some(existing) => *existing = preset,
-            None if at_limit => {
-                return Err(format!(
-                    "{} loadouts is the limit; delete one before saving another.",
-                    Self::MAX
-                ));
-            }
-            None => {
-                self.items.push(preset);
-                self.items.sort_by(|left, right| {
-                    left.name
-                        .cmp(&right.name)
-                        .then(left.character.cmp(&right.character))
-                });
-            }
+        let (key, character) = (preset.name.clone(), preset.character);
+        let before = self.items.len();
+        presets::upsert(
+            &mut self.items,
+            preset,
+            |entry| entry.name == key && entry.character == character,
+            "loadouts",
+        )?;
+        if self.items.len() > before {
+            self.items.sort_by(|left, right| {
+                left.name
+                    .cmp(&right.name)
+                    .then(left.character.cmp(&right.character))
+            });
         }
         Ok(format!("Saved the loadout “{name}”."))
     }
 
     /// Apply the loadout at `index` to its character's working loadout.
-    pub fn apply(&self, index: usize, loadout: &mut Loadout) -> String {
+    pub(crate) fn apply(&self, index: usize, loadout: &mut Loadout) -> String {
         let Some(preset) = self.items.get(index) else {
             return "No loadout at that position.".into();
         };
@@ -78,13 +67,13 @@ impl Presets {
     }
 
     /// Forget one named loadout.
-    pub fn delete(&mut self, index: usize) -> Option<Preset> {
-        (index < self.items.len()).then(|| self.items.remove(index))
+    pub(crate) fn delete(&mut self, index: usize) -> Option<Preset> {
+        presets::remove(&mut self.items, index)
     }
 }
 
 /// The preset bar: the name field, Save, and one row per stored loadout.
-pub fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let name_focus = state.combat.name.read(cx).focus().clone();
     let presets = state.combat.presets.items.clone();
@@ -111,7 +100,7 @@ pub fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         let items = preset
             .items
             .iter()
-            .filter(|key| !idleon_core::combat::data::is_empty(key))
+            .filter(|key| !idleon_combat::data::is_empty(key))
             .count();
         let detail = format!(
             "{items} item(s) · {} talent(s){}",
@@ -209,7 +198,7 @@ pub fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::save::Save;
+    use idleon_save::Save;
     use serde_json::json;
 
     fn save() -> Save {
@@ -282,7 +271,7 @@ mod tests {
         let mut presets = Presets::default();
         let refused = presets.store(&loadout, "   ").expect_err("no name");
         assert!(refused.contains("name"), "{refused}");
-        for index in 0..Presets::MAX {
+        for index in 0..presets::MAX {
             presets
                 .store(&loadout, &format!("Loadout {index}"))
                 .expect("under the limit");
@@ -291,13 +280,13 @@ mod tests {
             .store(&loadout, "One more")
             .expect_err("the list is full");
         assert!(full.contains("limit"), "{full}");
-        assert_eq!(presets.items.len(), Presets::MAX);
+        assert_eq!(presets.items.len(), presets::MAX);
     }
 
     #[test]
     fn a_preset_from_another_character_is_refused() {
         let save = save();
-        let mut other = Loadout::from_save(&save, 1);
+        let other = Loadout::from_save(&save, 1);
         let mut presets = Presets::default();
         presets.store(&other, "Bo's build").expect("saves");
         let mut loadout = Loadout::from_save(&save, 0);
@@ -306,6 +295,5 @@ mod tests {
         assert!(refused.contains("character 2"), "{refused}");
         // The working loadout is untouched.
         assert_eq!(loadout.slot(0, 0).expect("helmet").item, "EquipmentHats1");
-        other.set_item(0, 0, "Blank");
     }
 }

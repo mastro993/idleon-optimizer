@@ -2,19 +2,17 @@
 //!
 //! Ported from the upstream `Shape Optimization` tab in
 //! `js/renderers/upgrade-eval.js`. The two stored lists come from
-//! [`idleon_core::tiers`]: `above` is pinned ahead of the Res EXP divider and
+//! [`idleon_research::tiers`]: `above` is pinned ahead of the Res EXP divider and
 //! `below` holds the non-EXP nodes the leftover shapes cover. Editing a tier
 //! detaches the active preset; a built-in preset is never rewritten, and a
 //! custom one only changes when the user saves it again.
 //!
 //! The preview and the breakdown are the real optimizer's output
-//! ([`idleon_core::optimize::shapes`]), run through the shared task runner, so
+//! ([`idleon_research::optimize::shapes`]), run through the shared task runner, so
 //! a tier edit marks the stored layout stale instead of hiding it.
 
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
@@ -29,17 +27,19 @@ use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Point, Render, Role, SharedString, Styled,
     Window, div, px,
 };
-use idleon_core::game;
-use idleon_core::model::{Effort, coord};
-use idleon_core::optimize::shapes::ShapesOutcome;
-use idleon_core::sim;
-use idleon_core::tiers::{Tier, is_exp_node};
+use idleon_research::game;
+use idleon_research::model::{Effort, coord};
+use idleon_research::optimize::shapes::ShapesOutcome;
+use idleon_research::sim;
+use idleon_research::tiers::{Tier, is_exp_node};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// Logical pixels per preview cell; the board keeps the 20×12 upstream shape.
 const PREVIEW_CELL: f32 = 22.0;
 
 /// The Shape Optimization pane: tiers, presets, placement preview, breakdown.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
@@ -224,7 +224,7 @@ fn tier_square(
         .map(|shape| shape.name.clone());
     let border = placed
         .as_ref()
-        .map(|_| format::shape_color(shape as usize))
+        .map(|_| super::colors::shape_color(shape as usize))
         .unwrap_or(colors.border);
     let zone = match tier {
         Tier::Above => "above",
@@ -434,7 +434,7 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 /// The optimized placement card: effort, the run, the summary and the board.
 fn preview_card(
     state: &mut AppState,
-    run: &crate::task::TaskState<ShapesOutcome>,
+    run: &idleon_ui::runner::TaskState<ShapesOutcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let colors = cx.theme().colors.clone();
@@ -501,7 +501,7 @@ fn preview_card(
     if run.running {
         if let Some(progress) = run.progress.clone() {
             let cancel = entity.clone();
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "shape",
                 "Optimizing shapes",
                 "Runs off the UI thread; a cancelled run keeps the previous layout.",
@@ -512,13 +512,13 @@ fn preview_card(
             ));
         }
     } else if run.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "shape-cancelled",
             run.result.is_some(),
         ));
     }
     if run.stale {
-        body = body.child(task::stale_banner("shape-stale-banner"));
+        body = body.child(run_chrome::stale_banner("shape-stale-banner"));
     }
 
     match &run.result {
@@ -627,7 +627,7 @@ fn preview_cell(
     let colors = cx.theme().colors.clone();
     let node = game().node_at(cell);
     let level = state.simulation.grid.level(cell);
-    let tint = format::goal_color(node.and_then(|node| node.goal.as_deref()));
+    let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let fill = if node.is_none() {
         colors.bg
     } else if level == 0 {
@@ -641,7 +641,7 @@ fn preview_cell(
     let border = usize::try_from(shape)
         .ok()
         .and_then(|index| game().shapes.get(index))
-        .map(|_| format::shape_color(shape as usize))
+        .map(|_| super::colors::shape_color(shape as usize))
         .unwrap_or(colors.border);
     let name = node
         .map(|node| node.name.replace('_', " "))
@@ -671,7 +671,7 @@ fn preview_cell(
 
 /// The coverage breakdown: one row per placement, in the order to drop them.
 fn breakdown_card(
-    run: &crate::task::TaskState<ShapesOutcome>,
+    run: &idleon_ui::runner::TaskState<ShapesOutcome>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let colors = cx.theme().colors.clone();
@@ -706,7 +706,7 @@ fn breakdown_card(
                                 .flex_none()
                                 .size(px(8.0))
                                 .rounded_full()
-                                .bg(format::shape_color(placement.shape)),
+                                .bg(super::colors::shape_color(placement.shape)),
                         )
                         .child(name)
                         .into_any_element(),

@@ -3,22 +3,22 @@
 
 use super::world_rail;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
+use idleon_ui::format;
 
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::RoyalGuardian;
-use idleon_core::royal_guardian::{self, Clear, ClearState, RangeTarget};
+use idleon_royal_guardian::RoyalGuardian;
+use idleon_royal_guardian::{self as royal_guardian, Clear, ClearState, RangeTarget};
 
 /// The overview pane, in the upstream order: counters, world progress, the
 /// clearing values and the range targets.
-pub fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let royal = state
         .royal
         .as_ref()

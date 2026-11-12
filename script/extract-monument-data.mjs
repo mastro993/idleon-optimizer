@@ -120,7 +120,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/monument.json', import.meta.url);
+const out = new URL('../crates/monument/data/monument.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${payload.holes.milestoneHours.length} milestones, ${payload.holes.bonusPerLevel.length} bonus rows, ${Object.keys(payload.summon.normal).length} summon wins`,

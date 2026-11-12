@@ -12,9 +12,10 @@
 //! every effect, the native systems upstream's source audit traced for it and
 //! whether this build computes a downstream metric for it.
 
+mod actions;
+
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use crate::ui::{format, task};
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::{Callout, EmptyState};
@@ -29,33 +30,31 @@ use gpui::{
     AnyElement, App, Context, Entity, FontWeight, IntoElement, ParentElement, Role, SharedString,
     Styled, Window, div, px,
 };
-use idleon_core::prisma::{self, Cauldron, Change, Consumer, Outcome, Plan, RowResult, Status};
+use idleon_prisma::{self as prisma, Cauldron, Change, Consumer, Outcome, Plan, RowResult, Status};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// The AFK claim range upstream validates, in hours.
-pub const MIN_HOURS: f64 = 0.034;
-pub const MAX_HOURS: f64 = 55_555.0;
+pub(crate) const MIN_HOURS: f64 = 0.034;
+pub(crate) const MAX_HOURS: f64 = 55_555.0;
 
 /// The section's own state: the run inputs and the last plan.
-pub struct State {
-    pub character: usize,
-    pub cauldron: Cauldron,
-    pub afk_hours: f64,
+pub(crate) struct State {
+    pub(crate) character: usize,
+    pub(crate) cauldron: Cauldron,
+    pub(crate) afk_hours: f64,
     /// The plan the save, character and cauldron resolve to.
-    pub plan: Option<Plan>,
+    pub(crate) plan: Option<Plan>,
     /// Why the plan could not be built, when it could not.
-    pub plan_error: Option<String>,
+    pub(crate) plan_error: Option<String>,
     /// The metric the rows rank by; empty is the bubble order.
-    pub metric: Option<String>,
-    pub search: Entity<TextInput>,
+    pub(crate) metric: Option<String>,
+    pub(crate) search: Entity<TextInput>,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let search = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Name or changed outcome")
-                .label("Filter bubbles")
-        });
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let search = crate::ui::text_input("Name or changed outcome", "Filter bubbles", window, cx);
         Self {
             character: 0,
             cauldron: Cauldron::default(),
@@ -68,7 +67,7 @@ impl State {
     }
 
     /// Rebuild the plan from the save, keeping the character when it still exists.
-    pub fn adopt(&mut self, save: Option<&idleon_core::save::Save>) {
+    pub(crate) fn adopt(&mut self, save: Option<&idleon_save::Save>) {
         let Some(save) = save else {
             self.plan = None;
             self.plan_error = None;
@@ -94,28 +93,32 @@ impl State {
     }
 
     /// The filter text, for the row search.
-    pub fn query(&self, cx: &App) -> String {
+    pub(crate) fn query(&self, cx: &App) -> String {
         self.search.read(cx).text().to_string()
     }
 }
 
 /// The inputs a run captures, so a later edit marks its result stale.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RunInputs {
-    pub save_revision: u64,
-    pub character: usize,
-    pub cauldron: usize,
+pub(crate) struct RunInputs {
+    pub(crate) save_revision: u64,
+    pub(crate) character: usize,
+    pub(crate) cauldron: usize,
     /// The AFK claim in whole seconds; zero when the value is not usable.
-    pub afk_seconds: u64,
+    pub(crate) afk_seconds: u64,
 }
 
 /// Whether the AFK claim is inside the upstream range.
-pub fn valid_hours(hours: f64) -> bool {
+pub(crate) fn valid_hours(hours: f64) -> bool {
     hours.is_finite() && (MIN_HOURS..=MAX_HOURS).contains(&hours)
 }
 
 /// The Prisma Calculator page.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let query = state.prisma.query(cx);
     let task_state = state.prisma_task(cx);
     let plan = state.prisma.plan.clone();
@@ -138,7 +141,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     if running {
         if let Some(progress) = progress {
             let entity = cx.entity();
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "prisma",
                 "Comparing bubbles",
                 "Runs off the UI thread. Cancelling keeps the result this run replaced.",
@@ -149,14 +152,14 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             ));
         }
     } else if cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "prisma-cancelled",
             outcome.is_some(),
         ));
     }
 
     if stale {
-        body = body.child(task::stale_banner("prisma-stale"));
+        body = body.child(run_chrome::stale_banner("prisma-stale"));
     }
 
     match (&plan, plan_error) {
@@ -525,7 +528,7 @@ fn results_card(
             CardHeader::new("Bubble impacts")
                 .description(description)
                 .when(stale, |header| {
-                    header.action(task::stale_badge("prisma-result-stale"))
+                    header.action(run_chrome::stale_badge("prisma-result-stale"))
                 }),
         )
         .child(

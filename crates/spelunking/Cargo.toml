@@ -1,0 +1,17 @@
+[package]
+name = "idleon-spelunking"
+description = "Spelunking expedition config, depth charts and run simulator."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-common = { workspace = true }
+idleon-sailing = { workspace = true }
+idleon-save = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+idleon-import = { workspace = true }

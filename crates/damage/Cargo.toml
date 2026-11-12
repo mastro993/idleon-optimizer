@@ -1,0 +1,16 @@
+[package]
+name = "idleon-damage"
+description = "Damage context and summary."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-save = { workspace = true }
+idleon-stats = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+idleon-import = { workspace = true }

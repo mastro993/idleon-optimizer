@@ -451,7 +451,7 @@ const payload = {
   },
 };
 writeFileSync(
-  new URL('../crates/core/tests/ladle-kitchen-oracle.json', import.meta.url),
+  new URL('../crates/ladle/tests/ladle-kitchen-oracle.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(

@@ -8,7 +8,6 @@
 use super::chart::{Series, chart};
 use super::state::records;
 use crate::state::AppState;
-use crate::ui::format::{self, hex};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, NumberInput, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -17,7 +16,8 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Div, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::spelunking::{ConfigError, Inputs, Profile, ReferenceTool, profile};
+use idleon_spelunking::{ConfigError, Inputs, Profile, ReferenceTool, profile};
+use idleon_ui::format::{self, hex};
 
 /// The upstream per-rock-type chart colours.
 const DEPTH_COLORS: [&str; 16] = [
@@ -26,7 +26,7 @@ const DEPTH_COLORS: [&str; 16] = [
 ];
 
 /// The estimates card.
-pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let border = cx.theme().colors.border;
     let entity = cx.entity();

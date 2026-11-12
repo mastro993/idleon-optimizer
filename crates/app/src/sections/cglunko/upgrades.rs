@@ -8,7 +8,6 @@
 //! saved balances.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
@@ -16,9 +15,10 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
-use idleon_core::cglunko::{self, Page, stone};
+use idleon_cglunko::{self as cglunko, Page, stone};
+use idleon_ui::format;
 
-pub fn upgrades_pane(
+pub(crate) fn upgrades_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -49,7 +49,7 @@ pub fn upgrades_pane(
 
 /// Every upgrade on the page with its level, bonus, per-level value and next
 /// cost, plus the stone that funds it.
-fn page_card(cglunko: &idleon_core::Cglunko, page: Page) -> AnyElement {
+fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page) -> AnyElement {
     let mut table = Table::new([
         "Upgrade",
         "Effect",
@@ -119,7 +119,7 @@ fn page_card(cglunko: &idleon_core::Cglunko, page: Page) -> AnyElement {
 
 /// The upstream `_fmtDesc` line, with `{` the saved bonus, `}` the multiplier it
 /// buys and `$` the cost reduction it applies.
-pub(super) fn effect(cglunko: &idleon_core::Cglunko, index: usize) -> String {
+pub(super) fn effect(cglunko: &idleon_cglunko::Cglunko, index: usize) -> String {
     let bonus = cglunko.bonus(index);
     let multiplier = 1.0 + bonus / 100.0;
     let value = if bonus > 0.0 {
@@ -136,7 +136,7 @@ pub(super) fn effect(cglunko: &idleon_core::Cglunko, index: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::Cglunko;
+    use idleon_cglunko::Cglunko;
 
     fn sample() -> Cglunko {
         let mut upgrades = [0_u32; cglunko::UPGRADE_COUNT];

@@ -2,11 +2,10 @@
 //!
 //! Ported from the upstream `endgame.html`: a huge red `NO` over the account's
 //! leaderboard statistics. The verdict never changes; the audit renders the save
-//! table metrics [`idleon_core::endgame`] can read and says why the rest are
+//! table metrics [`idleon_endgame`] can read and says why the rest are
 //! unavailable, standing in for the upstream grid and its `Unavailable` cells.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::feedback::{Alert, EmptyState};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::{IconName, Severity};
@@ -17,19 +16,20 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, Styled, Window, div, px, rgb,
 };
+use idleon_ui::format;
 
 /// The endgame section's own state: the audit of the last applied save.
 #[derive(Default)]
-pub struct State {
+pub(crate) struct State {
     /// `None` until a save is applied; the verdict is `NO` either way.
-    pub stats: Option<Result<Vec<idleon_core::endgame::Stat>, String>>,
+    pub(crate) stats: Option<Result<Vec<idleon_endgame::Stat>, String>>,
 }
 
 impl State {
     /// Audit an applied save, exactly as the upstream page does on load.
-    pub fn audit(imported: &idleon_core::save::Imported) -> Self {
+    pub(crate) fn audit(imported: &idleon_import::Imported) -> Self {
         Self {
-            stats: Some(idleon_core::endgame::collect(
+            stats: Some(idleon_endgame::collect(
                 &imported.save,
                 imported.named_characters,
             )),
@@ -38,13 +38,17 @@ impl State {
 }
 
 /// The section: the verdict, then the account audit.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let size = (f32::from(window.viewport_size().height) * 0.2).clamp(96.0, 180.0);
     let verdict = div()
         .id("endgame-verdict")
         .role(Role::Status)
-        .aria_label(idleon_core::endgame::VERDICT)
+        .aria_label(idleon_endgame::VERDICT)
         .flex_none()
         .flex()
         .items_center()
@@ -55,7 +59,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                 .text_size(px(size))
                 .font_weight(FontWeight::BLACK)
                 .text_color(rgb(0xff_44_44))
-                .child(idleon_core::endgame::VERDICT),
+                .child(idleon_endgame::VERDICT),
         );
 
     div()
@@ -132,7 +136,7 @@ fn stats_card(state: &AppState, muted: gpui::Hsla) -> impl IntoElement {
 }
 
 /// One row per leaderboard metric, in the upstream category order.
-fn stats_table(stats: &[idleon_core::endgame::Stat], muted: gpui::Hsla) -> AnyElement {
+fn stats_table(stats: &[idleon_endgame::Stat], muted: gpui::Hsla) -> AnyElement {
     let mut table = Table::new(["Category", "Metric", "Value", "Note"]);
     for stat in stats {
         let shown = format::stat_value(stat.value);
@@ -172,7 +176,7 @@ fn stats_table(stats: &[idleon_core::endgame::Stat], muted: gpui::Hsla) -> AnyEl
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::save::import;
+    use idleon_import::import;
 
     #[test]
     fn an_applied_save_fills_the_audit_and_a_broken_one_reports_why() {

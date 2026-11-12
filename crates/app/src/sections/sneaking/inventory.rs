@@ -16,10 +16,10 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use idleon_core::sneaking::{Loadout, SlotKind};
+use idleon_sneaking::{Loadout, SlotKind};
 
 /// The inventory card: the selected target, the unequip action and the grid.
-pub fn card(state: &AppState, loadout: &Loadout, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, loadout: &Loadout, cx: &mut Context<AppState>) -> AnyElement {
     let colors = cx.theme().colors.clone();
     let target = state.sneaking_state.target(loadout.players());
     let selected = target.map(|(twin, slot)| {
@@ -132,7 +132,7 @@ fn slot(
             )
             .into_any_element();
     }
-    let info = idleon_core::sneaking::equip_info(item);
+    let info = idleon_sneaking::equip_info(item);
     let tooltip = match &info {
         Some(info) => format!(
             "Inventory {}\n{}\n+{}\n{}\n{}\nSymbol +{}%",

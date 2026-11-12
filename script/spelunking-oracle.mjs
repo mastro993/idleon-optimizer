@@ -1,5 +1,5 @@
 // Writes the upstream Spelunking figures for the committed synthetic save, so
-// `crates/core/tests/spelunking.rs` compares the Rust port against the JS.
+// `crates/spelunking/tests/spelunking.rs` compares the Rust port against the JS.
 //
 // Usage: node script/spelunking-oracle.mjs <path-to-idleon-research-optimizer>
 //

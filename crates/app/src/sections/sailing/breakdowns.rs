@@ -2,22 +2,22 @@
 //!
 //! One selector picks the boat, as upstream's breakdown tab does, and every tree
 //! reads that boat's route from the active assignment. The trees themselves come
-//! from `crates/core`, so the searched and copied numbers are the ones the other
+//! from the domain crates, so the searched and copied numbers are the ones the other
 //! tabs report.
 
 use super::{captain_short, trip};
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Pixels, Styled, div, px};
-use idleon_core::sailing::{RouteMetrics, artifact_tree, chest_tree, loot_tree, speed_tree};
+use idleon_sailing::{RouteMetrics, artifact_tree, chest_tree, loot_tree, speed_tree};
+use idleon_ui::formula::FormulaTree;
 
 /// The breakdowns tab: the boat selector and the four trees.
-pub fn breakdowns_tab(
+pub(crate) fn breakdowns_tab(
     state: &mut AppState,
     _table_height: Pixels,
     cx: &mut Context<AppState>,

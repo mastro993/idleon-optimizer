@@ -1,0 +1,36 @@
+[package]
+name = "idleon-import"
+description = "Reads a save or project document into every calculator's state."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-account = { workspace = true }
+idleon-cglunko = { workspace = true }
+idleon-clamworks = { workspace = true }
+idleon-cog = { workspace = true }
+idleon-coin-multi = { workspace = true }
+idleon-cooking-mastery = { workspace = true }
+idleon-coral = { workspace = true }
+idleon-farming = { workspace = true }
+idleon-fountain = { workspace = true }
+idleon-jar = { workspace = true }
+idleon-jelly = { workspace = true }
+idleon-ladle = { workspace = true }
+idleon-opal = { workspace = true }
+idleon-project = { workspace = true }
+idleon-research = { workspace = true }
+idleon-royal-guardian = { workspace = true }
+idleon-sailing = { workspace = true }
+idleon-save = { workspace = true }
+idleon-sneaking = { workspace = true }
+idleon-spelunking = { workspace = true }
+idleon-statue = { workspace = true }
+idleon-worship = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+base64 = { workspace = true }
+flate2 = { workspace = true }

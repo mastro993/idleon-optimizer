@@ -1,7 +1,6 @@
 //! Right rail: the selected square, the shape list and the magnifier pool.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{Button, IconButton};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -10,10 +9,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
-use idleon_core::model::coord;
-use idleon_core::{game, shape, sim};
+use idleon_research::game;
+use idleon_research::model::coord;
+use idleon_research::{shape, sim};
 
-pub fn inspector_pane(
+pub(crate) fn inspector_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -241,7 +241,7 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
                             div()
                                 .size(px(8.0))
                                 .rounded_full()
-                                .bg(format::shape_color(index)),
+                                .bg(super::colors::shape_color(index)),
                         )
                         .child(name)
                         .child(

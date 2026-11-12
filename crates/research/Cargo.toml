@@ -1,0 +1,17 @@
+[package]
+name = "idleon-research"
+description = "Research grid model, EXP simulation and grid/shape/magnifier optimizers."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-common = { workspace = true }
+idleon-save = { workspace = true }
+rayon = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+idleon-import = { workspace = true }

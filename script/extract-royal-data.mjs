@@ -127,7 +127,7 @@ const payload = {
 };
 
 writeFileSync(
-  new URL('../crates/core/data/royal-guardian.json', import.meta.url),
+  new URL('../crates/royal-guardian/data/royal-guardian.json', import.meta.url),
   `${JSON.stringify(payload)}\n`,
 );
 console.log(

@@ -2,23 +2,24 @@
 
 use super::Mode;
 use crate::state::AppState;
-use crate::task::TaskState;
 use gpui::{App, ClipboardItem, Context};
-use idleon_core::killroy::{self, Comparisons, Plan, PlanInput, RowSummary, Selection};
-use idleon_core::model::{Control, Progress};
+use idleon_common::Control;
+use idleon_common::Progress;
+use idleon_killroy::{self as killroy, Comparisons, Plan, PlanInput, RowSummary, Selection};
+use idleon_ui::runner::TaskState;
 
 /// What a finished run stores: the plan it ran and one summary row per
 /// configuration. The plan rides along so the results export writes the inputs
 /// and saved buffs the rows were produced from, not a later edit's.
 #[derive(Clone, Debug, PartialEq)]
-pub struct KillroyOutcome {
-    pub plan: Plan,
-    pub rows: Vec<RowSummary>,
+pub(crate) struct KillroyOutcome {
+    pub(crate) plan: Plan,
+    pub(crate) rows: Vec<RowSummary>,
 }
 
 impl AppState {
     /// The inputs a run started now would use.
-    pub fn killroy_plan_inputs(&self) -> PlanInput {
+    pub(crate) fn killroy_plan_inputs(&self) -> PlanInput {
         let state = &self.killroy;
         let comparisons = match state.mode {
             Mode::Baseline => Comparisons::Off,
@@ -48,7 +49,7 @@ impl AppState {
     }
 
     /// The plan a run started now would execute, or why it cannot run.
-    pub fn killroy_plan(&self) -> Result<Plan, String> {
+    pub(crate) fn killroy_plan(&self) -> Result<Plan, String> {
         let save = self
             .save
             .as_ref()
@@ -67,7 +68,7 @@ impl AppState {
     ///
     /// The stored result is stale once the plan a run would execute now differs;
     /// a plan that cannot build at all (no checked week, no upgrade) is stale too.
-    pub fn killroy_task(&self, cx: &App) -> TaskState<KillroyOutcome> {
+    pub(crate) fn killroy_task(&self, cx: &App) -> TaskState<KillroyOutcome> {
         let runner = self.killroy_run.read(cx);
         let stale = match self.killroy_plan() {
             Ok(plan) => runner.is_stale(&plan),
@@ -83,18 +84,20 @@ impl AppState {
     }
 
     /// Run the trials off the UI thread through the shared runner.
-    pub fn run_killroy(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn run_killroy(&mut self, cx: &mut Context<Self>) {
         let plan = match self.killroy_plan() {
             Ok(plan) => plan,
             Err(error) => {
-                self.status = error;
-                cx.notify();
+                self.set_status(error, cx);
                 return;
             }
         };
         let attempts = plan.attempts();
-        let started = self.killroy_run.update(cx, |runner, cx| {
-            runner.start(cx, plan, move |plan, report| {
+        self.start_run(
+            self.killroy_run.clone(),
+            format!("Running {attempts} Killroy attempts…"),
+            plan,
+            move |plan, report| {
                 let rows = killroy::run(&plan, |done, total| {
                     let progress = Progress {
                         fraction: (done as f32 / total.max(1) as f32).min(0.99),
@@ -103,40 +106,35 @@ impl AppState {
                     report(progress) == Control::Stop
                 })?;
                 Some(KillroyOutcome { plan, rows })
-            })
-        });
-        if started {
-            self.status = format!("Running {attempts} Killroy attempts…");
-            cx.notify();
-        }
+            },
+            cx,
+        );
     }
 
     /// Ask the run to stop at its next attempt.
-    pub fn cancel_killroy(&mut self, cx: &mut Context<Self>) {
-        if self.killroy_run.update(cx, |runner, _| runner.cancel()) {
-            self.status = "Cancelling the Killroy run…".into();
-            cx.notify();
-        }
+    pub(crate) fn cancel_killroy(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(self.killroy_run.clone(), "Cancelling the Killroy run…", cx);
     }
 
     /// Copy the last finished run's results document, the section's JSON export.
-    pub fn copy_killroy_results(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn copy_killroy_results(&mut self, cx: &mut Context<Self>) {
         let Some(outcome) = self.killroy_run.read(cx).result().cloned() else {
-            self.status = "Run the trials before exporting the results.".into();
-            cx.notify();
+            self.set_status("Run the trials before exporting the results.", cx);
             return;
         };
         let json = killroy::results_json(&outcome.plan, &outcome.rows);
         cx.write_to_clipboard(ClipboardItem::new_string(json.clone()));
-        self.status = format!(
-            "Copied the Killroy results JSON to the clipboard ({} bytes).",
-            json.len()
+        self.set_status(
+            format!(
+                "Copied the Killroy results JSON to the clipboard ({} bytes).",
+                json.len()
+            ),
+            cx,
         );
-        cx.notify();
     }
 
     /// The trials a new save, or the section's first render, starts with.
-    pub fn killroy_default_selection(&mut self) {
+    pub(crate) fn killroy_default_selection(&mut self) {
         let Some(save) = self.save.as_ref() else {
             return;
         };
@@ -165,7 +163,7 @@ impl AppState {
     }
 
     /// Switch the section's tab.
-    pub fn set_killroy_mode(&mut self, mode: Mode, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_mode(&mut self, mode: Mode, cx: &mut Context<Self>) {
         if self.killroy.mode == mode {
             return;
         }
@@ -174,7 +172,7 @@ impl AppState {
     }
 
     /// Set the forecast's horizon, dropping checks it no longer covers.
-    pub fn set_killroy_weeks(&mut self, value: f64, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_weeks(&mut self, value: f64, cx: &mut Context<Self>) {
         let weeks = if value.is_finite() {
             value.round().clamp(1.0, 52.0) as usize
         } else {
@@ -192,7 +190,7 @@ impl AppState {
     }
 
     /// Set the trials a run averages.
-    pub fn set_killroy_trials(&mut self, value: f64, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_trials(&mut self, value: f64, cx: &mut Context<Self>) {
         self.killroy.trials = if value.is_finite() {
             value.round().clamp(1.0, 20.0) as usize
         } else {
@@ -202,7 +200,7 @@ impl AppState {
     }
 
     /// Set the base seed the trial seeds step from.
-    pub fn set_killroy_seed(&mut self, value: f64, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_seed(&mut self, value: f64, cx: &mut Context<Self>) {
         self.killroy.seed = if value.is_finite() {
             (value.round().max(1.0) as u64).min(999_999)
         } else {
@@ -212,7 +210,7 @@ impl AppState {
     }
 
     /// Set the stand-in kill rate the trials run at.
-    pub fn set_killroy_kills_per_second(&mut self, value: f64, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_kills_per_second(&mut self, value: f64, cx: &mut Context<Self>) {
         self.killroy.kills_per_second = if value.is_finite() {
             value.clamp(0.0, 100.0)
         } else {
@@ -222,19 +220,28 @@ impl AppState {
     }
 
     /// Keep the save's buff timers instead of starting from a fresh map entry.
-    pub fn set_killroy_keep_buffs(&mut self, keep: bool, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_keep_buffs(&mut self, keep: bool, cx: &mut Context<Self>) {
         self.killroy.keep_buffs = keep;
         cx.notify();
     }
 
     /// Lift the bag-space limit on the run's pickups.
-    pub fn set_killroy_unlimited_inventory(&mut self, unlimited: bool, cx: &mut Context<Self>) {
+    pub(crate) fn set_killroy_unlimited_inventory(
+        &mut self,
+        unlimited: bool,
+        cx: &mut Context<Self>,
+    ) {
         self.killroy.unlimited_inventory = unlimited;
         cx.notify();
     }
 
     /// Check or uncheck a week.
-    pub fn toggle_killroy_week(&mut self, week_offset: usize, on: bool, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_killroy_week(
+        &mut self,
+        week_offset: usize,
+        on: bool,
+        cx: &mut Context<Self>,
+    ) {
         self.killroy
             .checked_weeks
             .retain(|week| *week != week_offset);
@@ -249,7 +256,7 @@ impl AppState {
     }
 
     /// Check or uncheck one encounter.
-    pub fn toggle_killroy_selection(
+    pub(crate) fn toggle_killroy_selection(
         &mut self,
         selection: Selection,
         on: bool,
@@ -269,7 +276,7 @@ impl AppState {
     }
 
     /// Check or uncheck a `+1` comparison.
-    pub fn toggle_killroy_upgrade(&mut self, id: usize, on: bool, cx: &mut Context<Self>) {
+    pub(crate) fn toggle_killroy_upgrade(&mut self, id: usize, on: bool, cx: &mut Context<Self>) {
         self.killroy.upgrades.retain(|other| *other != id);
         if on {
             self.killroy.upgrades.push(id);

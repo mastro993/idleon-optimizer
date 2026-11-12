@@ -6,15 +6,15 @@ use super::{
     unavailable_card,
 };
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::layout::ScrollArea;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::monument::{Charge, WisdomSnapshot};
+use idleon_monument::{Charge, WisdomSnapshot};
+use idleon_ui::format;
 
 /// The Wisdom pane.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     snapshot: Option<&WisdomSnapshot>,
     cx: &mut Context<AppState>,

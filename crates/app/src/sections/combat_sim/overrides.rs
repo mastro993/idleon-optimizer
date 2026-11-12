@@ -26,10 +26,14 @@ use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, Role,
     SharedString, Styled, Window, div, px,
 };
-use idleon_core::combat::overrides::{self, Mode};
+use idleon_combat::overrides::{self, Mode};
 
 /// The mechanics pane: the toolbar and one row per mechanic.
-pub fn pane(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let active = state.combat.overrides.len();
     let query = state.combat.override_query(cx).trim().to_lowercase();
@@ -150,7 +154,7 @@ pub fn pane(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
 }
 
 /// The chips above the editor: one removable tag per active rule.
-pub fn chips(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
+pub(crate) fn chips(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
     let chips = state.combat.overrides.chips();
     if chips.is_empty() {
         return None;

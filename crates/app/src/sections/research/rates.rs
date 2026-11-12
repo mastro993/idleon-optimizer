@@ -1,7 +1,6 @@
 //! Rates pane: the EXP breakdown and the observation board.
 
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::buttons::{Button, IconButton};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
@@ -15,9 +14,11 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
-use idleon_core::{game, sim};
+use idleon_research::game;
+use idleon_research::sim;
+use idleon_ui::format;
 
-pub fn rates_pane(
+pub(crate) fn rates_pane(
     state: &mut AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
@@ -27,7 +28,7 @@ pub fn rates_pane(
     let rate = state.rate();
     let points = state.grid_points();
     let tree = state.breakdown.clone();
-    let root = idleon_core::breakdown::exp(&state.simulation, &state.context);
+    let root = idleon_research::breakdown::exp(&state.simulation, &state.context);
     tree.update(cx, |tree, cx| tree.set_root(root, cx));
     let cards = div()
         .id("kpi-row")
@@ -112,7 +113,7 @@ pub fn rates_pane(
 }
 
 /// The shared formula tree, collapsed to a fixed height inside the side rail.
-fn formula_card(tree: gpui::Entity<crate::ui::formula::FormulaTree>) -> impl IntoElement {
+fn formula_card(tree: gpui::Entity<idleon_ui::formula::FormulaTree>) -> impl IntoElement {
     Card::new()
         .header(
             CardHeader::new("EXP formula")

@@ -364,7 +364,7 @@ function issueBody(feature, milestone, numbers) {
     '## Agent notes',
     '',
     '- Port behavior from the upstream source listed above; do not infer rules from fixtures.',
-    '- Keep `crates/core` free of GPUI and add formula tests before wiring the UI.',
+    '- Keep the domain crates free of GPUI and add formula tests before wiring the UI.',
     '- Use the shared components from M0; do not reimplement cards, tables, formula trees or task running.',
     '- Close this issue only when the acceptance list and the section verification pass.',
   ];

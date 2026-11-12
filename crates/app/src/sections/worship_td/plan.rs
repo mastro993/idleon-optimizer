@@ -8,7 +8,6 @@
 
 use super::{PlanSource, format_time};
 use crate::state::AppState;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
@@ -19,10 +18,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::worship::{self, PhaseSell, PhaseWhen, Plan, PlanPhase, PlanStage, RunResult};
+use idleon_ui::run_chrome;
+use idleon_worship::{
+    self as worship, PhaseSell, PhaseWhen, Plan, PlanPhase, PlanStage, RunResult,
+};
 
 /// The Plan pane.
-pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     state.worship_ensure_plan();
     let plan = state.worship.plan.clone().unwrap_or_default();
     let trial_index = state.worship.trial;
@@ -142,7 +144,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     if running {
         if let Some(progress) = progress {
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "worship-plan",
                 "Plan run",
                 "The same simulator engine builds this plan; the run can be cancelled.",
@@ -156,7 +158,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             ));
         }
     } else if cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "worship-plan-cancelled",
             result.is_some(),
         ));
@@ -450,7 +452,7 @@ fn result_card(result: &RunResult, muted: gpui::Hsla, stale: bool) -> AnyElement
             div()
                 .px_3()
                 .pb_3()
-                .child(task::stale_banner("worship-plan-stale")),
+                .child(run_chrome::stale_banner("worship-plan-stale")),
         );
     }
     card.into_any_element()

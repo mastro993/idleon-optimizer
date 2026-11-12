@@ -9,12 +9,13 @@
 //! applies the run's swap list in order, Previous restores the prior board and
 //! Done keeps the optimized board.
 
+mod actions;
+
 mod board;
 mod insights;
 mod walkthrough;
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::{Banner, EmptyState};
@@ -28,47 +29,48 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
 };
-use idleon_core::cog::{
+use idleon_cog::{
     BOARD_SIZE, Board, BoardTotals, Cog, CogResult, CogSave, Goal, Objective, PerfectBoard,
     PerfectStats, SwapStep, SwapWalkthrough, WeightError, WeightInputs, board_insights,
     compute_totals, empty_board, perfect_stats, player_slot, slot_to_pos,
 };
+use idleon_ui::format;
 
 /// The inputs a stored optimizer result was produced from, so a later edit
 /// marks it stale.
 #[derive(Clone, Debug, PartialEq)]
-pub struct RunInputs {
-    pub board: Board,
-    pub shelf: Vec<Cog>,
-    pub objective: Objective,
+pub(crate) struct RunInputs {
+    pub(crate) board: Board,
+    pub(crate) shelf: Vec<Cog>,
+    pub(crate) objective: Objective,
 }
 
 /// The inputs a stored perfect board was produced from. The perfect board reads
 /// the player and the Yin/Yang inventory from the save board, not from the
 /// placement currently on screen.
 #[derive(Clone, Debug, PartialEq)]
-pub struct PerfectRunInputs {
-    pub board: Board,
-    pub shelf: Vec<Cog>,
-    pub construction_level: u32,
-    pub goal: Goal,
+pub(crate) struct PerfectRunInputs {
+    pub(crate) board: Board,
+    pub(crate) shelf: Vec<Cog>,
+    pub(crate) construction_level: u32,
+    pub(crate) goal: Goal,
 }
 
 /// The section's own state: the save board, the board on screen, the objective,
 /// the swap walkthrough while one is open and the perfect-board preview.
 #[derive(Clone, Debug)]
-pub struct State {
-    pub save: CogSave,
-    pub board: Board,
-    pub goal: Goal,
-    pub walkthrough: Option<SwapWalkthrough>,
+pub(crate) struct State {
+    pub(crate) save: CogSave,
+    pub(crate) board: Board,
+    pub(crate) goal: Goal,
+    pub(crate) walkthrough: Option<SwapWalkthrough>,
     /// Whether the custom weights replace the single goal for Optimize.
-    pub weighted: bool,
+    pub(crate) weighted: bool,
     /// The weight fields as entered, kept even while they are invalid.
-    pub weights: WeightInputs,
+    pub(crate) weights: WeightInputs,
     /// Whether the board grid shows the perfect board instead of the board on
     /// screen. The optimizer's result is shown by its walkthrough instead.
-    pub show_perfect: bool,
+    pub(crate) show_perfect: bool,
 }
 
 impl Default for State {
@@ -87,7 +89,7 @@ impl Default for State {
 
 impl State {
     /// Take a newly imported save: reset the board to it and keep the controls.
-    pub fn load(&mut self, save: CogSave) {
+    pub(crate) fn load(&mut self, save: CogSave) {
         self.board = save.board.clone();
         self.save = save;
         self.walkthrough = None;
@@ -95,14 +97,14 @@ impl State {
     }
 
     /// Restore the save board, dropping any optimized or perfect placement.
-    pub fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.board = self.save.board.clone();
         self.walkthrough = None;
         self.show_perfect = false;
     }
 
     /// The validated weights, or the reason they cannot run.
-    pub fn weight_problem(&self) -> Option<WeightError> {
+    pub(crate) fn weight_problem(&self) -> Option<WeightError> {
         self.weighted
             .then(|| self.weights.weights().err())
             .flatten()
@@ -113,7 +115,7 @@ impl State {
     /// Invalid weights fall back to the selected single goal so a stored result
     /// can still be compared; the controls refuse to start a run until the
     /// weights are valid.
-    pub fn objective(&self) -> Objective {
+    pub(crate) fn objective(&self) -> Objective {
         if self.weighted
             && let Ok(weights) = self.weights.weights()
         {
@@ -123,7 +125,7 @@ impl State {
     }
 
     /// The inputs a run started now would use.
-    pub fn inputs(&self) -> RunInputs {
+    pub(crate) fn inputs(&self) -> RunInputs {
         RunInputs {
             board: self.board.clone(),
             shelf: self.save.shelf.clone(),
@@ -137,7 +139,7 @@ impl State {
     /// weights, so it always maximises the selected single goal. Its stats use
     /// the effective construction level the save's own rolls reveal, as the
     /// roll ranges do.
-    pub fn perfect_inputs(&self) -> PerfectRunInputs {
+    pub(crate) fn perfect_inputs(&self) -> PerfectRunInputs {
         PerfectRunInputs {
             board: self.save.board.clone(),
             shelf: self.save.shelf.clone(),
@@ -148,7 +150,7 @@ impl State {
 
     /// Start replaying a finished run from the board the run started on. A run
     /// with no swaps has nothing to walk through, so its board is kept at once.
-    pub fn begin_walkthrough(&mut self, result: &CogResult) {
+    pub(crate) fn begin_walkthrough(&mut self, result: &CogResult) {
         self.show_perfect = false;
         if result.swaps.is_empty() {
             self.board = result.board.clone();
@@ -165,21 +167,21 @@ impl State {
     }
 
     /// Apply the next swap step.
-    pub fn next_swap(&mut self) -> bool {
+    pub(crate) fn next_swap(&mut self) -> bool {
         self.walkthrough
             .as_mut()
             .is_some_and(SwapWalkthrough::next_step)
     }
 
     /// Restore the board before the last applied swap step.
-    pub fn previous_swap(&mut self) -> bool {
+    pub(crate) fn previous_swap(&mut self) -> bool {
         self.walkthrough
             .as_mut()
             .is_some_and(SwapWalkthrough::previous)
     }
 
     /// Keep the optimized board and close the walkthrough.
-    pub fn finish_walkthrough(&mut self) -> bool {
+    pub(crate) fn finish_walkthrough(&mut self) -> bool {
         let Some(mut walkthrough) = self.walkthrough.take() else {
             return false;
         };
@@ -188,13 +190,17 @@ impl State {
     }
 
     /// Drop a walkthrough without keeping its result, as a new run or reset does.
-    pub fn dismiss_walkthrough(&mut self) {
+    pub(crate) fn dismiss_walkthrough(&mut self) {
         self.walkthrough = None;
     }
 }
 
 /// The section view: controls, summaries, the board and the swap list.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if !state.cog.save.has_board() {
         return empty_state(cx);
     }
@@ -242,7 +248,7 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         && let Some(progress) = task.progress.clone()
     {
         let entity = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "cog",
             "Optimizing the cog board",
             "Greedy construction, simulated annealing and the greedy finish.",
@@ -256,7 +262,7 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         && let Some(progress) = perfect.progress.clone()
     {
         let entity = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "cog-perfect",
             "Building the perfect cog board",
             "Perfect cogs, directionals, crystals, Excogia and Yang, one player slot at a time.",
@@ -267,13 +273,13 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "cog-cancelled",
             board_changed,
         ));
     }
     if perfect.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "cog-perfect-cancelled",
             board_changed,
         ));
@@ -631,7 +637,7 @@ fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElem
                     result.improvement_pct
                 ))
                 .action(if stale {
-                    crate::ui::task::stale_badge("cog").into_any_element()
+                    idleon_ui::run_chrome::stale_badge("cog").into_any_element()
                 } else {
                     div().into_any_element()
                 }),
@@ -652,7 +658,7 @@ fn result_card(result: &CogResult, before: &BoardTotals, stale: bool) -> AnyElem
                 .child(row),
         )
         .when(stale, |card| {
-            card.child(crate::ui::task::stale_banner("cog"))
+            card.child(idleon_ui::run_chrome::stale_banner("cog"))
         })
         .into_any_element()
 }
@@ -705,7 +711,7 @@ fn perfect_card(perfect: &PerfectBoard, before: &BoardTotals, stale: bool) -> An
                     "Theoretical placement from perfect cogs; the layers are applied in order and only kept when they raise the score.",
                 )
                 .action(if stale {
-                    crate::ui::task::stale_badge("cog-perfect").into_any_element()
+                    idleon_ui::run_chrome::stale_badge("cog-perfect").into_any_element()
                 } else {
                     div().into_any_element()
                 }),
@@ -749,7 +755,7 @@ fn perfect_card(perfect: &PerfectBoard, before: &BoardTotals, stale: bool) -> An
                 )),
         )
         .when(stale, |card| {
-            card.child(crate::ui::task::stale_banner("cog-perfect"))
+            card.child(idleon_ui::run_chrome::stale_banner("cog-perfect"))
         })
         .into_any_element()
 }
@@ -808,10 +814,10 @@ fn swaps(steps: &[SwapStep]) -> AnyElement {
             table.row([
                 div().child((index + 1).to_string()).into_any_element(),
                 div()
-                    .child(idleon_core::cog::display_name(&step.from))
+                    .child(idleon_cog::display_name(&step.from))
                     .into_any_element(),
                 div()
-                    .child(idleon_core::cog::display_name(&step.to))
+                    .child(idleon_cog::display_name(&step.to))
                     .into_any_element(),
                 div()
                     .child(format!("({},{})", step.col, step.row))

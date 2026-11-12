@@ -4,40 +4,40 @@
 //! switch keeps it; this struct does the same for the app, adds the goal the
 //! section's inputs ask for, and is what a project document carries.
 
-use idleon_core::cooking_mastery::{Goal, Mastery, Plan};
+use idleon_cooking_mastery::{Goal, Mastery, Plan};
 
 /// The daily distribution's goal and budget, kept across dashboard visits.
 #[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub goal: Goal,
+pub(crate) struct State {
+    pub(crate) goal: Goal,
     /// The points to spend; `None` spends every point the rank has granted, the
     /// page's default before its input is touched.
-    pub budget: Option<f64>,
+    pub(crate) budget: Option<f64>,
 }
 
 impl State {
     /// The budget the plan is asked for: the override, or every point earned.
-    pub fn requested(&self, mastery: &Mastery) -> f64 {
+    pub(crate) fn requested(&self, mastery: &Mastery) -> f64 {
         self.budget
             .unwrap_or_else(|| mastery.points_earned())
             .max(0.0)
     }
 
     /// The plan for this state's goal and budget.
-    pub fn plan(&self, mastery: &Mastery) -> Plan {
+    pub(crate) fn plan(&self, mastery: &Mastery) -> Plan {
         mastery.distribution(self.goal, self.requested(mastery))
     }
 
     /// Switch the goal from a select value; an unknown id keeps the current one.
-    pub fn set_goal(&mut self, id: &str) {
+    pub(crate) fn set_goal(&mut self, id: &str) {
         if let Some(goal) = Goal::from_id(id) {
             self.goal = goal;
         }
     }
 
     /// Spend `budget` points instead of every point the rank granted.
-    pub fn set_budget(&mut self, budget: f64) {
+    pub(crate) fn set_budget(&mut self, budget: f64) {
         self.budget = Some(if budget.is_finite() {
             budget.max(0.0)
         } else {
@@ -46,7 +46,7 @@ impl State {
     }
 
     /// Follow a new save: its own point total is the new default.
-    pub fn adopt(&mut self) {
+    pub(crate) fn adopt(&mut self) {
         self.budget = None;
     }
 }

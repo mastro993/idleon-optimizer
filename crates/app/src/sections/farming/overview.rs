@@ -8,7 +8,6 @@
 use crate::sections::farming::curves::curves_card;
 use crate::sections::farming::field::family_name;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -18,9 +17,8 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
-use idleon_core::farming::{
-    CropScientistUnit, Diagnostics, Farm, GrowthBreakpoint, Snapshot, data,
-};
+use idleon_farming::{CropScientistUnit, Diagnostics, Farm, GrowthBreakpoint, Snapshot, data};
+use idleon_ui::format;
 
 /// The overview tab's scrolling body.
 pub(super) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -145,7 +143,7 @@ fn cards(
             format!(
                 "{} / {} plots capped",
                 diagnostics.capped_plots,
-                idleon_core::farming::PLOTS
+                idleon_farming::PLOTS
             ),
             cx,
         ))

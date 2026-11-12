@@ -1,7 +1,6 @@
 //! Current-state summary: the save's coral metrics and Coral Kid levels.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -11,10 +10,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::coral::{Unlock, unlocks};
+use idleon_coral::{Unlock, unlocks};
+use idleon_ui::format;
 
 /// The saved budget, rank and unlock headline above the plan.
-pub fn kpis(state: &mut AppState) -> AnyElement {
+pub(crate) fn kpis(state: &mut AppState) -> AnyElement {
     let inputs = &state.coral.inputs;
     let (budget, budget_unit) = format::scaled(inputs.budget);
     let budget_decimals = match budget_unit.as_str() {
@@ -79,7 +79,7 @@ pub fn kpis(state: &mut AppState) -> AnyElement {
 }
 
 /// The save's current coral metrics and Coral Kid levels.
-pub fn current_pane(
+pub(crate) fn current_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,

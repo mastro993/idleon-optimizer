@@ -6,8 +6,6 @@
 //! and a later baseline or crop-target edit marks the table stale.
 
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -16,7 +14,9 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::farming::{Allocation, Comparison, Objective, data};
+use idleon_farming::{Allocation, Comparison, Objective, data};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// The compare button, the run chrome and the per-goal table.
 pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -86,7 +86,7 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
     if running {
         if let Some(progress) = task.progress.clone() {
             let on_cancel = entity.clone();
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "farming-compare",
                 "Comparing preset goals",
                 "Every goal runs off the UI thread. Cancelling keeps the table this run replaced.",
@@ -97,13 +97,13 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
             ));
         }
     } else if task.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "farming-compare-cancelled",
             result.is_some(),
         ));
     }
     if task.stale {
-        body = body.child(task::stale_banner("farming-compare-stale"));
+        body = body.child(run_chrome::stale_banner("farming-compare-stale"));
     }
 
     match &result {
@@ -211,11 +211,11 @@ fn largest_moves(row: &Allocation) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::farming::{Farm, Mode};
+    use idleon_farming::{Farm, Mode};
 
     fn farm() -> Farm {
         let mut farm = Farm {
-            rank_ranks: vec![4; idleon_core::farming::PLOTS],
+            rank_ranks: vec![4; idleon_farming::PLOTS],
             ..Farm::default()
         };
         farm.plots[0].seed_family = 0;
@@ -227,7 +227,7 @@ mod tests {
         let farm = farm();
         let comparison = farm
             .comparison(Mode::Reset, Some(240), &mut |_progress| {
-                idleon_core::model::Control::Continue
+                idleon_common::Control::Continue
             })
             .expect("the comparison completes");
         let farming_exp = comparison

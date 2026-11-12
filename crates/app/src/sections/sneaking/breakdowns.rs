@@ -8,7 +8,6 @@
 
 use super::state::FormulaTab;
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::shell::{TabBar, WindowTab};
@@ -18,10 +17,11 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, div, px,
 };
-use idleon_core::sneaking::breakdown;
+use idleon_sneaking::breakdown;
+use idleon_ui::formula::FormulaTree;
 
 /// The breakdowns workspace.
-pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let Some(loadout) = state.sneaking.as_ref() else {
         return div().into_any_element();
     };

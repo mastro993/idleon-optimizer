@@ -15,7 +15,7 @@ use gpui::{
 };
 
 /// An image at `size`, or a labelled placeholder with the same footprint.
-pub fn asset_image(
+pub(crate) fn asset_image(
     id: impl Into<ElementId>,
     manifest: &Manifest,
     reference: &str,
@@ -27,7 +27,7 @@ pub fn asset_image(
 
 /// The same image with independent width and height, for the non-square
 /// upstream sprites (the Jelly Operator cells are 36×109 and 184×183).
-pub fn asset_image_sized(
+pub(crate) fn asset_image_sized(
     id: impl Into<ElementId>,
     manifest: &Manifest,
     reference: &str,

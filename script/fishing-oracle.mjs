@@ -1,4 +1,4 @@
-// Regenerates crates/core/tests/fishing-fixture.json from the upstream fishing
+// Regenerates crates/fishing/tests/fishing-fixture.json from the upstream fishing
 // formulas, so the Rust port is tested against the source of truth.
 // Usage: node script/fishing-oracle.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -470,7 +470,7 @@ const payload = {
 };
 
 writeFileSync(
-  join(root, 'crates/core/tests/fishing-fixture.json'),
+  join(root, 'crates/fishing/tests/fishing-fixture.json'),
   `${JSON.stringify(payload, null, 2)}\n`
 );
 console.log(

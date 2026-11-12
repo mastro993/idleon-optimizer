@@ -20,7 +20,7 @@
 
 use crate::project::{self, Config};
 use crate::state::AppState;
-use idleon_core::import as pipeline;
+use idleon_import::pipeline;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
@@ -29,36 +29,36 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// The session file's format marker.
-pub const FORMAT: &str = "idleon-optimizer-session";
+pub(crate) const FORMAT: &str = "idleon-optimizer-session";
 /// The session file's schema version.
-pub const VERSION: u32 = 1;
+pub(crate) const VERSION: u32 = 1;
 /// The file name under the app-data directory.
-pub const FILE: &str = "session.json";
+pub(crate) const FILE: &str = "session.json";
 /// The environment variable that moves the app-data directory.
-pub const ENV_DIR: &str = "IDLEON_OPTIMIZER_STATE_DIR";
+pub(crate) const ENV_DIR: &str = "IDLEON_OPTIMIZER_STATE_DIR";
 /// How many recent imports the dialog lists and the file keeps.
-pub const RECENT_LIMIT: usize = 8;
+pub(crate) const RECENT_LIMIT: usize = 8;
 /// How long an edit waits before the next session write.
-pub const SAVE_DEBOUNCE: Duration = Duration::from_millis(250);
+pub(crate) const SAVE_DEBOUNCE: Duration = Duration::from_millis(250);
 
 /// One applied import, as the dialog lists it.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct RecentImport {
+pub(crate) struct RecentImport {
     /// Unix seconds, formatted in the local zone when displayed.
-    pub at: i64,
+    pub(crate) at: i64,
     /// The detected format, e.g. `it.json`, `project` or `section config`.
-    pub format: String,
+    pub(crate) format: String,
     /// The pasted text's label or the dropped file's name.
-    pub source: String,
-    pub characters: Option<usize>,
-    pub research_level: Option<u32>,
-    pub warnings: usize,
+    pub(crate) source: String,
+    pub(crate) characters: Option<usize>,
+    pub(crate) research_level: Option<u32>,
+    pub(crate) warnings: usize,
 }
 
 impl RecentImport {
     /// An entry stamped now.
-    pub fn new(
+    pub(crate) fn new(
         format: impl Into<String>,
         source: impl Into<String>,
         characters: Option<usize>,
@@ -76,7 +76,7 @@ impl RecentImport {
     }
 
     /// The line the dialog shows: format, local time and the source.
-    pub fn line(&self) -> String {
+    pub(crate) fn line(&self) -> String {
         let mut line = format!("{} · {}", self.format, time_label(self.at));
         if let Some(characters) = self.characters {
             line.push_str(&format!(" · {characters} character(s)"));
@@ -89,26 +89,26 @@ impl RecentImport {
 }
 
 /// The project a saved session restores, decoded and prepared for applying.
-pub struct SessionRestore {
-    pub project: pipeline::ProjectImport,
-    pub configs: Vec<Config>,
+pub(crate) struct SessionRestore {
+    pub(crate) project: pipeline::ProjectImport,
+    pub(crate) configs: Vec<Config>,
 }
 
 /// The window's local memory: where the file is and what it held.
-pub struct Session {
+pub(crate) struct Session {
     path: PathBuf,
     /// The most recent applied imports, newest first.
-    pub recent: Vec<RecentImport>,
+    pub(crate) recent: Vec<RecentImport>,
     /// The project waiting for the window to apply it, taken once at launch.
-    pub restore: Option<SessionRestore>,
+    pub(crate) restore: Option<SessionRestore>,
     /// Why the file was backed up or skipped, for the first status line.
-    pub notice: Option<String>,
+    pub(crate) notice: Option<String>,
 }
 
 impl Session {
     /// Load the session at `path`; a missing file starts clean, and a corrupt
     /// one is backed up beside itself before the clean start.
-    pub fn load(path: PathBuf) -> Self {
+    pub(crate) fn load(path: PathBuf) -> Self {
         let mut session = Self {
             path,
             recent: Vec::new(),
@@ -146,7 +146,7 @@ impl Session {
 
     /// The default file under the platform app-data directory, or under
     /// `explicit` when the launch names one.
-    pub fn path(explicit: Option<PathBuf>) -> PathBuf {
+    pub(crate) fn path(explicit: Option<PathBuf>) -> PathBuf {
         if let Some(dir) = explicit {
             return dir.join(FILE);
         }
@@ -159,13 +159,13 @@ impl Session {
     }
 
     /// Add an applied import to the front of the list and drop the oldest.
-    pub fn record(&mut self, recent: RecentImport) {
+    pub(crate) fn record(&mut self, recent: RecentImport) {
         self.recent.insert(0, recent);
         self.recent.truncate(RECENT_LIMIT);
     }
 
     /// Write the whole session: the project document plus the recent imports.
-    pub fn save(&self, project: &Value) -> io::Result<()> {
+    pub(crate) fn save(&self, project: &Value) -> io::Result<()> {
         let text = serde_json::json!({
             "format": FORMAT,
             "version": VERSION,
@@ -277,7 +277,7 @@ fn write_atomic(path: &Path, text: &str) -> io::Result<()> {
 }
 
 /// A Unix second as the local time the dialog shows.
-pub fn time_label(at: i64) -> String {
+pub(crate) fn time_label(at: i64) -> String {
     let Ok(timestamp) = jiff::Timestamp::from_second(at) else {
         return at.to_string();
     };
@@ -287,14 +287,14 @@ pub fn time_label(at: i64) -> String {
 }
 
 /// The project a window state exports, as the session stores it.
-pub fn project_value(state: &AppState) -> Option<Value> {
+pub(crate) fn project_value(state: &AppState) -> Option<Value> {
     serde_json::from_str(&project::export(state)).ok()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::project as core_project;
+    use idleon_project as core_project;
     use serde_json::json;
     use std::path::PathBuf;
 

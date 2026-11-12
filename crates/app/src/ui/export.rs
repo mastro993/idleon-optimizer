@@ -19,7 +19,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, ClipboardItem, Context, IntoElement, ParentElement, Role, div, px};
-use idleon_core::project;
+use idleon_project as project;
 
 /// How much of the project document the dialog shows; the rest is on the
 /// clipboard.
@@ -37,12 +37,12 @@ const SHOWN_STATE: usize = 80;
 /// Everything the dialog shows is read once, when it opens: the project can
 /// carry a save, and a per-frame clone of it would stall the window.
 #[derive(Default)]
-pub struct Export {
-    pub open: bool,
+pub(crate) struct Export {
+    pub(crate) open: bool,
     /// The whole project document, for the copy action.
-    pub project: String,
+    pub(crate) project: String,
     /// The upstream `ROv2:` state string, for its copy action and its node.
-    pub state: String,
+    pub(crate) state: String,
     /// The document's head, whitespace-collapsed for a labelled one-line node.
     preview: String,
     /// How many section configs the document carries.
@@ -53,7 +53,7 @@ pub struct Export {
 
 impl Export {
     /// Open the dialog over a freshly written project document and state string.
-    pub fn open(state: &AppState) -> Self {
+    pub(crate) fn open(state: &AppState) -> Self {
         let project = crate::project::export(state);
         let document = serde_json::from_str::<serde_json::Value>(&project).ok();
         let sections = document
@@ -81,18 +81,18 @@ impl Export {
     }
 
     /// How many bytes the whole project document has.
-    pub fn bytes(&self) -> usize {
+    pub(crate) fn bytes(&self) -> usize {
         self.project.len()
     }
 
     /// How many bytes the state string has.
-    pub fn state_bytes(&self) -> usize {
+    pub(crate) fn state_bytes(&self) -> usize {
         self.state.len()
     }
 }
 
 /// The export dialog, rendered on top of the shell while it is open.
-pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let close = entity.clone();
     let cancel = entity.clone();
@@ -199,12 +199,12 @@ pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
 /// Copy the whole document, so the box never has to lay out a save-sized
 /// string just to hand it over.
-pub fn copy(state: &AppState, cx: &mut Context<AppState>) {
+pub(crate) fn copy(state: &AppState, cx: &mut Context<AppState>) {
     cx.write_to_clipboard(ClipboardItem::new_string(state.export.project.clone()));
 }
 
 /// Copy the `ROv2:` state string, the format the upstream tool reads.
-pub fn copy_state(state: &AppState, cx: &mut Context<AppState>) {
+pub(crate) fn copy_state(state: &AppState, cx: &mut Context<AppState>) {
     cx.write_to_clipboard(ClipboardItem::new_string(state.export.state.clone()));
 }
 
@@ -217,8 +217,8 @@ mod tests {
             version: project::VERSION,
             section: Some("research".into()),
             save: None,
-            simulation: idleon_core::model::Simulation::default(),
-            context: idleon_core::model::SimContext::default(),
+            simulation: idleon_research::model::Simulation::default(),
+            context: idleon_research::model::SimContext::default(),
             sections: Default::default(),
             warnings: Vec::new(),
             origin: project::Origin::Project,

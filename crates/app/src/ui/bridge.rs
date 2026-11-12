@@ -9,7 +9,7 @@ use std::path::PathBuf;
 ///
 /// `endpoint_dir` isolates this instance's discovery files, so an agent lane can
 /// run its own window while another lane drives a different one.
-pub fn install(
+pub(crate) fn install(
     window: &mut Window,
     cx: &mut Context<AppState>,
     endpoint_dir: Option<PathBuf>,

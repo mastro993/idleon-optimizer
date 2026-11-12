@@ -191,7 +191,7 @@ const payload = {
   equipmentSets,
 };
 writeFileSync(
-  new URL('../crates/core/data/stats.json', import.meta.url),
+  new URL('../crates/stats-data/data/stats.json', import.meta.url),
   `${JSON.stringify(payload)}\n`,
 );
 console.log(

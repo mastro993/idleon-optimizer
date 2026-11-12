@@ -3367,12 +3367,253 @@ dependencies = [
 ]
 
 [[package]]
-name = "idleon-core"
+name = "idleon-account"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-cooking-mastery",
+ "idleon-fountain",
+ "idleon-jar",
+ "idleon-jelly",
+ "idleon-opal",
+ "idleon-research",
+ "idleon-save",
+ "idleon-sneaking",
+ "idleon-stats-data",
+ "idleon-statue",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-cglunko"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-clamworks"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-cog"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-coin-multi"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-import",
+ "idleon-research",
+ "idleon-save",
+ "idleon-stats",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-combat"
+version = "0.1.0"
+dependencies = [
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-common"
+version = "0.1.0"
+
+[[package]]
+name = "idleon-cooking-mastery"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-coral"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-damage"
+version = "0.1.0"
+dependencies = [
+ "idleon-import",
+ "idleon-save",
+ "idleon-stats",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-drop-rate"
+version = "0.1.0"
+dependencies = [
+ "idleon-save",
+ "idleon-stats",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-endgame"
+version = "0.1.0"
+dependencies = [
+ "idleon-import",
+ "idleon-save",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-farming"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-fishing"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-fountain"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-import"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "flate2",
- "rayon",
+ "idleon-account",
+ "idleon-cglunko",
+ "idleon-clamworks",
+ "idleon-cog",
+ "idleon-coin-multi",
+ "idleon-cooking-mastery",
+ "idleon-coral",
+ "idleon-farming",
+ "idleon-fountain",
+ "idleon-jar",
+ "idleon-jelly",
+ "idleon-ladle",
+ "idleon-opal",
+ "idleon-project",
+ "idleon-research",
+ "idleon-royal-guardian",
+ "idleon-sailing",
+ "idleon-save",
+ "idleon-sneaking",
+ "idleon-spelunking",
+ "idleon-statue",
+ "idleon-worship",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-jar"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-jelly"
+version = "0.1.0"
+dependencies = [
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-killroy"
+version = "0.1.0"
+dependencies = [
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-ladle"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-monument"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-opal"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
  "serde",
  "serde_json",
 ]
@@ -3387,8 +3628,187 @@ dependencies = [
  "gpui-mcp",
  "gpui-pre",
  "gpui-pre-platform",
- "idleon-core",
+ "idleon-cglunko",
+ "idleon-clamworks",
+ "idleon-cog",
+ "idleon-coin-multi",
+ "idleon-combat",
+ "idleon-common",
+ "idleon-cooking-mastery",
+ "idleon-coral",
+ "idleon-damage",
+ "idleon-drop-rate",
+ "idleon-endgame",
+ "idleon-farming",
+ "idleon-fishing",
+ "idleon-fountain",
+ "idleon-import",
+ "idleon-jar",
+ "idleon-jelly",
+ "idleon-killroy",
+ "idleon-ladle",
+ "idleon-monument",
+ "idleon-opal",
+ "idleon-pickle",
+ "idleon-prisma",
+ "idleon-project",
+ "idleon-research",
+ "idleon-royal-guardian",
+ "idleon-sailing",
+ "idleon-save",
+ "idleon-sneaking",
+ "idleon-spelunking",
+ "idleon-stats",
+ "idleon-statue",
+ "idleon-ui",
+ "idleon-worship",
  "jiff",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-pickle"
+version = "0.1.0"
+
+[[package]]
+name = "idleon-prisma"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-combat",
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "idleon-stats",
+ "idleon-statue",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-project"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "flate2",
+ "idleon-research",
+ "idleon-save",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-research"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-save",
+ "rayon",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-royal-guardian"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-jelly",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-sailing"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-save"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-sneaking"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-common",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-spelunking"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "idleon-sailing",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-stats"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-common",
+ "idleon-import",
+ "idleon-research",
+ "idleon-save",
+ "idleon-stats-data",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-stats-data"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-statue"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-ui"
+version = "0.1.0"
+dependencies = [
+ "ely-gpui-component",
+ "gpui-pre",
+ "idleon-common",
+]
+
+[[package]]
+name = "idleon-worship"
+version = "0.1.0"
+dependencies = [
+ "idleon-common",
+ "idleon-import",
+ "rayon",
  "serde",
  "serde_json",
 ]

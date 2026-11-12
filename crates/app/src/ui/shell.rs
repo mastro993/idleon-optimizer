@@ -18,10 +18,10 @@ gpui::actions!(idleon_shell, [BackToDashboard]);
 /// Key context of a section page: it makes Back work from every section,
 /// including the ones that own Escape themselves (the research grid binds it
 /// deeper, so Escape there clears the selection before it leaves the page).
-pub const SECTION_CONTEXT: &str = "Section";
+pub(crate) const SECTION_CONTEXT: &str = "Section";
 
 /// Register the routing shortcuts.
-pub fn bind_keys(cx: &mut App) {
+pub(crate) fn bind_keys(cx: &mut App) {
     let context = Some(SECTION_CONTEXT);
     cx.bind_keys([
         KeyBinding::new("escape", BackToDashboard, context),
@@ -30,7 +30,11 @@ pub fn bind_keys(cx: &mut App) {
 }
 
 /// Window chrome and the active view.
-pub fn shell(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn shell(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let (bg, fg) = {
         let colors = &cx.theme().colors;
         (colors.bg, colors.fg)

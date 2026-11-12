@@ -4,8 +4,10 @@
 //!
 //! A context change re-resolves every descriptor, so the page never shows a
 //! value from the previous character or map. The breakdown rows read the
-//! descriptor model in `idleon_core::stats::breakdowns`; the formula tree is
+//! descriptor model in `idleon_stats::breakdowns`; the formula tree is
 //! the shared [`FormulaTree`] component, not a second renderer.
+
+mod actions;
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -19,23 +21,23 @@ use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
     div, px,
 };
-use idleon_core::model::{SimContext, Simulation};
-use idleon_core::save::Save;
-use idleon_core::stats::{
-    self, BreakdownCategory, ConstructionMode, Context as StatsContext, MapVisibility, Resolution,
-    Skill,
+use idleon_research::model::{SimContext, Simulation};
+use idleon_save::Save;
+use idleon_stats::{
+    self as stats, BreakdownCategory, ConstructionMode, Context as StatsContext, MapVisibility,
+    Resolution, Skill,
 };
 
 /// The section's own state: the context, the save slice and the breakdowns.
-pub struct State {
-    pub context: StatsContext,
-    pub snapshot: Option<stats::Snapshot>,
+pub(crate) struct State {
+    pub(crate) context: StatsContext,
+    pub(crate) snapshot: Option<stats::Snapshot>,
     /// Every upstream descriptor resolved against the save and the context.
-    pub sheet: Option<stats::Sheet>,
+    pub(crate) sheet: Option<stats::Sheet>,
     /// The category tab on screen.
-    pub category: BreakdownCategory,
+    pub(crate) category: BreakdownCategory,
     /// The descriptor whose formula tree the detail card shows.
-    pub selected: Option<String>,
+    pub(crate) selected: Option<String>,
 }
 
 impl Default for State {
@@ -54,7 +56,7 @@ impl State {
     /// Take a freshly imported save, opening on character one and its current
     /// map exactly like upstream `onLoad`. The other selectors keep the user's
     /// choice, which is what upstream reads back from the DOM.
-    pub fn load(&mut self, save: &Save, simulation: &Simulation, sim_context: &SimContext) {
+    pub(crate) fn load(&mut self, save: &Save, simulation: &Simulation, sim_context: &SimContext) {
         let snapshot = stats::Snapshot::from_save(save);
         self.context.character = 0;
         self.context.map = snapshot.current_map(0).unwrap_or(0);
@@ -65,7 +67,12 @@ impl State {
 
     /// Re-resolve every breakdown; a selection the new sheet still carries is
     /// kept, otherwise the first row of the current tab is selected.
-    pub fn rebuild(&mut self, save: &Save, simulation: &Simulation, sim_context: &SimContext) {
+    pub(crate) fn rebuild(
+        &mut self,
+        save: &Save,
+        simulation: &Simulation,
+        sim_context: &SimContext,
+    ) {
         let sheet = stats::Sheet::build(&stats::BreakdownInputs {
             save,
             simulation,
@@ -82,7 +89,7 @@ impl State {
     }
 
     /// Select the first descriptor of the current category.
-    pub fn select_first(&mut self) {
+    pub(crate) fn select_first(&mut self) {
         let Some(sheet) = self.sheet.as_ref() else {
             return;
         };
@@ -93,13 +100,13 @@ impl State {
     }
 
     /// The descriptor the detail card shows.
-    pub fn selected_row(&self) -> Option<&stats::Breakdown> {
+    pub(crate) fn selected_row(&self) -> Option<&stats::Breakdown> {
         let sheet = self.sheet.as_ref()?;
         sheet.get(self.selected.as_deref()?)
     }
 
     /// The map selector's rows for the current character and list level.
-    pub fn options(&self) -> Vec<stats::MapOption> {
+    pub(crate) fn options(&self) -> Vec<stats::MapOption> {
         self.snapshot
             .as_ref()
             .map(|snapshot| self.context.map_options(snapshot))
@@ -108,7 +115,7 @@ impl State {
 
     /// Keep the context inside the save and the list level; names the dropped
     /// map in `warnings`, for a project file restoring an unavailable one.
-    pub fn clamp(&mut self, warnings: &mut Vec<String>) {
+    pub(crate) fn clamp(&mut self, warnings: &mut Vec<String>) {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return;
         };
@@ -131,7 +138,11 @@ impl State {
 }
 
 /// The All Stats Dashboard page: the context card and the map access summary.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     let stats = &state.stats_all;
@@ -477,7 +488,7 @@ fn breakdowns(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 /// The selected descriptor: its provenance, its value and the shared tree.
 fn detail_card(
     state: &mut AppState,
-    tree: Entity<crate::ui::formula::FormulaTree>,
+    tree: Entity<idleon_ui::formula::FormulaTree>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -656,7 +667,7 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
 }
 
 /// Restore a project file's context, warning about values the save cannot show.
-pub fn restore(state: &mut AppState, context: StatsContext, warnings: &mut Vec<String>) {
+pub(crate) fn restore(state: &mut AppState, context: StatsContext, warnings: &mut Vec<String>) {
     state.stats_all.context = context;
     state.stats_all.clamp(warnings);
     // The restored character and map must re-resolve every breakdown, or the

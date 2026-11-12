@@ -178,7 +178,7 @@ for (const key of Object.keys(payload)) {
   if (payload[key] === undefined) delete payload[key];
 }
 
-const out = new URL('../crates/core/data/account.json', import.meta.url);
+const out = new URL('../crates/account/data/account.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload));
 console.log(
   `wrote ${Object.keys(itemStats).length} item stats, ${payload.tome.length} tome slots, ` +

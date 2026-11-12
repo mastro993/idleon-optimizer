@@ -69,7 +69,7 @@ const captainBonuses = customlists.CaptainBonuses.map((row, id) => ({
 
 const payload = { artifacts, islands, captainBonuses };
 writeFileSync(
-  new URL('../crates/core/data/sailing.json', import.meta.url),
+  new URL('../crates/sailing/data/sailing.json', import.meta.url),
   `${JSON.stringify(payload, null, 2)}\n`,
 );
 console.log(

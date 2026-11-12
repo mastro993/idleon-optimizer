@@ -1,4 +1,4 @@
-// Regenerates crates/core/tests/clamworks-oracle.json from the upstream
+// Regenerates crates/clamworks/tests/clamworks-oracle.json from the upstream
 // Clamworks calculator, so the promotion tracker, the worker-class rewards and
 // the budgeted upgrade plan are compared with the source of truth instead of
 // hand-picked numbers.
@@ -122,7 +122,7 @@ const fixture = {
 };
 
 writeFileSync(
-  join(root, 'crates/core/tests/clamworks-oracle.json'),
+  join(root, 'crates/clamworks/tests/clamworks-oracle.json'),
   `${JSON.stringify(fixture, null, 1)}\n`,
 );
 console.log(

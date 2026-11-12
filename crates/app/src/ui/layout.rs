@@ -16,20 +16,20 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Heading;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, ElementId, IntoElement, ParentElement, Pixels, Role, SharedString, Styled,
-    Window, div, px,
+    AnyElement, Context, Div, ElementId, Entity, Hsla, IntoElement, ParentElement, Pixels, Role,
+    SharedString, Stateful, Styled, Window, div, px,
 };
 
 /// The smallest window the layout is designed for.
-pub const MIN_WIDTH: f32 = 1080.0;
+pub(crate) const MIN_WIDTH: f32 = 1080.0;
 /// The smallest window height the layout is designed for.
-pub const MIN_HEIGHT: f32 = 680.0;
+pub(crate) const MIN_HEIGHT: f32 = 680.0;
 /// Below this window width, panes stack and fixed side rails drop under content.
-pub const COMPACT_WIDTH: f32 = 1360.0;
+pub(crate) const COMPACT_WIDTH: f32 = 1360.0;
 
 /// The room a window leaves for the layout.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Breakpoint {
+pub(crate) enum Breakpoint {
     /// Stacked panes and full-width cards.
     Compact,
     /// Side-by-side panes with fixed rails.
@@ -38,7 +38,7 @@ pub enum Breakpoint {
 
 impl Breakpoint {
     /// The room a viewport `width` leaves.
-    pub fn from_width(width: f32) -> Self {
+    pub(crate) fn from_width(width: f32) -> Self {
         if width < COMPACT_WIDTH {
             Self::Compact
         } else {
@@ -47,16 +47,16 @@ impl Breakpoint {
     }
 
     /// The current window's room.
-    pub fn of(window: &Window) -> Self {
+    pub(crate) fn of(window: &Window) -> Self {
         Self::from_width(f32::from(window.viewport_size().width))
     }
 
-    pub fn is_compact(self) -> bool {
+    pub(crate) fn is_compact(self) -> bool {
         self == Self::Compact
     }
 
     /// The narrowest a dashboard card may be at this width.
-    pub fn card_min(self) -> Pixels {
+    pub(crate) fn card_min(self) -> Pixels {
         match self {
             Self::Compact => px(280.0),
             Self::Regular => px(300.0),
@@ -68,14 +68,14 @@ impl Breakpoint {
 ///
 /// Leaves room for the header, tab strip, KPI cards and the table's own header
 /// and footnote, so a table scrolls instead of pushing the page off-screen.
-pub fn table_height(viewport_height: f32) -> Pixels {
+pub(crate) fn table_height(viewport_height: f32) -> Pixels {
     px((viewport_height - 400.0).clamp(160.0, 520.0))
 }
 
 /// Two panes side by side, or stacked in a scrolling page when compact.
 ///
 /// `side_width` is the fixed rail width; it only applies while regular.
-pub fn split_pane(
+pub(crate) fn split_pane(
     id: impl Into<ElementId>,
     breakpoint: Breakpoint,
     primary: impl IntoElement,
@@ -86,7 +86,7 @@ pub fn split_pane(
 }
 
 /// Like [`split_pane`], with the side rail first once the panes stack.
-pub fn split_pane_reversed(
+pub(crate) fn split_pane_reversed(
     id: impl Into<ElementId>,
     breakpoint: Breakpoint,
     primary: impl IntoElement,
@@ -152,7 +152,7 @@ fn split_pane_inner(
 
 /// A headline figure as the upstream `_card` draws it: its label, its value and
 /// a one-line explanation, all in one card.
-pub fn figure(
+pub(crate) fn figure(
     id: &'static str,
     label: &'static str,
     value: impl Into<SharedString>,
@@ -191,7 +191,7 @@ pub fn figure(
 }
 
 /// The shared section header: back, icon, title, world badge, save status, import.
-pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let Some(section) = state.current_section() else {
         return div().into_any_element();
     };
@@ -204,25 +204,8 @@ pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let import = entity.clone();
     let export = entity.clone();
 
-    div()
-        .id("app-header")
-        .flex()
-        .flex_none()
-        .items_center()
-        .gap_3()
-        // Leaves room for the macOS traffic lights in the transparent title bar.
-        .pl(px(84.0))
-        .pr_4()
-        .h(px(48.0))
-        .border_b_1()
-        .border_color(border)
-        .child(
-            IconButton::new("back-to-dashboard", IconName::ArrowLeft)
-                .tooltip("Back to dashboard")
-                .on_click(move |_event, window, cx| {
-                    back.update(cx, |state, cx| state.back_to_dashboard(window, cx));
-                }),
-        )
+    header_bar(border)
+        .child(back_button(back))
         .child(div().text_size(px(18.0)).child(section.icon))
         .child(
             div()
@@ -238,23 +221,37 @@ pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The landing page's header: product name, save status and the shared import action.
-pub fn dashboard_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let import = cx.entity();
-    let export = cx.entity();
+/// The bar every header sits in. Its left padding leaves room for the macOS
+/// traffic lights in the transparent title bar.
+fn header_bar(border: Hsla) -> Stateful<Div> {
     div()
         .id("app-header")
         .flex()
         .flex_none()
         .items_center()
         .gap_3()
-        // Leaves room for the macOS traffic lights in the transparent title bar.
         .pl(px(84.0))
         .pr_4()
         .h(px(48.0))
         .border_b_1()
-        .border_color(colors.border)
+        .border_color(border)
+}
+
+/// The header's way back to the dashboard.
+fn back_button(state: Entity<AppState>) -> IconButton {
+    IconButton::new("back-to-dashboard", IconName::ArrowLeft)
+        .tooltip("Back to dashboard")
+        .on_click(move |_event, window, cx| {
+            state.update(cx, |state, cx| state.back_to_dashboard(window, cx));
+        })
+}
+
+/// The landing page's header: product name, save status and the shared import action.
+pub(crate) fn dashboard_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let colors = &cx.theme().colors;
+    let import = cx.entity();
+    let export = cx.entity();
+    header_bar(colors.border)
         .child(Heading::new(3, "Idleon Optimizer"))
         .child(
             div()
@@ -323,7 +320,7 @@ fn save_actions(
 }
 
 /// The shared tab strip; the section that owns it passes its active tab in state.
-pub fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
     let mut tabs = TabBar::new("app-tabs").selected(SharedString::from(state.research.tab.id()));
     for tab in Tab::ALL {
@@ -337,7 +334,7 @@ pub fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElemen
 }
 
 /// The header for an id the registry does not declare.
-pub fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let (border, muted) = {
         let colors = &cx.theme().colors;
         (colors.border, colors.fg_muted)
@@ -346,25 +343,8 @@ pub fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) ->
     let back = entity.clone();
     let import = entity.clone();
     let export = entity.clone();
-    div()
-        .id("app-header")
-        .flex()
-        .flex_none()
-        .items_center()
-        .gap_3()
-        // Leaves room for the macOS traffic lights in the transparent title bar.
-        .pl(px(84.0))
-        .pr_4()
-        .h(px(48.0))
-        .border_b_1()
-        .border_color(border)
-        .child(
-            IconButton::new("back-to-dashboard", IconName::ArrowLeft)
-                .tooltip("Back to dashboard")
-                .on_click(move |_event, window, cx| {
-                    back.update(cx, |state, cx| state.back_to_dashboard(window, cx));
-                }),
-        )
+    header_bar(border)
+        .child(back_button(back))
         .child(
             div()
                 .id("section-title")

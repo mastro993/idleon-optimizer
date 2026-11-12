@@ -7,7 +7,6 @@
 
 use super::captain_code;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::forms::NumberInput;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -17,15 +16,16 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div, px};
-use idleon_core::sailing::{
+use idleon_sailing::{
     ReplacementOutcome, RouteMetrics, chest_loot_multiplier, ranked, replacement_outcome, strongest,
 };
+use idleon_ui::format;
 
 /// The tiers the matrix compares, upstream's ordinary chest tiers.
 const TIERS: usize = 5;
 
 /// The replacements tab: the controls, the reference KPIs and the matrix.
-pub fn replacements_tab(
+pub(crate) fn replacements_tab(
     state: &AppState,
     table_height: Pixels,
     cx: &mut Context<AppState>,

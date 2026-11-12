@@ -2,7 +2,6 @@
 //! the breakdowns.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::forms::{Checkbox, Stepper};
@@ -13,10 +12,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::ladle::{self, Ladle, Panel, Stats};
+use idleon_ladle::{self as ladle, Ladle, Panel, Stats};
+use idleon_ui::format;
 
 /// The header's one-line summary.
-pub fn line(ladle: &Ladle, panel: Panel, claim_hours: f64, assigned: &[usize]) -> String {
+pub(crate) fn line(ladle: &Ladle, panel: Panel, claim_hours: f64, assigned: &[usize]) -> String {
     let stats = all(ladle, panel, claim_hours);
     let guaranteed = total(&stats, assigned, |row| row.min_per_day);
     let expected = total(&stats, assigned, |row| row.per_day);
@@ -33,7 +33,7 @@ pub fn line(ladle: &Ladle, panel: Panel, claim_hours: f64, assigned: &[usize]) -
 }
 
 /// The whole Ladles tab.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     ladle: &Ladle,
     window: &mut Window,
@@ -346,7 +346,7 @@ fn characters(
 }
 
 /// Every character's rates for the panel the section holds.
-pub fn all(ladle: &Ladle, panel: Panel, claim_hours: f64) -> Vec<Stats> {
+pub(crate) fn all(ladle: &Ladle, panel: Panel, claim_hours: f64) -> Vec<Stats> {
     ladle
         .characters
         .iter()
@@ -355,7 +355,7 @@ pub fn all(ladle: &Ladle, panel: Panel, claim_hours: f64) -> Vec<Stats> {
 }
 
 /// Sum one column over the checked characters.
-pub fn total(stats: &[Stats], selected: &[usize], column: impl Fn(&Stats) -> f64) -> f64 {
+pub(crate) fn total(stats: &[Stats], selected: &[usize], column: impl Fn(&Stats) -> f64) -> f64 {
     stats
         .iter()
         .filter(|row| selected.contains(&row.index))

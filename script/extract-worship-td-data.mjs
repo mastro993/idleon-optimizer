@@ -110,7 +110,7 @@ const payload = {
 };
 
 writeFileSync(
-  new URL('../crates/core/data/worship-td.json', import.meta.url),
+  new URL('../crates/worship/data/worship-td.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(

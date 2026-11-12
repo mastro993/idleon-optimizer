@@ -6,6 +6,7 @@
 //! section inputs in the project document, so a project round trip restores it
 //! and applying one is the same edit as picking them by hand.
 
+use crate::sections::presets;
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::forms::Input;
@@ -14,16 +15,16 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use idleon_core::farming::{Mode, Objective, data};
+use idleon_farming::{Mode, Objective, data};
 
 /// One named preset: the goal, the baseline and the crop target.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct CustomPreset {
-    pub name: String,
-    pub objective: Objective,
-    pub mode: Mode,
-    pub target_crop: u32,
+pub(crate) struct CustomPreset {
+    pub(crate) name: String,
+    pub(crate) objective: Objective,
+    pub(crate) mode: Mode,
+    pub(crate) target_crop: u32,
 }
 
 impl Default for CustomPreset {
@@ -38,21 +39,16 @@ impl Default for CustomPreset {
 }
 
 impl CustomPreset {
-    /// How many presets one project keeps.
-    pub const MAX: usize = 40;
-    /// How long a preset name may be.
-    const NAME_MAX: usize = 60;
-
     /// Save the current inputs under `name`, replacing a preset of the same
     /// name. Returns the status line the window shows.
-    pub fn store(
+    pub(crate) fn store(
         presets: &mut Vec<Self>,
         name: &str,
         objective: Objective,
         mode: Mode,
         target_crop: u32,
     ) -> Result<String, String> {
-        let name: String = name.trim().chars().take(Self::NAME_MAX).collect();
+        let name = presets::clean_name(name);
         if name.is_empty() {
             return Err("Type a preset name before saving.".into());
         }
@@ -62,34 +58,25 @@ impl CustomPreset {
             mode,
             target_crop: clamp_crop(target_crop),
         };
-        if let Some(index) = presets.iter().position(|entry| entry.name == name) {
-            presets[index] = preset;
-        } else if presets.len() >= Self::MAX {
-            return Err(format!(
-                "{} presets is the limit; delete one before saving another.",
-                Self::MAX
-            ));
-        } else {
-            presets.push(preset);
-        }
+        presets::upsert(presets, preset, |entry| entry.name == name, "presets")?;
         Ok(format!("Saved the farming preset “{name}”."))
     }
 
     /// Forget the preset at `index`.
-    pub fn delete(presets: &mut Vec<Self>, index: usize) -> Option<Self> {
-        (index < presets.len()).then(|| presets.remove(index))
+    pub(crate) fn delete(presets: &mut Vec<Self>, index: usize) -> Option<Self> {
+        presets::remove(presets, index)
     }
 
     /// Drop nameless and duplicate presets read from a document, clamp their
     /// crop target and keep the project's limit.
-    pub fn sanitise(presets: Vec<Self>) -> Vec<Self> {
+    pub(crate) fn sanitise(presets: Vec<Self>) -> Vec<Self> {
         let mut kept: Vec<Self> = Vec::new();
         for mut preset in presets {
-            preset.name = preset.name.trim().chars().take(Self::NAME_MAX).collect();
+            preset.name = presets::clean_name(&preset.name);
             if preset.name.is_empty() || kept.iter().any(|other| other.name == preset.name) {
                 continue;
             }
-            if kept.len() >= Self::MAX {
+            if kept.len() >= presets::MAX {
                 break;
             }
             preset.target_crop = clamp_crop(preset.target_crop);
@@ -99,7 +86,7 @@ impl CustomPreset {
     }
 
     /// A one-line description of what the preset sets.
-    pub fn detail(&self) -> String {
+    pub(crate) fn detail(&self) -> String {
         format!(
             "{} · {} · crop #{}",
             self.objective.label(),
@@ -268,35 +255,6 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_name_or_a_full_list_is_refused() {
-        let mut presets = Vec::new();
-        assert!(
-            CustomPreset::store(&mut presets, "  ", Objective::RankXp, Mode::Unspent, 1).is_err()
-        );
-        for index in 0..CustomPreset::MAX {
-            CustomPreset::store(
-                &mut presets,
-                &format!("preset {index}"),
-                Objective::RankXp,
-                Mode::Unspent,
-                1,
-            )
-            .expect("saved");
-        }
-        assert!(
-            CustomPreset::store(
-                &mut presets,
-                "one more",
-                Objective::RankXp,
-                Mode::Unspent,
-                1
-            )
-            .is_err()
-        );
-        assert_eq!(presets.len(), CustomPreset::MAX);
-    }
-
-    #[test]
     fn sanitise_drops_nameless_and_duplicate_presets() {
         let presets = CustomPreset::sanitise(vec![
             CustomPreset {
@@ -318,16 +276,5 @@ mod tests {
         assert_eq!(presets.len(), 1);
         assert_eq!(presets[0].objective, Objective::Growth);
         assert_eq!(presets[0].target_crop, 329, "the crop target clamps");
-    }
-
-    #[test]
-    fn a_preset_deletes_by_index() {
-        let mut presets = Vec::new();
-        CustomPreset::store(&mut presets, "Run", Objective::RankXp, Mode::Unspent, 3)
-            .expect("saved");
-        let removed = CustomPreset::delete(&mut presets, 0).expect("the preset deletes");
-        assert_eq!(removed.name, "Run");
-        assert!(presets.is_empty());
-        assert!(CustomPreset::delete(&mut presets, 0).is_none());
     }
 }

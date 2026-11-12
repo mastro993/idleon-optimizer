@@ -4,14 +4,14 @@
 //! The save supplies every number; these are only the section's selections, so
 //! they live in the project document like every other section's.
 
-use idleon_core::Fountain;
-use idleon_core::fountain::{self, WATERS};
+use idleon_fountain::Fountain;
+use idleon_fountain::{self as fountain, WATERS};
 use serde::{Deserialize, Serialize};
 
 /// The fountain tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// Summary, income, bonuses, stacks and the level plan.
     #[default]
     Overview,
@@ -22,9 +22,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Overview, Tab::Currency, Tab::Upgrades];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Overview, Tab::Currency, Tab::Upgrades];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Currency => "currency",
@@ -32,7 +32,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Currency => "Currency",
@@ -40,7 +40,7 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
@@ -48,19 +48,19 @@ impl Tab {
 /// The section's selections, kept across tab switches and dashboard visits.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub tab: Tab,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
     /// The water the upgrade table lists.
-    pub water: usize,
+    pub(crate) water: usize,
     /// The desired currency the currency tab simulates; `None` reads the save's.
-    pub desired: Option<usize>,
+    pub(crate) desired: Option<usize>,
     /// The upgrade the cost curve plots.
-    pub upgrade: Option<usize>,
+    pub(crate) upgrade: Option<usize>,
 }
 
 impl State {
     /// Keep the selections the current cavern can still resolve.
-    pub fn adopt(&mut self, fountain: Option<&Fountain>) {
+    pub(crate) fn adopt(&mut self, fountain: Option<&Fountain>) {
         let Some(fountain) = fountain else {
             return;
         };

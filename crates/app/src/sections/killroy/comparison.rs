@@ -9,8 +9,7 @@
 use crate::sections::killroy::Mode;
 use crate::sections::killroy::forecast_view::{metric, week_label};
 use crate::state::AppState;
-use crate::task::TaskState;
-use crate::ui::{layout, task};
+use crate::ui::layout;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Checkbox, NumberInput};
@@ -23,13 +22,19 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
-use idleon_core::killroy::{Plan, Row, RowSummary, UpgradeChoice};
-use idleon_core::save::Save;
+use idleon_killroy::{Plan, Row, RowSummary, UpgradeChoice};
+use idleon_save::Save;
+use idleon_ui::run_chrome;
+use idleon_ui::runner::TaskState;
 
 /// The `+1` list: every upgrade the save lists, its level and its availability.
-pub fn upgrade_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn upgrade_card(
+    state: &AppState,
+    save: &Save,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let choices = idleon_core::killroy::upgrade_choices(save);
+    let choices = idleon_killroy::upgrade_choices(save);
     let entity = cx.entity();
     let rows = choices.iter().fold(
         Table::new(["Upgrade", "Level", "Runs needed", "Availability", ""]),
@@ -40,14 +45,14 @@ pub fn upgrade_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -
                     .into_any_element(),
                 div()
                     .child(match choice.level {
-                        Some(level) => crate::ui::format::count(level as u64),
+                        Some(level) => idleon_ui::format::count(level as u64),
                         None => "—".into(),
                     })
                     .into_any_element(),
                 div()
                     .child(match choice.id {
                         0 => "—".to_string(),
-                        _ => crate::ui::format::count(choice.runs_required as u64),
+                        _ => idleon_ui::format::count(choice.runs_required as u64),
                     })
                     .into_any_element(),
                 availability(choice),
@@ -123,7 +128,7 @@ fn upgrade_check(
 }
 
 /// The trials: the settings, the queue preview, the run and its progress.
-pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let comparing = state.killroy.mode == Mode::Upgrades;
     let plan = state.killroy_plan();
@@ -175,7 +180,7 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 } else {
                     "Simulate baseline"
                 },
-                crate::ui::format::count(plan.attempts() as u64)
+                idleon_ui::format::count(plan.attempts() as u64)
             ),
             plan.attempts(),
         ),
@@ -214,7 +219,7 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     } = &task_state
     {
         let cancel_entity = cx.entity();
-        body = body.child(task::progress_card(
+        body = body.child(run_chrome::progress_card(
             "killroy-run",
             "Running the trials",
             "Each attempt starts from the imported save with the trial's own seed.",
@@ -225,7 +230,7 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         ));
     }
     if task_state.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "killroy-cancelled",
             task_state.result.is_some(),
         ));
@@ -327,7 +332,7 @@ fn preview(
                 } else {
                     "trials"
                 },
-                crate::ui::format::count(attempts as u64)
+                idleon_ui::format::count(attempts as u64)
             );
             let rows = plan.rows.iter().fold(
                 Table::new(["Week", "Map / class", "Character", "Configurations"]),
@@ -405,7 +410,7 @@ fn queue_row(plan: &Plan, row: &Row) -> [AnyElement; 4] {
 }
 
 /// The comparison: every configuration's average, its delta and the best option.
-pub fn results_card(
+pub(crate) fn results_card(
     state: &AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
@@ -461,7 +466,7 @@ pub fn results_card(
             div()
                 .px_3()
                 .pt_3()
-                .child(task::stale_banner("killroy-stale")),
+                .child(run_chrome::stale_banner("killroy-stale")),
         );
     }
     card.child(
@@ -524,7 +529,7 @@ fn run_details(plan: &Plan) -> String {
 }
 
 /// The saved buffs every selected character's run starts from.
-pub fn buffs_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn buffs_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let keep = state.killroy.keep_buffs;
     let mut cis: Vec<usize> = state
@@ -535,7 +540,7 @@ pub fn buffs_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -> 
         .collect();
     cis.sort_unstable();
     cis.dedup();
-    let characters = idleon_core::killroy::character_buffs(save, &cis, keep);
+    let characters = idleon_killroy::character_buffs(save, &cis, keep);
     let buffs: usize = characters
         .iter()
         .map(|character| character.buffs.len())
@@ -688,8 +693,8 @@ fn result_row(row: &RowSummary) -> [AnyElement; 8] {
             .child(div().child(SharedString::from(format!(
                 "+1 {} ({} → {})",
                 upgrade.name,
-                crate::ui::format::count(upgrade.level as u64),
-                crate::ui::format::count(upgrade.next as u64),
+                idleon_ui::format::count(upgrade.level as u64),
+                idleon_ui::format::count(upgrade.next as u64),
             ))))
             .children(row.best.then(|| {
                 div()
@@ -723,7 +728,7 @@ fn result_row(row: &RowSummary) -> [AnyElement; 8] {
 /// A mean, rounded the way the upstream tables print it.
 fn number(value: f64) -> AnyElement {
     let text = if value.fract().abs() < 0.005 {
-        crate::ui::format::count(value.round() as u64)
+        idleon_ui::format::count(value.round() as u64)
     } else {
         metric(Some(value))
     };
@@ -733,10 +738,10 @@ fn number(value: f64) -> AnyElement {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::killroy::{
+    use idleon_import::import;
+    use idleon_killroy::{
         Comparisons, Delta, Means, PlanInput, Selection, plan as build, trial_seeds,
     };
-    use idleon_core::save::import;
     use serde_json::json;
 
     fn save() -> Save {
@@ -766,10 +771,10 @@ mod tests {
             },
         )
         .expect("the plan builds");
-        idleon_core::killroy::run(&plan, |_, _| false).expect("the run finishes")
+        idleon_killroy::run(&plan, |_, _| false).expect("the run finishes")
     }
 
-    fn plan(keep_buffs: bool, unlimited_inventory: bool) -> idleon_core::killroy::Plan {
+    fn plan(keep_buffs: bool, unlimited_inventory: bool) -> idleon_killroy::Plan {
         build(
             &save(),
             &PlanInput {
@@ -803,7 +808,7 @@ mod tests {
     #[test]
     fn the_saved_buff_table_reads_the_selected_characters() {
         let plan = plan(false, false);
-        let buffs = idleon_core::killroy::character_buffs(&save(), &[0], plan.keep_buffs);
+        let buffs = idleon_killroy::character_buffs(&save(), &[0], plan.keep_buffs);
         assert_eq!(buffs.len(), 1);
         assert!(!buffs[0].buffs.is_empty());
         assert_eq!(buffs[0].buffs, plan.characters[0].buffs);
@@ -885,7 +890,7 @@ mod tests {
             .iter()
             .filter(|row| row.baseline == baseline.key && row.upgrade.is_some())
             .count();
-        assert_eq!(options, idleon_core::killroy::UPGRADES);
+        assert_eq!(options, idleon_killroy::UPGRADES);
         assert_eq!(plan.attempts(), (options + 1) * 2);
     }
 }

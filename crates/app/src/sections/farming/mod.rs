@@ -14,8 +14,9 @@
 //! overgrowth curve. The evolution chain adds its own tab later in the
 //! milestone.
 
+mod actions;
+
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::forms::{Choice, Select, Stepper};
 use ely_gpui_component::layout::ScrollArea;
@@ -26,7 +27,8 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
-use idleon_core::farming::{self, Assignment, Farm, Mode, Objective, PlotMetrics, Snapshot};
+use idleon_farming::{self as farming, Assignment, Farm, Mode, Objective, PlotMetrics, Snapshot};
+use idleon_ui::format;
 
 mod allocation;
 mod assignment;
@@ -37,12 +39,12 @@ mod field;
 mod overview;
 mod presets;
 
-pub use presets::CustomPreset;
+pub(crate) use presets::CustomPreset;
 
 /// The farming page's tabs, in the upstream order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The signals, multipliers, thresholds, Crop Scientist and curves.
     #[default]
     Overview,
@@ -51,23 +53,23 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 2] = [Tab::Overview, Tab::Plots];
+    pub(crate) const ALL: [Tab; 2] = [Tab::Overview, Tab::Plots];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Plots => "plots",
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Plots => "Full Plot Grid",
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
@@ -78,20 +80,20 @@ impl Tab {
 /// loaded farm, so the project document does not carry it.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub tab: Tab,
-    pub selected_plot: usize,
-    pub target_crop: u32,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
+    pub(crate) selected_plot: usize,
+    pub(crate) target_crop: u32,
     /// The objective the assignment and the Land Rank allocation plan for.
-    pub objective: Objective,
+    pub(crate) objective: Objective,
     /// Whether the allocator keeps the saved levels or reallocates every point.
-    pub mode: Mode,
+    pub(crate) mode: Mode,
     /// The named presets the project document keeps.
-    pub presets: Vec<CustomPreset>,
+    pub(crate) presets: Vec<CustomPreset>,
     /// The field's assignment for `objective`; derived from the loaded farm, so
     /// the project document does not carry it.
     #[serde(skip)]
-    pub assignment: Assignment,
+    pub(crate) assignment: Assignment,
 }
 
 impl Default for State {
@@ -110,17 +112,17 @@ impl Default for State {
 
 impl State {
     /// Select a plot, clamped to the field.
-    pub fn select(&mut self, plot: usize) {
+    pub(crate) fn select(&mut self, plot: usize) {
         self.selected_plot = plot.min(farming::PLOTS - 1);
     }
 
     /// Switch tab.
-    pub fn set_tab(&mut self, tab: Tab) {
+    pub(crate) fn set_tab(&mut self, tab: Tab) {
         self.tab = tab;
     }
 
     /// Aim at a crop id, clamped to the last seed family.
-    pub fn set_target_crop(&mut self, value: f64) {
+    pub(crate) fn set_target_crop(&mut self, value: f64) {
         let max = farming::data()
             .seeds
             .last()
@@ -130,17 +132,17 @@ impl State {
     }
 
     /// Plan for a new objective.
-    pub fn set_objective(&mut self, objective: Objective) {
+    pub(crate) fn set_objective(&mut self, objective: Objective) {
         self.objective = objective;
     }
 
     /// Keep the saved levels or reallocate every point.
-    pub fn set_mode(&mut self, mode: Mode) {
+    pub(crate) fn set_mode(&mut self, mode: Mode) {
         self.mode = mode;
     }
 
     /// Save the current goal, baseline and crop target under `name`.
-    pub fn save_preset(&mut self, name: &str) -> Result<String, String> {
+    pub(crate) fn save_preset(&mut self, name: &str) -> Result<String, String> {
         CustomPreset::store(
             &mut self.presets,
             name,
@@ -151,7 +153,7 @@ impl State {
     }
 
     /// Apply the preset at `index` to the section's inputs; returns its name.
-    pub fn apply_preset(&mut self, index: usize) -> Option<String> {
+    pub(crate) fn apply_preset(&mut self, index: usize) -> Option<String> {
         let preset = self.presets.get(index)?.clone();
         self.objective = preset.objective;
         self.mode = preset.mode;
@@ -160,18 +162,22 @@ impl State {
     }
 
     /// Forget the preset at `index`.
-    pub fn delete_preset(&mut self, index: usize) -> Option<CustomPreset> {
+    pub(crate) fn delete_preset(&mut self, index: usize) -> Option<CustomPreset> {
         CustomPreset::delete(&mut self.presets, index)
     }
 
     /// Rebuild the assignment for the field, objective and target crop.
-    pub fn adopt(&mut self, farm: &Farm) {
+    pub(crate) fn adopt(&mut self, farm: &Farm) {
         self.assignment = farm.assignment(self.objective, Some(self.target_crop));
     }
 }
 
 /// The section: a summary line, the tab strip and the tab's pane.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let snapshot = state.farm.snapshot();
     let header = section_header(state, &snapshot, cx);
     let tabs = tabs(state, cx);
@@ -251,19 +257,19 @@ fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
 /// The inputs a comparison run captures, so a later edit marks its table stale.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CompareInputs {
-    pub save_revision: u64,
-    pub mode: Mode,
-    pub target_crop: u32,
+pub(crate) struct CompareInputs {
+    pub(crate) save_revision: u64,
+    pub(crate) mode: Mode,
+    pub(crate) target_crop: u32,
 }
 
 /// The inputs a run captures, so a later edit marks its result stale.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RunInputs {
-    pub save_revision: u64,
-    pub objective: Objective,
-    pub mode: Mode,
-    pub target_crop: u32,
+pub(crate) struct RunInputs {
+    pub(crate) save_revision: u64,
+    pub(crate) objective: Objective,
+    pub(crate) mode: Mode,
+    pub(crate) target_crop: u32,
 }
 
 /// The crops, growth rate, points, objective and crop target above the tabs.

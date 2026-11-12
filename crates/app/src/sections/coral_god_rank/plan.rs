@@ -1,12 +1,9 @@
 //! The plan card, its projection table and the action list.
 //!
-//! Every figure comes from [`idleon_core::coral::Plan`]; the shared task runner
+//! Every figure comes from [`idleon_coral::Plan`]; the shared task runner
 //! owns the run, its progress and the stale marker.
 
 use crate::state::AppState;
-use crate::task::TaskState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
@@ -17,10 +14,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::coral::{Action, Plan, Projection};
+use idleon_coral::{Action, Plan, Projection};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
+use idleon_ui::runner::TaskState;
 
 /// The plan card, its projection and its actions, stacked.
-pub fn plan_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn plan_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let task = state.coral_task(cx);
     let runnable = state.coral_plan_inputs().is_ok();
     div()
@@ -88,7 +88,7 @@ fn plan_card(
     }
     if let Some(progress) = &task.progress {
         let cancel_entity = entity.clone();
-        body = body.child(task::progress_card(
+        body = body.child(run_chrome::progress_card(
             "coral-run",
             "Planning upgrades",
             "The search keeps the best beam and reports each step.",
@@ -99,7 +99,7 @@ fn plan_card(
         ));
     }
     if task.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "coral-cancelled",
             task.result.is_some(),
         ));
@@ -110,7 +110,7 @@ fn plan_card(
         ));
     }
     if task.stale {
-        body = body.child(task::stale_banner("coral-stale"));
+        body = body.child(run_chrome::stale_banner("coral-stale"));
     }
     if let Some(plan) = &task.result
         && !plan.partial.is_empty()
@@ -213,7 +213,7 @@ fn projection_card(plan: &Plan, task: &TaskState<Plan>) -> AnyElement {
                 div()
                     .px_3()
                     .pt_3()
-                    .child(task::stale_badge("coral-projection")),
+                    .child(run_chrome::stale_badge("coral-projection")),
             )
         })
         .child(div().id("coral-projection").p_3().child(table))
@@ -266,7 +266,7 @@ fn actions_card(plan: &Plan, task: &TaskState<Plan>, cx: &mut Context<AppState>)
                 div()
                     .px_3()
                     .pt_3()
-                    .child(task::stale_badge("coral-actions")),
+                    .child(run_chrome::stale_badge("coral-actions")),
             )
         })
         .child(body.id("coral-actions"))

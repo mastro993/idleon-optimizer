@@ -6,7 +6,7 @@
 //! exits and each character's maximum stamina). Importing a save adopts its
 //! records and saved selections; everything else stays as the user left it.
 
-use idleon_core::spelunking::{
+use idleon_spelunking::{
     Account, Config, ConfigError, DepthRange, Entry, Inputs, Policy, Preset, PresetKind,
     ReferenceTool, Requested, StaminaMode, ToolChoice, normalize,
 };
@@ -14,37 +14,37 @@ use idleon_core::spelunking::{
 /// The section's visible state, saved with the project.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
+pub(crate) struct State {
     /// The logged-in character whose row the section reads first.
-    pub character: usize,
-    pub cave: usize,
-    pub manic: bool,
-    pub policy: Policy,
-    pub full_clear: bool,
-    pub speed: u32,
+    pub(crate) character: usize,
+    pub(crate) cave: usize,
+    pub(crate) manic: bool,
+    pub(crate) policy: Policy,
+    pub(crate) full_clear: bool,
+    pub(crate) speed: u32,
     /// Saved stamina or a fully recovered hypothetical.
-    pub starting: StaminaMode,
+    pub(crate) starting: StaminaMode,
     /// One slot per cave capacity; `-1` is empty.
-    pub party: Vec<i32>,
+    pub(crate) party: Vec<i32>,
     /// One slot per unlocked belt slot; `-1` is empty.
-    pub elixirs: Vec<i32>,
+    pub(crate) elixirs: Vec<i32>,
     /// One slot per memory slot; `-1` is empty.
-    pub memorized: Vec<i32>,
+    pub(crate) memorized: Vec<i32>,
     /// The account values the save does not derive yet.
-    pub account: Account,
-    pub depth_from: usize,
-    pub depth_to: usize,
-    pub depth_tool: ReferenceTool,
+    pub(crate) account: Account,
+    pub(crate) depth_from: usize,
+    pub(crate) depth_to: usize,
+    pub(crate) depth_tool: ReferenceTool,
     /// The depth the inspector shows.
-    pub inspect: usize,
+    pub(crate) inspect: usize,
     /// The seed the next expedition run uses.
-    pub sim_seed: u32,
+    pub(crate) sim_seed: u32,
     /// The manual reaction time, in milliseconds.
-    pub sim_reaction_ms: f64,
+    pub(crate) sim_reaction_ms: f64,
     /// The manual tool: adaptive, or one unlocked tool.
-    pub sim_tool: ToolChoice,
+    pub(crate) sim_tool: ToolChoice,
     /// Where the run starts.
-    pub sim_entry: Entry,
+    pub(crate) sim_entry: Entry,
 }
 
 impl Default for State {
@@ -65,7 +65,7 @@ impl Default for State {
             depth_to: 150,
             depth_tool: ReferenceTool::Best,
             inspect: 1,
-            sim_seed: idleon_core::spelunking::DEFAULT_SEED,
+            sim_seed: idleon_spelunking::DEFAULT_SEED,
             sim_reaction_ms: 350.0,
             sim_tool: ToolChoice::Adaptive,
             sim_entry: Entry::Shortcut,
@@ -75,7 +75,7 @@ impl Default for State {
 
 impl State {
     /// Adopt a save's records and saved selections, keeping nothing stale.
-    pub fn adopt(&mut self, inputs: &Inputs) {
+    pub(crate) fn adopt(&mut self, inputs: &Inputs) {
         self.character = self
             .character
             .min(inputs.characters.len().saturating_sub(1));
@@ -118,7 +118,7 @@ impl State {
     ///
     /// A project from another save may name more party, belt or memory slots,
     /// a higher speed or a locked mode; those are clamped, the rest is kept.
-    pub fn clamp(&mut self, inputs: &Inputs) {
+    pub(crate) fn clamp(&mut self, inputs: &Inputs) {
         self.character = self
             .character
             .min(inputs.characters.len().saturating_sub(1));
@@ -147,13 +147,13 @@ impl State {
     }
 
     /// The request the section's depth estimate runs.
-    pub fn requested(&self) -> Requested {
+    pub(crate) fn requested(&self) -> Requested {
         self.run_requested()
     }
 
     /// The request the expedition run reads: the estimate's fields plus the
     /// run's own entry, tool and reaction time.
-    pub fn run_requested(&self) -> Requested {
+    pub(crate) fn run_requested(&self) -> Requested {
         Requested {
             cave: Some(self.cave),
             party: Some(self.party_ids()),
@@ -178,12 +178,12 @@ impl State {
     }
 
     /// The normalised configuration, or the reason the controls cannot run.
-    pub fn config(&self, inputs: &Inputs) -> Result<Config, ConfigError> {
+    pub(crate) fn config(&self, inputs: &Inputs) -> Result<Config, ConfigError> {
         normalize(inputs, &self.requested())
     }
 
     /// The depth window the estimate covers.
-    pub fn range(&self) -> DepthRange {
+    pub(crate) fn range(&self) -> DepthRange {
         DepthRange {
             from: self.depth_from,
             to: self.depth_to,
@@ -192,7 +192,7 @@ impl State {
     }
 
     /// The chosen party member ids, in slot order.
-    pub fn party_ids(&self) -> Vec<usize> {
+    pub(crate) fn party_ids(&self) -> Vec<usize> {
         self.party
             .iter()
             .filter(|id| **id >= 0)
@@ -201,7 +201,7 @@ impl State {
     }
 
     /// Whether `id` already fills another party slot.
-    pub fn in_party(&self, slot: usize, id: usize) -> bool {
+    pub(crate) fn in_party(&self, slot: usize, id: usize) -> bool {
         self.party
             .iter()
             .enumerate()
@@ -209,7 +209,7 @@ impl State {
     }
 
     /// Set one slot and fit the party to the cave capacity.
-    pub fn set_party_slot(&mut self, slot: usize, id: i32, inputs: &Inputs) {
+    pub(crate) fn set_party_slot(&mut self, slot: usize, id: i32, inputs: &Inputs) {
         let capacity = inputs.caves.get(self.cave).map_or(0, |cave| cave.capacity);
         self.party.resize(capacity, -1);
         if slot < capacity {
@@ -218,7 +218,7 @@ impl State {
     }
 
     /// Change the cave, keeping the party slots that still fit.
-    pub fn set_cave(&mut self, cave: usize, inputs: &Inputs) {
+    pub(crate) fn set_cave(&mut self, cave: usize, inputs: &Inputs) {
         self.cave = cave.min(inputs.caves.len().saturating_sub(1));
         let capacity = inputs.caves.get(self.cave).map_or(0, |cave| cave.capacity);
         self.party.resize(capacity, -1);
@@ -226,13 +226,13 @@ impl State {
     }
 
     /// Change the Normal/Manic mode and re-anchor the depth window.
-    pub fn set_manic(&mut self, manic: bool, inputs: &Inputs) {
+    pub(crate) fn set_manic(&mut self, manic: bool, inputs: &Inputs) {
         self.manic = manic && inputs.manic;
         self.reset_range(inputs);
     }
 
     /// Change the policy; amber farming always clears the floor.
-    pub fn set_policy(&mut self, policy: Policy) {
+    pub(crate) fn set_policy(&mut self, policy: Policy) {
         self.policy = policy;
         if policy == Policy::AmberFarm {
             self.full_clear = true;
@@ -240,7 +240,7 @@ impl State {
     }
 
     /// Set one belt slot.
-    pub fn set_elixir(&mut self, slot: usize, id: i32, inputs: &Inputs) {
+    pub(crate) fn set_elixir(&mut self, slot: usize, id: i32, inputs: &Inputs) {
         self.elixirs.resize(inputs.slots, -1);
         if slot < inputs.slots {
             self.elixirs[slot] = id;
@@ -248,7 +248,7 @@ impl State {
     }
 
     /// Set one memorized slot.
-    pub fn set_memorized(&mut self, slot: usize, id: i32, inputs: &Inputs) {
+    pub(crate) fn set_memorized(&mut self, slot: usize, id: i32, inputs: &Inputs) {
         self.memorized.resize(inputs.memory_slots, -1);
         if slot < inputs.memory_slots {
             self.memorized[slot] = id;
@@ -256,7 +256,7 @@ impl State {
     }
 
     /// The belt or memory a preset would fill, and why it cannot.
-    pub fn preset_issues(&self, inputs: &Inputs, preset: &Preset) -> Vec<String> {
+    pub(crate) fn preset_issues(&self, inputs: &Inputs, preset: &Preset) -> Vec<String> {
         let memory = preset.kind == PresetKind::Memory;
         let slots = if memory {
             inputs.memory_slots
@@ -295,7 +295,7 @@ impl State {
     }
 
     /// Fill the preset's half of the belt when it fits.
-    pub fn apply_preset(&mut self, inputs: &Inputs, preset: &Preset) {
+    pub(crate) fn apply_preset(&mut self, inputs: &Inputs, preset: &Preset) {
         if !self.preset_issues(inputs, preset).is_empty() {
             return;
         }
@@ -307,42 +307,42 @@ impl State {
     }
 
     /// Set the account power, the manual `Spelunking Power` input.
-    pub fn set_power(&mut self, power: f64) {
+    pub(crate) fn set_power(&mut self, power: f64) {
         if power.is_finite() {
             self.account.power = power.max(0.0);
         }
     }
 
     /// Set the account extra-exit bonus, the manual `SpelunkyBonus(1)` input.
-    pub fn set_holes_bonus(&mut self, bonus: f64) {
+    pub(crate) fn set_holes_bonus(&mut self, bonus: f64) {
         if bonus.is_finite() {
             self.account.holes_bonus = bonus.max(0.0);
         }
     }
 
     /// Set the account Amber multiplier.
-    pub fn set_amber(&mut self, amber: f64) {
+    pub(crate) fn set_amber(&mut self, amber: f64) {
         if amber.is_finite() {
             self.account.amber = amber.max(0.0);
         }
     }
 
     /// Set the account stamina regeneration per hour.
-    pub fn set_regen(&mut self, regen: f64) {
+    pub(crate) fn set_regen(&mut self, regen: f64) {
         if regen.is_finite() {
             self.account.regen = regen.max(0.0);
         }
     }
 
     /// Set the Grand Discovery chance from the percentage the user reads.
-    pub fn set_grand_pct(&mut self, percent: f64) {
+    pub(crate) fn set_grand_pct(&mut self, percent: f64) {
         if percent.is_finite() {
             self.account.grand = (percent / 100.0).clamp(0.0, 1.0);
         }
     }
 
     /// Override one character's maximum stamina.
-    pub fn set_max_stamina(&mut self, character: usize, value: f64) {
+    pub(crate) fn set_max_stamina(&mut self, character: usize, value: f64) {
         if !value.is_finite() || value < 0.0 {
             return;
         }
@@ -353,7 +353,7 @@ impl State {
     }
 
     /// Anchor the depth window around the current cave's record, as upstream does.
-    pub fn reset_range(&mut self, inputs: &Inputs) {
+    pub(crate) fn reset_range(&mut self, inputs: &Inputs) {
         let record = records(inputs, self.manic)
             .get(self.cave)
             .copied()
@@ -364,14 +364,14 @@ impl State {
     }
 
     /// Clamp the inspected depth into the window.
-    pub fn clamp_inspect(&mut self) {
+    pub(crate) fn clamp_inspect(&mut self) {
         self.inspect = self
             .inspect
             .clamp(self.depth_from, self.depth_to.max(self.depth_from));
     }
 
     /// Clamp the window into the bounds the profile accepts.
-    pub fn clamp_range(&mut self) {
+    pub(crate) fn clamp_range(&mut self) {
         self.depth_from = self.depth_from.clamp(1, 10_000);
         self.depth_to = self
             .depth_to
@@ -381,7 +381,7 @@ impl State {
 }
 
 /// The depth records for the current mode.
-pub fn records(inputs: &Inputs, manic: bool) -> &[f64] {
+pub(crate) fn records(inputs: &Inputs, manic: bool) -> &[f64] {
     if manic {
         &inputs.manic_depths
     } else {
@@ -413,7 +413,7 @@ fn pad(values: &[i32], slots: usize) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::spelunking::{Account, Save};
+    use idleon_spelunking::{Account, Save};
 
     fn inputs() -> Inputs {
         let text = std::fs::read_to_string(concat!(
@@ -421,7 +421,7 @@ mod tests {
             "/../../fixtures/data.json"
         ))
         .expect("the fixture is committed");
-        let imported = idleon_core::save::import(&text).expect("the fixture imports");
+        let imported = idleon_import::import(&text).expect("the fixture imports");
         Save::from_parts(&imported.save)
             .expect("the fixture carries Spelunk rows")
             .inputs(&Account::neutral())
@@ -486,7 +486,7 @@ mod tests {
         let restored: State =
             serde_json::from_str(r#"{"cave":2}"#).expect("an older project decodes");
         assert_eq!(restored.cave, 2);
-        assert_eq!(restored.sim_seed, idleon_core::spelunking::DEFAULT_SEED);
+        assert_eq!(restored.sim_seed, idleon_spelunking::DEFAULT_SEED);
         assert_eq!(restored.sim_tool, ToolChoice::Adaptive);
         assert_eq!(restored.sim_entry, Entry::Shortcut);
         assert_eq!(restored.sim_reaction_ms, 350.0);

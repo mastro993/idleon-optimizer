@@ -1,6 +1,6 @@
 //! The app's project file: what an export writes and an import applies.
 //!
-//! [`idleon_core::project`] owns the document — the format markers, the
+//! [`idleon_project`] owns the document — the format markers, the
 //! version, the research state, the supplements and the ROv2 migration. This
 //! module owns the part that is the window's: which section it was on and the
 //! config object each section keeps as its visible state.
@@ -36,19 +36,18 @@ use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
 use gpui::Context;
-use idleon_core::clamworks::afk::Phase as ClaimPhase;
-use idleon_core::cog::{Goal as CogGoal, WeightInputs as CogWeights};
-use idleon_core::combat::Preset as CombatPreset;
-use idleon_core::coral;
-use idleon_core::drop_rate;
-use idleon_core::game;
-use idleon_core::import as pipeline;
-use idleon_core::ladle::Panel as LadlePanel;
-use idleon_core::ladle::kitchen::Inputs as LadleKitchen;
-use idleon_core::model::{Effort, SimContext, SimOptions, Simulation};
-use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
-use idleon_core::project;
-use idleon_core::sailing::{AssignmentMode, Goal};
+use idleon_clamworks::afk::Phase as ClaimPhase;
+use idleon_cog::{Goal as CogGoal, WeightInputs as CogWeights};
+use idleon_combat::Preset as CombatPreset;
+use idleon_coral as coral;
+use idleon_drop_rate as drop_rate;
+use idleon_import::pipeline;
+use idleon_ladle::Panel as LadlePanel;
+use idleon_ladle::kitchen::Inputs as LadleKitchen;
+use idleon_project as project;
+use idleon_research::game;
+use idleon_research::model::{Effort, SimContext, SimOptions, Simulation};
+use idleon_sailing::{AssignmentMode, Goal};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
@@ -57,7 +56,7 @@ use std::collections::BTreeMap;
 /// The research section's config: its tab, selection, target and supplements.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ResearchConfig {
+pub(crate) struct ResearchConfig {
     tab: ResearchTab,
     selected_cell: Option<usize>,
     selected_shape: Option<usize>,
@@ -94,7 +93,7 @@ impl Default for ResearchConfig {
 /// The Prisma section's config: its character, cauldron, AFK claim and metric.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct PrismaConfig {
+pub(crate) struct PrismaConfig {
     character: usize,
     /// The cauldron tab id: `power`, `quicc`, `high-iq` or `kazam`.
     cauldron: String,
@@ -106,7 +105,7 @@ impl Default for PrismaConfig {
     fn default() -> Self {
         Self {
             character: 0,
-            cauldron: idleon_core::prisma::Cauldron::default().id().to_string(),
+            cauldron: idleon_prisma::Cauldron::default().id().to_string(),
             afk_hours: 1.0,
             metric: None,
         }
@@ -117,7 +116,7 @@ impl Default for PrismaConfig {
 /// chest tier floor that lives on the route context.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct SailingConfig {
+pub(crate) struct SailingConfig {
     tab: SailingTab,
     mode: AssignmentMode,
     island: usize,
@@ -141,8 +140,8 @@ impl Default for SailingConfig {
             sort_by_eta: false,
             breakdown_boat: 0,
             sim_island: 0,
-            sim_hours: idleon_core::sailing::DEFAULT_HOURS,
-            sim_trials: idleon_core::sailing::DEFAULT_TRIALS,
+            sim_hours: idleon_sailing::DEFAULT_HOURS,
+            sim_trials: idleon_sailing::DEFAULT_TRIALS,
         }
     }
 }
@@ -150,7 +149,7 @@ impl Default for SailingConfig {
 /// The Worship TD section's config: its trial, palette and playback.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct WorshipConfig {
+pub(crate) struct WorshipConfig {
     trial: usize,
     tower: usize,
     speed: f64,
@@ -180,7 +179,7 @@ impl Default for WorshipConfig {
 /// the current budget alone rather than zeroing it.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct ClamworksConfig {
+pub(crate) struct ClamworksConfig {
     tab: ClamworksTab,
     multikill: f64,
     budget: Option<f64>,
@@ -194,7 +193,7 @@ pub struct ClamworksConfig {
 /// characters.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct LadleConfig {
+pub(crate) struct LadleConfig {
     tab: LadleTab,
     ladle_character: usize,
     breakdown_character: usize,
@@ -215,7 +214,7 @@ pub struct LadleConfig {
 /// board itself comes from the save, so it is never part of a project document.
 #[derive(Clone, Copy, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct CogConfig {
+pub(crate) struct CogConfig {
     goal: CogGoal,
     weighted: bool,
     weights: CogWeights,
@@ -226,7 +225,7 @@ pub struct CogConfig {
 /// supplies the board and the metrics; the edited layout is a sandbox.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct JellyConfig {
+pub(crate) struct JellyConfig {
     tab: JellyTab,
     /// Anchor/type pairs; a type the save has not unlocked is dropped.
     layout: Vec<(usize, usize)>,
@@ -239,7 +238,7 @@ pub struct JellyConfig {
 /// the outpost, node and currency the panels explain.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct RoyalConfig {
+pub(crate) struct RoyalConfig {
     tab: RoyalTab,
     world: usize,
     outpost: Option<usize>,
@@ -250,7 +249,7 @@ pub struct RoyalConfig {
 /// The Jar section's config: its tab and the tier the rupie value projects.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct JarConfig {
+pub(crate) struct JarConfig {
     tab: JarTab,
     tier: u32,
 }
@@ -260,7 +259,7 @@ pub struct JarConfig {
 /// Every number comes from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct FountainConfig {
+pub(crate) struct FountainConfig {
     tab: FountainTab,
     water: usize,
     desired: Option<usize>,
@@ -273,7 +272,7 @@ pub struct FountainConfig {
 /// to the save's own.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct OpalConfig {
+pub(crate) struct OpalConfig {
     selected: Option<usize>,
     tab: OpalTab,
     target: Option<usize>,
@@ -285,11 +284,11 @@ pub struct OpalConfig {
 /// the save; presets and overrides are what the project keeps.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct CombatConfig {
+pub(crate) struct CombatConfig {
     character: usize,
     tab: CombatTab,
     presets: Vec<CombatPreset>,
-    toggles: idleon_core::combat::State,
+    toggles: idleon_combat::State,
 }
 
 /// The statue section's config: selected character, sort, deposit estimate, the
@@ -297,17 +296,17 @@ pub struct CombatConfig {
 /// is a filter, not state, and the statue rows come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct StatueConfig {
+pub(crate) struct StatueConfig {
     character: usize,
     sort: StatueSort,
-    estimate: idleon_core::statue::Estimate,
+    estimate: idleon_statue::Estimate,
     targets: Vec<Option<u32>>,
     rates: Vec<String>,
     breakdown_statue: usize,
 }
 
 /// The whole window state as a project document.
-pub fn export(state: &AppState) -> String {
+pub(crate) fn export(state: &AppState) -> String {
     project::write(&project::Project {
         version: project::VERSION,
         section: state
@@ -323,7 +322,7 @@ pub fn export(state: &AppState) -> String {
 }
 
 /// Every section's config object, keyed by registry id.
-pub fn configs(state: &AppState) -> Map<String, Value> {
+pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
     let mut configs = Map::new();
     let mut insert = |id: &str, config: Value| {
         configs.insert(id.to_string(), config);
@@ -335,12 +334,12 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             selected_cell: state.research.selected_cell,
             selected_shape: state.research.selected_shape,
             target_kind: match state.target {
-                idleon_core::model::Target::Hours(_) => "hours".into(),
-                idleon_core::model::Target::Level(_) => "level".into(),
+                idleon_research::model::Target::Hours(_) => "hours".into(),
+                idleon_research::model::Target::Level(_) => "level".into(),
             },
             target_value: match state.target {
-                idleon_core::model::Target::Hours(hours) => hours,
-                idleon_core::model::Target::Level(level) => f64::from(level),
+                idleon_research::model::Target::Hours(hours) => hours,
+                idleon_research::model::Target::Level(level) => f64::from(level),
             },
             effort: state.effort,
             options: state.options,
@@ -513,7 +512,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
 /// decoded, and its section configs from [`prepare`], so this only assigns: the
 /// save and the research state land together, then each decoded config is
 /// assigned. Nothing here can fail, so the window never changes halfway.
-pub fn apply(
+pub(crate) fn apply(
     state: &mut AppState,
     import: pipeline::ProjectImport,
     configs: Vec<Config>,
@@ -569,7 +568,7 @@ pub fn apply(
 
 /// One section's config, decoded while the dialog previews the document.
 #[derive(Clone, Debug)]
-pub enum Config {
+pub(crate) enum Config {
     Research(ResearchConfig),
     Killroy(KillroyState),
     Sailing(SailingConfig),
@@ -595,9 +594,9 @@ pub enum Config {
     Coral(coral::Inputs),
     CookingMastery(CookingMasteryState),
     Worship(WorshipConfig),
-    StatsAll(idleon_core::stats::Context),
-    DropRate(idleon_core::drop_rate::Selection),
-    Damage(idleon_core::damage::Context),
+    StatsAll(idleon_stats::Context),
+    DropRate(idleon_drop_rate::Selection),
+    Damage(idleon_damage::Context),
 }
 
 /// What decoding one section config found.
@@ -614,7 +613,7 @@ enum Decoded {
 /// The preview runs this, so applying the document only assigns what was
 /// already read: a malformed config fails the import instead of leaving the
 /// window half-changed, and each unknown-field warning is counted once.
-pub fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String> {
+pub(crate) fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String> {
     let configs: Vec<(String, Value)> = match document {
         pipeline::Document::Project(project) => project
             .document
@@ -640,7 +639,7 @@ pub fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String>
 }
 
 /// The tiers a built-in id or a saved preset name names.
-fn shape_preset_tiers(state: &AppState, id: &str) -> Option<idleon_core::Tiers> {
+fn shape_preset_tiers(state: &AppState, id: &str) -> Option<idleon_research::Tiers> {
     if id.starts_with('_') {
         game()
             .presets
@@ -654,7 +653,7 @@ fn shape_preset_tiers(state: &AppState, id: &str) -> Option<idleon_core::Tiers> 
 
 /// Assign one decoded section config. Warnings are for values the loaded save
 /// or the grid no longer has room for; they never fail the import.
-pub fn assign(
+pub(crate) fn assign(
     state: &mut AppState,
     config: Config,
     warnings: &mut Vec<String>,
@@ -680,13 +679,13 @@ pub fn assign(
             );
             match config.target_kind.as_str() {
                 "level" => {
-                    state.target = idleon_core::model::Target::Level(
+                    state.target = idleon_research::model::Target::Level(
                         config.target_value.max(1.0).round() as u32,
                     )
                 }
                 "hours" => {
                     state.target =
-                        idleon_core::model::Target::Hours(config.target_value.max(0.5))
+                        idleon_research::model::Target::Hours(config.target_value.max(0.5))
                 }
                 other => warnings.push(format!(
                     "research: targetKind {other:?} is not \"hours\" or \"level\"; the target is kept"
@@ -731,24 +730,22 @@ pub fn assign(
                     .sim_island
                     .min(state.fleet.available_islands().saturating_sub(1)),
                 sim_hours: if config.sim_hours.is_finite() {
-                    config.sim_hours.clamp(
-                        idleon_core::sailing::MIN_HOURS,
-                        idleon_core::sailing::MAX_HOURS,
-                    )
+                    config
+                        .sim_hours
+                        .clamp(idleon_sailing::MIN_HOURS, idleon_sailing::MAX_HOURS)
                 } else {
-                    idleon_core::sailing::DEFAULT_HOURS
+                    idleon_sailing::DEFAULT_HOURS
                 },
-                sim_trials: config.sim_trials.clamp(
-                    idleon_core::sailing::MIN_TRIALS,
-                    idleon_core::sailing::MAX_TRIALS,
-                ),
+                sim_trials: config
+                    .sim_trials
+                    .clamp(idleon_sailing::MIN_TRIALS, idleon_sailing::MAX_TRIALS),
             };
             state.sailing.minimum_tier = config.minimum_tier.min(5);
         }
         Config::Farming(config) => {
             state.farming = FarmingState {
                 tab: config.tab,
-                selected_plot: config.selected_plot.min(idleon_core::farming::PLOTS - 1),
+                selected_plot: config.selected_plot.min(idleon_farming::PLOTS - 1),
                 target_crop: config.target_crop,
                 objective: config.objective,
                 mode: config.mode,
@@ -765,7 +762,7 @@ pub fn assign(
                 .presets
                 .into_iter()
                 .filter(|preset| !preset.name.trim().is_empty())
-                .take(crate::sections::combat_sim::presets::Presets::MAX)
+                .take(crate::sections::presets::MAX)
                 .collect();
             let character = if let Some(save) = state.save.as_ref() {
                 if config.character < save.character_count() {
@@ -783,7 +780,7 @@ pub fn assign(
             };
             state.combat.character = character;
             if let Some(save) = state.save.as_ref() {
-                state.combat.loadout = idleon_core::combat::Loadout::from_save(save, character);
+                state.combat.loadout = idleon_combat::Loadout::from_save(save, character);
             }
         }
         Config::Fishing(config) => {
@@ -802,7 +799,7 @@ pub fn assign(
                 ));
             }
             state.statue.set_plan(config.targets, config.rates, cx);
-            if config.breakdown_statue < idleon_core::statue::count() {
+            if config.breakdown_statue < idleon_statue::count() {
                 state.statue.breakdown_statue = config.breakdown_statue;
             }
         }
@@ -810,7 +807,7 @@ pub fn assign(
             let characters = state
                 .save
                 .as_ref()
-                .map_or(0, idleon_core::save::Save::character_count);
+                .map_or(0, idleon_save::Save::character_count);
             state.monument = MonumentState {
                 tab: config.tab,
                 character: if characters == 0 {
@@ -827,22 +824,11 @@ pub fn assign(
             };
         }
         Config::Pickle(config) => {
-            state.pickle = PickleState {
-                dps: if config.dps.is_finite() {
-                    config.dps.clamp(0.0, MAX_DPS)
-                } else {
-                    0.0
-                },
-                max_ttk: if config.max_ttk.is_finite() {
-                    config.max_ttk.clamp(MIN_TTK, MAX_TTK)
-                } else {
-                    DEFAULT_TTK
-                },
-            };
+            state.pickle = config.clamped();
         }
         Config::Prisma(config) => {
             state.prisma.character = config.character;
-            state.prisma.cauldron = idleon_core::prisma::Cauldron::from_id(&config.cauldron)
+            state.prisma.cauldron = idleon_prisma::Cauldron::from_id(&config.cauldron)
                 .unwrap_or_else(|| {
                     warnings.push(format!(
                         "prisma: cauldron {:?} is not a tab id; the section keeps {}",
@@ -906,15 +892,15 @@ pub fn assign(
                 warnings.push("jelly-operator: no imported save; the board config is kept for the next import".into());
                 return;
             };
-            let mut layout = idleon_core::jelly::board::Layout::new();
+            let mut layout = idleon_jelly::board::Layout::new();
             for (anchor, cell_type) in config.layout {
                 if cell_type < jelly.units_owned()
-                    && idleon_core::jelly::board::footprint(anchor, cell_type).is_some()
+                    && idleon_jelly::board::footprint(anchor, cell_type).is_some()
                 {
                     layout.insert(anchor, cell_type);
                 }
             }
-            if idleon_core::jelly::board::validate(&jelly, &layout).is_ok() {
+            if idleon_jelly::board::validate(&jelly, &layout).is_ok() {
                 state.jelly_state.layout = layout;
             } else {
                 warnings.push(
@@ -925,7 +911,7 @@ pub fn assign(
         }
         Config::Jar(config) => {
             state.jar_tab = config.tab;
-            state.jar_tier = config.tier.min(idleon_core::jar::INCOME_TIERS - 1);
+            state.jar_tier = config.tier.min(idleon_jar::INCOME_TIERS - 1);
         }
         Config::Spelunking(config) => {
             state.spelunking = config;
@@ -943,7 +929,7 @@ pub fn assign(
         Config::Royal(config) => {
             state.royal_state = crate::sections::royal_guardian::State {
                 tab: config.tab,
-                world: config.world.min(idleon_core::royal_guardian::WORLDS - 1),
+                world: config.world.min(idleon_royal_guardian::WORLDS - 1),
                 outpost: config.outpost,
                 resource: config.resource,
                 currency: config.currency,
@@ -962,7 +948,7 @@ pub fn assign(
             let players = state
                 .sneaking
                 .as_ref()
-                .map_or(0, idleon_core::sneaking::Loadout::players);
+                .map_or(0, idleon_sneaking::Loadout::players);
             state.sneaking_state = SneakingState {
                 login: config.login.filter(|index| *index < players.max(1)),
                 twin: config.twin.filter(|index| *index < players.max(1)),
@@ -996,9 +982,7 @@ pub fn assign(
                 .into_iter()
                 .filter(|index| *index < characters)
                 .collect();
-            state.ladle_state.balloon = config
-                .balloon
-                .min(idleon_core::ladle::EXP_BALLOONS.len() - 1);
+            state.ladle_state.balloon = config.balloon.min(idleon_ladle::EXP_BALLOONS.len() - 1);
             state.ladle_state.target_level = config.target_level.min(1000);
             state.ladle_state.split = config.split;
             state.ladle_state.kitchen = config.kitchen;
@@ -1038,9 +1022,9 @@ pub fn assign(
         }
         Config::Damage(context) => crate::sections::damage::restore(state, context, warnings),
         Config::Worship(config) => {
-            let last_trial = idleon_core::worship::data().trials.len().saturating_sub(1);
+            let last_trial = idleon_worship::data().trials.len().saturating_sub(1);
             state.worship.trial = config.trial.min(last_trial);
-            state.worship.tower = config.tower.min(idleon_core::worship::TOWER_COUNT - 1);
+            state.worship.tower = config.tower.min(idleon_worship::TOWER_COUNT - 1);
             state.worship.speed = config.speed.clamp(0.5, 5.0);
             state.worship.ranges = config.ranges;
             state.worship.tab = config.tab;
@@ -1097,9 +1081,9 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
         "cooking-mastery" => decode!(CookingMastery, CookingMasteryState),
-        "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
-        "drop-rate" => decode!(DropRate, idleon_core::drop_rate::Selection),
-        "damage" => decode!(Damage, idleon_core::damage::Context),
+        "stats-all" => decode!(StatsAll, idleon_stats::Context),
+        "drop-rate" => decode!(DropRate, idleon_drop_rate::Selection),
+        "damage" => decode!(Damage, idleon_damage::Context),
         "worship-td" => decode!(Worship, WorshipConfig),
         _ => Decoded::Unknown,
     }
@@ -1111,7 +1095,7 @@ fn value<T: Serialize>(config: &T) -> Value {
 }
 
 /// The research fields that changed, named as the document names them.
-pub fn research_changes(before: &Simulation, after: &Simulation) -> Vec<String> {
+pub(crate) fn research_changes(before: &Simulation, after: &Simulation) -> Vec<String> {
     let mut changes = Vec::new();
     if before.research_level != after.research_level {
         changes.push(format!(
@@ -1153,7 +1137,7 @@ pub fn research_changes(before: &Simulation, after: &Simulation) -> Vec<String> 
 }
 
 /// The save-derived multiplier fields that changed, by their document name.
-pub fn supplement_changes(before: &SimContext, after: &SimContext) -> Vec<String> {
+pub(crate) fn supplement_changes(before: &SimContext, after: &SimContext) -> Vec<String> {
     let (Ok(before), Ok(after)) = (serde_json::to_value(before), serde_json::to_value(after))
     else {
         return Vec::new();
@@ -1174,7 +1158,10 @@ pub fn supplement_changes(before: &SimContext, after: &SimContext) -> Vec<String
 }
 
 /// The section configs that differ between two snapshots of the window.
-pub fn config_changes(before: &Map<String, Value>, after: &Map<String, Value>) -> Vec<String> {
+pub(crate) fn config_changes(
+    before: &Map<String, Value>,
+    after: &Map<String, Value>,
+) -> Vec<String> {
     after
         .iter()
         .filter(|(id, config)| before.get(*id) != Some(*config))
@@ -1183,7 +1170,7 @@ pub fn config_changes(before: &Map<String, Value>, after: &Map<String, Value>) -
 }
 
 /// A change log as the one line the status bar shows.
-pub fn change_line(changes: &[String]) -> String {
+pub(crate) fn change_line(changes: &[String]) -> String {
     match changes.first() {
         None => "Nothing changed.".into(),
         Some(first) if changes.len() == 1 => format!("Changed: {first}."),
@@ -1267,7 +1254,7 @@ fn within(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::coral::Goal as CoralGoal;
+    use idleon_coral::Goal as CoralGoal;
     use serde_json::json;
 
     fn round_trip<T>(config: &T) -> T
@@ -1317,12 +1304,12 @@ mod tests {
             tab: crate::sections::farming::Tab::Plots,
             selected_plot: 5,
             target_crop: 12,
-            objective: idleon_core::farming::Objective::Beans,
-            mode: idleon_core::farming::Mode::Reset,
+            objective: idleon_farming::Objective::Beans,
+            mode: idleon_farming::Mode::Reset,
             presets: vec![crate::sections::farming::CustomPreset {
                 name: "Beans run".into(),
-                objective: idleon_core::farming::Objective::Beans,
-                mode: idleon_core::farming::Mode::Reset,
+                objective: idleon_farming::Objective::Beans,
+                mode: idleon_farming::Mode::Reset,
                 target_crop: 230,
             }],
             ..FarmingState::default()
@@ -1330,20 +1317,20 @@ mod tests {
         assert_eq!(farming.tab, crate::sections::farming::Tab::Plots);
         assert_eq!(farming.selected_plot, 5);
         assert_eq!(farming.target_crop, 12);
-        assert_eq!(farming.objective, idleon_core::farming::Objective::Beans);
-        assert_eq!(farming.mode, idleon_core::farming::Mode::Reset);
+        assert_eq!(farming.objective, idleon_farming::Objective::Beans);
+        assert_eq!(farming.mode, idleon_farming::Mode::Reset);
         assert_eq!(farming.presets.len(), 1);
         assert_eq!(farming.presets[0].name, "Beans run");
         assert_eq!(farming.presets[0].target_crop, 230);
         // The Justice worksheet travels with the document, but its undo trail is
         // a session convenience and starts empty.
-        let mut justice = idleon_core::monument::justice::Worksheet::default();
+        let mut justice = idleon_monument::justice::Worksheet::default();
         justice.select(3);
         let mut justice_state = justice.state.clone();
         justice_state.health = 7;
         justice_state
             .effects
-            .insert(idleon_core::monument::justice::Effect::CryptoInvest, 4);
+            .insert(idleon_monument::justice::Effect::CryptoInvest, 4);
         justice.edit(justice_state);
         assert!(justice.can_undo());
         let monument = round_trip(&MonumentState {
@@ -1369,7 +1356,7 @@ mod tests {
                 .worksheet
                 .state
                 .effects
-                .get(&idleon_core::monument::justice::Effect::CryptoInvest),
+                .get(&idleon_monument::justice::Effect::CryptoInvest),
             Some(&4)
         );
         assert!(
@@ -1397,7 +1384,7 @@ mod tests {
             supplements_open: false,
             shape_presets: vec![CustomPreset {
                 name: "Minehead run".into(),
-                tiers: idleon_core::Tiers::parse("J6|").expect("the tiers"),
+                tiers: idleon_research::Tiers::parse("J6|").expect("the tiers"),
             }],
             active_shape_preset: Some("Minehead run".into()),
         });
@@ -1512,25 +1499,19 @@ mod tests {
         assert_eq!(prism.cauldron, "kazam");
         assert_eq!(prism.afk_hours, 8.5);
         assert_eq!(prism.metric.as_deref(), Some("bubble-bonus:0:0"));
-        let stats = round_trip(&idleon_core::stats::Context {
+        let stats = round_trip(&idleon_stats::Context {
             character: 2,
             map: 120,
-            map_visibility: idleon_core::stats::MapVisibility::Advanced,
-            skill: idleon_core::stats::Skill::Divinity,
-            construction: idleon_core::stats::ConstructionMode::Inactive,
+            map_visibility: idleon_stats::MapVisibility::Advanced,
+            skill: idleon_stats::Skill::Divinity,
+            construction: idleon_stats::ConstructionMode::Inactive,
         });
         assert_eq!(stats.character, 2);
         assert_eq!(stats.map, 120);
-        assert_eq!(
-            stats.map_visibility,
-            idleon_core::stats::MapVisibility::Advanced
-        );
-        assert_eq!(stats.skill, idleon_core::stats::Skill::Divinity);
-        assert_eq!(
-            stats.construction,
-            idleon_core::stats::ConstructionMode::Inactive
-        );
-        let drop_rate = round_trip(&idleon_core::drop_rate::Selection {
+        assert_eq!(stats.map_visibility, idleon_stats::MapVisibility::Advanced);
+        assert_eq!(stats.skill, idleon_stats::Skill::Divinity);
+        assert_eq!(stats.construction, idleon_stats::ConstructionMode::Inactive);
+        let drop_rate = round_trip(&idleon_drop_rate::Selection {
             character: 3,
             map: 118,
         });
@@ -1555,7 +1536,7 @@ mod tests {
             kitchen: LadleKitchen {
                 days: 12,
                 base_speed: 480.0,
-                policy: idleon_core::ladle::kitchen::Policy::Share,
+                policy: idleon_ladle::kitchen::Policy::Share,
                 income_fraction: 0.25,
                 ..LadleKitchen::default()
             },
@@ -1573,34 +1554,31 @@ mod tests {
         assert!(ladle.split);
         assert_eq!(ladle.kitchen.days, 12);
         assert_eq!(ladle.kitchen.base_speed, 480.0);
-        assert_eq!(
-            ladle.kitchen.policy,
-            idleon_core::ladle::kitchen::Policy::Share
-        );
+        assert_eq!(ladle.kitchen.policy, idleon_ladle::kitchen::Policy::Share);
         assert_eq!(ladle.kitchen.income_fraction, 0.25);
         assert!(!ladle.use_owned);
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,
-            estimate: idleon_core::statue::Estimate::Average,
+            estimate: idleon_statue::Estimate::Average,
             targets: vec![Some(120), None],
             rates: vec!["1.2M".into(), String::new()],
             breakdown_statue: 7,
         });
         assert_eq!(statue.character, 4);
         assert_eq!(statue.sort, StatueSort::Remaining);
-        assert_eq!(statue.estimate, idleon_core::statue::Estimate::Average);
+        assert_eq!(statue.estimate, idleon_statue::Estimate::Average);
         assert_eq!(statue.targets, vec![Some(120), None]);
         assert_eq!(statue.rates, vec!["1.2M".to_string(), String::new()]);
         assert_eq!(statue.breakdown_statue, 7);
-        let mut toggles = idleon_core::combat::State::new();
+        let mut toggles = idleon_combat::State::new();
         toggles.set(
             "dropRate",
-            idleon_core::combat::Rule::with_value(idleon_core::combat::Mode::Scale, 2.0),
+            idleon_combat::Rule::with_value(idleon_combat::Mode::Scale, 2.0),
         );
         toggles.set(
             "compass3",
-            idleon_core::combat::Rule::new(idleon_core::combat::Mode::On),
+            idleon_combat::Rule::new(idleon_combat::Mode::On),
         );
         let combat = round_trip(&CombatConfig {
             character: 2,
@@ -1608,7 +1586,7 @@ mod tests {
             presets: vec![CombatPreset {
                 name: "Bossing".into(),
                 character: 2,
-                items: vec!["Blank".into(); idleon_core::combat::SLOT_COUNT],
+                items: vec!["Blank".into(); idleon_combat::SLOT_COUNT],
                 talents: [("0".to_string(), 5u32)].into_iter().collect(),
             }],
             toggles,
@@ -1617,33 +1595,28 @@ mod tests {
         assert_eq!(combat.tab, CombatTab::Talents);
         assert_eq!(combat.presets.len(), 1);
         assert_eq!(combat.presets[0].name, "Bossing");
-        assert_eq!(
-            combat.presets[0].items.len(),
-            idleon_core::combat::SLOT_COUNT
-        );
+        assert_eq!(combat.presets[0].items.len(), idleon_combat::SLOT_COUNT);
         assert_eq!(combat.toggles.len(), 2);
         assert_eq!(
             combat.toggles.rule("dropRate"),
-            Some(idleon_core::combat::Rule::with_value(
-                idleon_core::combat::Mode::Scale,
+            Some(idleon_combat::Rule::with_value(
+                idleon_combat::Mode::Scale,
                 2.0
             ))
         );
         assert_eq!(
             combat.toggles.rule("compass3"),
-            Some(idleon_core::combat::Rule::new(
-                idleon_core::combat::Mode::On
-            ))
+            Some(idleon_combat::Rule::new(idleon_combat::Mode::On))
         );
         let mastery = round_trip(&CookingMasteryState {
-            goal: idleon_core::cooking_mastery::Goal::NextUnlock,
+            goal: idleon_cooking_mastery::Goal::NextUnlock,
             budget: Some(12.0),
         });
-        assert_eq!(mastery.goal, idleon_core::cooking_mastery::Goal::NextUnlock);
+        assert_eq!(mastery.goal, idleon_cooking_mastery::Goal::NextUnlock);
         assert_eq!(mastery.budget, Some(12.0));
         // A document that never touched the budget leaves it at every point.
         let untouched = round_trip(&CookingMasteryState::default());
-        assert_eq!(untouched.goal, idleon_core::cooking_mastery::Goal::Now);
+        assert_eq!(untouched.goal, idleon_cooking_mastery::Goal::Now);
         assert_eq!(untouched.budget, None);
         let coral = round_trip(&coral::Inputs {
             goal: CoralGoal::DivinityPoints,
@@ -1688,7 +1661,7 @@ mod tests {
 
     #[test]
     fn prepare_refuses_a_document_whose_config_does_not_fit() {
-        use idleon_core::import as pipeline;
+        use idleon_import::pipeline;
 
         let mut document =
             pipeline::read(&project_text(json!({ "weeks": "twelve" }))).expect("the project reads");
@@ -1708,8 +1681,8 @@ mod tests {
     #[test]
     fn prepare_decodes_the_stats_context_from_a_project() {
         let text = json!({
-            "format": idleon_core::project::FORMAT,
-            "version": idleon_core::project::VERSION,
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
             "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
             "sections": {
                 "stats-all": {
@@ -1729,22 +1702,19 @@ mod tests {
         };
         assert_eq!(context.character, 2);
         assert_eq!(context.map, 120);
-        assert_eq!(
-            context.map_visibility,
-            idleon_core::stats::MapVisibility::All
-        );
-        assert_eq!(context.skill, idleon_core::stats::Skill::Divinity);
+        assert_eq!(context.map_visibility, idleon_stats::MapVisibility::All);
+        assert_eq!(context.skill, idleon_stats::Skill::Divinity);
         assert_eq!(
             context.construction,
-            idleon_core::stats::ConstructionMode::Inactive
+            idleon_stats::ConstructionMode::Inactive
         );
     }
 
     #[test]
     fn prepare_decodes_the_drop_rate_selection_from_a_project() {
         let text = json!({
-            "format": idleon_core::project::FORMAT,
-            "version": idleon_core::project::VERSION,
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
             "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
             "sections": { "drop-rate": { "character": 3, "map": 118 } },
         })
@@ -1761,8 +1731,8 @@ mod tests {
     #[test]
     fn prepare_decodes_the_damage_context_from_a_project() {
         let text = json!({
-            "format": idleon_core::project::FORMAT,
-            "version": idleon_core::project::VERSION,
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
             "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
             "sections": { "damage": { "character": 3, "map": 120 } },
         })
@@ -1779,8 +1749,8 @@ mod tests {
     /// A project document carrying one killroy config, for the prepare tests.
     fn project_text(config: serde_json::Value) -> String {
         json!({
-            "format": idleon_core::project::FORMAT,
-            "version": idleon_core::project::VERSION,
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
             "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
             "sections": { "killroy": config },
         })
@@ -1887,8 +1857,8 @@ mod tests {
     #[test]
     fn a_jelly_config_decodes_and_names_its_tab() {
         let text = serde_json::json!({
-            "format": idleon_core::project::FORMAT,
-            "version": idleon_core::project::VERSION,
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
             "section": "jelly-operator",
             "save": null,
             "sections": {

@@ -2,7 +2,6 @@
 
 use super::spot_text;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
@@ -10,10 +9,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Pixels, Role, Styled, div, px};
-use idleon_core::fishing::{Evaluation, Objective, ties};
+use idleon_fishing::{Evaluation, Objective, ties};
+use idleon_ui::format;
 
 /// The character's fishing context as one wrap of cards.
-pub fn kpis(
+pub(crate) fn kpis(
     evaluation: &Evaluation,
     ranking: &[Evaluation],
     objective: Objective,
@@ -187,7 +187,7 @@ fn card(
 /// Every location, each row switching the selected pool. The selected row is
 /// marked, and its first cell is the harness/click target
 /// `fishing-location-<id with : as ->`.
-pub fn location_table(
+pub(crate) fn location_table(
     rows: &[Evaluation],
     selected: &str,
     hours: f64,
@@ -301,7 +301,7 @@ pub fn location_table(
         .into_any_element()
 }
 
-fn share_cell(outcome: &idleon_core::fishing::PoolOutcome, tier: usize, muted: Hsla) -> AnyElement {
+fn share_cell(outcome: &idleon_fishing::PoolOutcome, tier: usize, muted: Hsla) -> AnyElement {
     let fish = &outcome.fish[tier];
     let share = outcome.shares[tier];
     let text = if !fish.unlocked {
@@ -315,6 +315,6 @@ fn share_cell(outcome: &idleon_core::fishing::PoolOutcome, tier: usize, muted: H
 }
 
 /// `54:0` becomes `fishing-location-54-0` for the automation bridge.
-pub fn eval_id(id: &str) -> String {
+pub(crate) fn eval_id(id: &str) -> String {
     format!("fishing-location-{}", id.replace(':', "-"))
 }

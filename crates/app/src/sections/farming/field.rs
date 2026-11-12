@@ -1,13 +1,13 @@
 //! The 9×4 plot field: family colours, tiles and the crop legend.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div, px, rgb};
-use idleon_core::farming::{self, Assignment, CropRow, PlotMetrics};
+use idleon_farming::{self as farming, Assignment, CropRow, PlotMetrics};
+use idleon_ui::format;
 
 /// The 9×4 family colours from `farming-calc.html`.
 pub(super) fn family_color(family: i64) -> Hsla {

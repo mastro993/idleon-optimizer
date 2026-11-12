@@ -1,13 +1,13 @@
 //! Dashboard pane: the summary, grid and observation previews and the three
 //! breakdown trees, ported from the upstream `js/ui/dashboard.js`.
 //!
-//! Every number comes from [`idleon_core::dashboard`], which composes the same
+//! Every number comes from [`idleon_research::dashboard`], which composes the same
 //! simulation functions the Optimizer tab reads. The previews are read-only:
 //! clicking one opens the editor it belongs to.
 
 use crate::sections::research::Tab;
 use crate::state::AppState;
-use crate::ui::format;
+use crate::ui::formula_tree;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -16,11 +16,12 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
-use idleon_core::dashboard;
-use idleon_core::game;
-use idleon_core::model::coord;
+use idleon_research::dashboard;
+use idleon_research::game;
+use idleon_research::model::coord;
+use idleon_ui::format;
 
-use crate::ui::formula::FormulaTree;
+use idleon_ui::formula::FormulaTree;
 
 /// Logical pixels per preview cell.
 const CELL_PX: f32 = 24.0;
@@ -29,37 +30,36 @@ const CELL_PX: f32 = 24.0;
 const OBS_WIDTH: f32 = 132.0;
 
 /// The three formula trees plus the grid-point tree the dashboard owns.
-pub struct Trees {
-    pub exp: Entity<FormulaTree>,
-    pub afk: Entity<FormulaTree>,
-    pub insight: Entity<FormulaTree>,
-    pub points: Entity<FormulaTree>,
+pub(crate) struct Trees {
+    pub(crate) exp: Entity<FormulaTree>,
+    pub(crate) afk: Entity<FormulaTree>,
+    pub(crate) insight: Entity<FormulaTree>,
+    pub(crate) points: Entity<FormulaTree>,
 }
 
 impl Trees {
     /// Create the dashboard's trees; the pane replaces their roots each render.
-    pub fn new(window: &mut Window, cx: &mut gpui::App) -> Self {
-        let mut tree = |id: &'static str| cx.new(|cx| FormulaTree::new(id, window, cx));
+    pub(crate) fn new(window: &mut Window, cx: &mut gpui::App) -> Self {
         Self {
-            exp: tree("dash-exp-formula"),
-            afk: tree("dash-afk-formula"),
-            insight: tree("dash-insight-formula"),
-            points: tree("dash-points-formula"),
+            exp: formula_tree("dash-exp-formula", window, cx),
+            afk: formula_tree("dash-afk-formula", window, cx),
+            insight: formula_tree("dash-insight-formula", window, cx),
+            points: formula_tree("dash-points-formula", window, cx),
         }
     }
 }
 
-pub fn dashboard_pane(
+pub(crate) fn dashboard_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let summary = dashboard::summary(&state.simulation, &state.context);
     let cards = dashboard::observations(&state.simulation, &state.context);
-    let exp_root = idleon_core::breakdown::exp(&state.simulation, &state.context);
-    let afk_root = idleon_core::breakdown::afk(&state.simulation, &state.context);
-    let insight_root = idleon_core::breakdown::insight(&state.simulation, &state.context);
-    let points_root = idleon_core::breakdown::grid_points(&state.simulation, &state.context);
+    let exp_root = idleon_research::breakdown::exp(&state.simulation, &state.context);
+    let afk_root = idleon_research::breakdown::afk(&state.simulation, &state.context);
+    let insight_root = idleon_research::breakdown::insight(&state.simulation, &state.context);
+    let points_root = idleon_research::breakdown::grid_points(&state.simulation, &state.context);
     state
         .research_trees
         .exp
@@ -351,7 +351,7 @@ fn preview_cell(
     let colors = cx.theme().colors.clone();
     let level = state.simulation.grid.level(cell);
     let node = game().node_at(cell);
-    let tint = format::goal_color(node.and_then(|node| node.goal.as_deref()));
+    let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let fill = if node.is_none() {
         colors.bg
     } else if level == 0 {
@@ -365,7 +365,7 @@ fn preview_cell(
         .ok()
         .and_then(|index| game().shapes.get(index))
     {
-        Some(_) => format::shape_color(shape as usize),
+        Some(_) => super::colors::shape_color(shape as usize),
         None if level > 0 => tint.opacity(0.55),
         None => colors.border,
     };

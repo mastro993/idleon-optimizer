@@ -3,7 +3,6 @@
 
 use super::spot_text;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
@@ -11,10 +10,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::fishing::Evaluation;
+use idleon_fishing::Evaluation;
+use idleon_ui::format;
 
 /// The selected pool's split card.
-pub fn card(evaluation: &Evaluation, hours: f64, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(evaluation: &Evaluation, hours: f64, cx: &mut Context<AppState>) -> AnyElement {
     let colors = &cx.theme().colors;
     let (muted, success, warning) = (colors.fg_muted, colors.success, colors.warning);
     let outcome = &evaluation.outcome;

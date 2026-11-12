@@ -2,17 +2,17 @@
 
 use super::estimate;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::KpiCard;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
-use idleon_core::jelly::metrics::MetricOptions;
-use idleon_core::jelly::{Jelly, boss_hp};
+use idleon_jelly::metrics::MetricOptions;
+use idleon_jelly::{Jelly, boss_hp};
+use idleon_ui::format;
 
-pub fn overview(
+pub(crate) fn overview(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -66,7 +66,7 @@ fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
             CardHeader::new("Account snapshot").description(format!(
                 "Obstruction {} of 72 · Fever {} · {} cells in the saved board",
                 progress.obstruction + 1,
-                idleon_core::jelly::fever_mode_name(progress.fever),
+                idleon_jelly::fever_mode_name(progress.fever),
                 jelly.layout.len()
             )),
         )
@@ -91,7 +91,7 @@ fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
                             .caption(format!(
                                 "{} HP · {} sec normal phase",
                                 format::value(boss_hp(progress.obstruction)),
-                                idleon_core::jelly::boss_time(progress.obstruction)
+                                idleon_jelly::boss_time(progress.obstruction)
                             )),
                         )
                         .child(
@@ -134,7 +134,7 @@ fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
                             ))
                             .caption(format!(
                                 "×{:.3} Bloodcells",
-                                idleon_core::jelly::metrics::best_dps_multiplier_from_value(
+                                idleon_jelly::metrics::best_dps_multiplier_from_value(
                                     progress.best_dps
                                 )
                             )),
@@ -154,11 +154,11 @@ fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
                             KpiCard::new(estimate::stat(
                                 "jelly-slot-unlocks",
                                 "Slot unlocks left",
-                                idleon_core::jelly::board::slot_purchases_left(jelly),
+                                idleon_jelly::board::slot_purchases_left(jelly),
                             ))
                             .caption(format!(
                                 "{} grid slots available",
-                                idleon_core::jelly::board::unlocked_count(jelly)
+                                idleon_jelly::board::unlocked_count(jelly)
                             )),
                         ),
                 )

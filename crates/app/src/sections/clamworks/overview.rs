@@ -2,15 +2,15 @@
 
 use super::kpi;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use idleon_ui::format;
 
-pub fn overview_pane(
+pub(crate) fn overview_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -181,7 +181,7 @@ pub fn overview_pane(
 }
 
 /// The shared formula tree, collapsed to a fixed height.
-fn formula_card(tree: gpui::Entity<crate::ui::formula::FormulaTree>) -> impl IntoElement {
+fn formula_card(tree: gpui::Entity<idleon_ui::formula::FormulaTree>) -> impl IntoElement {
     Card::new()
         .header(
             CardHeader::new("Pearl value breakdown")

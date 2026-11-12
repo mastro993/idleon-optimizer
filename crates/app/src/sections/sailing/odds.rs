@@ -13,7 +13,6 @@
 
 use super::{captain_short, chance, chest_odds, percent, text_kpi};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
@@ -22,13 +21,18 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
-use idleon_core::sailing::{
+use idleon_sailing::{
     ChestPayoutBreakdown, FleetChestOutcomes, RouteMetrics, aggregate_fleet_tiers, currency,
     fleet_chest_payout_breakdown, near_full_pile,
 };
+use idleon_ui::format;
 
 /// The odds tab: the KPI row, the fleet table, the per-boat chances and the pile.
-pub fn odds_tab(state: &AppState, table_height: Pixels, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn odds_tab(
+    state: &AppState,
+    table_height: Pixels,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let plan = state.fleet_plan(state.sailing_state.island, state.sailing_state.goal);
     let outcomes = aggregate_fleet_tiers(&plan.routes);
     let breakdowns: Vec<ChestPayoutBreakdown> = outcomes
@@ -385,10 +389,7 @@ fn chance_cell(probability: f64, tier: usize, kind: &'static str) -> AnyElement 
         .into_any_element()
 }
 
-fn currency_cell(
-    id: (&'static str, usize),
-    payout: idleon_core::sailing::CurrencyPayout,
-) -> AnyElement {
+fn currency_cell(id: (&'static str, usize), payout: idleon_sailing::CurrencyPayout) -> AnyElement {
     div()
         .id(id)
         .child(format::value(payout.expected_value_per_chest))

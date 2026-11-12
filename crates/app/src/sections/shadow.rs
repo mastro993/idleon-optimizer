@@ -12,10 +12,14 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, Styled, Window, div, px,
 };
-use idleon_core::save::ShadowVerdict;
+use idleon_import::ShadowVerdict;
 
 /// The shadow-ban page: the verdict and the flag it read.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let colors = &cx.theme().colors;
     let verdict = state.shadow.verdict();
     let tone = match verdict {

@@ -3,7 +3,6 @@
 
 use crate::sections::jar::metric;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -13,10 +12,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::Jar;
-use idleon_core::jar::{MilestoneRow, TierProjection};
+use idleon_jar::Jar;
+use idleon_jar::{MilestoneRow, TierProjection};
+use idleon_ui::format;
 
-pub fn next_tier(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn next_tier(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()

@@ -6,17 +6,17 @@
 //! of one claim imply.
 
 use super::claim::quantity;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Hsla, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use idleon_core::clamworks::afk::{ClaimError, Compare, CompareRow, Phase};
+use idleon_clamworks::afk::{ClaimError, Compare, CompareRow, Phase};
+use idleon_ui::format;
 
 /// The comparison: every unlocked `+1` beside the current claim.
-pub fn compare_card(
+pub(crate) fn compare_card(
     outcome: Result<&Compare, &ClaimError>,
     phase: Phase,
     muted: Hsla,

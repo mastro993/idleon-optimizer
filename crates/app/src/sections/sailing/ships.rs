@@ -7,7 +7,6 @@
 
 use super::{gain, hours_or_ready, text_kpi};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::forms::Checkbox;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
@@ -15,10 +14,11 @@ use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, SharedString, Styled, div};
-use idleon_core::sailing::{
+use idleon_sailing::{
     Currency, FleetPlan, Goal, UpgradeBreakpoint, UpgradeStat, currency, upgrade_breakpoint,
     upgrade_cost_type, upgrade_eta,
 };
+use idleon_ui::format;
 use std::collections::BTreeMap;
 
 /// One boat/stat row: its breakpoint and the island its currency is paid on.
@@ -28,7 +28,11 @@ struct Row {
 }
 
 /// The ships tab: the breakpoint KPI row and the table.
-pub fn ships_tab(state: &AppState, table_height: Pixels, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn ships_tab(
+    state: &AppState,
+    table_height: Pixels,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     // One plan per currency island, exactly as `activeFleet(targetIsland)`
     // resolves it upstream: the currency decides the route, not the selector.
     let mut plans: BTreeMap<usize, FleetPlan> = BTreeMap::new();

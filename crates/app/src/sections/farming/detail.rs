@@ -2,7 +2,6 @@
 
 use super::field::family_name;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -11,7 +10,8 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, SharedString, Styled, div, px};
-use idleon_core::farming::{self, PlotMetrics, Snapshot};
+use idleon_farming::{self as farming, PlotMetrics, Snapshot};
+use idleon_ui::format;
 
 /// The selected plot's saved row and formulas.
 pub(super) fn detail_pane(

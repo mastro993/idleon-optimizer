@@ -19,7 +19,7 @@ mod inventory;
 mod loadout;
 mod state;
 
-pub use state::{State, Workspace};
+pub(crate) use state::{State, Workspace};
 
 use crate::state::AppState;
 use crate::ui::section;
@@ -32,7 +32,11 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
 
 /// The sneaking section: the loadout or breakdowns workspace, or the import prompt.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(loadout) = &state.sneaking else {
         return prompt(state, cx);
     };

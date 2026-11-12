@@ -10,19 +10,19 @@
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image_sized;
-use crate::ui::format;
 use ely_gpui_component::primitives::Tooltip;
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::jelly::PROXIMITY_ANCHORS;
-use idleon_core::jelly::board::{self, Layout};
-use idleon_core::jelly::data;
+use idleon_jelly::PROXIMITY_ANCHORS;
+use idleon_jelly::board::{self, Layout};
+use idleon_jelly::data;
+use idleon_ui::format;
 
 /// Where a board click goes: the layout tab's editable save board or the
 /// simulator's sandbox.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BoardAction {
+pub(crate) enum BoardAction {
     Layout,
     Simulator,
 }
@@ -59,17 +59,21 @@ const CELL_COLORS: [(&str, &str); 8] = [
 /// What one board view draws: the layout, its sandbox terms and where a click
 /// goes. `prefix` names its elements (`<prefix>-board`, `<prefix>-slot-…`), so
 /// the layout editor and the simulator never collide.
-pub struct BoardView<'a> {
-    pub prefix: &'static str,
-    pub layout: &'a Layout,
-    pub unlocked: &'a [bool],
-    pub obstruction: usize,
-    pub selected: Option<usize>,
-    pub action: BoardAction,
+pub(crate) struct BoardView<'a> {
+    pub(crate) prefix: &'static str,
+    pub(crate) layout: &'a Layout,
+    pub(crate) unlocked: &'a [bool],
+    pub(crate) obstruction: usize,
+    pub(crate) selected: Option<usize>,
+    pub(crate) action: BoardAction,
 }
 
 /// The board with its cells, clickable slots and obstruction sprite.
-pub fn board(state: &AppState, view: BoardView<'_>, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn board(
+    state: &AppState,
+    view: BoardView<'_>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let BoardView {
         prefix,
         layout,
@@ -262,7 +266,7 @@ pub fn board(state: &AppState, view: BoardView<'_>, cx: &mut Context<AppState>) 
 }
 
 /// The upstream legend: one chip per unlocked cell type.
-pub fn legend(state: &AppState) -> AnyElement {
+pub(crate) fn legend(state: &AppState) -> AnyElement {
     let Some(jelly) = state.jelly.as_ref() else {
         return div().into_any_element();
     };
@@ -291,7 +295,7 @@ pub fn legend(state: &AppState) -> AnyElement {
 }
 
 /// A slot tint for one cell type, shared with the palette.
-pub fn cell_color(cell_type: usize) -> (Hsla, Hsla) {
+pub(crate) fn cell_color(cell_type: usize) -> (Hsla, Hsla) {
     let (background, border) = CELL_COLORS[cell_type.min(7)];
     (format::hex(background), format::hex(border))
 }
@@ -300,7 +304,7 @@ pub fn cell_color(cell_type: usize) -> (Hsla, Hsla) {
 ///
 /// The layout tab and the simulator place the same cells, so they share one
 /// builder; `prefix` names its buttons (`<prefix>-<type>`).
-pub fn palette(
+pub(crate) fn palette(
     state: &AppState,
     owned: usize,
     selected: Option<usize>,

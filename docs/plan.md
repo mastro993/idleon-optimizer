@@ -173,7 +173,7 @@ group and marks the total partial, so the figure is a lower bound until those sy
 Detection order: project JSON, section config, ROv2 string, raw save. A raw save is detected by
 `Research`/`Lv0_*`/`gridLevels` fields; an object with a `format` marker this build does not read is
 rejected by name, and an object with no marker and no save field is rejected with the field list it
-expected. `crates/core/src/import.rs` is the one pipeline every accepted format goes through.
+expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted format goes through.
 
 ### 5.3 Import pipeline
 
@@ -235,20 +235,27 @@ counts and field names, not save values.
 ## 7. Architecture
 
 ```
-crates/core                         no GPUI, testable
-  save/                             raw save, account and research decoding
-  sections/                         one module per domain: research, combat, farming, ...
-    <section>/{mod,model,sim,optimize}.rs
-  shared/                           formulas, trees, number formatting, game data
-crates/app                          GPUI + Ely
+crates/common                       formula trees, game curve evaluator, run Control/Progress
+crates/save                         raw save document: codec, JSON helpers, characters, companions
+crates/research                     research grid model, EXP/insight maths, grid/shape/mag optimizers
+crates/stats-data                   static map, monster, class and equipment-set tables
+crates/account                      account-wide bonus decoder (`Decoder`): one view of every system
+crates/<domain>                     one crate per calculator, no GPUI, testable in isolation:
+                                    cglunko, clamworks, cog, coin-multi, combat, cooking-mastery,
+                                    coral, damage, drop-rate, endgame, farming, fishing, fountain,
+                                    jar, jelly, killroy, ladle, monument, opal, pickle, prisma,
+                                    royal-guardian, sailing, sneaking, spelunking, stats, statue,
+                                    worship; each owns its `data/*.json` and oracle `tests/`
+crates/import                       save -> every calculator's state (`import`), text `pipeline`
+crates/project                      project document format, migration and `ROv2:` state strings
+crates/ui                           GPUI building blocks: TaskRunner, run chrome, formula tree,
+                                    number formats
+crates/app                          GPUI + Ely binary
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
-    research/                       the research section's state, tab strip and panes
-    clamworks/                      the Clamworks overview, upgrades, claim, plan and promotion
+    <section>/actions.rs            what the section's controls do to `AppState`
   ui/                               shell (window, router, shortcuts), dashboard, section states
-  ui/task.rs                        shared progress card, cancelled notice and stale marker
-  task.rs                           TaskRunner: off-thread job, progress, cancel, stale inputs
-  state.rs                          AppState, Route (`Dashboard`/`Section`/`Missing`) and state
+  state/                            AppState, Route, run/subscription helpers, import/export
 assets/upstream                     committed upstream artwork, manifest-backed
 docs/plan.md                        this document
 docs/roadmap.json                   milestones and feature issues (source of truth)
@@ -334,7 +341,7 @@ ranking, priced at the levels each purchase reaches and run through the shared t
 progress, cancel, a stale marker and an applied projection), the promotion tracker and all twelve
 worker-class rewards, plus save decoding for pearl balance, upgrade levels, unlock progress,
 promotion and Scurge. `script/clamworks-oracle.mjs` regenerates
-`crates/core/tests/clamworks-oracle.json` from the upstream module, so the tracker, the rewards and
+`crates/clamworks/tests/clamworks-oracle.json` from the upstream module, so the tracker, the rewards and
 the plans are compared with the source of truth, and `script/clamworks-afk-oracle.mjs` regenerates
 `fixtures/clamworks-afk.json` for the claim. Multi-Scalping takes a manual multikill total, and the
 claim takes the character's kills per hour and drop rate, until the combat simulator lands. The
@@ -377,7 +384,7 @@ statue first and rejected with the upstream message), Next level for all, a one-
 batch action, and the farming breakdown behind one statue's row through the shared formula tree.
 Missing: the upstream "Measure statue farming" panel, which needs the combat simulator's encounter
 run (CS-03), so rates are manual entries today. Formula parity against the upstream JS uses the
-fixtures in `crates/core/tests/statue-requirements.json`, `statue-costs.json` and
+fixtures in `crates/statue/tests/statue-requirements.json`, `statue-costs.json` and
 `statue-batch.json`. Details: [`docs/sections/statue.md`](sections/statue.md).
 
 The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
@@ -397,7 +404,7 @@ its Boss3B card and map rule, prayers 4 and 12, bribe 23, materials and the mate
 two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's own terms. The other
 fifty descriptors resolve to a warning naming their upstream def instead of a guessed number, since
 they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capacity rows match the
-upstream stats page exactly on the committed fixture; `crates/core/tests/stats.rs` pins the eight
+upstream stats page exactly on the committed fixture; `crates/stats/tests/stats.rs` pins the eight
 values and checks every category renders. Missing: the formula explorer (SA-03) and the input ledger
 (SA-04). Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
 
@@ -425,7 +432,7 @@ fountain summary, the fill and income rates per currency, lucky coins and rubber
 coin stacks, the eighteen cross-system bonuses and the level planner, then the currency value table
 with a simulated desired currency, the per-water POW 10 multipliers, the desired-currency simulator,
 the next unlock tracker and every water's upgrade list with its cap state and a log-scale cost
-curve. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus source the save
+curve. `idleon_fountain::Fountain` reads the cavern rows and names every bonus source the save
 does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
 `fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
 the upgrade planner, marble planner and simulator (FN-03 and FN-04).
@@ -436,9 +443,9 @@ production rate and six-tier slot table, the rupie value breakdown with its extr
 per-break payouts, the opal/collectible/enchant chances and their tier scaling, the forty
 collectibles grouped by effect with the enchant priority, the nineteen jar schematics and the
 jar-type upgrade plan, and the next-tier tab with its pow10 milestone ranking and off-map tier
-accumulation. `idleon_core::jar::Jar` reads `Holes`, `Spelunk`, `OptLacc`, `Gaming` and the account
+accumulation. `idleon_jar::Jar` reads `Holes`, `Spelunk`, `OptLacc`, `Gaming` and the account
 rows; `script/extract-jar-data.mjs` extracts the collectible, schematic and measurement tables, and
-`script/jar-oracle.mjs` regenerates `crates/core/tests/jar-oracle.json` from the upstream
+`script/jar-oracle.mjs` regenerates `crates/jar/tests/jar-oracle.json` from the upstream
 `js/stats/systems/w5/jar.js` plus the inline `jar-calc.html` accumulation loop. The upgrade plan
 marks only the next jar type affordable and never spends past the rupie balance it is paid from.
 Missing: the enchant simulator and history (JR-04).
@@ -450,7 +457,7 @@ cards, the raw clearing values every unbuilt outpost reports (progress, requirem
 militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; then the
 outpost map with its saved Normal, Support and Savage links, the resource nodes with their grade,
 capacity, collected progress and drain projection, the currencies with their balances and source
-nodes, and the banked hours and daily reset countdown. `idleon_core::royal_guardian` reads `RoyalG`,
+nodes, and the banked hours and daily reset countdown. `idleon_royal_guardian` reads `RoyalG`,
 `RoyalMaps`, `Spelunk`, `Sushi`, `ArcadeUpg`, `Lv0_<n>` and `TimeAway`;
 `script/extract-royal-data.mjs` extracts the Armory, resource (capacity and currency slot), map and
 talent tables plus the three cross-system constants the collection rate reads, and
@@ -462,7 +469,7 @@ breakdown tree and the forecast (RG-03) and the optimizer, unit EXP and shelf st
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run
-(SP-01, SP-02). `idleon_core::spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
+(SP-01, SP-02). `idleon_spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
 unlocks and depth records from the save, normalises the party, belt, mode and policy with the
 upstream `normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits
 profile from `spelunk-depth.js`. The four account multipliers upstream derives from its whole stat
@@ -470,7 +477,7 @@ context — Spelunking Power, the amber multiplier, stamina regeneration and the
 chance — stay explicit inputs here; the page carries all four, the extra-exit bonus and each
 character's maximum stamina. The section renders the character/cave/mode/policy/full-clear/speed
 toolbar, the party with the half-stamina rule, the equipped and memorized belt with the built-in
-presets, and the two depth charts with a per-depth inspector. `idleon_core::spelunking::sim` ports
+presets, and the two depth charts with a per-depth inspector. `idleon_spelunking::sim` ports
 the whole expedition from `spelunk-expedition.js` — the seeded 10 ms tick, floor generation, digging,
 the elixir belt with its refills, party switching, exits, the Delve toll and the run log — so the same
 inputs and seed reproduce the run; the page runs it through the shared task runner with progress and
@@ -478,7 +485,7 @@ cancel, and shows the outcome, rewards, stamina, per-member contributions and th
 phased Amber policy is not ported yet, so `amber-farm` is rejected instead of behaving like another
 policy. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
 four configurations, three whole runs and nineteen rejected inputs, compared field for field by
-`crates/core/tests/spelunking.rs`; regenerate it with `script/spelunking-oracle.mjs`, and
+`crates/spelunking/tests/spelunking.rs`; regenerate it with `script/spelunking-oracle.mjs`, and
 `script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir, chapter and sprite tables.
 Missing: the Amber policies and the optimizer (SP-03, SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
@@ -488,26 +495,26 @@ villagers, their levels, invested opals and stars, the six overview figures, the
 bonus terms and the shared formula tree, switchable between the total and one villager. The
 `Optimizer` tab splits a total across the unlocked villagers for the total EXP or one villager's rate:
 the plan comes off the shared task runner, prints the saved and planned rate per villager, sums to the
-total and can be copied as tab-separated text. `idleon_core::opal::Opal` decodes `buildExt` out of the
+total and can be copied as tab-separated text. `idleon_opal::Opal` decodes `buildExt` out of the
 save — the villager rows, the cosmo upgrades and every cross-system term through the account decoder —
-and `idleon_core::opal::Opal::plan` searches every lowest count with each villager on that count or the
+and `idleon_opal::Opal::plan` searches every lowest count with each villager on that count or the
 next multiple of ten, so the plan is never worse than the saved split and at least as good as the
 page's own greedy shapes. `script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to
 regenerate `fixtures/opal.json` (the page's rates and optimizer plans), which
-`crates/core/tests/opal.rs` pins. Missing: the manual simulator (OP-03).
+`crates/opal/tests/opal.rs` pins. Missing: the manual simulator (OP-03).
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
 The Sneaking section has its loadout, inventory and formula breakdown workspaces (SN-01 and SN-02):
-`idleon_core::sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
+`idleon_sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
 equipment rows per twin, the 39-slot inventory and the Ninja Knowledge levels — and computes the
 item stats, the charm bonus map, the Gold inventory scan, action speed, KO recovery, the level,
 charm, ally and flower stealth factors and the detection chance they give. Slots swap with the
 inventory (two items trade places, so the editor cannot invent a charm), a repeated charm without
 the Charmed emporium perk and a second Scroll of Power are flagged, and a save without `Ninja` rows
 says so. The saved floor assignments line names each floor's twins, their action and the loadout's
-try rate. `idleon_core::sneaking::account` reads the account-wide stack — Land Rank, compass,
+try rate. `idleon_sneaking::account` reads the account-wide stack — Land Rank, compass,
 statues, cards, achievements, gemstones, lamps, Hole upgrades, Emperor, RoG, Jelly and companions —
-and `idleon_core::sneaking::breakdown` builds the five upstream trees: Stealth, Jade per hour, EXP
+and `idleon_sneaking::breakdown` builds the five upstream trees: Stealth, Jade per hour, EXP
 per action, door damage per hour and the runtime action loop. The breakdowns workspace selects a
 twin and a formula tab and renders each tree through the shared formula tree with its search,
 expand and copy controls. `script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
@@ -533,7 +540,7 @@ scripts upstream's source audit (`js/stats/data/prisma-source-coverage.js`) trac
 whether this build models a downstream metric for it, so the bubble bonus is never presented as a
 stat, skill or damage gain. The shared task runner reports progress and keeps the previous result
 when a run is cancelled, and a save, character, cauldron or AFK-hours change marks the result stale. Formula parity is pinned by
-`crates/core/tests/prisma-oracle.json`, generated by `script/prisma-oracle.mjs` from the upstream
+`crates/prisma/tests/prisma-oracle.json`, generated by `script/prisma-oracle.mjs` from the upstream
 plan, multiplier, bubble bonus and comparison; `script/extract-prisma-data.mjs` extracts the bubble
 table and the consumer audit. Missing: the damage, stats and skills outcome families the upstream
 evaluator covers beyond the modelled one, and the bubble icons.
@@ -558,7 +565,7 @@ stays a session convenience. The full permanent/charge summary stays on the road
 seven Bravery run states (boost stacks, spent rethrows, an entered last-sword HP), the Wisdom
 snapshot, all three reward charges, the Justice snapshot, its fresh-story start, a report for every
 one of the 90 cases, the worked states with the deals and promises active, each timer settlement and
-the rejected inputs, so `crates/core/tests/monument.rs` compares the port field for field;
+the rejected inputs, so `crates/monument/tests/monument.rs` compares the port field for field;
 regenerate it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs` extracts the
 tables the tabs read. Details: [`docs/sections/monument.md`](sections/monument.md).
 
@@ -596,7 +603,7 @@ upstream greedy marginal search over the twenty upgrade rows, with the unlock ra
 cap rules and the per-objective candidate lists; a run reports progress, cancels without dropping
 the previous plan, and an objective, mode or save edit marks the stored plan stale. `fixtures/farming.json`
 is the upstream planner's own output for one purpose-built save, including all seven objectives and both
-allocation modes, so `crates/core/tests/farming_planner.rs` compares the assignment rows, the
+allocation modes, so `crates/farming/tests/farming_planner.rs` compares the assignment rows, the
 allocator's levels, points and scores, and the account snapshot field for field; regenerate it with
 `script/farming-oracle.mjs`. FM-05 adds the upstream Overview tab: the priority signals, the account
 multipliers, the GMO thresholds, the ten Crop Scientist bonuses, the seven growth breakpoints and
@@ -604,14 +611,14 @@ every plot's long-run overgrowth curve, with the plot selection switching the cu
 snapshot applies only the terms the save carries, so every figure is a lower bound;
 `script/farming-signals-oracle.mjs` regenerates `fixtures/farming-signals.json` from the upstream
 `farming-planner.js` and `farming.js` on a purpose-built save whose unmodelled systems are all
-absent, and `crates/core/tests/farming_signals.rs` compares the snapshot, the diagnostics, the
+absent, and `crates/farming/tests/farming_signals.rs` compares the snapshot, the diagnostics, the
 thresholds, the breakpoints, all 36 plots' metrics, all 36 curves and the Crop Scientist table
 against it. FM-03 adds the preset comparison and the named presets: the Plots tab runs the
 upstream "Preset Comparison" table through the shared task runner, so every goal reports its gain,
 the points it spends and the Land Rank rows it raises from the current baseline, and the preset bar
 keeps a named goal, baseline and crop target in the project document. The built-in presets are the
 page's own seven `OBJECTIVES` goals: `fixtures/farming.json` carries that list and both comparison
-tables, so `crates/core/tests/farming_planner.rs` proves every upstream preset exists and each
+tables, so `crates/farming/tests/farming_planner.rs` proves every upstream preset exists and each
 comparison row matches upstream field for field. The evolution chain with overgrowth advice (FM-04)
 stays on the roadmap. Details: [`docs/sections/farming.md`](sections/farming.md).
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,
@@ -638,7 +645,7 @@ into its spend order and a copy button with the same instructions as plain text.
 the upstream stats engine resolves are entered instead: the ladle panel values, the kitchen speed
 at Speed Lv 0 and the meal max level stand in for the Cooking speed model, and the meal cost terms
 (companion 162, achievement 233, cloud 33, Dream days) are the Cooking menu's discount inputs.
-`script/ladle-kitchen-oracle.mjs` regenerates `crates/core/tests/ladle-kitchen-oracle.json` from the
+`script/ladle-kitchen-oracle.mjs` regenerates `crates/ladle/tests/ladle-kitchen-oracle.json` from the
 upstream module, with a model whose account multipliers are neutral so every rate is the port's
 `base × (1 + Speed Lv / 10) × (1 + gem doubler)`; `script/extract-cooking-data.mjs` extracts
 `MealINFO` and the `N2L` encoding. The forecast comparison and the meal outcome tables (LD-03) and
@@ -660,7 +667,7 @@ revives), its Monte Carlo aggregate, the cell contribution table, the critical t
 the progression outlook, whose obstruction rows come from the deterministic surrogate.
 `script/extract-jelly-data.mjs` writes the cell, plot and upgrade tables; `script/jelly-oracle.mjs`
 regenerates `fixtures/jelly.json` from the upstream JS for the committed save and three documented
-overrides, and `crates/core/tests/jelly.rs` compares the state, the multipliers, the layout metrics,
+overrides, and `crates/jelly/tests/jelly.rs` compares the state, the multipliers, the layout metrics,
 the estimate and the outlook field for field. The simulator tab is a sandbox copy of the same slice:
 the stage and Fever selects, Stronkroid's activation second, the automatic revive policy, the seeded
 single operation through the shared task runner, the palette with remove mode, Clear cells and Reset
@@ -668,7 +675,7 @@ from save, and hypothetical board sections that reflow the board through `board:
 page's `normalizeSimulatorLayout`). A run shows the outcome cards, the per-cell contribution table
 and the critical target timeline. `script/jelly-oracle.mjs` also writes two seeded single operations
 (Stronkroid at 5s with `dps-first` revives, and an empty sandbox board), and
-`crates/core/tests/jelly-estimate.rs` compares every trial field. The upgrades, bonuses and
+`crates/jelly/tests/jelly-estimate.rs` compares every trial field. The upgrades, bonuses and
 breakdowns (JO-03), the section planner (JO-04) and the coordinator optimizer (JO-05) stay on the
 roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
 a save-export timing bug from the page's own local storage, and this app reads the save's shape
@@ -680,7 +687,7 @@ validation and the save's current coral state, the bounded deterministic beam se
 shared task runner, then the offering fit and the current Coral Kid levels. A run keeps the best plan
 per beam, reports each step, can be cancelled and marks the stored plan stale when an input changes.
 The card shows what the plan commits, the projected coral state against the current one and the
-ordered Coral Kid and God Rank offering actions. The search is `idleon_core::coral::plan`: every
+ordered Coral Kid and God Rank offering actions. The search is `idleon_coral::plan`: every
 unlocked upgrade and one offering per state, candidates that do not strictly improve the goal
 dropped, states deduped by level/rank signature with dominance pruning, then sorted by the goal,
 spend and signature before the beam is cut. The offering fit reads the upstream `offeringStats` row
@@ -691,7 +698,7 @@ both cards name the save fields they read as zero (Y4, DivCostAfter3, and the Co
 Singularity level pages) instead of hiding the gap.
 `script/coral-god-rank-oracle.mjs` regenerates the upstream plans in `fixtures/coral-plan.json`,
 including the beam-dependent case and offering rows with and without a Y4 free chance, and
-`crates/core/tests/coral_plan.rs` compares the plan action by action and the fit figures. Details:
+`crates/coral/tests/coral_plan.rs` compares the plan action by action and the fit figures. Details:
 [`docs/sections/coral-god-rank.md`](sections/coral-god-rank.md).
 
 ## 10. Verification

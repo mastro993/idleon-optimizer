@@ -12,15 +12,15 @@ use gpui::{
 };
 
 /// One line, one value per depth offset; `None` leaves a gap.
-pub struct Series {
-    pub name: String,
-    pub color: Hsla,
-    pub values: Vec<Option<f64>>,
-    pub dashed: bool,
+pub(crate) struct Series {
+    pub(crate) name: String,
+    pub(crate) color: Hsla,
+    pub(crate) values: Vec<Option<f64>>,
+    pub(crate) dashed: bool,
 }
 
 impl Series {
-    pub fn new(name: impl Into<String>, color: Hsla, values: Vec<Option<f64>>) -> Self {
+    pub(crate) fn new(name: impl Into<String>, color: Hsla, values: Vec<Option<f64>>) -> Self {
         Self {
             name: name.into(),
             color,
@@ -30,7 +30,7 @@ impl Series {
     }
 
     /// Dashed, as the upstream page draws its secondary risk series.
-    pub fn dashed(mut self) -> Self {
+    pub(crate) fn dashed(mut self) -> Self {
         self.dashed = true;
         self
     }
@@ -38,7 +38,7 @@ impl Series {
 
 /// A line chart of `series` across `depths`, with an optional dashed reference.
 #[allow(clippy::too_many_arguments)]
-pub fn chart(
+pub(crate) fn chart(
     id: &'static str,
     aria: String,
     series: Vec<Series>,

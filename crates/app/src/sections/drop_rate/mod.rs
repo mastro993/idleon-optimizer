@@ -4,10 +4,12 @@
 //! Ported from `drop-rate-calc.html`: the context card that
 //! `populateMapSel`/`switchChar`/`switchMap` drive, the runtime panel that only
 //! a dungeon map shows, and the `#result-card` total. The formula tree below
-//! them is DR-02; the maths the total reads lives in [`idleon_core::drop_rate`].
+//! them is DR-02; the maths the total reads lives in [`idleon_drop_rate`].
+
+mod actions;
 
 use crate::state::AppState;
-use ely_gpui_component::forms::{Choice, Input, InputEvent, Select, TextInput};
+use ely_gpui_component::forms::{Choice, Input, Select, TextInput};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
@@ -16,25 +18,25 @@ use gpui::{
     AnyElement, App, Context, Entity, FontWeight, Hsla, ParentElement, Role, Styled, Subscription,
     Window, div, px,
 };
-use idleon_core::drop_rate::{self, Runtime, Selection, Total};
-use idleon_core::save::Save;
-use idleon_core::stats::{self, Snapshot};
+use idleon_drop_rate::{self as drop_rate, Runtime, Selection, Total};
+use idleon_save::Save;
+use idleon_stats::{self as stats, Snapshot};
 
 /// The page's own state: the context, the save slice it reads and the two live
 /// fields a dungeon run shows.
-pub struct State {
-    pub selection: Selection,
-    pub snapshot: Option<Snapshot>,
+pub(crate) struct State {
+    pub(crate) selection: Selection,
+    pub(crate) snapshot: Option<Snapshot>,
     /// Dungeon Total LUK; a blank field is upstream's "not entered".
-    pub luk: Entity<TextInput>,
+    pub(crate) luk: Entity<TextInput>,
     /// Dungeon Drop Rate stat.
-    pub rate: Entity<TextInput>,
+    pub(crate) rate: Entity<TextInput>,
     _subscriptions: Vec<Subscription>,
 }
 
 impl State {
     /// The page with empty fields and no save.
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let (luk, luk_subscription) = live_field("Dungeon Total LUK", "e.g. 1200", window, cx);
         let (rate, rate_subscription) = live_field("Dungeon Drop Rate Stat", "e.g. 35", window, cx);
         Self {
@@ -47,19 +49,19 @@ impl State {
     }
 
     /// Take a freshly imported save: character one on its current map.
-    pub fn load(&mut self, save: &Save) {
+    pub(crate) fn load(&mut self, save: &Save) {
         let snapshot = Snapshot::from_save(save);
         self.selection = Selection::from_snapshot(&snapshot);
         self.snapshot = Some(snapshot);
     }
 
     /// The live dungeon values as the fields hold them.
-    pub fn runtime(&self, cx: &App) -> Result<Runtime, String> {
+    pub(crate) fn runtime(&self, cx: &App) -> Result<Runtime, String> {
         Runtime::read(self.luk.read(cx).text(), self.rate.read(cx).text())
     }
 
     /// The total card's answer for the current context.
-    pub fn total(&self, cx: &App) -> Total {
+    pub(crate) fn total(&self, cx: &App) -> Total {
         match self.runtime(cx) {
             Ok(runtime) => drop_rate::total(self.selection.map, runtime),
             Err(reason) => Total::Invalid(reason),
@@ -67,7 +69,7 @@ impl State {
     }
 
     /// The character selector's rows: every character with its class.
-    pub fn characters(&self) -> Vec<Choice> {
+    pub(crate) fn characters(&self) -> Vec<Choice> {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return Vec::new();
         };
@@ -83,7 +85,7 @@ impl State {
     }
 
     /// The map selector's rows, marked when they are dungeons.
-    pub fn maps(&self) -> Vec<Choice> {
+    pub(crate) fn maps(&self) -> Vec<Choice> {
         drop_rate::maps(self.snapshot.as_ref(), self.selection.character)
             .into_iter()
             .map(|row| Choice::new(row.map.to_string(), row.label))
@@ -91,7 +93,7 @@ impl State {
     }
 
     /// Whether the selected map runs the live dungeon formula.
-    pub fn dungeon(&self) -> bool {
+    pub(crate) fn dungeon(&self) -> bool {
         drop_rate::is_dungeon_map(self.selection.map)
     }
 }
@@ -109,16 +111,16 @@ fn live_field(
             .placeholder(placeholder)
             .label(label)
     });
-    let subscription = cx.subscribe(&input, |_state, _input, event: &InputEvent, cx| {
-        if *event == InputEvent::Changed {
-            cx.notify();
-        }
-    });
+    let subscription = crate::state::redraw_on_edit(cx, &input);
     (input, subscription)
 }
 
 /// The Drop Rate page: the context, the live dungeon fields and the total.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let colors = &cx.theme().colors;
     let (muted, gold, danger) = (colors.fg_muted, colors.warning, colors.danger);
     let selection = state.drop_rate.selection;
@@ -396,7 +398,7 @@ fn field(label: &'static str, muted: Hsla) -> gpui::Div {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::save::Save;
+    use idleon_save::Save;
     use serde_json::json;
 
     fn save() -> Save {

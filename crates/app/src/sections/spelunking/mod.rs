@@ -7,7 +7,7 @@
 //! and the optimizer stay on the roadmap as SP-03 and SP-04.
 //!
 //! The four account multipliers upstream derives from its whole stat context are
-//! user inputs here (see [`idleon_core::spelunking::Account`]); every other
+//! user inputs here (see [`idleon_spelunking::Account`]); every other
 //! control and every depth estimate comes from the imported save.
 
 mod actions;
@@ -19,8 +19,8 @@ mod party;
 mod run;
 mod state;
 
-pub use run::RunInputs;
-pub use state::State;
+pub(crate) use run::RunInputs;
+pub(crate) use state::State;
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
@@ -35,7 +35,11 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div,
 /// The section: the controls, the party and belt, the account inputs and the
 /// depth estimates in one scrolling page (the upstream page's shared toolbar
 /// above its Depth limits tab).
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(save) = state.spelunking_save.as_ref() else {
         return empty(cx);
     };

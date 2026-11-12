@@ -79,7 +79,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/fountain.json', import.meta.url);
+const out = new URL('../crates/fountain/data/fountain.json', import.meta.url);
 writeFileSync(out, `${JSON.stringify(payload, null, 1)}\n`);
 console.log(
   `wrote ${payload.upgrades.length} waters x ${payload.upgrades[0]?.length} upgrades, ${payload.holes.measurementType.length} measurements`,

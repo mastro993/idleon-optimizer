@@ -1,7 +1,6 @@
 //! The Cooking EXP tab: one balloon at a time, with the overflow carried.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Checkbox, Choice, Select, Stepper};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -10,12 +9,14 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::ladle::{
-    self, EXP_BALLOONS, Ladle, Split, balloons_to_level, levels_from_balloons, split_balloons,
+use idleon_ladle::{
+    self as ladle, EXP_BALLOONS, Ladle, Split, balloons_to_level, levels_from_balloons,
+    split_balloons,
 };
+use idleon_ui::format;
 
 /// The whole Cooking EXP tab.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     ladle: &Ladle,
     window: &mut Window,

@@ -1,11 +1,11 @@
 //! The section's selection rules: the tab ids and what a new cavern keeps.
 //!
-//! The numbers themselves are pinned in `crates/core/tests/fountain.rs` against
+//! The numbers themselves are pinned in `crates/fountain/tests/fountain.rs` against
 //! the upstream JS; these cover what the section decides on top of them.
 
 use super::{State, Tab};
-use idleon_core::Fountain;
-use idleon_core::save::import;
+use idleon_fountain::Fountain;
+use idleon_import::import;
 use serde_json::{Value, json};
 
 /// A cavern with all three waters unlocked and every upgrade row present.
