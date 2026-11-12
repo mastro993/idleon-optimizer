@@ -560,8 +560,14 @@ snapshot applies only the terms the save carries, so every figure is a lower bou
 `farming-planner.js` and `farming.js` on a purpose-built save whose unmodelled systems are all
 absent, and `crates/core/tests/farming_signals.rs` compares the snapshot, the diagnostics, the
 thresholds, the breakpoints, all 36 plots' metrics, all 36 curves and the Crop Scientist table
-against it. Presets and the preset comparison (FM-03) and the evolution chain with overgrowth advice
-(FM-04) stay on the roadmap. Details: [`docs/sections/farming.md`](sections/farming.md).
+against it. FM-03 adds the preset comparison and the named presets: the Plots tab runs the
+upstream "Preset Comparison" table through the shared task runner, so every goal reports its gain,
+the points it spends and the Land Rank rows it raises from the current baseline, and the preset bar
+keeps a named goal, baseline and crop target in the project document. The built-in presets are the
+page's own seven `OBJECTIVES` goals: `fixtures/farming.json` carries that list and both comparison
+tables, so `crates/core/tests/farming_planner.rs` proves every upstream preset exists and each
+comparison row matches upstream field for field. The evolution chain with overgrowth advice (FM-04)
+stays on the roadmap. Details: [`docs/sections/farming.md`](sections/farming.md).
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,
 the current EXP rate, the EXP the next level takes and the hours that needs, the upgrade comparison
 ranked by the gain one more point buys, and the EXP rate breakdown in the shared formula tree. Every

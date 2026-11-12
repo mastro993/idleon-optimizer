@@ -52,6 +52,45 @@ struct Fixture {
     save: Value,
     snapshot: SnapshotRow,
     plans: Vec<PlanRow>,
+    presets: PresetsRow,
+}
+
+/// The upstream page's own preset list and comparison table.
+#[derive(Deserialize)]
+struct PresetsRow {
+    objectives: Vec<GoalRow>,
+    comparisons: Vec<ComparisonRow>,
+}
+
+#[derive(Deserialize)]
+struct GoalRow {
+    id: String,
+    name: String,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ComparisonRow {
+    mode: String,
+    rows: Vec<PresetRow>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PresetRow {
+    objective: String,
+    relative_gain: f64,
+    points_spent: u32,
+    points_unused: u32,
+    initial_score: f64,
+    final_score: f64,
+    moves: Vec<MoveRow>,
+}
+
+#[derive(Deserialize)]
+struct MoveRow {
+    id: usize,
+    delta: i64,
 }
 
 #[derive(Deserialize)]
@@ -422,5 +461,101 @@ fn an_empty_farm_targets_the_evolution_predecessor_only() {
         let allocation = allocate(&farm, objective, Mode::Unspent, Some(1));
         assert_eq!(allocation.points_available, 0);
         assert_eq!(allocation.points_spent, 0);
+    }
+}
+
+#[test]
+fn every_upstream_preset_exists() {
+    let fixture = fixture();
+    // The page's OBJECTIVES list is the built-in preset list: same goals, same
+    // order and same labels.
+    assert_eq!(
+        Objective::ALL.len(),
+        fixture.presets.objectives.len(),
+        "the port offers every upstream goal"
+    );
+    for (objective, upstream) in Objective::ALL.iter().zip(&fixture.presets.objectives) {
+        assert_eq!(objective.id(), upstream.id, "preset id");
+        assert_eq!(
+            objective.label(),
+            upstream.name,
+            "{}: the label matches upstream",
+            upstream.id
+        );
+        assert_eq!(Objective::from_id(&upstream.id), Some(*objective));
+    }
+}
+
+#[test]
+fn the_comparison_matches_upstream_per_objective() {
+    let fixture = fixture();
+    let farm = farm(&fixture);
+    for comparison in &fixture.presets.comparisons {
+        let mode = Mode::from_id(&comparison.mode).expect("a known mode");
+        let label = format!("comparison / {}", comparison.mode);
+        let planned = farm
+            .comparison(mode, Some(TARGET_CROP), &mut |_progress| Control::Continue)
+            .expect("an uncancelled comparison returns every goal");
+        assert_eq!(planned.mode, mode, "{label}: mode");
+        assert_eq!(planned.target_crop, Some(TARGET_CROP), "{label}: target");
+        assert_eq!(
+            planned.rows.len(),
+            comparison.rows.len(),
+            "{label}: one row per goal"
+        );
+        for (row, expected) in planned.rows.iter().zip(&comparison.rows) {
+            let row_label = format!("{label} / {}", expected.objective);
+            assert_eq!(
+                row.objective.id(),
+                expected.objective,
+                "{row_label}: the row keeps the upstream goal order"
+            );
+            close(row.relative_gain(), expected.relative_gain);
+            assert_eq!(
+                row.points_spent, expected.points_spent,
+                "{row_label}: points"
+            );
+            assert_eq!(
+                row.points_unused(),
+                expected.points_unused,
+                "{row_label}: unused points"
+            );
+            close(row.initial_score, expected.initial_score);
+            close(row.final_score, expected.final_score);
+            // The table's "Largest Moves" column reads the upstream change list
+            // in order, so the ordering is part of the port.
+            let moves: Vec<(usize, i64)> = row
+                .changes
+                .iter()
+                .map(|change| (change.id, change.delta()))
+                .collect();
+            let expected_moves: Vec<(usize, i64)> = expected
+                .moves
+                .iter()
+                .map(|change| (change.id, change.delta))
+                .collect();
+            assert_eq!(moves, expected_moves, "{row_label}: largest moves");
+        }
+    }
+}
+
+#[test]
+fn the_comparison_plans_each_goal_once() {
+    let fixture = fixture();
+    let farm = farm(&fixture);
+    let planned = farm
+        .comparison(Mode::Unspent, Some(TARGET_CROP), &mut |_progress| {
+            Control::Continue
+        })
+        .expect("the comparison completes");
+    for row in &planned.rows {
+        let single = allocate(&farm, row.objective, Mode::Unspent, Some(TARGET_CROP));
+        assert_eq!(row, &single, "{}: the same plan twice", row.objective.id());
+    }
+    // Every row can only spend what the account has, and never scores below
+    // the baseline it started from.
+    for row in &planned.rows {
+        assert!(row.points_spent <= row.points_available);
+        assert!(row.final_score >= row.initial_score);
     }
 }

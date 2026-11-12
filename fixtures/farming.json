@@ -3266,5 +3266,297 @@
         ]
       }
     }
-  ]
+  ],
+  "presets": {
+    "objectives": [
+      {
+        "id": "rankXp",
+        "name": "Land Rank XP"
+      },
+      {
+        "id": "farmingExp",
+        "name": "Farming EXP"
+      },
+      {
+        "id": "evolution",
+        "name": "Crop Evolution"
+      },
+      {
+        "id": "overgrowth",
+        "name": "Overgrowth"
+      },
+      {
+        "id": "cropValue",
+        "name": "Crop Value"
+      },
+      {
+        "id": "beans",
+        "name": "Magic Beans"
+      },
+      {
+        "id": "growth",
+        "name": "Growth Speed"
+      }
+    ],
+    "comparisons": [
+      {
+        "mode": "unspent",
+        "rows": [
+          {
+            "objective": "rankXp",
+            "relativeGain": 6.8054754637161645,
+            "pointsSpent": 1751,
+            "pointsUnused": 0,
+            "initialScore": 0.3704810197134609,
+            "finalScore": 2.891780509145964,
+            "moves": [
+              {
+                "id": 2,
+                "delta": 765
+              },
+              {
+                "id": 13,
+                "delta": 644
+              },
+              {
+                "id": 6,
+                "delta": 342
+              }
+            ]
+          },
+          {
+            "objective": "farmingExp",
+            "relativeGain": 1.3645300124166693,
+            "pointsSpent": 1751,
+            "pointsUnused": 0,
+            "initialScore": 84420.09001348841,
+            "finalScore": 199613.8364878101,
+            "moves": [
+              {
+                "id": 16,
+                "delta": 769
+              },
+              {
+                "id": 12,
+                "delta": 524
+              },
+              {
+                "id": 5,
+                "delta": 458
+              }
+            ]
+          },
+          {
+            "objective": "evolution",
+            "relativeGain": 31.455690590975514,
+            "pointsSpent": 1751,
+            "pointsUnused": 0,
+            "initialScore": 3.2757034162194016e-17,
+            "finalScore": 1.0631521654461838e-15,
+            "moves": [
+              {
+                "id": 15,
+                "delta": 439
+              },
+              {
+                "id": 0,
+                "delta": 438
+              },
+              {
+                "id": 10,
+                "delta": 438
+              },
+              {
+                "id": 3,
+                "delta": 436
+              }
+            ]
+          },
+          {
+            "objective": "overgrowth",
+            "relativeGain": 1.856682279719558,
+            "pointsSpent": 1751,
+            "pointsUnused": 0,
+            "initialScore": 0.00059289201761169,
+            "finalScore": 0.001693704120498491,
+            "moves": [
+              {
+                "id": 18,
+                "delta": 1074
+              },
+              {
+                "id": 11,
+                "delta": 456
+              },
+              {
+                "id": 7,
+                "delta": 221
+              }
+            ]
+          },
+          {
+            "objective": "cropValue",
+            "relativeGain": 0.0006943326393706872,
+            "pointsSpent": 1,
+            "pointsUnused": 1750,
+            "initialScore": 0.020896335488928088,
+            "finalScore": 0.020910844496701293,
+            "moves": [
+              {
+                "id": 1,
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "objective": "beans",
+            "relativeGain": 0.022089426438355098,
+            "pointsSpent": 1,
+            "pointsUnused": 1750,
+            "initialScore": 6.4949923903793145,
+            "finalScore": 6.638463047004275,
+            "moves": [
+              {
+                "id": 1,
+                "delta": 1
+              }
+            ]
+          },
+          {
+            "objective": "growth",
+            "relativeGain": 0,
+            "pointsSpent": 0,
+            "pointsUnused": 1751,
+            "initialScore": 0.0002287040303089686,
+            "finalScore": 0.0002287040303089686,
+            "moves": []
+          }
+        ]
+      },
+      {
+        "mode": "reset",
+        "rows": [
+          {
+            "objective": "rankXp",
+            "relativeGain": 431.5112394499622,
+            "pointsSpent": 2300,
+            "pointsUnused": 0,
+            "initialScore": 0.006958327400548696,
+            "finalScore": 3.00955480850995,
+            "moves": [
+              {
+                "id": 2,
+                "delta": 997
+              },
+              {
+                "id": 13,
+                "delta": 823
+              },
+              {
+                "id": 6,
+                "delta": 480
+              }
+            ]
+          },
+          {
+            "objective": "farmingExp",
+            "relativeGain": 6.4990702177431965,
+            "pointsSpent": 2300,
+            "pointsUnused": 0,
+            "initialScore": 27129.86355011204,
+            "finalScore": 203448.7517600819,
+            "moves": [
+              {
+                "id": 16,
+                "delta": 1003
+              },
+              {
+                "id": 12,
+                "delta": 685
+              },
+              {
+                "id": 5,
+                "delta": 612
+              }
+            ]
+          },
+          {
+            "objective": "evolution",
+            "relativeGain": 112625312.01196791,
+            "pointsSpent": 2300,
+            "pointsUnused": 0,
+            "initialScore": 1.0350949804751518e-23,
+            "finalScore": 1.1657789617313079e-15,
+            "moves": [
+              {
+                "id": 15,
+                "delta": 585
+              },
+              {
+                "id": 0,
+                "delta": 584
+              },
+              {
+                "id": 10,
+                "delta": 578
+              },
+              {
+                "id": 3,
+                "delta": 553
+              }
+            ]
+          },
+          {
+            "objective": "overgrowth",
+            "relativeGain": 30.872092935304416,
+            "pointsSpent": 2300,
+            "pointsUnused": 0,
+            "initialScore": 0.00005404653325494807,
+            "finalScore": 0.0017225761307327256,
+            "moves": [
+              {
+                "id": 18,
+                "delta": 1364
+              },
+              {
+                "id": 11,
+                "delta": 608
+              },
+              {
+                "id": 7,
+                "delta": 328
+              }
+            ]
+          },
+          {
+            "objective": "cropValue",
+            "relativeGain": 0,
+            "pointsSpent": 0,
+            "pointsUnused": 2300,
+            "initialScore": 0.00143978990136521,
+            "finalScore": 0.00143978990136521,
+            "moves": []
+          },
+          {
+            "objective": "beans",
+            "relativeGain": 0,
+            "pointsSpent": 0,
+            "pointsUnused": 2300,
+            "initialScore": 0.37558511427717695,
+            "finalScore": 0.37558511427717695,
+            "moves": []
+          },
+          {
+            "objective": "growth",
+            "relativeGain": 0,
+            "pointsSpent": 0,
+            "pointsUnused": 2300,
+            "initialScore": 0.0002287040303089686,
+            "finalScore": 0.0002287040303089686,
+            "moves": []
+          }
+        ]
+      }
+    ]
+  }
 }
