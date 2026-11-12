@@ -29,6 +29,7 @@ idleon-jar = { workspace = true }
 idleon-jelly = { workspace = true }
 idleon-killroy = { workspace = true }
 idleon-ladle = { workspace = true }
+idleon-minehead = { workspace = true }
 idleon-monument = { workspace = true }
 idleon-opal = { workspace = true }
 idleon-pickle = { workspace = true }

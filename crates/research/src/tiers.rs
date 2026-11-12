@@ -97,7 +97,7 @@ impl Default for Tiers {
 impl Tiers {
     /// The tiers of a preset that only names `above` nodes; every non-EXP node
     /// the list leaves out joins `below`.
-    pub(crate) fn from_above(above: Vec<usize>) -> Self {
+    pub fn from_above(above: Vec<usize>) -> Self {
         let mut tiers = Self {
             above,
             below: Vec::new(),

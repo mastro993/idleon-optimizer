@@ -468,21 +468,31 @@ impl Game {
     /// Spend the insta-reveals this turn's strategy allows.
     pub fn use_instas(&mut self, rng: &mut Rng, threshold: f64) {
         let p_mine = self.setup.mines / self.setup.num_tiles as f64;
-        while self.insta_left > 0.0 && !self.insta_locked && p_mine >= threshold {
-            let unrevealed: Vec<usize> = (0..self.setup.num_tiles)
-                .filter(|index| self.grid[*index] == 0 && !self.revealed[*index])
-                .collect();
-            if unrevealed.is_empty() {
-                break;
-            }
-            let target = unrevealed[(rng.draw() * unrevealed.len() as f64).floor() as usize];
-            if rng.draw() < (0.2 + 0.15 * self.insta_attempts as f64).min(0.7) {
-                self.insta_locked = true;
-            }
-            self.insta_attempts += 1;
-            self.insta_left -= 1.0;
-            self.reveal(target, true, rng);
+        while p_mine >= threshold && self.use_insta(rng) {}
+    }
+
+    /// Spend one insta-reveal on an unrevealed depth charge. Returns whether one
+    /// was available; the Play tab's button calls this directly.
+    pub fn use_insta(&mut self, rng: &mut Rng) -> bool {
+        if self.insta_left <= 0.0 || self.insta_locked {
+            return false;
         }
+        let unrevealed: Vec<usize> = (0..self.setup.num_tiles)
+            .filter(|index| self.grid[*index] == 0 && !self.revealed[*index])
+            .collect();
+        let Some(target) = unrevealed
+            .get((rng.draw() * unrevealed.len() as f64).floor() as usize)
+            .copied()
+        else {
+            return false;
+        };
+        if rng.draw() < (0.2 + 0.15 * self.insta_attempts as f64).min(0.7) {
+            self.insta_locked = true;
+        }
+        self.insta_attempts += 1;
+        self.insta_left -= 1.0;
+        self.reveal(target, true, rng);
+        true
     }
 
     /// How many mines, safe tiles and unclicked goldens remain.

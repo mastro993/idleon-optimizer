@@ -6,6 +6,7 @@ pub(crate) mod colors;
 pub(crate) mod dashboard;
 pub(crate) mod grid;
 mod inspector;
+pub(crate) mod minehead;
 mod optimizer;
 mod rates;
 mod shape_opt;
@@ -39,10 +40,19 @@ pub(crate) enum Tab {
     Run,
     /// Shape priority tiers, presets and the optimized placement.
     Shapes,
+    /// The Depth Charge dashboard, strategy search, ranking, path and game.
+    Minehead,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 5] = [Tab::Dashboard, Tab::Grid, Tab::Rates, Tab::Run, Tab::Shapes];
+    pub(crate) const ALL: [Tab; 6] = [
+        Tab::Dashboard,
+        Tab::Grid,
+        Tab::Rates,
+        Tab::Run,
+        Tab::Shapes,
+        Tab::Minehead,
+    ];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
@@ -51,6 +61,7 @@ impl Tab {
             Tab::Rates => "rates",
             Tab::Run => "run",
             Tab::Shapes => "shapes",
+            Tab::Minehead => "minehead",
         }
     }
 
@@ -61,6 +72,7 @@ impl Tab {
             Tab::Rates => "Rates",
             Tab::Run => "Optimize",
             Tab::Shapes => "Shape Optimization",
+            Tab::Minehead => "Minehead",
         }
     }
 
@@ -120,6 +132,8 @@ pub(crate) struct State {
         idleon_research::SimContext,
         Vec<f64>,
     )>,
+    /// The Minehead tab's own state.
+    pub(crate) minehead: minehead::State,
 }
 
 impl State {
@@ -138,8 +152,34 @@ impl State {
             active_shape_preset: None,
             preset_name,
             shape_values: None,
+            minehead: minehead::State::new(),
         }
     }
+}
+
+/// The tiers a built-in preset resolves to against the loaded save.
+///
+/// The Minehead preset's ranking reads the save's currency and damage terms,
+/// which live in `idleon-minehead`; the research crate cannot depend on it, so
+/// the app resolves that one preset here and the rest through the simulation.
+pub(crate) fn preset_tiers(
+    state: &AppState,
+    preset: &idleon_research::data::Preset,
+) -> Option<idleon_research::Tiers> {
+    if preset.id == "_minehead"
+        && let Some(inputs) = state.research.minehead.inputs.as_ref()
+    {
+        let shape_pct = idleon_research::game()
+            .shapes
+            .iter()
+            .map(|shape| shape.bonus_pct)
+            .fold(f64::MIN, f64::max);
+        let context = inputs.shape_context(shape_pct, 5.0);
+        return Some(idleon_research::Tiers::from_above(
+            idleon_minehead::math::shape_priority(&context),
+        ));
+    }
+    preset.tiers_for(&state.simulation)
 }
 
 /// Register the grid's shortcuts: arrows, `+`/`-` and Escape.
@@ -257,6 +297,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(shape_opt::pane(state, window, cx))
+            .into_any_element(),
+        Tab::Minehead => div()
+            .id("pane-minehead")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(minehead::pane(state, window, cx))
             .into_any_element(),
     }
 }

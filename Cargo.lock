@@ -3662,6 +3662,7 @@ dependencies = [
  "idleon-jelly",
  "idleon-killroy",
  "idleon-ladle",
+ "idleon-minehead",
  "idleon-monument",
  "idleon-opal",
  "idleon-pickle",

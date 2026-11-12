@@ -33,6 +33,9 @@ use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::State as ResearchState;
+use crate::sections::research::minehead::{
+    OptimizeInputs as MineheadOptimizeInputs, RunInputs as MineheadRunInputs,
+};
 use crate::sections::royal_guardian::State as RoyalState;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
@@ -387,6 +390,15 @@ pub(crate) struct AppState {
     pub(crate) farming_compare_run: Entity<TaskRunner<FarmingComparison, FarmingCompareInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub(crate) breakdown: Entity<FormulaTree>,
+    /// The shared formula tree on the Minehead currency pane.
+    pub(crate) minehead_breakdown: Entity<FormulaTree>,
+    /// The Minehead strategy search.
+    pub(crate) minehead_optimize:
+        Entity<TaskRunner<idleon_minehead::Optimized, MineheadOptimizeInputs>>,
+    /// The Minehead +1 upgrade ranking.
+    pub(crate) minehead_rank: Entity<TaskRunner<idleon_minehead::RankOutcome, MineheadRunInputs>>,
+    /// The Minehead affordable upgrade path.
+    pub(crate) minehead_path: Entity<TaskRunner<idleon_minehead::Path, MineheadRunInputs>>,
     /// The research dashboard's four breakdown trees.
     pub(crate) research_trees: crate::sections::research::Trees,
     /// The shared formula tree on the Cglunko overview.
@@ -771,6 +783,43 @@ impl AppState {
                 ))
             },
         );
+        let minehead_breakdown = ui::formula_tree("minehead-formula", window, cx);
+        let minehead_optimize = report_run::<idleon_minehead::Optimized, MineheadOptimizeInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the strategy…"),
+                cancelled_kept: "Strategy search cancelled; the previous result is unchanged.",
+                cancelled_empty: "Strategy search cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Searched {} strategies; best win rate {:.1}%.",
+                    result.total_combos,
+                    result.best.result.win_rate * 100.0
+                ))
+            },
+        );
+        let minehead_rank = report_run::<idleon_minehead::RankOutcome, MineheadRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Ranking upgrades…"),
+                cancelled_kept: "Upgrade ranking cancelled; the previous table is unchanged.",
+                cancelled_empty: "Upgrade ranking cancelled; nothing was stored.",
+            },
+            |_, result| Some(format!("Ranked {} upgrades.", result.rows.len())),
+        );
+        let minehead_path = report_run::<idleon_minehead::Path, MineheadRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Finding the upgrade path…"),
+                cancelled_kept: "Upgrade path cancelled; the previous path is unchanged.",
+                cancelled_empty: "Upgrade path cancelled; nothing was stored.",
+            },
+            |_, result| Some(format!("Path ready: {} upgrades.", result.steps.len())),
+        );
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
         let sailing_sim = report_run::<SimResult, SailingSimInputs>(
@@ -920,6 +969,10 @@ impl AppState {
             farming_run,
             farming_compare_run,
             breakdown,
+            minehead_breakdown,
+            minehead_optimize,
+            minehead_rank,
+            minehead_path,
             research_trees,
             cglunko_breakdown,
             clamworks_breakdown,
