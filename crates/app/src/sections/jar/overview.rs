@@ -15,7 +15,7 @@ use gpui::{
     px,
 };
 use idleon_core::Jar;
-use idleon_core::jar::{COLLECTIBLE_NAMES, RUPIE_COLORS, RUPIE_NAMES, TYPE_NAMES};
+use idleon_core::jar::{RUPIE_COLORS, RUPIE_NAMES, TYPE_NAMES, collectible_name};
 
 pub fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
@@ -211,7 +211,7 @@ fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     };
     let target = match jar.targeted_enchant() {
         Some(index) => (
-            COLLECTIBLE_NAMES[index].to_owned(),
+            collectible_name(index).to_owned(),
             Tone::Accent,
             format!(
                 "{} of enchants land on it",

@@ -348,7 +348,7 @@ pub const SECTIONS: [Section; 30] = [
         title: "Jar Calculator",
         icon: "🏺",
         group: Group::W5,
-        description: "Production rates, rupie value, chances, collectibles",
+        description: "Production rates, rupie value, chances, collectibles, upgrades, next tier",
         spec: "docs/sections/jar.md",
         status: Status::Ready,
         dashboard: true,

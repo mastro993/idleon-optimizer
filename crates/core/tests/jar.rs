@@ -391,3 +391,220 @@ fn chance_jar_type(name: &str) -> Option<usize> {
         _ => None,
     }
 }
+
+#[test]
+fn the_collectibles_match_upstream() {
+    let (jar, oracle) = jar();
+    let rows = jar.collectibles();
+    let expected = oracle["collectibles"]
+        .as_array()
+        .expect("the oracle lists the collectibles");
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            Some(row.index),
+            expected["idx"].as_u64().map(|idx| idx as usize)
+        );
+        assert_eq!(Some(row.name), expected["name"].as_str());
+        assert_eq!(Some(row.category), expected["category"].as_str());
+        assert_eq!(Some(row.category_label), expected["categoryLabel"].as_str());
+        assert_eq!(Some(row.category_color), expected["categoryColor"].as_str());
+        assert_eq!(row.level, expected["level"].as_u64().unwrap() as u32);
+        assert_eq!(
+            row.enchant_levels,
+            expected["enchantLevels"].as_u64().unwrap() as u32
+        );
+        close(row.per_level, number(&expected["perLevel"]));
+        close(row.bonus, number(&expected["bonus"]));
+        assert_eq!(
+            Some(row.effect.as_str()),
+            expected["currentEffect"].as_str()
+        );
+        assert_eq!(
+            Some(row.per_level_effect.as_str()),
+            expected["atLevel"].as_str()
+        );
+    }
+    // The page-two unlock decides which thirty-nine rows stay hidden.
+    assert_eq!(
+        jar.collectible_groups()
+            .iter()
+            .map(|g| g.items.len())
+            .sum::<usize>(),
+        40
+    );
+    assert_eq!(jar.collectible_groups()[0].label, "Rupie +%");
+}
+
+#[test]
+fn the_enchant_priority_matches_upstream() {
+    let (jar, oracle) = jar();
+    let rows = jar.enchant_priority();
+    let expected = oracle["enchantPriority"]
+        .as_array()
+        .expect("the oracle lists the priority");
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            Some(row.index),
+            expected["idx"].as_u64().map(|idx| idx as usize)
+        );
+        assert_eq!(Some(row.name), expected["name"].as_str());
+        assert_eq!(row.level, expected["level"].as_u64().unwrap() as u32);
+        assert_eq!(
+            row.enchant_levels,
+            expected["enchantLevels"].as_u64().unwrap() as u32
+        );
+        close(row.bonus, number(&expected["totalBonus"]));
+        close(row.marginal, number(&expected["marginalValue"]));
+    }
+    // The tie-break prefers the collectible with fewer enchant levels.
+    assert!(rows.windows(2).all(|pair| {
+        pair[0].marginal > pair[1].marginal
+            || (pair[0].marginal == pair[1].marginal
+                && pair[0].enchant_levels <= pair[1].enchant_levels)
+    }));
+}
+
+#[test]
+fn the_schematics_match_upstream() {
+    let (jar, oracle) = jar();
+    let rows = jar.schematics();
+    let expected = oracle["schematics"]
+        .as_array()
+        .expect("the oracle lists the schematics");
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            Some(row.index),
+            expected["index"].as_u64().map(|index| index as usize)
+        );
+        assert_eq!(Some(row.group), expected["group"].as_str());
+        assert_eq!(Some(row.name), expected["name"].as_str());
+        close(row.effect, number(&expected["effect"]));
+        assert_eq!(Some(row.description), expected["description"].as_str());
+        assert_eq!(
+            Some(row.currency),
+            expected["currency"].as_u64().map(|c| c as usize)
+        );
+        close(row.cost, number(&expected["cost"]));
+        assert_eq!(row.owned, expected["owned"].as_bool().unwrap());
+    }
+    // The first group is the rupie-value chain, and every group has rows.
+    assert_eq!(rows[0].group, "Rupie Value");
+    assert_eq!(rows[0].name, "Big Jar Mach II");
+    assert_eq!(
+        rows.iter()
+            .map(|row| row.group)
+            .collect::<std::collections::BTreeSet<_>>()
+            .len(),
+        6
+    );
+}
+
+#[test]
+fn the_jar_type_upgrades_match_upstream() {
+    let (jar, oracle) = jar();
+    let plan = jar.upgrade_plan();
+    let expected = oracle["jarTypeUpgrades"]
+        .as_array()
+        .expect("the oracle lists the jar types");
+    assert_eq!(plan.steps.len(), expected.len());
+    for (step, expected) in plan.steps.iter().zip(expected) {
+        assert_eq!(
+            Some(step.jar_type),
+            expected["jarType"].as_u64().map(|t| t as usize)
+        );
+        assert_eq!(Some(step.name), expected["name"].as_str());
+        close(step.cost, number(&expected["cost"]));
+        assert_eq!(
+            Some(step.currency),
+            expected["currency"].as_u64().map(|c| c as usize)
+        );
+        assert_eq!(Some(step.currency_name), expected["currencyName"].as_str());
+        close(step.balance, number(&expected["balance"]));
+        let status = expected["status"].as_str().expect("a status");
+        assert_eq!(step.status.label(), status_label(status));
+        assert_eq!(step.shortfall(), number(&expected["shortfall"]));
+    }
+    // Every type is owned on the fixture, so the plan has nothing to spend.
+    assert_eq!(jar.types_purchased(), 9);
+    assert!(plan.next().is_none());
+    assert_eq!(plan.budget(), 0.0);
+    assert_eq!(plan.spent(), 0.0);
+    assert_eq!(plan.purchases().count(), 0);
+}
+
+#[test]
+fn the_next_pow10_milestones_match_upstream() {
+    let (jar, oracle) = jar();
+    assert!(jar.production_line_unlocked());
+    let rows = jar.milestone_ranking();
+    let expected = oracle["milestoneRanking"]
+        .as_array()
+        .expect("the oracle lists the milestones");
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            Some(row.jar_type),
+            expected["jarType"].as_u64().map(|t| t as usize)
+        );
+        assert_eq!(Some(row.name), expected["name"].as_str());
+        close(row.count, number(&expected["count"]));
+        close(row.next, number(&expected["next"]));
+        close(row.deficit, number(&expected["deficit"]));
+        close(row.hours, number(&expected["hours"]));
+        assert_eq!(row.benefits, expected["benefits"].as_str());
+        close(row.line_now, number(&expected["lineNow"]));
+        close(row.line_next, number(&expected["lineNext"]));
+        close(row.requirement, number(&expected["requirement"]));
+    }
+}
+
+#[test]
+fn the_off_map_tiers_match_upstream() {
+    let (jar, oracle) = jar();
+    close(jar.per_tick(), number(&oracle["perTick"]));
+    let rows = jar.tier_projections();
+    let expected = oracle["tierProjections"]
+        .as_array()
+        .expect("the oracle lists the projections");
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            Some(row.jar_type),
+            expected["jarType"].as_u64().map(|t| t as usize)
+        );
+        close(row.requirement, number(&expected["requirement"]));
+        close(row.base_requirement, number(&expected["baseRequirement"]));
+        let sustained = expected["sustained"].as_i64().expect("a sustained tier");
+        assert_eq!(row.sustained, (sustained >= 0).then_some(sustained as u32));
+        assert_eq!(row.max_tier, expected["maxTier"].as_u64().unwrap() as u32);
+        assert_eq!(row.ticks_between_max, expected["ticksBetweenMax"].as_f64());
+        assert_eq!(row.seconds_between, expected["secsBetween"].as_f64());
+        close(row.net_sustained, number(&expected["netSustained"]));
+        assert_eq!(row.next_tier, expected["nextTier"].as_u64().unwrap() as u32);
+        close(row.net_next, number(&expected["netNext"]));
+        if let Some(line) = expected["neededLine"].as_f64() {
+            close(row.needed_line, line);
+        } else {
+            assert!(!row.needed_line.is_finite());
+        }
+        close(row.needed_production, number(&expected["neededProduction"]));
+        close(row.previous_count, number(&expected["previousCount"]));
+    }
+    // The highest tier the loop reaches is never below the tier it sustains.
+    assert!(
+        rows.iter()
+            .all(|row| row.sustained.is_none_or(|tier| row.max_tier >= tier))
+    );
+}
+
+fn status_label(status: &str) -> &'static str {
+    match status {
+        "owned" => "Owned",
+        "affordable" => "Affordable",
+        "shortfall" => "Short by",
+        _ => "Locked",
+    }
+}

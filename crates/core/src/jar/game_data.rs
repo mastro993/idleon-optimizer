@@ -66,57 +66,8 @@ pub const RUPIE_COLORS: [&str; 12] = [
     "#ffd700", "#eee", "#666",
 ];
 
-/// `COLLECTIBLE_DATA[i][0]`: the forty collectibles, in save order.
-pub const COLLECTIBLE_NAMES: [&str; 40] = [
-    "Abnormal Rupie",
-    "Sapphire Droplet",
-    "Effervescent Diamond",
-    "Tortole Rock",
-    "Natural Pearl",
-    "Amethyst Heartstone",
-    "Amber Square",
-    "Verdant Thorns",
-    "Violent Violets",
-    "Blue Faberge Egg",
-    "Shadow Prism",
-    "Big Beef Rock",
-    "Emerald Ore",
-    "Dawn Prism",
-    "Swampstone",
-    "Frost Spirestone",
-    "Rosemerald",
-    "Blood Glass",
-    "Sunrise Diamond",
-    "Minceraft Gem",
-    "Crimson Spade",
-    "Stained Glassdrop",
-    "Tabula Rasastone",
-    "Deep Blue Square",
-    "Earthbound Geode",
-    "Inferno Droplet",
-    "Octogonal Gem",
-    "Solarfang",
-    "Mystic Ore",
-    "Arcane Prism",
-    "Murky Fabrege Egg",
-    "Corpore Rock",
-    "Twilight Prism",
-    "Tewball Orbstone",
-    "Mad Muscle Rock",
-    "Sunroot Splinters",
-    "Twisted Rupie",
-    "Overloaded Relic",
-    "Sunburst Pearl",
-    "Bloodfang Spires",
-];
-
-/// `COLLECTIBLE_DATA[i][1]`: the bonus each collectible level grants.
-pub(super) const COLLECTIBLE_BONUS_PER_LEVEL: [f64; 40] = [
-    20.0, 10.0, 20.0, 25.0, 15.0, 10.0, 25.0, 25.0, 20.0, 15.0, 20.0, 25.0, 30.0, 30.0, 25.0, 12.0,
-    10.0, 40.0, 25.0, 20.0, 20.0, 35.0, 32.0, 1.0, 15.0, 40.0, 30.0, 32.0, 50.0, 38.0, 1.0, 1.0,
-    1.0, 40.0, 40.0, 40.0, 75.0, 1.0, 1.0, 1.0,
-];
-
+/// `COLLECTIBLE_DATA` is the forty-collectible table in
+/// `crates/core/data/jar.json`; these are its page and slot counts.
 /// The collectible page two unlocks with `Advanced Collection`.
 pub(super) const PAGE_TWO_COLLECTIBLES: usize = 16;
 pub(super) const COLLECTIBLES: usize = 40;
