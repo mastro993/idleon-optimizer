@@ -129,6 +129,8 @@ pub struct Imported {
     pub opal: Option<crate::opal::Opal>,
     /// The Royal Guardian rows, when the save carries `RoyalG` and `RoyalMaps`.
     pub royal: Option<crate::royal_guardian::RoyalGuardian>,
+    /// The ninja loadout and inventory, when the save carries its `Ninja` rows.
+    pub sneaking: Option<crate::sneaking::Loadout>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
     /// sections can read raw fields and audit it.
     pub save: Save,
@@ -362,6 +364,11 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
     }
     let opal = account::opal(save, root, &characters, &simulation);
+    let sneaking = crate::sneaking::Loadout::from_save(&document);
+    if sneaking.is_none() {
+        warnings
+            .push("Ninja: not in the save; the sneaking optimizer has no loadout to read".into());
+    }
     let ladle = crate::ladle::Ladle::from_save(&document);
     if ladle.is_none() {
         warnings.push(
@@ -391,6 +398,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         fountain,
         opal,
         royal,
+        sneaking,
         save: document,
         companion,
         statues,

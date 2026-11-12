@@ -3,9 +3,10 @@
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
-estimates, the combat simulator's loadout editor, the cog board optimizer, the Clamworks optimizer
-and the Jelly Operator overview and layout editor partial, shadow-ban, endgame and BoneJoePickle
-done, Monument Bravery and the All Stats context built, 4 sections planned.** The live breakdown is
+estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor, the
+cog board optimizer, the Clamworks optimizer and the Jelly Operator overview and layout editor
+partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and the All Stats context
+built, 5 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -258,6 +259,8 @@ script/extract-royal-data.mjs       extract the Royal Guardian armory, resource 
 script/royal-oracle.mjs             regenerate the Royal Guardian overview oracle fixture
 script/extract-farming-data.mjs     extract the farming tables, emporium encoding and gates
 script/farming-signals-oracle.mjs   regenerate the farming signals and curves fixture
+script/extract-sneaking-data.mjs    extract the ninja equipment, knowledge and floor tables
+script/sneaking-oracle.mjs          regenerate the loadout formula oracle fixture
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -403,6 +406,20 @@ the account decoder — and `script/opal-oracle.mjs` evaluates `opal-calc.html`'
 regenerate `fixtures/opal.json`, which `crates/core/tests/opal.rs` pins. Missing: the distribution
 optimizer (OP-02) and the manual simulator (OP-03).
 Details: [`docs/sections/opal.md`](sections/opal.md).
+
+The Sneaking section has its loadout and inventory workspaces (SN-01):
+`idleon_core::sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
+equipment rows per twin, the 39-slot inventory and the Ninja Knowledge levels — and computes the
+item stats, the charm bonus map, the Gold inventory scan, action speed, KO recovery, the level,
+charm, ally and flower stealth factors and the detection chance they give. Slots swap with the
+inventory (two items trade places, so the editor cannot invent a charm), a repeated charm without
+the Charmed emporium perk and a second Scroll of Power are flagged, and a save without `Ninja` rows
+says so. The saved floor assignments line names each floor's twins, their action and the loadout's
+try rate. `script/extract-sneaking-data.mjs` extracts the catalog and the floor tables, and
+`script/sneaking-oracle.mjs` regenerates `fixtures/sneaking.json` from the upstream formulas.
+Missing: the breakdown trees (SN-02, which also brings the account-wide stealth stack), the
+placement optimizer (SN-03) and the floor × mastery table with the door ETA (SN-04).
+Details: [`docs/sections/sneaking.md`](sections/sneaking.md).
 
 The Prisma section implements PR-01: the plan for one character and cauldron (every bubble's saved
 level, its saved Prisma ownership and the four statuses upstream distinguishes), the save's Prisma

@@ -539,6 +539,7 @@ mod tests {
             fountain: None,
             opal: None,
             royal: None,
+            sneaking: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),
             companion: None,
             statues: Default::default(),

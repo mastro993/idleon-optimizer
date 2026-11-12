@@ -32,6 +32,7 @@ pub mod research;
 pub mod royal_guardian;
 pub mod sailing;
 pub mod shadow;
+pub mod sneaking;
 pub mod spelunking;
 pub mod stats_all;
 pub mod statue;
@@ -420,9 +421,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W6,
         description: "Stealth, detection, charm equips, ninja kit bonuses",
         spec: "docs/sections/sneaking.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: sneaking::view,
         keys: no_keys,
     },
     Section {

@@ -23,6 +23,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
+use crate::sections::sneaking::State as SneakingState;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
@@ -368,6 +369,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             selected: state.opal_selected,
         }),
     );
+    insert("sneaking", value(&state.sneaking_state));
     insert("stats-all", value(&state.stats_all.context));
     insert(
         "ladle",
@@ -479,6 +481,9 @@ pub enum Config {
     Jar(JarConfig),
     Royal(RoyalConfig),
     Opal(OpalConfig),
+    /// The login context and the selected slot; the loadout itself comes from
+    /// the save, so it is never part of a project.
+    Sneaking(SneakingState),
     Ladle(LadleConfig),
     Spelunking(SpelunkingState),
     Coral(coral::Inputs),
@@ -750,6 +755,17 @@ pub fn assign(
         Config::Opal(config) => {
             state.set_opal_villager(config.selected, cx);
         }
+        Config::Sneaking(config) => {
+            let players = state
+                .sneaking
+                .as_ref()
+                .map_or(0, idleon_core::sneaking::Loadout::players);
+            state.sneaking_state = SneakingState {
+                login: config.login.filter(|index| *index < players.max(1)),
+                twin: config.twin.filter(|index| *index < players.max(1)),
+                slot: config.slot.filter(|slot| *slot < 4),
+            };
+        }
         Config::Ladle(config) => {
             let characters = state
                 .ladle
@@ -836,6 +852,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "jar" => decode!(Jar, JarConfig),
         "royal-guardian" => decode!(Royal, RoyalConfig),
         "opal" => decode!(Opal, OpalConfig),
+        "sneaking" => decode!(Sneaking, SneakingState),
         "ladle" => decode!(Ladle, LadleConfig),
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
@@ -1483,6 +1500,7 @@ mod tests {
                 "combat-sim",
                 "stats-all",
                 "royal-guardian",
+                "sneaking",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);
