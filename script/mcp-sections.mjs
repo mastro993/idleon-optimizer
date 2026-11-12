@@ -125,11 +125,23 @@ const killroySave = () => {
 
 const jarSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
-  const holes = Array.from({ length: 35 }, () => []);
-  holes[9] = row(21, { 20: 500 });
-  holes[11] = row(38, { 37: 2 });
-  holes[25] = [1, 0, 0, 250];
-  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+  // Real saves write fixed-width rows and a character row, so the account
+  // decoders have something to read.
+  const holes = Array.from({ length: 35 }, () => row(150, {}));
+  // Three types bought; Green (index 2) holds the next type's price.
+  holes[9] = row(150, { 20: 500, 22: 10000 });
+  // Types owned, jars produced of the first three, and the banked doubler.
+  holes[11] = row(150, { 37: 2, 40: 1234, 41: 567, 42: 89, 60: 100 });
+  // Production line, page two and the requirement reduction.
+  holes[13] = row(150, { 67: 1, 74: 1, 75: 1 });
+  // A few found collectibles across both pages.
+  holes[24] = row(150, { 0: 3, 1: 2, 3: 4, 17: 2, 28: 1, 36: 5 });
+  holes[25] = row(150, { 0: 1, 3: 250 });
+  return JSON.stringify({
+    Research: JSON.stringify([row(32, {})]),
+    Lv0_0: JSON.stringify(row(30, {})),
+    Holes: JSON.stringify(holes),
+  });
 };
 
 /// A small flat save for the Farming planner: six planted plots across the
@@ -959,6 +971,31 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'chances' });
     await waitForNode(lane, 'jar-chances', 'jar: the chances tab opens');
     await waitForNode(lane, 'jar-chance-opal', 'jar: the chance cards render');
+    await lane.call('click_element', { id: 'collectibles' });
+    await waitForNode(lane, 'jar-collectibles', 'jar: the collectibles tab opens');
+    await waitForNode(lane, 'jar-collectible-grid', 'jar: the collectible tiles render');
+    await waitForNode(lane, 'jar-collectible-priority', 'jar: the enchant priority renders');
+    await lane.call('click_element', { id: 'upgrades' });
+    await waitForNode(lane, 'jar-upgrades', 'jar: the upgrades tab opens');
+    await waitForNode(lane, 'jar-schematic-groups', 'jar: the schematics render');
+    await waitForNode(lane, 'jar-type-plan', 'jar: the jar type plan renders');
+    await waitForNode(lane, 'jar-gilded-tiers', 'jar: the gilded tiers render');
+    const affordable = labelOf(await lane.tree(), 'jar-upgrade-status') ?? '';
+    if (!affordable.includes('Yes')) {
+      throw new Error(`jar: the upgrade plan does not budget the next type (${affordable})`);
+    }
+    await lane.call('click_element', { id: 'nexttier' });
+    await waitForNode(lane, 'jar-next-tier', 'jar: the next tier tab opens');
+    await waitForNode(lane, 'jar-next-milestones', 'jar: the milestone ranking renders');
+    const maxTier = labelOf(await lane.tree(), 'jar-next-projections') ?? '';
+    if (!maxTier.includes('Max tier')) {
+      throw new Error(`jar: the max tier is not labelled (${maxTier})`);
+    }
+    await waitForNode(lane, 'jar-next-recommendation', 'jar: the next tier recommendation renders');
+    const recommendation = labelOf(await lane.tree(), 'jar-next-recommendation') ?? '';
+    if (!recommendation.includes('fastest')) {
+      throw new Error(`jar: the next tier recommendation is not actionable (${recommendation})`);
+    }
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },

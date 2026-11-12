@@ -9,7 +9,7 @@ use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::jar::{COLLECTIBLE_NAMES, INCOME_TIERS};
+use idleon_core::jar::{INCOME_TIERS, collectible_name};
 use idleon_core::{Jar, jar};
 
 pub fn chances(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -168,7 +168,7 @@ fn targeted(jar: &Jar, target: usize, cx: &mut Context<AppState>) -> AnyElement 
         .child(metric(
             "jar-target-name",
             "Target",
-            COLLECTIBLE_NAMES[target].to_owned(),
+            collectible_name(target).to_owned(),
             format!("Collectible #{target}"),
             Tone::Accent,
             cx,

@@ -117,11 +117,485 @@
   "10TOT"
  ],
  "superBit32": "F",
+ "collectibles": [
+  {
+   "name": "Abnormal Rupie",
+   "perLevel": 20,
+   "category": "rupie-add",
+   "effect": "+{% rupie value"
+  },
+  {
+   "name": "Sapphire Droplet",
+   "perLevel": 10,
+   "category": "production",
+   "effect": "+{% jar production"
+  },
+  {
+   "name": "Effervescent Diamond",
+   "perLevel": 20,
+   "category": "opal",
+   "effect": "}x opal chance"
+  },
+  {
+   "name": "Tortole Rock",
+   "perLevel": 25,
+   "category": "rupie-mul",
+   "effect": "}x rupie value"
+  },
+  {
+   "name": "Natural Pearl",
+   "perLevel": 15,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Amethyst Heartstone",
+   "perLevel": 10,
+   "category": "other",
+   "effect": "-{% skilling cavern req"
+  },
+  {
+   "name": "Amber Square",
+   "perLevel": 25,
+   "category": "rupie-add",
+   "effect": "+{% rupie value"
+  },
+  {
+   "name": "Verdant Thorns",
+   "perLevel": 25,
+   "category": "collectible",
+   "effect": "}x collectible chance"
+  },
+  {
+   "name": "Violent Violets",
+   "perLevel": 20,
+   "category": "other",
+   "effect": "}x bucket fill rate"
+  },
+  {
+   "name": "Blue Faberge Egg",
+   "perLevel": 15,
+   "category": "enchant",
+   "effect": "}x enchant chance"
+  },
+  {
+   "name": "Shadow Prism",
+   "perLevel": 20,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Big Beef Rock",
+   "perLevel": 25,
+   "category": "bell",
+   "effect": "}x bell ring rate"
+  },
+  {
+   "name": "Emerald Ore",
+   "perLevel": 30,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Dawn Prism",
+   "perLevel": 30,
+   "category": "rupie-add",
+   "effect": "+{% rupie value"
+  },
+  {
+   "name": "Swampstone",
+   "perLevel": 25,
+   "category": "opal",
+   "effect": "}x opal chance"
+  },
+  {
+   "name": "Frost Spirestone",
+   "perLevel": 12,
+   "category": "production",
+   "effect": "+{% jar production"
+  },
+  {
+   "name": "Rosemerald",
+   "perLevel": 10,
+   "category": "other",
+   "effect": "}x Bolaia study rate"
+  },
+  {
+   "name": "Blood Glass",
+   "perLevel": 40,
+   "category": "rupie-mul",
+   "effect": "}x rupie value"
+  },
+  {
+   "name": "Sunrise Diamond",
+   "perLevel": 25,
+   "category": "enchant",
+   "effect": "}x enchant chance"
+  },
+  {
+   "name": "Minceraft Gem",
+   "perLevel": 20,
+   "category": "other",
+   "effect": "+{% Monument AFK gain"
+  },
+  {
+   "name": "Crimson Spade",
+   "perLevel": 20,
+   "category": "other",
+   "effect": "}x harp notes"
+  },
+  {
+   "name": "Stained Glassdrop",
+   "perLevel": 35,
+   "category": "rupie-add",
+   "effect": "+{% rupie value"
+  },
+  {
+   "name": "Tabula Rasastone",
+   "perLevel": 32,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Deep Blue Square",
+   "perLevel": 1,
+   "category": "gambit",
+   "effect": "+{% Gambit PTS"
+  },
+  {
+   "name": "Earthbound Geode",
+   "perLevel": 15,
+   "category": "production",
+   "effect": "+{% jar production"
+  },
+  {
+   "name": "Inferno Droplet",
+   "perLevel": 40,
+   "category": "collectible",
+   "effect": "}x collectible chance"
+  },
+  {
+   "name": "Octogonal Gem",
+   "perLevel": 30,
+   "category": "enchant",
+   "effect": "}x enchant chance"
+  },
+  {
+   "name": "Solarfang",
+   "perLevel": 32,
+   "category": "opal",
+   "effect": "}x opal chance"
+  },
+  {
+   "name": "Mystic Ore",
+   "perLevel": 50,
+   "category": "rupie-mul",
+   "effect": "}x rupie value"
+  },
+  {
+   "name": "Arcane Prism",
+   "perLevel": 38,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Murky Fabrege Egg",
+   "perLevel": 1,
+   "category": "gambit",
+   "effect": "+{% Gambit PTS"
+  },
+  {
+   "name": "Corpore Rock",
+   "perLevel": 1,
+   "category": "future",
+   "effect": "Future cavern"
+  },
+  {
+   "name": "Twilight Prism",
+   "perLevel": 1,
+   "category": "future",
+   "effect": "Future cavern"
+  },
+  {
+   "name": "Tewball Orbstone",
+   "perLevel": 40,
+   "category": "rupie-add",
+   "effect": "+{% rupie value"
+  },
+  {
+   "name": "Mad Muscle Rock",
+   "perLevel": 40,
+   "category": "enchant",
+   "effect": "}x enchant chance"
+  },
+  {
+   "name": "Sunroot Splinters",
+   "perLevel": 40,
+   "category": "village",
+   "effect": "+{% villager EXP"
+  },
+  {
+   "name": "Twisted Rupie",
+   "perLevel": 75,
+   "category": "bell",
+   "effect": "}x bell ring rate"
+  },
+  {
+   "name": "Overloaded Relic",
+   "perLevel": 1,
+   "category": "future",
+   "effect": "Future cavern"
+  },
+  {
+   "name": "Sunburst Pearl",
+   "perLevel": 1,
+   "category": "future",
+   "effect": "Future cavern"
+  },
+  {
+   "name": "Bloodfang Spires",
+   "perLevel": 1,
+   "category": "future",
+   "effect": "Future cavern"
+  }
+ ],
+ "categoryLabels": {
+  "rupie-add": "Rupie +%",
+  "rupie-mul": "Rupie ×",
+  "production": "Production",
+  "opal": "Opal Chance",
+  "collectible": "Collectible Chance",
+  "enchant": "Enchant Chance",
+  "village": "Villager EXP",
+  "bell": "Bell Ring Rate",
+  "gambit": "Gambit PTS",
+  "other": "Other",
+  "future": "Future"
+ },
+ "categoryColors": {
+  "rupie-add": "#ffd700",
+  "rupie-mul": "#ff9800",
+  "production": "#4caf50",
+  "opal": "#4dd0e1",
+  "collectible": "#bb86fc",
+  "enchant": "#f48fb1",
+  "village": "#90caf9",
+  "bell": "#a5d6a7",
+  "gambit": "#ef5350",
+  "other": "#b0bec5",
+  "future": "#555"
+ },
+ "schematics": [
+  {
+   "index": 62,
+   "name": "Big Jar Mach II",
+   "effect": 1,
+   "description": "+1 base rupie value",
+   "currency": 0,
+   "cost": 10
+  },
+  {
+   "index": 63,
+   "name": "Big Jar Mach III",
+   "effect": 1,
+   "description": "2 production slots",
+   "currency": 1,
+   "cost": 0
+  },
+  {
+   "index": 64,
+   "name": "Big Jar Mach IV",
+   "effect": 50,
+   "description": "+50% extra rupie chance",
+   "currency": 2,
+   "cost": 0
+  },
+  {
+   "index": 65,
+   "name": "Big Jar Mach V",
+   "effect": 2,
+   "description": "+2 base rupie value",
+   "currency": 4,
+   "cost": 0
+  },
+  {
+   "index": 66,
+   "name": "Big Jar Mach VI",
+   "effect": 1,
+   "description": "3 production slots",
+   "currency": 5,
+   "cost": 0
+  },
+  {
+   "index": 67,
+   "name": "Big Jar Mach VII",
+   "effect": 30,
+   "description": "-30% production requirement",
+   "currency": 7,
+   "cost": 0
+  },
+  {
+   "index": 68,
+   "name": "Big Jar Mach VIII",
+   "effect": 4,
+   "description": "+4 base rupie value",
+   "currency": 9,
+   "cost": 0
+  },
+  {
+   "index": 69,
+   "name": "Break All Button",
+   "effect": 1,
+   "description": "Enables Break All",
+   "currency": 1,
+   "cost": 200
+  },
+  {
+   "index": 70,
+   "name": "Max Monument Rewards",
+   "effect": 2,
+   "description": "+2 days monument reward",
+   "currency": 4,
+   "cost": 0
+  },
+  {
+   "index": 71,
+   "name": "Supergiant Jars",
+   "effect": 1,
+   "description": "Jars combine into tiers",
+   "currency": 0,
+   "cost": 25
+  },
+  {
+   "index": 72,
+   "name": "Light Speed",
+   "effect": 10,
+   "description": "+10% prod per log10(white rupies)",
+   "currency": 5,
+   "cost": 0
+  },
+  {
+   "index": 73,
+   "name": "Dark Luck",
+   "effect": 1,
+   "description": "1.10x enchant per log10(dark)",
+   "currency": 7,
+   "cost": 0
+  },
+  {
+   "index": 74,
+   "name": "Jar Production Line",
+   "effect": 5,
+   "description": "-5% requirement per power of 10 previous jars",
+   "currency": 2,
+   "cost": 0
+  },
+  {
+   "index": 75,
+   "name": "Advanced Collection",
+   "effect": 1,
+   "description": "Unlocks page 2 collectibles (16-39)",
+   "currency": 8,
+   "cost": 0
+  },
+  {
+   "index": 76,
+   "name": "Collect 'Em All",
+   "effect": 1,
+   "description": "1.02x collect per rupie digit",
+   "currency": 3,
+   "cost": 0
+  },
+  {
+   "index": 77,
+   "name": "Roaring Flame",
+   "effect": 25,
+   "description": "+25% double torch chance",
+   "currency": 6,
+   "cost": 0
+  },
+  {
+   "index": 78,
+   "name": "The Sicilian",
+   "effect": 10,
+   "description": "+10% Total Gambit Score",
+   "currency": 5,
+   "cost": 0
+  },
+  {
+   "index": 79,
+   "name": "Evertree Trickledown",
+   "effect": 1,
+   "description": "Skill eff per Evertree trunk",
+   "currency": 0,
+   "cost": 400
+  },
+  {
+   "index": 80,
+   "name": "Evertree ~ Rupie Synergy",
+   "effect": 1,
+   "description": "1.10x rupie per Evertree trunk",
+   "currency": 0,
+   "cost": 100
+  }
+ ],
+ "schematicGroups": [
+  {
+   "name": "Rupie Value",
+   "indices": [
+    62,
+    65,
+    68,
+    80
+   ]
+  },
+  {
+   "name": "Slots",
+   "indices": [
+    63,
+    66
+   ]
+  },
+  {
+   "name": "Production",
+   "indices": [
+    67,
+    72,
+    74
+   ]
+  },
+  {
+   "name": "Chances",
+   "indices": [
+    73,
+    75,
+    76
+   ]
+  },
+  {
+   "name": "Utility",
+   "indices": [
+    64,
+    69,
+    71
+   ]
+  },
+  {
+   "name": "Cross-System",
+   "indices": [
+    70,
+    77,
+    78,
+    79
+   ]
+  }
+ ],
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer",
   "files": [
    "js/stats/data/game/customlists.js",
    "js/stats/systems/w5/fountain.js",
+   "js/stats/systems/w5/jar.js",
    "js/stats/data/w4/gaming.js",
    "js/stats/data/common/encoding.js"
   ],

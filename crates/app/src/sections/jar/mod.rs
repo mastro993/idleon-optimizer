@@ -1,14 +1,18 @@
-//! The Jar Calculator section: the upstream Overview, Production, Rupie Value
-//! and Chances tabs.
+//! The Jar Calculator section: the upstream Overview, Production, Rupie Value,
+//! Chances, Collectibles, Upgrades and Next Tier tabs.
 //!
 //! The upstream `jar-calc.html` has nine tabs. JR-01 and JR-02 build the first
-//! four; the rest arrive with JR-03 and JR-04 and are added to [`Tab::ALL`]
-//! then, so the strip never offers a tab that has nothing behind it.
+//! four; JR-03 adds Collectibles, Upgrades and Next Tier, and JR-04 adds the
+//! enchant simulator and history to [`Tab::ALL`] then, so the strip never offers
+//! a tab that has nothing behind it.
 
 mod chances;
+mod collectibles;
+mod next_tier;
 mod overview;
 mod production;
 mod rupies;
+mod upgrades;
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -38,14 +42,23 @@ pub enum Tab {
     RupieValue,
     /// The opal, collectible and enchant chances and their tier scaling.
     Chances,
+    /// Every collectible, its saved bonus and the enchant priority.
+    Collectibles,
+    /// The jar schematics, the jar-type costs and the upgrade plan.
+    Upgrades,
+    /// The next power-of-ten milestone and the off-map tier accumulation.
+    NextTier,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [
+    pub const ALL: [Tab; 7] = [
         Tab::Overview,
         Tab::Production,
         Tab::RupieValue,
         Tab::Chances,
+        Tab::Collectibles,
+        Tab::Upgrades,
+        Tab::NextTier,
     ];
 
     pub fn id(self) -> &'static str {
@@ -54,6 +67,9 @@ impl Tab {
             Tab::Production => "production",
             Tab::RupieValue => "rupie",
             Tab::Chances => "chances",
+            Tab::Collectibles => "collectibles",
+            Tab::Upgrades => "upgrades",
+            Tab::NextTier => "nexttier",
         }
     }
 
@@ -63,6 +79,9 @@ impl Tab {
             Tab::Production => "Production",
             Tab::RupieValue => "Rupie Value",
             Tab::Chances => "Chances",
+            Tab::Collectibles => "Collectibles",
+            Tab::Upgrades => "Upgrades",
+            Tab::NextTier => "Next Tier",
         }
     }
 
@@ -96,6 +115,9 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
                     Tab::Production => production::production(state, cx),
                     Tab::RupieValue => rupies::rupies(state, cx),
                     Tab::Chances => chances::chances(state, cx),
+                    Tab::Collectibles => collectibles::collectibles(state, cx),
+                    Tab::Upgrades => upgrades::upgrades(state, cx),
+                    Tab::NextTier => next_tier::next_tier(state, cx),
                 }),
         )
         .into_any_element()

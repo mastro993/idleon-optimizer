@@ -1,4 +1,5 @@
-//! The Jar Cavern (W5): the summary, production, rupie value and break chances.
+//! The Jar Cavern (W5): the summary, production, rupie value, break chances,
+//! collectibles, upgrades and next tier.
 //!
 //! Ported from the upstream `js/stats/systems/w5/jar.js` and its
 //! `jar-calc.html` page. The upstream reads a decoded save through
@@ -6,9 +7,9 @@
 //! save, so every accessor below is a direct transcription of one upstream
 //! reader.
 //!
-//! The overview, the production tab, the rupie value and the break chances are
-//! complete. The collectibles, the upgrade plan and the enchant simulator are
-//! JR-03 and JR-04.
+//! The overview, production, rupie value, break chances, collectibles, upgrade
+//! plan and next tier are complete; the enchant simulator and history are
+//! JR-04.
 //!
 //! The external bonuses the formulas read live in [`Ext`]. Everything the save
 //! itself carries is decoded here; two bonuses (the Cavern Resource stamp and
@@ -18,22 +19,27 @@
 
 mod bonus;
 mod chance;
+mod collectibles;
 mod data;
 mod ext;
 mod game_data;
+mod next_tier;
 mod production;
 mod rupies;
+mod upgrades;
 
 pub use chance::ChanceEvent;
+pub use collectibles::{
+    Collectible, CollectibleGroup, EnchantPriority, collectible_effect, collectible_name,
+};
 pub use ext::Ext;
 pub use game_data::{
-    BASE_PRODUCTION_PER_HOUR, COLLECTIBLE_NAMES, RUPIE_COLORS, RUPIE_NAMES, TYPE_CATEGORIES,
-    TYPE_NAMES, TypeCategory,
+    BASE_PRODUCTION_PER_HOUR, RUPIE_COLORS, RUPIE_NAMES, TYPE_CATEGORIES, TYPE_NAMES, TypeCategory,
 };
-use game_data::{
-    COLLECTIBLE_BONUS_PER_LEVEL, COLLECTIBLES, PAGE_TWO_COLLECTIBLES, STANDARD_RUPIES,
-};
+use game_data::{COLLECTIBLES, PAGE_TWO_COLLECTIBLES, STANDARD_RUPIES};
+pub use next_tier::{MilestoneRow, TierProjection};
 pub use rupies::{INCOME_TIERS, VALUE_TIERS};
+pub use upgrades::{GILDED_TIERS, JarTypeUpgrade, Schematic, UpgradePlan, UpgradeStatus};
 
 use crate::save::json;
 use data::data;
@@ -337,10 +343,7 @@ impl Jar {
     /// `collectibleBonus`: a collectible's total bonus at its saved level, raised
     /// by the legend talent points every collectible level shares.
     pub fn collectible_bonus(&self, index: usize, legend_pts: f64) -> f64 {
-        let per_level = COLLECTIBLE_BONUS_PER_LEVEL
-            .get(index)
-            .copied()
-            .unwrap_or(0.0);
+        let per_level = data().collectible_per_level(index);
         f64::from(self.collectible_level(index)) * per_level * (1.0 + legend_pts / 100.0)
     }
 

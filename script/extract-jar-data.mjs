@@ -22,6 +22,7 @@ writeFileSync(marker, JSON.stringify({ type: 'module' }));
 
 const game = await import(join(source, 'js/stats/data/game/customlists.js'));
 const fountain = await import(join(source, 'js/stats/systems/w5/fountain.js'));
+const jar = await import(join(source, 'js/stats/systems/w5/jar.js'));
 const gaming = await import(join(source, 'js/stats/data/w4/gaming.js'));
 const encoding = await import(join(source, 'js/stats/data/common/encoding.js'));
 
@@ -60,11 +61,37 @@ const payload = {
   measurementBase: holes[55] || [],
   // SuperBit 32's encoding key, matched against `Gaming[12]`.
   superBit32: encoding.N2L[32],
+  // `COLLECTIBLE_DATA`: one row per collectible, with the effect text the
+  // collectibles tab formats at the saved bonus.
+  collectibles: jar.COLLECTIBLE_DATA.map(([name, perLevel, category, effect]) => ({
+    name,
+    perLevel: number(perLevel),
+    category,
+    effect,
+  })),
+  // `CATEGORY_LABELS` and `CATEGORY_COLORS`, keyed by collectible category.
+  categoryLabels: jar.CATEGORY_LABELS,
+  categoryColors: jar.CATEGORY_COLORS,
+  // `B_UPG_DATA`: [index, name, effect, description, currency, cost].
+  schematics: jar.B_UPG_DATA.map(([index, name, effect, description, currency, cost]) => ({
+    index,
+    name,
+    effect: number(effect),
+    description,
+    currency: number(currency),
+    cost: number(cost),
+  })),
+  // `B_UPG_GROUPS`: the schematic groups in display order.
+  schematicGroups: Object.entries(jar.B_UPG_GROUPS).map(([name, indices]) => ({
+    name,
+    indices,
+  })),
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
     files: [
       'js/stats/data/game/customlists.js',
       'js/stats/systems/w5/fountain.js',
+      'js/stats/systems/w5/jar.js',
       'js/stats/data/w4/gaming.js',
       'js/stats/data/common/encoding.js',
     ],
@@ -75,5 +102,5 @@ const payload = {
 const out = new URL('../crates/core/data/jar.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
-  `wrote ${payload.measurementBase.length} measurement bases, ${payload.monumentBonusPerLevel.length} monument bonuses`,
+  `wrote ${payload.measurementBase.length} measurement bases, ${payload.monumentBonusPerLevel.length} monument bonuses, ${payload.collectibles.length} collectibles, ${payload.schematics.length} schematics`,
 );

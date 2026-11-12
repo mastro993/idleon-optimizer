@@ -133,6 +133,192 @@ const chances = [
   expectedHours: J.expectedHoursToEvent(S, ext, chance.jarType, chance.base),
 }));
 
+// `_collectibleEffect` from jar-calc.html: fill the effect template with the
+// bonus the collectible grants at its saved level.
+const collectibleEffect = (idx, bonus) => {
+  const desc = J.COLLECTIBLE_DATA[idx][3];
+  if (desc.includes('Future cavern')) return desc;
+  if (desc.includes('}x')) return desc.replace('}x', `${(1 + bonus / 100).toFixed(2)}x`);
+  return desc.replace('{%', `${bonus.toFixed(1)}%`);
+};
+
+const collectibles = J.COLLECTIBLE_DATA.map(([name, perLevel, category, effect], idx) => ({
+  idx,
+  name,
+  perLevel,
+  category,
+  categoryLabel: J.CATEGORY_LABELS[category],
+  categoryColor: J.CATEGORY_COLORS[category],
+  effect,
+  level: J.collectibleLevel(S, idx),
+  bonus: J.collectibleBonus(S, idx, ext.legendPts29),
+  enchantLevels: Math.max(0, J.collectibleLevel(S, idx) - 1),
+  atLevel: collectibleEffect(idx, perLevel),
+  currentEffect: collectibleEffect(idx, J.collectibleBonus(S, idx, ext.legendPts29)),
+}));
+
+const enchantPriority = J.enchantPriority(S, ext).map((row) => ({
+  idx: row.idx,
+  name: row.name,
+  category: row.category,
+  categoryLabel: row.categoryLabel,
+  level: row.level,
+  enchantLevels: row.enchantLevels,
+  totalBonus: row.totalBonus,
+  marginalValue: row.marginalValue,
+}));
+
+// The schematic rows in the upstream display order.
+const schematics = [];
+for (const [group, indices] of Object.entries(J.B_UPG_GROUPS)) {
+  for (const index of indices) {
+    const row = J.B_UPG_DATA.find((entry) => entry[0] === index);
+    if (!row) continue;
+    const [, name, effect, description, currency, cost] = row;
+    schematics.push({
+      index,
+      group,
+      name,
+      effect,
+      description,
+      currency,
+      cost,
+      owned: J.bupgOwned(S, index) === 1,
+    });
+  }
+}
+
+// The jar-type purchase plan: each type is paid with the rupie below it, and
+// only the next type can be bought.
+const ownedTypes = J.jarTypesOwned(S);
+const jarTypeUpgrades = Array.from({ length: 9 }, (_, index) => {
+  const cost = 50 * Math.pow(1 + index, 1.5) * Math.pow(4.8, index);
+  const balance = J.rupieBalance(S, index);
+  const status =
+    index < ownedTypes
+      ? 'owned'
+      : index === ownedTypes
+        ? balance >= cost
+          ? 'affordable'
+          : 'shortfall'
+        : 'locked';
+  return {
+    jarType: index + 1,
+    name: J.JAR_TYPE_NAMES[index + 1],
+    cost,
+    currency: index,
+    currencyName: J.RUPIE_NAMES[index],
+    balance,
+    shortfall: Math.max(0, cost - balance),
+    status,
+  };
+});
+
+// `_renderNextTier` milestone ranking.
+const productionPerHour = J.productionPerHR(S, ext);
+const total = J.totalJarTypes(S);
+const milestones = [];
+for (let jarType = 0; jarType < total; jarType++) {
+  const count = J.jarsProducedOfType(S, jarType);
+  const logCount = count > 0 ? Math.floor(Math.log10(count)) : -1;
+  const next = Math.pow(10, logCount + 1);
+  const deficit = next - count;
+  const requirement = J.productionREQ(S, jarType);
+  const jarsPerHr = productionPerHour / requirement;
+  milestones.push({
+    jarType,
+    name: J.JAR_TYPE_NAMES[jarType],
+    count,
+    next,
+    deficit,
+    hours: deficit / (jarsPerHr * 3),
+    benefits: jarType + 1 < total ? J.JAR_TYPE_NAMES[jarType + 1] : null,
+    lineNow: 5 * Math.log10(Math.max(1, count)),
+    lineNext: 5 * (logCount + 2),
+    requirement,
+  });
+}
+milestones.sort((left, right) => left.hours - right.hours);
+
+// `_renderNextTier`'s off-map accumulation, from `jar-calc.html`.
+const perTick = productionPerHour * 5 / 3600;
+const machSeven = 1 + (J.bupgOwned(S, 67) ? 30 : 0) / 100;
+
+const simMaxTier = (tick, requirement) => {
+  if (tick <= requirement) return 0;
+  let progress = 0;
+  let best = 0;
+  for (let t = 0; t < 500; t++) {
+    progress += tick;
+    if (progress >= requirement) {
+      const tier = Math.floor(Math.log10(progress / requirement));
+      if (tier > best) best = tier;
+      progress -= requirement * Math.pow(10, tier);
+      if (progress < 0) progress = 0;
+    }
+  }
+  return best;
+};
+
+const simTierStats = (tick, requirement) => {
+  if (tick <= requirement) return { sustained: -1, ticksBetweenMax: Infinity };
+  const sustained = Math.floor(Math.log10(tick / requirement));
+  const maxTier = simMaxTier(tick, requirement);
+  let progress = 0;
+  let firstHit = -1;
+  let hits = 0;
+  for (let t = 0; t < 1000; t++) {
+    progress += tick;
+    if (progress >= requirement) {
+      const tier = Math.floor(Math.log10(progress / requirement));
+      if (tier >= maxTier && maxTier > sustained) {
+        hits++;
+        if (firstHit < 0) firstHit = t + 1;
+      }
+      progress -= requirement * Math.pow(10, tier);
+      if (progress < 0) progress = 0;
+    }
+  }
+  const avgInterval = hits > 1 ? Math.ceil(1000 / hits) : firstHit > 0 ? firstHit : Infinity;
+  return { sustained, maxTier, ticksBetweenMax: avgInterval };
+};
+
+const tierProjections = [];
+for (let jarType = 0; jarType < total; jarType++) {
+  const requirement = J.productionREQ(S, jarType);
+  const baseRequirement = 1000 + 2000 * jarType;
+  const previousCount = J.jarsProducedOfType(S, Math.max(0, jarType - 1));
+  const stats = simTierStats(perTick, requirement);
+  const computedTier = simMaxTier(perTick, requirement);
+  const sustained = stats.sustained;
+  const netSustained = sustained >= 0 ? perTick - requirement * Math.pow(10, sustained) : perTick - requirement;
+  const nextTier = sustained + 1;
+  const netNext = perTick - requirement * Math.pow(10, nextTier);
+  const secsBetween =
+    perTick > requirement && Number.isFinite(stats.ticksBetweenMax)
+      ? stats.ticksBetweenMax * 5
+      : Math.ceil(requirement / perTick) * 5;
+  const sustainNeeded = perTick / Math.pow(10, nextTier);
+  const lineMultiplier = baseRequirement / (sustainNeeded * machSeven);
+  const linePercent = (lineMultiplier - 1) * 100;
+  tierProjections.push({
+    jarType,
+    name: J.JAR_TYPE_NAMES[jarType],
+    requirement,
+    baseRequirement,
+    sustained,
+    maxTier: computedTier,
+    ticksBetweenMax: stats.ticksBetweenMax,
+    secsBetween,
+    netSustained,
+    nextTier,
+    netNext,
+    neededLine: linePercent > 0 ? Math.pow(10, linePercent / 5) : 1,
+    neededProduction: requirement * Math.pow(10, nextTier) * 3600 / 5,
+    previousCount,
+  });
+}
+
 const payload = {
   source: 'fixtures/data.json read through the upstream jar formulas',
   ext,
@@ -148,6 +334,13 @@ const payload = {
     Array.from({ length: 6 }, (_, tier) => J.timeToTier(S, jarType, tier, ext)),
   ),
   chances,
+  collectibles,
+  enchantPriority,
+  schematics,
+  jarTypeUpgrades,
+  milestoneRanking: milestones,
+  perTick,
+  tierProjections,
   enchantMulti: J.enchantMulti(S, ext),
   totalEnchantLevels: J.totalEnchantLevels(S),
   targetedEnchantProb: J.targetedEnchantProb(S),
@@ -159,5 +352,5 @@ writeFileSync(
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(
-  `wrote rupie value ${rupieValue.toFixed(4)}, ${chances.length} chances, ${rupieJars.length} rupie jars`,
+  `wrote rupie value ${rupieValue.toFixed(4)}, ${chances.length} chances, ${rupieJars.length} rupie jars, ${collectibles.length} collectibles, ${schematics.length} schematics, ${milestones.length} milestones`,
 );

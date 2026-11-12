@@ -328,3 +328,70 @@ fn the_time_to_an_event_counts_the_jar_type_rate() {
     assert!((hours - 4.0 * per_jar).abs() < 1e-9);
     assert!(jar.expected_hours(1, 0.0).is_infinite());
 }
+
+#[test]
+fn the_upgrade_plan_only_buys_what_the_balance_covers() {
+    let mut rows = blank_rows();
+    rows[11][37] = 3.0;
+    let cost = Jar::jar_type_cost(4);
+    // Type four is paid with Purple, `Holes[9][23]`, the third standard rupie.
+    rows[9][23] = cost - 1.0;
+    let plan = jar(json!(rows.clone())).upgrade_plan();
+    assert_eq!(plan.steps[0].status, super::UpgradeStatus::Owned);
+    assert_eq!(plan.steps[2].status, super::UpgradeStatus::Owned);
+    assert_eq!(plan.steps[3].status, super::UpgradeStatus::Shortfall);
+    assert_eq!(plan.steps[4].status, super::UpgradeStatus::Locked);
+    let next = plan.next().expect("the fourth type is next");
+    assert_eq!(next.jar_type, 4);
+    assert_eq!(next.name, "Enchant");
+    assert_eq!(next.shortfall(), 1.0);
+    // A shortfall spends nothing from the budget.
+    assert_eq!(plan.spent(), 0.0);
+    assert_eq!(plan.budget(), cost - 1.0);
+    assert_eq!(plan.purchases().count(), 0);
+
+    rows[9][23] = cost;
+    let plan = jar(json!(rows)).upgrade_plan();
+    assert_eq!(plan.steps[3].status, super::UpgradeStatus::Affordable);
+    assert_eq!(plan.spent(), cost);
+    assert!(plan.spent() <= plan.budget());
+    assert_eq!(plan.purchases().count(), 1);
+    // With every type bought the plan has nothing left to buy.
+    let mut rows = blank_rows();
+    rows[11][37] = 9.0;
+    let plan = jar(json!(rows)).upgrade_plan();
+    assert!(plan.next().is_none());
+    assert_eq!(plan.spent(), 0.0);
+}
+
+#[test]
+fn the_highest_reachable_tier_is_the_accumulation_peak() {
+    let mut rows = blank_rows();
+    // A hundred thousand Sapphire Droplet levels: a rate high enough to bank
+    // progress past the first requirement on every tick.
+    rows[24][1] = 100_000.0;
+    rows[13][74] = 1.0;
+    let jar = jar(json!(rows));
+    let projection = jar.tier_projection(0);
+    let sustained = projection.sustained.expect("the rate sustains a tier");
+    assert!(projection.max_tier >= sustained);
+    assert!(projection.seconds_between.is_some());
+    assert!(jar.production_line_unlocked());
+
+    let ranking = jar.milestone_ranking();
+    assert_eq!(ranking.len(), jar.types_available());
+    assert!(
+        ranking
+            .windows(2)
+            .all(|pair| pair[0].hours <= pair[1].hours)
+    );
+    assert_eq!(ranking[0].benefits.is_some(), jar.types_available() > 1);
+}
+
+#[test]
+fn a_collectible_effect_fills_its_placeholder() {
+    assert_eq!(collectible_effect(0, 360.0), "+360.0% rupie value");
+    assert_eq!(collectible_effect(3, 225.0), "3.25x rupie value");
+    assert_eq!(collectible_effect(31, 9.0), "Future cavern");
+    assert!(collectible_effect(99, 0.0).is_empty());
+}

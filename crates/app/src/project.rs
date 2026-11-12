@@ -1399,6 +1399,15 @@ mod tests {
         assert_eq!(fountain.water, 2);
         assert_eq!(fountain.desired, Some(5));
         assert_eq!(fountain.upgrade, Some(11));
+        // The three JR-03 tabs keep the upstream ids in a saved project.
+        for tab in [JarTab::Collectibles, JarTab::Upgrades, JarTab::NextTier] {
+            let config = JarConfig { tab, tier: 0 };
+            let saved = serde_json::to_value(&config).expect("the jar config saves");
+            assert_eq!(saved["tab"], tab.id());
+            let restored: JarConfig =
+                serde_json::from_value(saved).expect("the jar config reads back");
+            assert_eq!(restored.tab, tab);
+        }
         let prism = round_trip(&PrismaConfig {
             character: 2,
             cauldron: "kazam".into(),

@@ -29,6 +29,47 @@ pub struct Data {
     pub measurement_base: Vec<String>,
     /// `N2L[32]`, the SuperBit 32 key matched against `Gaming[12]`.
     pub super_bit32: String,
+    /// `COLLECTIBLE_DATA`: the forty collectibles, in save order.
+    pub collectibles: Vec<CollectibleData>,
+    /// `CATEGORY_LABELS`, keyed by collectible category.
+    pub category_labels: HashMap<String, String>,
+    /// `CATEGORY_COLORS`, keyed by collectible category.
+    pub category_colors: HashMap<String, String>,
+    /// `B_UPG_DATA`: the jar schematics.
+    pub schematics: Vec<SchematicData>,
+    /// `B_UPG_GROUPS`: the schematic groups, in display order.
+    pub schematic_groups: Vec<SchematicGroup>,
+}
+
+/// One `COLLECTIBLE_DATA` row: `[name, bonPerLv, effectCategory, effectDesc]`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CollectibleData {
+    pub name: String,
+    pub per_level: f64,
+    pub category: String,
+    /// The template `{%` or `}x` fill with the saved bonus.
+    pub effect: String,
+}
+
+/// One `B_UPG_DATA` row: `[index, name, effectVal, effectDesc, currency, cost]`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SchematicData {
+    pub index: usize,
+    pub name: String,
+    pub effect: f64,
+    pub description: String,
+    /// The rupie index the schematic costs, when `cost` is non-zero.
+    pub currency: usize,
+    pub cost: f64,
+}
+
+/// One `B_UPG_GROUPS` entry.
+#[derive(Debug, Deserialize)]
+pub struct SchematicGroup {
+    pub name: String,
+    pub indices: Vec<usize>,
 }
 
 /// `CosmoBonus` bases for the upgrades the jar reads.
@@ -92,6 +133,41 @@ impl Data {
             .get(slot)
             .copied()
             .unwrap_or(0.0)
+    }
+
+    /// `COLLECTIBLE_DATA[idx]`; `None` past the forty rows.
+    pub fn collectible(&self, index: usize) -> Option<&CollectibleData> {
+        self.collectibles.get(index)
+    }
+
+    /// The name of a collectible, or `Collectible <index>` when a save names
+    /// one past the table.
+    pub fn collectible_name(&self, index: usize) -> &str {
+        self.collectible(index)
+            .map(|row| row.name.as_str())
+            .unwrap_or("Collectible")
+    }
+
+    /// `COLLECTIBLE_DATA[idx][1]`: the bonus each collectible level grants.
+    pub fn collectible_per_level(&self, index: usize) -> f64 {
+        self.collectible(index)
+            .map(|row| row.per_level)
+            .unwrap_or(0.0)
+    }
+
+    /// The display label of a collectible category.
+    pub fn category_label(&self, category: &str) -> Option<&str> {
+        self.category_labels.get(category).map(String::as_str)
+    }
+
+    /// The dot colour of a collectible category.
+    pub fn category_color(&self, category: &str) -> Option<&str> {
+        self.category_colors.get(category).map(String::as_str)
+    }
+
+    /// `B_UPG_DATA[row]` by its schematic index, not its array position.
+    pub fn schematic(&self, index: usize) -> Option<&SchematicData> {
+        self.schematics.iter().find(|row| row.index == index)
     }
 }
 
