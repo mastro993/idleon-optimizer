@@ -65,26 +65,14 @@ pub(crate) const GROUPS: [(&str, &str); 23] = [
         "Talent 433 and Cooking Level",
         "needs the talent system (js/stats/systems/common/talent.js)",
     ),
-    (
-        "Meals, Maneki Kat, Poppy, and Voting",
-        "needs the Cooking meal, Roo, and Voting systems",
-    ),
-    (
-        "Pet Arena, Friends, and Pecunia",
-        "needs the pet arena, friend and statue bonus systems",
-    ),
+    ("Meals, Maneki Kat, Poppy, and Voting", ""),
+    ("Pet Arena, Friends, and Pecunia", ""),
     ("Mainframe and Vault Progress", ""),
-    (
-        "Pristine 16",
-        "needs the Sneaking pristine system (js/stats/systems/w6/sneaking.js)",
-    ),
-    (
-        "Prayer 8",
-        "needs the prayer system (js/stats/systems/w3/prayer.js)",
-    ),
+    ("Pristine 16", ""),
+    ("Prayer 8", ""),
     (
         "Divinity and Crop Scientist",
-        "needs the Divinity minor bonus and Crop Scientist cash row",
+        "needs the Divinity minor bonus and its bubble chain (js/stats/systems/w5/divinity.js)",
     ),
     (
         "Other Additive Sources",

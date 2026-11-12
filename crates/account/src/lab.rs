@@ -290,8 +290,8 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
-    /// `computePetArenaBonus`.
-    fn pet_arena(&self, index: usize) -> f64 {
+    /// `computePetArenaBonus`: whether the arena's wave count clears the tier.
+    pub fn pet_arena(&self, index: usize) -> f64 {
         let waves = self.ola(89);
         let mut tier = 0;
         for (threshold_index, threshold) in self.data.pet_arena_thresholds.iter().enumerate() {

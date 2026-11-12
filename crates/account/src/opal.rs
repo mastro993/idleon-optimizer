@@ -222,7 +222,7 @@ impl Decoder<'_> {
     /// The statue's own level × its per-level base, then the Zenith, artifact,
     /// vault, Dragon statue, event shop, All Statues talent and meritocracy
     /// factors, in the page's order.
-    pub(crate) fn statue(&self, index: usize) -> f64 {
+    pub fn statue(&self, index: usize) -> f64 {
         let level = self.statue_level(index);
         if level <= 0.0 {
             return 0.0;

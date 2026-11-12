@@ -42,12 +42,27 @@ fn coin_groups(
         values[11] = Some(1.0 + decoder.etc(100, index) / 100.0);
         values[12] = Some(1.0 + gold_set_bonus(&decoder, index) / 100.0);
         values[14] = Some(1.0 + 2.5 * if decoder.bundle("bun_y") { 1.0 } else { 0.0 });
+        // Voting pays only while the vote is the server-wide winner, which a
+        // save alone does not carry, so the term reads zero on most imports.
+        let vote = decoder.voting(34);
+        values[16] = Some(
+            1.0 + (decoder.meal("Cash") + decoder.maneki_kat() + decoder.roo(6) + vote) / 100.0,
+        );
+        values[17] = Some(
+            1.0 + 0.5 * decoder.pet_arena(5)
+                + decoder.friend(5)
+                + decoder.pet_arena(14)
+                + decoder.statue(19) / 100.0,
+        );
         values[18] = Some(
             1.0 + (decoder.mainframe(9).unwrap_or(0.0)
                 + decoder.vault(34) * killz[8]
                 + decoder.vault(37) * killz[9])
                 / 100.0,
         );
+        values[19] = Some(1.0 + decoder.pristine_charm(16) / 100.0);
+        // `computePrayerReal`, shared with the All Stats capacity breakdown.
+        values[20] = Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0);
     }
 
     groups
