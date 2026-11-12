@@ -60,6 +60,21 @@ pub fn footprint(anchor: usize, cell_type: usize) -> Option<Vec<usize>> {
     Some(slots)
 }
 
+/// `normalizeSimulatorLayout`'s re-place: every cell in anchor order, dropping
+/// the ones the sandbox's unlocked slots no longer fit. Returns the layout and
+/// how many cells were dropped.
+pub fn normalize(jelly: &Jelly, layout: &Layout) -> (Layout, usize) {
+    let mut next = Layout::new();
+    let mut removed = 0;
+    for (anchor, cell_type) in layout {
+        match place(jelly, &next, *anchor, *cell_type) {
+            Ok(placed) => next = placed,
+            Err(_) => removed += 1,
+        }
+    }
+    (next, removed)
+}
+
 /// `jellyLayoutOccupancy`: which cell covers each slot.
 pub fn occupancy(layout: &Layout) -> BTreeMap<usize, (usize, usize)> {
     let mut occupied = BTreeMap::new();

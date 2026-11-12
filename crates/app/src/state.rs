@@ -18,7 +18,8 @@ use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::State as FountainState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
-    RunInputs as JellyRunInputs, State as JellyState, Tab as JellyTab,
+    RunInputs as JellyRunInputs, Simulator as JellySimulator,
+    SimulatorRunInputs as JellySimRunInputs, State as JellyState, Tab as JellyTab,
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
@@ -60,7 +61,8 @@ use idleon_core::farming::{
 };
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
-use idleon_core::jelly::{Estimate as JellyEstimate, Jelly};
+use idleon_core::jelly::operation::{RevivePolicy, simulate as simulate_jelly_operation};
+use idleon_core::jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_core::killroy::Plan as KillroyPlan;
 use idleon_core::ladle::Ladle;
 use idleon_core::model::{
@@ -341,6 +343,8 @@ pub struct AppState {
     pub(crate) coral_run: Entity<TaskRunner<CoralPlan, CoralInputs>>,
     /// The shared runner for the Jelly Operator operation estimate.
     pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
+    /// The shared runner for one simulator operation.
+    pub(crate) jelly_sim_run: Entity<TaskRunner<JellyTrial, JellySimRunInputs>>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for the perfect cog board.
@@ -395,6 +399,7 @@ pub struct AppState {
     _killroy_run_subscription: Subscription,
     _coral_run_subscription: Subscription,
     _jelly_run_subscription: Subscription,
+    _jelly_sim_run_subscription: Subscription,
     _cog_subscription: Subscription,
     _cog_perfect_subscription: Subscription,
     _cglunko_run_subscription: Subscription,
@@ -802,6 +807,36 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The simulator runs one seeded operation off the UI thread, so its
+        // result is stored the same way as the estimate's aggregate.
+        let jelly_sim_run = cx.new(|_| TaskRunner::<JellyTrial, JellySimRunInputs>::new());
+        let jelly_sim_run_subscription =
+            cx.subscribe(&jelly_sim_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status =
+                            format!("Simulating the Jelly operation… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Jelly simulation cancelled; the previous run is unchanged.".into()
+                        } else {
+                            "Jelly simulation cancelled; nothing was stored.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(trial) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Jelly operation finished: {} at {:.2}s with {} damage.",
+                                trial.ended_by.replace('-', " "),
+                                trial.time,
+                                crate::ui::format::value(trial.damage)
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // The coral beam search is bounded but budget-sized, so it reports each
         // step and can be cancelled like the other optimizers.
         let coral_run = cx.new(|_| TaskRunner::<CoralPlan, CoralInputs>::new());
@@ -1107,6 +1142,7 @@ impl AppState {
             killroy_run,
             coral_run,
             jelly_run,
+            jelly_sim_run,
             cog_run,
             cog_perfect_run,
             cglunko_run,
@@ -1142,6 +1178,7 @@ impl AppState {
             _killroy_run_subscription: killroy_run_subscription,
             _coral_run_subscription: coral_run_subscription,
             _jelly_run_subscription: jelly_run_subscription,
+            _jelly_sim_run_subscription: jelly_sim_run_subscription,
             _cog_subscription: cog_subscription,
             _cog_perfect_subscription: cog_perfect_subscription,
             _cglunko_run_subscription: cglunko_run_subscription,
@@ -2857,6 +2894,140 @@ impl AppState {
     pub fn cancel_jelly_estimate(&mut self, cx: &mut Context<Self>) {
         if self.jelly_run.update(cx, |runner, _| runner.cancel()) {
             self.status = "Cancelling the Jelly estimate…".into();
+            cx.notify();
+        }
+    }
+
+    /// What the shared Jelly simulator runner shows against the sandbox.
+    pub fn jelly_sim_task(&self, cx: &App) -> TaskState<JellyTrial> {
+        let inputs = self.jelly_state.simulator.inputs(self.jelly.as_ref());
+        self.jelly_sim_run.read(cx).state(&inputs)
+    }
+
+    /// Apply one sandbox edit, publish its message, and let the runner notice
+    /// the new inputs.
+    fn jelly_sim_edit(
+        &mut self,
+        cx: &mut Context<Self>,
+        edit: impl FnOnce(&mut JellySimulator, &Jelly),
+    ) {
+        let Some(jelly) = self.jelly.clone() else {
+            return;
+        };
+        edit(&mut self.jelly_state.simulator, &jelly);
+        self.status = self.jelly_state.simulator.message.clone();
+        cx.notify();
+    }
+
+    /// The simulator's stage select.
+    pub fn set_jelly_sim_stage(&mut self, stage: usize, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.set_stage(jelly, stage));
+    }
+
+    /// The simulator's Fever select.
+    pub fn set_jelly_sim_fever(&mut self, fever: u32, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.set_fever(jelly, fever));
+    }
+
+    /// Stronkroid's activation second; a negative value disables it.
+    pub fn set_jelly_sim_roid(&mut self, seconds: f64, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.set_roid(seconds));
+    }
+
+    /// The simulator's automatic revive policy.
+    pub fn set_jelly_sim_revive(&mut self, revive: RevivePolicy, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.set_revive(revive));
+    }
+
+    /// The seed one simulator attempt is drawn from.
+    pub fn set_jelly_sim_seed(&mut self, seed: f64, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.set_seed(seed));
+    }
+
+    /// Pick the cell the next sandbox board click places.
+    pub fn jelly_sim_select(&mut self, cell_type: usize, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.select(cell_type));
+    }
+
+    /// Remove mode: the next sandbox board click removes what it covers.
+    pub fn jelly_sim_remove_mode(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.remove_mode());
+    }
+
+    /// Place the picked cell on the sandbox slot, or remove the cell there.
+    pub fn jelly_sim_click_slot(&mut self, slot: usize, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.click(jelly, slot));
+    }
+
+    /// Empty the sandbox board.
+    pub fn clear_jelly_simulator(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, _| simulator.clear_board());
+    }
+
+    /// Put the sandbox back to the save's own board and knobs.
+    pub fn reset_jelly_simulator(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.reset(jelly));
+    }
+
+    /// Restore the save's purchased board sections in the sandbox.
+    pub fn jelly_sim_use_save_sections(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.use_save_sections(jelly));
+    }
+
+    /// Lock every purchased board section in the sandbox.
+    pub fn jelly_sim_lock_sections(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.lock_sections(jelly));
+    }
+
+    /// Unlock every board section in the sandbox.
+    pub fn jelly_sim_unlock_all_sections(&mut self, cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.unlock_all_sections(jelly));
+    }
+
+    /// Apply the whole board-section selection the sandbox toggle group reports.
+    pub fn jelly_sim_set_plots(&mut self, plots: &[usize], cx: &mut Context<Self>) {
+        self.jelly_sim_edit(cx, |simulator, jelly| simulator.set_plots(jelly, plots));
+    }
+
+    /// Run one seeded operation of the sandbox board off the UI thread.
+    pub fn run_jelly_simulation(&mut self, cx: &mut Context<Self>) {
+        let Some(jelly) = self.jelly.clone() else {
+            self.status = "Jelly simulation: import a save with a board first.".into();
+            cx.notify();
+            return;
+        };
+        let simulator = &self.jelly_state.simulator;
+        let sandbox = simulator.sandbox(&jelly);
+        let layout = simulator.layout.clone();
+        if let Err(reason) = idleon_core::jelly::board::validate(&sandbox, &layout) {
+            let simulator = &mut self.jelly_state.simulator;
+            simulator.message = format!("The sandbox board is not valid: {reason}");
+            simulator.message_bad = true;
+            self.status = simulator.message.clone();
+            cx.notify();
+            return;
+        }
+        let inputs = simulator.inputs(Some(&jelly));
+        let options = simulator.options();
+        let started = self.jelly_sim_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_inputs, report| {
+                let _ = report(Progress {
+                    fraction: 0.0,
+                    message: "One seeded 60 FPS operation…".into(),
+                });
+                Some(simulate_jelly_operation(&sandbox, &layout, options))
+            })
+        });
+        if started {
+            self.status = "Simulating one Jelly operation…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running simulation to stop at its next report.
+    pub fn cancel_jelly_simulation(&mut self, cx: &mut Context<Self>) {
+        if self.jelly_sim_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Jelly simulation…".into();
             cx.notify();
         }
     }

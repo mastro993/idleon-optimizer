@@ -679,18 +679,24 @@ const spelunkSave = () => {
 /// A small flat `save.json` carrying a Jelly Operator board: eight cells
 /// unlocked, the starting slots open, two Plasmids on the saved board, three
 /// attempts banked and no account multipliers, so the estimate has a board to
-/// run and the palette has every cell type to place.
+/// run and the palette has every cell type to place. The Feverizer, Stronkroid
+/// and automatic revives are unlocked and the stage is deep enough that the
+/// normal phase cannot clear it, so the simulator has its controls and a
+/// critical timeline to render.
 const jellySave = () => {
   const row = (length, filled = {}) =>
     Array.from({ length }, (_, index) => filled[index] ?? 0);
   const research = Array.from({ length: 19 }, () => []);
-  research[7] = row(15, { 9: 0, 10: 3, 11: 1000, 12: 500, 13: 0, 14: 2000 });
+  research[7] = row(15, { 9: 32, 10: 3, 11: 1000, 12: 500, 13: 0, 14: 2000 });
   research[14] = Array.from({ length: 180 }, () => -1);
   research[14][77] = 1;
   research[14][95] = 1;
   research[15] = row(9);
   research[16] = row(9);
-  research[17] = row(40, { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1 });
+  research[17] = row(40, {
+    0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1,
+    12: 1, 16: 3, 28: 1, 29: 10, 35: 2, 36: 1, 38: 1,
+  });
   research[18] = [];
   return JSON.stringify({
     Research: JSON.stringify(research),
@@ -791,7 +797,7 @@ const INTERACTIONS = {
       throw new Error(`spelunking: the starting stamina reads ${stamina}`);
     }
   },
-  jelly: async (lane) => {
+  'jelly-operator': async (lane) => {
     await lane.call('click_element', { id: 'jelly-import' });
     await waitForNode(lane, 'import-drop', 'jelly: the empty state opens the import');
     await lane.call('click_element', { id: 'import-cancel' });
@@ -810,10 +816,10 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-board', 'jelly: the board renders');
     await waitForNode(lane, 'jelly-palette-7', 'jelly: the palette lists every cell type');
     await lane.call('click_element', { id: 'jelly-palette-0' });
-    await lane.call('click_element', { id: 'jelly-slot-96' });
+    await lane.call('click_element', { id: 'jelly-slot-76' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'jelly-message') ?? '').includes('Placed Amoeba at slot 96'),
+      (nodes) => (labelOf(nodes, 'jelly-message') ?? '').includes('Placed Amoeba at slot 76'),
       'jelly: the palette places the picked cell',
     );
     // The estimate runs off the UI thread and stores its aggregate.
@@ -823,6 +829,29 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-estimate-result', 'jelly: the estimate stores a result', 120000);
     await waitForNode(lane, 'jelly-contribution', 'jelly: the cell contribution renders');
     await waitForNode(lane, 'jelly-obstruction-outlook', 'jelly: the outlook renders');
+    // The simulator's sandbox clears, resets and runs one seeded operation.
+    await lane.call('click_element', { id: 'jelly-tab-simulator' });
+    await waitForNode(lane, 'jelly-sim-board', 'jelly: the simulator board renders');
+    await waitForNode(lane, 'jelly-sim-stage', 'jelly: the stage select renders');
+    await waitForNode(lane, 'jelly-sim-roid', 'jelly: the Stronkroid timing renders');
+    await waitForNode(lane, 'jelly-sim-revive', 'jelly: the revive policy renders');
+    await waitForNode(lane, 'jelly-sim-plots-toggle-0', 'jelly: the board sections render');
+    await lane.call('click_element', { id: 'jelly-sim-clear' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-sim-message') ?? '').includes('Removed every cell'),
+      'jelly: Clear cells empties the sandbox',
+    );
+    await lane.call('click_element', { id: 'jelly-sim-reset' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-sim-message') ?? '').includes('Sandbox reset'),
+      'jelly: Reset from save restores the board',
+    );
+    await lane.call('click_element', { id: 'jelly-sim-run' });
+    await waitForNode(lane, 'jelly-sim-result', 'jelly: the simulator stores a run', 120000);
+    await waitForNode(lane, 'jelly-sim-contribution', 'jelly: the run contribution renders');
+    await waitForNode(lane, 'jelly-sim-timeline', 'jelly: the critical timeline renders');
   },
   'royal-guardian': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

@@ -1,15 +1,15 @@
 //! Jelly Operator (W7): the board, its cells and the operation estimate.
 //!
-//! Ports the overview and layout tabs of `jelly-operator-calc.html` from the
-//! upstream `idleon-research-optimizer`; every function names the upstream one
-//! it rewrites:
+//! Ports the overview, layout and simulator tabs of `jelly-operator-calc.html`
+//! from the upstream `idleon-research-optimizer`; every function names the
+//! upstream one it rewrites:
 //!
 //! - [`Jelly`] is the decoded save slice (`Research[7]`, `[14]`, `[15]`,
 //!   `[16]`, `[17]`, `[18]`) plus the account terms the page reads from other
 //!   systems ([`Account`]).
 //! - [`board`] is `jellyLayoutFromSave`, `jellyFootprintSlots`,
-//!   `jellyUnlockedSlots`, `jellyValidateLayout`, `jellyPlaceCell` and
-//!   `jellyRemoveCell`.
+//!   `jellyUnlockedSlots`, `jellyValidateLayout`, `jellyPlaceCell`,
+//!   `jellyRemoveCell` and the simulator's `normalizeSimulatorLayout` reflow.
 //! - [`metrics`] is `jellyLayoutMetrics` and the multipliers it multiplies:
 //!   `jellyCellDamageMultiplier`, `jellyCellSpeedMultiplier`,
 //!   `jellyCellExpMultiplier`, `jellyAttackCadence`, `jellyFeverBonus` and the
@@ -57,6 +57,16 @@ pub const PROXIMITY_ANCHORS: [usize; 16] = [
 
 /// The fever modes, in the game's own order (`FEVER_MODE_NAMES`).
 pub const FEVER_MODES: [&str; 6] = ["COLD", "RASH", "SEPSIS", "NAUSEA", "RABIES", "PLAGUE"];
+
+/// The fever modes' effect text, as the page's simulator lists them.
+pub const FEVER_BONUSES: [&str; 6] = [
+    "+1% all damage each elapsed second",
+    "2.00x all damage",
+    "4.00x Bloodcell gains",
+    "2.00x EXP gains for all cells",
+    "1.50x all damage and 1.25x all speed",
+    "1.40x all speed",
+];
 
 /// `CurrencyMulti`'s innermost pool adds a flat +11%.
 pub const BASE_BLOODCELL_BONUS_PCT: f64 = 11.0;
@@ -258,4 +268,9 @@ pub fn fever_mode_name(fever: u32) -> String {
         .get(fever as usize)
         .map(|name| (*name).to_string())
         .unwrap_or_else(|| format!("Fever {}", fever + 1))
+}
+
+/// The fever mode's effect text, or `None` past the six the game defines.
+pub fn fever_mode_bonus(fever: u32) -> Option<&'static str> {
+    FEVER_BONUSES.get(fever as usize).copied()
 }

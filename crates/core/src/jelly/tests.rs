@@ -112,6 +112,70 @@ fn the_menagerie_doubler_doubles_an_upgrade() {
 }
 
 #[test]
+fn normalizing_a_sandbox_drops_the_cells_that_no_longer_fit() {
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/data.json"
+    ))
+    .expect("fixtures/data.json is committed");
+    let imported = crate::save::import(&text).expect("the fixture imports");
+    let mut jelly = imported.jelly.expect("the fixture carries a board");
+    jelly.progress.obstruction = 2;
+    let mut layout = board::Layout::new();
+    layout.insert(75, 0);
+    layout.insert(77, 0);
+    let (normalized, removed) = board::normalize(&jelly, &layout);
+    assert_eq!(removed, 0, "the second clear opens slot 75");
+    assert_eq!(normalized.len(), 2);
+    // Stepping the sandbox back to its first stage relocks the second clear.
+    jelly.progress.obstruction = 0;
+    let (normalized, removed) = board::normalize(&jelly, &layout);
+    assert_eq!(removed, 1);
+    assert_eq!(normalized.keys().copied().collect::<Vec<_>>(), vec![77]);
+}
+
+#[test]
+fn an_empty_sandbox_board_runs_a_trial_with_no_projectiles() {
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/data.json"
+    ))
+    .expect("fixtures/data.json is committed");
+    let imported = crate::save::import(&text).expect("the fixture imports");
+    let mut jelly = imported.jelly.expect("the fixture carries a board");
+    jelly.upgrades = vec![0; 40];
+    let options = super::OperationOptions {
+        obstruction: Some(0),
+        fever: Some(0),
+        seed: 4,
+        ..super::OperationOptions::default()
+    };
+    let trial = super::operation::simulate(&jelly, &board::Layout::new(), options);
+    assert!(trial.valid, "{}", trial.reason);
+    assert!(!trial.success);
+    assert_eq!(trial.ended_by, "timer");
+    assert_eq!(trial.shots, 0.0);
+    assert_eq!(trial.hits, 0.0);
+    assert_eq!(trial.damage, 0.0);
+    assert_eq!(trial.normal_time, boss_time(0));
+    assert!(trial.time >= boss_time(0));
+    assert_eq!(
+        trial,
+        super::operation::simulate(&jelly, &board::Layout::new(), options),
+        "the same seed is the same attempt"
+    );
+}
+
+#[test]
+fn every_fever_mode_carries_its_bonus_text() {
+    for fever in 0..super::FEVER_MODES.len() as u32 {
+        assert!(!super::fever_mode_name(fever).is_empty());
+        assert!(super::fever_mode_bonus(fever).is_some_and(|bonus| !bonus.is_empty()));
+    }
+    assert!(super::fever_mode_bonus(6).is_none());
+}
+
+#[test]
 fn the_count_bonus_needs_its_upgrade() {
     let text = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),

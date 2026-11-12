@@ -4,9 +4,10 @@
 // Usage: node script/jelly-oracle.mjs <path-to-idleon-research-optimizer>
 //
 // Every case runs `js/stats/systems/w7/jelly-operator.js` itself: the layout,
-// its metrics, the seeded Monte Carlo estimate and the progression insights. A
-// case may override the save's Fever, upgrade levels, cell levels and layout;
-// the overrides are written to the fixture and replayed by the Rust test.
+// its metrics, the seeded Monte Carlo estimate, the simulator's single seeded
+// operation and the progression insights. A case may override the save's Fever,
+// upgrade levels, cell levels and layout; the overrides are written to the
+// fixture and replayed by the Rust test.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -101,6 +102,58 @@ function metricsOf(S, layout) {
   };
 }
 
+/// The trial fields the Rust port compares, shared by the estimate's
+/// representative and the simulator's single seeded operation.
+function trialOf(trial) {
+  return {
+    success: trial.success,
+    endedBy: trial.endedBy,
+    time: trial.time,
+    normalTime: trial.normalTime,
+    criticalTime: trial.criticalTime,
+    damage: trial.damage,
+    shots: trial.shots,
+    hits: trial.hits,
+    bloodcells: trial.bloodcells,
+    cellExp: trial.cellExp,
+    expByType: trial.expByType,
+    feverSeconds: trial.feverSeconds,
+    bestDpsBefore: trial.bestDpsBefore,
+    bestDpsAfter: trial.bestDpsAfter,
+    peakDps: trial.peakDps,
+    deaths: trial.deaths,
+    bossAttacks: trial.bossAttacks,
+    immunoidHits: trial.immunoidHits,
+    immunoidFocusTime: trial.immunoidFocusTime,
+    liveSlots: trial.liveSlots,
+    revivesUsed: trial.revivesUsed,
+    revivesRemaining: trial.revivesRemaining,
+    roidUsed: trial.roidUsed,
+    roidStart: trial.roidStart,
+    amoebaStacks: trial.amoebaStacks,
+    amoebaStacksAtCriticalStart: trial.amoebaStacksAtCriticalStart,
+    damageAtCriticalStart: trial.damageAtCriticalStart,
+    attemptDelta: trial.attemptDelta,
+    obstructionAfter: trial.obstructionAfter,
+    gameplayRandomCalls: trial.gameplayRandomCalls,
+    deathLog: trial.deathLog.slice(0, 8).map((row) => ({
+      time: row.time,
+      slot: row.slot,
+      focused: row.focused,
+      disabledAnchor: row.disabledAnchor,
+      revived: row.revived,
+    })),
+    contribution: trial.contribution.map((row) => ({
+      type: row.type,
+      shots: row.shots,
+      hits: row.hits,
+      damage: row.damage,
+      bloodcells: row.bloodcells,
+      exp: row.exp,
+    })),
+  };
+}
+
 function estimateOf(S, layout, options) {
   const estimate = J.simulateJellyTrials(layout, S, {
     trials: options.trials,
@@ -155,54 +208,19 @@ function estimateOf(S, layout, options) {
       bloodcells: row.bloodcells,
       exp: row.exp,
     })),
-    representative: {
-      success: representative.success,
-      endedBy: representative.endedBy,
-      time: representative.time,
-      normalTime: representative.normalTime,
-      criticalTime: representative.criticalTime,
-      damage: representative.damage,
-      shots: representative.shots,
-      hits: representative.hits,
-      bloodcells: representative.bloodcells,
-      cellExp: representative.cellExp,
-      expByType: representative.expByType,
-      feverSeconds: representative.feverSeconds,
-      bestDpsBefore: representative.bestDpsBefore,
-      bestDpsAfter: representative.bestDpsAfter,
-      peakDps: representative.peakDps,
-      deaths: representative.deaths,
-      bossAttacks: representative.bossAttacks,
-      immunoidHits: representative.immunoidHits,
-      immunoidFocusTime: representative.immunoidFocusTime,
-      liveSlots: representative.liveSlots,
-      revivesUsed: representative.revivesUsed,
-      revivesRemaining: representative.revivesRemaining,
-      roidUsed: representative.roidUsed,
-      roidStart: representative.roidStart,
-      amoebaStacks: representative.amoebaStacks,
-      amoebaStacksAtCriticalStart: representative.amoebaStacksAtCriticalStart,
-      damageAtCriticalStart: representative.damageAtCriticalStart,
-      attemptDelta: representative.attemptDelta,
-      obstructionAfter: representative.obstructionAfter,
-      gameplayRandomCalls: representative.gameplayRandomCalls,
-      deathLog: representative.deathLog.slice(0, 8).map((row) => ({
-        time: row.time,
-        slot: row.slot,
-        focused: row.focused,
-        disabledAnchor: row.disabledAnchor,
-        revived: row.revived,
-      })),
-      contribution: representative.contribution.map((row) => ({
-        type: row.type,
-        shots: row.shots,
-        hits: row.hits,
-        damage: row.damage,
-        bloodcells: row.bloodcells,
-        exp: row.exp,
-      })),
-    },
+    representative: trialOf(representative),
   };
+}
+
+/// One operation exactly as the simulator runs it: the sandbox's stage and
+/// Fever come from the save, the knobs from the case.
+function simulationOf(S, layout, options) {
+  const trial = J.simulateJellyOperation(layout, S, {
+    ...options,
+    obstruction: J.jellyProgress(S).obstruction,
+    fever: J.jellyProgress(S).fever,
+  });
+  return { valid: trial.valid, reason: trial.reason || '', trial: trialOf(trial) };
 }
 
 function insightsOf(S, layout, operation) {
@@ -278,6 +296,35 @@ const cases = [
     estimate: { trials: 5, seed: 3 },
   },
   {
+    name: 'simulator',
+    overrides: {
+      fever: 2,
+      obstruction: 32,
+      layout: { 0: 6, 4: 2, 59: 1, 65: 0, 67: 5, 72: 4, 84: 3, 94: 7 },
+      upgrades: {
+        0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1,
+        10: 1, 12: 1, 13: 2, 14: 1, 15: 1, 16: 3, 17: 3, 18: 5,
+        23: 2, 28: 1, 29: 10, 35: 3, 36: 1, 38: 2,
+      },
+      cellLevels: [3, 2, 1, 0, 0, 0, 0, 0, 0],
+      cellExp: [10, 5, 0, 0, 0, 0, 0, 0, 0],
+    },
+    // The simulator's own knobs: Stronkroid at 5s and the highest-DPS revive.
+    simulation: { seed: 13, useRoid: true, roidTiming: 5, revivePolicy: 'dps-first' },
+  },
+  {
+    name: 'simulator-empty',
+    overrides: {
+      fever: 0,
+      obstruction: 0,
+      layout: {},
+      upgrades: { 0: 1, 1: 1 },
+      cellLevels: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      cellExp: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    },
+    simulation: { seed: 4, useRoid: false, roidTiming: 'none', revivePolicy: 'none' },
+  },
+  {
     name: 'locked-cell',
     overrides: {
       obstruction: 0,
@@ -320,7 +367,12 @@ const payload = {
       output.estimateOptions = entry.estimate;
       output.metrics = metricsOf(S, layout);
       output.insights = estimate.valid ? insightsOf(S, layout, operation) : null;
-    } else {
+    }
+    if (entry.simulation) {
+      output.simulationOptions = entry.simulation;
+      output.simulation = simulationOf(S, layout, entry.simulation);
+    }
+    if (!entry.estimate && !entry.simulation) {
       const validation = J.jellyValidateLayout(layout, S);
       output.validation = { valid: validation.valid, reason: validation.reason };
     }
@@ -338,6 +390,11 @@ for (const entry of payload.cases) {
     console.log(
       `${entry.name}: ${entry.estimate.successCount}/${entry.estimate.trials} clears, ` +
         `${entry.estimate.meanDamage.toFixed(0)} mean damage, ${entry.estimate.representative.endedBy}`,
+    );
+  } else if (entry.simulation) {
+    console.log(
+      `${entry.name}: ${entry.simulation.valid ? 'valid' : entry.simulation.reason}, ` +
+        `${entry.simulation.trial.endedBy}, ${entry.simulation.trial.damage.toFixed(0)} damage`,
     );
   } else {
     console.log(`${entry.name}: ${entry.validation.valid ? 'valid' : entry.validation.reason}`);
