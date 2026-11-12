@@ -1,5 +1,5 @@
 // Writes the upstream Coral God Rank planner figures for the committed synthetic
-// save, so `crates/core/tests/coral_plan.rs` compares the Rust port against the
+// save, so `crates/coral/tests/coral_plan.rs` compares the Rust port against the
 // JS beam search and offering model.
 //
 // Usage: node script/coral-god-rank-oracle.mjs <path-to-idleon-research-optimizer>
@@ -47,7 +47,7 @@ const singularityLevels = [6, 7, 8, 9, 10, 11].map((index) =>
   C.coralKidLevel(index, saveData),
 );
 
-/// The section's defaults, in the same shape as `idleon_core::coral::Inputs`.
+/// The section's defaults, in the same shape as `idleon_coral::Inputs`.
 const inputs = {
   goal: 'balanced',
   budget: base.budget || 0,

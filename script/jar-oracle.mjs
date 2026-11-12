@@ -1,4 +1,4 @@
-// Regenerates crates/core/tests/jar-oracle.json from the upstream jar formulas,
+// Regenerates crates/jar/tests/jar-oracle.json from the upstream jar formulas,
 // so the Rust port is tested against the source of truth rather than hand-picked
 // numbers. Usage: node script/jar-oracle.mjs <path-to-idleon-research-optimizer>
 //
@@ -348,7 +348,7 @@ const payload = {
 };
 
 writeFileSync(
-  join(root, 'crates/core/tests/jar-oracle.json'),
+  join(root, 'crates/jar/tests/jar-oracle.json'),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(

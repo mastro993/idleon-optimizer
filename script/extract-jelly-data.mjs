@@ -63,7 +63,7 @@ const payload = {
   },
 };
 writeFileSync(
-  new URL('../crates/core/data/jelly.json', import.meta.url),
+  new URL('../crates/jelly/data/jelly.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(

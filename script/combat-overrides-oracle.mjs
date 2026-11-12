@@ -8,9 +8,9 @@
 // `compass3` override forces on).
 //
 // Two files come out of one checkout, so they can never disagree:
-//   - `crates/core/data/combat-overrides.json`: the catalog the app reads;
+//   - `crates/combat/data/combat-overrides.json`: the catalog the app reads;
 //   - `fixtures/combat-overrides.json`: the saved-input map and the resolved
-//     states `crates/core/tests/combat_overrides.rs` compares the engine against.
+//     states `crates/combat/tests/combat_overrides.rs` compares the engine against.
 // The entries map is synthetic: one number per input so the off, set and scale
 // branches have a saved value to act on, and an object for `objscale`.
 import { writeFileSync } from 'node:fs';
@@ -131,7 +131,7 @@ const resolved = cases.map((entry) => ({
 
 const root = new URL('..', import.meta.url);
 writeFileSync(
-  new URL('crates/core/data/combat-overrides.json', root),
+  new URL('crates/combat/data/combat-overrides.json', root),
   `${JSON.stringify({ groups: toggles.TOGGLE_GROUPS, toggles: catalog }, null, 2)}\n`
 );
 writeFileSync(

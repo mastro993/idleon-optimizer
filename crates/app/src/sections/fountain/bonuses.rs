@@ -3,7 +3,6 @@
 
 use super::overview::{num, pct, time};
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use crate::ui::layout::figure;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
@@ -15,11 +14,12 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, FontWeight, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::Fountain;
-use idleon_core::fountain;
+use idleon_fountain as fountain;
+use idleon_fountain::Fountain;
+use idleon_ui::formula::FormulaTree;
 
 /// The cross-system bonuses the save cannot supply, named instead of reading zero.
-pub fn missing(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn missing(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
     let missing = fountain.missing_bonuses();
     let muted = cx.theme().colors.fg_muted;
     div()
@@ -43,7 +43,10 @@ pub fn missing(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// Lucky coins and rubber ducks, when either system is unlocked.
-pub fn lucky_and_ducks(fountain: &Fountain, cx: &mut Context<AppState>) -> Option<AnyElement> {
+pub(crate) fn lucky_and_ducks(
+    fountain: &Fountain,
+    cx: &mut Context<AppState>,
+) -> Option<AnyElement> {
     let any_lucky =
         (0..fountain::CURRENCIES).any(|currency| fountain.lucky_coin_count(currency) > 0.0);
     if !fountain.duck_bar_unlocked() && !any_lucky {
@@ -173,7 +176,7 @@ pub fn lucky_and_ducks(fountain: &Fountain, cx: &mut Context<AppState>) -> Optio
 }
 
 /// The coin stacks lying on the fountain floor.
-pub fn stacks(fountain: &Fountain, _cx: &mut Context<AppState>) -> Option<AnyElement> {
+pub(crate) fn stacks(fountain: &Fountain, _cx: &mut Context<AppState>) -> Option<AnyElement> {
     let stacks = fountain.stacks();
     if stacks.is_empty() {
         return None;
@@ -237,7 +240,7 @@ pub fn stacks(fountain: &Fountain, _cx: &mut Context<AppState>) -> Option<AnyEle
 }
 
 /// The eighteen upgrades that boost other systems.
-pub fn cross_system(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn cross_system(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let mut grid = div().id("fountain-cross").flex().flex_wrap().gap_3();
     for bonus in fountain.cross_bonuses() {
@@ -275,7 +278,11 @@ pub fn cross_system(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyEleme
 }
 
 /// The shared formula tree over the currency value multiplier.
-pub fn formula(state: &AppState, fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn formula(
+    state: &AppState,
+    fountain: &Fountain,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let tree: Entity<FormulaTree> = state.fountain_breakdown.clone();
     tree.update(cx, |tree, cx| tree.set_root(fountain.multi_tree(), cx));
     Card::new()

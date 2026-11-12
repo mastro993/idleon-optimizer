@@ -16,11 +16,11 @@ use crate::ui::layout::{self, Breakpoint};
 use ely_gpui_component::layout::ScrollArea;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
-use idleon_core::coral::{Goal, Inputs, SaveInputs};
+use idleon_coral::{Goal, Inputs, SaveInputs};
 
 /// One numeric planner field, so the controls can share one editor row.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Field {
+pub(crate) enum Field {
     Budget,
     MaxLevels,
     BeamSize,
@@ -36,33 +36,33 @@ pub enum Field {
 
 /// The section's state, kept alive in `AppState` while the window is open.
 #[derive(Default)]
-pub struct State {
-    pub inputs: Inputs,
+pub(crate) struct State {
+    pub(crate) inputs: Inputs,
     /// The last imported save's values, so Reset can restore them.
-    pub save: SaveInputs,
+    pub(crate) save: SaveInputs,
 }
 
 impl State {
     /// Take the imported save's values as the new defaults.
-    pub fn adopt(&mut self, save: &SaveInputs) {
+    pub(crate) fn adopt(&mut self, save: &SaveInputs) {
         self.save = save.clone();
         self.inputs = Inputs::from_save(save);
     }
 
     /// Put every input back to what the save carried.
-    pub fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.inputs = Inputs::from_save(&self.save);
     }
 
-    pub fn set_goal(&mut self, id: &str) {
+    pub(crate) fn set_goal(&mut self, id: &str) {
         self.inputs.goal = Goal::from_id(id);
     }
 
-    pub fn set_assume_unlocked(&mut self, on: bool) {
+    pub(crate) fn set_assume_unlocked(&mut self, on: bool) {
         self.inputs.assume_unlocked = on;
     }
 
-    pub fn set(&mut self, field: Field, value: f64) {
+    pub(crate) fn set(&mut self, field: Field, value: f64) {
         let value = if value.is_finite() {
             value.max(0.0)
         } else {
@@ -85,7 +85,11 @@ impl State {
 }
 
 /// The section: the controls rail and the summary, plan and projection column.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let controls = ScrollArea::new("coral-controls-scroll")
         .vertical()
         .flex_1()

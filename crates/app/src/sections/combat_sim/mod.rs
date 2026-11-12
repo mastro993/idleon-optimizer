@@ -4,7 +4,7 @@
 //! `js/ui/combat-sim-setup-ui.js`: the character picker, the equipment slots
 //! with their saved upgrade deltas, the talent table and the named loadouts.
 //! The save-derived defaults and the item catalog come from
-//! [`idleon_core::combat`]; every edit recomputes the gear totals the header
+//! [`idleon_combat`]; every edit recomputes the gear totals the header
 //! shows, so the summary never lags behind the editor.
 //!
 //! The mechanics overrides (CS-02) sit beside it: the curated mechanics the
@@ -12,10 +12,12 @@
 //! a reset back to the save. The encounter run (CS-03) and the result tabs land
 //! on top of both; the editor owns the loadout and overrides they read.
 
-pub mod equipment;
-pub mod overrides;
-pub mod presets;
-pub mod talents;
+mod actions;
+
+pub(crate) mod equipment;
+pub(crate) mod overrides;
+pub(crate) mod presets;
+pub(crate) mod talents;
 
 use crate::state::AppState;
 use crate::ui::layout;
@@ -32,13 +34,13 @@ use gpui::{
     AnyElement, App, Context, Entity, InteractiveElement, IntoElement, ParentElement, Role,
     SharedString, StatefulInteractiveElement, Styled, Window, div, px,
 };
-use idleon_core::combat::Loadout;
-use idleon_core::save::Save;
+use idleon_combat::Loadout;
+use idleon_save::Save;
 
 /// The editor's tabs, matching the upstream setup editor's character tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     #[default]
     Gear,
     Talents,
@@ -46,9 +48,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Gear, Tab::Talents, Tab::Mechanics];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Gear, Tab::Talents, Tab::Mechanics];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Gear => "gear",
             Tab::Talents => "talents",
@@ -56,7 +58,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Gear => "Equipment",
             Tab::Talents => "Talents",
@@ -64,53 +66,42 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The section's own state: the working loadout and the named presets.
-pub struct State {
+pub(crate) struct State {
     /// The working copy of the selected character's loadout.
-    pub loadout: Loadout,
+    pub(crate) loadout: Loadout,
     /// Which character the loadout belongs to.
-    pub character: usize,
-    pub tab: Tab,
+    pub(crate) character: usize,
+    pub(crate) tab: Tab,
     /// The flat equipment slot the detail panel edits.
-    pub selected: usize,
+    pub(crate) selected: usize,
     /// The named loadouts the project JSON keeps.
-    pub presets: presets::Presets,
+    pub(crate) presets: presets::Presets,
     /// The name typed into the preset bar.
-    pub name: Entity<TextInput>,
+    pub(crate) name: Entity<TextInput>,
     /// The talent table's filter.
-    pub talent_search: Entity<TextInput>,
+    pub(crate) talent_search: Entity<TextInput>,
     /// The mechanic overrides the working loadout carries.
-    pub overrides: idleon_core::combat::State,
+    pub(crate) overrides: idleon_combat::State,
     /// The mechanics pane's search field.
-    pub override_search: Entity<TextInput>,
+    pub(crate) override_search: Entity<TextInput>,
     /// The mechanics pane's group filter; empty means every group.
-    pub override_group: String,
+    pub(crate) override_group: String,
     /// Whether the mechanics pane lists only the overridden rows.
-    pub override_only_active: bool,
+    pub(crate) override_only_active: bool,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let name = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Loadout name")
-                .label("Loadout name")
-        });
-        let talent_search = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Find a talent")
-                .label("Find a talent")
-        });
-        let override_search = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("crystal, drop rate, orb…")
-                .label("Find a mechanic")
-        });
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let name = crate::ui::text_input("Loadout name", "Loadout name", window, cx);
+        let talent_search = crate::ui::text_input("Find a talent", "Find a talent", window, cx);
+        let override_search =
+            crate::ui::text_input("crystal, drop rate, orb…", "Find a mechanic", window, cx);
         Self {
             loadout: Loadout::empty(),
             character: 0,
@@ -119,7 +110,7 @@ impl State {
             presets: presets::Presets::default(),
             name,
             talent_search,
-            overrides: idleon_core::combat::State::new(),
+            overrides: idleon_combat::State::new(),
             override_search,
             override_group: String::new(),
             override_only_active: false,
@@ -129,7 +120,7 @@ impl State {
     /// Replace the working loadout with the save's defaults for `character`,
     /// keeping the selected slot when it still exists. Named presets stay: they
     /// live in the project, not in the save.
-    pub fn load(&mut self, save: &Save, character: usize) {
+    pub(crate) fn load(&mut self, save: &Save, character: usize) {
         self.character = character;
         self.loadout = Loadout::from_save(save, character);
         if self.selected >= self.loadout.slots.len() {
@@ -138,23 +129,27 @@ impl State {
     }
 
     /// The preset name typed into the bar, trimmed.
-    pub fn preset_name(&self, cx: &App) -> String {
+    pub(crate) fn preset_name(&self, cx: &App) -> String {
         self.name.read(cx).text().trim().to_string()
     }
 
     /// The talent table's query.
-    pub fn talent_query(&self, cx: &App) -> String {
+    pub(crate) fn talent_query(&self, cx: &App) -> String {
         self.talent_search.read(cx).text().to_string()
     }
 
     /// The mechanics pane's query.
-    pub fn override_query(&self, cx: &App) -> String {
+    pub(crate) fn override_query(&self, cx: &App) -> String {
         self.override_search.read(cx).text().to_string()
     }
 }
 
 /// The loadout editor page.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let breakpoint = layout::Breakpoint::of(window);
     let totals = state.combat.loadout.totals();
     let summary = totals.line();

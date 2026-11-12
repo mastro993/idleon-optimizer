@@ -1,7 +1,7 @@
 //! The Fleet Simulation tab: the run controls, progress and the pile results.
 //!
 //! Upstream runs the pile in a module worker. This section runs the same
-//! simulation through the shared [`crate::task::TaskRunner`], so the progress
+//! simulation through the shared [`idleon_ui::runner::TaskRunner`], so the progress
 //! card, cancel action, cancelled notice and stale marker are the ones every
 //! other section uses. Every trial starts with an empty pile and all boats
 //! freshly departed, and the tier filter applies only until the pile reaches its
@@ -9,7 +9,6 @@
 
 use super::text_kpi;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::forms::{Choice, Select, Stepper};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -19,30 +18,31 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
-use idleon_core::sailing::{
+use idleon_sailing::{
     AssignmentMode, Goal, MAX_HOURS, MAX_TRIALS, MIN_HOURS, MIN_TRIALS, SimCurrencies, SimResult,
     SimSummary, island_artifact_count, island_distance,
 };
+use idleon_ui::format;
 
 /// What a simulation result was produced from; a change marks it stale.
 #[derive(Clone, Debug, PartialEq)]
-pub struct RunInputs {
-    pub island: usize,
-    pub goal: Goal,
-    pub mode: AssignmentMode,
-    pub minimum_tier: u32,
-    pub hours: f64,
-    pub trials: usize,
+pub(crate) struct RunInputs {
+    pub(crate) island: usize,
+    pub(crate) goal: Goal,
+    pub(crate) mode: AssignmentMode,
+    pub(crate) minimum_tier: u32,
+    pub(crate) hours: f64,
+    pub(crate) trials: usize,
     /// The account's talent, so a re-import with a different talent is stale.
-    pub unending_loot_search: f64,
+    pub(crate) unending_loot_search: f64,
     /// The pile capacity the account carries.
-    pub capacity: usize,
+    pub(crate) capacity: usize,
     /// The save this run read, so a new import is stale.
-    pub revision: u64,
+    pub(crate) revision: u64,
 }
 
 /// The simulation tab: controls, the run in flight and the stored results.
-pub fn simulation_tab(
+pub(crate) fn simulation_tab(
     state: &mut AppState,
     _table_height: Pixels,
     cx: &mut Context<AppState>,
@@ -69,7 +69,7 @@ pub fn simulation_tab(
         && let Some(progress) = task.progress.clone()
     {
         let cancel = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "sailing-sim",
             "Simulating the fleet pile",
             "Runs off the UI thread; cancelling keeps the previous result.",
@@ -80,7 +80,7 @@ pub fn simulation_tab(
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "sailing-sim-cancelled",
             task.result.is_some(),
         ));
@@ -274,11 +274,11 @@ fn results_card(result: &SimResult, stale: bool, cx: &mut Context<AppState>) -> 
         result.setup.island + 1
     ));
     if stale {
-        header = header.action(crate::ui::task::stale_badge("sailing-sim"));
+        header = header.action(idleon_ui::run_chrome::stale_badge("sailing-sim"));
     }
     let mut card = Card::new().header(header);
     if stale {
-        card = card.child(crate::ui::task::stale_banner("sailing-sim"));
+        card = card.child(idleon_ui::run_chrome::stale_banner("sailing-sim"));
     }
     let cards = div()
         .id("sailing-sim-kpis")

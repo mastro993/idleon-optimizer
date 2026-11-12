@@ -1,16 +1,16 @@
 //! The Clamworks upgrades: every pearl upgrade in the game's order.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
-use idleon_core::Clamworks;
+use idleon_clamworks::Clamworks;
+use idleon_ui::format;
 
-pub fn upgrades_pane(
+pub(crate) fn upgrades_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -41,7 +41,7 @@ pub fn upgrades_pane(
 
 /// Every upgrade with its level, saved bonus, per-level value and next cost.
 fn all_upgrades_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
-    let data = idleon_core::data::clamworks();
+    let data = idleon_clamworks::data::clamworks();
     let mut table = Table::new(["Upgrade", "Effect", "Lv", "Bonus", "Per Lv", "Next Cost"]);
     for (index, upgrade) in data.upgrades.iter().enumerate() {
         table = table.row([

@@ -69,7 +69,7 @@ const payload = {
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
 };
 
-const out = new URL('../crates/core/data/fishing.json', import.meta.url);
+const out = new URL('../crates/fishing/data/fishing.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${pools.length} pools, ${lures.length} lures, ${lines.length} lines, ` +

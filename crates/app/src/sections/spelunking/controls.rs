@@ -15,10 +15,10 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, div, px};
-use idleon_core::spelunking::{Inputs, Policy, StaminaMode};
+use idleon_spelunking::{Inputs, Policy, StaminaMode};
 
 /// The toolbar card: character, cave, mode, policy, full-clear and speed.
-pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let entity = cx.entity();
     let character_entity = entity.clone();
@@ -196,7 +196,11 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
 }
 
 /// The account values the upstream stat context would supply.
-pub fn account_card(state: &AppState, _inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn account_card(
+    state: &AppState,
+    _inputs: &Inputs,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let entity = cx.entity();
     let power_entity = entity.clone();
@@ -290,7 +294,7 @@ pub fn account_card(state: &AppState, _inputs: &Inputs, cx: &mut Context<AppStat
 }
 
 /// The starting-stamina choice shared by the party card.
-pub fn starting_select(state: &AppState, entity: gpui::Entity<AppState>) -> AnyElement {
+pub(crate) fn starting_select(state: &AppState, entity: gpui::Entity<AppState>) -> AnyElement {
     let modes = [
         Choice::new(StaminaMode::Saved.id(), "Saved stamina"),
         Choice::new(StaminaMode::Full.id(), "Fully recovered (hypothetical)"),
@@ -309,5 +313,5 @@ pub fn starting_select(state: &AppState, entity: gpui::Entity<AppState>) -> AnyE
 
 /// A short stamina readout for notes and choices.
 fn held(value: f64) -> String {
-    crate::ui::format::value(value)
+    idleon_ui::format::value(value)
 }

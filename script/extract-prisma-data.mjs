@@ -66,7 +66,7 @@ const payload = {
   },
 };
 writeFileSync(
-  new URL('../crates/core/data/prisma.json', import.meta.url),
+  new URL('../crates/prisma/data/prisma.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 const perCauldron = [0, 1, 2, 3].map(

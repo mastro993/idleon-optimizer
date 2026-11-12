@@ -38,7 +38,7 @@ const payload = {
   },
 };
 writeFileSync(
-  new URL('../crates/core/data/statues.json', import.meta.url),
+  new URL('../crates/statue/data/statues.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(`wrote ${STATUE_COUNT} statues`);
@@ -81,7 +81,7 @@ const expected = {
   firstCharacter: characters.find((rows) => rows.length) ?? [],
 };
 writeFileSync(
-  new URL('../crates/core/tests/statue-requirements.json', import.meta.url),
+  new URL('../crates/statue/tests/statue-requirements.json', import.meta.url),
   `${JSON.stringify(expected, null, 1)}\n`,
 );
 console.log(`wrote the requirement table for character ${characters.findIndex((rows) => rows.length)}`);
@@ -149,7 +149,7 @@ for (let charIdx = 0; charIdx < (saveData.statueLvAllData || []).length; charIdx
   });
 }
 writeFileSync(
-  new URL('../crates/core/tests/statue-costs.json', import.meta.url),
+  new URL('../crates/statue/tests/statue-costs.json', import.meta.url),
   JSON.stringify({
     generatedFrom: {
       repo: 'Corgan/idleon-research-optimizer',
@@ -193,7 +193,7 @@ const batch = entries.map((text) => {
   }
 });
 writeFileSync(
-  new URL('../crates/core/tests/statue-batch.json', import.meta.url),
+  new URL('../crates/statue/tests/statue-batch.json', import.meta.url),
   `${JSON.stringify({
     generatedFrom: {
       repo: 'Corgan/idleon-research-optimizer',

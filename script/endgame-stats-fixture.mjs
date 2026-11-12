@@ -1,5 +1,5 @@
 // Writes the upstream leaderboard audit for the committed synthetic save, so
-// `crates/core/tests/endgame.rs` can compare the Rust port against the JS.
+// `crates/endgame/tests/endgame.rs` can compare the Rust port against the JS.
 //
 // Usage: node script/endgame-stats-fixture.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';

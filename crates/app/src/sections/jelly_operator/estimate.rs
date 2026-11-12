@@ -2,8 +2,6 @@
 
 use super::outlook;
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
@@ -14,7 +12,9 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::jelly::{Estimate, Jelly};
+use idleon_jelly::{Estimate, Jelly};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// A number with a game suffix (`1.23M`), as the KPI cards read.
 pub(crate) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
@@ -66,7 +66,7 @@ pub(crate) fn text_kpi(
         .into_any_element()
 }
 
-pub fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
+pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
     let task = state.jelly_task(cx);
     let inputs = state.jelly_state.inputs(Some(jelly));
     let trials = state.jelly_state.trials;
@@ -125,7 +125,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> 
     );
     if running && let Some(progress) = task.progress.clone() {
         let entity = cx.entity();
-        body = body.child(task::progress_card(
+        body = body.child(run_chrome::progress_card(
             "jelly",
             "Estimating the operation",
             "Seeded trials of the saved board.",
@@ -136,7 +136,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> 
         ));
     }
     if task.cancelled {
-        body = body.child(task::cancelled_banner("jelly-cancelled", stale));
+        body = body.child(run_chrome::cancelled_banner("jelly-cancelled", stale));
     }
     let Some(result) = task.result.clone() else {
         if !running && !task.cancelled {
@@ -151,9 +151,9 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> 
         return body.into_any_element();
     };
     if stale {
-        body = body.child(task::stale_banner("jelly-estimate-stale"));
+        body = body.child(run_chrome::stale_banner("jelly-estimate-stale"));
     }
-    let stale_badge = stale.then(|| task::stale_badge("jelly-estimate"));
+    let stale_badge = stale.then(|| run_chrome::stale_badge("jelly-estimate"));
     body = body
         .child(
             div()

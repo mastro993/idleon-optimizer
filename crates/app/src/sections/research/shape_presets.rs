@@ -6,26 +6,26 @@
 //! only; editing a tier detaches the active preset, it never rewrites the
 //! preset or a built-in.
 
-use idleon_core::Tiers;
+use crate::sections::presets;
+use idleon_research::Tiers;
 
 /// One named tier list.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct CustomPreset {
-    pub name: String,
-    pub tiers: Tiers,
+pub(crate) struct CustomPreset {
+    pub(crate) name: String,
+    pub(crate) tiers: Tiers,
 }
 
 impl CustomPreset {
-    /// How many presets one project keeps.
-    pub const MAX: usize = 40;
-    /// How long a preset name may be.
-    const NAME_MAX: usize = 60;
-
     /// Save `tiers` under `name`, replacing a preset of the same name. Returns
     /// the status line the window shows.
-    pub fn store(presets: &mut Vec<Self>, name: &str, tiers: &Tiers) -> Result<String, String> {
-        let name: String = name.trim().chars().take(Self::NAME_MAX).collect();
+    pub(crate) fn store(
+        presets: &mut Vec<Self>,
+        name: &str,
+        tiers: &Tiers,
+    ) -> Result<String, String> {
+        let name = presets::clean_name(name);
         if name.is_empty() {
             return Err("Type a preset name before saving.".into());
         }
@@ -36,42 +36,33 @@ impl CustomPreset {
             name: name.clone(),
             tiers: tiers.clone(),
         };
-        if let Some(index) = presets.iter().position(|entry| entry.name == name) {
-            presets[index] = preset;
-        } else if presets.len() >= Self::MAX {
-            return Err(format!(
-                "{} presets is the limit; delete one before saving another.",
-                Self::MAX
-            ));
-        } else {
-            presets.push(preset);
-        }
+        presets::upsert(presets, preset, |entry| entry.name == name, "presets")?;
         Ok(format!("Saved the shape preset “{name}”."))
     }
 
     /// The tiers the preset called `name` holds.
-    pub fn find<'a>(presets: &'a [Self], name: &str) -> Option<&'a Self> {
+    pub(crate) fn find<'a>(presets: &'a [Self], name: &str) -> Option<&'a Self> {
         presets.iter().find(|preset| preset.name == name)
     }
 
     /// Forget the preset at `index`.
-    pub fn delete(presets: &mut Vec<Self>, index: usize) -> Option<Self> {
-        (index < presets.len()).then(|| presets.remove(index))
+    pub(crate) fn delete(presets: &mut Vec<Self>, index: usize) -> Option<Self> {
+        presets::remove(presets, index)
     }
 
     /// Drop nameless and duplicate presets read from a document, keeping the
     /// first of each name and the project's limit.
-    pub fn sanitise(presets: Vec<Self>) -> Vec<Self> {
+    pub(crate) fn sanitise(presets: Vec<Self>) -> Vec<Self> {
         let mut kept: Vec<Self> = Vec::new();
         for mut preset in presets {
-            preset.name = preset.name.trim().chars().take(Self::NAME_MAX).collect();
+            preset.name = presets::clean_name(&preset.name);
             if preset.name.is_empty()
                 || preset.name.starts_with('_')
                 || kept.iter().any(|other| other.name == preset.name)
             {
                 continue;
             }
-            if kept.len() >= Self::MAX {
+            if kept.len() >= presets::MAX {
                 break;
             }
             preset.tiers = preset.tiers.reconciled();
@@ -98,14 +89,12 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_name_or_a_full_list_is_refused() {
+    fn an_empty_or_builtin_name_is_refused() {
         let tiers = Tiers::default();
         let mut presets = Vec::new();
         assert!(CustomPreset::store(&mut presets, "  ", &tiers).is_err());
-        for index in 0..CustomPreset::MAX {
-            CustomPreset::store(&mut presets, &format!("preset {index}"), &tiers).expect("saved");
-        }
-        assert!(CustomPreset::store(&mut presets, "one more", &tiers).is_err());
+        assert!(CustomPreset::store(&mut presets, "_none", &tiers).is_err());
+        assert!(presets.is_empty());
     }
 
     #[test]

@@ -10,11 +10,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::fishing::{self, FishingSave};
+use idleon_fishing::{self as fishing, FishingSave};
 
 /// The character, toolkit, location and claim length, with the account card's
 /// values applied to the selected toolkit.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     save: &FishingSave,
     breakpoint: Breakpoint,
@@ -190,7 +190,7 @@ fn field(label: &'static str, control: AnyElement) -> AnyElement {
 }
 
 /// The shared formula tree under a fixed height, so its own scroll area works.
-pub(super) fn formula_card(tree: &gpui::Entity<crate::ui::formula::FormulaTree>) -> AnyElement {
+pub(super) fn formula_card(tree: &gpui::Entity<idleon_ui::formula::FormulaTree>) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Breakdown")
@@ -240,7 +240,7 @@ fn depth_text(bonus: &[f64; 4]) -> String {
 }
 
 /// The upstream "Reset to saved" action.
-pub fn reset(cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn reset(cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     Button::new("fishing-reset", "Reset to saved")
         .size(ControlSize::Sm)

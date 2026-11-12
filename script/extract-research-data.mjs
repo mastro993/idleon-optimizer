@@ -64,7 +64,7 @@ const payload = {
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer', game: game.Research?.length ?? 0 },
 };
 
-const out = new URL('../crates/core/data/research.json', import.meta.url);
+const out = new URL('../crates/research/data/research.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(`wrote ${nodes.length} nodes, ${shapes.length} shapes, ${observations.length} observations`);
 
@@ -95,7 +95,7 @@ const clamworks = {
 };
 
 writeFileSync(
-  new URL('../crates/core/data/clamworks.json', import.meta.url),
+  new URL('../crates/clamworks/data/clamworks.json', import.meta.url),
   JSON.stringify(clamworks, null, 1)
 );
 console.log(`wrote ${clamworks.upgrades.length} Clamworks upgrades and ${clamworks.scurge.length} Scurge upgrades`);

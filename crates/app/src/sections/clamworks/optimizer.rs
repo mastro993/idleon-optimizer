@@ -2,14 +2,13 @@
 //!
 //! `clamworks.plan` repeats the upstream ranking (`rankUpgrades`) at the levels
 //! each purchase reaches, so every step pays the `upgNextCost` the game would
-//! charge there. The plan runs through the shared [`crate::task::TaskRunner`]:
-//! its progress and cancel chrome come from `ui::task`, and a result whose
+//! charge there. The plan runs through the shared [`idleon_ui::runner::TaskRunner`]:
+//! its progress and cancel chrome come from `idleon_ui::run_chrome`, and a result whose
 //! budget or multikill changed is marked stale instead of dropped.
 
 use super::kpi;
 use super::upgrades::{effect, money};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::Stepper;
@@ -20,13 +19,14 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, Window, div};
-use idleon_core::Clamworks;
-use idleon_core::clamworks::{Category, Plan, PlanStep, UpgradeRank};
+use idleon_clamworks::Clamworks;
+use idleon_clamworks::{Category, Plan, PlanStep, UpgradeRank};
+use idleon_ui::format;
 
 /// The largest budget the control offers, so the stepper stays finite.
 const MAX_BUDGET: f64 = 1e18;
 
-pub fn optimizer_pane(
+pub(crate) fn optimizer_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -52,7 +52,7 @@ pub fn optimizer_pane(
         && let Some(progress) = task.progress.clone()
     {
         let cancel = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "clamworks-plan",
             "Planning the purchases",
             "Runs off the UI thread; cancelling keeps the plan this run replaced.",
@@ -63,7 +63,7 @@ pub fn optimizer_pane(
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "clamworks-plan-cancelled",
             task.result.is_some(),
         ));
@@ -168,11 +168,11 @@ fn plan_card(plan: &Plan, stale: bool, cx: &mut Context<AppState>) -> AnyElement
         format::rate(plan.budget)
     ));
     if stale {
-        header = header.action(crate::ui::task::stale_badge("clamworks-plan"));
+        header = header.action(idleon_ui::run_chrome::stale_badge("clamworks-plan"));
     }
     let mut card = Card::new().header(header);
     if stale {
-        card = card.child(crate::ui::task::stale_banner("clamworks-plan"));
+        card = card.child(idleon_ui::run_chrome::stale_banner("clamworks-plan"));
     }
     let summary = div()
         .id("clamworks-plan-result")
@@ -225,7 +225,7 @@ fn plan_card(plan: &Plan, stale: bool, cx: &mut Context<AppState>) -> AnyElement
         ));
     let mut table = Table::new(["Upgrade", "Purchases", "Levels", "Pearls", "Pearls / Kill"]);
     for row in &rows {
-        let name = idleon_core::data::clamworks().upgrades[row.index]
+        let name = idleon_clamworks::data::clamworks().upgrades[row.index]
             .name
             .clone();
         table = table.row([

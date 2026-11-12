@@ -10,7 +10,6 @@ use super::{
     notes_card, unavailable_card,
 };
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, SearchInput, Select};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -19,13 +18,14 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::monument::JusticeSnapshot;
-use idleon_core::monument::justice::{self, Response, State};
-pub use idleon_core::monument::justice::{Action, Effect};
+use idleon_monument::JusticeSnapshot;
+use idleon_monument::justice::{self, Response, State};
+pub(crate) use idleon_monument::justice::{Action, Effect};
+use idleon_ui::format;
 
 /// One of the worksheet's six stats, in the upstream order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Field {
+pub(crate) enum Field {
     Round,
     Health,
     Coins,
@@ -35,7 +35,7 @@ pub enum Field {
 }
 
 impl Field {
-    pub const ALL: [Field; 6] = [
+    pub(crate) const ALL: [Field; 6] = [
         Field::Round,
         Field::Health,
         Field::Coins,
@@ -45,7 +45,7 @@ impl Field {
     ];
 
     /// The element id suffix and the editor order key.
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Field::Round => "round",
             Field::Health => "health",
@@ -57,7 +57,7 @@ impl Field {
     }
 
     /// The stat's label, as the upstream worksheet names it.
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Field::Round => "Case number",
             Field::Health => "Mental health",
@@ -69,7 +69,7 @@ impl Field {
     }
 
     /// The value the editor shows; the case number is the round plus one.
-    pub fn value(self, state: &State) -> f64 {
+    pub(crate) fn value(self, state: &State) -> f64 {
         match self {
             Field::Round => (state.round + 1) as f64,
             Field::Health => state.health as f64,
@@ -82,7 +82,7 @@ impl Field {
 
     /// Writes a typed value, clamped the way the input is; the case number is
     /// the round plus one, as upstream shows it.
-    pub fn set(self, state: &mut State, value: f64) {
+    pub(crate) fn set(self, state: &mut State, value: f64) {
         match self {
             Field::Round => state.round = (value.round() - 1.0).max(0.0) as i64,
             Field::Popularity => state.popularity = value.round() as i64,
@@ -95,7 +95,7 @@ impl Field {
 }
 
 /// The Justice pane.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     snapshot: Option<&JusticeSnapshot>,
     cx: &mut Context<AppState>,

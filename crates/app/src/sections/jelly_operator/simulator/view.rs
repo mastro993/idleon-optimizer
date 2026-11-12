@@ -4,8 +4,6 @@ use super::result;
 use super::state::{fever_modes, revive_label};
 use crate::sections::jelly_operator::grid;
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant, ToggleGroup, ToggleItem};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::forms::{Choice, NumberInput, Select};
@@ -15,12 +13,14 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::jelly::board;
-use idleon_core::jelly::operation::RevivePolicy;
-use idleon_core::jelly::{Jelly, boss_hp, boss_time, data, fever_mode_bonus, fever_mode_name};
+use idleon_jelly::board;
+use idleon_jelly::operation::RevivePolicy;
+use idleon_jelly::{Jelly, boss_hp, boss_time, data, fever_mode_bonus, fever_mode_name};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// The simulator tab: the controls, the sandbox board and the last run.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -96,7 +96,7 @@ pub fn pane(
         return body.into_any_element();
     };
     if task.stale {
-        body = body.child(task::stale_banner("jelly-sim-stale"));
+        body = body.child(run_chrome::stale_banner("jelly-sim-stale"));
     }
     body.child(result::card(&result, task.stale, cx))
         .into_any_element()
@@ -243,7 +243,7 @@ fn controls(state: &AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyE
         );
     if running && let Some(progress) = task.progress.clone() {
         let entity = cx.entity();
-        row = row.child(task::progress_card(
+        row = row.child(run_chrome::progress_card(
             "jelly-sim",
             "Simulating the operation",
             "One seeded 60 FPS attempt of the sandbox board.",
@@ -254,7 +254,10 @@ fn controls(state: &AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyE
         ));
     }
     if task.cancelled {
-        row = row.child(task::cancelled_banner("jelly-sim-cancelled", task.stale));
+        row = row.child(run_chrome::cancelled_banner(
+            "jelly-sim-cancelled",
+            task.stale,
+        ));
     }
     row.into_any_element()
 }

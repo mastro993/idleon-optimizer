@@ -1,5 +1,5 @@
 // Writes the upstream Royal Guardian figures for the committed synthetic save,
-// so `crates/core/tests/royal_guardian.rs` compares the Rust port against the JS.
+// so `crates/royal-guardian/tests/royal_guardian.rs` compares the Rust port against the JS.
 //
 // Usage: node script/royal-oracle.mjs <path-to-idleon-research-optimizer>
 //

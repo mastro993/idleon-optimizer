@@ -7,11 +7,12 @@
 //! layers come from the upstream shared stat pipeline, which this build does
 //! not decode, so the page renders the upstream dungeon and missing-pipeline
 //! states instead of a number it cannot justify. The context, the layer arithmetic and the
-//! upstream formatting live in [`idleon_core::damage`] and are ready for that
+//! upstream formatting live in [`idleon_damage`] and are ready for that
 //! provider.
 
+mod actions;
+
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout::figure;
 use ely_gpui_component::feedback::{Callout, EmptyState};
 use ely_gpui_component::forms::{Choice, Select};
@@ -22,24 +23,25 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_core::damage::{self, Context as DamageContext, Summary};
-use idleon_core::save::Save;
-use idleon_core::stats::{self, MapVisibility, Snapshot};
+use idleon_damage::{self as damage, Context as DamageContext, Summary};
+use idleon_save::Save;
+use idleon_stats::{self as stats, MapVisibility, Snapshot};
+use idleon_ui::format;
 
 /// The section's own state: the context and the save slice it reads.
 #[derive(Default)]
-pub struct State {
-    pub context: DamageContext,
-    pub snapshot: Option<Snapshot>,
+pub(crate) struct State {
+    pub(crate) context: DamageContext,
+    pub(crate) snapshot: Option<Snapshot>,
     /// The last computed summary; `None` before a save loads.
-    pub summary: Option<Summary>,
+    pub(crate) summary: Option<Summary>,
     save: Option<Save>,
 }
 
 impl State {
     /// Take a freshly imported save, opening on character one and its current
     /// map exactly like upstream `onLoad`.
-    pub fn load(&mut self, save: &Save) {
+    pub(crate) fn load(&mut self, save: &Save) {
         let snapshot = Snapshot::from_save(save);
         self.context = DamageContext::from_snapshot(&snapshot);
         self.snapshot = Some(snapshot);
@@ -50,7 +52,7 @@ impl State {
 
     /// The map selector's rows for the current character; upstream lists every
     /// valid map, not the character's accessible subset.
-    pub fn options(&self) -> Vec<stats::MapOption> {
+    pub(crate) fn options(&self) -> Vec<stats::MapOption> {
         self.snapshot
             .as_ref()
             .map(|snapshot| self.context.map_options(snapshot))
@@ -59,7 +61,7 @@ impl State {
 
     /// Keep the context inside the save and the map list; names a dropped map
     /// in `warnings`, for a project file restoring an unavailable one.
-    pub fn clamp(&mut self, warnings: &mut Vec<String>) {
+    pub(crate) fn clamp(&mut self, warnings: &mut Vec<String>) {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return;
         };
@@ -81,7 +83,7 @@ impl State {
     }
 
     /// Recompute the summary for the current context.
-    pub fn refresh(&mut self) {
+    pub(crate) fn refresh(&mut self) {
         self.summary = self
             .save
             .as_ref()
@@ -89,7 +91,7 @@ impl State {
     }
 
     /// Pick a character; the map follows its current map, as upstream `switchChar`.
-    pub fn select_character(&mut self, character: usize) {
+    pub(crate) fn select_character(&mut self, character: usize) {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return;
         };
@@ -101,7 +103,7 @@ impl State {
     }
 
     /// Pick a map from the list the save allows.
-    pub fn select_map(&mut self, map: usize) {
+    pub(crate) fn select_map(&mut self, map: usize) {
         if !self.options().iter().any(|option| option.class.map == map) {
             return;
         }
@@ -111,7 +113,11 @@ impl State {
 }
 
 /// The section page: the context card and the summary cards.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     let damage = &state.damage;
@@ -382,7 +388,7 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
 
 /// Restore a project file's damage context, warning about values the save
 /// cannot show.
-pub fn restore(state: &mut AppState, context: DamageContext, warnings: &mut Vec<String>) {
+pub(crate) fn restore(state: &mut AppState, context: DamageContext, warnings: &mut Vec<String>) {
     state.damage.context = context;
     state.damage.clamp(warnings);
     state.damage.refresh();

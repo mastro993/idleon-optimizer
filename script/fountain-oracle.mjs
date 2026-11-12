@@ -1,5 +1,5 @@
 // Writes the upstream Fountain (W5) figures for the committed synthetic save, so
-// `crates/core/tests/fountain.rs` compares the Rust port against the JS.
+// `crates/fountain/tests/fountain.rs` compares the Rust port against the JS.
 //
 // Usage: node script/fountain-oracle.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';

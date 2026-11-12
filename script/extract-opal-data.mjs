@@ -3,7 +3,7 @@
 //
 // `opal-calc.html` keeps its villager maths inline and pulls each account
 // bonus from another system. This file holds only the per-level constants
-// those systems need, so `crates/core/src/opal` can reproduce `buildExt`
+// those systems need, so `crates/opal/src` can reproduce `buildExt`
 // without a second copy of the whole account tree. The bell and measurement
 // rows already ship in `fountain.json`, extracted from the same upstream rows.
 import { writeFileSync } from 'node:fs';
@@ -70,7 +70,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/opal.json', import.meta.url);
+const out = new URL('../crates/opal/data/opal.json', import.meta.url);
 writeFileSync(out, `${JSON.stringify(payload, null, 1)}\n`);
 console.log(
   `wrote ${payload.cosmo.flat().length} cosmo bases, ${payload.compassPerLevel.length} compass upgrades, ` +

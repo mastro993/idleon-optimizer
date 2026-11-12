@@ -7,7 +7,6 @@
 //! copies the same instructions as plain text.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::CopyButton;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Checkbox, Choice, Select};
@@ -18,10 +17,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::ladle::kitchen::{self, Layout, LayoutMode, Phase, PhaseKind};
+use idleon_ladle::kitchen::{self, Layout, LayoutMode, Phase, PhaseKind};
+use idleon_ui::format;
 
 /// The reset layout card and the forecast list.
-pub fn pane(
+pub(crate) fn pane(
     state: &AppState,
     reset: &kitchen::Reset,
     plan: &kitchen::Plan,

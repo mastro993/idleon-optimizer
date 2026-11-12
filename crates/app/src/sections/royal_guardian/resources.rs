@@ -8,7 +8,6 @@
 use super::overview::{figure_text, kpi, number_cell, rate_cell};
 use super::world_rail;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -17,11 +16,14 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
-use idleon_core::RoyalGuardian;
-use idleon_core::royal_guardian::{self, Allocation, NodeAllocation, Rate, ResourceNode};
+use idleon_royal_guardian::RoyalGuardian;
+use idleon_royal_guardian::{
+    self as royal_guardian, Allocation, NodeAllocation, Rate, ResourceNode,
+};
+use idleon_ui::format;
 
 /// The Resources pane.
-pub fn resources(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn resources(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let royal = state
         .royal
         .as_ref()

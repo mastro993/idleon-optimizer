@@ -3,7 +3,6 @@
 
 use super::RunInputs;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
@@ -11,12 +10,13 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::jelly::{Estimate, Insights, Jelly};
+use idleon_jelly::{Estimate, Insights, Jelly};
+use idleon_ui::format;
 
 use super::estimate::{stat, text_kpi};
 
 /// The progression outlook, from the same estimate.
-pub fn insights_card(
+pub(crate) fn insights_card(
     jelly: &Jelly,
     inputs: &RunInputs,
     result: &Estimate,
@@ -191,7 +191,7 @@ pub fn insights_card(
         .into_any_element()
 }
 
-pub fn contribution_card(result: &Estimate) -> AnyElement {
+pub(crate) fn contribution_card(result: &Estimate) -> AnyElement {
     let mut table = Table::new(["Cell", "Shots", "Hits", "Damage", "Bloodcells", "EXP"]);
     for row in result
         .mean_contribution_by_type
@@ -216,7 +216,7 @@ pub fn contribution_card(result: &Estimate) -> AnyElement {
         .into_any_element()
 }
 
-pub fn timeline_card(result: &Estimate, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn timeline_card(result: &Estimate, cx: &mut Context<AppState>) -> AnyElement {
     let representative = &result.representative;
     let deaths = &representative.death_log;
     let muted = cx.theme().colors.fg_muted;

@@ -1,0 +1,19 @@
+[package]
+name = "idleon-stats"
+description = "Account stats context, map classification and stat breakdowns."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-account = { workspace = true }
+idleon-common = { workspace = true }
+idleon-research = { workspace = true }
+idleon-save = { workspace = true }
+idleon-stats-data = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+idleon-import = { workspace = true }

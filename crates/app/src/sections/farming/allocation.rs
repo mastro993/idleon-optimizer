@@ -5,8 +5,6 @@
 //! save edit marks the stored allocation stale.
 
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -15,7 +13,9 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::farming::{self, Allocation, Mode, Objective, RANK_UPGRADES};
+use idleon_farming::{self as farming, Allocation, Mode, Objective, RANK_UPGRADES};
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// The recommended allocation, its scope buttons and the twenty upgrade rows.
 pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
@@ -37,7 +37,7 @@ pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) 
     if running {
         if let Some(progress) = task.progress.clone() {
             let cancel = cx.entity();
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "farming",
                 "Allocating Land Rank",
                 "Runs off the UI thread. Cancelling keeps the result this run replaced.",
@@ -48,13 +48,13 @@ pub(super) fn allocation_card(state: &mut AppState, cx: &mut Context<AppState>) 
             ));
         }
     } else if task.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "farming-cancelled",
             result.is_some(),
         ));
     }
     if task.stale {
-        body = body.child(task::stale_banner("farming-stale"));
+        body = body.child(run_chrome::stale_banner("farming-stale"));
     }
 
     match &result {

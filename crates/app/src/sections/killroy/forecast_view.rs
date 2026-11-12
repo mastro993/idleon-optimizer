@@ -20,10 +20,10 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
-use idleon_core::killroy::{Forecast, ForecastWeek, Selection};
+use idleon_killroy::{Forecast, ForecastWeek, Selection};
 
 /// No save has been imported yet.
-pub fn empty_state(_window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn empty_state(_window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     Card::new()
         .header(
@@ -52,7 +52,11 @@ pub fn empty_state(_window: &mut Window, cx: &mut Context<AppState>) -> AnyEleme
 }
 
 /// A save that cannot answer the forecast, with the way to replace it.
-pub fn error_state(error: String, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn error_state(
+    error: String,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let entity = cx.entity();
     Card::new()
         .header(
@@ -78,7 +82,7 @@ pub fn error_state(error: String, _window: &mut Window, cx: &mut Context<AppStat
 }
 
 /// The forecast table and the `+1` upgrade list beside it.
-pub fn forecast_card(
+pub(crate) fn forecast_card(
     state: &mut AppState,
     forecast: &Forecast,
     window: &mut Window,
@@ -212,14 +216,14 @@ fn encounter_cell(
         let colors = &cx.theme().colors;
         (colors.fg_muted, colors.accent)
     };
-    let entries: Vec<&idleon_core::killroy::Encounter> = week
+    let entries: Vec<&idleon_killroy::Encounter> = week
         .characters
         .iter()
         .filter_map(|character| character.encounters.get(slot))
         .collect();
     // Upstream draws a room for every slot not known to be locked, so an
     // unknown unlock still shows its map and record.
-    let offered: Vec<&idleon_core::killroy::Encounter> = entries
+    let offered: Vec<&idleon_killroy::Encounter> = entries
         .iter()
         .copied()
         .filter(|encounter| encounter.available != Some(false))
@@ -231,7 +235,7 @@ fn encounter_cell(
     else {
         return div().into_any_element();
     };
-    let mut maps: Vec<&idleon_core::killroy::Encounter> = Vec::new();
+    let mut maps: Vec<&idleon_killroy::Encounter> = Vec::new();
     for encounter in &offered {
         if encounter
             .map_idx
@@ -352,7 +356,7 @@ fn selector(
 
 /// The right rail: family and map appearances over the upcoming weeks and the
 /// assumptions the numbers rest on.
-pub fn rotation_card(
+pub(crate) fn rotation_card(
     forecast: &Forecast,
     table_height: gpui::Pixels,
     cx: &mut Context<AppState>,
@@ -408,7 +412,7 @@ pub fn rotation_card(
         .into_any_element()
 }
 
-pub fn week_label(offset: usize) -> String {
+pub(crate) fn week_label(offset: usize) -> String {
     match offset {
         0 => "This week".into(),
         1 => "+1 week".into(),
@@ -417,7 +421,7 @@ pub fn week_label(offset: usize) -> String {
 }
 
 /// A local date for an aria label.
-pub fn stamp(seconds: f64) -> String {
+pub(crate) fn stamp(seconds: f64) -> String {
     jiff::Timestamp::from_second(seconds.floor() as i64)
         .ok()
         .and_then(|at| {
@@ -428,12 +432,12 @@ pub fn stamp(seconds: f64) -> String {
 }
 
 /// A record or count with thousands separators.
-pub fn metric(value: Option<f64>) -> String {
+pub(crate) fn metric(value: Option<f64>) -> String {
     let Some(value) = value else {
         return "—".into();
     };
     if value.fract() == 0.0 && value.abs() < u64::MAX as f64 {
-        crate::ui::format::count(value as u64)
+        idleon_ui::format::count(value as u64)
     } else {
         format!("{value:.2}")
     }

@@ -48,7 +48,7 @@ const upgrades = killroy.KILLROY_UPGRADES.map(({ name, effect }) => ({ name, eff
 
 const data = { families: killroy.KILLROY_FAMILIES, upgrades, pools };
 writeFileSync(
-  join(import.meta.dirname, '../crates/core/data/killroy.json'),
+  join(import.meta.dirname, '../crates/killroy/data/killroy.json'),
   `${JSON.stringify(data, null, 2)}\n`
 );
-console.log(`wrote ${POOLS.length} pools to crates/core/data/killroy.json`);
+console.log(`wrote ${POOLS.length} pools to crates/killroy/data/killroy.json`);

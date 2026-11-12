@@ -12,7 +12,6 @@ use super::overview::{number_cell, rate_cell, selected_outpost, type_label};
 use super::world_rail;
 use crate::assets::{Artwork, Manifest};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
@@ -20,8 +19,9 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, Styled, canvas, div, img, point, px};
-use idleon_core::RoyalGuardian;
-use idleon_core::royal_guardian::{self, Endpoint};
+use idleon_royal_guardian::RoyalGuardian;
+use idleon_royal_guardian::{self as royal_guardian, Endpoint};
+use idleon_ui::format;
 
 /// Resolve one upstream artwork reference, or `None` when the import skipped it.
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
@@ -41,7 +41,7 @@ const MAP_TOP: f64 = 27.0;
 const MAP_SCALE: f32 = 0.92;
 
 /// The Outposts pane.
-pub fn outposts(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn outposts(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let royal = state
         .royal
         .as_ref()

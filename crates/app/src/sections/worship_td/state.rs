@@ -6,10 +6,10 @@
 //! view so the HUD and the map always describe the same tick. A finished run's
 //! recorder loads as a replay, which the second pump scrubs and plays.
 
-use crate::state::AppState;
+use crate::state::{AppState, discard_run};
 use gpui::Context;
-use idleon_core::worship::{
-    self, Inputs, Plan, PlanIssue, PlanStage, Replay, ReplayConfig, Run, RunView,
+use idleon_worship::{
+    self as worship, Inputs, Plan, PlanIssue, PlanStage, Replay, ReplayConfig, Run, RunView,
     guide_presets_for_trial, heuristic_plan, plan_issues, plan_stages,
 };
 use std::time::{Duration, Instant};
@@ -17,7 +17,7 @@ use std::time::{Duration, Instant};
 /// Where a build plan comes from.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum PlanSource {
+pub(crate) enum PlanSource {
     /// The community guide preset for this trial, when one ships.
     #[default]
     Guide,
@@ -26,28 +26,28 @@ pub enum PlanSource {
 }
 
 impl PlanSource {
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             PlanSource::Guide => "guide",
             PlanSource::Heuristic => "heuristic",
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             PlanSource::Guide => "Guide preset",
             PlanSource::Heuristic => "Coverage heuristic",
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         [PlanSource::Guide, PlanSource::Heuristic]
             .into_iter()
             .find(|source| source.id() == id)
     }
 
     /// Whether this source has a plan for `trial`.
-    pub fn available(self, trial: usize) -> bool {
+    pub(crate) fn available(self, trial: usize) -> bool {
         match self {
             PlanSource::Guide => guide_presets_for_trial(trial).next().is_some(),
             PlanSource::Heuristic => true,
@@ -57,12 +57,12 @@ impl PlanSource {
 
 /// The inputs a stored plan result was produced from.
 #[derive(Clone, Debug, PartialEq)]
-pub struct PlanRunInputs {
-    pub trial: usize,
-    pub source: PlanSource,
-    pub seed: u64,
-    pub inputs: Inputs,
-    pub plan: Plan,
+pub(crate) struct PlanRunInputs {
+    pub(crate) trial: usize,
+    pub(crate) source: PlanSource,
+    pub(crate) seed: u64,
+    pub(crate) inputs: Inputs,
+    pub(crate) plan: Plan,
 }
 
 /// What the optimizer search runs with: the mode's budget, how many runs each
@@ -70,14 +70,14 @@ pub struct PlanRunInputs {
 /// wave a simulated run stops at.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct OptimizeConfig {
-    pub mode: worship::Mode,
+pub(crate) struct OptimizeConfig {
+    pub(crate) mode: worship::Mode,
     /// Screening runs per candidate.
-    pub seeds: usize,
+    pub(crate) seeds: usize,
     /// The seed the whole search derives from; two runs with it agree.
-    pub base_seed: u64,
+    pub(crate) base_seed: u64,
     /// Stop a simulated run once it starts this wave.
-    pub max_wave: u32,
+    pub(crate) max_wave: u32,
 }
 
 impl Default for OptimizeConfig {
@@ -109,10 +109,10 @@ impl OptimizeConfig {
 /// The inputs a stored optimizer result was produced from: the search settings
 /// and the account values, not the plan the search compares against.
 #[derive(Clone, Debug, PartialEq)]
-pub struct OptimizeRunInputs {
-    pub trial: usize,
-    pub config: OptimizeConfig,
-    pub inputs: Inputs,
+pub(crate) struct OptimizeRunInputs {
+    pub(crate) trial: usize,
+    pub(crate) config: OptimizeConfig,
+    pub(crate) inputs: Inputs,
 }
 
 /// The default plan source for a trial: the guide when one ships, else the
@@ -131,45 +131,45 @@ const FRAME: Duration = Duration::from_millis(16);
 /// The section's config and its live run.
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub trial: usize,
+pub(crate) struct State {
+    pub(crate) trial: usize,
     /// The simulator, Plan or Model pane the section shows.
-    pub tab: super::Tab,
+    pub(crate) tab: super::Tab,
     /// Where the build plan comes from.
-    pub plan_source: PlanSource,
+    pub(crate) plan_source: PlanSource,
     /// Whether the plan on screen is the optimizer's recommendation.
-    pub plan_from_optimizer: bool,
+    pub(crate) plan_from_optimizer: bool,
     /// What the strategy optimizer searches with.
-    pub optimize: OptimizeConfig,
+    pub(crate) optimize: OptimizeConfig,
     /// The palette's selected tower type.
-    pub tower: usize,
-    pub ranges: bool,
-    pub speed: f64,
+    pub(crate) tower: usize,
+    pub(crate) ranges: bool,
+    pub(crate) speed: f64,
     /// The current plan, regenerated when the trial or source changes.
     #[serde(skip)]
-    pub plan: Option<Plan>,
+    pub(crate) plan: Option<Plan>,
     /// The plan's staged layout, cached with the plan.
     #[serde(skip)]
-    pub plan_stages: Vec<PlanStage>,
+    pub(crate) plan_stages: Vec<PlanStage>,
     /// The plan's missing inputs and refused actions, cached with the plan.
     #[serde(skip)]
-    pub plan_issues: Vec<PlanIssue>,
+    pub(crate) plan_issues: Vec<PlanIssue>,
     #[serde(skip)]
-    pub run: Option<Run>,
+    pub(crate) run: Option<Run>,
     #[serde(skip)]
-    pub view: Option<RunView>,
+    pub(crate) view: Option<RunView>,
     #[serde(skip)]
-    pub replay: Option<Replay>,
+    pub(crate) replay: Option<Replay>,
     /// Whether the map shows the recorded replay instead of the live run.
     #[serde(skip)]
-    pub replay_mode: bool,
+    pub(crate) replay_mode: bool,
     /// The replay's position in frames; fractional while playing.
     #[serde(skip)]
-    pub replay_pos: f64,
+    pub(crate) replay_pos: f64,
     #[serde(skip)]
-    pub replay_playing: bool,
+    pub(crate) replay_playing: bool,
     #[serde(skip)]
-    pub replay_speed: f64,
+    pub(crate) replay_speed: f64,
     #[serde(skip)]
     replay_generation: u64,
     #[serde(skip)]
@@ -177,17 +177,17 @@ pub struct State {
     #[serde(skip)]
     replay_frame_at: Option<Instant>,
     #[serde(skip)]
-    pub playing: bool,
+    pub(crate) playing: bool,
     #[serde(skip)]
-    pub generation: u64,
+    pub(crate) generation: u64,
     #[serde(skip)]
-    pub seed: u64,
+    pub(crate) seed: u64,
     #[serde(skip)]
-    pub selected: Option<u64>,
+    pub(crate) selected: Option<u64>,
     #[serde(skip)]
-    pub message: Option<String>,
+    pub(crate) message: Option<String>,
     #[serde(skip)]
-    pub pumping: bool,
+    pub(crate) pumping: bool,
     #[serde(skip)]
     frame_at: Option<Instant>,
     #[serde(skip)]
@@ -358,7 +358,7 @@ impl AppState {
     }
 
     /// Play or pause the run.
-    pub fn worship_set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
         if playing && self.worship.run.as_ref().is_none_or(Run::done) {
             return;
         }
@@ -375,7 +375,7 @@ impl AppState {
     }
 
     /// Restart the trial from tick 0 with the same seed.
-    pub fn worship_restart(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_restart(&mut self, cx: &mut Context<Self>) {
         self.worship.generation += 1;
         self.worship.playing = false;
         self.worship.pumping = false;
@@ -417,7 +417,7 @@ impl AppState {
     }
 
     /// Switch the build plan's source and drop the previous plan run.
-    pub fn worship_set_plan_source(&mut self, source: PlanSource, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_plan_source(&mut self, source: PlanSource, cx: &mut Context<Self>) {
         let trial = self.worship.trial;
         if !source.available(trial) {
             return;
@@ -426,10 +426,7 @@ impl AppState {
         self.worship.plan_from_optimizer = false;
         self.worship.plan = None;
         self.worship_ensure_plan();
-        self.worship_plan.update(cx, |runner, _| {
-            runner.cancel();
-            runner.clear();
-        });
+        discard_run(&self.worship_plan, cx);
         cx.notify();
     }
 
@@ -463,21 +460,18 @@ impl AppState {
     }
 
     /// Switch trials, restarting the run.
-    pub fn worship_set_trial(&mut self, trial: usize, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_trial(&mut self, trial: usize, cx: &mut Context<Self>) {
         let last = worship::data().trials.len().saturating_sub(1);
         self.worship.trial = trial.min(last);
         self.worship.plan = None;
         self.worship.plan_from_optimizer = false;
         self.worship.plan_source = default_plan_source(self.worship.trial);
-        self.worship_plan.update(cx, |runner, _| {
-            runner.cancel();
-            runner.clear();
-        });
+        discard_run(&self.worship_plan, cx);
         self.worship_restart(cx);
     }
 
     /// Switch the section's pane.
-    pub fn worship_set_tab(&mut self, tab: super::Tab, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_tab(&mut self, tab: super::Tab, cx: &mut Context<Self>) {
         self.worship.tab = tab;
         if tab != super::Tab::Simulator {
             self.worship.playing = false;
@@ -487,44 +481,48 @@ impl AppState {
     }
 
     /// Select a tower type from the palette.
-    pub fn worship_set_tower(&mut self, tower: usize, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_tower(&mut self, tower: usize, cx: &mut Context<Self>) {
         self.worship.tower = tower.min(worship::TOWER_COUNT - 1);
         self.worship.message = None;
         cx.notify();
     }
 
     /// Set the playback speed.
-    pub fn worship_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
         self.worship.speed = speed;
         cx.notify();
     }
 
     /// Set the optimizer's search budget.
-    pub fn worship_set_optimize_mode(&mut self, mode: worship::Mode, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_optimize_mode(
+        &mut self,
+        mode: worship::Mode,
+        cx: &mut Context<Self>,
+    ) {
         self.worship.optimize.mode = mode;
         cx.notify();
     }
 
     /// Set how many runs screen each candidate.
-    pub fn worship_set_optimize_seeds(&mut self, seeds: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_optimize_seeds(&mut self, seeds: f64, cx: &mut Context<Self>) {
         self.worship.optimize.seeds = (seeds as usize).clamp(1, 6);
         cx.notify();
     }
 
     /// Set the seed the whole search derives from.
-    pub fn worship_set_optimize_seed(&mut self, seed: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_optimize_seed(&mut self, seed: f64, cx: &mut Context<Self>) {
         self.worship.optimize.base_seed = (seed.max(0.0) as u64).min(999_999);
         cx.notify();
     }
 
     /// Set the wave a simulated run stops at.
-    pub fn worship_set_optimize_wave(&mut self, wave: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_set_optimize_wave(&mut self, wave: f64, cx: &mut Context<Self>) {
         self.worship.optimize.max_wave = (wave.max(0.0) as u32).clamp(10, 1000);
         cx.notify();
     }
 
     /// Place the selected tower on a platform slot.
-    pub fn worship_place(&mut self, node: usize, x: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_place(&mut self, node: usize, x: f64, cx: &mut Context<Self>) {
         self.worship_ensure();
         let tower = self.worship.tower;
         let outcome = self
@@ -547,14 +545,14 @@ impl AppState {
     }
 
     /// Select a standing tower, or clear the selection.
-    pub fn worship_select(&mut self, id: Option<u64>, cx: &mut Context<Self>) {
+    pub(crate) fn worship_select(&mut self, id: Option<u64>, cx: &mut Context<Self>) {
         self.worship.selected = id;
         self.worship.message = None;
         cx.notify();
     }
 
     /// Upgrade the selected tower.
-    pub fn worship_upgrade(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_upgrade(&mut self, cx: &mut Context<Self>) {
         let Some(id) = self.worship.selected else {
             return;
         };
@@ -571,7 +569,7 @@ impl AppState {
     }
 
     /// Sell the selected tower.
-    pub fn worship_sell(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_sell(&mut self, cx: &mut Context<Self>) {
         let Some(id) = self.worship.selected else {
             return;
         };
@@ -591,7 +589,7 @@ impl AppState {
     }
 
     /// Skip the rest of the countdown.
-    pub fn worship_skip(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_skip(&mut self, cx: &mut Context<Self>) {
         if let Some(run) = self.worship.run.as_mut() {
             let reward = run.skip_wave();
             self.worship.view = Some(run.view());
@@ -603,7 +601,7 @@ impl AppState {
     }
 
     /// Advance one 100 ms tick while paused.
-    pub fn worship_step(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_step(&mut self, cx: &mut Context<Self>) {
         if self.worship.playing {
             return;
         }
@@ -664,7 +662,7 @@ impl AppState {
     }
 
     /// Play or pause the recorded replay, leaving the live view.
-    pub fn worship_replay_set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
+    pub(crate) fn worship_replay_set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
         if self.worship.replay.is_none() {
             return;
         }
@@ -692,7 +690,7 @@ impl AppState {
     }
 
     /// Move the replay scrubber to a frame index.
-    pub fn worship_replay_seek(&mut self, frame: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_replay_seek(&mut self, frame: f64, cx: &mut Context<Self>) {
         if self.worship.replay.is_none() {
             return;
         }
@@ -708,7 +706,7 @@ impl AppState {
     }
 
     /// Set how many recorded frames play per real second.
-    pub fn worship_replay_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
+    pub(crate) fn worship_replay_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
         if speed > 0.0 {
             self.worship.replay_speed = speed;
         }
@@ -716,7 +714,7 @@ impl AppState {
     }
 
     /// Open the replay without playing it.
-    pub fn worship_replay_open(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_replay_open(&mut self, cx: &mut Context<Self>) {
         if self.worship.replay.is_none() {
             return;
         }
@@ -728,7 +726,7 @@ impl AppState {
     }
 
     /// Return to the live run's field.
-    pub fn worship_replay_close(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn worship_replay_close(&mut self, cx: &mut Context<Self>) {
         self.worship.replay_playing = false;
         self.worship.replay_pumping = false;
         self.worship.replay_generation += 1;

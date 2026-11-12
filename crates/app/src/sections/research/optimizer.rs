@@ -1,9 +1,7 @@
 //! Optimize pane: the target, the effort, and what the last run found.
 
 use crate::state::AppState;
-use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
@@ -15,11 +13,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, Window, div, px};
-use idleon_core::game;
-use idleon_core::model::{Effort, SimOptions, Target};
-use idleon_core::sim::Sample;
+use idleon_research::game;
+use idleon_research::model::{Effort, SimOptions, Target};
+use idleon_research::sim::Sample;
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
-pub fn optimizer_pane(
+pub(crate) fn optimizer_pane(
     state: &mut AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
@@ -150,7 +150,6 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
         .selected([state.simulation.preset.clone()])
         .on_change(move |selected, _window, cx| {
             let Some(id) = selected.first() else { return };
-            let id = id.to_string();
             preset_entity.update(cx, |state, cx| state.set_preset(id, cx));
         });
 
@@ -238,7 +237,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     if run.running {
         if let Some(progress) = run.progress.clone() {
             let cancel = cx.entity();
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "run",
                 "Optimizing",
                 "Runs off the UI thread. Cancelling keeps the result this run replaced.",
@@ -249,7 +248,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             ));
         }
     } else if run.cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "run-cancelled",
             run.result.is_some(),
         ));
@@ -298,7 +297,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     let mut trailing = div().flex().items_center().gap_2();
     if stale {
-        trailing = trailing.child(task::stale_badge("result-stale"));
+        trailing = trailing.child(run_chrome::stale_badge("result-stale"));
     }
     trailing = trailing.child(
         div()
@@ -318,7 +317,7 @@ fn result(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             .action(trailing),
     );
     if stale {
-        card = card.child(task::stale_banner("result-stale"));
+        card = card.child(run_chrome::stale_banner("result-stale"));
     }
     body.child(
         card.child(

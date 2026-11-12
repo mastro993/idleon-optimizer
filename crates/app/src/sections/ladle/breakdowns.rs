@@ -1,15 +1,19 @@
 //! The formula trees behind the rates: the AFK panel rate and one claim's rolls.
 
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, div};
-use idleon_core::ladle::Stats;
+use idleon_ladle::Stats;
+use idleon_ui::formula::FormulaTree;
 
 /// The two rate trees, each in its own card around the shared tree component.
-pub fn ladles(state: &mut AppState, stats: &[Stats], cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn ladles(
+    state: &mut AppState,
+    stats: &[Stats],
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let chosen = state
         .ladle_state
         .breakdown_character
@@ -58,7 +62,7 @@ pub fn ladles(state: &mut AppState, stats: &[Stats], cx: &mut Context<AppState>)
 }
 
 /// One breakdown card around a shared formula tree.
-pub fn panel(
+pub(crate) fn panel(
     id: &'static str,
     title: &'static str,
     description: &'static str,

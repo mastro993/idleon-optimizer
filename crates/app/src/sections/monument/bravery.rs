@@ -6,7 +6,6 @@ use super::{
     unavailable_card,
 };
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::forms::NumberInput;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -14,10 +13,11 @@ use ely_gpui_component::theme::ControlSize;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
-use idleon_core::monument::{Odds, Snapshot};
+use idleon_monument::{Odds, Snapshot};
+use idleon_ui::format;
 
 /// The Bravery pane.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     snapshot: Option<&Snapshot>,
     cx: &mut Context<AppState>,

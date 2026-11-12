@@ -12,11 +12,11 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement, SharedString, Styled, div, px,
 };
-use idleon_core::Fountain;
-use idleon_core::fountain;
+use idleon_fountain as fountain;
+use idleon_fountain::Fountain;
 
 /// The overview pane, in the upstream order: summary, income, bonuses, stacks.
-pub fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let fountain = state
         .fountain
         .as_ref()

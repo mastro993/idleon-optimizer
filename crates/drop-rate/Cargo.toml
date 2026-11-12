@@ -1,0 +1,13 @@
+[package]
+name = "idleon-drop-rate"
+description = "Drop rate breakdown."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-save = { workspace = true }
+idleon-stats = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

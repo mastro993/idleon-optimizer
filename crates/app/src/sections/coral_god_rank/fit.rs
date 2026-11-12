@@ -7,7 +7,6 @@
 //! planning confidence combine.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -16,10 +15,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div};
-use idleon_core::coral::{SaveInputs, offer};
+use idleon_coral::{SaveInputs, offer};
+use idleon_ui::format;
 
 /// The fit card: the odds, the expected spend and the tier the model reads.
-pub fn offering_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn offering_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let inputs = &state.coral.inputs;
     let row = offer(inputs, inputs.god_rank);
     let muted = cx.theme().colors.fg_muted;

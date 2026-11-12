@@ -1,14 +1,13 @@
 //! The expedition run: its controls, the run in flight and the results.
 //!
 //! Upstream runs the expedition in a module worker. This section runs the same
-//! simulation through the shared [`crate::task::TaskRunner`], so the progress
+//! simulation through the shared [`idleon_ui::runner::TaskRunner`], so the progress
 //! card, the cancel action and the stale marker are the ones every other
 //! section uses. A run is deterministic: the seed, the cave, the party, the belt
 //! and the memorized elixirs fully describe it, so the result says which seed
 //! produced it.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, NumberInput, Select};
@@ -20,26 +19,27 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::spelunking::{
+use idleon_spelunking::{
     Account, Entry, EventKind, Inputs, Policy, Requested, RunResult, Status, ToolChoice, data,
 };
+use idleon_ui::format;
 
 /// What a run was produced from; a change marks the result stale.
 #[derive(Clone, Debug, PartialEq)]
-pub struct RunInputs {
-    pub requested: Requested,
+pub(crate) struct RunInputs {
+    pub(crate) requested: Requested,
     /// The account values the run reads, which the request does not carry.
-    pub account: Account,
-    pub seed: u32,
+    pub(crate) account: Account,
+    pub(crate) seed: u32,
     /// The save this run read, so a new import is stale.
-    pub revision: u64,
+    pub(crate) revision: u64,
 }
 
 /// How many log lines the card lists before it stops.
 const VISIBLE_EVENTS: usize = 200;
 
 /// The run card: controls, the run in flight and the stored result.
-pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let task = state.spelunk_simulation(cx);
     let amber = state.spelunking.policy == Policy::AmberFarm;
@@ -72,7 +72,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
         && let Some(progress) = task.progress.clone()
     {
         let cancel = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "spelunk-run",
             "Running the expedition",
             "Runs off the UI thread; cancelling keeps the previous result.",
@@ -83,7 +83,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "spelunk-run-cancelled",
             task.result.is_some(),
         ));
@@ -103,7 +103,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
 fn controls(
     state: &AppState,
     inputs: &Inputs,
-    task: &crate::task::TaskState<RunResult>,
+    task: &idleon_ui::runner::TaskState<RunResult>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -271,11 +271,11 @@ fn results_card(
             result.seconds
         ));
     if stale {
-        header = header.action(crate::ui::task::stale_badge("spelunk-run"));
+        header = header.action(idleon_ui::run_chrome::stale_badge("spelunk-run"));
     }
     let mut card = Card::new().header(header);
     if stale {
-        card = card.child(crate::ui::task::stale_banner("spelunk-run"));
+        card = card.child(idleon_ui::run_chrome::stale_banner("spelunk-run"));
     }
     if let Some(error) = &result.error {
         card = card.child(

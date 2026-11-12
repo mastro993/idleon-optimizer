@@ -1,6 +1,6 @@
 //! The Cglunko overview: the summary cards and the drop-rate formula tree.
 //!
-//! Every card and the tree read the same [`idleon_core::Cglunko`] state, so the
+//! Every card and the tree read the same [`idleon_cglunko::Cglunko`] state, so the
 //! KPI figures and the breakdown's total cannot disagree. The section header
 //! prints the one-line summary; the page below is the cards and the tree.
 
@@ -10,10 +10,10 @@ use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::theme::TextSize;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
-use idleon_core::cglunko;
+use idleon_cglunko as cglunko;
 
 /// The overview page: the upstream cards and the DR tree.
-pub fn overview_pane(
+pub(crate) fn overview_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,

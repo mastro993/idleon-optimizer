@@ -2,7 +2,6 @@
 
 use super::{artifacts, captain_details, captain_short, text_kpi, trip};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
@@ -10,10 +9,15 @@ use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
-use idleon_core::sailing::{AssignmentMode, FleetPlan, Goal, RouteMetrics, route_metrics};
+use idleon_sailing::{AssignmentMode, FleetPlan, Goal, RouteMetrics, route_metrics};
+use idleon_ui::format;
 
 /// The fleet tab: the KPI row over the assignment table.
-pub fn fleet_tab(state: &AppState, table_height: Pixels, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn fleet_tab(
+    state: &AppState,
+    table_height: Pixels,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let comparison = state.fleet_comparison();
     let plan = match state.sailing_state.mode {
         AssignmentMode::Optimized => &comparison.optimized,

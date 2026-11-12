@@ -1,0 +1,13 @@
+[package]
+name = "idleon-fishing"
+description = "Fishing pools, toolkits and trench projections."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-common = { workspace = true }
+idleon-save = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

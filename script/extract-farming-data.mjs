@@ -88,7 +88,7 @@ const payload = {
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
 };
 
-const out = new URL('../crates/core/data/farming.json', import.meta.url);
+const out = new URL('../crates/farming/data/farming.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${seeds.length} seed families, ${market.length} market rows, ${exotics.length} exotics`

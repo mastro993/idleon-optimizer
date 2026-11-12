@@ -198,7 +198,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/sneaking.json', import.meta.url);
+const out = new URL('../crates/sneaking/data/sneaking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${Object.keys(items).length} items, ${upgrades.length} ninja upgrades, ${payload.legendTalentPerPoint.length} legend talents`,

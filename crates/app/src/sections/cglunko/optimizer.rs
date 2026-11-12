@@ -6,13 +6,12 @@
 //! at the levels and stone balances each purchase reaches, pays every step's
 //! `upgNextCost` from the upgrade's own stone, and refuses a purchase that would
 //! lose more DR through a stone's digit than the level adds. The plan runs
-//! through the shared [`crate::task::TaskRunner`]: its progress and cancel chrome
-//! come from `ui::task`, and a result whose page changed is marked stale instead
+//! through the shared [`idleon_ui::runner::TaskRunner`]: its progress and cancel chrome
+//! come from `idleon_ui::run_chrome`, and a result whose page changed is marked stale instead
 //! of dropped.
 
 use super::upgrades::effect;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
@@ -22,10 +21,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, Window, div};
-use idleon_core::Cglunko;
-use idleon_core::cglunko::{Page, Plan, Rank, Step};
+use idleon_cglunko::Cglunko;
+use idleon_cglunko::{Page, Plan, Rank, Step};
+use idleon_ui::format;
 
-pub fn optimizer_pane(
+pub(crate) fn optimizer_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -51,7 +51,7 @@ pub fn optimizer_pane(
         && let Some(progress) = task.progress.clone()
     {
         let cancel = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "cglunko-plan",
             "Planning the purchases",
             "Runs off the UI thread; cancelling keeps the plan this run replaced.",
@@ -62,7 +62,7 @@ pub fn optimizer_pane(
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "cglunko-plan-cancelled",
             task.result.is_some(),
         ));
@@ -131,11 +131,11 @@ fn plan_card(plan: &Plan, stale: bool) -> AnyElement {
         plan.page.label()
     ));
     if stale {
-        header = header.action(crate::ui::task::stale_badge("cglunko-plan"));
+        header = header.action(idleon_ui::run_chrome::stale_badge("cglunko-plan"));
     }
     let mut card = Card::new().header(header);
     if stale {
-        card = card.child(crate::ui::task::stale_banner("cglunko-plan"));
+        card = card.child(idleon_ui::run_chrome::stale_banner("cglunko-plan"));
     }
     let summary = div()
         .id("cglunko-plan-result")
@@ -187,7 +187,7 @@ fn plan_card(plan: &Plan, stale: bool) -> AnyElement {
         table = table.row([
             div()
                 .id(("cglunko-plan-upgrade", row.index))
-                .child(idleon_core::cglunko::upgrade_name(row.index))
+                .child(idleon_cglunko::upgrade_name(row.index))
                 .into_any_element(),
             div().child(row.count.to_string()).into_any_element(),
             div()
@@ -331,7 +331,7 @@ fn priority_row(
             .child(Caption::new(format!(
                 "{} #{} · {} held",
                 rank.page.label(),
-                idleon_core::cglunko::stone(rank.index) % 6 + 1,
+                idleon_cglunko::stone(rank.index) % 6 + 1,
                 format::rate(rank.balance)
             )))
             .into_any_element(),

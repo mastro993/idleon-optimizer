@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/core", "crates/app"]
+members = ["crates/*"]
 # The automation bridge is a nested workspace checked out as a submodule. Keeping
 # it out of this one lets it inherit its own package metadata and lets the GPUI
 # patches below point at its vendored tree.
@@ -34,6 +34,45 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 rayon = "1"
 jiff = "0.2"
 directories = "6"
+base64 = "0.22"
+flate2 = "1"
+
+idleon-common = { path = "crates/common" }
+idleon-save = { path = "crates/save" }
+idleon-prisma = { path = "crates/prisma" }
+idleon-drop-rate = { path = "crates/drop-rate" }
+idleon-damage = { path = "crates/damage" }
+idleon-coin-multi = { path = "crates/coin-multi" }
+idleon-stats = { path = "crates/stats" }
+idleon-research = { path = "crates/research" }
+idleon-stats-data = { path = "crates/stats-data" }
+idleon-account = { path = "crates/account" }
+idleon-import = { path = "crates/import" }
+idleon-project = { path = "crates/project" }
+idleon-ui = { path = "crates/ui" }
+idleon-clamworks = { path = "crates/clamworks" }
+idleon-royal-guardian = { path = "crates/royal-guardian" }
+idleon-spelunking = { path = "crates/spelunking" }
+idleon-sneaking = { path = "crates/sneaking" }
+idleon-monument = { path = "crates/monument" }
+idleon-killroy = { path = "crates/killroy" }
+idleon-jelly = { path = "crates/jelly" }
+idleon-fishing = { path = "crates/fishing" }
+idleon-worship = { path = "crates/worship" }
+idleon-statue = { path = "crates/statue" }
+idleon-sailing = { path = "crates/sailing" }
+idleon-opal = { path = "crates/opal" }
+idleon-ladle = { path = "crates/ladle" }
+idleon-jar = { path = "crates/jar" }
+idleon-fountain = { path = "crates/fountain" }
+idleon-farming = { path = "crates/farming" }
+idleon-endgame = { path = "crates/endgame" }
+idleon-coral = { path = "crates/coral" }
+idleon-cooking-mastery = { path = "crates/cooking-mastery" }
+idleon-combat = { path = "crates/combat" }
+idleon-cog = { path = "crates/cog" }
+idleon-cglunko = { path = "crates/cglunko" }
+idleon-pickle = { path = "crates/pickle" }
 
 # The bridge's GPUI carries the accessibility ids and roles it reads; patch the
 # registry snapshot to that tree so the app, the platform crate and the bridge

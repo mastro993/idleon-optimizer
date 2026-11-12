@@ -10,56 +10,57 @@
 //! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
 //! the harness can still open them by id.
 
-pub mod cglunko;
-pub mod clamworks;
-pub mod cog;
-pub mod coin_multi;
-pub mod combat_sim;
-pub mod cooking_mastery;
-pub mod coral_god_rank;
-pub mod damage;
-pub mod drop_rate;
-pub mod endgame;
-pub mod farming;
-pub mod fishing;
-pub mod fountain;
-pub mod jar;
-pub mod jelly_operator;
-pub mod killroy;
-pub mod ladle;
-pub mod monument;
-pub mod opal;
-pub mod pickle;
-pub mod prisma;
-pub mod research;
-pub mod royal_guardian;
-pub mod sailing;
-pub mod shadow;
-pub mod sneaking;
-pub mod spelunking;
-pub mod stats_all;
-pub mod statue;
-pub mod worship_td;
+pub(crate) mod cglunko;
+pub(crate) mod clamworks;
+pub(crate) mod cog;
+pub(crate) mod coin_multi;
+pub(crate) mod combat_sim;
+pub(crate) mod cooking_mastery;
+pub(crate) mod coral_god_rank;
+pub(crate) mod damage;
+pub(crate) mod drop_rate;
+pub(crate) mod endgame;
+pub(crate) mod farming;
+pub(crate) mod fishing;
+pub(crate) mod fountain;
+pub(crate) mod jar;
+pub(crate) mod jelly_operator;
+pub(crate) mod killroy;
+pub(crate) mod ladle;
+pub(crate) mod monument;
+pub(crate) mod opal;
+pub(crate) mod pickle;
+pub(crate) mod presets;
+pub(crate) mod prisma;
+pub(crate) mod research;
+pub(crate) mod royal_guardian;
+pub(crate) mod sailing;
+pub(crate) mod shadow;
+pub(crate) mod sneaking;
+pub(crate) mod spelunking;
+pub(crate) mod stats_all;
+pub(crate) mod statue;
+pub(crate) mod worship_td;
 
 use crate::state::AppState;
 use gpui::{AnyElement, App, Context, Window};
 
 /// A section's own renderer: the module that owns its upstream tab strip and content.
-pub type View = fn(&mut AppState, &mut Window, &mut Context<AppState>) -> AnyElement;
+pub(crate) type View = fn(&mut AppState, &mut Window, &mut Context<AppState>) -> AnyElement;
 
 /// A section's keyboard shortcuts, registered once at startup.
-pub type Keys = fn(&mut App);
+pub(crate) type Keys = fn(&mut App);
 
 /// How much of a section exists in this build.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Status {
+pub(crate) enum Status {
     /// Built: the entry's view is the section module's own renderer.
     Ready,
 }
 
 impl Status {
     /// The word the status bar shows.
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Status::Ready => "Ready",
         }
@@ -68,7 +69,7 @@ impl Status {
 
 /// A world badge shared by the cards of one group.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Group {
+pub(crate) enum Group {
     General,
     W2,
     W3,
@@ -82,7 +83,7 @@ pub enum Group {
 
 impl Group {
     /// Every group in dashboard order.
-    pub const ALL: [Group; 8] = [
+    pub(crate) const ALL: [Group; 8] = [
         Group::General,
         Group::W2,
         Group::W3,
@@ -94,7 +95,7 @@ impl Group {
     ];
 
     /// Stable id used for group headings and grid element ids.
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Group::General => "general",
             Group::W2 => "w2",
@@ -108,7 +109,7 @@ impl Group {
     }
 
     /// The heading above the group's cards.
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Group::General => "General",
             Group::W2 => "World 2",
@@ -122,7 +123,7 @@ impl Group {
     }
 
     /// The badge on each card, matching the upstream classes.
-    pub fn badge(self) -> &'static str {
+    pub(crate) fn badge(self) -> &'static str {
         match self {
             Group::General => "General",
             Group::W2 => "W2",
@@ -138,21 +139,21 @@ impl Group {
 
 /// One section in the registry: a dashboard card, or one of the hidden tools.
 #[derive(Clone, Copy, Debug)]
-pub struct Section {
-    pub id: &'static str,
-    pub title: &'static str,
-    pub icon: &'static str,
-    pub group: Group,
-    pub description: &'static str,
+pub(crate) struct Section {
+    pub(crate) id: &'static str,
+    pub(crate) title: &'static str,
+    pub(crate) icon: &'static str,
+    pub(crate) group: Group,
+    pub(crate) description: &'static str,
     /// The generated specification, relative to the repository root.
-    pub spec: &'static str,
-    pub status: Status,
+    pub(crate) spec: &'static str,
+    pub(crate) status: Status,
     /// Whether the dashboard shows a card; the hidden tools open by id only.
-    pub dashboard: bool,
+    pub(crate) dashboard: bool,
     /// The section module's renderer, or the shared planned placeholder.
-    pub view: View,
+    pub(crate) view: View,
     /// The section's keyboard shortcuts, or a no-op for a planned section.
-    pub keys: Keys,
+    pub(crate) keys: Keys,
 }
 
 impl PartialEq for Section {
@@ -164,12 +165,12 @@ impl PartialEq for Section {
 
 impl Section {
     /// The badge the card and the section header show.
-    pub fn badge(self) -> &'static str {
+    pub(crate) fn badge(self) -> &'static str {
         self.group.badge()
     }
 
     /// Whether the card matches a search query by title, description or world.
-    pub fn matches(self, query: &str) -> bool {
+    pub(crate) fn matches(self, query: &str) -> bool {
         let query = query.trim().to_lowercase();
         query.is_empty()
             || [
@@ -184,7 +185,7 @@ impl Section {
 }
 
 /// Every section, grouped like `js/ui/site-nav.js` and ordered by group.
-pub const SECTIONS: [Section; 30] = [
+pub(crate) const SECTIONS: [Section; 30] = [
     Section {
         id: "combat-sim",
         title: "Combat Simulator",
@@ -548,23 +549,23 @@ pub const SECTIONS: [Section; 30] = [
 ];
 
 /// The sections registered under `id`, if any.
-pub fn find(id: &str) -> Option<&'static Section> {
+pub(crate) fn find(id: &str) -> Option<&'static Section> {
     SECTIONS.iter().find(|section| section.id == id)
 }
 
 /// The sections the dashboard shows, in card order.
-pub fn cards() -> impl Iterator<Item = &'static Section> {
+pub(crate) fn cards() -> impl Iterator<Item = &'static Section> {
     SECTIONS.iter().filter(|section| section.dashboard)
 }
 
 /// The dashboard's card count.
-pub fn card_count() -> usize {
+pub(crate) fn card_count() -> usize {
     cards().count()
 }
 
 /// The registry as JSON, so the harness can enumerate sections without
 /// hardcoding ids that the table already owns.
-pub fn manifest() -> String {
+pub(crate) fn manifest() -> String {
     let sections: Vec<serde_json::Value> = SECTIONS
         .iter()
         .map(|section| {

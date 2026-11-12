@@ -10,6 +10,8 @@
 //! The assignment controls and the header stay above the strip because every tab
 //! reads the same island, goal and fleet mode, as upstream's own layout does.
 
+mod actions;
+
 mod artifacts;
 mod breakdowns;
 mod captains;
@@ -17,11 +19,10 @@ mod fleet;
 mod odds;
 mod replacements;
 mod ships;
-pub mod simulation;
+pub(crate) mod simulation;
 
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
-use crate::ui::layout;
+use crate::ui::{formula_tree, layout};
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::EmptyState;
@@ -35,29 +36,30 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
-use idleon_core::sailing::{
+use idleon_sailing::{
     AssignmentMode, DEFAULT_HOURS, DEFAULT_TRIALS, Goal, captain_bonus_name, island_artifact_count,
     island_distance,
 };
+use idleon_ui::formula::FormulaTree;
 
 /// The section's own state, kept across dashboard visits.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub tab: Tab,
-    pub mode: AssignmentMode,
-    pub island: usize,
-    pub goal: Goal,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
+    pub(crate) mode: AssignmentMode,
+    pub(crate) island: usize,
+    pub(crate) goal: Goal,
     /// Sort the ship tab by the lowest breakpoint ETA instead of by boat.
-    pub sort_by_eta: bool,
+    pub(crate) sort_by_eta: bool,
     /// The boat whose breakdowns the formula tab draws.
-    pub breakdown_boat: usize,
+    pub(crate) breakdown_boat: usize,
     /// The destination the pile simulation runs on.
-    pub sim_island: usize,
+    pub(crate) sim_island: usize,
     /// The interval each simulation trial covers.
-    pub sim_hours: f64,
+    pub(crate) sim_hours: f64,
     /// How many simulation trials to run.
-    pub sim_trials: usize,
+    pub(crate) sim_trials: usize,
 }
 
 impl Default for State {
@@ -77,22 +79,21 @@ impl Default for State {
 }
 
 /// The four formula trees the breakdowns tab owns.
-pub struct Trees {
-    pub loot: Entity<FormulaTree>,
-    pub speed: Entity<FormulaTree>,
-    pub artifact: Entity<FormulaTree>,
-    pub chest: Entity<FormulaTree>,
+pub(crate) struct Trees {
+    pub(crate) loot: Entity<FormulaTree>,
+    pub(crate) speed: Entity<FormulaTree>,
+    pub(crate) artifact: Entity<FormulaTree>,
+    pub(crate) chest: Entity<FormulaTree>,
 }
 
 impl Trees {
     /// Create the trees; the tab replaces their roots each render.
-    pub fn new(window: &mut Window, cx: &mut App) -> Self {
-        let mut tree = |id: &'static str| cx.new(|cx| FormulaTree::new(id, window, cx));
+    pub(crate) fn new(window: &mut Window, cx: &mut App) -> Self {
         Self {
-            loot: tree("sailing-loot-formula"),
-            speed: tree("sailing-speed-formula"),
-            artifact: tree("sailing-artifact-formula"),
-            chest: tree("sailing-chest-formula"),
+            loot: formula_tree("sailing-loot-formula", window, cx),
+            speed: formula_tree("sailing-speed-formula", window, cx),
+            artifact: formula_tree("sailing-artifact-formula", window, cx),
+            chest: formula_tree("sailing-chest-formula", window, cx),
         }
     }
 }
@@ -100,7 +101,7 @@ impl Trees {
 /// The sailing page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// Current versus optimized captain-to-boat pairings.
     #[default]
     Fleet,
@@ -123,7 +124,7 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 8] = [
+    pub(crate) const ALL: [Tab; 8] = [
         Tab::Fleet,
         Tab::Ships,
         Tab::Captains,
@@ -134,7 +135,7 @@ impl Tab {
         Tab::Breakdowns,
     ];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Fleet => "fleet",
             Tab::Ships => "ships",
@@ -147,7 +148,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Fleet => "Fleet",
             Tab::Ships => "Ships",
@@ -160,13 +161,17 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The sailing section: header, fleet controls, the tab strip and the active tab.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if state.fleet.boats.is_empty() {
         return empty(cx);
     }
@@ -490,7 +495,7 @@ pub(super) fn chest_odds(probability: f64) -> String {
         return "Never".into();
     }
     if probability < 0.00001 {
-        return format!("1 in {}", crate::ui::format::fmt_val(1.0 / probability));
+        return format!("1 in {}", idleon_ui::format::fmt_val(1.0 / probability));
     }
     let digits = if probability >= 0.1 {
         1
@@ -515,7 +520,7 @@ pub(super) fn chance(probability: f64) -> String {
     if probability >= 0.001 {
         return percent(probability);
     }
-    format!("1 in {}", crate::ui::format::fmt_val(1.0 / probability))
+    format!("1 in {}", idleon_ui::format::fmt_val(1.0 / probability))
 }
 
 /// A trip time as seconds, minutes or hours.
@@ -541,7 +546,7 @@ pub(super) fn artifacts(value: f64) -> String {
     } else if value >= 1e-4 {
         format!("{value:.4}")
     } else {
-        format!("1 in {}", crate::ui::format::rate(1.0 / value))
+        format!("1 in {}", idleon_ui::format::rate(1.0 / value))
     }
 }
 
@@ -562,7 +567,7 @@ pub(super) fn hours_or_ready(hours: f64) -> String {
     if hours <= 0.0 {
         "Ready".into()
     } else if hours.is_finite() {
-        crate::ui::format::projection(hours)
+        idleon_ui::format::projection(hours)
     } else {
         "—".into()
     }

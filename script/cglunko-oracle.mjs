@@ -1,4 +1,4 @@
-// Regenerates crates/core/tests/cglunko-oracle.json from the upstream Cglunko
+// Regenerates crates/cglunko/tests/cglunko-oracle.json from the upstream Cglunko
 // formulas, so the Rust port is tested against the source of truth rather than
 // hand-picked numbers. Usage:
 //   node script/cglunko-oracle.mjs <path-to-idleon-research-optimizer>
@@ -170,7 +170,7 @@ const payload = {
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer', fixture: 'fixtures/data.json' },
 };
 
-const out = new URL('../crates/core/tests/cglunko-oracle.json', import.meta.url);
+const out = new URL('../crates/cglunko/tests/cglunko-oracle.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${upgrades.length} upgrades, ${payload.plans.blue.steps.length} blue steps and ${payload.plans.purple.steps.length} purple steps`

@@ -10,13 +10,17 @@ use gpui::{
     AnyElement, Context, Hsla, IntoElement, Pixels, Point, Styled, Window, canvas, div, img, point,
     px,
 };
-use idleon_core::worship::{self, EffectKind, RunView, TowerView};
+use idleon_worship::{self as worship, EffectKind, RunView, TowerView};
 
 /// One point of a shape in scene coordinates.
 type ScenePoint = (f64, f64);
 
 /// The map pane: the whole trial scene, scaled to the window.
-pub fn map(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn map(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(trial) = worship::trial(state.worship.trial) else {
         return div().into_any_element();
     };
@@ -197,7 +201,7 @@ fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
 }
 
 fn mob_marker(
-    mob: &idleon_core::worship::MobView,
+    mob: &idleon_worship::MobView,
     trial: &worship::Trial,
     scale: f32,
     tick: u64,

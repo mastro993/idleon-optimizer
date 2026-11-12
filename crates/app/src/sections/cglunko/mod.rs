@@ -6,12 +6,13 @@
 //! stone focus (CL-03) arrives later and adds its own tab to a strip that never
 //! offers a page with nothing behind it, the way the Jar calculator grew.
 
+mod actions;
+
 mod optimizer;
 mod overview;
 mod upgrades;
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{ToggleGroup, ToggleItem};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::primitives::Severity;
@@ -20,12 +21,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
-use idleon_core::cglunko::Page;
+use idleon_cglunko::Page;
+use idleon_ui::format;
 
 /// The Cglunko tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// Summary, the DR cards and the formula tree.
     #[default]
     Overview,
@@ -36,9 +38,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Overview, Tab::Upgrades, Tab::Optimizer];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Overview, Tab::Upgrades, Tab::Optimizer];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Upgrades => "upgrades",
@@ -46,7 +48,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Upgrades => "Upgrades",
@@ -54,13 +56,17 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The section: the tab strip, the page selector, the summary and the pane.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let tab = state.cglunko_tab;
     let page = state.cglunko_page;
     let cglunko = state.cglunko.clone();

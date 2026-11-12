@@ -8,21 +8,21 @@ It exists for testing and debugging only. The game formulas, save decoding and o
 come from the upstream [`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer)
 repo; do not reverse-engineer logic from this file or tune behaviour to match it.
 
-Used by `crates/core/tests/fixture.rs`, `crates/core/tests/statue.rs` and
-`crates/core/tests/sneaking.rs`. To exercise the app by
+Used by `crates/import/tests/fixture.rs`, `crates/statue/tests/statue.rs` and
+`crates/sneaking/tests/sneaking.rs`. To exercise the app by
 hand, open the header's Import dialog and paste the file's contents, or drop the file on it.
 
 `endgame-stats.json` is the upstream `js/endgame-stats.js` leaderboard audit of `data.json`: all 177
 metrics with their group, label and value. Generate it from an upstream checkout with
-`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/core/tests/endgame.rs` compares
+`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/endgame/tests/endgame.rs` compares
 the Rust port against it and lists the 21 metrics that still need the account stats engine.
 
-Treat it as frozen. Add small purpose-built saves to `crates/core/tests/save.rs` for edge cases
+Treat it as frozen. Add small purpose-built saves to `crates/import/tests/save.rs` for edge cases
 instead of editing this one; regenerating it means updating the fixture test on purpose.
 
 `killroy.json` is the upstream planner's forecast for `data.json` wrapped as `it.json` with
 `serverVars.KillroySwap = 7`. Regenerate it with `node script/killroy-oracle.mjs <upstream-repo> 2`
-after changing the wrap or the horizon; `crates/core/tests/killroy.rs` compares the port field for
+after changing the wrap or the horizon; `crates/killroy/tests/killroy.rs` compares the port field for
 field. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
 
 `monument.json` is the upstream Monument calculator's own output for `data.json`: the saved
@@ -30,7 +30,7 @@ Bravery and Wisdom snapshots (training sources, stats, milestones and permanent 
 reward charge for all three monuments at the saved wait, after 24 hours and after an extra hour,
 seven Bravery run states covering boost stacks, spent rethrows and an entered last-sword HP, and
 the inputs it rejects with their messages. Regenerate it with
-`node script/monument-oracle.mjs <upstream-repo>`; `crates/core/tests/monument.rs` compares the
+`node script/monument-oracle.mjs <upstream-repo>`; `crates/monument/tests/monument.rs` compares the
 port field for field. Treat it as frozen for the same reason: it is the oracle's output, not this
 app's.
 
@@ -38,14 +38,14 @@ app's.
 section's defaults, four beam-search cases (the fixture plan at the default and a one-state beam,
 plus a small crafted plan where a wide beam has to beat a narrow one) and the offering model at
 eight God Ranks. Regenerate it with
-`node script/coral-god-rank-oracle.mjs <upstream-repo>`; `crates/core/tests/coral_plan.rs` compares
+`node script/coral-god-rank-oracle.mjs <upstream-repo>`; `crates/coral/tests/coral_plan.rs` compares
 the port action by action. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
 
 `farming.json` is the upstream Farming planner's own output for one purpose-built save: the
 account snapshot, the plot assignment for all seven objectives and the Land Rank allocation in both
 modes, with the points, scores, levels and change list. Regenerate it with
-`node script/farming-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_planner.rs` compares
+`node script/farming-oracle.mjs <upstream-repo>`; `crates/farming/tests/farming_planner.rs` compares
 the port field for field. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
 
@@ -55,7 +55,7 @@ systems this port deliberately does not apply; the fixture's purpose-built save 
 them out, so they fall back to their neutral values and the two calculators agree term for term: the
 account multipliers, the priority diagnostics, the GMO counts, the seven growth breakpoints, all 36
 plots' metrics, all 36 overgrowth curves and the ten Crop Scientist bonuses. Regenerate it with
-`node script/farming-signals-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_signals.rs`
+`node script/farming-signals-oracle.mjs <upstream-repo>`; `crates/farming/tests/farming_signals.rs`
 compares the port field for field. Treat it as frozen for the same reason: it is the oracle's
 output, not this app's.
 
@@ -65,13 +65,13 @@ Gold inventory scan with the charm it selects per bonus type, the charm bonus ma
 per twin, and the pure formulas (Ninja Knowledge bonuses, action speed, KO recovery, detection
 bases and chances, stealth, door HP and the target-stealth inverse) over the save's own rows and
 over the whole `NjEQ` catalog. Regenerate it with `node script/sneaking-oracle.mjs <upstream-repo>`;
-`crates/core/tests/sneaking.rs` compares the port field for field. Treat it as frozen for the same
+`crates/sneaking/tests/sneaking.rs` compares the port field for field. Treat it as frozen for the same
 reason: it is the oracle's output, not this app's.
 
 `drop-rate.json` is the upstream Drop Rate calculator's own output for `data.json`: seven dungeon
 totals over the two live run values, the reason a dungeon map gives when either is blank, and the
 reference total for the character's saved map, which needs the account stats engine. Regenerate it
-with `node script/drop-rate-oracle.mjs <upstream-repo>`; `crates/core/tests/drop_rate.rs` compares
+with `node script/drop-rate-oracle.mjs <upstream-repo>`; `crates/drop-rate/tests/drop_rate.rs` compares
 the port number for number. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
 
@@ -81,7 +81,7 @@ tier-three filter), each with the configuration the calculator builds and the fu
 counts, pile summaries, slot statistics, tier composition and the three currency distributions.
 `script/sailing-simulation-oracle.mjs` replaces `Math.random` with the same seeded xorshift stream the
 Rust port uses, so the upstream output is reproducible; regenerate it with
-`node script/sailing-simulation-oracle.mjs <upstream-repo>`. `crates/core/tests/sailing_simulation.rs`
+`node script/sailing-simulation-oracle.mjs <upstream-repo>`. `crates/sailing/tests/sailing_simulation.rs`
 compares the port field for field.
 
 `coin-multi.json` is the upstream Coin Multiplier calculator's own output, from
@@ -89,7 +89,7 @@ compares the port field for field.
 sources are all neutral. It carries every character's map, AFK target, monster HP, computed damage,
 overkill tier and the 23 multiplicative groups, so the port's own overkill tier and every resolved
 group are compared against upstream, and the simple save's total is compared end to end. Regenerate
-it with `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/core/tests/coin_multi.rs`
+it with `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/coin-multi/tests/coin_multi.rs`
 compares the port field for field. Nine groups still need the account stats engine (total
 STR/AGI/WIS), the talent, meal, pet arena/friend/statue, Sneaking, prayer, Divinity/Crop Scientist,
 Gambit and card/golden-food/guild systems; the port reports them as not modelled instead of guessing.

@@ -14,10 +14,10 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::worship;
+use idleon_worship as worship;
 
 /// The Model pane.
-pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     state.worship_ensure_plan();
     let issues = state.worship.plan_issues.clone();
     let muted = cx.theme().colors.fg_muted;

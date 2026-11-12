@@ -3,16 +3,17 @@
 
 use crate::sections::jar::metric;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::Tone;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::jar::{INCOME_TIERS, collectible_name};
-use idleon_core::{Jar, jar};
+use idleon_jar as jar;
+use idleon_jar::Jar;
+use idleon_jar::{INCOME_TIERS, collectible_name};
+use idleon_ui::format;
 
-pub fn chances(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn chances(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()

@@ -15,9 +15,9 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, FontWeight, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::Fountain;
-use idleon_core::fountain;
-use idleon_core::fountain::CurrencyRow;
+use idleon_fountain as fountain;
+use idleon_fountain::CurrencyRow;
+use idleon_fountain::Fountain;
 
 /// The Currency pane: values, per-water multipliers, desired simulator, unlocks.
 pub(super) fn currency_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {

@@ -9,7 +9,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::farming;
+use idleon_farming as farming;
 
 /// `plotAssignmentPlan`: every plot's target crop, with the plots that differ.
 pub(super) fn assignment_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {

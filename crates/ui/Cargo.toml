@@ -1,0 +1,12 @@
+[package]
+name = "idleon-ui"
+description = "Shared GPUI building blocks: the background task runner, run chrome, formula trees and number formatting."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+ely-gpui-component = { workspace = true }
+gpui = { workspace = true }
+idleon-common = { workspace = true }

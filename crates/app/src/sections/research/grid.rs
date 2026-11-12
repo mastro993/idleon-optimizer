@@ -1,7 +1,6 @@
 //! The 20×12 research grid: cells, level badges and the shape polygons over them.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
@@ -9,7 +8,7 @@ use gpui::{
     App, Context, Hsla, IntoElement, KeyBinding, ParentElement, PathBuilder, Pixels, Point, Styled,
     Window, canvas, div, point, px,
 };
-use idleon_core::game;
+use idleon_research::game;
 
 gpui::actions!(
     idleon_grid,
@@ -25,10 +24,10 @@ gpui::actions!(
 );
 
 /// Key context of the grid canvas: bindings here never fire while an input has focus.
-pub const GRID_CONTEXT: &str = "ResearchGrid";
+pub(crate) const GRID_CONTEXT: &str = "ResearchGrid";
 
 /// Arrow keys move the selected square, `+`/`-` level it, Escape deselects.
-pub fn bind_keys(cx: &mut App) {
+pub(crate) fn bind_keys(cx: &mut App) {
     let context = Some(GRID_CONTEXT);
     cx.bind_keys([
         KeyBinding::new("left", SelectLeft, context),
@@ -43,13 +42,13 @@ pub fn bind_keys(cx: &mut App) {
 }
 
 /// Logical pixels per grid cell.
-pub const CELL_PX: f32 = 46.0;
+pub(crate) const CELL_PX: f32 = 46.0;
 const CELL: f32 = CELL_PX;
 /// The geometry data is authored at 30 px per cell.
 const DATA_CELL: f32 = 30.0;
 
 /// The canvas plus its legend.
-pub fn grid_pane(
+pub(crate) fn grid_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -89,7 +88,7 @@ pub fn grid_pane(
         .research
         .selected_shape
         .and_then(|shape| state.simulation.placements.get(shape))
-        .map(idleon_core::shape::cells_at)
+        .map(idleon_research::shape::cells_at)
         .unwrap_or_default();
 
     for row in 0..game.grid.rows {
@@ -203,7 +202,7 @@ fn grid_cell(
     let level = state.simulation.grid.level(cell);
     let selected = state.research.selected_cell == Some(cell);
     let node = game.node_at(cell);
-    let tint = format::goal_color(node.and_then(|node| node.goal.as_deref()));
+    let tint = super::colors::goal_color(node.and_then(|node| node.goal.as_deref()));
     let is_node = node.is_some();
     let fill: Hsla = if !is_node {
         colors.bg
@@ -233,10 +232,10 @@ fn grid_cell(
             format!(
                 "{} · {} · level {level}",
                 node.name.replace('_', " "),
-                idleon_core::model::coord(cell)
+                idleon_research::model::coord(cell)
             )
         })
-        .unwrap_or_else(|| format!("{} · empty", idleon_core::model::coord(cell)));
+        .unwrap_or_else(|| format!("{} · empty", idleon_research::model::coord(cell)));
     let id = format!("cell-{cell}");
 
     div()
@@ -281,12 +280,13 @@ fn shape_overlay(state: &AppState, cx: &mut Context<AppState>) -> impl IntoEleme
         let Some(def) = game().shapes.get(placement.shape) else {
             continue;
         };
-        let polygon = idleon_core::shape::polygon_at(def, placement.x, placement.y, placement.rot);
+        let polygon =
+            idleon_research::shape::polygon_at(def, placement.x, placement.y, placement.rot);
         let points = polygon
             .iter()
             .map(|[x, y]| ((x * scale) as f32, (y * scale) as f32))
             .collect::<Vec<_>>();
-        polygons.push((points, format::shape_color(placement.shape)));
+        polygons.push((points, super::colors::shape_color(placement.shape)));
     }
     let _ = cx;
     canvas(
@@ -337,7 +337,7 @@ fn legend(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
                     div()
                         .size(px(8.0))
                         .rounded_full()
-                        .bg(format::shape_color(placement.shape)),
+                        .bg(super::colors::shape_color(placement.shape)),
                 )
                 .child(Caption::new(format!("{} +{:.0}%", def.name, def.bonus_pct))),
         );

@@ -2,8 +2,6 @@
 
 use crate::sections::jelly_operator::estimate::{stat, text_kpi};
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::task;
 use ely_gpui_component::data_display::{KpiCard, Statistic, Timeline, TimelineItem, Tone};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -12,10 +10,12 @@ use ely_gpui_component::tables::Table;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
-use idleon_core::jelly::Trial;
+use idleon_jelly::Trial;
+use idleon_ui::format;
+use idleon_ui::run_chrome;
 
 /// The simulated run: its outcome, cell contribution and critical timeline.
-pub fn card(trial: &Trial, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(trial: &Trial, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
     let mut header = CardHeader::new("Simulated run").description(format!(
         "{} · {:.2}s · {} cell type(s) fired",
         status(trial),
@@ -27,7 +27,7 @@ pub fn card(trial: &Trial, stale: bool, cx: &mut Context<AppState>) -> AnyElemen
             .count()
     ));
     if stale {
-        header = header.action(task::stale_badge("jelly-sim-result"));
+        header = header.action(run_chrome::stale_badge("jelly-sim-result"));
     }
     let card = Card::new().header(header);
     if !trial.valid {

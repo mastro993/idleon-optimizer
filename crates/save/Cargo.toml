@@ -1,0 +1,10 @@
+[package]
+name = "idleon-save"
+description = "Raw access to a decoded Legends of Idleon save."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde_json = { workspace = true }

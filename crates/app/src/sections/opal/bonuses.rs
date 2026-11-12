@@ -1,22 +1,22 @@
 //! Every bonus term behind the rates, and the shared formula tree.
 
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Entity, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::Opal;
+use idleon_opal::Opal;
+use idleon_ui::format;
+use idleon_ui::formula::FormulaTree;
 
 /// The terms table: the chain, the outer multipliers and the additive pool.
-pub fn terms(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn terms(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let terms = &opal.ext.terms;
     let mut table = Table::new(["Group", "Term", "Value"]);
-    for ((label, _), factor) in idleon_core::opal::CHAIN.iter().zip(terms.chain_factors()) {
+    for ((label, _), factor) in idleon_opal::CHAIN.iter().zip(terms.chain_factors()) {
         table = table.row([
             div().child("Chain").into_any_element(),
             div().child(*label).into_any_element(),
@@ -69,11 +69,11 @@ pub fn terms(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The shared formula tree, rooted at the selector's villager or the total.
-pub fn formula(state: &AppState, tree: Entity<FormulaTree>) -> AnyElement {
+pub(crate) fn formula(state: &AppState, tree: Entity<FormulaTree>) -> AnyElement {
     let title = match state.opal_selected {
         Some(villager) => format!(
             "{} EXP Rate Breakdown",
-            idleon_core::opal::NAMES
+            idleon_opal::NAMES
                 .get(villager)
                 .copied()
                 .unwrap_or("Villager")

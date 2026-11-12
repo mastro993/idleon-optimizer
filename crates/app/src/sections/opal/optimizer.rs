@@ -6,7 +6,6 @@
 //! clipboard.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, Select, Stepper};
@@ -17,14 +16,15 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::Opal;
-use idleon_core::opal::{NAMES, Plan, PlanTarget, VILLAGERS};
+use idleon_opal::Opal;
+use idleon_opal::{NAMES, Plan, PlanTarget, VILLAGERS};
+use idleon_ui::format;
 
 /// The largest total the stepper offers; a save above it raises the ceiling.
 const MAX_TOTAL: f64 = 1_000_000.0;
 
 /// The optimizer pane: the run controls, the progress chrome and the plan.
-pub fn optimizer_pane(
+pub(crate) fn optimizer_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
@@ -55,7 +55,7 @@ pub fn optimizer_pane(
         && let Some(progress) = task.progress.clone()
     {
         let cancel = cx.entity();
-        body = body.child(crate::ui::task::progress_card(
+        body = body.child(idleon_ui::run_chrome::progress_card(
             "opal-plan",
             "Optimizing the opal distribution",
             "Runs off the UI thread; cancelling keeps the plan this run replaced.",
@@ -66,7 +66,7 @@ pub fn optimizer_pane(
         ));
     }
     if task.cancelled {
-        body = body.child(crate::ui::task::cancelled_banner(
+        body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "opal-plan-cancelled",
             task.result.is_some(),
         ));
@@ -238,11 +238,11 @@ fn plan_card(opal: &Opal, plan: &Plan, stale: bool, cx: &mut Context<AppState>) 
         opal.unlocked_count()
     ));
     if stale {
-        header = header.action(crate::ui::task::stale_badge("opal-plan"));
+        header = header.action(idleon_ui::run_chrome::stale_badge("opal-plan"));
     }
     let mut card = Card::new().header(header);
     if stale {
-        card = card.child(crate::ui::task::stale_banner("opal-plan"));
+        card = card.child(idleon_ui::run_chrome::stale_banner("opal-plan"));
     }
 
     let mut table = Table::new([

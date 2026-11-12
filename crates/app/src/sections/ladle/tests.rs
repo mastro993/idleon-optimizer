@@ -6,8 +6,8 @@ use super::forecast::toggle_day;
 use super::kitchens::{inputs, parse_policy, policy_id};
 use super::summary::{all, line, total};
 use super::{adopt, toggle};
-use idleon_core::ladle::kitchen::Policy;
-use idleon_core::ladle::{Character, EXP_BALLOONS, Ladle, Panel};
+use idleon_ladle::kitchen::Policy;
+use idleon_ladle::{Character, EXP_BALLOONS, Ladle, Panel};
 
 fn character(index: usize, cooking: bool) -> Character {
     Character {
@@ -133,13 +133,10 @@ fn the_exp_target_is_the_entered_level_or_the_next_one() {
 #[test]
 fn afk_time_costs_the_exp_between_the_two_levels() {
     let next = exp_to_level(42.0, 0.0, 43.0);
-    close(next, idleon_core::ladle::cooking_exp_req(42.0));
+    close(next, idleon_ladle::cooking_exp_req(42.0));
     // Banked EXP already paid for part of it.
     let banked = exp_to_level(42.0, 1_000_000.0, 43.0);
-    close(
-        banked,
-        idleon_core::ladle::cooking_exp_req(42.0) - 1_000_000.0,
-    );
+    close(banked, idleon_ladle::cooking_exp_req(42.0) - 1_000_000.0);
     // Never negative, and nothing to do at the current level.
     close(exp_to_level(42.0, 1e30, 43.0), 0.0);
     close(exp_to_level(42.0, 0.0, 42.0), 0.0);
@@ -181,7 +178,7 @@ fn the_plan_inputs_come_from_the_checked_rates_and_the_save() {
         ..Panel::default()
     };
     let stats = all(&ladle, panel, 24.0);
-    let settings = idleon_core::ladle::kitchen::Inputs::default();
+    let settings = idleon_ladle::kitchen::Inputs::default();
     let plan = inputs(&settings, &[0, 2], panel, true, &ladle, &stats);
     // 15 ladles a day each, both checked.
     assert_eq!(plan.ladles_per_day, 30.0);

@@ -1,0 +1,16 @@
+[package]
+name = "idleon-cog"
+description = "Cog board decoding, insights and placement optimizers."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-common = { workspace = true }
+idleon-save = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+idleon-import = { workspace = true }

@@ -8,7 +8,6 @@
 
 use super::{artifacts as finds, captain_short, chance, text_kpi, trip};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
@@ -17,12 +16,13 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div};
-use idleon_core::sailing::{
+use idleon_sailing::{
     ArtifactOutcome, RouteMetrics, incomplete_artifacts, max_artifact_tier, route_metrics,
 };
+use idleon_ui::format;
 
 /// The artifacts tab: the KPIs, the island ranking and the island's own artifacts.
-pub fn artifacts_tab(
+pub(crate) fn artifacts_tab(
     state: &AppState,
     table_height: Pixels,
     cx: &mut Context<AppState>,

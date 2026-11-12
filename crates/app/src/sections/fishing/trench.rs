@@ -5,7 +5,6 @@
 //! Ported from `renderTrench` in the upstream `fishing-calc.html`.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::Badge;
 use ely_gpui_component::feedback::EmptyState;
@@ -20,13 +19,18 @@ use gpui::{
     AnyElement, Context, Hsla, IntoElement, ParentElement, Pixels, Role, SharedString, Styled, div,
     px,
 };
-use idleon_core::fishing::{self, HelperMode, TrenchPlan};
+use idleon_fishing::{self as fishing, HelperMode, TrenchPlan};
+use idleon_ui::format;
 
 /// The depth choices the upstream selector offers.
 const DEPTH_CHOICES: [usize; 5] = [3, 5, 10, 15, 25];
 
 /// The Trench card, or the state that explains why it has nothing to show.
-pub fn card(state: &mut AppState, table_height: Pixels, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(
+    state: &mut AppState,
+    table_height: Pixels,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(plan) = plan(state) else {
         return missing(state, cx);
     };

@@ -1,12 +1,13 @@
 //! The Monument (W5) section: the Bravery, Justice and Wisdom tabs and the
 //! training sources every monument shares.
 
-pub mod bravery;
-pub mod justice;
-pub mod wisdom;
+mod actions;
+
+pub(crate) mod bravery;
+pub(crate) mod justice;
+pub(crate) mod wisdom;
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::{Choice, Select};
@@ -21,12 +22,13 @@ use gpui::{
     AnyElement, Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled,
     Window, div, px,
 };
-use idleon_core::monument::{BonusRow, Milestone, Snapshot};
+use idleon_monument::{BonusRow, Milestone, Snapshot};
+use idleon_ui::format;
 
 /// The upstream monument tab strip.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     #[default]
     Bravery,
     Justice,
@@ -35,9 +37,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Bravery, Tab::Justice, Tab::Wisdom, Tab::Sources];
+    pub(crate) const ALL: [Tab; 4] = [Tab::Bravery, Tab::Justice, Tab::Wisdom, Tab::Sources];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Bravery => "bravery",
             Tab::Justice => "justice",
@@ -46,7 +48,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Bravery => "Bravery",
             Tab::Justice => "Justice",
@@ -55,7 +57,7 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
@@ -63,23 +65,23 @@ impl Tab {
 /// The monument section's live inputs; the save supplies the rest.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub tab: Tab,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
     /// The character whose Summoning access the Meritoc charge reads.
-    pub character: usize,
+    pub(crate) character: usize,
     /// The enemy number, 1 for the first enemy; the upstream wave is one less.
-    pub wave: u32,
+    pub(crate) wave: u32,
     /// Damage-boost stacks already earned this story.
-    pub boosts: u32,
+    pub(crate) boosts: u32,
     /// Rethrows left; `None` uses the saved maximum.
-    pub rerolls: Option<u32>,
+    pub(crate) rerolls: Option<u32>,
     /// HP before the last sword, when the player knows it.
-    pub remaining_hp: Option<f64>,
+    pub(crate) remaining_hp: Option<f64>,
     /// The Justice worksheet: its stats, its observed case and its undo trail.
-    pub worksheet: idleon_core::monument::justice::Worksheet,
+    pub(crate) worksheet: idleon_monument::justice::Worksheet,
     /// What the last Justice step reported, under the advisor.
     #[serde(skip)]
-    pub notice: String,
+    pub(crate) notice: String,
 }
 
 impl Default for State {
@@ -91,14 +93,18 @@ impl Default for State {
             boosts: 0,
             rerolls: None,
             remaining_hp: None,
-            worksheet: idleon_core::monument::justice::Worksheet::default(),
+            worksheet: idleon_monument::justice::Worksheet::default(),
             notice: String::new(),
         }
     }
 }
 
 /// The section: tab strip, training summary and the active pane.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if let Some(save) = state.save.as_ref() {
         let count = save.character_count();
         if count > 0 && state.monument.character >= count {

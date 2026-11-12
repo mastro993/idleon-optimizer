@@ -20,10 +20,10 @@ use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, Role,
     SharedString, StatefulInteractiveElement, Styled, div,
 };
-use idleon_core::combat::{self, data, loadout::Slot};
+use idleon_combat::{self as combat, data, loadout::Slot};
 
 /// The equipment pane: every slot on the left, the selected slot on the right.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     breakpoint: Breakpoint,
     cx: &mut Context<AppState>,

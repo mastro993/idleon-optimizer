@@ -1,13 +1,13 @@
 //! The overview's selection and plan wording.
 //!
-//! The numbers themselves are pinned in `crates/core/tests/royal_guardian.rs`
+//! The numbers themselves are pinned in `crates/royal-guardian/tests/royal_guardian.rs`
 //! against the upstream JS; these cover what the section decides on top of them:
 //! which outpost the range panel explains and how it words the plan.
 
 use super::overview::{plan_text, selected_outpost};
-use idleon_core::RoyalGuardian;
-use idleon_core::royal_guardian;
-use idleon_core::royal_guardian::RangeTarget;
+use idleon_royal_guardian as royal_guardian;
+use idleon_royal_guardian::RangeTarget;
+use idleon_royal_guardian::RoyalGuardian;
 use serde_json::{Map, Value, json};
 
 /// A save with one built W1 outpost and one map still clearing.

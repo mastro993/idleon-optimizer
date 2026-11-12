@@ -9,17 +9,17 @@
 use crate::state::AppState;
 use ely_gpui_component::forms::TextInput;
 use gpui::{App, AppContext as _, Context, Entity, Window};
-use idleon_core::clamworks::afk::{ClaimError, Compare, Inputs, Phase};
+use idleon_clamworks::afk::{ClaimError, Compare, Inputs, Phase};
 use std::collections::BTreeMap;
 
 /// One character's combat stand-ins, which the combat simulator will supply.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct StandIn {
+pub(crate) struct StandIn {
     /// Monsters killed per hour on Clamworks.
-    pub kills_per_hour: f64,
+    pub(crate) kills_per_hour: f64,
     /// The character's drop-rate multiplier.
-    pub drop_rate: f64,
+    pub(crate) drop_rate: f64,
 }
 
 impl Default for StandIn {
@@ -32,23 +32,23 @@ impl Default for StandIn {
 }
 
 /// The claim tab's state, kept across dashboard visits.
-pub struct State {
+pub(crate) struct State {
     /// The save character the claim and the comparison run for.
-    pub character: usize,
+    pub(crate) character: usize,
     /// Each character's stand-ins, keyed by its save index; switching character
     /// switches the numbers, which is what makes a comparison that character's.
-    pub stand_ins: BTreeMap<usize, StandIn>,
+    pub(crate) stand_ins: BTreeMap<usize, StandIn>,
     /// The hours away the last entry committed, valid or not.
-    pub hours: f64,
-    pub phase: Phase,
+    pub(crate) hours: f64,
+    pub(crate) phase: Phase,
     /// Why the claim refused the committed entry, or `None` when it accepted it.
-    pub error: Option<ClaimError>,
+    pub(crate) error: Option<ClaimError>,
     /// The hours field, read when the claim is calculated.
-    pub hours_field: Entity<TextInput>,
+    pub(crate) hours_field: Entity<TextInput>,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let default = Inputs::default();
         let hours_field = cx.new(|cx| {
             let mut input = TextInput::new(window, cx)
@@ -68,7 +68,7 @@ impl State {
     }
 
     /// The claim's inputs for the selected character.
-    pub fn inputs(&self) -> Inputs {
+    pub(crate) fn inputs(&self) -> Inputs {
         let stand_in = self.stand_in(self.character);
         Inputs {
             hours: self.hours,
@@ -79,14 +79,14 @@ impl State {
     }
 
     /// One character's stand-ins; a character without any reads the defaults.
-    pub fn stand_in(&self, character: usize) -> StandIn {
+    pub(crate) fn stand_in(&self, character: usize) -> StandIn {
         self.stand_ins.get(&character).copied().unwrap_or_default()
     }
 
     /// The claimed comparison for the saved state, or why the entry is refused.
-    pub fn compare(
+    pub(crate) fn compare(
         &self,
-        clamworks: &idleon_core::Clamworks,
+        clamworks: &idleon_clamworks::Clamworks,
         multikill: f64,
     ) -> Result<Compare, ClaimError> {
         match self.error {
@@ -96,14 +96,14 @@ impl State {
     }
 
     /// The hours field's text.
-    pub fn hours_text(&self, cx: &App) -> String {
+    pub(crate) fn hours_text(&self, cx: &App) -> String {
         self.hours_field.read(cx).text().trim().to_string()
     }
 
     /// Commit the typed hours. Text that is not a number is the one entry the
     /// claim cannot read at all; a number outside the credited range is the
     /// claim's own refusal, so it stays here until a later entry is accepted.
-    pub fn commit_hours(&mut self, text: &str) {
+    pub(crate) fn commit_hours(&mut self, text: &str) {
         match text.trim().parse::<f64>() {
             Ok(hours) => {
                 self.hours = hours;
@@ -114,7 +114,7 @@ impl State {
     }
 
     /// Pick the character the claim and the comparison run for.
-    pub fn set_character(&mut self, character: usize, count: usize) {
+    pub(crate) fn set_character(&mut self, character: usize, count: usize) {
         self.character = if count == 0 {
             0
         } else {
@@ -122,12 +122,12 @@ impl State {
         };
     }
 
-    pub fn set_phase(&mut self, phase: Phase) {
+    pub(crate) fn set_phase(&mut self, phase: Phase) {
         self.phase = phase;
     }
 
     /// A stand-in number, kept non-negative and finite.
-    pub fn set_stand_in(&mut self, character: usize, update: impl FnOnce(&mut StandIn)) {
+    pub(crate) fn set_stand_in(&mut self, character: usize, update: impl FnOnce(&mut StandIn)) {
         let mut stand_in = self.stand_in(character);
         update(&mut stand_in);
         stand_in.kills_per_hour = non_negative(stand_in.kills_per_hour, 0.0);
@@ -136,7 +136,7 @@ impl State {
     }
 
     /// Replace the entries from a project config and reseed the field.
-    pub fn adopt(
+    pub(crate) fn adopt(
         &mut self,
         character: usize,
         stand_ins: BTreeMap<usize, StandIn>,
@@ -165,7 +165,7 @@ impl State {
     }
 
     /// After a save import the selected character may be gone.
-    pub fn load(&mut self, count: usize) {
+    pub(crate) fn load(&mut self, count: usize) {
         self.set_character(self.character, count);
     }
 

@@ -85,7 +85,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/spelunking.json', import.meta.url);
+const out = new URL('../crates/spelunking/data/spelunking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${payload.caves.length} caves, ${payload.tools.length} tools, ${payload.elixirs.length} elixirs, ` +

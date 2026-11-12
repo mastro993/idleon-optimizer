@@ -7,13 +7,15 @@
 //! list with its cost curve. The planner and marble tabs arrive with FN-03 and
 //! FN-04.
 
+mod actions;
+
 mod bonuses;
 mod currency;
 mod overview;
-pub mod state;
+pub(crate) mod state;
 mod upgrades;
 
-pub use state::{State, Tab};
+pub(crate) use state::{State, Tab};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -28,7 +30,11 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled
 
 /// The fountain section: the tab strip and the selected pane, or the import
 /// prompt when the loaded save carries no cavern.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let fountain = state.fountain.as_ref();
     let muted = cx.theme().colors.fg_muted;
     let Some(fountain) = fountain else {
@@ -55,7 +61,7 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
     });
     let desired = state.fountain_desired();
     let saved = fountain.desired_currency();
-    let wanted = idleon_core::fountain::currency_label(desired);
+    let wanted = idleon_fountain::currency_label(desired);
     let summary = format!(
         "Fountain level {} · {} · {}× currency",
         overview::num(fountain.level()),

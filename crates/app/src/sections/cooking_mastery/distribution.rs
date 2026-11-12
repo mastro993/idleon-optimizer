@@ -3,12 +3,11 @@
 //! The page renders one table under a "Points to spend" input. The card keeps
 //! that input, adds the goal the section's inputs ask for, and offers the plan as
 //! text for the copy action. Planning itself is
-//! [`idleon_core::cooking_mastery::Mastery::distribution`]; this module only
+//! [`idleon_cooking_mastery::Mastery::distribution`]; this module only
 //! draws it.
 
 use super::whole;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::CopyButton;
 use ely_gpui_component::data_display::Statistic;
 use ely_gpui_component::feedback::Callout;
@@ -20,12 +19,13 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
-use idleon_core::cooking_mastery::{Goal, Plan, Row};
+use idleon_cooking_mastery::{Goal, Plan, Row};
+use idleon_ui::format;
 
 /// The card: the controls, the plan's headline, its table and the copy action.
-pub fn card(
+pub(crate) fn card(
     state: &AppState,
-    mastery: &idleon_core::cooking_mastery::Mastery,
+    mastery: &idleon_cooking_mastery::Mastery,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let plan = state.mastery_plan.plan(mastery);
@@ -269,8 +269,7 @@ fn notes(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
     body = body.child(
         Caption::new(format!(
             "{} is not an EXP upgrade, so no point goes there.",
-            idleon_core::cooking_mastery::UPGRADE_NAMES
-                [idleon_core::cooking_mastery::RIBBON_CHANCE]
+            idleon_cooking_mastery::UPGRADE_NAMES[idleon_cooking_mastery::RIBBON_CHANCE]
         ))
         .text_color(muted),
     );

@@ -7,13 +7,13 @@
 //! selection preview, the trials and the comparison that highlights the best
 //! option; KL-03 adds the run options (saved buffs and unlimited inventory), the
 //! saved-buff table, the results export and the assumptions the numbers rest on.
-//! The shared [`crate::task::TaskRunner`] runs the trials off the UI thread.
+//! The shared [`idleon_ui::runner::TaskRunner`] runs the trials off the UI thread.
 
 mod comparison;
 mod forecast_view;
 mod state;
 
-pub use state::KillroyOutcome;
+pub(crate) use state::KillroyOutcome;
 
 use crate::state::AppState;
 use ely_gpui_component::shell::{TabBar, WindowTab};
@@ -21,12 +21,12 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
-use idleon_core::killroy::{self, Selection};
+use idleon_killroy::{self as killroy, Selection};
 
 /// The section's two halves, as the upstream tab strip splits them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Mode {
+pub(crate) enum Mode {
     /// The forecast and the baseline selection.
     #[default]
     Baseline,
@@ -35,23 +35,23 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub const ALL: [Mode; 2] = [Mode::Baseline, Mode::Upgrades];
+    pub(crate) const ALL: [Mode; 2] = [Mode::Baseline, Mode::Upgrades];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Mode::Baseline => "baseline",
             Mode::Upgrades => "upgrades",
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Mode::Baseline => "Baseline",
             Mode::Upgrades => "Upgrade comparisons",
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|mode| mode.id() == id)
     }
 }
@@ -59,27 +59,27 @@ impl Mode {
 /// The section's settings, saved with the project.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
+pub(crate) struct State {
     /// Upcoming weeks the forecast covers, 1-52.
-    pub weeks: usize,
-    pub mode: Mode,
+    pub(crate) weeks: usize,
+    pub(crate) mode: Mode,
     /// Trials per configuration, 1-20.
-    pub trials: usize,
+    pub(crate) trials: usize,
     /// The base seed the trial seeds step from.
-    pub seed: u64,
+    pub(crate) seed: u64,
     /// The combat simulator stand-in: how many monsters the character kills a
     /// second.
-    pub kills_per_second: f64,
+    pub(crate) kills_per_second: f64,
     /// Start with the save's `BuffsActive` timers instead of a fresh map entry.
-    pub keep_buffs: bool,
+    pub(crate) keep_buffs: bool,
     /// Lift the bag-space limit on the run's pickups.
-    pub unlimited_inventory: bool,
+    pub(crate) unlimited_inventory: bool,
     /// The weeks the run covers; this week is checked by default.
-    pub checked_weeks: Vec<usize>,
+    pub(crate) checked_weeks: Vec<usize>,
     /// The encounters the run covers.
-    pub selection: Vec<Selection>,
+    pub(crate) selection: Vec<Selection>,
     /// The upgrade ids the comparison tests; every upgrade by default.
-    pub upgrades: Vec<usize>,
+    pub(crate) upgrades: Vec<usize>,
 }
 
 impl Default for State {
@@ -101,7 +101,7 @@ impl Default for State {
 
 impl State {
     /// The settings with every field inside the range the plan accepts.
-    pub fn normalized(mut self) -> Self {
+    pub(crate) fn normalized(mut self) -> Self {
         self.weeks = self.weeks.clamp(1, 52);
         self.trials = self.trials.clamp(1, 20);
         self.seed = self.seed.max(1);
@@ -125,7 +125,7 @@ impl State {
     }
 
     /// Whether the run covers a selection of this week and slot.
-    pub fn selected(&self, week_offset: usize, ci: usize, slot: usize) -> bool {
+    pub(crate) fn selected(&self, week_offset: usize, ci: usize, slot: usize) -> bool {
         let key = Selection {
             week_offset,
             ci,
@@ -135,18 +135,22 @@ impl State {
     }
 
     /// Whether a week is checked for the run.
-    pub fn week_checked(&self, week_offset: usize) -> bool {
+    pub(crate) fn week_checked(&self, week_offset: usize) -> bool {
         self.checked_weeks.contains(&week_offset)
     }
 
     /// Whether the comparison tests an upgrade.
-    pub fn compares(&self, id: usize) -> bool {
+    pub(crate) fn compares(&self, id: usize) -> bool {
         self.mode == Mode::Upgrades && self.upgrades.contains(&id)
     }
 }
 
 /// The section as the registry opens it.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let mode = state.killroy.mode;
     let entity = cx.entity();
     let tabs = TabBar::new("killroy-tabs")
@@ -285,20 +289,16 @@ mod tests {
         assert_eq!(state.checked_weeks, vec![0]);
         let state = State {
             weeks: 99,
-            ..State::default()
-        }
-        .normalized();
-        assert_eq!(state.weeks, 52);
-    }
-
-    #[test]
-    fn a_state_without_checked_weeks_keeps_this_week() {
-        let state = State {
             checked_weeks: Vec::new(),
             ..State::default()
         }
         .normalized();
-        assert_eq!(state.checked_weeks, vec![0]);
+        assert_eq!(state.weeks, 52);
+        assert_eq!(
+            state.checked_weeks,
+            vec![0],
+            "no checked week keeps this one"
+        );
     }
 
     #[test]

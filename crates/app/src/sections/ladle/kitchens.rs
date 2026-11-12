@@ -1,13 +1,12 @@
 //! The Kitchens & Jellyfish tab: the reset investment, the daily layout and the
 //! copyable reset instructions.
 //!
-//! The plan itself lives in [`idleon_core::ladle::kitchen`]: this tab only gathers
+//! The plan itself lives in [`idleon_ladle::kitchen`]: this tab only gathers
 //! the inputs the save and the section's selectors give it, then draws the cards
 //! and hands each reset to [`super::forecast`].
 
 use super::summary;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::{Callout, EmptyState};
 use ely_gpui_component::forms::{Checkbox, Choice, Select, Stepper};
@@ -17,11 +16,12 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_core::ladle::kitchen::{self, Policy};
-use idleon_core::ladle::{self, Ladle};
+use idleon_ladle::kitchen::{self, Policy};
+use idleon_ladle::{self as ladle, Ladle};
+use idleon_ui::format;
 
 /// The whole Kitchens & Jellyfish tab.
-pub fn pane(
+pub(crate) fn pane(
     state: &mut AppState,
     ladle: &Ladle,
     _window: &mut Window,

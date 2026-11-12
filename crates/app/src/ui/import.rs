@@ -4,7 +4,7 @@
 //! Ported from the upstream `js/ui/save-loader.js`, which loads a file or a paste
 //! into `js/state.js` and reports the load in the bar it injects, and from
 //! `js/ui/state-io.js`, whose state box reads the gzip+base64 `ROv2:` string.
-//! Detection, parsing and migration live in [`idleon_core::import`], so this
+//! Detection, parsing and migration live in [`idleon_import::pipeline`], so this
 //! module only names what it found: the format, the research level, the section
 //! count and the warnings are shown before anything is applied, a failed parse
 //! only replaces the message, and applying cannot fail halfway because the
@@ -24,8 +24,8 @@ use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
     div, px,
 };
-use idleon_core::import::Document;
-use idleon_core::save::Imported;
+use idleon_import::Imported;
+use idleon_import::pipeline::Document;
 use std::path::Path;
 
 /// How many warnings the preview lists before it counts the rest.
@@ -37,38 +37,38 @@ const SHOWN_RECENT: usize = 5;
 
 /// The document waiting for Apply.
 ///
-/// [`idleon_core::import`] owns detection, parsing and migration; the app side
+/// [`idleon_import::pipeline`] owns detection, parsing and migration; the app side
 /// decodes every section config while previewing, so Apply only assigns what
 /// was already read. A document either previews completely or fails with one
 /// message, never half-applying.
-pub struct Pending {
+pub(crate) struct Pending {
     /// The detected, parsed and migrated document.
-    pub document: Document,
+    pub(crate) document: Document,
     /// The section configs it carries, decoded while previewing.
-    pub configs: Vec<crate::project::Config>,
+    pub(crate) configs: Vec<crate::project::Config>,
 }
 
 /// What the dialog is holding while it is open.
-pub struct Import {
-    pub open: bool,
+pub(crate) struct Import {
+    pub(crate) open: bool,
     /// The pasted JSON or state string.
-    pub input: Entity<TextInput>,
+    pub(crate) input: Entity<TextInput>,
     /// Where the previewed text came from: the paste box, or a dropped file.
-    pub source: String,
+    pub(crate) source: String,
     /// The line under the preview: what the last parse said.
-    pub message: String,
+    pub(crate) message: String,
     /// Whether the last parse succeeded.
-    pub ok: bool,
+    pub(crate) ok: bool,
     /// The parsed document waiting for Apply. A failed parse leaves it empty, so
     /// a failure can never replace the loaded run.
-    pub pending: Option<Pending>,
+    pub(crate) pending: Option<Pending>,
     /// What applying the last document changed, field by field. The dialog
     /// lists it and the status bar summarises it.
-    pub changes: Vec<String>,
+    pub(crate) changes: Vec<String>,
 }
 
 impl Import {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let input = cx.new(|cx| {
             TextInput::new(window, cx)
                 .multi_line(4, 10)
@@ -89,7 +89,7 @@ impl Import {
 }
 
 /// The line under the preview: what applying would load.
-pub fn summary(document: &Document) -> String {
+pub(crate) fn summary(document: &Document) -> String {
     let mut line = format!("Ready to apply: {}", document.format());
     if let Some(id) = document.section_id() {
         line.push_str(&format!(" · {}", section_title(id)));
@@ -122,7 +122,7 @@ fn farming_suffix(import: &Imported) -> String {
 }
 
 /// The line the dialog keeps once the document is applied.
-pub fn applied(document: &Document) -> String {
+pub(crate) fn applied(document: &Document) -> String {
     match document {
         Document::Save(imported) => format!(
             "Applied {} · research level {}{}{} · {} character(s).",
@@ -166,7 +166,7 @@ fn fleet(import: &Imported) -> String {
 }
 
 /// The import dialog, rendered on top of the shell while it is open.
-pub fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let close = entity.clone();
     let cancel = entity.clone();
@@ -514,10 +514,10 @@ fn file_name(path: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use idleon_core::import as pipeline;
-    use idleon_core::model::Simulation;
-    use idleon_core::project;
-    use idleon_core::save::Format;
+    use idleon_import::Format;
+    use idleon_import::pipeline;
+    use idleon_project as project;
+    use idleon_research::model::Simulation;
 
     fn imported(format: Format, characters: usize, warnings: &[&str]) -> Document {
         Document::Save(Box::new(Imported {
@@ -540,7 +540,7 @@ mod tests {
             opal: None,
             royal: None,
             sneaking: None,
-            save: idleon_core::save::Save::new(serde_json::Value::Null),
+            save: idleon_save::Save::new(serde_json::Value::Null),
             companion: None,
             statues: Default::default(),
             coral: Default::default(),

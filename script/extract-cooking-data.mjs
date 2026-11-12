@@ -45,7 +45,7 @@ const payload = {
   },
 };
 writeFileSync(
-  new URL('../crates/core/data/cooking.json', import.meta.url),
+  new URL('../crates/ladle/data/cooking.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(`cooking: ${meals.length} meals, ${payload.numberToLetter.length} encoding letters`);

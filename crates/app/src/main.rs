@@ -5,7 +5,6 @@ mod project;
 mod sections;
 mod session;
 mod state;
-mod task;
 mod ui;
 
 use anyhow::{Context as _, Result};

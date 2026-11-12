@@ -13,16 +13,15 @@
 //! section asks the player for them and says so. Everything else comes from the
 //! save.
 
-pub mod breakdowns;
-pub mod exp;
-pub mod forecast;
-pub mod kitchens;
-pub mod summary;
+pub(crate) mod breakdowns;
+pub(crate) mod exp;
+pub(crate) mod forecast;
+pub(crate) mod kitchens;
+pub(crate) mod summary;
 #[cfg(test)]
 mod tests;
 
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::{Choice, Select, Stepper};
@@ -34,13 +33,14 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
-use idleon_core::ladle::kitchen;
-use idleon_core::ladle::{EXP_BALLOONS, Panel};
+use idleon_ladle::kitchen;
+use idleon_ladle::{EXP_BALLOONS, Panel};
+use idleon_ui::formula::FormulaTree;
 
 /// The ladle page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The summary, the character rates and the breakdowns.
     #[default]
     Ladles,
@@ -51,9 +51,9 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 3] = [Tab::Ladles, Tab::Kitchens, Tab::Exp];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Ladles, Tab::Kitchens, Tab::Exp];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Ladles => "ladles",
             Tab::Kitchens => "kitchens",
@@ -61,7 +61,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Ladles => "Ladles",
             Tab::Kitchens => "Kitchens & Jellyfish",
@@ -69,54 +69,54 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The section's own state: the selectors, the panel inputs, the checked
 /// characters and the three formula trees.
-pub struct State {
-    pub tab: Tab,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
     /// The character whose ladle hours the summary and later tabs use.
-    pub ladle_character: usize,
+    pub(crate) ladle_character: usize,
     /// The character whose breakdowns are drawn.
-    pub breakdown_character: usize,
+    pub(crate) breakdown_character: usize,
     /// `AFK claim every (h)`: how often the player claims.
-    pub claim_hours: f64,
-    pub panel: Panel,
+    pub(crate) claim_hours: f64,
+    pub(crate) panel: Panel,
     /// The characters whose ladles the totals count.
-    pub assigned: Vec<usize>,
+    pub(crate) assigned: Vec<usize>,
     /// The EXP balloon the Cooking EXP tab spends, as an index into
     /// [`EXP_BALLOONS`].
-    pub balloon: usize,
+    pub(crate) balloon: usize,
     /// The target Cooking level, or 0 for the next level.
-    pub target_level: u32,
+    pub(crate) target_level: u32,
     /// Share the owned balloons to keep levels even.
-    pub split: bool,
+    pub(crate) split: bool,
     /// The Kitchens & Jellyfish inputs: the horizon, the donation policy, the
     /// meal cost terms and the layout pins.
-    pub kitchen: kitchen::Inputs,
+    pub(crate) kitchen: kitchen::Inputs,
     /// Whether the reset plan spends the ladles the save already carries.
-    pub use_owned: bool,
+    pub(crate) use_owned: bool,
     /// The reset whose layout the forecast draws, 1-based.
-    pub day: usize,
+    pub(crate) day: usize,
     /// The resets whose instructions are expanded, by day number.
-    pub open_days: Vec<u32>,
+    pub(crate) open_days: Vec<u32>,
     /// Whether the kitchen pins and meal exclusions are shown.
-    pub show_layout: bool,
+    pub(crate) show_layout: bool,
     /// The plan the Kitchens tab last computed and the inputs it came from.
-    pub kitchen_plan: Option<KitchenPlan>,
-    pub ladles_tree: Entity<FormulaTree>,
-    pub claims_tree: Entity<FormulaTree>,
-    pub balloons_tree: Entity<FormulaTree>,
+    pub(crate) kitchen_plan: Option<KitchenPlan>,
+    pub(crate) ladles_tree: Entity<FormulaTree>,
+    pub(crate) claims_tree: Entity<FormulaTree>,
+    pub(crate) balloons_tree: Entity<FormulaTree>,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let ladles_tree = cx.new(|cx| FormulaTree::new("ladle-ladles-formula", window, cx));
-        let claims_tree = cx.new(|cx| FormulaTree::new("ladle-claims-formula", window, cx));
-        let balloons_tree = cx.new(|cx| FormulaTree::new("ladle-balloons-formula", window, cx));
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let ladles_tree = crate::ui::formula_tree("ladle-ladles-formula", window, cx);
+        let claims_tree = crate::ui::formula_tree("ladle-claims-formula", window, cx);
+        let balloons_tree = crate::ui::formula_tree("ladle-balloons-formula", window, cx);
         Self {
             tab: Tab::Ladles,
             ladle_character: 0,
@@ -140,23 +140,23 @@ impl State {
     }
 
     /// The balloon the Cooking EXP tab spends.
-    pub fn balloon_key(&self) -> idleon_core::ladle::Balloon {
+    pub(crate) fn balloon_key(&self) -> idleon_ladle::Balloon {
         EXP_BALLOONS[self.balloon.min(EXP_BALLOONS.len() - 1)]
     }
 
     /// Whether a character is counted in the totals.
-    pub fn is_assigned(&self, index: usize) -> bool {
+    pub(crate) fn is_assigned(&self, index: usize) -> bool {
         self.assigned.contains(&index)
     }
 
     /// Count or stop counting a character.
-    pub fn toggle_assigned(&mut self, index: usize) {
+    pub(crate) fn toggle_assigned(&mut self, index: usize) {
         toggle(&mut self.assigned, index);
     }
 
     /// Adopt a new roster: keep the selections the save still carries and, when
     /// nothing is checked yet, count the characters AFK-ing Cooking like upstream.
-    pub fn adopt(&mut self, ladle: &idleon_core::ladle::Ladle) {
+    pub(crate) fn adopt(&mut self, ladle: &idleon_ladle::Ladle) {
         let characters = ladle.characters.len();
         adopt(&mut self.assigned, ladle);
         self.ladle_character = self.ladle_character.min(characters.saturating_sub(1));
@@ -168,7 +168,7 @@ impl State {
     /// The plan simulates the whole horizon and searches each reset's layout, so
     /// the pane caches it: a redraw reuses the stored plan, and the saved
     /// signature rebuilds it whenever the save or an input moves.
-    pub fn plan(
+    pub(crate) fn plan(
         &mut self,
         reset: &kitchen::Reset,
         inputs: &kitchen::Inputs,
@@ -192,7 +192,7 @@ impl State {
     }
 
     /// Pin one kitchen to a meal, or let the optimizer choose with `None`.
-    pub fn set_pin(&mut self, index: usize, meal: Option<i32>) {
+    pub(crate) fn set_pin(&mut self, index: usize, meal: Option<i32>) {
         match meal {
             Some(meal) => self.kitchen.layout.pins.insert(index, meal),
             None => self.kitchen.layout.pins.remove(&index),
@@ -200,7 +200,7 @@ impl State {
     }
 
     /// Exclude or re-include one meal in the reset layout.
-    pub fn toggle_excluded(&mut self, meal: usize) {
+    pub(crate) fn toggle_excluded(&mut self, meal: usize) {
         match self
             .kitchen
             .layout
@@ -216,13 +216,13 @@ impl State {
     }
 
     /// Change one input; the next render rebuilds the plan from it.
-    pub fn set_kitchen(&mut self, edit: impl FnOnce(&mut kitchen::Inputs)) {
+    pub(crate) fn set_kitchen(&mut self, edit: impl FnOnce(&mut kitchen::Inputs)) {
         edit(&mut self.kitchen);
     }
 }
 
 /// The Kitchens tab's cached plan and the inputs it was built from.
-pub struct KitchenPlan {
+pub(crate) struct KitchenPlan {
     signature: String,
     plan: Result<kitchen::Plan, kitchen::Problem>,
 }
@@ -242,7 +242,7 @@ fn toggle(assigned: &mut Vec<usize>, index: usize) {
 
 /// Adopt a new roster: keep the checked characters it still carries, and count
 /// the ones AFK-ing Cooking when nothing is checked yet, as upstream does.
-fn adopt(assigned: &mut Vec<usize>, ladle: &idleon_core::ladle::Ladle) {
+fn adopt(assigned: &mut Vec<usize>, ladle: &idleon_ladle::Ladle) {
     let characters = ladle.characters.len();
     if assigned.is_empty() {
         *assigned = ladle.cooking_characters();
@@ -251,7 +251,11 @@ fn adopt(assigned: &mut Vec<usize>, ladle: &idleon_core::ladle::Ladle) {
 }
 
 /// The ladle section: the tab strip, the selectors and the pane.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(ladle) = state.ladle.clone() else {
         return no_roster(cx);
     };

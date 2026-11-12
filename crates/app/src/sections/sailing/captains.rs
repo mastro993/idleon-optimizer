@@ -6,7 +6,6 @@
 
 use super::{captain_code, hours_or_ready};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, KpiCard, Meter, Statistic, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::Tooltip;
@@ -15,10 +14,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Pixels, Styled, div, px};
-use idleon_core::sailing::{
+use idleon_sailing::{
     CaptainLevelTime, FleetPlan, RollQuality, captain_bonus, captain_bonus_name, level_time,
     roll_quality,
 };
+use idleon_ui::format;
 
 /// One captain row: their bonuses, their boat and their level time.
 struct Row {
@@ -30,7 +30,7 @@ struct Row {
 }
 
 /// The captains tab: the flags, the KPI row and the captain table.
-pub fn captains_tab(
+pub(crate) fn captains_tab(
     state: &AppState,
     table_height: Pixels,
     cx: &mut Context<AppState>,

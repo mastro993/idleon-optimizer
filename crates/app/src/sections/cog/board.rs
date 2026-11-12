@@ -2,7 +2,6 @@
 //! objective stat.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::Tooltip;
@@ -10,9 +9,10 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::cog::{
+use idleon_cog::{
     BOARD_SIZE, BOARD_W, Board, BoardInsights, Cog, CogKind, Goal, classify, slot_to_pos,
 };
+use idleon_ui::format;
 
 /// What the insights measured a slot to be, so the grid can mark it.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -25,7 +25,7 @@ enum CellRole {
 
 /// The placement card: the grid, with the changed slots tinted and the two
 /// measured extremes marked.
-pub fn card(
+pub(crate) fn card(
     state: &AppState,
     board: &Board,
     insights: Option<&BoardInsights>,

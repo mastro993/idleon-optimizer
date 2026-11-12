@@ -13,7 +13,6 @@
 
 use super::compare::compare_card;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
@@ -27,9 +26,10 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
 };
-use idleon_core::clamworks::afk::{Claim, ClaimError, Compare, Phase};
+use idleon_clamworks::afk::{Claim, ClaimError, Compare, Phase};
+use idleon_ui::format;
 
-pub fn claim_pane(
+pub(crate) fn claim_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,

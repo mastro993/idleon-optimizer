@@ -3,11 +3,13 @@
 //!
 //! Ported from `coin-multi-calc.html`: the character select, the six cards and
 //! the partial badge. The cards read the save through
-//! [`idleon_core::coin_multi`], which resolves the groups this build ports and
+//! [`idleon_coin_multi`], which resolves the groups this build ports and
 //! names the ones it does not, so the badge always explains itself. The damage
 //! card is the one editable value: upstream resolves it through the damage
 //! descriptor, which this build does not carry yet, so the field opens on the
 //! save's highest recorded hit and the overkill tier follows what it holds.
+
+mod actions;
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -20,26 +22,22 @@ use gpui::{
     AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Window, div,
     px,
 };
-use idleon_core::coin_multi::{self, Character, Evaluation};
-use idleon_core::save::Imported;
+use idleon_coin_multi::{self as coin_multi, Character, Evaluation};
+use idleon_import::Imported;
 
 /// The section's state: the save slice, the selected character and the damage
 /// field.
-pub struct State {
+pub(crate) struct State {
     /// Every character's cards, from the last applied save.
-    pub snapshot: Option<coin_multi::Snapshot>,
-    pub character: usize,
+    pub(crate) snapshot: Option<coin_multi::Snapshot>,
+    pub(crate) character: usize,
     /// The editable damage value; the save's highest recorded hit prefills it.
-    pub damage: Entity<TextInput>,
+    pub(crate) damage: Entity<TextInput>,
 }
 
 impl State {
-    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let damage = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .placeholder("Maximum damage")
-                .label("Computed damage")
-        });
+    pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let damage = crate::ui::text_input("Maximum damage", "Computed damage", window, cx);
         Self {
             snapshot: None,
             character: 0,
@@ -49,7 +47,7 @@ impl State {
 
     /// Take a freshly imported save: character one, its saved target and the
     /// save's highest recorded damage, exactly like upstream's `onLoad`.
-    pub fn load(&mut self, imported: &Imported, cx: &mut Context<AppState>) {
+    pub(crate) fn load(&mut self, imported: &Imported, cx: &mut Context<AppState>) {
         self.character = 0;
         let prefill = imported
             .coin
@@ -62,12 +60,12 @@ impl State {
     }
 
     /// The selected character's cards, when the save carries it.
-    pub fn character(&self) -> Option<&Character> {
+    pub(crate) fn character(&self) -> Option<&Character> {
         self.snapshot.as_ref()?.character(self.character)
     }
 
     /// One character's choices for the selector.
-    pub fn choices(&self) -> Vec<Choice> {
+    pub(crate) fn choices(&self) -> Vec<Choice> {
         match self.snapshot.as_ref() {
             None => Vec::new(),
             Some(snapshot) => snapshot
@@ -86,7 +84,7 @@ impl State {
     }
 
     /// The damage field's value, or why it cannot be read.
-    pub fn damage_value(&self, cx: &App) -> Result<f64, String> {
+    pub(crate) fn damage_value(&self, cx: &App) -> Result<f64, String> {
         let text = self.damage.read(cx).text().trim().to_string();
         if text.is_empty() {
             return Err("Damage is required; the overkill tier and the total read it.".into());
@@ -99,7 +97,7 @@ impl State {
     }
 
     /// The cards' calculation for the selected character and damage.
-    pub fn evaluation(&self, cx: &App) -> Result<Evaluation, String> {
+    pub(crate) fn evaluation(&self, cx: &App) -> Result<Evaluation, String> {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return Err("Load a save to calculate the coin multiplier.".into());
         };
@@ -112,7 +110,11 @@ impl State {
 }
 
 /// The section page.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     let snapshot_missing = state.coin_multi.snapshot.is_none();
@@ -336,7 +338,7 @@ fn cards(
         })
         .unwrap_or_default();
     let total_text = total
-        .map(|total| format!("{}x", crate::ui::format::monster_cash(total)))
+        .map(|total| format!("{}x", idleon_ui::format::monster_cash(total)))
         .unwrap_or_else(|| "Unavailable".into());
     let partial_state = evaluation
         .map(|evaluation| !evaluation.complete)
@@ -493,7 +495,7 @@ fn figure_card(
     muted: Hsla,
 ) -> AnyElement {
     let text = match value {
-        Some(value) => crate::ui::format::fmt_val(value),
+        Some(value) => idleon_ui::format::fmt_val(value),
         None => "Unavailable".to_string(),
     };
     text_card(id, title, &text, caption, muted)
@@ -505,7 +507,7 @@ mod tests {
     use serde_json::json;
 
     fn imported(save: serde_json::Value) -> Imported {
-        idleon_core::save::import(&json!({ "data": save }).to_string()).expect("the save imports")
+        idleon_import::import(&json!({ "data": save }).to_string()).expect("the save imports")
     }
 
     fn save() -> serde_json::Value {

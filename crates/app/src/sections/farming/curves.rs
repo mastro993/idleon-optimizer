@@ -7,14 +7,14 @@
 
 use crate::sections::farming::field::family_name;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::farming::{OvergrowthAdvice, OvergrowthCurve, PLOTS, PlotMetrics, Snapshot};
+use idleon_farming::{OvergrowthAdvice, OvergrowthCurve, PLOTS, PlotMetrics, Snapshot};
+use idleon_ui::format;
 
 /// The all-plots summary and the selected plot's curve.
 pub(super) fn curves_card(

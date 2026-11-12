@@ -6,6 +6,8 @@
 //! enchant simulator and history to [`Tab::ALL`] then, so the strip never offers
 //! a tab that has nothing behind it.
 
+mod actions;
+
 mod chances;
 mod collectibles;
 mod next_tier;
@@ -31,7 +33,7 @@ use gpui::{
 /// The jar page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The jar summary, rupie balances and the cavern's status.
     #[default]
     Overview,
@@ -51,7 +53,7 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 7] = [
+    pub(crate) const ALL: [Tab; 7] = [
         Tab::Overview,
         Tab::Production,
         Tab::RupieValue,
@@ -61,7 +63,7 @@ impl Tab {
         Tab::NextTier,
     ];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Production => "production",
@@ -73,7 +75,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Production => "Production",
@@ -85,14 +87,18 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The jar section: the tab strip over a scrolling pane, or the import prompt
 /// when the loaded save carries no cavern.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if state.jar.is_none() {
         return prompt(cx);
     }
@@ -140,7 +146,7 @@ fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
 /// A KPI figure with its value scaled to `K`/`M`/`B`, so a cavern-sized
 /// multiplier still fits the card.
 pub(super) fn stat(id: &'static str, label: &'static str, value: f64) -> Statistic {
-    let (scaled, suffix) = crate::ui::format::scaled(value);
+    let (scaled, suffix) = idleon_ui::format::scaled(value);
     let statistic = Statistic::new(id, label, scaled).decimals(2);
     match suffix.is_empty() {
         true => statistic,

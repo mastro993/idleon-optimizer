@@ -1,8 +1,8 @@
 //! The simulator sandbox's board rules and one seeded attempt.
 
 use super::{Simulator, state::fever_modes};
-use idleon_core::jelly::Jelly;
-use idleon_core::jelly::operation::{RevivePolicy, RoidTiming, simulate};
+use idleon_jelly::Jelly;
+use idleon_jelly::operation::{RevivePolicy, RoidTiming, simulate};
 
 /// A flat save with the eight cell unlocks, the Feverizer and the roid/revive
 /// upgrades, every plot bought and two Amoebas on the saved board.
@@ -31,7 +31,7 @@ fn save() -> String {
 }
 
 fn jelly() -> Jelly {
-    idleon_core::save::import(&save())
+    idleon_import::import(&save())
         .expect("the save imports")
         .jelly
         .expect("the save carries a board")

@@ -7,14 +7,14 @@
 //! construction level; the shelf lists the pool the optimizer draws from and
 //! takes no edits.
 
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::cog::{BoardInsights, CogSave, Goal, Insight, slot_to_pos};
+use idleon_cog::{BoardInsights, CogSave, Goal, Insight, slot_to_pos};
+use idleon_ui::format;
 
 /// The objective's base and surround stat keys, as the controls name them.
 fn stat_keys(goal: Goal) -> (&'static str, &'static str) {
@@ -26,7 +26,11 @@ fn stat_keys(goal: Goal) -> (&'static str, &'static str) {
 }
 
 /// The insights card: the two measured extremes and the rolls they ask for.
-pub fn insights_card(insights: Option<&BoardInsights>, goal: Goal, muted: Hsla) -> AnyElement {
+pub(crate) fn insights_card(
+    insights: Option<&BoardInsights>,
+    goal: Goal,
+    muted: Hsla,
+) -> AnyElement {
     let header = CardHeader::new("Board insights").description(
         "Each cog measured by removing it and rescoring, so a surround's gift to its \
          neighbours counts toward its own contribution.",
@@ -171,8 +175,8 @@ fn extreme(
 }
 
 /// The roll ranges card: what each tier's rolls reach at the effective level.
-pub fn roll_ranges_card(goal: Goal, level: u32, saved_level: u32) -> AnyElement {
-    let ranges = idleon_core::cog::roll_ranges(goal, level);
+pub(crate) fn roll_ranges_card(goal: Goal, level: u32, saved_level: u32) -> AnyElement {
+    let ranges = idleon_cog::roll_ranges(goal, level);
     let summary = ranges
         .iter()
         .map(|range| {
@@ -282,7 +286,7 @@ fn tier_label(tier: usize) -> String {
 }
 
 /// The shelf card: every placeable shelf cog, with no way to change it.
-pub fn shelf_card(save: &CogSave, goal: Goal, muted: Hsla) -> AnyElement {
+pub(crate) fn shelf_card(save: &CogSave, goal: Goal, muted: Hsla) -> AnyElement {
     let (base_key, surround_key) = stat_keys(goal);
     let header = CardHeader::new("Shelf").description(format!(
         "The optimizer's pool, read straight from the save. Base is this objective's {base_key} and the surround is its {surround_key}."

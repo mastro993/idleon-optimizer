@@ -1,0 +1,401 @@
+//! Import a game save into a simulation, its multipliers, the farming field,
+//! the account multiplier tree and the Clamworks state.
+//!
+//! The upstream calculators read the game's save through Google sign-in and a
+//! decode step; this app takes the decoded object as text. The layout follows
+//! the upstream decoder in `js/save/loader.js`:
+//!
+//! - `it.json` wraps the save in `data`; a plain `save.json` is flat. The
+//!   server constants (`serverVars`) and the companion list sit beside `data`.
+//! - The research state is row-encoded: `Research` is a JSON string holding
+//!   rows `[gridLevels, shapeOverlay, occFound, insightProgress, insightLvs,
+//!   magData, shapePositions, …]`, where `magData` and `shapePositions` are flat
+//!   groups of four numbers.
+//! - The research level is the highest `Lv0_<char>[20]` across characters, and
+//!   the accumulated EXP is `Exp0_<char>[20]` for a character at that level.
+//! - Statue levels are `StatueLevels_<char>` JSON strings of `[level, exp]`
+//!   pairs in statue order; `charNames` supplies the selector's labels.
+//! - The farming side reads `FarmPlot`, `FarmRank`, `FarmUpg`, `FarmCrop`,
+//!   `Spelunk[50]` and `GemItemsPurchased`; the active character's Farming level
+//!   is `Lv0_<char>[16]`. A research-only save stays silent about farming.
+//!
+//! The app's own state exports use the decoded names (`gridLevels`, `magData`,
+//! …) at the top level, so the importer accepts either shape. [`import`] reports
+//! which shape it read in `Imported::format`, so a caller can preview a save and
+//! apply it in a second step without parsing twice.
+//!
+//! Every account multiplier the research simulator reads is decoded from the
+//! save by [`account`], which also reports the tree it built. A term whose
+//! save field is missing is left out and warned about by that field's name;
+//! nothing is guessed.
+//!
+//! The coral god rank planner reads its own slice of the same object (`Divinity`,
+//! `OptLacc`, the Minehead row and `UpgVault`); [`Imported::coral`] carries it so
+//! the section never parses the save a second time. The Cglunko overview reads
+//! `OptLacc[630..669]` and the account's highest drop rate at `OptLacc[200]`, and
+//! [`Imported::cglunko`] carries that slice.
+//!
+//! The same save carries the sailing fleet (`Boats`, `Captains`), the artifact
+//! tiers and island progress in `Sailing`, and the account fields the route
+//! model reads. Account-wide sailing loot, speed and artifact multipliers that
+//! the route model does not read stay neutral.
+
+mod coral;
+mod farming;
+pub mod pipeline;
+mod sailing;
+mod shadow;
+mod statue;
+mod worship;
+
+use idleon_account as account;
+use idleon_research::save as research;
+
+pub use idleon_save::{Roster, Save, at, number, row_values};
+pub use shadow::{Shadow, ShadowVerdict};
+
+pub use account::sneaking_account;
+pub use account::{BonusTerm, BonusTree};
+use idleon_cglunko::Cglunko;
+use idleon_clamworks::Clamworks;
+use idleon_cog::CogSave;
+use idleon_farming::Farm;
+use idleon_fountain::Fountain;
+use idleon_jar::Jar;
+use idleon_research::model::{SimContext, Simulation};
+use idleon_sailing::{Fleet, RouteContext};
+use idleon_save::{Character, character_count, characters};
+use serde_json::{Map, Value};
+
+/// The shape the imported text had, as the upstream loader detects it
+/// (`raw.data ? 'it.json' : 'save.json'`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Format {
+    /// `it.json`: the decoded save under `data`, with `serverVars` and the
+    /// companion roster beside it.
+    ItJson,
+    /// `save.json`: the decoded save at the top level.
+    SaveJson,
+    /// The decoded research fields of an app state export, at the top level.
+    ResearchState,
+    /// The decoded farming fields of an app state export, at the top level.
+    FarmingState,
+}
+
+impl Format {
+    /// The name a preview shows.
+    pub fn label(self) -> &'static str {
+        match self {
+            Format::ItJson => "it.json",
+            Format::SaveJson => "save.json",
+            Format::ResearchState => "research state",
+            Format::FarmingState => "farming state",
+        }
+    }
+}
+
+/// What an import produced.
+#[derive(Clone, Debug)]
+pub struct Imported {
+    pub simulation: Simulation,
+    pub context: SimContext,
+    /// The active sailing fleet and its artifact tiers.
+    pub fleet: Fleet,
+    /// The account fields the sailing route model reads.
+    pub sailing: RouteContext,
+    /// The farming field, ranks, crops and market levels the save carries.
+    pub farming: Farm,
+    /// The save-derived multiplier tree behind [`Self::context`].
+    pub tree: BonusTree,
+    /// The Cglunko state the save carries, or the zero state when it has none.
+    pub cglunko: Cglunko,
+    /// The Clamworks state the save carries, or the zero state when it has none.
+    pub clamworks: Clamworks,
+    /// The cog board and shelf the save carries.
+    pub cog: CogSave,
+    /// The Jar Cavern state, when the save carries its `Holes` rows.
+    pub jar: Option<Jar>,
+    /// The Spelunking rows, when the save carries its stamina and shop rows.
+    pub spelunking: Option<idleon_spelunking::Save>,
+    /// The ladle optimizer's per-character Cooking state and counts.
+    pub ladle: Option<idleon_ladle::Ladle>,
+    /// The Fountain Cavern state, when the save carries its `Holes` rows.
+    pub fountain: Option<Fountain>,
+    /// The Opal Optimizer's villagers and account bonuses, when the save
+    /// carries its `Holes` rows.
+    pub opal: Option<idleon_opal::Opal>,
+    /// The Royal Guardian rows, when the save carries `RoyalG` and `RoyalMaps`.
+    pub royal: Option<idleon_royal_guardian::RoyalGuardian>,
+    /// The ninja loadout and inventory, when the save carries its `Ninja` rows.
+    pub sneaking: Option<idleon_sneaking::Loadout>,
+    /// The decoded save with its `it.json` wrapper, kept whole so read-only
+    /// sections can read raw fields and audit it.
+    pub save: Save,
+    /// The `it.json` wrapper's companion roster, beside the save.
+    pub companion: Option<Value>,
+    /// The per-character statue levels and EXP the save carries.
+    pub statues: idleon_statue::StatueSave,
+    /// The coral god rank planner's save-derived inputs.
+    pub coral: idleon_coral::SaveInputs,
+    /// The Worship TD simulator's save-derived inputs.
+    pub worship: idleon_worship::Inputs,
+    /// The Cooking Mastery state, when the save carries `CookMaster`.
+    pub mastery: Option<idleon_cooking_mastery::Mastery>,
+    /// The Jelly Operator board, when the save carries `Research[14]`/`[17]`.
+    pub jelly: Option<idleon_jelly::Jelly>,
+    /// Which shape the text had.
+    pub format: Format,
+    /// How many characters the save carries, from its `Lv0_<n>` rows.
+    pub characters: usize,
+    /// How many names the `charNames` roster beside the save carries.
+    pub named_characters: usize,
+    /// Save fields the import could not read or had to drop.
+    pub warnings: Vec<String>,
+    /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
+    pub shadow: Shadow,
+    /// The coin multiplier calculator's per-character cards and groups.
+    pub coin: idleon_coin_multi::Snapshot,
+}
+
+/// Why an import could not be read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ImportError {
+    /// The text is not JSON.
+    NotJson(String),
+    /// JSON, but not an object that looks like a save.
+    NoSaveFields(String),
+}
+
+impl std::fmt::Display for ImportError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ImportError::NotJson(detail) => write!(formatter, "not valid JSON: {detail}"),
+            ImportError::NoSaveFields(detail) => {
+                write!(formatter, "no save fields found: {detail}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for ImportError {}
+
+/// Top-level names that mark an object as research state, whichever shape the
+/// object uses (`Research` rows, or the decoded names of a state export).
+const RESEARCH_FIELDS: [&str; 11] = [
+    "Research",
+    "researchLevel",
+    "researchExp",
+    "cachedResearchExp",
+    "gridLevels",
+    "shapeOverlay",
+    "shapePositions",
+    "occFound",
+    "insightLvs",
+    "insightProgress",
+    "magData",
+];
+
+/// Read a decoded save object (the `SaveData` JSON the game writes) into a run.
+pub fn import(save_json: &str) -> Result<Imported, ImportError> {
+    let parsed: Value =
+        serde_json::from_str(save_json).map_err(|error| ImportError::NotJson(error.to_string()))?;
+    let document = Save::new(parsed);
+    let root = document
+        .root()
+        .as_object()
+        .ok_or_else(|| ImportError::NoSaveFields("the top level is not an object".into()))?;
+    // `it.json` nests the save under `data`; a plain save is the object itself.
+    let save = match root.get("data") {
+        Some(Value::Object(save)) => save,
+        _ => root,
+    };
+
+    let mut warnings = Vec::new();
+    let rows = research::research_rows(save, &mut warnings);
+    let format = detect(root, save);
+    let carries_research = RESEARCH_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field));
+    let carries_farming = farming::has_farming(save);
+    let carries_cog = idleon_cog::has_cog(save);
+    let Some(format) =
+        format.filter(|_| !rows.is_empty() || carries_research || carries_farming || carries_cog)
+    else {
+        return Err(ImportError::NoSaveFields(format!(
+            "expected a research seed field ({}) or a farming field ({}) or cog fields (CogO, CogM) at the top level or in the Research rows",
+            RESEARCH_FIELDS.join(", "),
+            farming::FARMING_FIELDS.join(", ")
+        )));
+    };
+
+    let characters = characters(save);
+    let roster = character_count(save);
+    let named_characters = root
+        .get("charNames")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    if roster == 0 {
+        warnings
+            .push("characters: no Lv0_<n> rows in the save; only the account fields import".into());
+    }
+    let mut simulation = Simulation::default();
+
+    match research::research_level(save, &characters) {
+        Some(level) => simulation.research_level = level,
+        None => warnings.push("researchLevel: not in the save; kept at 1".into()),
+    }
+    simulation.research_exp = research::research_exp(save, &characters, simulation.research_level);
+
+    match research::grid_levels(save, &rows) {
+        Some(levels) => simulation.grid = research::grid(&levels, &mut warnings),
+        None => warnings.push("gridLevels: not in the save; the grid stays empty".into()),
+    }
+    simulation.observations = research::observations(save, &rows, &mut warnings);
+    simulation.mags = research::mags(save, &rows, &mut warnings);
+    simulation.placements = research::placements(save, &rows, &mut warnings);
+    simulation.saved_overlay = research::shape_overlay(save, &rows);
+    if let Some(tiers) = research::tiers(save) {
+        simulation.shape_tiers = tiers;
+    }
+
+    let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
+    let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);
+    let jelly = account::jelly(save, &characters, &simulation, &mut warnings);
+    let coral = coral::inputs(save, root, &characters, &rows);
+    let mut statues = statue::read(save, root, &mut warnings);
+    if !statues.is_empty() {
+        statues.set_leveling(account::statue_leveling(
+            save,
+            root,
+            &characters,
+            &simulation,
+            &mut warnings,
+        ));
+    }
+    let sailing = sailing::import(save, root, &characters, &simulation.grid, &mut warnings);
+    let farm_level = characters
+        .first()
+        .and_then(Character::farming_level)
+        .unwrap_or(0);
+    let farming = farming::farm(save, farm_level, &mut warnings).unwrap_or_default();
+    let cglunko = Cglunko::from_save(save, &mut warnings);
+    let clamworks = Clamworks::from_save(save, &mut warnings);
+    let construction_level = characters
+        .iter()
+        .filter_map(Character::construction_level)
+        .fold(0.0, f64::max);
+    let construction_level = if construction_level > 0.0 {
+        construction_level.round() as u32
+    } else {
+        100
+    };
+    let cog = CogSave::from_save(save, construction_level, &mut warnings);
+    let worship = worship::inputs(save, &mut warnings);
+    let shadow = Shadow::read(save);
+    let coin = idleon_coin_multi::coin(save, &characters, &simulation);
+    let companion = root.get("companion").cloned();
+    let jar = Jar::from_save(save);
+    let spelunking = idleon_spelunking::Save::from_parts(&document);
+    if spelunking.is_none() {
+        warnings.push(
+            "Spelunk: no stamina or shop rows in the save; the spelunking section has no expedition state"
+                .into(),
+        );
+    }
+    let fountain = Fountain::from_save(save, Roster::read(companion.as_ref()));
+    let royal = idleon_royal_guardian::RoyalGuardian::from_save(save, jelly.as_ref());
+    if royal.is_none() {
+        warnings.push(
+            "RoyalG/RoyalMaps: not in the save; the Royal Guardian calculator has no outposts to read"
+                .into(),
+        );
+    }
+    if jar.is_none() {
+        warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
+    }
+    let opal = account::opal(save, root, &characters, &simulation);
+    let sneaking = idleon_sneaking::Loadout::from_save(&document, |loadout| {
+        account::sneaking_account(&document, loadout)
+    });
+    if sneaking.is_none() {
+        warnings
+            .push("Ninja: not in the save; the sneaking optimizer has no loadout to read".into());
+    }
+    let ladle = idleon_ladle::Ladle::from_save(&document);
+    if ladle.is_none() {
+        warnings.push(
+            "Lv0_<n>: no character rows in the save; the ladle optimizer has no roster".into(),
+        );
+    }
+    if ladle.as_ref().is_some_and(|ladle| ladle.kitchen.is_none()) {
+        warnings
+            .push("Meals/Cooking: not in the save; the kitchen reset has no layout to plan".into());
+    }
+    if fountain.is_none() {
+        warnings.push(
+            "Holes: not in the save; the fountain and opal calculators have no cavern state to read"
+                .into(),
+        );
+    }
+
+    Ok(Imported {
+        simulation,
+        context,
+        fleet: sailing.fleet,
+        sailing: sailing.context,
+        farming,
+        tree,
+        cglunko,
+        clamworks,
+        cog,
+        jar,
+        spelunking,
+        ladle,
+        fountain,
+        opal,
+        royal,
+        sneaking,
+        save: document,
+        companion,
+        statues,
+        coral,
+        worship,
+        mastery,
+        jelly,
+        format,
+        characters: roster,
+        named_characters,
+        warnings,
+        shadow,
+        coin,
+    })
+}
+
+/// Which shape the text has: a save wrapped in `data`, a flat save, or an app
+/// state export under its decoded field names.
+fn detect(root: &Map<String, Value>, save: &Map<String, Value>) -> Option<Format> {
+    if matches!(root.get("data"), Some(Value::Object(_))) {
+        return Some(Format::ItJson);
+    }
+    let raw = save.contains_key("Research")
+        || farming::RAW_FARMING_FIELDS
+            .iter()
+            .any(|field| save.contains_key(*field))
+        || idleon_cog::has_cog(save)
+        || save
+            .keys()
+            .any(|key| key.starts_with("Lv0_") || key.starts_with("Exp0_"));
+    if raw {
+        return Some(Format::SaveJson);
+    }
+    if RESEARCH_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field))
+    {
+        return Some(Format::ResearchState);
+    }
+    farming::FARMING_FIELDS
+        .iter()
+        .any(|field| save.contains_key(*field))
+        .then_some(Format::FarmingState)
+}

@@ -17,11 +17,9 @@
 mod distribution;
 mod state;
 
-pub use state::State;
+pub(crate) use state::State;
 
 use crate::state::AppState;
-use crate::ui::format;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::{Callout, EmptyState};
@@ -35,10 +33,16 @@ use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
     div, px,
 };
-use idleon_core::cooking_mastery::{Mastery, RIBBON_CHANCE, UPGRADE_NAMES, Upgrade};
+use idleon_cooking_mastery::{Mastery, RIBBON_CHANCE, UPGRADE_NAMES, Upgrade};
+use idleon_ui::format;
+use idleon_ui::formula::FormulaTree;
 
 /// The section: the mastery summary, the recommendation and the comparison.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(mastery) = state.mastery.clone() else {
         return prompt(cx);
     };

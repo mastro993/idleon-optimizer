@@ -17,8 +17,8 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
-use idleon_core::Fountain;
-use idleon_core::fountain;
+use idleon_fountain as fountain;
+use idleon_fountain::Fountain;
 
 /// How many levels past the current one the cost curve plots.
 const CURVE_STEPS: usize = 50;

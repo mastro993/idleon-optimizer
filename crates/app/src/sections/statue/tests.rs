@@ -1,7 +1,7 @@
 //! Statue table search and sort.
 
 use super::*;
-use idleon_core::statue::Progress;
+use idleon_statue::{self as statue, Progress};
 
 fn sample(level: u32, exp: f64) -> StatueSave {
     let mut rows = vec![Some(Progress { level, exp }); statue::count()];
@@ -95,7 +95,7 @@ fn sort_ids_round_trip() {
 }
 
 #[test]
-fn availability_reads_the_core_label_and_tone() {
+fn availability_reads_the_unavailable_label_and_tone() {
     let available = row(&sample(10, 0.0), 0);
     assert_eq!(
         available.availability(false),

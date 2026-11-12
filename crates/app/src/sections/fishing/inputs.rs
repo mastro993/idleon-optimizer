@@ -13,10 +13,10 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::fishing::AccountInputs;
+use idleon_fishing::AccountInputs;
 
 /// The account inputs card.
-pub fn card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let account = state.fishing.account;
     let muted = cx.theme().colors.fg_muted;
     let efficiency = number(

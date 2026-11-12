@@ -14,7 +14,7 @@ use gpui::{
 /// The ground, surfaces, borders and accent come from `index.html`
 /// (`#1a1a2e`, `#16213e`, `#0f3460`, `#00d4ff`); the remaining semantic
 /// colors stay Ely's so success, warning and danger keep their contrast.
-pub fn palette() -> Palette {
+pub(crate) fn palette() -> Palette {
     let mut palette = Palette::dark(false);
     palette.bg = rgb(0x1a1a2e).into();
     palette.surface = rgb(0x16213e).into();
@@ -43,7 +43,7 @@ pub fn palette() -> Palette {
 }
 
 /// The fill and text of one upstream world badge.
-pub fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
+pub(crate) fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
     let (fill, text) = match group {
         Group::General => (0x78909c44, 0xb0bec5),
         Group::W2 => (0x0288d144, 0x81d4fa),
@@ -62,12 +62,12 @@ pub fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
 /// Ely's badge tones are semantic, while the upstream world badges each keep a
 /// hue; this is the one specialization the dashboard and page header share.
 #[derive(IntoElement)]
-pub struct WorldBadge {
+pub(crate) struct WorldBadge {
     group: Group,
 }
 
 impl WorldBadge {
-    pub fn new(group: Group) -> Self {
+    pub(crate) fn new(group: Group) -> Self {
         Self { group }
     }
 }

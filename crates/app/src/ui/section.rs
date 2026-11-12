@@ -14,7 +14,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div}
 ///
 /// It names what the fallback means and offers the shared import action, so a
 /// section that needs account data is never a blank page with no way forward.
-pub fn no_save(cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn no_save(cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
     Banner::new(
         "no-save-state",
@@ -28,7 +28,7 @@ pub fn no_save(cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The route's id is not in the registry: say so, name the id, and offer the way back.
-pub fn missing(id: &str, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn missing(id: &str, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let back = entity.clone();
     div()

@@ -95,7 +95,7 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   levels, server scale, all-bonus multiplier, flat grid points and the decodable true multipliers are
   read from it. The same decoded save keeps the Monument rows the Bravery tab reads. Fields the app
   cannot model are reported as warnings instead of guessed. One pipeline detects, parses and
-  migrates every accepted document (`crates/core/src/import.rs`): malformed JSON names the parser
+  migrates every accepted document (`crates/import/src/pipeline.rs`): malformed JSON names the parser
   detail, an unknown format marker names the marker and the ones this build reads, and an
   unsupported version names the version and the one it migrates. A document that cannot be read
   only replaces the message and leaves the run untouched.
@@ -263,18 +263,21 @@ against this app. Every control in the UI carries a stable id for that purpose (
 ## Layout
 
 ```
-crates/core        game data, geometry, simulation maths, optimizers, endgame audit   (no GPUI)
-  data/research.json  research grid, shapes and observations from upstream
-  data/account.json   account tables for the save-derived multiplier tree
-  data/farming.json   seed, market, exotic and rank tables
-  data/clamworks.json Clamworks upgrade, Scurge and promotion tables
-  data/statues.json   the 32 statue rows, extracted from the upstream repo
+crates/common      formula trees, curve evaluator, run control                        (no GPUI)
+crates/save        raw save document access and JSON helpers
+crates/research    research grid model, EXP maths and optimizers; data/research.json
+crates/account     account-wide bonus decoder; data/account.json
+crates/<domain>    one crate per calculator (sailing, farming, jelly, ...), each with its own
+                   data/*.json tables and oracle tests
+crates/import      save and document import into every calculator's state
+crates/project     project document format and upstream state strings
+crates/ui          shared GPUI widgets: task runner, run chrome, formula tree, formats
 crates/app         GPUI + Ely window: shell, dashboard and the section modules
-  src/sections/      the registry plus one module per section (`research/`, `statue/`, `farming/`,
-                     `clamworks/`, `coral_god_rank/`)
+  src/sections/      the registry plus one module per section; `<section>/actions.rs` holds
+                     what its controls do to the window state
   src/ui/            window chrome, dashboard, shared section states, assets, bridge
   src/assets.rs      manifest-backed artwork: resolve, missing files, section previews
-  src/state.rs       AppState, the route and each section's state
+  src/state/         AppState, the route, run/subscription helpers, import/export
 script/            data extraction, roadmap sync, MCP lane, smoke, drive and section harnesses
 docs/plan.md       product plan, dashboard, JSON import, architecture, verification
 docs/roadmap.json  milestones and feature issues (source of truth)
@@ -286,40 +289,40 @@ vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 
 ## Data
 
-`crates/core/data/research.json` is generated from the upstream JS by
+`crates/research/data/research.json` is generated from the upstream JS by
 `node script/extract-research-data.mjs <path-to-upstream-repo>`: 62 grid squares, 10 shapes with
 vertices and dimensions, 43 observations, and the sixteen presets' target squares. The same run
-writes `crates/core/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
+writes `crates/clamworks/data/clamworks.json` with the nine pearl upgrades, the nine Scurge upgrades and
 the twelve promotion rewards. Re-run it when the upstream tables move.
 
-`crates/core/data/account.json` is the account side of the same port:
+`crates/account/data/account.json` is the account side of the same port:
 `node script/extract-account-data.mjs <path-to-upstream-repo>` writes the event-shop encoding,
 RoG/minehead/jelly tables, equipment UQ stats, lab and tome tables the multiplier tree reads.
 [`docs/research-multipliers.md`](docs/research-multipliers.md) lists every term, the save field it
 comes from and the two upstream steps that are still omitted.
 
-`crates/core/data/sailing.json` is generated from the same checkout by
+`crates/sailing/data/sailing.json` is generated from the same checkout by
 `node script/extract-sailing-data.mjs <path-to-upstream-repo>`: 41 artifacts with base odds, base
 bonuses and tier bonuses, 17 island distances and artifact counts, and the five captain bonus names.
 
-`crates/core/data/farming.json` comes from `node script/extract-farming-data.mjs
+`crates/farming/data/farming.json` comes from `node script/extract-farming-data.mjs
 <path-to-upstream-repo>`: the seven seed families, both market pages, the 80 exotic rows, the twenty
 Land Rank names and unlock ranks, the Ninja Rank bases and the five GMO thresholds. Farming chances
 and values apply only the multipliers the save carries (market levels, Land Rank, exotics, crop
 counts, gem items and Spelunk organic labels); other account systems are named in an import warning
 rather than guessed.
 
-`crates/core/data/statues.json` and the fixture parity tables in
-`crates/core/tests/statue-requirements.json` and `crates/core/tests/statue-costs.json` are generated
+`crates/statue/data/statues.json` and the fixture parity tables in
+`crates/statue/tests/statue-requirements.json` and `crates/statue/tests/statue-costs.json` are generated
 by `node script/extract-statue-data.mjs <path-to-upstream-repo> fixtures/data.json`: 32 statue names,
 effects and per-level bases, the upstream EXP requirement for every fixture statue level, and the
 upstream leveling inputs and target costs (statues needed) for three targets per statue and
 character.
 
-`fixtures/data.json` is a full synthetic account save used by `crates/core/tests/fixture.rs` and for
+`fixtures/data.json` is a full synthetic account save used by `crates/import/tests/fixture.rs` and for
 manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
 upstream `js/endgame-stats.js` audit of that save, regenerated with
-`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/core/tests/endgame.rs` compares
+`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/endgame/tests/endgame.rs` compares
 the Rust port against it. Both are test input only: game formulas and save decoding stay ports of the
 upstream repo, never inferred from the fixtures. See [`fixtures/README.md`](fixtures/README.md).
 

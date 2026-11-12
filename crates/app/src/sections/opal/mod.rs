@@ -10,12 +10,13 @@
 //! Every save-derived figure comes from the import; the section keeps only its
 //! visible selections.
 
+mod actions;
+
 mod bonuses;
 mod optimizer;
 mod overview;
 
 use crate::state::AppState;
-use crate::ui::formula::FormulaTree;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::layout::ScrollArea;
@@ -25,12 +26,13 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
-use idleon_core::Opal;
+use idleon_opal::Opal;
+use idleon_ui::formula::FormulaTree;
 
 /// The Opal Optimizer tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The villagers, their rates, the bonus terms and the formula tree.
     #[default]
     Current,
@@ -39,29 +41,33 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 2] = [Tab::Current, Tab::Optimizer];
+    pub(crate) const ALL: [Tab; 2] = [Tab::Current, Tab::Optimizer];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Current => "opal-tab-current",
             Tab::Optimizer => "opal-tab-optimizer",
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Current => "Current state",
             Tab::Optimizer => "Optimizer",
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The section: the tab strip and the selected pane under it.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(opal) = state.opal.clone() else {
         return prompt(cx);
     };

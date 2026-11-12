@@ -11,15 +11,15 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 /// The manifest file inside the asset folder.
-pub const MANIFEST_FILE: &str = "manifest.json";
+pub(crate) const MANIFEST_FILE: &str = "manifest.json";
 /// The default asset folder, relative to the repository root.
-pub const DEFAULT_DIR: &str = "assets/upstream";
+pub(crate) const DEFAULT_DIR: &str = "assets/upstream";
 /// Overrides the asset folder, for packaged builds and harnesses.
-pub const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
+pub(crate) const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
 
 /// Whether the asset folder is usable.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Status {
+pub(crate) enum Status {
     /// A manifest loaded; individual files may still be missing.
     Ready,
     /// No manifest in any candidate folder.
@@ -30,7 +30,7 @@ pub enum Status {
 
 /// What an image reference resolves to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Artwork<'a> {
+pub(crate) enum Artwork<'a> {
     /// The file exists and the manifest lists it.
     Ready(&'a Path),
     /// The reference is not in the manifest, or the file is gone.
@@ -39,7 +39,7 @@ pub enum Artwork<'a> {
 
 /// The manifest's entries and the totals it declares.
 #[derive(Clone, Debug)]
-pub struct Manifest {
+pub(crate) struct Manifest {
     files: BTreeMap<String, PathBuf>,
     total_files: usize,
     total_bytes: u64,
@@ -61,7 +61,7 @@ impl Default for Manifest {
 
 impl Manifest {
     /// Load the manifest in `dir`; a missing or unreadable one is a state, not an error.
-    pub fn load(dir: impl Into<PathBuf>) -> Self {
+    pub(crate) fn load(dir: impl Into<PathBuf>) -> Self {
         let dir = dir.into();
         let path = dir.join(MANIFEST_FILE);
         let Ok(text) = std::fs::read_to_string(&path) else {
@@ -81,7 +81,7 @@ impl Manifest {
     /// `IDLEON_ASSETS_DIR` wins when set, so a packaged build can point at its
     /// own copy. Otherwise the folder next to the executable, the working
     /// directory and the repository root are tried in that order.
-    pub fn load_default() -> Self {
+    pub(crate) fn load_default() -> Self {
         if let Some(dir) = std::env::var_os(ENV_DIR) {
             return Self::load(dir);
         }
@@ -143,7 +143,7 @@ impl Manifest {
     }
 
     /// The short line the status bar shows.
-    pub fn status_label(&self) -> String {
+    pub(crate) fn status_label(&self) -> String {
         match &self.status {
             Status::Ready if self.missing_files == 0 => format!(
                 "Art: {} files · {:.1} MB",
@@ -161,7 +161,7 @@ impl Manifest {
     }
 
     /// What `reference` resolves to. A file removed after the import is missing.
-    pub fn artwork(&self, reference: &str) -> Artwork<'_> {
+    pub(crate) fn artwork(&self, reference: &str) -> Artwork<'_> {
         normalize(reference)
             .and_then(|reference| self.files.get(&reference))
             .map_or(Artwork::Missing, |path| Artwork::Ready(path))
@@ -172,7 +172,7 @@ impl Manifest {
 ///
 /// Accepts the upstream form (`./assets/combat-sim/...`) and the manifest form
 /// (`combat-sim/...`), and rejects absolute paths and parent traversal.
-pub fn normalize(reference: &str) -> Option<String> {
+pub(crate) fn normalize(reference: &str) -> Option<String> {
     let reference = reference.trim().replace('\\', "/");
     let reference = reference.split(['?', '#']).next().unwrap_or_default();
     let reference = reference.trim_start_matches("./");

@@ -10,12 +10,14 @@
 //! the skill systems are entered in the account card until those systems are
 //! decoded.
 
-pub mod detail;
-pub mod inputs;
-pub mod pools;
-pub mod ranking;
-pub mod toolbar;
-pub mod trench;
+mod actions;
+
+pub(crate) mod detail;
+pub(crate) mod inputs;
+pub(crate) mod pools;
+pub(crate) mod ranking;
+pub(crate) mod toolbar;
+pub(crate) mod trench;
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
@@ -27,30 +29,32 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_core::fishing::{self, AccountInputs, Evaluation, FishingSave, HelperMode, Objective};
+use idleon_fishing::{
+    self as fishing, AccountInputs, Evaluation, FishingSave, HelperMode, Objective,
+};
 
 /// The section's live state: the character, toolkit, location, hours and the
 /// account values the upstream derives.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
-    pub character: usize,
-    pub lure: usize,
-    pub line: usize,
+pub(crate) struct State {
+    pub(crate) character: usize,
+    pub(crate) lure: usize,
+    pub(crate) line: usize,
     /// The upstream location id, `map:spot` or `x:pool`.
-    pub location: String,
+    pub(crate) location: String,
     /// Hours away; the AFK claim length.
-    pub hours: f64,
+    pub(crate) hours: f64,
     /// What the lure/line ranking sorts by.
-    pub objective: Objective,
-    pub account: AccountInputs,
+    pub(crate) objective: Objective,
+    pub(crate) account: AccountInputs,
     /// How many Trench depths the depth projection covers.
-    pub trench_depths: usize,
+    pub(crate) trench_depths: usize,
     /// How the other Trench characters choose their lure and line.
-    pub trench_helper_mode: HelperMode,
+    pub(crate) trench_helper_mode: HelperMode,
     /// One tick per character: the helpers assumed to fish the Trench. `None`
     /// until a save seeds it from the characters' saved targets.
-    pub trench_helpers: Option<Vec<bool>>,
+    pub(crate) trench_helpers: Option<Vec<bool>>,
 }
 
 impl Default for State {
@@ -73,7 +77,7 @@ impl Default for State {
 impl State {
     /// Take a character's saved toolkit, spot and level after an import, and
     /// tick the characters already left on the Trench.
-    pub fn adopt(&mut self, save: &FishingSave) {
+    pub(crate) fn adopt(&mut self, save: &FishingSave) {
         self.character = save.default_character();
         self.character_defaults(save);
         self.trench_helpers = Some(
@@ -85,7 +89,7 @@ impl State {
     }
 
     /// Tick or untick one helper, keeping the list aligned with the roster.
-    pub fn set_helper(&mut self, index: usize, on: bool, characters: usize) {
+    pub(crate) fn set_helper(&mut self, index: usize, on: bool, characters: usize) {
         let helpers = self
             .trench_helpers
             .get_or_insert_with(|| vec![false; characters]);
@@ -98,7 +102,7 @@ impl State {
     }
 
     /// Reset the toolkit and location to the selected character's saved ones.
-    pub fn character_defaults(&mut self, save: &FishingSave) {
+    pub(crate) fn character_defaults(&mut self, save: &FishingSave) {
         let Some(character) = save.character(self.character) else {
             self.lure = 0;
             self.line = 0;
@@ -114,14 +118,14 @@ impl State {
     }
 
     /// Apply a ranked lure/line pair to the toolbar, clamped like the selectors.
-    pub fn use_toolkit(&mut self, lure: usize, line: usize) {
+    pub(crate) fn use_toolkit(&mut self, lure: usize, line: usize) {
         let data = fishing::data();
         self.lure = lure.min(data.lures.len().saturating_sub(1));
         self.line = line.min(data.lines.len().saturating_sub(1));
     }
 
     /// Normalize everything an imported config could carry out of range.
-    pub fn clamp(&mut self, save: &FishingSave) {
+    pub(crate) fn clamp(&mut self, save: &FishingSave) {
         let data = fishing::data();
         self.character = self.character.min(save.characters.len().saturating_sub(1));
         self.lure = self.lure.min(data.lures.len().saturating_sub(1));
@@ -170,7 +174,11 @@ impl State {
 
 /// The section: the character toolbar, the account inputs, the pool table and
 /// the selected pool's split, with the shared formula tree underneath.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let breakpoint = Breakpoint::of(window);
     let save = state.fishing_save.clone();
     state.fishing.clamp(&save);
@@ -380,7 +388,7 @@ mod tests {
 
     #[test]
     fn adopting_a_save_takes_its_character_toolkit_and_spot() {
-        let save = idleon_core::save::Save::new(serde_json::json!({
+        let save = idleon_save::Save::new(serde_json::json!({
             "charNames": ["Ana"],
             "Lv0_0": [0, 0, 0, 0, 100],
             "EquipOrder_0": [[], { "2": "FishingRod13" }],
@@ -429,7 +437,7 @@ mod tests {
 
     #[test]
     fn adopting_a_save_ticks_the_characters_left_on_the_trench() {
-        let save = idleon_core::save::Save::new(serde_json::json!({
+        let save = idleon_save::Save::new(serde_json::json!({
             "charNames": ["Ana", "Bo", "Cy"],
             "Lv0_0": [0, 0, 0, 0, 100],
             "Lv0_1": [0, 0, 0, 0, 80],

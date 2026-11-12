@@ -16,7 +16,7 @@ use gpui::{
 };
 
 /// The searchable dashboard, grouped General, World 2-7.
-pub fn dashboard_pane(
+pub(crate) fn dashboard_pane(
     state: &mut AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,

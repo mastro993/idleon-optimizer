@@ -16,10 +16,10 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
-use idleon_core::spelunking::{Inputs, PresetKind, data};
+use idleon_spelunking::{Inputs, PresetKind, data};
 
 /// The belt card.
-pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let entity = cx.entity();
     let equipped_count = state
@@ -118,7 +118,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
             } else {
                 format!(
                     "Applied at entry {repeats:.0} time(s) when memorized; {} belt charges.",
-                    crate::ui::format::value(elixir.charges)
+                    idleon_ui::format::value(elixir.charges)
                 )
             };
             div()
@@ -135,7 +135,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
                         .child(
                             Badge::new(format!(
                                 "{} charges",
-                                crate::ui::format::value(elixir.charges)
+                                idleon_ui::format::value(elixir.charges)
                             ))
                             .tone(Tone::Neutral),
                         ),
@@ -253,7 +253,7 @@ fn slots(
             };
             let choice = Choice::new(id.to_string(), elixir.name.clone()).note(format!(
                 "{} charges",
-                crate::ui::format::value(elixir.charges)
+                idleon_ui::format::value(elixir.charges)
             ));
             choices.push(if used { choice.disabled() } else { choice });
         }

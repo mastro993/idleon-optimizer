@@ -1,14 +1,13 @@
 //! The Optimizer pane: the search inputs, its progress, and the recommended
 //! plan against the baselines.
 //!
-//! The search runs `idleon_core::worship::optimize` off the UI thread through the
+//! The search runs `idleon_worship::optimize` off the UI thread through the
 //! shared task runner, so it reports progress and can be cancelled. Every
 //! candidate is simulated by the same engine the Plan pane runs; the pane shows
 //! the winner's plan, the finalists and the baselines on shared final seeds, and
 //! adopts the winner into the Plan pane.
 
 use crate::state::AppState;
-use crate::ui::task;
 use ely_gpui_component::buttons::{Button, ButtonVariant, SegmentedControl};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
@@ -20,10 +19,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div};
-use idleon_core::worship::{self, Mode, Plan, Search};
+use idleon_ui::run_chrome;
+use idleon_worship::{self as worship, Mode, Plan, Search};
 
 /// The Optimizer pane.
-pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     state.worship_ensure_plan();
     let muted = cx.theme().colors.fg_muted;
     let task_state = state.worship_optimize_task(cx);
@@ -52,7 +52,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     if running {
         if let Some(progress) = progress {
-            body = body.child(task::progress_card(
+            body = body.child(run_chrome::progress_card(
                 "worship-optimize",
                 "Searching strategies",
                 "Runs off the UI thread. Cancelling keeps the result this run replaced.",
@@ -63,7 +63,7 @@ pub fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             ));
         }
     } else if cancelled {
-        body = body.child(task::cancelled_banner(
+        body = body.child(run_chrome::cancelled_banner(
             "worship-optimize-cancelled",
             result.is_some(),
         ));
@@ -254,7 +254,7 @@ fn result_card(
     };
     let mut actions = div().flex().items_center().gap_2();
     if stale {
-        actions = actions.child(task::stale_badge("worship-optimize-stale"));
+        actions = actions.child(run_chrome::stale_badge("worship-optimize-stale"));
     }
     actions = actions.child(
         div()
@@ -321,7 +321,7 @@ fn result_card(
             div()
                 .px_3()
                 .pb_3()
-                .child(task::stale_banner("worship-optimize-stale")),
+                .child(run_chrome::stale_banner("worship-optimize-stale")),
         );
     }
     card.into_any_element()

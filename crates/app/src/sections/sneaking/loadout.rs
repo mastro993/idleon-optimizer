@@ -9,7 +9,6 @@
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image;
-use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -21,10 +20,11 @@ use gpui::{
     AnyElement, Context, FontWeight, Hsla, IntoElement, ParentElement, Role, SharedString, Styled,
     div, px,
 };
-use idleon_core::sneaking::{Loadout, SlotKind, Twin};
+use idleon_sneaking::{Loadout, SlotKind, Twin};
+use idleon_ui::format;
 
 /// The scenario strip: the login context, the mastery pair and the reset action.
-pub fn scenario(state: &AppState, players: usize, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn scenario(state: &AppState, players: usize, cx: &mut Context<AppState>) -> AnyElement {
     let loadout = state
         .sneaking
         .as_ref()
@@ -113,7 +113,11 @@ pub fn scenario(state: &AppState, players: usize, cx: &mut Context<AppState>) ->
 }
 
 /// The saved floor assignments: which twins stand where and what they do.
-pub fn saved_floors(state: &AppState, loadout: &Loadout, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn saved_floors(
+    state: &AppState,
+    loadout: &Loadout,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let mut floors: Vec<usize> = loadout
         .twins()
         .iter()
@@ -236,7 +240,11 @@ fn floor_card(
 }
 
 /// The four loadout slots of every active twin.
-pub fn loadout_card(state: &AppState, loadout: &Loadout, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn loadout_card(
+    state: &AppState,
+    loadout: &Loadout,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let target = state.sneaking_state.target(loadout.players());
     let mut cards = div().id("sneaking-loadout").flex().flex_wrap().gap_3();
     for twin in loadout.twins() {
@@ -371,7 +379,7 @@ fn bonus_totals(loadout: &Loadout, twin: usize) -> Option<String> {
         .map(|(bonus_type, value)| {
             format!(
                 "{} {:.1}",
-                idleon_core::sneaking::charm_bonus_label(bonus_type),
+                idleon_sneaking::charm_bonus_label(bonus_type),
                 value
             )
         })
@@ -410,7 +418,7 @@ fn slot_button(
     } else {
         format!("{} +{}", item.name(), item.level)
     };
-    let tooltip = match (item.is_blank(), idleon_core::sneaking::equip_info(item)) {
+    let tooltip = match (item.is_blank(), idleon_sneaking::equip_info(item)) {
         (false, Some(info)) => format!(
             "{} · {} +{}\n{}\n{}",
             slot.label(),

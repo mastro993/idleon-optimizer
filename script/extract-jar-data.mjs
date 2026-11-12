@@ -99,7 +99,7 @@ const payload = {
   },
 };
 
-const out = new URL('../crates/core/data/jar.json', import.meta.url);
+const out = new URL('../crates/jar/data/jar.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${payload.measurementBase.length} measurement bases, ${payload.monumentBonusPerLevel.length} monument bonuses, ${payload.collectibles.length} collectibles, ${payload.schematics.length} schematics`,

@@ -10,8 +10,8 @@ mod result;
 mod state;
 mod view;
 
-pub use state::{MAX_STAGE, RunInputs, Simulator};
-pub use view::pane;
+pub(crate) use state::{MAX_STAGE, RunInputs, Simulator};
+pub(crate) use view::pane;
 
 #[cfg(test)]
 mod tests;

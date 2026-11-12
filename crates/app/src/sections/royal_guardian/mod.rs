@@ -10,6 +10,8 @@
 //! staffing and the banked hours. The upgrades arrive with RG-03 and the
 //! optimizer with RG-04, so the strip lists only the panes behind it.
 
+mod actions;
+
 mod currencies;
 mod outposts;
 mod overview;
@@ -26,12 +28,12 @@ use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::shell::{TabBar, WindowTab};
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, Window, div};
-use idleon_core::royal_guardian;
+use idleon_royal_guardian as royal_guardian;
 
 /// The Royal Guardian tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// The counters, world progress, clearing values and range targets.
     #[default]
     Overview,
@@ -44,14 +46,14 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [
+    pub(crate) const ALL: [Tab; 4] = [
         Tab::Overview,
         Tab::Outposts,
         Tab::Resources,
         Tab::Currencies,
     ];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Outposts => "outposts",
@@ -60,7 +62,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Outposts => "Outposts",
@@ -69,7 +71,7 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
@@ -77,22 +79,26 @@ impl Tab {
 /// The section's own state, kept across dashboard visits.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
-pub struct State {
+pub(crate) struct State {
     /// The pane the strip shows.
-    pub tab: Tab,
+    pub(crate) tab: Tab,
     /// The world the outpost tables list.
-    pub world: usize,
+    pub(crate) world: usize,
     /// The built outpost whose next range target the panel explains.
-    pub outpost: Option<usize>,
+    pub(crate) outpost: Option<usize>,
     /// The resource node the resources pane explains.
-    pub resource: Option<usize>,
+    pub(crate) resource: Option<usize>,
     /// The currency slot the currencies pane explains.
-    pub currency: Option<i64>,
+    pub(crate) currency: Option<i64>,
 }
 
 /// The Royal Guardian section: the tab strip and its pane, or the import prompt
 /// when the loaded save carries no Royal Guardian rows.
-pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     if state.royal.is_none() {
         return prompt(cx);
     }

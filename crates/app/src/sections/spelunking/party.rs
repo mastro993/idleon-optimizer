@@ -16,10 +16,10 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, Styled, div, px};
-use idleon_core::spelunking::{Inputs, StaminaMode};
+use idleon_spelunking::{Inputs, StaminaMode};
 
 /// The party card: the slots, the team stamina and every maximum.
-pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let capacity = inputs
         .caves
@@ -56,8 +56,8 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
             let choice =
                 Choice::new(character.id.to_string(), character.name.clone()).note(format!(
                     "{} / {}",
-                    crate::ui::format::value(character.stamina),
-                    crate::ui::format::value(character.max_stamina)
+                    idleon_ui::format::value(character.stamina),
+                    idleon_ui::format::value(character.max_stamina)
                 ));
             choices.push(if taken || !eligible {
                 choice.disabled()
@@ -98,7 +98,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
                         Caption::new(format!(
                             "max {}",
                             current_character.map_or("—".to_string(), |character| {
-                                crate::ui::format::value(character.max_stamina)
+                                idleon_ui::format::value(character.max_stamina)
                             })
                         ))
                         .text_color(muted),
@@ -130,7 +130,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
                     .child(character.name.clone())
                     .into_any_element(),
                 div()
-                    .child(crate::ui::format::value(character.stamina))
+                    .child(idleon_ui::format::value(character.stamina))
                     .into_any_element(),
                 input.into_any_element(),
             ]
@@ -153,7 +153,7 @@ pub fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> An
                 .gap_3()
                 .child(Badge::new(format!(
                     "Team stamina {}",
-                    crate::ui::format::value(total)
+                    idleon_ui::format::value(total)
                 )))
                 .child(controls::starting_select(state, starting_entity)),
         )

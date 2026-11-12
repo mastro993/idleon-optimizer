@@ -1,5 +1,5 @@
 // Writes the upstream Clamworks AFK claim and comparison figures for the
-// committed synthetic save, so `crates/core/tests/clamworks_afk.rs` compares the
+// committed synthetic save, so `crates/clamworks/tests/clamworks_afk.rs` compares the
 // Rust port against the JS.
 //
 // The upstream page runs the claim in a combat worker; the pearl half of that

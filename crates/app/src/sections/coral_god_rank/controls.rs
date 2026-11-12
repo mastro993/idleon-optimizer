@@ -2,7 +2,6 @@
 
 use super::Field;
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, Select};
@@ -12,9 +11,10 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
-use idleon_core::coral::Goal;
+use idleon_coral::Goal;
+use idleon_ui::format;
 
-pub fn controls_pane(
+pub(crate) fn controls_pane(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,

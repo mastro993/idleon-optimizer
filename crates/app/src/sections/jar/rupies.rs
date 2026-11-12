@@ -3,7 +3,6 @@
 
 use crate::sections::jar::{kpi, metric, stat};
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::buttons::{ToggleGroup, ToggleItem};
 use ely_gpui_component::data_display::Tone;
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -12,10 +11,11 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, div, px};
-use idleon_core::Jar;
-use idleon_core::jar::{INCOME_TIERS, RUPIE_COLORS, RUPIE_NAMES, VALUE_TIERS};
+use idleon_jar::Jar;
+use idleon_jar::{INCOME_TIERS, RUPIE_COLORS, RUPIE_NAMES, VALUE_TIERS};
+use idleon_ui::format;
 
-pub fn rupies(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn rupies(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let jar = state
         .jar
         .as_ref()
@@ -131,7 +131,7 @@ fn tier_control(tier: u32, cx: &mut Context<AppState>) -> AnyElement {
 }
 
 /// The shared formula tree under a fixed height, so its own scroll area works.
-fn breakdown(tree: Entity<crate::ui::formula::FormulaTree>) -> AnyElement {
+fn breakdown(tree: Entity<idleon_ui::formula::FormulaTree>) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Rupie value breakdown")

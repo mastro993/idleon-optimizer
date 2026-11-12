@@ -1,0 +1,22 @@
+[package]
+name = "idleon-account"
+description = "The account-wide bonus decoder: a read-only view of every system a save carries."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+idleon-common = { workspace = true }
+idleon-cooking-mastery = { workspace = true }
+idleon-fountain = { workspace = true }
+idleon-jar = { workspace = true }
+idleon-jelly = { workspace = true }
+idleon-opal = { workspace = true }
+idleon-research = { workspace = true }
+idleon-save = { workspace = true }
+idleon-sneaking = { workspace = true }
+idleon-statue = { workspace = true }
+idleon-stats-data = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

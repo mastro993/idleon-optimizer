@@ -8,8 +8,10 @@
 //! upgrades and breakdowns (JO-03), section planner (JO-04) and coordinator
 //! optimizer (JO-05) are the later features on the same section.
 //!
-//! The maths lives in `idleon_core::jelly`; this module owns the board on
+//! The maths lives in `idleon_jelly`; this module owns the board on
 //! screen and the shared task runner's inputs.
+
+mod actions;
 
 mod estimate;
 mod grid;
@@ -18,8 +20,8 @@ mod outlook;
 mod overview;
 mod simulator;
 
-pub use simulator::RunInputs as SimulatorRunInputs;
-pub use simulator::Simulator;
+pub(crate) use simulator::RunInputs as SimulatorRunInputs;
+pub(crate) use simulator::Simulator;
 
 use crate::state::AppState;
 use crate::ui::theme;
@@ -30,13 +32,13 @@ use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::ControlSize;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
-use idleon_core::jelly::Jelly;
-use idleon_core::jelly::board::{self, Layout};
+use idleon_jelly::Jelly;
+use idleon_jelly::board::{self, Layout};
 
 /// The upstream tabs this issue builds.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     #[default]
     Overview,
     Layout,
@@ -44,7 +46,7 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Layout => "layout",
@@ -52,7 +54,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Layout => "Layout",
@@ -63,27 +65,27 @@ impl Tab {
 
 /// The inputs one estimate run reads, so a later board edit marks it stale.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct RunInputs {
-    pub jelly: Option<Jelly>,
-    pub layout: Layout,
-    pub trials: u32,
-    pub seed: u32,
+pub(crate) struct RunInputs {
+    pub(crate) jelly: Option<Jelly>,
+    pub(crate) layout: Layout,
+    pub(crate) trials: u32,
+    pub(crate) seed: u32,
 }
 
 /// The section's state: the board on screen, the palette pick and the run knobs.
 #[derive(Clone, Debug)]
-pub struct State {
-    pub tab: Tab,
+pub(crate) struct State {
+    pub(crate) tab: Tab,
     /// The board on screen, which starts as the saved layout.
-    pub layout: Layout,
+    pub(crate) layout: Layout,
     /// The palette cell type the next slot click places.
-    pub selected: usize,
+    pub(crate) selected: usize,
     /// The last placement answer, shown under the board.
-    pub message: String,
-    pub trials: u32,
-    pub seed: u32,
+    pub(crate) message: String,
+    pub(crate) trials: u32,
+    pub(crate) seed: u32,
     /// The simulator tab's own sandbox board and knobs.
-    pub simulator: simulator::Simulator,
+    pub(crate) simulator: simulator::Simulator,
 }
 
 impl Default for State {
@@ -102,7 +104,7 @@ impl Default for State {
 
 impl State {
     /// Take a newly imported save's board.
-    pub fn adopt(&mut self, jelly: &Jelly) {
+    pub(crate) fn adopt(&mut self, jelly: &Jelly) {
         self.layout = jelly.layout.clone();
         self.selected = 0;
         self.message = String::new();
@@ -110,25 +112,25 @@ impl State {
     }
 
     /// Put the board back to the save's own layout.
-    pub fn reset(&mut self, jelly: &Jelly) {
+    pub(crate) fn reset(&mut self, jelly: &Jelly) {
         self.layout = jelly.layout.clone();
         self.message = "Board reset to the saved layout.".to_string();
     }
 
     /// Pick a palette cell type.
-    pub fn select(&mut self, cell_type: usize) {
+    pub(crate) fn select(&mut self, cell_type: usize) {
         self.selected = cell_type;
         self.message = String::new();
     }
 
     /// Place the picked cell at `anchor`, or explain why it does not fit.
-    pub fn place(&mut self, jelly: &Jelly, anchor: usize) {
+    pub(crate) fn place(&mut self, jelly: &Jelly, anchor: usize) {
         match board::place(jelly, &self.layout, anchor, self.selected) {
             Ok(next) => {
                 self.layout = next;
                 self.message = format!(
                     "Placed {} at slot {anchor}.",
-                    idleon_core::jelly::data().cell_name(self.selected)
+                    idleon_jelly::data().cell_name(self.selected)
                 );
             }
             Err(reason) => self.message = reason,
@@ -136,7 +138,7 @@ impl State {
     }
 
     /// Remove whatever cell covers `anchor`.
-    pub fn remove_at(&mut self, layout: &Layout, anchor: usize) {
+    pub(crate) fn remove_at(&mut self, layout: &Layout, anchor: usize) {
         let Some((owner, _)) = board::occupancy(layout).get(&anchor).copied() else {
             self.message = format!("Slot {anchor} is empty.");
             return;
@@ -146,7 +148,7 @@ impl State {
     }
 
     /// The inputs a run started now would use.
-    pub fn inputs(&self, jelly: Option<&Jelly>) -> RunInputs {
+    pub(crate) fn inputs(&self, jelly: Option<&Jelly>) -> RunInputs {
         RunInputs {
             jelly: jelly.cloned(),
             layout: self.layout.clone(),
@@ -157,7 +159,11 @@ impl State {
 }
 
 /// The section view: the tab strip and the selected tab.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let Some(jelly) = state.jelly.clone() else {
         return unavailable(state, cx);
     };
@@ -245,7 +251,7 @@ fn unavailable(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 #[cfg(test)]
 mod tests {
     use super::{RunInputs, State, Tab};
-    use idleon_core::jelly::board;
+    use idleon_jelly::board;
 
     /// A flat save with the eight cell unlocks and two Plasmids on the board.
     fn save() -> String {
@@ -271,7 +277,7 @@ mod tests {
 
     #[test]
     fn a_saved_layout_loads_and_every_cell_type_is_placeable() {
-        let imported = idleon_core::save::import(&save()).expect("the save imports");
+        let imported = idleon_import::import(&save()).expect("the save imports");
         let jelly = imported.jelly.expect("the save carries a board");
         let mut state = State::default();
         state.adopt(&jelly);
@@ -317,7 +323,7 @@ mod tests {
 
     #[test]
     fn a_refused_placement_names_the_reason() {
-        let imported = idleon_core::save::import(&save()).expect("the save imports");
+        let imported = idleon_import::import(&save()).expect("the save imports");
         let jelly = imported.jelly.expect("the save carries a board");
         let mut state = State::default();
         state.adopt(&jelly);
@@ -336,7 +342,7 @@ mod tests {
 
     #[test]
     fn the_runner_inputs_follow_the_board_and_the_knobs() {
-        let imported = idleon_core::save::import(&save()).expect("the save imports");
+        let imported = idleon_import::import(&save()).expect("the save imports");
         let jelly = imported.jelly.expect("the save carries a board");
         let mut state = State::default();
         state.adopt(&jelly);

@@ -77,7 +77,7 @@ const payload = {
   items: catalog,
 };
 
-const out = new URL('../crates/core/data/combat.json', import.meta.url);
+const out = new URL('../crates/combat/data/combat.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload));
 console.log(
   `wrote ${Object.keys(catalog).length} wearable items, ` +

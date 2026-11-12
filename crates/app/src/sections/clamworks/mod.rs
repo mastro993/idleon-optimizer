@@ -9,18 +9,19 @@
 //! manual inputs until the combat simulator lands, exactly like the upstream's
 //! own supplement fields.
 
-pub mod claim;
-pub mod compare;
-pub mod optimizer;
-pub mod overview;
-pub mod promotion;
-pub mod state;
-pub mod upgrades;
+mod actions;
 
-pub use state::State;
+pub(crate) mod claim;
+pub(crate) mod compare;
+pub(crate) mod optimizer;
+pub(crate) mod overview;
+pub(crate) mod promotion;
+pub(crate) mod state;
+pub(crate) mod upgrades;
+
+pub(crate) use state::State;
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::primitives::Severity;
@@ -29,11 +30,12 @@ use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use idleon_ui::format;
 
 /// The Clamworks tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Tab {
+pub(crate) enum Tab {
     /// Summary, rates and the pearl value breakdown.
     #[default]
     Overview,
@@ -48,7 +50,7 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 5] = [
+    pub(crate) const ALL: [Tab; 5] = [
         Tab::Overview,
         Tab::Upgrades,
         Tab::Claim,
@@ -56,7 +58,7 @@ impl Tab {
         Tab::Promotion,
     ];
 
-    pub fn id(self) -> &'static str {
+    pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Upgrades => "upgrades",
@@ -66,7 +68,7 @@ impl Tab {
         }
     }
 
-    pub fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Tab::Overview => "Overview",
             Tab::Upgrades => "Upgrades",
@@ -76,13 +78,17 @@ impl Tab {
         }
     }
 
-    pub fn from_id(id: &str) -> Option<Self> {
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|tab| tab.id() == id)
     }
 }
 
 /// The Clamworks section: the tab strip, the pearl-value summary and the pane.
-pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn view(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let tab = state.clamworks_tab;
     let clamworks = state.clamworks_view();
     let projected = state.clamworks_projection.is_some();
