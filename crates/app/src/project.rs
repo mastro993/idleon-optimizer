@@ -34,7 +34,7 @@ use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
 use gpui::Context;
 use idleon_core::clamworks::afk::Phase as ClaimPhase;
-use idleon_core::cog::Goal as CogGoal;
+use idleon_core::cog::{Goal as CogGoal, WeightInputs as CogWeights};
 use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
 use idleon_core::drop_rate;
@@ -182,12 +182,14 @@ pub struct LadleConfig {
     split: bool,
 }
 
-/// The cog board section's config: the objective. The board itself comes from
-/// the save, so it is never part of a project document.
+/// The cog board section's config: the objective and the custom weights. The
+/// board itself comes from the save, so it is never part of a project document.
 #[derive(Clone, Copy, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CogConfig {
     goal: CogGoal,
+    weighted: bool,
+    weights: CogWeights,
 }
 
 /// The Jelly Operator section's config: its tab, the board on screen (which
@@ -373,6 +375,8 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         "cog",
         value(&CogConfig {
             goal: state.cog.goal,
+            weighted: state.cog.weighted,
+            weights: state.cog.weights,
         }),
     );
     insert(
@@ -805,6 +809,14 @@ pub fn assign(
         }
         Config::Cog(config) => {
             state.cog.goal = config.goal;
+            state.cog.weights = config.weights;
+            match config.weights.weights() {
+                Ok(_) => state.cog.weighted = config.weighted,
+                Err(error) => {
+                    state.cog.weighted = false;
+                    warnings.push(format!("cog: weights ignored ({error})"));
+                }
+            }
         }
         Config::Jelly(config) => {
             state.jelly_state.tab = config.tab;
@@ -1297,8 +1309,22 @@ mod tests {
         assert_eq!(legacy.budget, None);
         let cog = round_trip(&CogConfig {
             goal: CogGoal::Flaggy,
+            weighted: true,
+            weights: CogWeights {
+                build: 50.0,
+                conexp: 30.0,
+                flaggy: 20.0,
+            },
         });
         assert_eq!(cog.goal, CogGoal::Flaggy);
+        assert!(cog.weighted);
+        assert_eq!(cog.weights.build, 50.0);
+        let legacy_cog: CogConfig = serde_json::from_value(serde_json::json!({
+            "goal": "build",
+        }))
+        .expect("a config without weights still reads");
+        assert!(!legacy_cog.weighted);
+        assert_eq!(legacy_cog.weights.build, 33.0);
         let jar = round_trip(&JarConfig {
             tab: JarTab::Production,
             tier: 3,

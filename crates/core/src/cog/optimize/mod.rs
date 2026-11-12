@@ -21,7 +21,7 @@ mod greedy;
 
 use crate::model::{Control, Progress};
 
-use super::{BOARD_SIZE, Board, Cog, Goal, score, slot_to_pos};
+use super::{BOARD_SIZE, Board, Cog, Objective, score, slot_to_pos};
 use anneal::{Rng, bias_slots, greedy_finish, smart_move, swap_back};
 use greedy::{greedy_construct, lock_yin_blocks};
 
@@ -79,6 +79,9 @@ impl SwapStep {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CogResult {
     pub board: Board,
+    /// The objective the run maximised, so the result explains itself even
+    /// after the controls change.
+    pub objective: Objective,
     pub score: f64,
     pub initial_score: f64,
     pub improvement: f64,
@@ -86,7 +89,7 @@ pub struct CogResult {
     pub swaps: Vec<SwapStep>,
 }
 
-/// Optimize `board` for `goal`, borrowing the shelf as the available pool.
+/// Optimize `board` for `objective`, borrowing the shelf as the available pool.
 ///
 /// `report` receives progress and may return [`Control::Stop`]; a stopped run
 /// returns `None` and leaves the caller's result untouched. The returned board
@@ -95,10 +98,11 @@ pub struct CogResult {
 pub fn optimize(
     board: &Board,
     shelf: &[Cog],
-    goal: Goal,
+    objective: &Objective,
     options: &OptimizeOptions,
     report: &mut dyn FnMut(Progress) -> Control,
 ) -> Option<CogResult> {
+    let goal = objective.dominant();
     let original = board.clone();
     let mut working = board.clone();
     let mut pool: Vec<Option<Cog>> = shelf
@@ -107,19 +111,19 @@ pub fn optimize(
         .cloned()
         .map(Some)
         .collect();
-    let initial_score = score(&original, goal);
+    let initial_score = score(&original, objective);
     let original_pool = pool.clone();
 
-    if !greedy_construct(&mut working, &mut pool, goal, report) {
+    if !greedy_construct(&mut working, &mut pool, goal, objective, report) {
         return None;
     }
     // Upstream keeps the save board when the greedy rebuild is not better: it
     // is a better annealing start, not an unconditional replacement.
-    if score(&working, goal) <= initial_score {
+    if score(&working, objective) <= initial_score {
         working = original.clone();
         pool = original_pool;
     }
-    let mut best_score = score(&working, goal);
+    let mut best_score = score(&working, objective);
     let mut current_board = working.clone();
     let mut best_board = current_board.clone();
     let mut best_pool = pool.clone();
@@ -138,7 +142,7 @@ pub fn optimize(
             continue;
         };
         next.apply(&mut current_board, &mut pool);
-        let new_score = score(&current_board, goal);
+        let new_score = score(&current_board, objective);
         let delta = new_score - current_score;
         let accept = if delta > 0.0 {
             true
@@ -183,9 +187,9 @@ pub fn optimize(
     {
         return None;
     }
-    greedy_finish(&mut best_board, &mut best_pool, &locked, goal);
-    swap_back(&mut best_board, &original, &mut locked, goal);
-    let mut final_score = score(&best_board, goal);
+    greedy_finish(&mut best_board, &mut best_pool, &locked, objective);
+    swap_back(&mut best_board, &original, &mut locked, objective);
+    let mut final_score = score(&best_board, objective);
 
     // The invariant: no phase may leave the user worse off than the save.
     if final_score < initial_score {
@@ -208,6 +212,7 @@ pub fn optimize(
     }
     Some(CogResult {
         board: best_board,
+        objective: objective.clone(),
         score: final_score,
         initial_score,
         improvement,
@@ -344,7 +349,7 @@ pub(super) fn swap_slot_pool(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cog::{Direction, empty_board};
+    use crate::cog::{Direction, Goal, empty_board};
 
     fn cog(name: &str, slot: usize) -> Cog {
         Cog::named(name, slot)
@@ -380,8 +385,9 @@ mod tests {
             ..OptimizeOptions::default()
         };
         let mut report = |_progress| Control::Continue;
+        let objective = Objective::goal(Goal::ConExp);
         let result =
-            optimize(&board, &shelf, Goal::ConExp, &options, &mut report).expect("a full run");
+            optimize(&board, &shelf, &objective, &options, &mut report).expect("a full run");
         assert!(
             result.score >= result.initial_score,
             "{} < {}",
@@ -400,9 +406,10 @@ mod tests {
             ..OptimizeOptions::default()
         };
         let mut first = |_progress| Control::Continue;
-        let a = optimize(&board, &shelf, Goal::ConExp, &options, &mut first).expect("run a");
+        let objective = Objective::goal(Goal::ConExp);
+        let a = optimize(&board, &shelf, &objective, &options, &mut first).expect("run a");
         let mut second = |_progress| Control::Continue;
-        let b = optimize(&board, &shelf, Goal::ConExp, &options, &mut second).expect("run b");
+        let b = optimize(&board, &shelf, &objective, &options, &mut second).expect("run b");
         assert_eq!(a, b);
     }
 
@@ -414,7 +421,8 @@ mod tests {
             ..OptimizeOptions::default()
         };
         let mut stop = |_progress| Control::Stop;
-        assert!(optimize(&board, &shelf, Goal::ConExp, &options, &mut stop).is_none());
+        let objective = Objective::goal(Goal::ConExp);
+        assert!(optimize(&board, &shelf, &objective, &options, &mut stop).is_none());
     }
 
     #[test]
@@ -425,8 +433,9 @@ mod tests {
             ..OptimizeOptions::default()
         };
         let mut report = |_progress| Control::Continue;
+        let objective = Objective::goal(Goal::ConExp);
         let result =
-            optimize(&board, &shelf, Goal::ConExp, &options, &mut report).expect("a full run");
+            optimize(&board, &shelf, &objective, &options, &mut report).expect("a full run");
         let mut shelf_slots: Vec<Option<Cog>> = shelf.iter().cloned().map(Some).collect();
         shelf_slots.resize(120, None);
         let mut applied = board.clone();

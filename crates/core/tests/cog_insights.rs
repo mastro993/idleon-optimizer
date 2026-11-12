@@ -9,7 +9,8 @@
 //! contribution is the score lost by removing its cog — are checked here too.
 
 use idleon_core::cog::{
-    Goal, OptimizeOptions, board_insights, compute_totals, optimize, roll_ranges, score,
+    Goal, Objective, OptimizeOptions, board_insights, compute_totals, goal_score, optimize,
+    roll_ranges,
 };
 use idleon_core::model::Control;
 use idleon_core::save::import;
@@ -125,11 +126,12 @@ fn the_insight_score_is_the_optimizer_score() {
     };
     for goal in Goal::ALL {
         let insights = board_insights(&save.board, goal).expect("insights");
-        assert_eq!(insights.base_score, score(&save.board, goal));
+        assert_eq!(insights.base_score, goal_score(&save.board, goal));
         // The optimizer measures the same board, so its starting score is the
         // insight's own; a result is never worse than it.
         let mut report = |_progress| Control::Continue;
-        let result = optimize(&save.board, &save.shelf, goal, &options, &mut report)
+        let objective = Objective::goal(goal);
+        let result = optimize(&save.board, &save.shelf, &objective, &options, &mut report)
             .expect("a short run completes");
         assert_eq!(result.initial_score, insights.base_score, "{}", goal.id());
         assert!(result.score >= insights.base_score, "{}", goal.id());
@@ -139,7 +141,7 @@ fn the_insight_score_is_the_optimizer_score() {
         for impact in &insights.impacts {
             let mut without = save.board.clone();
             without[impact.slot] = None;
-            let removed = score(&without, goal);
+            let removed = goal_score(&without, goal);
             assert!(
                 (insights.base_score - removed - impact.delta).abs() < 1e-9,
                 "{}: slot {}",

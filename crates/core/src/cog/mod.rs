@@ -20,6 +20,7 @@
 mod display;
 mod insights;
 mod optimize;
+mod perfect;
 mod roll;
 mod save;
 mod walkthrough;
@@ -27,6 +28,9 @@ mod walkthrough;
 pub use display::{CogKind, classify, display_name, small_cog, stat_tier};
 pub use insights::{BoardInsights, Insight, RollTarget, board_insights};
 pub use optimize::{CogResult, OptimizeOptions, SwapStep, apply_swaps, optimize};
+pub use perfect::{
+    PerfectBoard, PerfectLayer, PerfectStats, perfect_board, perfect_stats, player_slot,
+};
 pub use roll::{
     RollRange, SHOWN_TIERS, infer_construction_level, max_rolls, min_rolls, raw_magnitude,
     roll_range, roll_ranges, stat_from_value,
@@ -306,6 +310,223 @@ impl Goal {
     }
 }
 
+/// The normalised weights of a weighted objective, one per [`Goal`].
+///
+/// The weights sum to one. Upstream divides the three fields by their total and
+/// keeps the ratios; this build refuses the inputs it would silently replace.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Weights {
+    build: f64,
+    conexp: f64,
+    flaggy: f64,
+}
+
+impl Weights {
+    /// Validate raw weights and normalise them to sum to one.
+    ///
+    /// Negative, non-finite and all-zero weights are rejected: there would be
+    /// no objective to maximise.
+    pub fn new(build: f64, conexp: f64, flaggy: f64) -> Result<Self, WeightError> {
+        if !build.is_finite() || !conexp.is_finite() || !flaggy.is_finite() {
+            return Err(WeightError::NotFinite);
+        }
+        if build < 0.0 || conexp < 0.0 || flaggy < 0.0 {
+            return Err(WeightError::Negative);
+        }
+        let total = build + conexp + flaggy;
+        if !total.is_finite() {
+            return Err(WeightError::NotFinite);
+        }
+        if total <= 0.0 {
+            return Err(WeightError::Empty);
+        }
+        Ok(Self {
+            build: build / total,
+            conexp: conexp / total,
+            flaggy: flaggy / total,
+        })
+    }
+
+    /// Equal thirds, the upstream default.
+    pub fn uniform() -> Self {
+        Self::new(1.0, 1.0, 1.0).expect("equal weights are valid")
+    }
+
+    /// One goal at full weight.
+    pub fn single(goal: Goal) -> Self {
+        let mut weights = Self {
+            build: 0.0,
+            conexp: 0.0,
+            flaggy: 0.0,
+        };
+        *weights.get_mut(goal) = 1.0;
+        weights
+    }
+
+    /// The weight of one goal, 0..=1.
+    pub fn get(self, goal: Goal) -> f64 {
+        match goal {
+            Goal::Build => self.build,
+            Goal::ConExp => self.conexp,
+            Goal::Flaggy => self.flaggy,
+        }
+    }
+
+    fn get_mut(&mut self, goal: Goal) -> &mut f64 {
+        match goal {
+            Goal::Build => &mut self.build,
+            Goal::ConExp => &mut self.conexp,
+            Goal::Flaggy => &mut self.flaggy,
+        }
+    }
+}
+
+/// Why a set of weights cannot describe an objective.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WeightError {
+    /// A weight was NaN or infinite.
+    NotFinite,
+    /// A weight was negative.
+    Negative,
+    /// Every weight was zero, so there is nothing to maximise.
+    Empty,
+}
+
+impl WeightError {
+    /// The line the controls show under an invalid set.
+    pub fn message(self) -> &'static str {
+        match self {
+            Self::NotFinite => "Weights must be finite numbers.",
+            Self::Negative => "Weights cannot be negative.",
+            Self::Empty => "At least one weight must be above zero.",
+        }
+    }
+}
+
+impl std::fmt::Display for WeightError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.message())
+    }
+}
+
+/// The weight fields as the controls enter them, before validation.
+///
+/// The section keeps these raw so the fields show the user's own numbers; a
+/// run normalises them with [`Weights::new`].
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct WeightInputs {
+    pub build: f64,
+    pub conexp: f64,
+    pub flaggy: f64,
+}
+
+impl Default for WeightInputs {
+    /// The upstream control defaults: 33 / 34 / 33.
+    fn default() -> Self {
+        Self {
+            build: 33.0,
+            conexp: 34.0,
+            flaggy: 33.0,
+        }
+    }
+}
+
+impl WeightInputs {
+    /// The weight of one goal, 0..=100.
+    pub fn get(self, goal: Goal) -> f64 {
+        match goal {
+            Goal::Build => self.build,
+            Goal::ConExp => self.conexp,
+            Goal::Flaggy => self.flaggy,
+        }
+    }
+
+    /// Replace one goal's weight, clamped to the controls' range.
+    pub fn set(&mut self, goal: Goal, value: f64) {
+        let value = if value.is_finite() {
+            value.clamp(0.0, 100.0)
+        } else {
+            0.0
+        };
+        match goal {
+            Goal::Build => self.build = value,
+            Goal::ConExp => self.conexp = value,
+            Goal::Flaggy => self.flaggy = value,
+        }
+    }
+
+    /// The validated, normalised weights, or why they cannot run.
+    pub fn weights(self) -> Result<Weights, WeightError> {
+        Weights::new(self.build, self.conexp, self.flaggy)
+    }
+}
+
+/// What an optimizer run maximises.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Objective {
+    /// One raw metric, the single-objective runs.
+    Goal(Goal),
+    /// The weighted sum of each metric relative to a reference board, the
+    /// upstream `scoreBoard` weighted branch. A metric the reference board does
+    /// not have is left out, as upstream does.
+    Weighted {
+        weights: Weights,
+        /// The metric values of the board the weights are read against, in
+        /// [`Goal::ALL`] order.
+        reference: [f64; 3],
+    },
+}
+
+impl Objective {
+    /// Maximise one raw metric.
+    pub fn goal(goal: Goal) -> Self {
+        Self::Goal(goal)
+    }
+
+    /// Weight the metrics against `reference`'s totals. Upstream normalises
+    /// against the save board, so a run scores one on that board and the
+    /// percentage improvement reads as a share of the save's own mix.
+    pub fn weighted(weights: Weights, reference: &Board) -> Self {
+        let totals = compute_totals(reference);
+        Self::Weighted {
+            weights,
+            reference: [
+                totals.total_build,
+                totals.player_con_exp_hr,
+                totals.total_flaggy,
+            ],
+        }
+    }
+
+    /// The goal the greedy heuristics sort and bias for: the only goal, or the
+    /// heaviest weight. Ties keep the earlier goal in [`Goal::ALL`] order, as
+    /// the upstream `_dominantGoal` does.
+    pub fn dominant(&self) -> Goal {
+        match self {
+            Self::Goal(goal) => *goal,
+            Self::Weighted { weights, .. } => {
+                let mut best = Goal::Build;
+                for goal in [Goal::ConExp, Goal::Flaggy] {
+                    if weights.get(goal) > weights.get(best) {
+                        best = goal;
+                    }
+                }
+                best
+            }
+        }
+    }
+
+    /// The weights this objective applies, a single goal at full weight for a
+    /// single-objective run.
+    pub fn weights(&self) -> Weights {
+        match self {
+            Self::Goal(goal) => Weights::single(*goal),
+            Self::Weighted { weights, .. } => *weights,
+        }
+    }
+}
+
 /// Where a cog sits: its column and row on the 12x8 board.
 pub fn slot_to_pos(slot: usize) -> (usize, usize) {
     (slot % BOARD_W, slot / BOARD_W)
@@ -486,11 +707,22 @@ pub fn compute_totals(board: &Board) -> BoardTotals {
     totals
 }
 
-/// The goal's score without materialising the per-slot table, for the hot loop
+impl BoardTotals {
+    /// The raw value of one goal, as the weighted objective reads it.
+    pub fn metric(&self, goal: Goal) -> f64 {
+        match goal {
+            Goal::Build => self.total_build,
+            Goal::ConExp => self.player_con_exp_hr,
+            Goal::Flaggy => self.total_flaggy,
+        }
+    }
+}
+
+/// One goal's score without materialising the per-slot table, for the hot loop
 /// in the optimizer and for the insights' contribution check. The maths is
 /// exactly [`compute_totals`]'s, so the score equals the goal's own total:
 /// build speed, Flaggy rate, or the best player's construction EXP/hr.
-pub fn score(board: &Board, goal: Goal) -> f64 {
+pub fn goal_score(board: &Board, goal: Goal) -> f64 {
     let active = active_yin(board);
     match goal {
         Goal::Build => {
@@ -538,6 +770,26 @@ pub fn score(board: &Board, goal: Goal) -> f64 {
                 }
             }
             best.unwrap_or(0.0)
+        }
+    }
+}
+
+/// The objective's score for `board`.
+///
+/// A single goal is the raw metric. A weighted objective is
+/// `Σ weight × metric / reference`, skipping metrics the reference board does
+/// not have, exactly the upstream `scoreBoard` weighted branch.
+pub fn score(board: &Board, objective: &Objective) -> f64 {
+    match objective {
+        Objective::Goal(goal) => goal_score(board, *goal),
+        Objective::Weighted { weights, reference } => {
+            let totals = compute_totals(board);
+            Goal::ALL
+                .into_iter()
+                .enumerate()
+                .filter(|(index, _)| reference[*index] > 0.0)
+                .map(|(index, goal)| weights.get(goal) * totals.metric(goal) / reference[index])
+                .sum()
         }
     }
 }

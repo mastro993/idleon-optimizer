@@ -5,8 +5,8 @@
 //! `js/cogs/cog-optimizer.js`.
 
 use super::super::{
-    BOARD_H, BOARD_SIZE, BOARD_W, Board, Cog, Direction, Goal, affects_player, compute_totals,
-    pos_to_slot, score, slot_to_pos,
+    BOARD_H, BOARD_SIZE, BOARD_W, Board, Cog, Direction, Goal, Objective, affects_player,
+    compute_totals, pos_to_slot, score, slot_to_pos,
 };
 use super::swap_slot_pool;
 
@@ -213,7 +213,7 @@ pub(super) fn greedy_finish(
     board: &mut Board,
     pool: &mut [Option<Cog>],
     locked: &[bool; BOARD_SIZE],
-    goal: Goal,
+    objective: &Objective,
 ) {
     let mut improved = true;
     let mut passes = 0;
@@ -224,13 +224,13 @@ pub(super) fn greedy_finish(
             if locked[a] {
                 continue;
             }
-            let mut current = score(board, goal);
+            let mut current = score(board, objective);
             for (b, locked_b) in locked.iter().enumerate().take(BOARD_SIZE).skip(a + 1) {
                 if *locked_b {
                     continue;
                 }
                 board.swap(a, b);
-                let value = score(board, goal);
+                let value = score(board, objective);
                 if value > current {
                     current = value;
                     improved = true;
@@ -244,11 +244,11 @@ pub(super) fn greedy_finish(
                 if *locked_slot {
                     continue;
                 }
-                let base = score(board, goal);
+                let base = score(board, objective);
                 let mut best = None;
                 for index in 0..pool.len() {
                     swap_slot_pool(board, pool, slot, index);
-                    let value = score(board, goal);
+                    let value = score(board, objective);
                     swap_slot_pool(board, pool, slot, index);
                     if value > base && best.is_none_or(|(_, best_value)| value > best_value) {
                         best = Some((index, value));
@@ -270,9 +270,9 @@ pub(super) fn swap_back(
     board: &mut Board,
     original: &Board,
     locked: &mut [bool; BOARD_SIZE],
-    goal: Goal,
+    objective: &Objective,
 ) {
-    let mut best_score = score(board, goal);
+    let mut best_score = score(board, objective);
     let mut changed = true;
     let mut passes = 0;
     while changed && passes < 4 {
@@ -313,7 +313,7 @@ pub(super) fn swap_back(
                 continue;
             };
             board.swap(slot, source);
-            let value = score(board, goal);
+            let value = score(board, objective);
             if value < best_score {
                 board.swap(slot, source);
             } else {
@@ -349,7 +349,7 @@ pub(super) fn swap_back(
                 continue;
             }
             board.swap(slot, other);
-            let value = score(board, goal);
+            let value = score(board, objective);
             if value < best_score {
                 board.swap(slot, other);
             } else {
@@ -385,7 +385,7 @@ pub(super) fn swap_back(
                 continue;
             };
             board.swap(slot, source);
-            let value = score(board, goal);
+            let value = score(board, objective);
             if value < best_score {
                 board.swap(slot, source);
             } else {

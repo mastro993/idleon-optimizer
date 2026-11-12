@@ -8,8 +8,8 @@
 use crate::model::{Control, Progress};
 
 use super::super::{
-    BOARD_H, BOARD_SIZE, BOARD_W, Board, Cog, Goal, compute_totals, empty_board, pos_to_slot,
-    score, slot_to_pos,
+    BOARD_H, BOARD_SIZE, BOARD_W, Board, Cog, Goal, Objective, compute_totals, empty_board,
+    pos_to_slot, score, slot_to_pos,
 };
 use super::swap_slot_pool;
 /// Phase 1: collect every movable cog, clear the board and rebuild it.
@@ -17,6 +17,7 @@ pub(super) fn greedy_construct(
     board: &mut Board,
     pool: &mut Vec<Option<Cog>>,
     goal: Goal,
+    objective: &Objective,
     report: &mut dyn FnMut(Progress) -> Control,
 ) -> bool {
     let mut all: Vec<Cog> = Vec::new();
@@ -30,6 +31,7 @@ pub(super) fn greedy_construct(
         return true;
     }
 
+    let weighted = matches!(objective, Objective::Weighted { .. });
     let mut players = Vec::new();
     let mut directional = Vec::new();
     let mut non_dir = Vec::new();
@@ -42,7 +44,10 @@ pub(super) fn greedy_construct(
                 Some(piece) if piece < 4 => yin_by_piece[piece].push(cog),
                 _ => non_dir.push(cog),
             }
-        } else if cog.direction.is_some() && cog.goal_surround(goal) > 0.0 {
+        } else if cog.direction.is_some()
+            && (cog.goal_surround(goal) > 0.0
+                || (weighted && (cog.e > 0.0 || cog.f > 0.0 || cog.g > 0.0)))
+        {
             directional.push(cog);
         } else {
             non_dir.push(cog);
@@ -65,7 +70,8 @@ pub(super) fn greedy_construct(
     non_dir.sort_by(|a, b| b.goal_base(goal).total_cmp(&a.goal_base(goal)));
     players.sort_by(|a, b| b.b.total_cmp(&a.b));
 
-    if goal == Goal::ConExp && !players.is_empty() {
+    let needs_player_sweep = !players.is_empty() && objective.weights().get(Goal::ConExp) > 0.0;
+    if needs_player_sweep {
         let main_player = players[0].clone();
         let other_players = players[1..].to_vec();
         let mut best: Option<(f64, Board, Vec<Option<Cog>>)> = None;
@@ -85,24 +91,24 @@ pub(super) fn greedy_construct(
             let mut candidate_pool = Vec::new();
             candidate[player_slot] = Some(main_player.clone());
             for cog in &other_players {
-                place_best(&mut candidate, &mut candidate_pool, cog.clone(), goal);
+                place_best(&mut candidate, &mut candidate_pool, cog.clone(), objective);
             }
             place_yin_blocks(
                 &mut candidate,
                 &mut candidate_pool,
                 &yin_blocks,
                 &[false; BOARD_SIZE],
-                goal,
+                objective,
             );
             place_greedy_list(
                 &mut candidate,
                 &mut candidate_pool,
                 directional.clone(),
-                goal,
+                objective,
                 &[false; BOARD_SIZE],
             );
             place_by_rearrangement(&mut candidate, &mut candidate_pool, &non_dir, goal);
-            let value = score(&candidate, goal);
+            let value = score(&candidate, objective);
             if best
                 .as_ref()
                 .is_none_or(|(best_score, ..)| value > *best_score)
@@ -115,20 +121,20 @@ pub(super) fn greedy_construct(
             *pool = candidate_pool;
         }
     } else {
-        place_greedy_list(board, pool, players, goal, &[false; BOARD_SIZE]);
-        place_yin_blocks(board, pool, &yin_blocks, &[false; BOARD_SIZE], goal);
-        place_greedy_list(board, pool, directional, goal, &[false; BOARD_SIZE]);
+        place_greedy_list(board, pool, players, objective, &[false; BOARD_SIZE]);
+        place_yin_blocks(board, pool, &yin_blocks, &[false; BOARD_SIZE], objective);
+        place_greedy_list(board, pool, directional, objective, &[false; BOARD_SIZE]);
         place_by_rearrangement(board, pool, &non_dir, goal);
     }
 
     let mut locked = [false; BOARD_SIZE];
     lock_yin_blocks(board, &mut locked);
-    refine(board, pool, &locked, goal, 6);
+    refine(board, pool, &locked, objective, 6);
     true
 }
 
 /// Place one cog at the empty slot that scores best, or send it to the pool.
-fn place_best(board: &mut Board, pool: &mut Vec<Option<Cog>>, cog: Cog, goal: Goal) {
+fn place_best(board: &mut Board, pool: &mut Vec<Option<Cog>>, cog: Cog, objective: &Objective) {
     let mut best_slot = None;
     let mut best_score = f64::NEG_INFINITY;
     for slot in 0..BOARD_SIZE {
@@ -136,7 +142,7 @@ fn place_best(board: &mut Board, pool: &mut Vec<Option<Cog>>, cog: Cog, goal: Go
             continue;
         }
         board[slot] = Some(cog.clone());
-        let value = score(board, goal);
+        let value = score(board, objective);
         board[slot] = None;
         if value > best_score {
             best_score = value;
@@ -155,7 +161,7 @@ fn place_greedy_list(
     board: &mut Board,
     pool: &mut Vec<Option<Cog>>,
     cogs: impl IntoIterator<Item = Cog>,
-    goal: Goal,
+    objective: &Objective,
     locked: &[bool; BOARD_SIZE],
 ) {
     for cog in cogs {
@@ -166,7 +172,7 @@ fn place_greedy_list(
                 continue;
             }
             board[slot] = Some(cog.clone());
-            let value = score(board, goal);
+            let value = score(board, objective);
             board[slot] = None;
             if value > best_score {
                 best_score = value;
@@ -221,7 +227,7 @@ fn place_yin_blocks(
     pool: &mut Vec<Option<Cog>>,
     blocks: &[[Cog; 4]],
     locked: &[bool; BOARD_SIZE],
-    goal: Goal,
+    objective: &Objective,
 ) {
     let mut player_rows = [false; BOARD_H];
     let mut player_cols = [false; BOARD_W];
@@ -279,7 +285,7 @@ fn place_yin_blocks(
                 for (index, slot) in slots.iter().enumerate() {
                     board[*slot] = Some(block[index].clone());
                 }
-                let value = score(board, goal);
+                let value = score(board, objective);
                 for (index, slot) in slots.iter().enumerate() {
                     board[*slot] = saved[index].clone();
                 }
@@ -343,7 +349,7 @@ fn refine(
     board: &mut Board,
     pool: &mut [Option<Cog>],
     locked: &[bool; BOARD_SIZE],
-    goal: Goal,
+    objective: &Objective,
     max_passes: usize,
 ) {
     let mut improved = true;
@@ -355,13 +361,13 @@ fn refine(
             if locked[a] {
                 continue;
             }
-            let mut current = score(board, goal);
+            let mut current = score(board, objective);
             for b in a + 1..BOARD_SIZE {
                 if locked[b] || (board[a].is_none() && board[b].is_none()) {
                     continue;
                 }
                 board.swap(a, b);
-                let value = score(board, goal);
+                let value = score(board, objective);
                 if value > current {
                     current = value;
                     improved = true;
@@ -375,12 +381,12 @@ fn refine(
                 if *locked_slot {
                     continue;
                 }
-                let base = score(board, goal);
+                let base = score(board, objective);
                 let mut best_delta = 0.0;
                 let mut best_index = None;
                 for index in 0..pool.len() {
                     swap_slot_pool(board, pool, slot, index);
-                    let value = score(board, goal);
+                    let value = score(board, objective);
                     swap_slot_pool(board, pool, slot, index);
                     if value - base > best_delta {
                         best_delta = value - base;

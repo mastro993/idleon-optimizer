@@ -39,11 +39,16 @@ pub fn card(
     } else {
         format!("{changed} slot(s) differ from the save board.")
     };
+    let label = if state.cog.weighted {
+        "Custom weights".to_string()
+    } else {
+        state.cog.goal.label().to_string()
+    };
     Card::new()
         .header(
-            CardHeader::new("Board").description(description).action(
-                Badge::new(format!("{} · 12×8", state.cog.goal.label())).tone(Tone::Accent),
-            ),
+            CardHeader::new("Board")
+                .description(description)
+                .action(Badge::new(format!("{label} · 12×8")).tone(Tone::Accent)),
         )
         .child(grid(state, board, insights, cx))
         .into_any_element()
