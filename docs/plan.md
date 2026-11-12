@@ -367,11 +367,22 @@ The endgame check is complete: the joke verdict plus the 177-metric leaderboard 
 save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
 Details: [`docs/sections/endgame.md`](sections/endgame.md).
 
-The All Stats Dashboard's calculation context is built (SA-01): the character, map, map-list, skill
-and construction-mode selectors, their save defaults (character one and its current map) and the map
-access walk ported from `js/stats/systems/common/map-access.js`. The breakdowns (SA-02), the formula
-explorer (SA-03) and the input ledger (SA-04) resolve against the same context. Details:
-[`docs/sections/stats-all.md`](sections/stats-all.md).
+The All Stats Dashboard has its calculation context (SA-01) and its category breakdowns (SA-02). The
+context is the character, map, map-list, skill and construction-mode selectors with their save
+defaults (character one and its current map), and the map access walk ported from
+`js/stats/systems/common/map-access.js`. The breakdowns are the upstream descriptor registry
+(`js/stats/registry.js`, 60 descriptors): every row keeps its id, name, scope and category, and the
+nine `CATEGORY_ORDER` tabs group them. Eight carry-capacity rows are ported in full
+(`js/stats/defs/carry-capacity.js` and `js/stats/systems/common/carry-capacity.js`: saved rows,
+vault 11, bundles, stamps with the lab and pristine multipliers and the exalted doubler chain, star
+signs with Seraph Cosmos, gem shop, guild, talents 78 and 634, companion 18, the Pantheon Shrine with
+its Boss3B card and map rule, prayers 4 and 12, bribe 23, materials and the material talent), and the
+two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's own terms. The other
+fifty descriptors resolve to a warning naming their upstream def instead of a guessed number, since
+they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capacity rows match the
+upstream stats page exactly on the committed fixture; `crates/core/tests/stats.rs` pins the eight
+values and checks every category renders. Missing: the formula explorer (SA-03) and the input ledger
+(SA-04). Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
 The Fountain section has its overview (FN-01): the fountain summary, the fill and income rates per
 currency, lucky coins and rubber ducks, the ground coin stacks, the eighteen cross-system bonuses and
 the level planner. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus

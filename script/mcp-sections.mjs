@@ -383,7 +383,8 @@ const fishingSave = ({ toolkit = true } = {}) => {
 
 /// A small flat `save.json` with two named characters standing on different
 /// maps, so the stats context's character and map selectors have save defaults
-/// to follow and a portal to read.
+/// to follow and a portal to read. The carry rows give the capacity tab a
+/// formula tree to render.
 const statsSave = () => {
   const kla = Array.from({ length: 60 }, () => [0]);
   return JSON.stringify({
@@ -397,6 +398,16 @@ const statsSave = () => {
     CurrentMap_1: 50,
     KLA_0: JSON.stringify(kla),
     KLA_1: JSON.stringify(kla),
+    MaxCarryCap_0: JSON.stringify({
+      Mining: 35000,
+      Chopping: 35000,
+      Fishing: 35000,
+      Bugs: 35000,
+      Foods: 35000,
+      Critters: 35000,
+      Souls: 35000,
+      bCraft: 35000,
+    }),
   });
 };
 
@@ -1552,6 +1563,57 @@ const INTERACTIONS = {
         (labelOf(nodes, 'stats-context-note') ?? '') ===
         'Bo · YumYum Grotto · Choppin · Construction Inactive',
       'stats-all: the skill and construction selectors refresh the context',
+    );
+
+    // Every upstream category has a tab, rows and a summary count; clicking
+    // each tab swaps the panel to that category.
+    await waitForNode(lane, 'stats-category-summary', 'stats-all: the category summary renders');
+    const summary = labelOf(await lane.tree(), 'stats-category-summary') ?? '';
+    const categories = [
+      ['combat', 'Combat'],
+      ['stat', 'Stats'],
+      ['multiplier', 'Multipliers'],
+      ['rate', 'Rates'],
+      ['capacity', 'Capacity'],
+      ['construction', 'Construction'],
+      ['research', 'Research'],
+      ['currency', 'Currency'],
+      ['progression', 'Progression'],
+    ];
+    for (const [key, label] of categories) {
+      if (!summary.includes(label)) {
+        throw new Error(`stats-all: ${label} is missing from the summary: ${summary}`);
+      }
+      await lane.call('click_element', { id: `stats-${key}-tab` });
+      await waitFor(
+        lane,
+        (nodes) => (labelOf(nodes, 'stats-category-panel') ?? '').startsWith(`${label} breakdowns:`),
+        `stats-all: the ${label} tab renders its rows`,
+      );
+    }
+
+    // The capacity rows resolve against the save and show their formula tree.
+    await lane.call('click_element', { id: 'stats-capacity-tab' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('Mining Carry Capacity') &&
+        (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('35,000'),
+      'stats-all: the capacity row resolves from the save',
+    );
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Mining Carry Capacity'),
+      'stats-all: the capacity row shows its formula tree',
+    );
+
+    // A combat row has no ported formula yet, so it warns with its source.
+    await lane.call('click_element', { id: 'stats-combat-tab' });
+    await lane.call('click_element', { id: 'stats-row-drop-rate' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'stats-descriptor-warning') ?? '').includes('drop-rate.js'),
+      'stats-all: an unported row names its upstream source',
     );
 
     // A project document restores the whole context.

@@ -67,6 +67,7 @@ use crate::model::{SimContext, Simulation};
 use crate::sailing::{Fleet, RouteContext};
 pub(crate) use account::prisma_multiplier;
 pub use account::{BonusTerm, BonusTree};
+pub(crate) use account::{companion_bonus, mainframe_bonus, vault_bonus};
 pub use formula::log as game_log;
 use serde_json::{Map, Value};
 
