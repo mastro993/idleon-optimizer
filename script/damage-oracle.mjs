@@ -20,6 +20,7 @@ const { createStatContext } = await import(join(source, 'js/stats/stat-context.j
 const { saveData } = await import(join(source, 'js/state.js'));
 const data = await import(join(source, 'js/save/data.js'));
 const { isDungeonMap } = await import(join(source, 'js/stats/systems/w2/dungeon.js'));
+const { MapDispName } = await import(join(source, 'js/stats/data/game/customlists.js'));
 
 const save = JSON.parse(readFileSync(join(root, 'fixtures/data.json'), 'utf8'));
 loadSaveData({ data: save });
@@ -40,12 +41,6 @@ const layer = (children, prefix) => {
   return child ? Number(child.val) : null;
 };
 
-const primaryStat = (children) => {
-  const child = children.find((node) => String(node.name).startsWith('Primary Stat'));
-  const match = child && /^Primary Stat \((\w+)\)$/.exec(String(child.name));
-  return { stat: match ? match[1] : null, value: child ? Number(child.val) : null };
-};
-
 const cases = [];
 for (let character = 0; character < characters; character += 1) {
   const map = Number(data.currentMapData?.[character]) || 0;
@@ -59,7 +54,6 @@ for (let character = 0; character < characters; character += 1) {
     max: layer(children, 'Max Damage'),
     min: layer(children, 'Min Damage'),
     mastery: layer(children, 'Mastery'),
-    primaryStat: primaryStat(children),
     layers: {
       base: layer(children, 'Base Damage'),
       percent: layer(children, 'Percentage Damage Multiplier'),
@@ -69,7 +63,7 @@ for (let character = 0; character < characters; character += 1) {
 }
 
 // Every dungeon map answers with the upstream reason instead of a summary.
-const dungeonCases = [...Array(400).keys()]
+const dungeonCases = [...Array(MapDispName.length).keys()]
   .filter((map) => isDungeonMap(map))
   .map((map) => {
     const result = resolve(0, map);

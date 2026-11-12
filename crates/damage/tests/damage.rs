@@ -124,8 +124,27 @@ fn the_summary_reports_the_missing_engine_until_the_provider_lands() {
         let character = expected["character"].as_u64().expect("an index") as usize;
         let map = expected["map"].as_u64().expect("a map") as usize;
         let summary = evaluate(&save, character, map);
-        assert!(!summary.available, "character {character} resolved");
-        assert_eq!(summary.reason, STATS_ENGINE);
+        if summary.available {
+            // The provider landed: it has to match upstream, case by case.
+            assert!(
+                close(summary.max, expected["max"].as_f64().expect("a max")),
+                "character {character}: max {} != {}",
+                summary.max,
+                expected["max"]
+            );
+            assert!(
+                close(summary.min, expected["min"].as_f64().expect("a min")),
+                "character {character}: min {} != {}",
+                summary.min,
+                expected["min"]
+            );
+            assert!(close(
+                summary.mastery,
+                expected["mastery"].as_f64().expect("a mastery")
+            ));
+            continue;
+        }
+        assert_eq!(summary.reason, STATS_ENGINE, "character {character}");
         assert_eq!(summary.game_range(), None);
         assert!(
             !summary.partial,
