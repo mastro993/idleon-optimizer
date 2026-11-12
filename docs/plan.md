@@ -1,6 +1,7 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks, the Cglunko
+Status: **foundation in progress, research (including the Minehead tab), statue, jar, farming, ladle,
+Clamworks, the Cglunko
 overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's
 current state, the Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God
 Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout, inventory and
@@ -242,6 +243,8 @@ crates/save                         raw save document: codec, JSON helpers, char
 crates/research                     research grid model, EXP/insight maths, grid/shape/mag optimizers
 crates/stats-data                   static map, monster, class and equipment-set tables
 crates/account                      account-wide bonus decoder (`Decoder`): one view of every system
+crates/minehead                     Depth Charge upgrades, floor simulation and strategy searches;
+                                    reads the account decoder, so it sits beside `stats`
 crates/<domain>                     one crate per calculator, no GPUI, testable in isolation:
                                     cglunko, clamworks, cog, coin-multi, combat, cooking-mastery,
                                     coral, damage, drop-rate, endgame, farming, fishing, fountain,

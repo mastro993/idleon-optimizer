@@ -28,6 +28,11 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
+    /// A number from `OptLacc`, the account's option list.
+    pub fn option(&self, index: usize) -> f64 {
+        self.ola(index)
+    }
+
     /// `OptLacc` as a string, as the game sometimes writes lists there.
     pub fn ola_text(&self, index: usize) -> String {
         fields::field(self.save, "OptLacc")
@@ -46,7 +51,7 @@ impl Decoder<'_> {
     }
 
     /// `Spelunk[row][column]`.
-    pub(crate) fn spelunk(&self, row: usize, column: usize) -> f64 {
+    pub fn spelunk(&self, row: usize, column: usize) -> f64 {
         fields::at(self.save, "Spelunk", &[row, column]).unwrap_or(0.0)
     }
 
@@ -115,12 +120,12 @@ impl Decoder<'_> {
     }
 
     /// One superbit.
-    pub(crate) fn superbit(&self, index: usize) -> f64 {
+    pub fn superbit(&self, index: usize) -> f64 {
         self.superbit_flags().get(index).copied().unwrap_or(0) as f64
     }
 
     /// One emporium bonus.
-    pub(crate) fn emporium(&self, index: usize) -> f64 {
+    pub fn emporium(&self, index: usize) -> f64 {
         self.emporium_flags().get(index).copied().unwrap_or(0) as f64
     }
 
@@ -216,13 +221,59 @@ impl Decoder<'_> {
 
     /// `jellyRewardBonus` from `js/stats/data/w7/jelly-operator.js`: the
     /// obstruction is `Research[7][9]`.
-    pub(crate) fn jelly(&self, index: usize) -> f64 {
+    pub fn jelly(&self, index: usize) -> f64 {
         let obstruction = self.research(7, 9).unwrap_or(0.0);
         if obstruction > index as f64 {
             self.data.jelly_reward.get(index).copied().unwrap_or(0.0)
         } else {
             0.0
         }
+    }
+
+    /// One `Atoms` row entry, the atom collider's levels.
+    pub fn atom(&self, index: usize) -> f64 {
+        self.row_at("Atoms", index)
+    }
+
+    /// `mineheadCurrencyTaskLevel` from `js/stats/data/w7/tasks.js`: the W7
+    /// task board's currency row, `TaskZZ2[6][4]`.
+    pub fn minehead_task_level(&self) -> f64 {
+        self.nested("TaskZZ2", &[6, 4])
+    }
+
+    /// `mineheadDoublers`: the upgrade indices `Spelunk[51]` doubles.
+    pub fn minehead_doublers(&self) -> Vec<usize> {
+        self.spelunk_row(51)
+            .iter()
+            .flatten()
+            .map(|value| value.round() as usize)
+            .collect()
+    }
+
+    /// `computeDancingCoralBonus`: `Spelunky[24][index] × max(0, Tower[18+index] - 200)`.
+    pub fn dancing_coral(&self, index: usize) -> f64 {
+        let base = self
+            .data
+            .dancing_coral_base
+            .get(index)
+            .copied()
+            .unwrap_or(0.0);
+        let level = self.row_at("Tower", 18 + index);
+        base * (level - 200.0).max(0.0)
+    }
+
+    /// `outpostROGBonus`: the Royal Guardian focus bonus, `1` when another
+    /// focus is selected.
+    pub fn outpost_rog(&self, kind: usize) -> f64 {
+        let selected = fields::at(self.save, "RoyalG", &[3, 2])
+            .unwrap_or(0.0)
+            .floor();
+        if selected != kind as f64 || kind > 3 {
+            return 1.0;
+        }
+        let progress = (self.total_statz()[4] - 6.0).max(1.0);
+        let rates = [10.0, 2.0, 1.0, 4.0];
+        1.0 + progress / (40.0 + progress) * rates[kind]
     }
 
     /// `jellyRewardBonus(0/23/46/54)` folded into one factor.
@@ -289,7 +340,7 @@ impl Decoder<'_> {
     }
 
     /// `companionLevel2`.
-    pub(crate) fn companion_level2(&self, index: usize) -> bool {
+    pub fn companion_level2(&self, index: usize) -> bool {
         self.companions()
             .iter()
             .any(|(id, enhanced)| *id == index as u32 && *enhanced)

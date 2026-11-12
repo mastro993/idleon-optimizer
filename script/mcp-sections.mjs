@@ -101,6 +101,11 @@ const researchSave = () => {
       sparse(80, {}),
       [0, 0],
       [],
+      // stateR7: floor 4 with currency and a best hit, so the Minehead tab has
+      // its boss, balance and farm term.
+      [0, 0, 0, 0, 4, 123456, 5000],
+      // The thirty Depth Charge upgrade levels.
+      sparse(30, { 0: 5, 1: 3, 2: 2, 6: 2, 8: 2, 9: 1, 10: 1, 16: 1, 19: 1 }),
     ]),
     Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
   });
@@ -2067,6 +2072,44 @@ const INTERACTIONS = {
     if (!shapeSummary.includes('shapes placed')) {
       throw new Error(`research: the shape summary reads ${shapeSummary}`);
     }
+
+    // RES-09: the Minehead tab's six subtabs render from the save. The subtab
+    // buttons are shared `Button`s whose semantic id a render can rewrite
+    // mid-frame, so they are clicked at their live centres by label.
+    const subtab = async (label) => {
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const node = (await lane.tree()).find(
+          (candidate) => candidate.parent === 'minehead-tabs' && candidate.label === label
+        );
+        if (node) {
+          return {
+            x: node.bounds.x + node.bounds.width / 2,
+            y: node.bounds.y + node.bounds.height / 2,
+          };
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error(`research: no Minehead subtab labelled ${label}`);
+    };
+    await lane.call('click_element', { id: 'minehead' });
+    await waitForNode(lane, 'minehead-dashboard', 'research: the Minehead dashboard opens');
+    await waitForNode(lane, 'mh-upg-name-0', 'research: the Minehead upgrade table lists its first row');
+    await waitForNode(lane, 'mh-reward-0', 'research: the Minehead boss rewards render');
+    await lane.call('click_coordinates', await subtab('Currency'));
+    await waitForNode(lane, 'minehead-currency-tree', 'research: the Minehead currency breakdown opens');
+    await lane.call('click_coordinates', await subtab('Optimize'));
+    await waitForNode(lane, 'mh-opt-run', 'research: the Minehead strategy search opens');
+    await lane.call('click_coordinates', await subtab('Rank Upgrades'));
+    await waitForNode(lane, 'mh-rank-run', 'research: the Minehead upgrade ranking opens');
+    await lane.call('click_coordinates', await subtab('Upgrade Path'));
+    await waitForNode(lane, 'mh-path-run', 'research: the Minehead upgrade path opens');
+    await lane.call('click_coordinates', await subtab('Play'));
+    await waitForNode(lane, 'mh-play-attack', 'research: the Minehead playfield opens');
+    await waitForNode(lane, 'mh-tile-0', 'research: the playfield draws its first tile');
+    await lane.call('click_element', { id: 'mh-play-insta' });
+    await waitForNode(lane, 'mh-log-1', 'research: an insta-reveal logs its mine');
+    await lane.call('click_element', { id: 'mh-play-new' });
+    await waitForNode(lane, 'mh-play-attack', 'research: a new game keeps the playfield');
   },
   'coral-god-rank': async (lane) => {
     // Turning the assumption off makes the save-derived unlock state (or its

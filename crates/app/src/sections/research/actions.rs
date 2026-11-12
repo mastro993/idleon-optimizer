@@ -371,7 +371,7 @@ impl AppState {
     /// preset's name, or `None` when it is unknown or unreadable.
     fn copy_shape_preset(&mut self, id: &str, cx: &mut Context<Self>) -> Option<&'static str> {
         let preset = game().presets.iter().find(|preset| preset.id == id)?;
-        let Some(tiers) = preset.tiers_for(&self.simulation) else {
+        let Some(tiers) = super::preset_tiers(self, preset) else {
             self.set_status(format!("{} has no readable tier list.", preset.name), cx);
             return None;
         };

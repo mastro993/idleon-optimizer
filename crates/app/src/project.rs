@@ -546,6 +546,10 @@ pub(crate) fn apply(
             changes.extend(supplement_changes(&state.context, &context));
             state.simulation = simulation;
             state.research.history.clear();
+            state
+                .research
+                .minehead
+                .load(state.save.as_ref(), &state.simulation);
             state.replace_context(context);
         }
     }
@@ -646,7 +650,7 @@ fn shape_preset_tiers(state: &AppState, id: &str) -> Option<idleon_research::Tie
             .presets
             .iter()
             .find(|preset| preset.id == id)
-            .and_then(|preset| preset.tiers_for(&state.simulation))
+            .and_then(|preset| crate::sections::research::preset_tiers(state, preset))
     } else {
         CustomPreset::find(&state.research.shape_presets, id).map(|preset| preset.tiers.clone())
     }

@@ -73,8 +73,10 @@ impl Preset {
 
     /// The preset's tiers against the loaded grid: the two upstream presets
     /// whose `build` only re-ranks a fixed node pool do so here, and every
-    /// other preset keeps its static string. `Minehead` and `Lumi/hr` need save
-    /// tables this build does not model, so they keep the static order too.
+    /// other preset keeps its static string. `Minehead`'s ranking reads the
+    /// save, so the app builds it from `idleon-minehead` before calling this;
+    /// `Lumi/hr` needs tables this build does not model and keeps the static
+    /// order.
     pub fn tiers_for(&self, simulation: &crate::model::Simulation) -> Option<crate::tiers::Tiers> {
         let pool: &[usize] = match self.id.as_str() {
             "_classexp" => &[130, 131, 132, 152],

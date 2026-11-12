@@ -202,6 +202,9 @@ impl AppState {
         self.drop_rate.load(&imported.save);
         self.damage.load(&imported.save);
         self.save = Some(imported.save);
+        self.research
+            .minehead
+            .load(self.save.as_ref(), &self.simulation);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
         self.statue.load(imported.statues, cx);

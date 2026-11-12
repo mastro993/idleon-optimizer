@@ -130,7 +130,7 @@ impl Decoder<'_> {
     }
 
     /// `legendPTSbonus`.
-    pub(crate) fn legend(&self, index: usize) -> f64 {
+    pub fn legend(&self, index: usize) -> f64 {
         let points = self.spelunk(18, index);
         let per_point = self
             .data
@@ -452,7 +452,7 @@ impl Decoder<'_> {
     }
 
     /// `arcadeBonus` from `js/stats/systems/w2/arcade.js`.
-    pub(crate) fn arcade(&self, index: usize) -> f64 {
+    pub fn arcade(&self, index: usize) -> f64 {
         let Some((formula, base, denom)) = self.data.arcade(index) else {
             return 0.0;
         };
@@ -531,7 +531,7 @@ impl Decoder<'_> {
     }
 
     /// `cloudBonus` from `js/game-helpers.js`.
-    pub(crate) fn cloud_bonus(&self, index: usize) -> f64 {
+    pub fn cloud_bonus(&self, index: usize) -> f64 {
         let Some(weekly_boss) = fields::object(self.save, "WeeklyBoss") else {
             return 0.0;
         };
@@ -547,7 +547,7 @@ impl Decoder<'_> {
     }
 
     /// `ribbonBonusAt` from `js/game-helpers.js`.
-    pub(crate) fn ribbon(&self, index: usize) -> f64 {
+    pub fn ribbon(&self, index: usize) -> f64 {
         let level = self.row_at("Ribbon", index);
         if level <= 0.0 {
             return 1.0;

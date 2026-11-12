@@ -1,0 +1,367 @@
+{
+ "upgrades": [
+  {
+   "name": "Base Damage I",
+   "maxLv": 9999,
+   "costExp": 1.1,
+   "bonus": 1,
+   "desc": "Boosts your base damage in the classic game of Depth Charge by +{"
+  },
+  {
+   "name": "Numbahs",
+   "maxLv": 17,
+   "costExp": 6,
+   "bonus": 1,
+   "desc": "Increase the max possible Tile Number you can find to $! These are a MULTI for damage!"
+  },
+  {
+   "name": "Grid Expansion",
+   "maxLv": 16,
+   "costExp": 7.5,
+   "bonus": 1,
+   "desc": "$"
+  },
+  {
+   "name": "Bettah Numbahs",
+   "maxLv": 9999,
+   "costExp": 1.15,
+   "bonus": 10,
+   "desc": "Boosts your odds of getting bigger Tile Numbers by }x"
+  },
+  {
+   "name": "Mega Damage I",
+   "maxLv": 9999,
+   "costExp": 1.12,
+   "bonus": 5,
+   "desc": "Permanently increases all damage you deal in the classic game of Depth Charge by +{%"
+  },
+  {
+   "name": "Miney Farmey I",
+   "maxLv": 9999,
+   "costExp": 1.1,
+   "bonus": 10,
+   "desc": "Boosts the amount of Mine Currency you generate per hour by +{%"
+  },
+  {
+   "name": "Extra Lives",
+   "maxLv": 7,
+   "costExp": 250,
+   "bonus": 1,
+   "desc": "Start each game with +1 extra life!"
+  },
+  {
+   "name": "Base Damage II",
+   "maxLv": 9999,
+   "costExp": 1.1,
+   "bonus": 3,
+   "desc": "Boosts your base damage in the classic game of Depth Charge by +{"
+  },
+  {
+   "name": "Golden Tiles",
+   "maxLv": 16,
+   "costExp": 8,
+   "bonus": 1,
+   "desc": "Click on up to { Golden Tiles per game, which are guaranteed to be safe from Depth Charges!"
+  },
+  {
+   "name": "Big Hit Combos",
+   "maxLv": 9999,
+   "costExp": 1.3,
+   "bonus": 1,
+   "desc": "Increases damage by +{% for every tile revealed, resetting at the start of each turn."
+  },
+  {
+   "name": "Boom Blocker",
+   "maxLv": 2,
+   "costExp": 1000000000,
+   "bonus": 1,
+   "desc": "Start each game of Depth Charge with +{ Blocks. Depth Charges HATE this feature!"
+  },
+  {
+   "name": "Final Round Fury",
+   "maxLv": 9999,
+   "costExp": 1.3,
+   "bonus": 2,
+   "desc": "Your damage is }x higher when down to your last life!"
+  },
+  {
+   "name": "Multiplier Madness",
+   "maxLv": 10,
+   "costExp": 35,
+   "bonus": 1,
+   "desc": "You can now find Multiplier Tiles, up to $! These multiply damage for the current turn."
+  },
+  {
+   "name": "Moar Moar Multi's",
+   "maxLv": 9999,
+   "costExp": 1.15,
+   "bonus": 6,
+   "desc": "Boosts your odds of getting bigger Multiplier Tiles by }x"
+  },
+  {
+   "name": "Triple Crown Hunter",
+   "maxLv": 250,
+   "costExp": 1.16,
+   "bonus": 1,
+   "desc": "Tiles can now have a Blue Crown background, reveal 3 to multiply current damage by $"
+  },
+  {
+   "name": "Crown Craze",
+   "maxLv": 100,
+   "costExp": 1.4,
+   "bonus": 1,
+   "desc": "Boosts your odds of revealing Blue Crown backgrounds by }x"
+  },
+  {
+   "name": "Legal Cheating Button",
+   "maxLv": 20,
+   "costExp": 6,
+   "bonus": 1,
+   "desc": "Reveals a Depth Charges, has { uses, but has a 25% chance to break until next turn!"
+  },
+  {
+   "name": "Awesome Additives",
+   "maxLv": 10,
+   "costExp": 35,
+   "bonus": 1,
+   "desc": "You can now find Additive Tiles, up to $! These boost your damage for the ENTIRE game!"
+  },
+  {
+   "name": "Always Adding",
+   "maxLv": 9999,
+   "costExp": 1.15,
+   "bonus": 5,
+   "desc": "Boosts your odds of revealing bigger Additive Tiles by }x"
+  },
+  {
+   "name": "Clutch Overtime Block",
+   "maxLv": 1,
+   "costExp": 100000,
+   "bonus": 1,
+   "desc": "When down to your last life, get +{ Block! Depth Charges STILL HATE this feature!!!"
+  },
+  {
+   "name": "Classic Flags",
+   "maxLv": 8,
+   "costExp": 500,
+   "bonus": 1,
+   "desc": "You can place down { Flags, which show the amount of surrounding Depth Charges!"
+  },
+  {
+   "name": "Mega Damage II",
+   "maxLv": 9999,
+   "costExp": 1.1,
+   "bonus": 20,
+   "desc": "Permanently increases all damage you deal in the classic game of Depth Charge by +{%"
+  },
+  {
+   "name": "Miney Farmey II",
+   "maxLv": 9999,
+   "costExp": 1.15,
+   "bonus": 15,
+   "desc": "Boosts the amount of Mine Currency you generate per hour by +{%"
+  },
+  {
+   "name": "Jackpot Time",
+   "maxLv": 9999,
+   "costExp": 1.14,
+   "bonus": 1,
+   "desc": "Boosts your odds of finding Jackpot tiles! You've currently got a 1 in $ chance!"
+  },
+  {
+   "name": "Record Breaking Jackpots",
+   "maxLv": 6,
+   "costExp": 1000,
+   "bonus": 1,
+   "desc": "Jackpot Tiles now reveal $ tiles when found!"
+  },
+  {
+   "name": "Base Damage III",
+   "maxLv": 9999,
+   "costExp": 1.1,
+   "bonus": 12,
+   "desc": "Boosts your base damage in the classic game of Depth Charge by +{"
+  },
+  {
+   "name": "El' Cheapo Upgrado",
+   "maxLv": 9999,
+   "costExp": 1.15,
+   "bonus": 1,
+   "desc": "All upgrades are $% cheaper, now and forever!"
+  },
+  {
+   "name": "Mega Damage III",
+   "maxLv": 9999,
+   "costExp": 1.12,
+   "bonus": 50,
+   "desc": "Permanently increases all damage you deal in the classic game of Depth Charge by +{%"
+  },
+  {
+   "name": "Miney Damagey Synergy",
+   "maxLv": 9999,
+   "costExp": 1.25,
+   "bonus": 2,
+   "desc": "$"
+  },
+  {
+   "name": "Rift Guy's Upgrade",
+   "maxLv": 0,
+   "costExp": 9999999,
+   "bonus": 1,
+   "desc": "Uh, yea. This is MY upgrade, NOT yours. I maxed it out because I'm me, duh."
+  }
+ ],
+ "floorRewards": {
+  "qty": [
+   10,
+   2,
+   1,
+   40,
+   1,
+   100,
+   50,
+   1,
+   2,
+   80,
+   3,
+   25,
+   1,
+   30,
+   2,
+   10,
+   20,
+   5,
+   1,
+   25,
+   1,
+   2,
+   50,
+   23,
+   24,
+   25,
+   26,
+   27,
+   28,
+   29,
+   30,
+   31
+  ],
+  "desc": [
+   "}x Total Damage and }x Drop Rate!",
+   "+{% AFK gains for Research! This affects offline Research, you get 100% gains if you're online! Current Research AFK rate: $%.",
+   "+{ new Research Magnifier to study your Observations!",
+   "Increases the Max LV of 'Blooming Axe' upgrade in Breeding by +{ LVs",
+   "+{% Damage per Weapon POW. Based on your current weapon, you're getting $x Damage",
+   "All of Bubba the Seal's upgrades are }x cheaper than normal",
+   "Multiplies Minehead Currency gain by }x",
+   "Unlock another Atom for your Atom Collider, which boosts minehead currency gain when upgraded",
+   "+{ more weekly Exotic Market purchases for Farming, and first few purchases cost no crops",
+   "+{ Max LVs for blessing upgrades, for all Divinities",
+   "+{% extra AFK gains for research",
+   "}x multiplier to Bucks gained in the Sushi Station",
+   "+{ new Magnifier, with which you can more carefully observe your Observations!",
+   "+{ LVs for your Grind Time bubble every day",
+   "+{% grand discovery chance per Spelunking LV",
+   "+{ daily bubble LVs from Kattlekruk divinity",
+   "The trapping bonus from your Magnesium Atom keeps increasing for +{ extra days",
+   "}x higher chance to grow Chemical Plants in Gaming",
+   "+{ more Trimmed Construction Slot, which build things $x faster",
+   "}x extra Monument AFK Hours gained from all sources for all monuments",
+   "+{ new Magnifier, further expanding your capacity to scrutinize and systematically examine your Observations",
+   "+{% Hat Rack bonus multi",
+   "}x daily amber gains from your Biggest Hauls in Spelunking",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet...",
+   "Nothing... yet..."
+  ]
+ },
+ "gridDims": [
+  "3,3",
+  "4,3",
+  "5,3",
+  "4,4",
+  "6,3",
+  "5,4",
+  "6,4",
+  "7,4",
+  "6,5",
+  "7,5",
+  "8,5",
+  "9,5",
+  "10,5",
+  "9,6",
+  "10,6",
+  "11,6",
+  "12,6"
+ ],
+ "bossNames": [
+  "Bronzehead",
+  "Gemhead",
+  "Yarnhead",
+  "Sashimihead",
+  "Bleckhead",
+  "Saturnhead",
+  "Basshead",
+  "Kelphead",
+  "Snouthead",
+  "Threadhead",
+  "Clownhead",
+  "Goldhead",
+  "Maizehead",
+  "Ironhead",
+  "Purrhead",
+  "Screamhead",
+  "Ballhead",
+  "Grosshead",
+  "Blindhead",
+  "Detahead",
+  "Brainhead",
+  "Raspberryhead",
+  "Leopahead",
+  "Baldhead",
+  "Royalhead",
+  "Stouthead",
+  "Chillhead",
+  "Summerhead",
+  "Tentahead",
+  "Humungohead",
+  "Mr_Minehead",
+  "Boghead"
+ ],
+ "tileMultipliers": [
+  1.2,
+  1.4,
+  1.6,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  1,
+  1,
+  1,
+  1
+ ],
+ "buttonRates": [
+  2,
+  3,
+  2,
+  2,
+  4,
+  5,
+  4,
+  25,
+  5
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer"
+ }
+}

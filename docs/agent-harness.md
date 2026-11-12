@@ -134,6 +134,11 @@ A page whose cards own their own scroll areas needs a wheel point on the page's 
 card: `bringIntoView(lane, id, await wheelPoint(lane, '<page-scroll-id>'))` scrolls the page, while
 the fixed default point can land on an inner table that swallows the wheel.
 
+The research check also opens every Minehead subtab and plays one insta-reveal (`RES-09`). A subtab
+strip built from shared buttons can rewrite one button's semantic id for a render, so the check finds
+the button by its `minehead-tabs` parent and label and clicks its live centre with
+`click_coordinates` instead of `click_element`.
+
 Screenshots are element captures of the section body, so small window-position differences between
 runs do not matter. Captures park the pointer first, which keeps hover styling out of the baseline.
 `--baseline` compares with a per-channel tolerance and a 0.2% mismatch budget (anti-aliasing jitter
