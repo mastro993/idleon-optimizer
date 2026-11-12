@@ -118,6 +118,8 @@ pub struct Imported {
     pub cog: CogSave,
     /// The Jar Cavern state, when the save carries its `Holes` rows.
     pub jar: Option<Jar>,
+    /// The Spelunking rows, when the save carries its stamina and shop rows.
+    pub spelunking: Option<crate::spelunking::Save>,
     /// The ladle optimizer's per-character Cooking state and counts.
     pub ladle: Option<crate::ladle::Ladle>,
     /// The Fountain Cavern state, when the save carries its `Holes` rows.
@@ -333,6 +335,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let shadow = Shadow::read(save);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
+    let spelunking = crate::spelunking::Save::from_parts(&document);
+    if spelunking.is_none() {
+        warnings.push(
+            "Spelunk: no stamina or shop rows in the save; the spelunking section has no expedition state"
+                .into(),
+        );
+    }
     let fountain = Fountain::from_save(save, companion::read(companion.as_ref()));
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
@@ -360,6 +369,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         clamworks,
         cog,
         jar,
+        spelunking,
         ladle,
         fountain,
         save: document,

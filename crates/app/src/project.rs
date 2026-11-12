@@ -22,6 +22,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
+use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all;
 use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
@@ -254,6 +255,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert("farming", value(&state.farming));
+    insert("spelunking", value(&state.spelunking));
     insert("fishing", value(&state.fishing));
     insert(
         "statue",
@@ -415,6 +417,7 @@ pub enum Config {
     Cog(CogConfig),
     Jar(JarConfig),
     Ladle(LadleConfig),
+    Spelunking(SpelunkingState),
     Coral(coral::Inputs),
     Worship(WorshipConfig),
     StatsAll(idleon_core::stats::Context),
@@ -642,6 +645,12 @@ pub fn assign(
             state.jar_tab = config.tab;
             state.jar_tier = config.tier.min(idleon_core::jar::INCOME_TIERS - 1);
         }
+        Config::Spelunking(config) => {
+            state.spelunking = config;
+            if let Some(inputs) = state.spelunk_inputs() {
+                state.spelunking.clamp(&inputs);
+            }
+        }
         Config::Ladle(config) => {
             let characters = state
                 .ladle
@@ -726,6 +735,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "cog" => decode!(Cog, CogConfig),
         "jar" => decode!(Jar, JarConfig),
         "ladle" => decode!(Ladle, LadleConfig),
+        "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
         "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
         "worship-td" => decode!(Worship, WorshipConfig),
@@ -1329,6 +1339,7 @@ mod tests {
                 "cog",
                 "jar",
                 "ladle",
+                "spelunking",
                 "coral-god-rank",
                 "worship-td",
                 "combat-sim",

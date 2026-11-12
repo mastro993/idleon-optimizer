@@ -2,8 +2,9 @@
 
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Coral God Rank planner,
-the combat simulator's loadout editor and the cog board optimizer partial, shadow-ban, endgame and
-BoneJoePickle done, Monument Bravery and the All Stats context built, 9 sections planned.** The live breakdown is
+the Spelunking controls and depth estimates, the combat simulator's loadout editor and the cog board
+optimizer partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and the All Stats
+context built, 9 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -248,6 +249,8 @@ script/extract-prisma-data.mjs      extract the bubble table the Prisma calculat
 script/prisma-oracle.mjs            regenerate the Prisma plan and bonus oracle fixture
 script/extract-fountain-data.mjs    extract the fountain upgrade table and its account rows
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
+script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and shop tables
+script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles and rejections
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -355,6 +358,23 @@ source the save does not carry; `script/fountain-oracle.mjs` regenerates the ups
 `fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
 the currency tab, upgrade list, planner, marble planner and simulator (FN-02 to FN-04).
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
+
+The Spelunking section has its controls, party, elixir belt and depth estimates (SP-01).
+`idleon_core::spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir unlocks and
+depth records from the save, normalises the party, belt, mode and policy with the upstream
+`normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits profile from
+`spelunk-depth.js`. The four account multipliers upstream derives from its whole stat context —
+Spelunking Power, the amber multiplier, stamina regeneration and the Grand Discovery chance — stay
+explicit inputs here; the page carries Spelunking Power, the extra-exit bonus and each character's
+maximum stamina, and names what it cannot derive. The section renders the
+character/cave/mode/policy/full-clear/speed toolbar, the party with the half-stamina rule, the
+equipped and memorized belt with the built-in presets, and the two depth charts with a per-depth
+inspector. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
+four configurations and nineteen rejected inputs, compared field for field by
+`crates/core/tests/spelunking.rs`; regenerate it with `script/spelunking-oracle.mjs`, and
+`script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir and shop tables. Missing: the
+run simulator, amber policies and the optimizer (SP-02 to SP-04).
+Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
 The Prisma section implements PR-01: the plan for one character and cauldron (every bubble's saved
 level, its saved Prisma ownership and the four statuses upstream distinguishes), the save's Prisma

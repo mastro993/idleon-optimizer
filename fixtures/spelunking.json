@@ -1,0 +1,7422 @@
+{
+ "account": {
+  "power": 2500,
+  "holesBonus": 0.5
+ },
+ "characters": [
+  {
+   "id": 0,
+   "name": "Character 1",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 40,
+   "level": 1348,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 1,
+   "name": "Character 2",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 14,
+   "level": 1348,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 2,
+   "name": "Character 3",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 22,
+   "level": 1338,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 3,
+   "name": "Character 4",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 16,
+   "level": 1330,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 4,
+   "name": "Character 5",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 29,
+   "level": 1353,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 5,
+   "name": "Character 6",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 34,
+   "level": 1342,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 6,
+   "name": "Character 7",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 16,
+   "level": 1341,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 7,
+   "name": "Character 8",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 4,
+   "level": 1318,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 8,
+   "name": "Character 9",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 10,
+   "level": 1343,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 9,
+   "name": "Character 10",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 22,
+   "level": 1340,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  },
+  {
+   "id": 10,
+   "name": "Character 11",
+   "max": 3522,
+   "stamina": 3522,
+   "classId": 1,
+   "level": 1282,
+   "breakdown": {
+    "name": "Spelunking Max Stamina",
+    "val": 3522,
+    "partial": false,
+    "reason": "",
+    "unavailable": false,
+    "children": [
+     {
+      "name": "Shop Upgrade 61",
+      "val": 60,
+      "fmt": "+"
+     },
+     {
+      "name": "W7 Task: +20 Max Stamina per level",
+      "val": 100,
+      "fmt": "+",
+      "note": "Level 5; +20 per level"
+     },
+     {
+      "name": "Glowfish Flat: +10 * Bonus",
+      "val": 0,
+      "fmt": "+",
+      "note": "Bonus 0"
+     },
+     {
+      "name": "Spelunking Max Stamina Base",
+      "val": 3233.72800414553,
+      "fmt": "raw",
+      "children": [
+       {
+        "name": "Constant",
+        "val": 14,
+        "fmt": "raw"
+       },
+       {
+        "name": "Spelunking Skill Level",
+        "val": 501,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 4 per 10 Skill Levels",
+        "val": 2500,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 2,0",
+        "val": 16.203703703703706,
+        "fmt": "raw"
+       },
+       {
+        "name": "Rift Skill Bonus 18,3",
+        "val": 15,
+        "fmt": "raw"
+       },
+       {
+        "name": "Shop Upgrade 5",
+        "val": 126,
+        "fmt": "raw"
+       },
+       {
+        "name": "Chapter Bonus 3,0",
+        "val": 4.381443298969073,
+        "fmt": "raw"
+       },
+       {
+        "name": "Talent: Spelunking Specialty",
+        "val": 57.142857142857146,
+        "fmt": "raw",
+        "note": "getbonus2(1,236,-1)"
+       }
+      ]
+     },
+     {
+      "name": "Big Fish Multiplier",
+      "val": 1.0397989949748743,
+      "fmt": "x",
+      "note": "1 + BigFishBonuses(1) / 100"
+     },
+     {
+      "name": "Glowfish Multiplier",
+      "val": 1,
+      "fmt": "x",
+      "note": "1 + Bonus / 100; Bonus 0"
+     },
+     {
+      "name": "Final Floor",
+      "val": 3522,
+      "fmt": "raw",
+      "note": "floor(total)"
+     }
+    ]
+   }
+  }
+ ],
+ "shop": [
+  1195887,
+  52884,
+  109388.58,
+  33723.7,
+  50,
+  126,
+  230,
+  59.55312810327706,
+  199471.05,
+  43697.52,
+  7017.3,
+  1,
+  1,
+  200,
+  1060,
+  1520,
+  2180,
+  4560,
+  108,
+  10,
+  1008,
+  38,
+  103,
+  12,
+  4,
+  5,
+  30,
+  402,
+  364,
+  163,
+  106,
+  36,
+  252,
+  612,
+  1,
+  181,
+  1,
+  3,
+  50,
+  30,
+  1,
+  1652,
+  40,
+  346,
+  5576,
+  6800,
+  2924,
+  82,
+  108,
+  76,
+  85,
+  1020,
+  9,
+  1,
+  663.1,
+  488.59999999999997,
+  436.25,
+  2,
+  23,
+  240,
+  390,
+  60,
+  7,
+  20,
+  20,
+  3,
+  14,
+  1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "caves": [
+  {
+   "id": 0,
+   "name": "Pebble Cove",
+   "capacity": 3,
+   "bossDepth": 6
+  },
+  {
+   "id": 1,
+   "name": "Sedimeadow",
+   "capacity": 4,
+   "bossDepth": 10
+  },
+  {
+   "id": 2,
+   "name": "Rustbelt 03",
+   "capacity": 5,
+   "bossDepth": 19
+  },
+  {
+   "id": 3,
+   "name": "Blushpit",
+   "capacity": 6,
+   "bossDepth": 29
+  },
+  {
+   "id": 4,
+   "name": "Chucklemire",
+   "capacity": 7,
+   "bossDepth": 39
+  },
+  {
+   "id": 5,
+   "name": "Lunarheim",
+   "capacity": 8,
+   "bossDepth": 49
+  },
+  {
+   "id": 6,
+   "name": "Bizarrio",
+   "capacity": 9,
+   "bossDepth": 69
+  },
+  {
+   "id": 7,
+   "name": "Glitter End",
+   "capacity": 10,
+   "bossDepth": 99
+  },
+  {
+   "id": 8,
+   "name": "Scoutpost",
+   "capacity": 10,
+   "bossDepth": 114
+  },
+  {
+   "id": 9,
+   "name": "Exiled Throne",
+   "capacity": 10,
+   "bossDepth": 129
+  }
+ ],
+ "tools": [
+  {
+   "id": 0,
+   "name": "Hammer",
+   "radius": 23,
+   "damage": 1,
+   "cost": 1
+  },
+  {
+   "id": 1,
+   "name": "Mace",
+   "radius": 40,
+   "damage": 2,
+   "cost": 2
+  },
+  {
+   "id": 2,
+   "name": "Mallet",
+   "radius": 50,
+   "damage": 4,
+   "cost": 3
+  },
+  {
+   "id": 3,
+   "name": "Flail",
+   "radius": 60,
+   "damage": 7,
+   "cost": 4
+  },
+  {
+   "id": 4,
+   "name": "Warhammer",
+   "radius": 85,
+   "damage": 15,
+   "cost": 7
+  }
+ ],
+ "elixirs": [
+  {
+   "id": 0,
+   "charges": 2,
+   "quantity": 25,
+   "description": "For the current player, 25% of all stamina used is given right back!  (Effect wears off when player runs out of Stamina)"
+  },
+  {
+   "id": 1,
+   "charges": 10,
+   "quantity": 1,
+   "description": "Highlights an area on the floor.  The hole to the next depth is guaranteed to be in that area!"
+  },
+  {
+   "id": 2,
+   "charges": 2,
+   "quantity": 30,
+   "description": "Gives the current player a 50% chance to regenerate  30% Stamina when they run out.  (Cannot be used a 2nd time while the effect is active)"
+  },
+  {
+   "id": 3,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Boosts your amber gain by +1% per 10 stamina used during the delve  at the time this elixir was used.  (Effect persists for the entire Delve)"
+  },
+  {
+   "id": 4,
+   "charges": 2,
+   "quantity": 20,
+   "description": "Boosts POW to 5x your normal amount.  However, you now lose 20% POW each time you descend!  (Effect persists for the entire Delve)"
+  },
+  {
+   "id": 5,
+   "charges": 3,
+   "quantity": 60,
+   "description": "For the next 2 depths, whenever an object is destroyed it has a 60% chance of hitting an adjacent object with the power of your Hammer tool."
+  },
+  {
+   "id": 6,
+   "charges": 1,
+   "quantity": 25,
+   "description": "All objects have a +25% chance of dropping Double Amber  instead of a single amber chunk  (Effect lasts for the entire Delve)"
+  },
+  {
+   "id": 7,
+   "charges": 1,
+   "quantity": 30,
+   "description": "Shadow Strikes are 1.5x more common,  and have a +30% higher chance to trigger a multi strike  (Effect lasts for the entire Delve)"
+  },
+  {
+   "id": 8,
+   "charges": 4,
+   "quantity": 1,
+   "description": "Triggers a Nova Blast. Woah..."
+  },
+  {
+   "id": 9,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Increases Stamina Costs by 2x, reduces POW by 100x, but boosts Grand Discovery chance by 5x"
+  },
+  {
+   "id": 10,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Increases Stamina Costs by 4x, boosts POW by 100x.  Each use adds a stack of this effect, so 8x and 200x on the 2nd use.  (Effect persists for the entire Delve)"
+  },
+  {
+   "id": 11,
+   "charges": 1,
+   "quantity": 0,
+   "description": "This elixir doesn't have a label on it. At least, that's what the label says..."
+  }
+ ],
+ "elixirOwned": 12,
+ "slots": 5,
+ "dupes": 5,
+ "memorySlots": 2,
+ "memorized": [
+  7
+ ],
+ "savedElixirs": [
+  6,
+  2,
+  0,
+  5,
+  3
+ ],
+ "savedManic": true,
+ "fullClear": true,
+ "auto": true,
+ "speedMax": 4,
+ "manic": true,
+ "partial": true,
+ "depths": [
+  338,
+  342,
+  281,
+  234,
+  245,
+  186,
+  174,
+  249,
+  257,
+  60,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "manicDepths": [
+  101,
+  20,
+  17,
+  16,
+  19,
+  27,
+  33,
+  35,
+  53,
+  8,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "configs": [
+  {
+   "label": "saved defaults",
+   "requested": {},
+   "range": {
+    "from": 1,
+    "to": 40,
+    "tool": "best"
+   },
+   "config": {
+    "cave": 0,
+    "party": [
+     0,
+     1,
+     2
+    ],
+    "manic": true,
+    "policy": "auto",
+    "speed": 4,
+    "elixirs": [
+     6,
+     2,
+     0,
+     5,
+     3
+    ],
+    "memorized": [
+     7
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "cave": "Pebble Cove",
+   "budget": 10566,
+   "power": 2500,
+   "refund": 0,
+   "holes": [
+    0,
+    0.915,
+    0.08499999999999996
+   ],
+   "rows": [
+    {
+     "depth": 1,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 2,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 3,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 4,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.7,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.30000000000000004,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 5,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 6,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.6428571428571428,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 7,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.75,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 6,
+       "name": "Scoundrel Pommsie",
+       "boss": true,
+       "probability": 1,
+       "hp": 10,
+       "requirement": 100,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 2,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 60,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 8,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.7371794871794872,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.09615384615384616,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 9,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.7071428571428571,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.19285714285714284,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 10,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.045454545454545414,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.6681818181818182,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.28636363636363643,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 11,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.625,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.375,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 12,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.5588235294117647,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4411764705882353,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 13,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4673913043478261,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.03260869565217391,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 14,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.44736842105263164,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.48355263157894735,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.06907894736842105,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 15,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.3999999999999999,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4920000000000001,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.10800000000000001,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 16,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4945054945054944,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.14835164835164835,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 17,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.31818181818181823,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4924242424242424,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.1893939393939394,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 18,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.28260869565217384,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.48680124223602494,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.22010869565217392,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.01048136645962733,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 19,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.478448275862069,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.24759127789046653,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.023960446247464504,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 20,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.21999999999999997,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.46799999999999997,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.27188571428571434,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.04011428571428572,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 21,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.1923076923076923,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.455955334987593,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.2931141439205956,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.05862282878411912,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 22,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.44270833333333337,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.31144425675675674,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.07628388678312459,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.0028968564601186556,
+       "hp": 4,
+       "requirement": 3600000,
+       "hitChance": 0.012734517798464993,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 2355.801803788454,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 23,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.1428571428571429,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.42857142857142855,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.32706766917293234,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.09425349087003222,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.007250268528464016,
+       "hp": 4,
+       "requirement": 4320000,
+       "hitChance": 0.01141494326053629,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 2628.1339569786487,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 24,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.12068965517241392,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.4137931034482758,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3401856763925729,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.11221547097649741,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.013116094010239956,
+       "hp": 4,
+       "requirement": 5183999.999999999,
+       "hitChance": 0.010232105502806654,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 2931.9478763946518,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 25,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.3985714285714285,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.351,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.12991558441558446,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.020512987012987018,
+       "hp": 4,
+       "requirement": 6220800,
+       "hitChance": 0.009171835604520335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 3270.8828737853214,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 26,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.08064516129032251,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.38306451612903225,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3597069236821401,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.147152832415421,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.029430566483084192,
+       "hp": 5,
+       "requirement": 7464959.999999998,
+       "hitChance": 0.008221432854975175,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 3648.998967600349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 27,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.0625,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.36739864864864863,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.36649372586872586,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.163771350931677,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.03983627455094845,
+       "hp": 5,
+       "requirement": 8957951.999999998,
+       "hitChance": 0.007369512614852427,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 4070.825516946448,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 28,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.045454545454545414,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.3516746411483254,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3715366640703238,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.17965311596656167,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.05168103336024376,
+       "hp": 5,
+       "requirement": 10749542.399999997,
+       "hitChance": 0.006605869942439985,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 4541.415477659104,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 29,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.02941176470588225,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.33597285067873306,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.37500000000000006,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.1947115384615385,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.06490384615384616,
+       "hp": 5,
+       "requirement": 12899450.879999995,
+       "hitChance": 0.005921357351161259,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 5066.405930409957,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 30,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.014285714285714235,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.32035714285714284,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.37703571428571436,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.20888593294460645,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.07943549562682217,
+       "hp": 5,
+       "requirement": 15479341.055999996,
+       "hitChance": 0.005307775234097417,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 5652.085605901034,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 31,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.30487804878048774,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3777836691410392,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.22213679745493112,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.09520148462354193,
+       "hp": 6,
+       "requirement": 18575209.267199993,
+       "hitChance": 0.004757773642925449,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 6305.470216013402,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 32,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.2857142857142858,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.37234042553191476,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.23131593062757017,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.11062935812622922,
+       "hp": 6,
+       "requirement": 22290251.12063999,
+       "hitChance": 0.004264764244706266,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 7034.386493283461,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 33,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.2674418604651163,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.36627906976744184,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2394901610017889,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.12678890876565294,
+       "hp": 6,
+       "requirement": 26748301.344767988,
+       "hitChance": 0.0038228414018749916,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 7847.565945394931,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 34,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3596938775510204,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2467029264536003,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.1436031959953793,
+       "hp": 6,
+       "requirement": 32097961.613721583,
+       "hitChance": 0.0034267114300701733,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 8754.749447748407,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 35,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.2333333333333334,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.35266666666666663,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.253,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.16099999999999998,
+       "hp": 6,
+       "requirement": 38517553.9364659,
+       "hitChance": 0.0030716291863989685,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 9766.803926996985,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 36,
+     "hard": 0.17891188095791674,
+     "blockedExits": 0.029775441147034,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.21739130434782616,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.34526854219948844,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2584282724947687,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.17891188095791674,
+       "hp": 6,
+       "requirement": 46221064.72375908,
+       "hitChance": 0.00275334122854482,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 10895.852533271158,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 37,
+     "hard": 0.19727612812719195,
+     "blockedExits": 0.03626244489935265,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.2021276595744681,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3375613747954173,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2630348375029226,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.19727612812719195,
+       "hp": 7,
+       "requirement": 55465277.66851089,
+       "hitChance": 0.002468034863834645,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 12155.41986039382,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 38,
+     "hard": 0.216034632571996,
+     "blockedExits": 0.04356094691999682,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.1875,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3295990566037736,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2668663108242304,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.216034632571996,
+       "hp": 7,
+       "requirement": 66558333.202213064,
+       "hitChance": 0.002212292477936917,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 13560.593953642438,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 39,
+     "hard": 0.23513370865587613,
+     "blockedExits": 0.0516933961478092,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.17346938775510212,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.32142857142857145,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.26996833216045035,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.23513370865587613,
+       "hp": 7,
+       "requirement": 79869999.84265567,
+       "hitChance": 0.0019830505961054247,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 15128.207045709243,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 40,
+     "hard": 0.2545238828967642,
+     "blockedExits": 0.06067743930278157,
+     "objects": [
+      {
+       "type": 2,
+       "name": "Big Stone",
+       "boss": false,
+       "probability": 0.15999999999999992,
+       "hp": 2,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Gravel Pile",
+       "boss": false,
+       "probability": 0.3130909090909092,
+       "hp": 2,
+       "requirement": 30000,
+       "hitChance": 0.22516000642010223,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 133.2385820953752,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Granite Stack",
+       "boss": false,
+       "probability": 0.2723852080123267,
+       "hp": 3,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 720.6746603888587,
+       "overBudget": false
+      },
+      {
+       "type": 5,
+       "name": "Stonespire",
+       "boss": false,
+       "probability": 0.2545238828967642,
+       "hp": 7,
+       "requirement": 95843999.8111868,
+       "hitChance": 0.0017775631865734774,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 16877.037185850786,
+       "overBudget": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "explicit party and belt",
+   "requested": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "elixirs": [
+     0,
+     2,
+     7
+    ],
+    "memorized": [
+     0,
+     2
+    ],
+    "policy": "dive",
+    "tool": 2,
+    "stamina": "saved",
+    "fullClear": false
+   },
+   "range": {
+    "from": 1,
+    "to": 25,
+    "tool": 2
+   },
+   "config": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "dive",
+    "speed": 4,
+    "elixirs": [
+     0,
+     2,
+     7,
+     -1,
+     -1
+    ],
+    "memorized": [
+     0,
+     2
+    ],
+    "tool": 2,
+    "entry": "shortcut",
+    "fullClear": false,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "cave": "Sedimeadow",
+   "budget": 7044,
+   "power": 2500,
+   "refund": 0.3,
+   "holes": [
+    0,
+    0.915,
+    0.08499999999999996
+   ],
+   "rows": [
+    {
+     "depth": 1,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 2,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 3,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 4,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.7,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.30000000000000004,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 5,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 6,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6428571428571428,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 7,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.75,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 8,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.8333333333333334,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 9,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.8099999999999999,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.09,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 10,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.045454545454545414,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 62.99999999999999,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.7755681818181819,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.17897727272727273,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 11,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.7352941176470589,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.2647058823529412,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 7,
+       "name": "Esquire Numbo",
+       "boss": true,
+       "probability": 1,
+       "hp": 15,
+       "requirement": 250000,
+       "hitChance": 0.06309573444801933,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 998.4827112505012,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 12,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6666666666666667,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.3333333333333333,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 13,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6052631578947368,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.39473684210526316,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 14,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.55,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.44999999999999996,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 15,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 16,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.4545454545454546,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5172413793103448,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.028213166144200625,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 17,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.4130434782608695,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5282608695652175,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.05869565217391305,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 18,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.375,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5342741935483871,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.09072580645161289,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 19,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.33999999999999997,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.53625,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.12375,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 20,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.3076923076923077,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5349650349650349,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.15734265734265734,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 21,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.2777777777777778,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5310457516339869,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.19117647058823528,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 22,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5249999999999999,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.21676829268292686,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Seaweed Tuft",
+       "boss": false,
+       "probability": 0.008231707317073173,
+       "hp": 4,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 1513.416786816603,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 23,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.22413793103448265,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.517241379310345,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.24014778325123154,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Seaweed Tuft",
+       "boss": false,
+       "probability": 0.01847290640394089,
+       "hp": 4,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 1513.416786816603,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 24,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.19999999999999996,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5081081081081081,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.26134506599622886,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Seaweed Tuft",
+       "boss": false,
+       "probability": 0.03054682589566311,
+       "hp": 4,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 1513.416786816603,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 25,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.17741935483870974,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 83.52424123696765,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.4978777589134125,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 219.37874195062327,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.28042521994134895,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 576.2043654284311,
+       "overBudget": false
+      },
+      {
+       "type": 4,
+       "name": "Seaweed Tuft",
+       "boss": false,
+       "probability": 0.04427766630652878,
+       "hp": 4,
+       "requirement": 500000,
+       "hitChance": 0.04162766037009366,
+       "tool": 2,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 62.99999999999999,
+       "expected": 1513.416786816603,
+       "overBudget": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "full stamina, manic, refund shield",
+   "requested": {
+    "cave": 3,
+    "party": [
+     2,
+     3,
+     4,
+     5
+    ],
+    "manic": true,
+    "elixirs": [
+     0,
+     2,
+     2,
+     2,
+     2
+    ],
+    "memorized": [
+     2,
+     9
+    ],
+    "policy": "efficient",
+    "tool": "adaptive",
+    "stamina": "full",
+    "fullClear": true
+   },
+   "range": {
+    "from": 15,
+    "to": 35,
+    "tool": "best"
+   },
+   "config": {
+    "cave": 3,
+    "party": [
+     2,
+     3,
+     4,
+     5
+    ],
+    "manic": true,
+    "policy": "efficient",
+    "speed": 4,
+    "elixirs": [
+     0,
+     2,
+     2,
+     2,
+     2
+    ],
+    "memorized": [
+     2,
+     9
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "reactionMs": 350,
+    "stamina": "full"
+   },
+   "cave": "Blushpit",
+   "budget": 14088,
+   "power": 25,
+   "refund": 0,
+   "holes": [
+    0,
+    0.915,
+    0.08499999999999996
+   ],
+   "rows": [
+    {
+     "depth": 15,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.4924242424242425,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.27954545454545454,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.061363636363636356,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 16,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.13157894736842102,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.4719679633867277,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.30496391480373175,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.09148917444111954,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 17,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.44999999999999996,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.32499999999999996,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.11895161290322581,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.006048387096774193,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 18,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.0714285714285714,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.4271428571428571,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3402551020408164,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.14606345663265305,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.015110012755102039,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 19,
+     "hard": 0.9999999999999999,
+     "blockedExits": 0.9999999999999998,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.045454545454545414,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.4038461538461538,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3513081745840367,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.17220142709954622,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.027189699015717824,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 20,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Lil Shroomie",
+       "boss": false,
+       "probability": 0.021739130434782594,
+       "hp": 2,
+       "requirement": 8000000,
+       "hitChance": 0.0004976339631918717,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 180855.82306868973,
+       "overBudget": true
+      },
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.38043478260869573,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.358695652173913,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.1969309462915601,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.04219948849104859,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 21,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3629032258064515,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.2199637919684003,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.05768281257912595,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.002307312503165038,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 22,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.3275862068965517,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3572198275862069,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.23639547413793105,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.07288860452586207,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.005909886853448277,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 23,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.30000000000000004,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.35,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.25067567567567567,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.08842287409360579,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.01090145023071852,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 24,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.27419354838709675,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3415559772296015,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.26290821931489067,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.1040076472014952,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.017334607866915864,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 25,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.33214285714285713,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.27321428571428574,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.11941445182724254,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.02522840531561462,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 26,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.2272727272727273,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.3219696969696969,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.28172348484848486,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.13445893595041325,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.03457515495867769,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 27,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.2058823529411764,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.31120826709062005,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.2885678002249021,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.14899521113653108,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.04401265188304179,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.001333716723728539,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 28,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.18571428571428572,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.30000000000000004,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.29387755102040813,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.1629103815439219,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.054180602006688956,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.0033171797146952426,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 29,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.2884615384615385,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.297778771615981,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.17611949529935678,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.0649474736960033,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.006026054260453915,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 30,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.14864864864864868,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.27668918918918917,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.30039158476658473,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.18856102195945948,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.0761862714987715,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.009523283937346437,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      },
+      {
+       "type": 9,
+       "name": "Greg",
+       "boss": true,
+       "probability": 1,
+       "hp": 100,
+       "requirement": 8000000000,
+       "hitChance": 0.000007886966806002418,
+       "tool": 4,
+       "hits": 1,
+       "cost": 630,
+       "perAttempt": 630,
+       "expected": 79878616.90004009,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 31,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.13157894736842102,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.26476251604621304,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.301829268292683,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.20019288203086114,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.08777687904430065,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.013859507217521154,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 32,
+     "hard": 0.9999999999999999,
+     "blockedExits": 0.9999999999999998,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.11538461538461542,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.25274725274725285,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.3021978021978021,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.21098901098901096,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.09960753532182101,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.019073783359497637,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 33,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.24069767441860465,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.301595744680851,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.22093641761504204,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.11157565952238338,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.025194503763118825,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 34,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.08536585365853666,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.22865853658536583,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.3001143292682927,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.23003268644465288,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.12358819527560327,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.03149638956522063,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      },
+      {
+       "type": 7,
+       "name": "Rotwood Colony",
+       "boss": false,
+       "probability": 0.0007440092023280464,
+       "hp": 8,
+       "requirement": 16000000000,
+       "hitChance": 0.00000520345754626171,
+       "tool": 0,
+       "hits": 2,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 34592383.6986652,
+       "overBudget": true
+      }
+     ]
+    },
+    {
+     "depth": 35,
+     "hard": 1,
+     "blockedExits": 1,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fly Amanita",
+       "boss": false,
+       "probability": 0.0714285714285714,
+       "hp": 3,
+       "requirement": 24000000,
+       "hitChance": 0.00025741702106975506,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 349627.2298777466,
+       "overBudget": true
+      },
+      {
+       "type": 2,
+       "name": "Toadstool Sprouts",
+       "boss": false,
+       "probability": 0.21666666666666673,
+       "hp": 4,
+       "requirement": 40000000,
+       "hitChance": 0.00018946457081379982,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 475022.8478782418,
+       "overBudget": true
+      },
+      {
+       "type": 3,
+       "name": "Fungi Trunk",
+       "boss": false,
+       "probability": 0.2978377065111759,
+       "hp": 4,
+       "requirement": 96000000,
+       "hitChance": 0.00011204726634714277,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 803232.4476454755,
+       "overBudget": true
+      },
+      {
+       "type": 4,
+       "name": "Tabletop Shroomie",
+       "boss": false,
+       "probability": 0.2382838715000825,
+       "hp": 5,
+       "requirement": 240000000,
+       "hitChance": 0.00006466023224647335,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 1391891.0723508685,
+       "overBudget": true
+      },
+      {
+       "type": 5,
+       "name": "Speckled Amanita",
+       "boss": false,
+       "probability": 0.13556160791787134,
+       "hp": 6,
+       "requirement": 560000000,
+       "hitChance": 0.00003889118615147823,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 2314149.011795547,
+       "overBudget": true
+      },
+      {
+       "type": 6,
+       "name": "Toadshool Thicket",
+       "boss": false,
+       "probability": 0.03839332252219434,
+       "hp": 7,
+       "requirement": 1600000000,
+       "hitChance": 0.000020715337608374925,
+       "tool": 0,
+       "hits": 1,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 4344606.962312516,
+       "overBudget": true
+      },
+      {
+       "type": 7,
+       "name": "Rotwood Colony",
+       "boss": false,
+       "probability": 0.0018282534534378257,
+       "hp": 8,
+       "requirement": 16000000000,
+       "hitChance": 0.00000520345754626171,
+       "tool": 0,
+       "hits": 2,
+       "cost": 90,
+       "perAttempt": 90,
+       "expected": 34592383.6986652,
+       "overBudget": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "label": "boss floor",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "elixirs": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "memorized": [],
+    "policy": "clear",
+    "entry": "surface",
+    "stamina": "saved"
+   },
+   "range": {
+    "from": 5,
+    "to": 7,
+    "tool": 0
+   },
+   "config": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "manic": true,
+    "policy": "clear",
+    "speed": 4,
+    "elixirs": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "memorized": [],
+    "tool": "adaptive",
+    "entry": "surface",
+    "fullClear": true,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "cave": "Pebble Cove",
+   "budget": 3522,
+   "power": 2500,
+   "refund": 0,
+   "holes": [
+    0,
+    0.915,
+    0.08499999999999996
+   ],
+   "rows": [
+    {
+     "depth": 5,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 6,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.6428571428571428,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 7,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Smol Pebbles",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 1,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Smooth Rocks",
+       "boss": false,
+       "probability": 0.75,
+       "hp": 1,
+       "requirement": 10,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 6,
+       "name": "Scoundrel Pommsie",
+       "boss": true,
+       "probability": 1,
+       "hp": 10,
+       "requirement": 100,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 2,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 60,
+       "overBudget": false
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "rejections": [
+  {
+   "label": "empty party",
+   "requested": {
+    "party": []
+   },
+   "input": "controlled",
+   "error": "Choose a unique, nonempty party within this cave's capacity."
+  },
+  {
+   "label": "duplicate member",
+   "requested": {
+    "party": [
+     0,
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Choose a unique, nonempty party within this cave's capacity."
+  },
+  {
+   "label": "over capacity",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "input": "controlled",
+   "error": "Choose a unique, nonempty party within this cave's capacity."
+  },
+  {
+   "label": "missing member",
+   "requested": {
+    "party": [
+     0,
+     99
+    ]
+   },
+   "input": "controlled",
+   "error": "Invalid party member."
+  },
+  {
+   "label": "tired member",
+   "requested": {
+    "party": [
+     0
+    ],
+    "stamina": "saved"
+   },
+   "input": "tired member",
+   "error": "Character 1 needs at least half maximum stamina to join."
+  },
+  {
+   "label": "tired member with full stamina is allowed",
+   "requested": {
+    "party": [
+     0
+    ],
+    "stamina": "full"
+   },
+   "input": "tired member with full stamina is allowed",
+   "error": null
+  },
+  {
+   "label": "missing member with full stamina",
+   "requested": {
+    "party": [
+     0,
+     99
+    ],
+    "stamina": "full"
+   },
+   "input": "controlled",
+   "error": "Invalid party member."
+  },
+  {
+   "label": "too many belt elixirs",
+   "requested": {
+    "elixirs": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6
+    ]
+   },
+   "input": "controlled",
+   "error": "Too many equipped elixirs."
+  },
+  {
+   "label": "too many duplicates",
+   "requested": {
+    "elixirs": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Too many equipped elixirs."
+  },
+  {
+   "label": "duplicated memory",
+   "requested": {
+    "memorized": [
+     0,
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Memorized elixirs must be different."
+  },
+  {
+   "label": "locked manic",
+   "requested": {
+    "manic": true,
+    "cave": 0,
+    "party": [
+     0
+    ]
+   },
+   "input": "locked manic",
+   "error": "Manic expeditions are locked."
+  },
+  {
+   "label": "duplicate limit",
+   "requested": {
+    "elixirs": [
+     0,
+     0,
+     -1,
+     -1,
+     -1
+    ]
+   },
+   "input": "duplicate limit",
+   "error": "This elixir exceeds the duplicate limit."
+  },
+  {
+   "label": "too many memorized",
+   "requested": {
+    "memorized": [
+     0,
+     1,
+     2
+    ]
+   },
+   "input": "controlled",
+   "error": "Too many memorized elixirs."
+  },
+  {
+   "label": "locked policy",
+   "requested": {
+    "policy": "auto",
+    "party": [
+     0
+    ]
+   },
+   "input": "locked policy",
+   "error": "This expedition policy is unavailable."
+  },
+  {
+   "label": "locked tool",
+   "requested": {
+    "tool": 2,
+    "party": [
+     0
+    ]
+   },
+   "input": "locked tool",
+   "error": "This tool is locked."
+  },
+  {
+   "label": "auto speed out of range",
+   "requested": {
+    "speed": 9,
+    "party": [
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Invalid Auto speed."
+  },
+  {
+   "label": "fast reaction",
+   "requested": {
+    "reactionMs": 50,
+    "party": [
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Invalid manual reaction time."
+  },
+  {
+   "label": "locked elixir",
+   "requested": {
+    "elixirs": [
+     99,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "party": [
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Invalid elixir."
+  },
+  {
+   "label": "locked memorized elixir",
+   "requested": {
+    "memorized": [
+     99
+    ],
+    "party": [
+     0
+    ]
+   },
+   "input": "controlled",
+   "error": "Invalid memorized elixir."
+  }
+ ]
+}

@@ -216,6 +216,36 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(points.points.earned, 176);
     assert_eq!(points.points.free, 6);
 
+    // The Spelunking rows the section reads: saved stamina, unlocks and records.
+    let spelunking = imported
+        .spelunking
+        .as_ref()
+        .expect("the fixture carries the Spelunk rows");
+    let spelunk = spelunking.inputs(&idleon_core::spelunking::Account::neutral());
+    assert_eq!(spelunk.characters.len(), 11);
+    assert_eq!(spelunk.characters[0].stamina, 3522.0);
+    assert_eq!(spelunk.caves.len(), 10);
+    assert_eq!(spelunk.tools.len(), 5);
+    assert_eq!(spelunk.elixir_owned, 12);
+    assert_eq!(spelunk.slots, 5);
+    assert_eq!(spelunk.dupes, 5);
+    assert_eq!(spelunk.memory_slots, 2);
+    assert_eq!(spelunk.saved_elixirs, vec![6, 2, 0, 5, 3]);
+    assert_eq!(spelunk.memorized, vec![7]);
+    assert!(spelunk.manic && spelunk.saved_manic && spelunk.auto);
+    assert!(spelunk.full_clear);
+    assert_eq!(spelunk.speed_max, 4);
+    assert_eq!(spelunk.depths[0], 338.0);
+    assert_eq!(spelunk.manic_depths[0], 101.0);
+    assert!(
+        !imported
+            .warnings
+            .iter()
+            .any(|warning| warning.starts_with("Spelunk")),
+        "the fixture carries the Spelunk rows: {:?}",
+        imported.warnings
+    );
+
     // The terms the save cannot supply are named instead of guessed.
     assert!(
         imported

@@ -2828,7 +2828,7 @@
       "key": "spelunking",
       "title": "Spelunking Simulator",
       "group": "w7",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.",
       "upstream": [
         "spelunking-calc.html",

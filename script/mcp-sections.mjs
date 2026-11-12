@@ -527,7 +527,64 @@ const fountainSave = () => {
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
 
+/// A small flat `save.json` carrying the Spelunking rows: four unlocked caves,
+/// ten characters at 100 stamina, four belt slots, five duplicates and two
+/// memory slots, so the party, belt and depth estimate all render.
+const spelunkSave = () => {
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const rows = Array.from({ length: 58 }, () => []);
+  rows[0] = row(15, { 0: 1, 1: 1, 2: 1, 3: 1 });
+  rows[1] = row(15, { 0: 42, 1: 12 });
+  rows[3] = row(12, Object.fromEntries(Array.from({ length: 12 }, (_, id) => [id, 100])));
+  rows[4] = row(30, { 10: 1 });
+  rows[5] = row(68, { 12: 1, 14: 1, 15: 1, 16: 1, 17: 1, 23: 12, 24: 4, 25: 5, 53: 1, 57: 2 });
+  rows[6] = ['Smol_Pebbles', 'Smooth_Rocks'];
+  rows[7] = [0, 2, 7, -1, -1];
+  rows[47] = row(15, { 0: 9 });
+  rows[48] = [7];
+  const lv0 = row(30, { 0: 500, 19: 10 });
+  const save = { Research: '[]', Spelunk: JSON.stringify(rows) };
+  save.OptionsListAccount = JSON.stringify(row(701, { 478: 15, 538: 1 }));
+  save.GemItemsPurchased = JSON.stringify(row(44, { 43: 4 }));
+  for (let id = 0; id < 10; id += 1) {
+    save[`Lv0_${id}`] = JSON.stringify(lv0);
+    save[`CharacterClass_${id}`] = String(10 + id);
+  }
+  return JSON.stringify(save);
+};
+
 const INTERACTIONS = {
+  spelunking: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'spelunking: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: spelunkSave() });
+    await waitForNode(lane, 'import-format', 'spelunking: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'spelunk-controls', 'spelunking: the controls render after Apply');
+    const summary = labelOf(await lane.tree(), 'spelunk-depth-summary') ?? '';
+    if (!summary.includes('Pebble Cove') || !summary.includes('Party stamina')) {
+      throw new Error(`spelunking: the depth summary reads ${summary}`);
+    }
+    await waitForNode(lane, 'spelunk-depth-risk', 'spelunking: the exit chart renders');
+    await waitForNode(lane, 'spelunk-depth-stamina', 'spelunking: the stamina chart renders');
+    await waitForNode(lane, 'spelunk-belt', 'spelunking: the saved belt renders');
+    await lane.call('click_element', { id: 'spelunk-preset-amber' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const slot = nodes.find((node) => node.id === 'spelunk-elixir-0');
+        return (slot?.value?.value ?? '') === 'Amber boost';
+      },
+      'spelunking: the Amber preset fills the first belt slot',
+    );
+    const stamina = valueOf(await lane.tree(), 'spelunk-stamina') ?? '';
+    if (stamina !== 'Saved stamina') {
+      throw new Error(`spelunking: the starting stamina reads ${stamina}`);
+    }
+  },
   killroy: async (lane) => {
     await lane.call('click_element', { id: 'killroy-import' });
     await waitForNode(lane, 'import-drop', 'killroy: the empty state opens the import');
@@ -1534,6 +1591,7 @@ const fail = (label, error) => {
 
 const has = (nodes, id) => nodes.some((node) => node.id === id);
 const labelOf = (nodes, id) => nodes.find((node) => node.id === id)?.label ?? null;
+const valueOf = (nodes, id) => nodes.find((node) => node.id === id)?.value?.value ?? null;
 
 const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
   const deadline = Date.now() + timeoutMs;

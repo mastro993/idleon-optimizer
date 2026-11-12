@@ -29,6 +29,7 @@ pub mod prisma;
 pub mod research;
 pub mod sailing;
 pub mod shadow;
+pub mod spelunking;
 pub mod stats_all;
 pub mod statue;
 pub mod worship_td;
@@ -464,9 +465,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W7,
         description: "Experimental Normal and Manic expeditions, Auto speeds, manual strategies, parties and elixirs",
         spec: "docs/sections/spelunking.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: spelunking::view,
         keys: no_keys,
     },
     Section {

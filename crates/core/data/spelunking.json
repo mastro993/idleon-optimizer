@@ -1,0 +1,1565 @@
+{
+ "caves": [
+  {
+   "id": 0,
+   "name": "Pebble Cove",
+   "capacity": 3,
+   "bossDepth": 6,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "_",
+   "rocks": [
+    {
+     "name": "Smol_Pebbles",
+     "pow": 0.01,
+     "hp": 1,
+     "amber": 1,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 1
+    },
+    {
+     "name": "Smooth_Rocks",
+     "pow": 0.1,
+     "hp": 1,
+     "amber": 1.3,
+     "scaled": false,
+     "growth": 1,
+     "depth": 2,
+     "base": null
+    },
+    {
+     "name": "Big_Stone",
+     "pow": 10,
+     "hp": 2,
+     "amber": 1.5,
+     "scaled": false,
+     "growth": 1,
+     "depth": 6,
+     "base": null
+    },
+    {
+     "name": "Gravel_Pile",
+     "pow": 300,
+     "hp": 2,
+     "amber": 1.8,
+     "scaled": false,
+     "growth": 1,
+     "depth": 11,
+     "base": null
+    },
+    {
+     "name": "Granite_Stack",
+     "pow": 5000,
+     "hp": 3,
+     "amber": 2.1,
+     "scaled": false,
+     "growth": 1,
+     "depth": 16,
+     "base": null
+    },
+    {
+     "name": "Stonespire",
+     "pow": 30000,
+     "hp": 4,
+     "amber": 3,
+     "scaled": true,
+     "growth": 1.2,
+     "depth": 20,
+     "base": null
+    },
+    {
+     "name": "Scoundrel_Pommsie",
+     "pow": 1,
+     "hp": 10,
+     "amber": 10,
+     "scaled": false,
+     "growth": 1,
+     "depth": 7,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 1,
+   "name": "Sedimeadow",
+   "capacity": 4,
+   "bossDepth": 10,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "a",
+   "rocks": [
+    {
+     "name": "Stubby_Coral",
+     "pow": 0.2,
+     "hp": 1,
+     "amber": 2,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 50
+    },
+    {
+     "name": "Fuzzy_Fungi",
+     "pow": 0.8,
+     "hp": 1,
+     "amber": 2.5,
+     "scaled": false,
+     "growth": 1,
+     "depth": 2,
+     "base": null
+    },
+    {
+     "name": "Vibrant_Coral",
+     "pow": 4,
+     "hp": 2,
+     "amber": 3,
+     "scaled": false,
+     "growth": 1,
+     "depth": 7,
+     "base": null
+    },
+    {
+     "name": "Spikey_Shell",
+     "pow": 20,
+     "hp": 3,
+     "amber": 3.7,
+     "scaled": false,
+     "growth": 1,
+     "depth": 14,
+     "base": null
+    },
+    {
+     "name": "Seaweed_Tuft",
+     "pow": 100,
+     "hp": 4,
+     "amber": 4.5,
+     "scaled": false,
+     "growth": 1,
+     "depth": 20,
+     "base": null
+    },
+    {
+     "name": "Giant_Conch",
+     "pow": 300,
+     "hp": 5,
+     "amber": 5.5,
+     "scaled": false,
+     "growth": 1,
+     "depth": 26,
+     "base": null
+    },
+    {
+     "name": "Coralissimus",
+     "pow": 1000,
+     "hp": 6,
+     "amber": 7,
+     "scaled": true,
+     "growth": 1.2,
+     "depth": 31,
+     "base": null
+    },
+    {
+     "name": "Esquire_Numbo",
+     "pow": 50,
+     "hp": 15,
+     "amber": 25,
+     "scaled": false,
+     "growth": 1,
+     "depth": 11,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "name": "Rustbelt 03",
+   "capacity": 5,
+   "bossDepth": 19,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "b",
+   "rocks": [
+    {
+     "name": "Sheet_Metal",
+     "pow": 1,
+     "hp": 1,
+     "amber": 4,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 1500
+    },
+    {
+     "name": "CTR_Television",
+     "pow": 4,
+     "hp": 2,
+     "amber": 5,
+     "scaled": false,
+     "growth": 1,
+     "depth": 3,
+     "base": null
+    },
+    {
+     "name": "Rusted_Girders",
+     "pow": 15,
+     "hp": 3,
+     "amber": 6,
+     "scaled": false,
+     "growth": 1,
+     "depth": 7,
+     "base": null
+    },
+    {
+     "name": "Corroded_Pipe",
+     "pow": 30,
+     "hp": 3,
+     "amber": 7,
+     "scaled": false,
+     "growth": 1,
+     "depth": 12,
+     "base": null
+    },
+    {
+     "name": "Sign_of_Haltage",
+     "pow": 75,
+     "hp": 4,
+     "amber": 8,
+     "scaled": false,
+     "growth": 1,
+     "depth": 17,
+     "base": null
+    },
+    {
+     "name": "E-Waste_Pile",
+     "pow": 250,
+     "hp": 5,
+     "amber": 10,
+     "scaled": false,
+     "growth": 1,
+     "depth": 24,
+     "base": null
+    },
+    {
+     "name": "Scrap_Heap",
+     "pow": 500,
+     "hp": 6,
+     "amber": 12,
+     "scaled": false,
+     "growth": 1,
+     "depth": 30,
+     "base": null
+    },
+    {
+     "name": "No_Man's_Crossroad",
+     "pow": 1000,
+     "hp": 7,
+     "amber": 15,
+     "scaled": true,
+     "growth": 1.2,
+     "depth": 35,
+     "base": null
+    },
+    {
+     "name": "Sentinelbot_447",
+     "pow": 30,
+     "hp": 40,
+     "amber": 50,
+     "scaled": false,
+     "growth": 1,
+     "depth": 20,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "name": "Blushpit",
+   "capacity": 6,
+   "bossDepth": 29,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "c",
+   "rocks": [
+    {
+     "name": "Lil_Shroomie",
+     "pow": 1,
+     "hp": 2,
+     "amber": 8,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 80000
+    },
+    {
+     "name": "Fly_Amanita",
+     "pow": 3,
+     "hp": 3,
+     "amber": 12,
+     "scaled": false,
+     "growth": 1,
+     "depth": 4,
+     "base": null
+    },
+    {
+     "name": "Toadstool_Sprouts",
+     "pow": 5,
+     "hp": 4,
+     "amber": 15,
+     "scaled": false,
+     "growth": 1,
+     "depth": 8,
+     "base": null
+    },
+    {
+     "name": "Fungi_Trunk",
+     "pow": 12,
+     "hp": 4,
+     "amber": 20,
+     "scaled": false,
+     "growth": 1,
+     "depth": 11,
+     "base": null
+    },
+    {
+     "name": "Tabletop_Shroomie",
+     "pow": 30,
+     "hp": 5,
+     "amber": 25,
+     "scaled": false,
+     "growth": 1,
+     "depth": 15,
+     "base": null
+    },
+    {
+     "name": "Speckled_Amanita",
+     "pow": 70,
+     "hp": 6,
+     "amber": 32,
+     "scaled": false,
+     "growth": 1,
+     "depth": 19,
+     "base": null
+    },
+    {
+     "name": "Toadshool_Thicket",
+     "pow": 200,
+     "hp": 7,
+     "amber": 40,
+     "scaled": false,
+     "growth": 1,
+     "depth": 25,
+     "base": null
+    },
+    {
+     "name": "Rotwood_Colony",
+     "pow": 2000,
+     "hp": 8,
+     "amber": 50,
+     "scaled": false,
+     "growth": 1,
+     "depth": 32,
+     "base": null
+    },
+    {
+     "name": "Plurabella",
+     "pow": 10000,
+     "hp": 9,
+     "amber": 65,
+     "scaled": true,
+     "growth": 1.2,
+     "depth": 40,
+     "base": null
+    },
+    {
+     "name": "Greg",
+     "pow": 1000,
+     "hp": 100,
+     "amber": 100,
+     "scaled": false,
+     "growth": 1,
+     "depth": 30,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "name": "Chucklemire",
+   "capacity": 7,
+   "bossDepth": 39,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "d",
+   "rocks": [
+    {
+     "name": "Cotton_Candy",
+     "pow": 1,
+     "hp": 2,
+     "amber": 25,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 50000000
+    },
+    {
+     "name": "Tiny_Teddy",
+     "pow": 3,
+     "hp": 3,
+     "amber": 35,
+     "scaled": false,
+     "growth": 1,
+     "depth": 3,
+     "base": null
+    },
+    {
+     "name": "Nacho_Box",
+     "pow": 5,
+     "hp": 4,
+     "amber": 50,
+     "scaled": false,
+     "growth": 1,
+     "depth": 7,
+     "base": null
+    },
+    {
+     "name": "Milk_Stack",
+     "pow": 20,
+     "hp": 5,
+     "amber": 100,
+     "scaled": false,
+     "growth": 1,
+     "depth": 10,
+     "base": null
+    },
+    {
+     "name": "Stuffed_Grizzly",
+     "pow": 35,
+     "hp": 5,
+     "amber": 120,
+     "scaled": false,
+     "growth": 1,
+     "depth": 15,
+     "base": null
+    },
+    {
+     "name": "Discarded_Popcorn",
+     "pow": 100,
+     "hp": 6,
+     "amber": 180,
+     "scaled": false,
+     "growth": 1,
+     "depth": 21,
+     "base": null
+    },
+    {
+     "name": "Broken_Horsey",
+     "pow": 700,
+     "hp": 7,
+     "amber": 230,
+     "scaled": false,
+     "growth": 1,
+     "depth": 28,
+     "base": null
+    },
+    {
+     "name": "Broken_Dispenser",
+     "pow": 1000,
+     "hp": 8,
+     "amber": 260,
+     "scaled": false,
+     "growth": 1,
+     "depth": 34,
+     "base": null
+    },
+    {
+     "name": "Knockdown_Tower",
+     "pow": 2500,
+     "hp": 9,
+     "amber": 350,
+     "scaled": false,
+     "growth": 1,
+     "depth": 39,
+     "base": null
+    },
+    {
+     "name": "Forgotten_Funhouse",
+     "pow": 20000,
+     "hp": 10,
+     "amber": 600,
+     "scaled": true,
+     "growth": 1.23,
+     "depth": 45,
+     "base": null
+    },
+    {
+     "name": "Blind_Gallopera",
+     "pow": 1250,
+     "hp": 150,
+     "amber": 500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 40,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "name": "Lunarheim",
+   "capacity": 8,
+   "bossDepth": 49,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "e",
+   "rocks": [
+    {
+     "name": "Skull_Pile",
+     "pow": 1,
+     "hp": 2,
+     "amber": 150,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 600000000000
+    },
+    {
+     "name": "Stuck_Sword",
+     "pow": 2,
+     "hp": 2,
+     "amber": 220,
+     "scaled": false,
+     "growth": 1,
+     "depth": 4,
+     "base": null
+    },
+    {
+     "name": "Proud_Flag",
+     "pow": 15,
+     "hp": 3,
+     "amber": 420,
+     "scaled": false,
+     "growth": 1,
+     "depth": 7,
+     "base": null
+    },
+    {
+     "name": "Old_Bones",
+     "pow": 20,
+     "hp": 4,
+     "amber": 500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 13,
+     "base": null
+    },
+    {
+     "name": "Wall_Remnants",
+     "pow": 200,
+     "hp": 5,
+     "amber": 800,
+     "scaled": false,
+     "growth": 1,
+     "depth": 19,
+     "base": null
+    },
+    {
+     "name": "Heroic_Remains",
+     "pow": 300,
+     "hp": 6,
+     "amber": 920,
+     "scaled": false,
+     "growth": 1,
+     "depth": 25,
+     "base": null
+    },
+    {
+     "name": "Knightly_Twohander",
+     "pow": 600,
+     "hp": 7,
+     "amber": 1200,
+     "scaled": false,
+     "growth": 1,
+     "depth": 30,
+     "base": null
+    },
+    {
+     "name": "Vacant_Throne",
+     "pow": 1500,
+     "hp": 8,
+     "amber": 1500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 36,
+     "base": null
+    },
+    {
+     "name": "Kingdom_Flags ",
+     "pow": 5000,
+     "hp": 9,
+     "amber": 1900,
+     "scaled": false,
+     "growth": 1,
+     "depth": 39,
+     "base": null
+    },
+    {
+     "name": "Fallen_Castle",
+     "pow": 20000,
+     "hp": 10,
+     "amber": 2500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 44,
+     "base": null
+    },
+    {
+     "name": "Monolith",
+     "pow": 110000,
+     "hp": 11,
+     "amber": 4500,
+     "scaled": true,
+     "growth": 1.25,
+     "depth": 51,
+     "base": null
+    },
+    {
+     "name": "Esquire_Skuumbus",
+     "pow": 15000,
+     "hp": 250,
+     "amber": 3000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 50,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "name": "Bizarrio",
+   "capacity": 9,
+   "bossDepth": 69,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "f",
+   "rocks": [
+    {
+     "name": "Lil_Peeper",
+     "pow": 1,
+     "hp": 2,
+     "amber": 1200,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 200000000000000
+    },
+    {
+     "name": "Snoozebox",
+     "pow": 3,
+     "hp": 2,
+     "amber": 1900,
+     "scaled": false,
+     "growth": 1,
+     "depth": 4,
+     "base": null
+    },
+    {
+     "name": "Stuckstream",
+     "pow": 9,
+     "hp": 3,
+     "amber": 3000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 8,
+     "base": null
+    },
+    {
+     "name": "Stacked_Gaze",
+     "pow": 25,
+     "hp": 4,
+     "amber": 4500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 12,
+     "base": null
+    },
+    {
+     "name": "Upstairs",
+     "pow": 80,
+     "hp": 5,
+     "amber": 6000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 16,
+     "base": null
+    },
+    {
+     "name": "Oz_Mirror",
+     "pow": 300,
+     "hp": 6,
+     "amber": 8000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 21,
+     "base": null
+    },
+    {
+     "name": "Flowffee",
+     "pow": 1000,
+     "hp": 7,
+     "amber": 11500,
+     "scaled": false,
+     "growth": 1,
+     "depth": 27,
+     "base": null
+    },
+    {
+     "name": "Ordinary_Door",
+     "pow": 5000,
+     "hp": 8,
+     "amber": 15000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 31,
+     "base": null
+    },
+    {
+     "name": "Grandmother_Clock",
+     "pow": 20000,
+     "hp": 9,
+     "amber": 21000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 35,
+     "base": null
+    },
+    {
+     "name": "Implausible_Statue",
+     "pow": 100000,
+     "hp": 10,
+     "amber": 30000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 40,
+     "base": null
+    },
+    {
+     "name": "Robust_Mirror",
+     "pow": 300000,
+     "hp": 11,
+     "amber": 50000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 49,
+     "base": null
+    },
+    {
+     "name": "Persisting_Time",
+     "pow": 1000000,
+     "hp": 15,
+     "amber": 75000,
+     "scaled": true,
+     "growth": 1.28,
+     "depth": 56,
+     "base": null
+    },
+    {
+     "name": "Mister_Jazzie",
+     "pow": 200000,
+     "hp": 500,
+     "amber": 100,
+     "scaled": false,
+     "growth": 1,
+     "depth": 70,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "name": "Glitter End",
+   "capacity": 10,
+   "bossDepth": 99,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "g",
+   "rocks": [
+    {
+     "name": "Opie",
+     "pow": 1,
+     "hp": 2,
+     "amber": 15000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 5000000000000000000
+    },
+    {
+     "name": "Bloo",
+     "pow": 2,
+     "hp": 2,
+     "amber": 20000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 5,
+     "base": null
+    },
+    {
+     "name": "Onyx",
+     "pow": 10,
+     "hp": 3,
+     "amber": 32000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 12,
+     "base": null
+    },
+    {
+     "name": "Merald",
+     "pow": 20,
+     "hp": 4,
+     "amber": 45000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 24,
+     "base": null
+    },
+    {
+     "name": "Gumborox",
+     "pow": 100,
+     "hp": 5,
+     "amber": 65000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 33,
+     "base": null
+    },
+    {
+     "name": "Beeg_Rubee",
+     "pow": 200,
+     "hp": 6,
+     "amber": 80000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 42,
+     "base": null
+    },
+    {
+     "name": "Chaomeraldi",
+     "pow": 500,
+     "hp": 7,
+     "amber": 110000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 54,
+     "base": null
+    },
+    {
+     "name": "Ammatheist",
+     "pow": 1000,
+     "hp": 8,
+     "amber": 140000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 68,
+     "base": null
+    },
+    {
+     "name": "Solidary_Pilar",
+     "pow": 5000,
+     "hp": 9,
+     "amber": 190000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 80,
+     "base": null
+    },
+    {
+     "name": "Supreme_Onyx",
+     "pow": 25000,
+     "hp": 10,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 91,
+     "base": null
+    },
+    {
+     "name": "Spagettical",
+     "pow": 150000,
+     "hp": 11,
+     "amber": 350000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 105,
+     "base": null
+    },
+    {
+     "name": "Flaming_Lavarock",
+     "pow": 2000000,
+     "hp": 12,
+     "amber": 600000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 120,
+     "base": null
+    },
+    {
+     "name": "Magnum_Opus",
+     "pow": 10000000,
+     "hp": 25,
+     "amber": 1000000,
+     "scaled": true,
+     "growth": 1.3,
+     "depth": 130,
+     "base": null
+    },
+    {
+     "name": "Bah_Dazzul",
+     "pow": 2500000,
+     "hp": 1000,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 100,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "name": "Scoutpost",
+   "capacity": 10,
+   "bossDepth": 114,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "h",
+   "rocks": [
+    {
+     "name": "Snow",
+     "pow": 1,
+     "hp": 2,
+     "amber": 15000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 8e+21
+    },
+    {
+     "name": "Keep_Out",
+     "pow": 2,
+     "hp": 3,
+     "amber": 20000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 5,
+     "base": null
+    },
+    {
+     "name": "Radi_Ooze",
+     "pow": 10,
+     "hp": 5,
+     "amber": 32000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 12,
+     "base": null
+    },
+    {
+     "name": "Smolman",
+     "pow": 20,
+     "hp": 8,
+     "amber": 45000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 24,
+     "base": null
+    },
+    {
+     "name": "Dead_Tree",
+     "pow": 100,
+     "hp": 10,
+     "amber": 65000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 33,
+     "base": null
+    },
+    {
+     "name": "Barbed_Wire",
+     "pow": 200,
+     "hp": 15,
+     "amber": 80000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 42,
+     "base": null
+    },
+    {
+     "name": "Small_Sonar",
+     "pow": 500,
+     "hp": 25,
+     "amber": 110000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 54,
+     "base": null
+    },
+    {
+     "name": "Cherno_Bile",
+     "pow": 1000,
+     "hp": 35,
+     "amber": 140000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 68,
+     "base": null
+    },
+    {
+     "name": "Incognisnow",
+     "pow": 5000,
+     "hp": 40,
+     "amber": 190000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 80,
+     "base": null
+    },
+    {
+     "name": "Labeled_Waste",
+     "pow": 25000,
+     "hp": 50,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 91,
+     "base": null
+    },
+    {
+     "name": "Artificial_Tree",
+     "pow": 150000,
+     "hp": 60,
+     "amber": 350000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 105,
+     "base": null
+    },
+    {
+     "name": "Contained_Impurity",
+     "pow": 2000000,
+     "hp": 80,
+     "amber": 600000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 120,
+     "base": null
+    },
+    {
+     "name": "Legrange_Sonar",
+     "pow": 10000000,
+     "hp": 100,
+     "amber": 1000000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 130,
+     "base": null
+    },
+    {
+     "name": "DMK_Snowgoon",
+     "pow": 30000000,
+     "hp": 120,
+     "amber": 1200000,
+     "scaled": true,
+     "growth": 1.32,
+     "depth": 140,
+     "base": null
+    },
+    {
+     "name": "SCP_4745",
+     "pow": 3000000,
+     "hp": 2500,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 115,
+     "base": null
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "name": "Exiled Throne",
+   "capacity": 10,
+   "bossDepth": 129,
+   "bossOffset": [
+    0,
+    0
+   ],
+   "letter": "i",
+   "rocks": [
+    {
+     "name": "Candles",
+     "pow": 1,
+     "hp": 2,
+     "amber": 15000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 0,
+     "base": 1.75e+28
+    },
+    {
+     "name": "Lil_Jar",
+     "pow": 2,
+     "hp": 3,
+     "amber": 20000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 5,
+     "base": null
+    },
+    {
+     "name": "Wreath",
+     "pow": 5,
+     "hp": 5,
+     "amber": 32000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 12,
+     "base": null
+    },
+    {
+     "name": "Stool",
+     "pow": 10,
+     "hp": 8,
+     "amber": 45000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 24,
+     "base": null
+    },
+    {
+     "name": "Candlssimo",
+     "pow": 50,
+     "hp": 10,
+     "amber": 65000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 33,
+     "base": null
+    },
+    {
+     "name": "Vase_of_Air",
+     "pow": 125,
+     "hp": 15,
+     "amber": 80000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 42,
+     "base": null
+    },
+    {
+     "name": "Barrier_Rope",
+     "pow": 300,
+     "hp": 25,
+     "amber": 110000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 54,
+     "base": null
+    },
+    {
+     "name": "Vase_of_Thistle",
+     "pow": 750,
+     "hp": 35,
+     "amber": 140000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 68,
+     "base": null
+    },
+    {
+     "name": "Chair",
+     "pow": 3000,
+     "hp": 40,
+     "amber": 190000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 80,
+     "base": null
+    },
+    {
+     "name": "Marble_Urn",
+     "pow": 15000,
+     "hp": 50,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 91,
+     "base": null
+    },
+    {
+     "name": "Holy_Visage",
+     "pow": 60000,
+     "hp": 60,
+     "amber": 350000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 105,
+     "base": null
+    },
+    {
+     "name": "Candelabra",
+     "pow": 200000,
+     "hp": 80,
+     "amber": 600000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 120,
+     "base": null
+    },
+    {
+     "name": "Squarelumn",
+     "pow": 5000000,
+     "hp": 100,
+     "amber": 1000000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 140,
+     "base": null
+    },
+    {
+     "name": "Crown_Jewel",
+     "pow": 20000000,
+     "hp": 120,
+     "amber": 1200000,
+     "scaled": true,
+     "growth": 1,
+     "depth": 160,
+     "base": null
+    },
+    {
+     "name": "Vase_of_Sanctimony",
+     "pow": 60000000,
+     "hp": 150,
+     "amber": 1500000,
+     "scaled": true,
+     "growth": 1.35,
+     "depth": 180,
+     "base": null
+    },
+    {
+     "name": "Esquire_Morose",
+     "pow": 10000000,
+     "hp": 15000,
+     "amber": 250000,
+     "scaled": false,
+     "growth": 1,
+     "depth": 130,
+     "base": null
+    }
+   ]
+  }
+ ],
+ "tools": [
+  {
+   "id": 0,
+   "name": "Hammer",
+   "radius": 23,
+   "damage": 1,
+   "cost": 1
+  },
+  {
+   "id": 1,
+   "name": "Mace",
+   "radius": 40,
+   "damage": 2,
+   "cost": 2
+  },
+  {
+   "id": 2,
+   "name": "Mallet",
+   "radius": 50,
+   "damage": 4,
+   "cost": 3
+  },
+  {
+   "id": 3,
+   "name": "Flail",
+   "radius": 60,
+   "damage": 7,
+   "cost": 4
+  },
+  {
+   "id": 4,
+   "name": "Warhammer",
+   "radius": 85,
+   "damage": 15,
+   "cost": 7
+  }
+ ],
+ "elixirs": [
+  {
+   "id": 0,
+   "charges": 2,
+   "quantity": 25,
+   "description": "For the current player, 25% of all stamina used is given right back!  (Effect wears off when player runs out of Stamina)",
+   "name": "Stamina refund"
+  },
+  {
+   "id": 1,
+   "charges": 10,
+   "quantity": 1,
+   "description": "Highlights an area on the floor.  The hole to the next depth is guaranteed to be in that area!",
+   "name": "Exit radar"
+  },
+  {
+   "id": 2,
+   "charges": 2,
+   "quantity": 30,
+   "description": "Gives the current player a 50% chance to regenerate  30% Stamina when they run out.  (Cannot be used a 2nd time while the effect is active)",
+   "name": "Stamina shield"
+  },
+  {
+   "id": 3,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Boosts your amber gain by +1% per 10 stamina used during the delve  at the time this elixir was used.  (Effect persists for the entire Delve)",
+   "name": "Amber boost"
+  },
+  {
+   "id": 4,
+   "charges": 2,
+   "quantity": 20,
+   "description": "Boosts POW to 5x your normal amount.  However, you now lose 20% POW each time you descend!  (Effect persists for the entire Delve)",
+   "name": "Power boost"
+  },
+  {
+   "id": 5,
+   "charges": 3,
+   "quantity": 60,
+   "description": "For the next 2 depths, whenever an object is destroyed it has a 60% chance of hitting an adjacent object with the power of your Hammer tool.",
+   "name": "Adjacent breaks"
+  },
+  {
+   "id": 6,
+   "charges": 1,
+   "quantity": 25,
+   "description": "All objects have a +25% chance of dropping Double Amber  instead of a single amber chunk  (Effect lasts for the entire Delve)",
+   "name": "Double Amber"
+  },
+  {
+   "id": 7,
+   "charges": 1,
+   "quantity": 30,
+   "description": "Shadow Strikes are 1.5x more common,  and have a +30% higher chance to trigger a multi strike  (Effect lasts for the entire Delve)",
+   "name": "Shadow strikes"
+  },
+  {
+   "id": 8,
+   "charges": 4,
+   "quantity": 1,
+   "description": "Triggers a Nova Blast. Woah...",
+   "name": "Nova"
+  },
+  {
+   "id": 9,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Increases Stamina Costs by 2x, reduces POW by 100x, but boosts Grand Discovery chance by 5x",
+   "name": "Grand Discovery"
+  },
+  {
+   "id": 10,
+   "charges": 1,
+   "quantity": 1,
+   "description": "Increases Stamina Costs by 4x, boosts POW by 100x.  Each use adds a stack of this effect, so 8x and 200x on the 2nd use.  (Effect persists for the entire Delve)",
+   "name": "Overdrive"
+  },
+  {
+   "id": 11,
+   "charges": 1,
+   "quantity": 0,
+   "description": "This elixir doesn't have a label on it. At least, that's what the label says...",
+   "name": "Unspecified effect"
+  }
+ ],
+ "elixirPresets": [
+  {
+   "id": "memorized",
+   "label": "Memorized",
+   "kind": "memory",
+   "elixirs": [
+    0,
+    2,
+    7
+   ]
+  },
+  {
+   "id": "depth",
+   "label": "Depth",
+   "kind": "elixir",
+   "elixirs": [
+    0,
+    2,
+    7,
+    7,
+    10
+   ]
+  },
+  {
+   "id": "depth-shortcut",
+   "label": "Depth after shortcut",
+   "kind": "elixir",
+   "elixirs": [
+    2,
+    7,
+    7,
+    7,
+    10
+   ]
+  },
+  {
+   "id": "manic",
+   "label": "Manic",
+   "kind": "elixir",
+   "elixirs": [
+    0,
+    2,
+    7,
+    7,
+    7
+   ]
+  },
+  {
+   "id": "amber",
+   "label": "Amber",
+   "kind": "elixir",
+   "elixirs": [
+    3,
+    3,
+    3,
+    6,
+    6
+   ]
+  },
+  {
+   "id": "grand",
+   "label": "Grand Discovery",
+   "kind": "elixir",
+   "elixirs": [
+    2,
+    7,
+    7,
+    7,
+    9
+   ]
+  }
+ ],
+ "policies": [
+  "auto",
+  "dive",
+  "efficient",
+  "clear-fifth",
+  "clear",
+  "amber-farm"
+ ],
+ "upgradePerLevel": [
+  1,
+  12,
+  7,
+  5,
+  1,
+  1,
+  1,
+  25,
+  5,
+  4,
+  3,
+  1,
+  1,
+  4,
+  2,
+  5,
+  10,
+  30,
+  12,
+  2,
+  3,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  2,
+  1,
+  1,
+  1,
+  4,
+  2,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  4,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  5,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  2,
+  1,
+  1,
+  2,
+  4,
+  1,
+  1,
+  1
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "caves": "SpelunkRocks / Spelunky[0,6,7,8,9]",
+  "tools": "Spelunky[10..13]",
+  "elixirs": "Spelunky[3,16,17]",
+  "shop": "SpelunkUpg[idx][4]",
+  "ui": "js/ui/spelunking.js elixirNames/elixirPresets"
+ }
+}
