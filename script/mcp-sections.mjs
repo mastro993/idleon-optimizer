@@ -732,7 +732,9 @@ const royalSave = () => {
 
 /// A small flat `save.json` carrying three villagers and the `Holes` rows their
 /// EXP rates read: levels, invested opals, stars, cosmo levels, a schematic, a
-/// bell, two measurements, a monument slot and a fountain upgrade.
+/// bell, two measurements, a monument slot and a fountain upgrade. One `Lv0_0`
+/// row keeps the account at one character: the Prisma plan runs on every import
+/// and refuses a save whose character count is zero.
 const opalSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   const holes = Array.from({ length: 33 }, () => []);
@@ -747,7 +749,12 @@ const opalSave = () => {
   holes[22] = row(20, { 0: 10, 7: 10 });
   holes[31] = [row(20, { 13: 10, 14: 10 })];
   holes[32] = [row(20, {})];
-  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+  return JSON.stringify({
+    Research: '[]',
+    Holes: JSON.stringify(holes),
+    // The Prisma plan runs on every import and refuses a save with no character.
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+  });
 };
 
 /// Section-specific interaction checks. Every ready section must own one; a
@@ -1041,6 +1048,23 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Total EXP/hr'),
       'opal: the total control readdresses the tree',
     );
+    // The optimizer splits the saved 155 opals and the copied plan names them.
+    await lane.call('click_element', { id: 'opal-tab-optimizer' });
+    await waitForNode(lane, 'opal-optimizer', 'opal: the optimizer tab opens');
+    await lane.call('click_element', { id: 'opal-run' });
+    await waitForNode(lane, 'opal-plan-result', 'opal: the plan lists its distribution');
+    const plan = labelOf(await lane.tree(), 'opal-plan-summary') ?? '';
+    if (!plan.includes('155 opals')) {
+      throw new Error(`opal: the plan reads ${plan}`);
+    }
+    await lane.call('click_element', { id: 'opal-plan-copy' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('Copied the opal plan'),
+      'opal: the plan copies to the clipboard',
+    );
+    await lane.call('click_element', { id: 'opal-tab-current' });
+    await waitForNode(lane, 'opal-overview', 'opal: the current tab reopens');
   },
   sneaking: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

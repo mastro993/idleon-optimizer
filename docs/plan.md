@@ -454,13 +454,18 @@ four configurations and nineteen rejected inputs, compared field for field by
 run simulator, amber policies and the optimizer (SP-02 to SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
-The Opal Optimizer section implements OP-01: the current state of the five villagers, their levels,
-invested opals and stars, the six overview figures, the villagers table and the shared formula tree,
-with the tree switchable between the total and one villager. `idleon_core::opal::Opal` decodes
-`buildExt` out of the save — the villager rows, the cosmo upgrades and every cross-system term through
-the account decoder — and `script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to
-regenerate `fixtures/opal.json`, which `crates/core/tests/opal.rs` pins. Missing: the distribution
-optimizer (OP-02) and the manual simulator (OP-03).
+The Opal Optimizer section implements OP-01 and OP-02. The `Current state` tab shows the five
+villagers, their levels, invested opals and stars, the six overview figures, the villagers table, the
+bonus terms and the shared formula tree, switchable between the total and one villager. The
+`Optimizer` tab splits a total across the unlocked villagers for the total EXP or one villager's rate:
+the plan comes off the shared task runner, prints the saved and planned rate per villager, sums to the
+total and can be copied as tab-separated text. `idleon_core::opal::Opal` decodes `buildExt` out of the
+save — the villager rows, the cosmo upgrades and every cross-system term through the account decoder —
+and `idleon_core::opal::Opal::plan` searches every lowest count with each villager on that count or the
+next multiple of ten, so the plan is never worse than the saved split and at least as good as the
+page's own greedy shapes. `script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to
+regenerate `fixtures/opal.json` (the page's rates and optimizer plans), which
+`crates/core/tests/opal.rs` pins. Missing: the manual simulator (OP-03).
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
 The Sneaking section has its loadout and inventory workspaces (SN-01):

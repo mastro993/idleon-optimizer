@@ -240,3 +240,103 @@ fn the_chain_and_the_outer_factors_multiply_to_the_base() {
             .product::<f64>();
     close(terms.base_multiplier(), base);
 }
+
+/// The fixture's total, every villager unlocked, and the page's own optimizer
+/// output for the total and each villager target.
+#[test]
+fn the_plan_at_least_matches_the_upstream_optimizer() {
+    let opal = opal();
+    let oracle = oracle();
+    let optimizer = &oracle["optimizer"];
+    let total = at(&oracle["current"], "totalOpals");
+    let input = |target| idleon_core::opal::PlanInput {
+        target,
+        total,
+        current: opal.opals(),
+    };
+
+    let upstream = &optimizer["total"];
+    let plan = opal.plan(input(idleon_core::opal::PlanTarget::Total));
+    close(plan.spent(), total);
+    // The page's two greedy shapes miss plans, so the port has to be at least
+    // as good, not identical: the same tolerance the rates use, in one direction.
+    assert!(
+        plan.rate(&opal) >= at(upstream, "rate") * (1.0 - 2e-3),
+        "the plan beats the page's own total split: {} vs {}",
+        plan.rate(&opal),
+        at(upstream, "rate")
+    );
+    let expected = upstream["opals"]
+        .as_array()
+        .expect("the oracle lists opals");
+    assert_eq!(expected.len(), idleon_core::opal::VILLAGERS);
+
+    for (villager, expected) in optimizer["targets"]
+        .as_array()
+        .expect("the oracle lists targets")
+        .iter()
+        .enumerate()
+    {
+        let target = idleon_core::opal::PlanTarget::Villager(villager);
+        let plan = opal.plan(input(target));
+        close(plan.spent(), total);
+        assert!(
+            plan.rate(&opal) >= at(expected, "rate") * (1.0 - 2e-3),
+            "villager {villager}: {} beats {}",
+            plan.rate(&opal),
+            at(expected, "rate")
+        );
+        let opals = expected["opals"]
+            .as_array()
+            .expect("the oracle lists opals");
+        assert_eq!(opals.len(), idleon_core::opal::VILLAGERS);
+    }
+}
+
+#[test]
+fn a_plan_is_never_worse_than_the_saved_distribution() {
+    let opal = opal();
+    let total = opal.total_opals();
+    let targets = std::iter::once(idleon_core::opal::PlanTarget::Total).chain(
+        (0..idleon_core::opal::VILLAGERS)
+            .filter(|villager| opal.unlocked(*villager))
+            .map(idleon_core::opal::PlanTarget::Villager),
+    );
+    for target in targets {
+        let plan = opal.plan(idleon_core::opal::PlanInput {
+            target,
+            total,
+            current: opal.opals(),
+        });
+        let before = opal.objective(target, &opal.opals());
+        let after = plan.rate(&opal);
+        assert!(
+            after >= before - before * 1e-12,
+            "{target:?}: the plan reads {after}, the save {before}"
+        );
+        close(plan.spent(), total);
+        assert_eq!(plan.unallocated(), 0.0);
+        for villager in 0..idleon_core::opal::VILLAGERS {
+            assert_eq!(plan.opals[villager].fract(), 0.0, "whole opals only");
+            if !opal.unlocked(villager) {
+                assert_eq!(plan.opals[villager], 0.0, "locked villagers get none");
+            }
+        }
+    }
+}
+
+#[test]
+fn the_plan_text_lists_every_unlocked_villager() {
+    let opal = opal();
+    let plan = opal.plan(idleon_core::opal::PlanInput::saved(
+        &opal,
+        idleon_core::opal::PlanTarget::Total,
+    ));
+    let text = plan.text(&opal);
+    for (villager, name) in idleon_core::opal::NAMES.iter().enumerate() {
+        if opal.unlocked(villager) {
+            assert!(text.contains(&format!("\n{name}\t")), "{name} is listed");
+        }
+    }
+    assert!(text.contains("Total\t369\t"));
+}

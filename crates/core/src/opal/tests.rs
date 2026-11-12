@@ -1,6 +1,8 @@
 //! The opal maths, checked against the page's own formulas.
 
+use super::optimize::Target;
 use super::*;
+use crate::model::Control;
 
 /// A save-shaped state whose terms are round numbers, so a wrong factor shows.
 fn sample() -> Opal {
@@ -240,4 +242,215 @@ fn the_cosmo_bonus_is_the_base_times_the_level_floored() {
     assert_eq!(opal.cosmo_level(1, 9), 0.0);
     assert_eq!(opal.cosmo_bonus(1, 0), data::cosmo_base(1, 0) * 5.0);
     assert_eq!(opal.cosmo_bonus(0, 0), data::cosmo_base(0, 0) * 4.0);
+}
+
+/// Every split of `total` across the unlocked villagers, so a small plan can be
+/// checked against the true optimum instead of another heuristic.
+fn brute_best(opal: &Opal, target: Target, total: f64) -> f64 {
+    fn walk(
+        opal: &Opal,
+        target: Target,
+        unlocked: &[usize],
+        index: usize,
+        remaining: f64,
+        opals: &mut [f64; VILLAGERS],
+        best: &mut f64,
+    ) {
+        let villager = unlocked[index];
+        if index + 1 == unlocked.len() {
+            opals[villager] = remaining;
+            *best = best.max(opal.objective(target, opals));
+            opals[villager] = 0.0;
+            return;
+        }
+        let reserved = (unlocked.len() - index - 1) as f64;
+        let mut count = 0.0;
+        while count + reserved <= remaining {
+            opals[villager] = count;
+            walk(
+                opal,
+                target,
+                unlocked,
+                index + 1,
+                remaining - count,
+                opals,
+                best,
+            );
+            count += 1.0;
+        }
+        opals[villager] = 0.0;
+    }
+
+    let unlocked: Vec<usize> = (0..VILLAGERS)
+        .filter(|villager| opal.unlocked(*villager))
+        .collect();
+    let mut opals = [0.0; VILLAGERS];
+    let mut best = f64::NEG_INFINITY;
+    walk(opal, target, &unlocked, 0, total, &mut opals, &mut best);
+    best
+}
+
+fn best_plan(opal: &Opal, target: Target, total: f64) -> Plan {
+    opal.plan(PlanInput {
+        target,
+        total,
+        current: opal.opals(),
+    })
+}
+
+#[test]
+fn a_plan_splits_the_whole_total_across_the_unlocked_villagers() {
+    let opal = sample();
+    for target in [Target::Total, Target::Villager(0), Target::Villager(4)] {
+        for total in [0.0, 1.0, 24.0, 100.0, 369.0] {
+            let plan = best_plan(&opal, target, total);
+            assert_eq!(plan.total, total);
+            assert_eq!(plan.spent(), total, "target {target:?} at {total}");
+            assert_eq!(plan.unallocated(), 0.0);
+            assert_eq!(plan.opals[2], 0.0, "the locked villager gets nothing");
+            assert_eq!(plan.change(2), 0.0);
+        }
+    }
+}
+
+#[test]
+fn a_plan_is_never_worse_than_the_saved_split() {
+    let opal = sample();
+    let total = opal.total_opals();
+    for target in [
+        Target::Total,
+        Target::Villager(0),
+        Target::Villager(1),
+        Target::Villager(3),
+        Target::Villager(4),
+    ] {
+        let saved = opal.objective(target, &opal.opals());
+        let plan = best_plan(&opal, target, total);
+        let after = plan.rate(&opal);
+        assert!(
+            after >= saved - saved.abs().max(1.0) * 1e-12,
+            "{target:?}: {after} beats {saved}"
+        );
+        assert!(plan.improvement(&opal).is_none_or(|gain| gain >= -1e-12));
+    }
+}
+
+#[test]
+fn a_small_plan_matches_an_exhaustive_search() {
+    let opal = sample();
+    for target in [
+        Target::Total,
+        Target::Villager(0),
+        Target::Villager(1),
+        Target::Villager(4),
+    ] {
+        for total in [0.0, 7.0, 17.0, 40.0, 60.0] {
+            let best = brute_best(&opal, target, total);
+            let plan = best_plan(&opal, target, total);
+            let rate = plan.rate(&opal);
+            assert!(
+                rate >= best - best.abs().max(1.0) * 1e-9,
+                "{target:?} at {total}: the plan reads {rate}, exhaustive {best}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_plan_with_no_target_or_no_villagers_stays_empty() {
+    let opal = sample();
+    // The second villager is locked, so it cannot be the target.
+    let locked = best_plan(&opal, Target::Villager(2), 100.0);
+    assert_eq!(locked.spent(), 0.0);
+    assert_eq!(locked.unallocated(), 100.0);
+
+    let mut empty = sample();
+    for villager in 0..VILLAGERS {
+        empty.villagers[villager].level = 0.0;
+    }
+    let none = best_plan(&empty, Target::Total, 100.0);
+    assert_eq!(none.spent(), 0.0);
+    assert_eq!(none.unallocated(), 100.0);
+}
+
+#[test]
+fn a_total_is_whole_and_negative_totals_distribute_nothing() {
+    let opal = sample();
+    let rounded = best_plan(&opal, Target::Total, 24.7);
+    assert_eq!(rounded.total, 24.0);
+    assert_eq!(rounded.spent(), 24.0);
+    let negative = best_plan(&opal, Target::Total, -5.0);
+    assert_eq!(negative.total, 0.0);
+    assert_eq!(negative.spent(), 0.0);
+    assert_eq!(negative.rate(&opal), 0.0);
+}
+
+#[test]
+fn the_progress_rises_and_a_cancelled_run_stores_nothing() {
+    let opal = sample();
+    let mut fractions = Vec::new();
+    let input = || PlanInput {
+        target: Target::Total,
+        total: 1_000.0,
+        current: opal.opals(),
+    };
+    let done = opal.plan_with(input(), |progress| {
+        fractions.push(progress.fraction);
+        Control::Continue
+    });
+    assert!(done.is_some());
+    assert!(fractions.len() > 1);
+    assert!(fractions.windows(2).all(|pair| pair[0] <= pair[1]));
+    assert!(
+        fractions
+            .iter()
+            .all(|fraction| (0.0..=1.0).contains(fraction))
+    );
+
+    let mut reported = false;
+    let cancelled = opal.plan_with(input(), |_| {
+        reported = true;
+        Control::Stop
+    });
+    assert!(cancelled.is_none());
+    assert!(reported, "the run checks cancellation at its first report");
+}
+
+#[test]
+fn a_plan_is_stable_when_the_save_already_holds_it() {
+    let opal = sample();
+    let first = best_plan(&opal, Target::Total, 100.0);
+    // Saving the plan and optimizing again must not shuffle equal plans: the
+    // tie-break keeps the split that moves the fewest opals.
+    let mut saved = opal;
+    for villager in 0..VILLAGERS {
+        saved.villagers[villager].opals = first.opals[villager];
+    }
+    let second = best_plan(&saved, Target::Total, 100.0);
+    assert_eq!(second.opals, first.opals);
+    assert_eq!(second.change(0), 0.0);
+}
+
+#[test]
+fn the_plan_text_lists_the_unlocked_villagers_and_the_total() {
+    let opal = sample();
+    let plan = best_plan(&opal, Target::Total, 100.0);
+    let text = plan.text(&opal);
+    assert!(
+        text.starts_with("Opal plan\tAll villagers\t100 opals\nVillager\tOpals\tChange\tEXP/hr\n"),
+        "{text}"
+    );
+    for villager in [0, 1, 3, 4] {
+        assert!(
+            text.contains(&format!("\n{}\t", name(villager))),
+            "{} is listed: {text}",
+            name(villager)
+        );
+    }
+    assert!(!text.contains(name(2)), "the locked villager is not listed");
+    assert!(text.contains(&format!("Total\t100\t\t{:.0}\n", plan.rate(&opal))));
+    assert!(text.contains("Improvement\t"));
+
+    let explorer = best_plan(&opal, Target::Villager(0), 100.0);
+    assert!(explorer.text(&opal).starts_with("Opal plan\tExplorer\t"));
 }

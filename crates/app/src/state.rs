@@ -22,6 +22,7 @@ use crate::sections::jelly_operator::{
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
+use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
@@ -41,7 +42,9 @@ use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::{self, Import, Pending};
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
+use gpui::{
+    App, AppContext as _, ClipboardItem, Context, Entity, FocusHandle, Subscription, Window,
+};
 use gpui_mcp::BridgeHandle;
 use idleon_core::cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_core::clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
@@ -61,6 +64,7 @@ use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, SimOptions, Simulation, Target,
 };
+use idleon_core::opal::{Plan as OpalPlan, PlanInput as OpalPlanInput, PlanTarget as OpalTarget};
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::prisma::Outcome as PrismaOutcome;
 use idleon_core::sailing::{
@@ -271,6 +275,12 @@ pub struct AppState {
     pub opal: Option<Opal>,
     /// The villager the opal breakdown is switched to, or the total.
     pub opal_selected: Option<usize>,
+    /// The Opal Optimizer's tab, kept across dashboard visits.
+    pub opal_tab: OpalTab,
+    /// The villager the opal optimizer maximizes, or `None` for the total.
+    pub opal_target: Option<usize>,
+    /// The opal total the optimizer distributes, seeded from the save.
+    pub opal_total: f64,
     /// The Royal Guardian rows the loaded save carries, if it has them.
     pub royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
@@ -334,6 +344,8 @@ pub struct AppState {
     cglunko_run: Entity<TaskRunner<CglunkoPlan, CglunkoPage>>,
     /// The shared runner for the Clamworks upgrade plan.
     clamworks_run: Entity<TaskRunner<ClamworksPlan, ClamworksPlanInput>>,
+    /// The shared runner for the opal distribution plan.
+    opal_run: Entity<TaskRunner<OpalPlan, OpalPlanInput>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
@@ -380,6 +392,7 @@ pub struct AppState {
     _cog_perfect_subscription: Subscription,
     _cglunko_run_subscription: Subscription,
     _clamworks_run_subscription: Subscription,
+    _opal_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
     _prisma_run_subscription: Subscription,
@@ -661,6 +674,34 @@ impl AppState {
                                 plan.steps.len(),
                                 plan.spent,
                                 plan.budget
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        // The opal optimizer reports each lowest count it tries, so the status
+        // line names the search and a cancel stops it between candidates.
+        let opal_run = cx.new(|_| TaskRunner::<OpalPlan, OpalPlanInput>::new());
+        let opal_run_subscription =
+            cx.subscribe(&opal_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status =
+                            format!("Optimizing the opal distribution… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Opal plan cancelled; the previous plan is unchanged.".into()
+                        } else {
+                            "Opal plan cancelled; nothing was planned.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(plan) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Opal plan ready: {} opals across the villagers.",
+                                ui::format::count(plan.spent() as u64)
                             );
                         }
                     }
@@ -994,6 +1035,9 @@ impl AppState {
             fountain_state: FountainState::default(),
             opal: None,
             opal_selected: None,
+            opal_tab: OpalTab::default(),
+            opal_target: None,
+            opal_total: 0.0,
             sneaking: None,
             sneaking_state: Default::default(),
             pickle: PickleState::default(),
@@ -1023,6 +1067,7 @@ impl AppState {
             cog_perfect_run,
             cglunko_run,
             clamworks_run,
+            opal_run,
             worship_plan,
             worship_optimize,
             prisma_run,
@@ -1056,6 +1101,7 @@ impl AppState {
             _cog_perfect_subscription: cog_perfect_subscription,
             _cglunko_run_subscription: cglunko_run_subscription,
             _clamworks_run_subscription: clamworks_run_subscription,
+            _opal_run_subscription: opal_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
             _prisma_run_subscription: prisma_run_subscription,
@@ -1429,6 +1475,9 @@ impl AppState {
         self.fountain_state.adopt(self.fountain.as_ref());
         self.opal = imported.opal;
         self.opal_selected = None;
+        self.opal_target = None;
+        // The plan's default total is the new save's invested opals.
+        self.opal_total = self.opal.as_ref().map_or(0.0, Opal::total_opals);
         self.royal = imported.royal;
         self.sneaking = imported.sneaking;
         self.research.selected_cell = None;
@@ -1758,6 +1807,133 @@ impl AppState {
             self.opal_selected = selected;
             cx.notify();
         }
+    }
+
+    /// Switch the Opal Optimizer between the total and one villager.
+    pub fn set_opal_target(&mut self, villager: Option<usize>, cx: &mut Context<Self>) {
+        let target = villager.filter(|villager| {
+            self.opal
+                .as_ref()
+                .is_some_and(|opal| opal.unlocked(*villager))
+        });
+        if self.opal_target != target {
+            self.opal_target = target;
+            cx.notify();
+        }
+    }
+
+    /// Switch the Opal Optimizer's tab.
+    pub fn set_opal_tab(&mut self, tab: OpalTab, cx: &mut Context<Self>) {
+        if self.opal_tab != tab {
+            self.opal_tab = tab;
+            cx.notify();
+        }
+    }
+
+    /// Set the opal total the optimizer splits; whole opals only.
+    pub fn set_opal_total(&mut self, total: f64, cx: &mut Context<Self>) {
+        let total = if total.is_finite() {
+            total.max(0.0).floor()
+        } else {
+            0.0
+        };
+        if self.opal_total != total {
+            self.opal_total = total;
+            cx.notify();
+        }
+    }
+
+    /// Put the optimizer back on the save's own opal total.
+    pub fn use_saved_opal_total(&mut self, cx: &mut Context<Self>) {
+        let total = self.opal.as_ref().map_or(0.0, Opal::total_opals);
+        self.set_opal_total(total, cx);
+    }
+
+    /// The plan's inputs: the selected target, the total and the save's split.
+    pub fn opal_plan_input(&self) -> OpalPlanInput {
+        let current = self
+            .opal
+            .as_ref()
+            .map_or([0.0; idleon_core::opal::VILLAGERS], Opal::opals);
+        let target = match self.opal_target {
+            Some(villager)
+                if self
+                    .opal
+                    .as_ref()
+                    .is_some_and(|opal| opal.unlocked(villager)) =>
+            {
+                OpalTarget::Villager(villager)
+            }
+            _ => OpalTarget::Total,
+        };
+        OpalPlanInput {
+            target,
+            total: self.opal_total,
+            current,
+        }
+    }
+
+    /// The plan run's progress, result and staleness.
+    pub fn opal_task(&self, cx: &App) -> TaskState<OpalPlan> {
+        self.opal_run.read(cx).state(&self.opal_plan_input())
+    }
+
+    /// Search the distribution off the UI thread through the shared runner.
+    pub fn run_opal_plan(&mut self, cx: &mut Context<Self>) {
+        let Some(opal) = self.opal.clone() else {
+            self.status = "Opal plan: import a save with villagers first.".into();
+            cx.notify();
+            return;
+        };
+        let input = self.opal_plan_input();
+        if opal.unlocked_count() == 0 {
+            self.status = "Opal plan: no villager is unlocked in this save.".into();
+            cx.notify();
+            return;
+        }
+        if input.total <= 0.0 {
+            self.status = "Opal plan: set a total above zero.".into();
+            cx.notify();
+            return;
+        }
+        let started = self.opal_run.update(cx, |runner, cx| {
+            runner.start(cx, input, move |input, report| {
+                opal.plan_with(input, report)
+            })
+        });
+        if started {
+            self.status = "Optimizing the opal distribution…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running opal plan to stop at its next report.
+    pub fn cancel_opal_plan(&mut self, cx: &mut Context<Self>) {
+        if self.opal_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the opal plan…".into();
+            cx.notify();
+        }
+    }
+
+    /// Copy the last finished plan as tab-separated text.
+    pub fn copy_opal_plan(&mut self, cx: &mut Context<Self>) {
+        let Some(plan) = self.opal_run.read(cx).result().cloned() else {
+            self.status = "Run the optimizer before copying the plan.".into();
+            cx.notify();
+            return;
+        };
+        let Some(opal) = self.opal.as_ref() else {
+            self.status = "Opal plan: import a save first.".into();
+            cx.notify();
+            return;
+        };
+        let text = plan.text(opal);
+        cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
+        self.status = format!(
+            "Copied the opal plan to the clipboard ({} bytes).",
+            text.len()
+        );
+        cx.notify();
     }
 
     /// Select a lure index, clamped to the upstream list.
