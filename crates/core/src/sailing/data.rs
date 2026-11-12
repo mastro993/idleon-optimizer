@@ -27,6 +27,10 @@ pub struct Artifact {
     /// The bonus for tiers 2 through 7, in order.
     #[serde(rename = "tierBonuses")]
     pub tier_bonuses: Vec<f64>,
+    /// The main-bonus multiplier for tiers 2 through 7: 0 keeps the base bonus,
+    /// otherwise the artifact's description doubles, triples, … it.
+    #[serde(rename = "mainBonusTierMultipliers", default)]
+    pub main_bonus_tier_multipliers: Vec<f64>,
 }
 
 /// One island: travel distance, unlock cost, captain EXP and artifact count.
@@ -130,6 +134,36 @@ pub fn artifact_tier_bonus(idx: usize, tier: u32) -> f64 {
         .unwrap_or(0.0)
 }
 
+/// An artifact's bonus at `tier`, matching the generic path of upstream
+/// `computeArtifactBonus`: the base bonus at tier one, scaled by the tier when
+/// the artifact's description says its main bonus is doubled, tripled, …
+///
+/// The artifact-specific special cases (card counts, skill levels and similar)
+/// are not part of this helper; callers that read one of those artifacts model
+/// its factor themselves.
+pub fn artifact_bonus(idx: usize, tier: u32) -> f64 {
+    if tier == 0 {
+        return 0.0;
+    }
+    let base = artifact_base(idx);
+    let Some(artifact) = artifact(idx) else {
+        return base;
+    };
+    if tier < 2 {
+        return base;
+    }
+    let multiplier = artifact
+        .main_bonus_tier_multipliers
+        .get((tier - 2) as usize)
+        .copied()
+        .unwrap_or(0.0);
+    if multiplier > 0.0 {
+        base * multiplier
+    } else {
+        base
+    }
+}
+
 /// A captain bonus type's display name.
 pub fn captain_bonus_name(idx: i32) -> String {
     if idx < 0 {
@@ -154,6 +188,15 @@ mod tests {
         assert_eq!(island_artifact_offset(1), 4);
         assert_eq!(artifact_base(5), 2.0);
         assert_eq!(artifact_tier_bonus(9, 2), 25.0);
+        assert_eq!(artifact_bonus(19, 0), 0.0);
+        assert_eq!(artifact_bonus(19, 1), 2.0);
+        assert_eq!(artifact_bonus(19, 2), 4.0);
+        assert_eq!(artifact_bonus(19, 7), 14.0);
+        assert_eq!(
+            artifact_bonus(0, 4),
+            1.0,
+            "an artifact without a multiplier description keeps its base bonus"
+        );
         assert_eq!(captain_bonus_name(0), "Boat Speed");
     }
 }

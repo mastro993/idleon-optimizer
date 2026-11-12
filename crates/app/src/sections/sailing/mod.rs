@@ -3,10 +3,9 @@
 //!
 //! The upstream `sailing-calc.html` has fleet, levels, captains, odds, simulation,
 //! artifacts and formula tabs. SL-01 built the fleet assignment, SL-02 the ship
-//! breakpoints, captain quality and replacement matrix, and SL-03 the chest
-//! outcomes, the artifact ranking and the four breakdowns; the pile simulation
-//! arrives with SL-04 and joins [`Tab::ALL`] then, so the strip never offers a
-//! tab with nothing behind it.
+//! breakpoints, captain quality and replacement matrix, SL-03 the chest
+//! outcomes, the artifact ranking and the four breakdowns, and SL-04 the fleet
+//! pile simulation.
 //!
 //! The assignment controls and the header stay above the strip because every tab
 //! reads the same island, goal and fleet mode, as upstream's own layout does.
@@ -18,6 +17,7 @@ mod fleet;
 mod odds;
 mod replacements;
 mod ships;
+pub mod simulation;
 
 use crate::state::AppState;
 use crate::ui::formula::FormulaTree;
@@ -36,7 +36,8 @@ use gpui::{
     AnyElement, App, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
 use idleon_core::sailing::{
-    AssignmentMode, Goal, captain_bonus_name, island_artifact_count, island_distance,
+    AssignmentMode, DEFAULT_HOURS, DEFAULT_TRIALS, Goal, captain_bonus_name, island_artifact_count,
+    island_distance,
 };
 
 /// The section's own state, kept across dashboard visits.
@@ -51,6 +52,12 @@ pub struct State {
     pub sort_by_eta: bool,
     /// The boat whose breakdowns the formula tab draws.
     pub breakdown_boat: usize,
+    /// The destination the pile simulation runs on.
+    pub sim_island: usize,
+    /// The interval each simulation trial covers.
+    pub sim_hours: f64,
+    /// How many simulation trials to run.
+    pub sim_trials: usize,
 }
 
 impl Default for State {
@@ -62,6 +69,9 @@ impl Default for State {
             goal: Goal::Treasure,
             sort_by_eta: false,
             breakdown_boat: 0,
+            sim_island: 0,
+            sim_hours: DEFAULT_HOURS,
+            sim_trials: DEFAULT_TRIALS,
         }
     }
 }
@@ -103,6 +113,8 @@ pub enum Tab {
     /// Fleet chest outcomes, per-boat tier chances and the near-full pile.
     #[serde(rename = "odds")]
     ChestOdds,
+    /// The fleet pile simulation with progress and results.
+    Simulation,
     /// The artifact route ranking and the selected island's artifacts.
     Artifacts,
     /// The loot, trip, artifact and chest formula trees.
@@ -111,12 +123,13 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 7] = [
+    pub const ALL: [Tab; 8] = [
         Tab::Fleet,
         Tab::Ships,
         Tab::Captains,
         Tab::Replacements,
         Tab::ChestOdds,
+        Tab::Simulation,
         Tab::Artifacts,
         Tab::Breakdowns,
     ];
@@ -128,6 +141,7 @@ impl Tab {
             Tab::Captains => "captains",
             Tab::Replacements => "replacements",
             Tab::ChestOdds => "odds",
+            Tab::Simulation => "simulation",
             Tab::Artifacts => "artifacts",
             Tab::Breakdowns => "formula",
         }
@@ -140,6 +154,7 @@ impl Tab {
             Tab::Captains => "Captains",
             Tab::Replacements => "Replacements",
             Tab::ChestOdds => "Chest Odds",
+            Tab::Simulation => "Fleet Simulation",
             Tab::Artifacts => "Artifacts",
             Tab::Breakdowns => "Breakdowns",
         }
@@ -163,6 +178,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         Tab::Captains => captains::captains_tab(state, table_height, cx),
         Tab::Replacements => replacements::replacements_tab(state, table_height, cx),
         Tab::ChestOdds => odds::odds_tab(state, table_height, cx),
+        Tab::Simulation => simulation::simulation_tab(state, table_height, cx),
         Tab::Artifacts => artifacts::artifacts_tab(state, table_height, cx),
         Tab::Breakdowns => breakdowns::breakdowns_tab(state, table_height, cx),
     };

@@ -26,6 +26,18 @@ const clean = (text) =>
     .replace(/_/g, ' ')
     .trim();
 
+// The doubled/tripled/... descriptions `computeArtifactBonus` reads at
+// `[2 * tier + 1]`; only the ones that spell out the multiplier scale the
+// artifact's main bonus, so the others stay at 0.
+const TIER_MULTIPLIER_TEXT = {
+  2: "The_artifact's_main_bonus_is_doubled!",
+  3: "The_artifact's_main_bonus_is_tripled!",
+  4: "The_artifact's_main_bonus_is_quadrupled!",
+  5: "The_artifact's_main_bonus_is_quintupled!",
+  6: "The_artifact's_main_bonus_is_sixtupled!",
+  7: "The_artifact's_main_bonus_is_seventupled!",
+};
+
 const artifacts = customlists.ArtifactInfo.map((row, id) => ({
   id,
   name: clean(row[0]) || `Artifact ${id}`,
@@ -35,6 +47,11 @@ const artifacts = customlists.ArtifactInfo.map((row, id) => ({
   baseBonus: Number(row[3]) || 0,
   // Tiers 2-7 store their value at `[2 * tier + 2]`.
   tierBonuses: [2, 3, 4, 5, 6, 7].map((tier) => Number(row[2 * tier + 2]) || 0),
+  // Tiers 2-7 double, triple, ... the main bonus when their description says
+  // so; 0 means the tier keeps the base bonus.
+  mainBonusTierMultipliers: [2, 3, 4, 5, 6, 7].map((tier) =>
+    row[2 * tier + 1] === TIER_MULTIPLIER_TEXT[tier] ? tier : 0,
+  ),
 }));
 
 const islands = customlists.IslandInfo.map((row, id) => ({

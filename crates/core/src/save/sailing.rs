@@ -148,14 +148,26 @@ fn route_context(
             .and_then(|menagerie| json::index(&menagerie, &[2, 0]).and_then(json::number))
             .is_some_and(|owned| owned >= 1.0),
     };
-    let chest_rolls = if json::parsed_field(save, "AchieveReg")
-        .and_then(|achievements| json::index(&achievements, &[300]).and_then(json::number))
-        .is_some_and(|status| status == -1.0)
-    {
+    let chest_rolls = if achievement_complete(save, 300) {
         1
     } else {
         0
     };
+    // `SailChests` is the banked pile; the simulation always starts fresh, so
+    // only the capacity from the account rows is read here.
+    let gem_purchase = json::parsed_field(save, "GemItemsPurchased")
+        .and_then(|items| json::index(&items, &[129]).and_then(json::number))
+        .unwrap_or(0.0);
+    let task_slots = json::parsed_field(save, "TaskZZ2")
+        .and_then(|tasks| json::index(&tasks, &[4, 2]).and_then(json::number))
+        .unwrap_or(0.0);
+    let chest_capacity = crate::sailing::chest_capacity(
+        gem_purchase,
+        artifact_tier(save, 19),
+        task_slots,
+        achievement_complete(save, 287),
+        achievement_complete(save, 290),
+    );
     let server_vars = ServerVars {
         ancient_odd_per_island: root
             .get("serverVars")
@@ -182,8 +194,26 @@ fn route_context(
         davey_unlocked: grid.level(105) > 0,
         chest_rolls,
         server_vars,
+        chest_capacity,
         ..RouteContext::default()
     }
+}
+
+/// `AchieveReg[index] == -1` marks a completed achievement.
+fn achievement_complete(save: &Map<String, Value>, index: usize) -> bool {
+    json::parsed_field(save, "AchieveReg")
+        .and_then(|achievements| json::index(&achievements, &[index]).and_then(json::number))
+        .is_some_and(|status| status == -1.0)
+}
+
+/// `Sailing[3][index]`, the saved artifact tier.
+fn artifact_tier(save: &Map<String, Value>, index: usize) -> u32 {
+    json::parsed_field(save, "Sailing")
+        .and_then(|sailing| json::index(&sailing, &[3, index]).and_then(json::number))
+        .unwrap_or(0.0)
+        .max(0.0)
+        .round()
+        .min(7.0) as u32
 }
 
 /// A field that may be a JSON array or a string holding one.

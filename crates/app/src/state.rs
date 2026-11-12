@@ -25,6 +25,7 @@ use crate::sections::royal_guardian::State as RoyalState;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::Trees as SailingTrees;
+use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
@@ -57,7 +58,9 @@ use idleon_core::model::{
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::prisma::Outcome as PrismaOutcome;
 use idleon_core::sailing::{
-    AssignmentMode, Fleet, FleetComparison, FleetPlan, Goal, RouteContext, compare, optimize, saved,
+    AssignmentMode, DEFAULT_HOURS, DEFAULT_SEED, Fleet, FleetComparison, FleetPlan, Goal,
+    MAX_HOURS, MAX_TRIALS, MIN_HOURS, MIN_TRIALS, RouteContext, SimConfig,
+    SimOptions as SailingSimOptions, SimResult, compare, optimize, saved, simulate,
 };
 use idleon_core::save::Shadow;
 use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
@@ -194,6 +197,8 @@ pub struct AppState {
     pub sailing_state: SailingState,
     /// The sailing breakdowns' formula trees.
     pub sailing_trees: SailingTrees,
+    /// The shared runner for the fleet pile simulation.
+    sailing_sim: Entity<TaskRunner<SimResult, SailingSimInputs>>,
     /// The farming field the last import carried.
     pub farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
@@ -361,6 +366,7 @@ pub struct AppState {
     _worship_optimize_subscription: Subscription,
     _prisma_run_subscription: Subscription,
     _farming_run_subscription: Subscription,
+    _sailing_sim_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -810,6 +816,34 @@ impl AppState {
         );
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
+        // The pile simulation reports each trial batch and keeps the previous
+        // result when a run is cancelled, like every other long run.
+        let sailing_sim = cx.new(|_| TaskRunner::<SimResult, SailingSimInputs>::new());
+        let sailing_sim_subscription =
+            cx.subscribe(&sailing_sim, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Simulating the fleet pile… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Fleet pile simulation cancelled; the previous result is unchanged."
+                                .into()
+                        } else {
+                            "Fleet pile simulation cancelled; nothing was stored.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Fleet pile simulation ready: {:.2} chests of {} trials.",
+                                result.pile.count.mean, result.setup.trials
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         let ladle_state = LadleSectionState::new(window, cx);
         let cglunko_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("cglunko-formula", window, cx));
@@ -847,6 +881,7 @@ impl AppState {
             royal: None,
             royal_state: RoyalState::default(),
             sailing_trees,
+            sailing_sim,
             farm: Farm::default(),
             farming: FarmingState::default(),
             fishing_save: FishingSave::default(),
@@ -939,6 +974,7 @@ impl AppState {
             _worship_optimize_subscription: worship_optimize_subscription,
             _prisma_run_subscription: prisma_run_subscription,
             _farming_run_subscription: farming_run_subscription,
+            _sailing_sim_subscription: sailing_sim_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -1302,6 +1338,12 @@ impl AppState {
             .and_then(|boat| boat.target_island)
             .filter(|island| *island < self.fleet.available_islands())
             .unwrap_or(0);
+        // The simulation has its own destination; it follows the save's island
+        // count like the fleet selector does.
+        self.sailing_state.sim_island = self
+            .sailing_state
+            .sim_island
+            .min(self.fleet.available_islands().saturating_sub(1));
         self.sailing_state.mode = AssignmentMode::Optimized;
         self.sailing_state.goal = Goal::Treasure;
         self.save_loaded = true;
@@ -1505,6 +1547,87 @@ impl AppState {
     pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
         self.sailing.minimum_tier = tier.min(5);
         cx.notify();
+    }
+
+    /// The stored pile simulation and whether its inputs changed since the run.
+    pub fn sailing_simulation(&self, cx: &App) -> TaskState<SimResult> {
+        self.sailing_sim.read(cx).state(&self.sailing_sim_inputs())
+    }
+
+    /// The inputs a simulation started now would read.
+    fn sailing_sim_inputs(&self) -> SailingSimInputs {
+        SailingSimInputs {
+            island: self.sailing_state.sim_island,
+            goal: self.sailing_state.goal,
+            mode: self.sailing_state.mode,
+            minimum_tier: self.sailing.minimum_tier,
+            hours: self.sailing_state.sim_hours,
+            trials: self.sailing_state.sim_trials,
+            unending_loot_search: self.sailing.unending_loot_search,
+            capacity: self.sailing.chest_capacity,
+            revision: self.save_revision,
+        }
+    }
+
+    /// Select the destination the pile simulation runs on.
+    pub fn set_sailing_sim_island(&mut self, island: usize, cx: &mut Context<Self>) {
+        let total = self.fleet.available_islands().max(1);
+        self.sailing_state.sim_island = island.min(total - 1);
+        cx.notify();
+    }
+
+    /// Set the interval one simulation trial covers.
+    pub fn set_sailing_sim_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
+        self.sailing_state.sim_hours = if hours.is_finite() {
+            hours.clamp(MIN_HOURS, MAX_HOURS)
+        } else {
+            DEFAULT_HOURS
+        };
+        cx.notify();
+    }
+
+    /// Set how many independent trials a run makes.
+    pub fn set_sailing_sim_trials(&mut self, trials: usize, cx: &mut Context<Self>) {
+        self.sailing_state.sim_trials = trials.clamp(MIN_TRIALS, MAX_TRIALS);
+        cx.notify();
+    }
+
+    /// Run the pile simulation off the UI thread through the shared runner.
+    pub fn run_sailing_simulation(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.sailing_sim_inputs();
+        let plan = self.fleet_plan(inputs.island, inputs.goal);
+        if plan.routes.is_empty() {
+            self.status = "No active boats are available for the pile simulation.".into();
+            cx.notify();
+            return;
+        }
+        let config = SimConfig::from_plan(
+            &plan,
+            &self.sailing,
+            SailingSimOptions {
+                hours: inputs.hours,
+                trials: inputs.trials,
+                seed: DEFAULT_SEED,
+            },
+        );
+        let started = self.sailing_sim.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_, report| simulate(&config, report))
+        });
+        if started {
+            self.status = format!(
+                "Simulating the fleet pile for {}h over {} trials…",
+                self.sailing_state.sim_hours, self.sailing_state.sim_trials
+            );
+            cx.notify();
+        }
+    }
+
+    /// Ask a running pile simulation to stop; the previous result stays.
+    pub fn cancel_sailing_simulation(&mut self, cx: &mut Context<Self>) {
+        if self.sailing_sim.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the fleet pile simulation…".into();
+            cx.notify();
+        }
     }
 
     /// Reset the fishing toolkit and location to the selected character's save.

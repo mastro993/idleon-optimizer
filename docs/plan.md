@@ -1,12 +1,12 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming, ladle, Clamworks,
+Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks,
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
 estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor and
 mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator overview
-and layout editor, the drop-rate inputs and dungeon total partial, shadow-ban, endgame, Fishing,
-Killroy and BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2
+and layout editor, the drop-rate inputs and dungeon total partial, sailing, shadow-ban, endgame,
+Fishing, Killroy and BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2
 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
