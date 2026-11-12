@@ -3600,6 +3600,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "idleon-minehead"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-common",
+ "idleon-import",
+ "idleon-research",
+ "idleon-save",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "idleon-monument"
 version = "0.1.0"
 dependencies = [
