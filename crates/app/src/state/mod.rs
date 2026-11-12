@@ -55,6 +55,8 @@ use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_clamworks::Clamworks;
 use idleon_clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_cog::{CogResult, PerfectBoard};
+use idleon_combat::encounter::Options as CombatEncounterOptions;
+use idleon_combat::encounter::Outcome as CombatEncounterOutcome;
 use idleon_cooking_mastery::Mastery;
 use idleon_coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_farming::{Allocation as FarmingOutcome, Comparison as FarmingComparison, Farm};
@@ -308,6 +310,8 @@ pub(crate) struct AppState {
     pub(crate) statue: StatueState,
     /// The combat simulator's working loadout and named presets.
     pub(crate) combat: CombatState,
+    /// The encounter run (CS-03) in flight and its stored outcome.
+    pub(crate) combat_encounter: Entity<TaskRunner<CombatEncounterOutcome, CombatEncounterOptions>>,
     /// The All Stats Dashboard's calculation context, save slice and breakdowns.
     pub(crate) stats_all: StatsAllState,
     /// The shared formula tree on the All Stats breakdown card.
@@ -731,6 +735,22 @@ impl AppState {
             },
             |_, result| Some(format!("Compared {} farming goals.", result.rows.len())),
         );
+        let combat_encounter = report_run::<CombatEncounterOutcome, CombatEncounterOptions>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Running the encounter…"),
+                cancelled_kept: "Encounter run cancelled; the previous result is unchanged.",
+                cancelled_empty: "Encounter run cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Encounter run ready: {} kills over {:.0}s.",
+                    result.kills,
+                    result.simulated_ms as f64 / 1000.0
+                ))
+            },
+        );
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
         let sailing_sim = report_run::<SimResult, SailingSimInputs>(
@@ -842,6 +862,7 @@ impl AppState {
             prisma,
             statue,
             combat,
+            combat_encounter,
             stats_all: StatsAllState::default(),
             stats_breakdown,
             stats_explorer_search,

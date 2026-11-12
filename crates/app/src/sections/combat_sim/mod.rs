@@ -14,6 +14,7 @@
 
 mod actions;
 
+pub(crate) mod encounter;
 pub(crate) mod equipment;
 pub(crate) mod overrides;
 pub(crate) mod presets;
@@ -45,16 +46,18 @@ pub(crate) enum Tab {
     Gear,
     Talents,
     Mechanics,
+    Encounter,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 3] = [Tab::Gear, Tab::Talents, Tab::Mechanics];
+    pub(crate) const ALL: [Tab; 4] = [Tab::Gear, Tab::Talents, Tab::Mechanics, Tab::Encounter];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Gear => "gear",
             Tab::Talents => "talents",
             Tab::Mechanics => "mechanics",
+            Tab::Encounter => "encounter",
         }
     }
 
@@ -63,6 +66,7 @@ impl Tab {
             Tab::Gear => "Equipment",
             Tab::Talents => "Talents",
             Tab::Mechanics => "Mechanics",
+            Tab::Encounter => "Encounter",
         }
     }
 
@@ -94,6 +98,14 @@ pub(crate) struct State {
     pub(crate) override_group: String,
     /// Whether the mechanics pane lists only the overridden rows.
     pub(crate) override_only_active: bool,
+    /// The encounter run's map index.
+    pub(crate) sim_map: usize,
+    /// Whether the run uses the fixed kill interval instead of the idle player.
+    pub(crate) sim_stand_in: bool,
+    /// The stand-in's kill interval in milliseconds.
+    pub(crate) sim_kill_every_ms: u64,
+    /// The run's simulated duration in seconds.
+    pub(crate) sim_duration_s: u64,
 }
 
 impl State {
@@ -114,6 +126,12 @@ impl State {
             override_search,
             override_group: String::new(),
             override_only_active: false,
+            sim_map: idleon_combat::encounter::maps()
+                .first()
+                .map_or(1, |map| map.index),
+            sim_stand_in: true,
+            sim_kill_every_ms: 1_500,
+            sim_duration_s: 300,
         }
     }
 
@@ -169,6 +187,7 @@ pub(crate) fn view(
         .tab(WindowTab::new(Tab::Gear.id(), Tab::Gear.label()))
         .tab(WindowTab::new(Tab::Talents.id(), Tab::Talents.label()))
         .tab(WindowTab::new(Tab::Mechanics.id(), Tab::Mechanics.label()))
+        .tab(WindowTab::new(Tab::Encounter.id(), Tab::Encounter.label()))
         .on_select(move |id, _window, cx| {
             if let Some(tab) = Tab::from_id(id.as_ref()) {
                 select_tab.update(cx, |state, cx| state.set_combat_tab(tab, cx));
@@ -273,6 +292,7 @@ pub(crate) fn view(
             Tab::Gear => equipment::pane(state, breakpoint, cx),
             Tab::Talents => talents::pane(state, window, cx),
             Tab::Mechanics => overrides::pane(state, window, cx),
+            Tab::Encounter => encounter::pane(state, cx),
         })
         .into_any_element()
 }

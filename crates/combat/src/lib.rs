@@ -5,9 +5,11 @@
 //! character, its equipment and talents, the pickers' item catalog and the
 //! presets the project JSON keeps. The mechanics overrides (CS-02) are the
 //! second half: the curated [`overrides`] catalog and the rules that turn it into
-//! simulator input overrides. The encounter simulation itself arrives with CS-03.
+//! simulator input overrides. The encounter run (CS-03) replays the game's
+//! spawn, respawn and kill loop over one map's roster in [`encounter`].
 
 pub mod data;
+pub mod encounter;
 pub mod loadout;
 pub mod overrides;
 pub mod preset;
