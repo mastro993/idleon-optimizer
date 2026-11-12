@@ -570,6 +570,7 @@ pub fn assign(
         }
         Config::Farming(config) => {
             state.farming = FarmingState {
+                tab: config.tab,
                 selected_plot: config.selected_plot.min(idleon_core::farming::PLOTS - 1),
                 target_crop: config.target_crop,
                 objective: config.objective,
@@ -1028,12 +1029,14 @@ mod tests {
         assert!(sailing.sort_by_eta);
         assert_eq!(sailing.breakdown_boat, 2);
         let farming = round_trip(&FarmingState {
+            tab: crate::sections::farming::Tab::Plots,
             selected_plot: 5,
             target_crop: 12,
             objective: idleon_core::farming::Objective::Beans,
             mode: idleon_core::farming::Mode::Reset,
             ..FarmingState::default()
         });
+        assert_eq!(farming.tab, crate::sections::farming::Tab::Plots);
         assert_eq!(farming.selected_plot, 5);
         assert_eq!(farming.target_crop, 12);
         assert_eq!(farming.objective, idleon_core::farming::Objective::Beans);

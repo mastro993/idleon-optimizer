@@ -1449,6 +1449,12 @@ impl AppState {
         cx.notify();
     }
 
+    /// Switch the farming tab; the section keeps it across dashboard visits.
+    pub fn set_farming_tab(&mut self, tab: crate::sections::farming::Tab, cx: &mut Context<Self>) {
+        self.farming.set_tab(tab);
+        cx.notify();
+    }
+
     /// Aim the later evolution features at a crop id, clamped to the families.
     pub fn set_target_crop(&mut self, value: f64, cx: &mut Context<Self>) {
         self.farming.set_target_crop(value);

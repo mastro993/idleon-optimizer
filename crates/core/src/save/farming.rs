@@ -89,9 +89,27 @@ pub(crate) fn farm(
     if let Some(gems) = field(save, "gemItemsData", "GemItemsPurchased") {
         farm.gem_items = floats(entries(&gems), usize::MAX);
     }
+    farm.emporium_owned = field(save, "ninjaData", "Ninja")
+        .and_then(|ninja| {
+            json::index(&ninja, &[102, 9])
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+        })
+        .unwrap_or_default();
+    if let Some(grimoire) = field(save, "grimoireData", "Grimoire") {
+        let levels = floats(entries(&grimoire), usize::MAX);
+        let level = |index: usize| levels.get(index).copied().unwrap_or(0.0);
+        farm.grimoire_crop_scientist = level(22) * (1.0 + level(36) / 100.0);
+    }
+    if let Some(vault) = field(save, "vaultData", "UpgVault") {
+        farm.vault_crop_scientist = entries(&vault)
+            .get(79)
+            .and_then(json::number)
+            .unwrap_or(0.0);
+    }
 
     warnings.push(
-        "farming multipliers: only market levels, Land Rank, exotics, crop counts, gem items and Spelunk organic labels are applied; chances and values are lower bounds".into(),
+        "farming multipliers: only market levels, Land Rank, exotics, crop counts, gem items, Spelunk organic labels, the emporium encoding, Grimoire 22/36 and Vault 79 are applied; chances and values are lower bounds".into(),
     );
     Some(farm)
 }

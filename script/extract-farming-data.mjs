@@ -22,6 +22,11 @@ const planner = readFileSync(
   join(source, 'js/stats/systems/w6/farming-planner.js'),
   'utf8'
 );
+const system = readFileSync(join(source, 'js/stats/systems/w6/farming.js'), 'utf8');
+const hardcoded = readFileSync(
+  join(source, 'js/stats/data/game/hardcoded.js'),
+  'utf8'
+);
 
 const seeds = Array.from({ length: farming.seedFamilyCount() }, (_, id) =>
   farming.seedFamily(id)
@@ -42,6 +47,15 @@ const rankUnlocks = unlockBlock.split(',').map((value) => Number(value.trim()));
 const thresholdBlock = planner.match(/var GMO_THRESHOLDS = \[([^\]]*)\]/)?.[1];
 if (!thresholdBlock) throw new Error('GMO_THRESHOLDS moved');
 const gmoThresholds = thresholdBlock.split(',').map((value) => Number(value.trim()));
+// The Crop Scientist gates index the emporium encoding: `Ninja[102][9]` holds
+// one character per owned emporium item, and `N2L` maps a gate index to it.
+const emporiumEncoding = hardcoded.match(/export var N2L = "([^"]*)"/)?.[1];
+if (!emporiumEncoding) throw new Error('N2L moved');
+const gateBlock = system.match(/var gates = \{([^}]*)\}/)?.[1];
+if (!gateBlock) throw new Error('Crop Scientist gates moved');
+const cropScientistGates = gateBlock
+  .split(',')
+  .map((pair) => Number(pair.split(':')[1].trim()));
 
 if (rankNames.length !== 20) throw new Error('rank names moved');
 if (rankUnlocks.length !== 20) throw new Error('rank unlocks moved');
@@ -50,6 +64,13 @@ if (lists.NinjaInfo[36]?.length !== 20) throw new Error('Ninja Rank bases moved'
 if (seeds.length !== 7) throw new Error('seed families moved');
 if (market.length !== 16) throw new Error('market rows moved');
 if (exotics.length !== 80) throw new Error('exotic rows moved');
+if (cropScientistGates.length !== 10) throw new Error('Crop Scientist gates moved');
+if (emporiumEncoding.length < 100) throw new Error('emporium encoding moved');
+// The upstream indexes the encoding by UTF-16 unit, so a character outside the
+// basic plane would shift every gate.
+if ([...emporiumEncoding].length !== emporiumEncoding.length) {
+  throw new Error('the emporium encoding has astral characters');
+}
 
 const payload = {
   seeds,
@@ -59,6 +80,11 @@ const payload = {
   rankUnlocks,
   ninjaRankBases: lists.NinjaInfo[36].map(Number),
   gmoThresholds,
+  emporiumEncoding,
+  cropScientistGates,
+  // Vault 79 (`Properly Funded Research`) is in the game's no-mastery list, so
+  // its Crop Scientist bonus is the saved level times this per-level value.
+  vaultCropScientistPerLevel: Number(lists.UpgradeVault[79][5]),
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
 };
 
@@ -66,4 +92,7 @@ const out = new URL('../crates/core/data/farming.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${seeds.length} seed families, ${market.length} market rows, ${exotics.length} exotics`
+);
+console.log(
+  `Crop Scientist: ${cropScientistGates.length} emporium gates, vault 79 per level ${payload.vaultCropScientistPerLevel}`
 );

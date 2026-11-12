@@ -5,11 +5,18 @@
 //! and `farming-calc.html`.
 //!
 //! The upstream account snapshot reads a dozen other systems (bubbles, meals,
-//! cards, stamps, vials, star signs, achievements, summoning, rift, vault,
-//! grimoire, minehead, sushi, lab, gaming, hole and pristine). This port applies
-//! only the terms the save itself carries — market levels, Land Rank, exotic
-//! upgrades, crop quantities, `GemItemsPurchased` and Spelunk organic labels —
-//! so chances and values here are lower bounds. The importer warns about it.
+//! cards, stamps, vials, star signs, achievements, summoning, rift, minehead,
+//! sushi, gaming, hole, pristine and the lab mainframe). This port applies only
+//! the terms the save itself carries — market levels, Land Rank, exotic
+//! upgrades, crop quantities, `GemItemsPurchased`, Spelunk organic labels, the
+//! emporium encoding (`Ninja[102][9]`), Grimoire 22/36 and Vault 79 — so
+//! chances and values here are lower bounds. The importer warns about it.
+//!
+//! Everything here is pinned against the upstream calculator's own output:
+//! `script/farming-signals-oracle.mjs` regenerates `fixtures/farming-signals.json` from
+//! `farming-planner.js` and `farming.js`, and `crates/core/tests/farming_signals.rs`
+//! compares the snapshot, the diagnostics, the growth breakpoints, every plot's
+//! metrics, every plot's overgrowth curve and the Crop Scientist table.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -36,6 +43,15 @@ pub struct FarmingData {
     pub ninja_rank_bases: Vec<f64>,
     #[serde(rename = "gmoThresholds")]
     pub gmo_thresholds: Vec<f64>,
+    /// `N2L`: the character encoding of the emporium item list.
+    #[serde(rename = "emporiumEncoding")]
+    pub emporium_encoding: String,
+    /// The emporium item each Crop Scientist bonus is gated behind.
+    #[serde(rename = "cropScientistGates")]
+    pub crop_scientist_gates: Vec<usize>,
+    /// Vault 79's bonus per level, the Crop Scientist multiplier term.
+    #[serde(rename = "vaultCropScientistPerLevel")]
+    pub vault_crop_scientist_per_level: f64,
 }
 
 /// One seed family and the crop ids it evolves through.
@@ -117,6 +133,15 @@ impl FarmingData {
     pub fn exotic(&self, id: usize) -> Option<&ExoticUpgrade> {
         self.exotics.get(id)
     }
+
+    /// `emporiumBonus(t, Ninja[102][9])`: whether the encoding of the owned
+    /// emporium items carries the character that item `t` is encoded as.
+    pub fn emporium_owned(&self, owned: &str, item: usize) -> bool {
+        self.emporium_encoding
+            .chars()
+            .nth(item)
+            .is_some_and(|code| owned.contains(code))
+    }
 }
 
 /// The bundled farming data, parsed once.
@@ -176,6 +201,13 @@ pub struct Farm {
     pub gem_items: Vec<f64>,
     /// The active character's Farming level (`Lv0_<n>[16]`).
     pub farm_level: u32,
+    /// The emporium items the account owns: `Ninja[102][9]`, one character per
+    /// item. It gates the Crop Scientist bonuses.
+    pub emporium_owned: String,
+    /// `Grimoire[22]` and its multiplier `Grimoire[36]`.
+    pub grimoire_crop_scientist: f64,
+    /// `UpgVault[79]`, `Properly Funded Research`, the Crop Scientist vault.
+    pub vault_crop_scientist: f64,
 }
 
 impl Default for Farm {
@@ -191,6 +223,9 @@ impl Default for Farm {
             organic_exotics: Vec::new(),
             gem_items: Vec::new(),
             farm_level: 0,
+            emporium_owned: String::new(),
+            grimoire_crop_scientist: 0.0,
+            vault_crop_scientist: 0.0,
         }
     }
 }
@@ -205,12 +240,20 @@ impl Farm {
 mod account;
 mod allocation;
 mod assignment;
+mod crop_scientist;
+mod curves;
+mod growth;
 mod plot;
+mod signals;
 
 pub use account::{RankTotals, Snapshot};
 pub use allocation::{Allocation, Mode};
 pub use assignment::{Assignment, CropRow, Objective};
+pub use crop_scientist::{CropScientistBonus, CropScientistUnit};
+pub use curves::{OvergrowthAdvice, OvergrowthCurve, OvergrowthRow};
+pub use growth::GrowthBreakpoint;
 pub use plot::{CropValue, PlotMetrics, land_rank_requirement, overgrowth_multiplier};
+pub use signals::Diagnostics;
 
 #[cfg(test)]
 mod tests {

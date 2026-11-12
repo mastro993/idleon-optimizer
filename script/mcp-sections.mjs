@@ -789,6 +789,36 @@ const INTERACTIONS = {
     await waitForNode(lane, 'fountain-stacks', 'fountain: the ground stack renders');
   },
   farming: async (lane) => {
+    // The Overview tab leads: the priority signals, the Crop Scientist table
+    // and the growth breakpoints from the save, then every plot's curve.
+    await waitForNode(lane, 'farming-cards', 'farming: the overview cards render');
+    await waitForNode(lane, 'farming-signals', 'farming: the priority signals render');
+    await waitForNode(
+      lane,
+      'farming-crop-scientist-table',
+      'farming: the Crop Scientist table renders'
+    );
+    await waitForNode(lane, 'farming-growth-table', 'farming: the growth breakpoints render');
+    await waitFor(
+      lane,
+      (nodes) => {
+        const labels = nodes
+          .filter((node) => node.id?.startsWith('farming-curve-plot-'))
+          .map((node) => node.label ?? '');
+        return labels.length === 36 && labels.every((label) => label.includes('target OG'));
+      },
+      'farming: every plot has a curve row'
+    );
+    const curve = labelOf(await lane.tree(), 'farming-curve-title') ?? '';
+    if (curve !== 'Plot 1 curve') throw new Error(`farming: the curve title reads ${curve}`);
+    await lane.call('click_element', { id: 'farming-curve-plot-7' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'farming-curve-title') === 'Plot 8 curve',
+      'farming: clicking a curve row switches the curve'
+    );
+    await lane.call('click_element', { id: 'plots' });
+    await waitForNode(lane, 'farming-field', 'farming: the full plot grid opens');
     await lane.call('click_element', { id: 'plot-1' });
     await waitFor(
       lane,
