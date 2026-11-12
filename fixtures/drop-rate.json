@@ -7,48 +7,311 @@
       "map": 39,
       "luk": 0,
       "dropRate": 0,
-      "total": 1
+      "total": 1,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 1,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 0,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 0,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 0,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 0,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 39,
       "luk": 1200,
       "dropRate": 35,
-      "total": 13.35
+      "total": 13.35,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 13.35,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 12.35,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 1235,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 1200,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 35,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 40,
       "luk": 25000,
       "dropRate": 750.5,
-      "total": 258.505
+      "total": 258.505,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 258.505,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 257.505,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 25750.5,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 25000,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 750.5,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 70,
       "luk": 3.5,
       "dropRate": 0.25,
-      "total": 1.0375
+      "total": 1.0375,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 1.0375,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 0.0375,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 3.75,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 3.5,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 0.25,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 71,
       "luk": 999999,
       "dropRate": 12345,
-      "total": 10124.44
+      "total": 10124.44,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 10124.44,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 10123.44,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 1012344,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 999999,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 12345,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 118,
       "luk": 12345.5,
       "dropRate": 678.25,
-      "total": 131.2375
+      "total": 131.2375,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 131.2375,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 130.2375,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 13023.75,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 12345.5,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 678.25,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "map": 119,
       "luk": 1,
       "dropRate": 99,
-      "total": 2
+      "total": 2,
+      "tree": {
+        "name": "Dungeon Drop Rate",
+        "val": 2,
+        "children": [
+          {
+            "name": "Constant",
+            "val": 1
+          },
+          {
+            "name": "Percent to fraction",
+            "val": 1,
+            "children": [
+              {
+                "name": "Dungeon bonuses",
+                "val": 100,
+                "children": [
+                  {
+                    "name": "Dungeon Total LUK",
+                    "val": 1,
+                    "source": "Live dungeon Total LUK input"
+                  },
+                  {
+                    "name": "Dungeon Drop Rate stat",
+                    "val": 99,
+                    "source": "Live dungeon Drop Rate input"
+                  }
+                ]
+              },
+              {
+                "name": "Constant",
+                "val": 100
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "missingInputs": {
     "map": 39,
-    "reason": "Dungeon Drop Rate needs live dungeon Total LUK and Dungeon Drop Rate stat values, which are not stored in save JSON."
+    "reason": "Dungeon Drop Rate needs live dungeon Total LUK and Dungeon Drop Rate stat values, which are not stored in save JSON.",
+    "tree": {
+      "name": "Drop Rate",
+      "val": 0,
+      "children": [
+        {
+          "name": "Dungeon Runtime Inputs Required",
+          "val": 0,
+          "note": "Enter the two values shown in the active dungeon run."
+        }
+      ]
+    }
   },
   "nonDungeon": {
     "note": "Needs the account stats engine (SA-02); recorded as the reference total.",

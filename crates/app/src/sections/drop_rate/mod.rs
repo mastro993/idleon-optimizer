@@ -1,16 +1,17 @@
 //! The Drop Rate Calculator: the character and map context, the live dungeon
-//! inputs and the total card.
+//! inputs, the total card and the formula tree behind it.
 //!
 //! Ported from `drop-rate-calc.html`: the context card that
 //! `populateMapSel`/`switchChar`/`switchMap` drive, the runtime panel that only
-//! a dungeon map shows, and the `#result-card` total. The formula tree below
-//! them is DR-02; the maths the total reads lives in [`idleon_drop_rate`].
+//! a dungeon map shows, the `#result-card` total and the `#tree` breakdown. The
+//! maths and the tree live in [`idleon_drop_rate`]; the breakdown renders through
+//! the shared formula tree.
 
 mod actions;
 
 use crate::state::AppState;
 use ely_gpui_component::forms::{Choice, Input, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
@@ -18,12 +19,14 @@ use gpui::{
     AnyElement, App, Context, Entity, FontWeight, Hsla, ParentElement, Role, Styled, Subscription,
     Window, div, px,
 };
+use idleon_common::formula::FormulaNode;
 use idleon_drop_rate::{self as drop_rate, Runtime, Selection, Total};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
+use idleon_ui::formula::FormulaTree;
 
-/// The page's own state: the context, the save slice it reads and the two live
-/// fields a dungeon run shows.
+/// The page's own state: the context, the save slice it reads, the two live
+/// fields a dungeon run shows and the breakdown tree under them.
 pub(crate) struct State {
     pub(crate) selection: Selection,
     pub(crate) snapshot: Option<Snapshot>,
@@ -31,6 +34,8 @@ pub(crate) struct State {
     pub(crate) luk: Entity<TextInput>,
     /// Dungeon Drop Rate stat.
     pub(crate) rate: Entity<TextInput>,
+    /// The `#tree` breakdown.
+    pub(crate) tree: Entity<FormulaTree>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -44,6 +49,7 @@ impl State {
             snapshot: None,
             luk,
             rate,
+            tree: crate::ui::formula_tree("drop-rate-formula", window, cx),
             _subscriptions: vec![luk_subscription, rate_subscription],
         }
     }
@@ -66,6 +72,12 @@ impl State {
             Ok(runtime) => drop_rate::total(self.selection.map, runtime),
             Err(reason) => Total::Invalid(reason),
         }
+    }
+
+    /// The formula tree's root: the upstream expansion of the total, or nothing
+    /// to expand on a map whose pool chain this build does not decode.
+    pub(crate) fn breakdown(&self, cx: &App) -> Option<FormulaNode> {
+        drop_rate::tree(self.selection.map, self.runtime(cx).ok()?)
     }
 
     /// The character selector's rows: every character with its class.
@@ -115,12 +127,23 @@ fn live_field(
     (input, subscription)
 }
 
-/// The Drop Rate page: the context, the live dungeon fields and the total.
+/// The Drop Rate page: the context, the live dungeon fields, the total and the
+/// formula tree.
 pub(crate) fn view(
     state: &mut AppState,
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
+    // The tree's root is set before the palette is borrowed: updating the child
+    // entity needs the context mutably.
+    let tree = state.drop_rate.tree.clone();
+    let expanded = match state.drop_rate.breakdown(cx) {
+        Some(root) => {
+            tree.update(cx, |tree, cx| tree.set_root(root, cx));
+            true
+        }
+        None => false,
+    };
     let colors = &cx.theme().colors;
     let (muted, gold, danger) = (colors.fg_muted, colors.warning, colors.danger);
     let selection = state.drop_rate.selection;
@@ -141,6 +164,7 @@ pub(crate) fn view(
     let dungeon = state.drop_rate.dungeon();
     let luk = state.drop_rate.luk.clone();
     let rate = state.drop_rate.rate.clone();
+    let gap = total.reason().map(str::to_string);
     let entity = cx.entity();
     let character_pick = entity.clone();
     let map_pick = entity;
@@ -183,51 +207,119 @@ pub(crate) fn view(
         );
 
     let note = context_note(character.as_deref(), selection);
+    let total = total_card(
+        &total,
+        character.as_deref(),
+        selection,
+        loaded,
+        muted,
+        gold,
+        danger,
+    );
+    let formula = if expanded {
+        formula_card(tree)
+    } else {
+        formula_gap(gap, loaded, muted)
+    };
     div()
         .id("drop-rate-calculator")
         .flex()
         .flex_col()
         .size_full()
         .min_h_0()
-        .gap_3()
         .child(
-            Card::new()
-                .header(CardHeader::new("Calculation Context").description(
-                    "The drop-rate descriptor resolves against this character and map.",
-                ))
-                .child(controls)
-                .when(dungeon, |card| {
-                    card.child(dungeon_fields(
-                        &luk,
-                        &rate,
-                        luk_invalid,
-                        rate_invalid,
-                        muted,
-                        colors.sunken,
-                    ))
-                })
+            ScrollArea::new("drop-rate-scroll")
+                .vertical()
+                .flex_1()
+                .min_h_0()
                 .child(
                     div()
-                        .id("drop-rate-context-note")
-                        .role(Role::Label)
-                        .aria_label(note.clone())
-                        .px_3()
-                        .pb_3()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note),
+                        .flex()
+                        .flex_col()
+                        .gap_3()
+                        .child(
+                            Card::new()
+                                .header(CardHeader::new("Calculation Context").description(
+                                    "The drop-rate descriptor resolves against this character and map.",
+                                ))
+                                .child(controls)
+                                .when(dungeon, |card| {
+                                    card.child(dungeon_fields(
+                                        &luk,
+                                        &rate,
+                                        luk_invalid,
+                                        rate_invalid,
+                                        muted,
+                                        colors.sunken,
+                                    ))
+                                })
+                                .child(
+                                    div()
+                                        .id("drop-rate-context-note")
+                                        .role(Role::Label)
+                                        .aria_label(note.clone())
+                                        .px_3()
+                                        .pb_3()
+                                        .text_size(px(12.0))
+                                        .text_color(muted)
+                                        .child(note),
+                                ),
+                        )
+                        .child(total)
+                        .child(formula),
                 ),
         )
-        .child(total_card(
-            &total,
-            character.as_deref(),
-            selection,
-            loaded,
-            muted,
-            gold,
-            danger,
-        ))
         .into_any_element()
+}
+
+/// The shared formula tree in its card, sized like the other sections'
+/// breakdown cards.
+fn formula_card(tree: Entity<FormulaTree>) -> AnyElement {
+    Card::new()
+        .header(
+            CardHeader::new("Formula Breakdown").description(
+                "1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100, term by term",
+            ),
+        )
+        .child(
+            div()
+                .id("drop-rate-formula-card-body")
+                .h(px(240.0))
+                .min_h_0()
+                .child(tree),
+        )
+        .into_any_element()
+}
+
+/// The tree card's empty state: the reason this map has nothing to expand.
+fn formula_gap(reason: Option<String>, loaded: bool, muted: Hsla) -> AnyElement {
+    let reason = gap_reason(reason.as_deref(), loaded);
+    Card::new()
+        .header(
+            CardHeader::new("Formula Breakdown")
+                .description("Nothing to expand until the missing terms resolve."),
+        )
+        .child(
+            div()
+                .id("drop-rate-formula-gap")
+                .role(Role::Label)
+                .aria_label(reason.clone())
+                .px_3()
+                .pb_3()
+                .text_size(px(12.0))
+                .text_color(muted)
+                .child(reason),
+        )
+        .into_any_element()
+}
+
+/// Why the tree card has no tree: nothing loaded yet, or the map's own gap.
+fn gap_reason(reason: Option<&str>, loaded: bool) -> String {
+    if loaded {
+        reason.unwrap_or(drop_rate::UNSUPPORTED).to_string()
+    } else {
+        "Load a save to expand the drop-rate formula.".to_string()
+    }
 }
 
 /// The two live dungeon inputs, shown only while a dungeon map is selected.
@@ -462,6 +554,19 @@ mod tests {
         assert_eq!(
             sub_line(&Total::Value(13.35), Some("Ana"), selection, false),
             "Select a character and map after loading."
+        );
+    }
+
+    #[test]
+    fn the_tree_card_names_the_reason_it_has_no_tree() {
+        assert_eq!(
+            gap_reason(None, false),
+            "Load a save to expand the drop-rate formula."
+        );
+        assert_eq!(gap_reason(None, true), drop_rate::UNSUPPORTED);
+        assert_eq!(
+            gap_reason(Some("Dungeon Total LUK must be 0 or more."), true),
+            "Dungeon Total LUK must be 0 or more."
         );
     }
 }
