@@ -51,6 +51,9 @@ pub struct Offer {
     pub cost: f64,
     /// The chance an offering costs nothing, from the Y4 bubble.
     pub free_chance: f64,
+    /// `expectedSpendForOneSuccess`: the Divinity points one successful
+    /// offering expects to spend, counting the free attempts.
+    pub expected_spend_per_success: f64,
     /// Attempts to reach the planning confidence.
     pub attempts: u32,
     /// What those attempts are expected to spend, counting free ones.
@@ -73,6 +76,11 @@ pub fn offer(inputs: &Inputs, god_rank: u32) -> Offer {
         confidence,
         cost,
         free_chance,
+        expected_spend_per_success: if odds > 0.0 {
+            cost * (1.0 - free_chance) / odds
+        } else {
+            0.0
+        },
         attempts,
         expected_spend: cost * (1.0 - free_chance) * (1.0 - (1.0 - odds).powi(attempts as i32))
             / odds,
@@ -120,6 +128,22 @@ mod tests {
             offering_cost(6, 80.0, 1),
             "the growth caps at 80%"
         );
+    }
+
+    #[test]
+    fn the_fit_reads_the_expected_spend_of_one_success() {
+        let inputs = Inputs {
+            tier: 1,
+            ..Inputs::default()
+        };
+        let row = offer(&inputs, 0);
+        assert_eq!(row.cost, 5.0);
+        assert_eq!(row.expected_spend_per_success, 100.0);
+
+        let free = Inputs { y4: 20.0, ..inputs };
+        let row = offer(&free, 0);
+        assert!((row.expected_spend_per_success - 80.0).abs() < 1e-9);
+        assert!(row.expected_spend_per_success < row.max_paid_spend);
     }
 
     #[test]

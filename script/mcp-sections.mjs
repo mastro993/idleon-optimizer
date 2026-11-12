@@ -1520,6 +1520,21 @@ const INTERACTIONS = {
     const summary = labelOf(await lane.tree(), 'coral-plan-summary') ?? '';
     if (!summary.includes('actions')) throw new Error(`coral: the plan summary reads ${summary}`);
 
+    // The fit explains the offering model, and names the save fields it had to
+    // read as zero; the current levels come straight from the imported save.
+    await waitForNode(lane, 'coral-offering-fit', 'coral: the offering fit opens');
+    const fit = labelOf(await lane.tree(), 'coral-fit-summary') ?? '';
+    if (!fit.includes('success') || !fit.includes('attempt')) {
+      throw new Error(`coral: the fit explanation reads ${fit}`);
+    }
+    await waitForNode(lane, 'coral-fit-missing', 'coral: the fit warns about the fields it lacks');
+    await waitForNode(lane, 'coral-levels', 'coral: the current levels table opens');
+    const levels = labelOf(await lane.tree(), 'coral-levels') ?? '';
+    if (!levels.includes('20, 10')) throw new Error(`coral: the current levels read ${levels}`);
+    if (has(await lane.tree(), 'coral-levels-missing')) {
+      throw new Error('coral: the levels warn despite the save carrying them');
+    }
+
     // An edited input keeps the plan on screen but marks it stale; putting the
     // input back marks it current again.
     await lane.call('click_element', { id: 'coral-assume-unlocked' });

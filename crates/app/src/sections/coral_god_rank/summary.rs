@@ -3,12 +3,15 @@
 use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
+use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::primitives::Severity;
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use idleon_core::coral::{Unlock, unlocks};
 
 /// The saved budget, rank and unlock headline above the plan.
 pub fn kpis(state: &mut AppState) -> AnyElement {
@@ -112,22 +115,64 @@ pub fn current_pane(
         coral_metrics = coral_metrics.row([label.to_string(), value]);
     }
 
-    let mut levels_table = Table::new(["Upgrade", "Per level", "Level", "Effect", "Next cost"]);
-    for row in inputs.level_rows() {
+    let mut levels_table = Table::new([
+        "Index",
+        "Per level",
+        "Level",
+        "Effect",
+        "Next cost",
+        "Status",
+    ]);
+    for (row, unlock) in inputs.level_rows().into_iter().zip(unlocks(inputs)) {
         levels_table = levels_table.row([
-            format!("Upgrade {}", row.index),
+            row.index.to_string(),
             format::value(row.per_level),
             row.level.to_string(),
             format::value(row.effect),
             format::value(row.next_cost),
+            unlock_status(unlock).to_string(),
         ]);
     }
+    let levels_summary = format!(
+        "Coral Kid levels: {}",
+        inputs
+            .levels
+            .iter()
+            .map(u32::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    );
 
     let singularity: Vec<String> = inputs
         .singularity_levels
         .iter()
         .map(u32::to_string)
         .collect();
+
+    let mut levels_card = Card::new()
+        .header(
+            CardHeader::new("Current Coral Kid levels")
+                .description("Upgrades 0-5, read from OptLacc[427+i]."),
+        )
+        .child(
+            div()
+                .id("coral-levels")
+                .role(Role::Label)
+                .aria_label(levels_summary)
+                .w_full()
+                .child(levels_table),
+        );
+    let missing_levels = state.coral.save.levels_missing();
+    if state.save_loaded && !missing_levels.is_empty() {
+        levels_card = levels_card.child(Banner::new(
+            "coral-levels-missing",
+            Severity::Warning,
+            format!(
+                "The save did not carry {}, so those levels read 0. Import a save with the Coral Kid page.",
+                missing_levels.join(" and ")
+            ),
+        ));
+    }
 
     div()
         .id("coral-summary")
@@ -151,12 +196,10 @@ pub fn current_pane(
                     ),
                 ),
         )
-        .child(
-            Card::new()
-                .header(
-                    CardHeader::new("Current Coral Kid levels")
-                        .description("Upgrades 0-5, read from OptLacc[427+i]."),
-                )
-                .child(levels_table),
-        )
+        .child(levels_card)
+}
+
+/// The status column: the unlock reason, or `Unlocked` when there is none.
+fn unlock_status(unlock: Unlock) -> &'static str {
+    unlock.reason.unwrap_or("Unlocked")
 }
