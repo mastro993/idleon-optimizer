@@ -1147,20 +1147,20 @@ const INTERACTIONS = {
       throw new Error(`opal: the current state reads ${current}`);
     }
     await waitForNode(lane, 'opal-terms', 'opal: every bonus term renders');
-    const total = labelOf(await lane.tree(), 'formula-node-root') ?? '';
+    const total = labelOf(await lane.tree(), 'opal-formula-node-root') ?? '';
     if (!total.includes('Total EXP/hr')) {
       throw new Error(`opal: the breakdown starts at the total, not ${total}`);
     }
     await lane.call('click_element', { id: 'opal-villager-0' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Explorer EXP/hr'),
+      (nodes) => (labelOf(nodes, 'opal-formula-node-root') ?? '').includes('Explorer EXP/hr'),
       'opal: picking a villager readdresses the tree',
     );
     await lane.call('click_element', { id: 'opal-villager-all' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Total EXP/hr'),
+      (nodes) => (labelOf(nodes, 'opal-formula-node-root') ?? '').includes('Total EXP/hr'),
       'opal: the total control readdresses the tree',
     );
     // The optimizer splits the saved 155 opals and the copied plan names them.
@@ -1210,7 +1210,7 @@ const INTERACTIONS = {
     // The Breakdowns workspace: every formula tab renders through the shared
     // tree, and the twin selector keeps the root on the chosen twin.
     await lane.call('click_element', { id: 'sneaking-tab-breakdowns' });
-    await waitForNode(lane, 'formula-node-root', 'sneaking: the breakdown tree renders');
+    await waitForNode(lane, 'sneaking-formula-node-root', 'sneaking: the breakdown tree renders');
     for (const [tab, root] of [
       ['jade', 'Jade per Hour'],
       ['exp', 'Sneaking EXP per Successful Action'],
@@ -1221,7 +1221,7 @@ const INTERACTIONS = {
       await lane.call('click_element', { id: `sneak-formula-${tab}` });
       await waitFor(
         lane,
-        (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes(root),
+        (nodes) => (labelOf(nodes, 'sneaking-formula-node-root') ?? '').includes(root),
         `sneaking: the ${tab} tree renders`
       );
     }
@@ -2034,7 +2034,9 @@ const INTERACTIONS = {
     );
 
     const guaranteed = labelOf(await lane.tree(), 'statue-needed-0');
+    // A closed select opens on the first Down and starts on its current choice.
     await lane.call('focus_element', { id: 'statue-estimate' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
@@ -2105,15 +2107,16 @@ const INTERACTIONS = {
     // The farming breakdown renders through the shared formula tree and
     // follows its statue selector.
     await waitForNode(lane, 'statue-breakdown-tree', 'statue: the farming breakdown renders');
-    const breakdownRoot = labelOf(await lane.tree(), 'formula-node-root');
+    const breakdownRoot = labelOf(await lane.tree(), 'statue-breakdown-node-root');
     await lane.call('focus_element', { id: 'statue-breakdown-statue' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
       (nodes) =>
-        (labelOf(nodes, 'formula-node-root') ?? '') !== breakdownRoot &&
-        (labelOf(nodes, 'formula-node-root') ?? '').includes('statues needed'),
+        (labelOf(nodes, 'statue-breakdown-node-root') ?? '') !== breakdownRoot &&
+        (labelOf(nodes, 'statue-breakdown-node-root') ?? '').includes('statues needed'),
       'statue: the farming breakdown follows the selected statue',
     );
   },
@@ -2161,12 +2164,14 @@ const INTERACTIONS = {
         'Ana · Blunder Hills · Mining · Construction Active',
       'stats-all: the save defaults open on character one and its current map',
     );
-    const count = (nodes) => Number(/^(\d+) maps/.exec(labelOf(nodes, 'stats-map-count') ?? '')?.[1]);
+    const count = (nodes) => Number(/(\d+) maps/.exec(labelOf(nodes, 'stats-map-count') ?? '')?.[1]);
     const accessible = count(await lane.tree());
     if (!(accessible > 0)) throw new Error(`stats-all: the accessible list reads ${accessible}`);
 
-    // Character two follows its own current map.
+    // Character two follows its own current map. A closed select opens on the
+    // first Down and starts on its current choice, so the second Down moves.
     await lane.call('focus_element', { id: 'stats-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
@@ -2177,8 +2182,10 @@ const INTERACTIONS = {
       'stats-all: the character selector switches to that character\'s current map',
     );
 
-    // The map list level widens the map selector and refreshes the summary.
+    // The map list level widens the map selector and refreshes the summary:
+    // Accessible opens, then two rows down reaches All Valid Maps.
     await lane.call('focus_element', { id: 'stats-map-visibility' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
@@ -2194,8 +2201,10 @@ const INTERACTIONS = {
     // Skill and construction mode follow their selectors.
     await lane.call('focus_element', { id: 'stats-skill' });
     await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await lane.call('focus_element', { id: 'stats-construction' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
@@ -2233,6 +2242,20 @@ const INTERACTIONS = {
       );
     }
 
+    // The capacity rows read the character's own saved bag row, so the check
+    // below needs the character this save carries: Home opens on the first slot.
+    await lane.call('focus_element', { id: 'stats-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'home' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-context-note') ?? '') ===
+        'Ana · Blunder Hills · Choppin · Construction Inactive',
+      'stats-all: the character selector returns to the character the save carries',
+    );
+
     // The capacity rows resolve against the save and show their formula tree.
     await lane.call('click_element', { id: 'stats-capacity-tab' });
     await waitFor(
@@ -2244,7 +2267,8 @@ const INTERACTIONS = {
     );
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Mining Carry Capacity'),
+      (nodes) =>
+        (labelOf(nodes, 'stats-formula-node-root') ?? '').includes('Mining Carry Capacity'),
       'stats-all: the capacity row shows its formula tree',
     );
 
@@ -2255,6 +2279,88 @@ const INTERACTIONS = {
       lane,
       (nodes) => (labelOf(nodes, 'stats-descriptor-warning') ?? '').includes('drop-rate.js'),
       'stats-all: an unported row names its upstream source',
+    );
+
+    // The formula explorer's ledger counts every category, so the region covers
+    // the whole registry rather than the computed rows alone.
+    await waitForNode(lane, 'stats-explorer-ledger', 'stats-all: the explorer ledger renders');
+    const ledger = labelOf(await lane.tree(), 'stats-explorer-ledger') ?? '';
+    for (const [, label] of categories) {
+      if (!ledger.includes(label)) {
+        throw new Error(`stats-all: the explorer ledger misses ${label}: ${ledger}`);
+      }
+    }
+
+    // The breakdown card shows the same descriptor the explorer card will, so
+    // the two values below come from one resolution rather than two.
+    await bringIntoView(lane, 'stats-capacity-tab');
+    await lane.call('click_element', { id: 'stats-capacity-tab' });
+
+    // Search reaches the saved inputs behind the terms: the eight capacity
+    // formulas read the vault row and nothing else does.
+    await bringIntoView(lane, 'stats-explorer-search');
+    await lane.call('click_element', { id: 'stats-explorer-search' });
+    await lane.call('type_text', { text: 'vault' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-explorer-count') ?? '').startsWith('8 of 60') &&
+        has(nodes, 'stats-formula-carry-capacity-mining') &&
+        !has(nodes, 'stats-formula-drop-rate'),
+      'stats-all: the explorer search reaches the saved inputs',
+    );
+
+    // Each formula links to the upstream definition it ports.
+    const miningLink = (await lane.tree()).find(
+      (node) => node.id === 'stats-formula-carry-capacity-mining-source',
+    );
+    if (!(miningLink?.label ?? '').includes('js/stats/defs/carry-capacity.js')) {
+      throw new Error(
+        `stats-all: the formula source link reads ${JSON.stringify(miningLink?.label)}`,
+      );
+    }
+
+    // The status filter keeps the formulas this build computes.
+    await bringIntoView(lane, 'stats-explorer-status');
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('keyboard', { keystroke: 'backspace' });
+    await lane.call('focus_element', { id: 'stats-explorer-status' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'stats-explorer-count') ?? '').startsWith('10 of 60'),
+      'stats-all: the status filter keeps the computed formulas',
+    );
+
+    // The category filter narrows the same list; the card shows the formula,
+    // and its value is the breakdown's own.
+    // The first Down opens the list on its current choice, so Capacity is five
+    // rows down from All categories.
+    await lane.call('focus_element', { id: 'stats-explorer-category' });
+    for (let row = 0; row <= 5; row += 1) {
+      await lane.call('keyboard', { keystroke: 'down' });
+    }
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-explorer-count') ?? '').startsWith('8 of 60') &&
+        has(nodes, 'stats-formula-carry-capacity-mining'),
+      'stats-all: the category filter keeps one category',
+    );
+    await bringIntoView(lane, 'stats-formula-carry-capacity-mining');
+    await lane.call('click_element', { id: 'stats-formula-carry-capacity-mining' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-formula-value') ?? '') ===
+          (labelOf(nodes, 'stats-descriptor-summary') ?? '') &&
+        (labelOf(nodes, 'stats-explorer-formula-node-root') ?? '').includes(
+          'Mining Carry Capacity',
+        ),
+      'stats-all: the explorer card agrees with the breakdown and shows its tree',
     );
 
     // A project document restores the whole context.
@@ -2875,12 +2981,12 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'cglunko-formula-collapse' });
     await waitFor(
       lane,
-      (nodes) => !has(nodes, 'formula-node-root-0'),
+      (nodes) => !has(nodes, 'cglunko-formula-node-root-0'),
       'cglunko: collapse closes the tree',
     );
     await lane.call('click_element', { id: 'cglunko-formula-expand' });
-    await waitForNode(lane, 'formula-node-root-0-0', 'cglunko: expand reopens the additive group');
-    const additive = labelOf(await lane.tree(), 'formula-node-root-0-0') ?? '';
+    await waitForNode(lane, 'cglunko-formula-node-root-0-0', 'cglunko: expand reopens the additive group');
+    const additive = labelOf(await lane.tree(), 'cglunko-formula-node-root-0-0') ?? '';
     if (!additive.includes('+30%')) {
       throw new Error(`cglunko: the additive group reads ${additive}`);
     }

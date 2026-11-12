@@ -330,3 +330,160 @@ fn every_category_renders_and_unported_rows_name_their_source() {
         }
     }
 }
+
+#[test]
+fn the_explorer_covers_every_descriptor_and_every_category() {
+    let sheet = fixture_sheet(&fixture());
+    let coverage = sheet.coverage();
+    assert_eq!(coverage.total, sheet.descriptors().len());
+    assert_eq!(coverage.computed, sheet.resolved());
+    assert_eq!(coverage.computed, 10);
+    assert_eq!(
+        coverage.categories.len(),
+        idleon_stats::BreakdownCategory::ALL.len()
+    );
+    assert_eq!(
+        coverage
+            .categories
+            .iter()
+            .map(|entry| entry.total)
+            .sum::<usize>(),
+        coverage.total
+    );
+    assert_eq!(
+        coverage
+            .categories
+            .iter()
+            .map(|entry| entry.computed)
+            .sum::<usize>(),
+        coverage.computed
+    );
+    for (entry, category) in coverage
+        .categories
+        .iter()
+        .zip(idleon_stats::BreakdownCategory::ALL)
+    {
+        assert_eq!(entry.category, category);
+        assert!(entry.total > 0, "{} is empty", category.label());
+        assert!(entry.computed <= entry.total);
+        assert!(
+            coverage.summary().contains(category.label()),
+            "{} is missing from the ledger",
+            category.label()
+        );
+    }
+}
+
+#[test]
+fn the_explorer_search_reads_names_sources_and_saved_inputs() {
+    let sheet = fixture_sheet(&fixture());
+    let all = idleon_stats::ExplorerFilter::default();
+    assert_eq!(sheet.matching("", all).len(), sheet.descriptors().len());
+    assert_eq!(sheet.matching("   ", all).len(), sheet.descriptors().len());
+    assert!(sheet.matching("no such formula", all).is_empty());
+
+    let by_name = sheet.matching("Mining Carry Capacity", all);
+    assert_eq!(by_name.len(), 1);
+    assert_eq!(by_name[0].id, "carry-capacity-mining");
+
+    let by_source = sheet.matching("drop-rate.js", all);
+    assert_eq!(by_source.len(), 1);
+    assert_eq!(by_source[0].id, "drop-rate");
+    assert_eq!(
+        by_source[0].source_url(),
+        format!("{}js/stats/defs/drop-rate.js", idleon_stats::UPSTREAM)
+    );
+
+    // A saved input the capacity formulas read finds the eight rows that read
+    // it: the search reaches the terms, not only the row names.
+    let by_input = sheet.matching("Vault upgrade 11", all);
+    assert_eq!(by_input.len(), 8);
+    assert!(
+        by_input
+            .iter()
+            .all(|row| row.id.starts_with("carry-capacity-"))
+    );
+}
+
+#[test]
+fn the_explorer_filters_by_category_and_status() {
+    let sheet = fixture_sheet(&fixture());
+    let capacity = sheet.matching(
+        "",
+        idleon_stats::ExplorerFilter {
+            category: Some(idleon_stats::BreakdownCategory::Capacity),
+            status: idleon_stats::ExplorerStatus::All,
+        },
+    );
+    assert_eq!(
+        capacity.len(),
+        sheet.count(idleon_stats::BreakdownCategory::Capacity)
+    );
+    assert!(
+        capacity
+            .iter()
+            .all(|row| row.category == idleon_stats::BreakdownCategory::Capacity)
+    );
+
+    let computed = sheet.matching(
+        "",
+        idleon_stats::ExplorerFilter {
+            status: idleon_stats::ExplorerStatus::Computed,
+            ..Default::default()
+        },
+    );
+    let unported = sheet.matching(
+        "",
+        idleon_stats::ExplorerFilter {
+            status: idleon_stats::ExplorerStatus::Unported,
+            ..Default::default()
+        },
+    );
+    assert_eq!(computed.len(), sheet.resolved());
+    assert_eq!(computed.len() + unported.len(), sheet.descriptors().len());
+    assert!(computed.iter().all(|row| row.display_value().is_some()));
+    assert!(unported.iter().all(|row| row.display_value().is_none()));
+
+    // The filters combine.
+    let research = sheet.matching(
+        "",
+        idleon_stats::ExplorerFilter {
+            category: Some(idleon_stats::BreakdownCategory::Research),
+            status: idleon_stats::ExplorerStatus::Computed,
+        },
+    );
+    assert_eq!(research.len(), 2);
+}
+
+#[test]
+fn every_explorer_row_is_its_breakdown_row_and_links_its_source() {
+    let sheet = fixture_sheet(&fixture());
+    for row in sheet.descriptors() {
+        let listed = sheet.matching(row.id, idleon_stats::ExplorerFilter::default());
+        let found = listed
+            .iter()
+            .find(|listed| listed.id == row.id)
+            .unwrap_or_else(|| panic!("{} is not in the explorer", row.id));
+        assert_eq!(
+            found.display_value(),
+            sheet.get(row.id).unwrap().display_value()
+        );
+        assert_eq!(
+            found.source_url(),
+            format!("{}{}", idleon_stats::UPSTREAM, row.source)
+        );
+    }
+    // The mining card shows the value the upstream stats page pins.
+    let mining = sheet.matching(
+        "carry-capacity-mining",
+        idleon_stats::ExplorerFilter::default(),
+    );
+    assert_eq!(
+        mining
+            .iter()
+            .find(|row| row.id == "carry-capacity-mining")
+            .and_then(|row| row.display_value())
+            .as_deref(),
+        Some("113,019,116")
+    );
+}

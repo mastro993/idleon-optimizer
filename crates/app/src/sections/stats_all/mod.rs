@@ -1,13 +1,15 @@
 //! The All Stats Dashboard: the five calculation-context selectors upstream's
-//! `stats-all.html` carries, the map access summary they resolve against, and
-//! the category breakdowns of SA-02.
+//! `stats-all.html` carries, the map access summary they resolve against, the
+//! category breakdowns of SA-02 and the formula explorer of SA-03.
 //!
 //! A context change re-resolves every descriptor, so the page never shows a
-//! value from the previous character or map. The breakdown rows read the
-//! descriptor model in `idleon_stats::breakdowns`; the formula tree is
-//! the shared [`FormulaTree`] component, not a second renderer.
+//! value from the previous character or map. The breakdown rows and the
+//! explorer read the descriptor model in `idleon_stats::breakdowns`; the
+//! explorer is [`explorer`], and both formula trees are the shared
+//! [`FormulaTree`] component, not a second renderer.
 
 mod actions;
+mod explorer;
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -38,6 +40,8 @@ pub(crate) struct State {
     pub(crate) category: BreakdownCategory,
     /// The descriptor whose formula tree the detail card shows.
     pub(crate) selected: Option<String>,
+    /// The formula explorer's filters and its own selection.
+    pub(crate) explorer: explorer::State,
 }
 
 impl Default for State {
@@ -48,6 +52,7 @@ impl Default for State {
             sheet: None,
             category: BreakdownCategory::Combat,
             selected: None,
+            explorer: explorer::State::default(),
         }
     }
 }
@@ -306,7 +311,8 @@ pub(crate) fn view(
         .when_some(snapshot, |page, snapshot| {
             page.child(map_card(context, snapshot, &options, muted))
         })
-        .child(breakdowns(state, cx));
+        .child(breakdowns(state, cx))
+        .child(explorer::region(state, cx));
     div()
         .id("stats-all-dashboard")
         .flex()

@@ -312,6 +312,10 @@ pub(crate) struct AppState {
     pub(crate) stats_all: StatsAllState,
     /// The shared formula tree on the All Stats breakdown card.
     pub(crate) stats_breakdown: Entity<FormulaTree>,
+    /// The formula explorer's search field.
+    pub(crate) stats_explorer_search: Entity<TextInput>,
+    /// The shared formula tree on the All Stats formula card.
+    pub(crate) stats_explorer_formula: Entity<FormulaTree>,
     /// The Drop Rate Calculator's context, save slice and live dungeon fields.
     pub(crate) drop_rate: DropRateState,
     /// The Coin Multiplier Calculator's cards and damage field.
@@ -425,6 +429,8 @@ impl AppState {
         let combat = CombatState::new(window, cx);
         let research = ResearchState::new(window, cx);
         let farming_name = ui::text_input("Preset name", "Preset name", window, cx);
+        let stats_explorer_search =
+            ui::text_input("Name, saved input or source", "Search formulas", window, cx);
         // Filter and name fields redraw the page on every keystroke.
         let mut subscriptions: Vec<Subscription> = [
             &search,
@@ -435,6 +441,7 @@ impl AppState {
             &combat.talent_search,
             &combat.override_search,
             &research.preset_name,
+            &stats_explorer_search,
         ]
         .into_iter()
         .map(|input| redraw_on_edit(cx, input))
@@ -765,6 +772,7 @@ impl AppState {
         let jar_breakdown = ui::formula_tree("jar-formula", window, cx);
         let opal_breakdown = ui::formula_tree("opal-formula", window, cx);
         let stats_breakdown = ui::formula_tree("stats-formula", window, cx);
+        let stats_explorer_formula = ui::formula_tree("stats-explorer-formula", window, cx);
         let sneaking_breakdown = ui::formula_tree("sneaking-formula", window, cx);
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
@@ -836,6 +844,8 @@ impl AppState {
             combat,
             stats_all: StatsAllState::default(),
             stats_breakdown,
+            stats_explorer_search,
+            stats_explorer_formula,
             drop_rate: DropRateState::new(window, cx),
             coin_multi: sections::coin_multi::State::new(window, cx),
             damage: DamageState::default(),
