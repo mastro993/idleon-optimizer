@@ -510,6 +510,15 @@ pub fn cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
     values
 }
 
+/// The value of putting a 25% shape on each cell as if no shape covered the
+/// grid: the upstream `bareSO` scoring shapes and the tier list both read.
+pub fn bare_cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
+    let mut bare = sim.clone();
+    bare.placements.clear();
+    bare.saved_overlay = Some(vec![-1; game().cells()]);
+    cell_values(&bare, ctx)
+}
+
 /// Grid points earned at a research level.
 pub fn grid_points_earned(research_level: u32, points_node_level: u32, bonus: u32) -> u32 {
     let lv = research_level as f64;

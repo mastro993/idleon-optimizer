@@ -21,6 +21,7 @@ use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
 use crate::sections::monument::State as MonumentState;
 use crate::sections::pickle::State as PickleState;
+use crate::sections::research::CustomPreset;
 use crate::sections::research::Tab as ResearchTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
@@ -61,6 +62,10 @@ pub struct ResearchConfig {
     /// The three upstream run toggles.
     options: SimOptions,
     supplements_open: bool,
+    /// The named shape tier lists the window keeps.
+    shape_presets: Vec<CustomPreset>,
+    /// The shape preset the tiers were applied from; `_` ids are built-ins.
+    active_shape_preset: Option<String>,
 }
 
 impl Default for ResearchConfig {
@@ -74,6 +79,8 @@ impl Default for ResearchConfig {
             effort: Effort::Balanced,
             options: SimOptions::default(),
             supplements_open: true,
+            shape_presets: Vec::new(),
+            active_shape_preset: None,
         }
     }
 }
@@ -285,6 +292,8 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             effort: state.effort,
             options: state.options,
             supplements_open: state.supplements_open,
+            shape_presets: state.research.shape_presets.clone(),
+            active_shape_preset: state.research.active_shape_preset.clone(),
         }),
     );
     insert("killroy", value(&state.killroy));
@@ -548,6 +557,19 @@ pub fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String>
     Ok(decoded)
 }
 
+/// The tiers a built-in id or a saved preset name names.
+fn shape_preset_tiers(state: &AppState, id: &str) -> Option<idleon_core::Tiers> {
+    if id.starts_with('_') {
+        game()
+            .presets
+            .iter()
+            .find(|preset| preset.id == id)
+            .and_then(|preset| preset.tiers_for(&state.simulation))
+    } else {
+        CustomPreset::find(&state.research.shape_presets, id).map(|preset| preset.tiers.clone())
+    }
+}
+
 /// Assign one decoded section config. Warnings are for values the loaded save
 /// or the grid no longer has room for; they never fail the import.
 pub fn assign(
@@ -589,6 +611,24 @@ pub fn assign(
                 )),
             }
             state.normalize_target();
+            let wanted = config.active_shape_preset;
+            state.research.shape_presets = CustomPreset::sanitise(config.shape_presets);
+            state.research.active_shape_preset = wanted
+                .as_deref()
+                .filter(|id| shape_preset_tiers(state, id).is_some())
+                .map(str::to_string);
+            if let Some(tiers) = state
+                .research
+                .active_shape_preset
+                .as_deref()
+                .and_then(|id| shape_preset_tiers(state, id))
+            {
+                state.simulation.shape_tiers = tiers;
+            } else if let Some(id) = wanted {
+                warnings.push(format!(
+                    "research: shape preset {id:?} is not in this build; the tiers are kept"
+                ));
+            }
         }
         Config::Killroy(config) => {
             state.killroy = config.normalized();
@@ -1138,6 +1178,11 @@ mod tests {
                 include_tournament: true,
             },
             supplements_open: false,
+            shape_presets: vec![CustomPreset {
+                name: "Minehead run".into(),
+                tiers: idleon_core::Tiers::parse("J6|").expect("the tiers"),
+            }],
+            active_shape_preset: Some("Minehead run".into()),
         });
         assert_eq!(research.tab, ResearchTab::Run);
         assert_eq!(research.selected_cell, Some(129));
@@ -1149,6 +1194,12 @@ mod tests {
         assert!(!research.options.extended_insight);
         assert!(research.options.include_tournament);
         assert!(!research.supplements_open);
+        assert_eq!(research.shape_presets.len(), 1);
+        assert_eq!(research.shape_presets[0].name, "Minehead run");
+        assert_eq!(
+            research.active_shape_preset.as_deref(),
+            Some("Minehead run")
+        );
         let clamworks = round_trip(&ClamworksConfig {
             tab: ClamworksTab::Claim,
             multikill: 7.0,

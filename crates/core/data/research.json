@@ -1263,149 +1263,82 @@
   {
    "id": "_none",
    "name": "Res EXP",
-   "data": "|",
-   "targets": []
+   "data": "|"
   },
   {
    "id": "_minehead",
    "name": "Minehead",
-   "data": "J6,I5,H5,G4,F6,H4,G5|",
-   "targets": [
-    129,
-    148,
-    147,
-    166,
-    125,
-    167,
-    146
-   ]
+   "data": "J6,I5,H5,G4,F6,H4,G5|"
   },
   {
    "id": "_dr",
    "name": "DR",
-   "data": "N4,M4,I4|",
-   "targets": [
-    173,
-    172,
-    168
-   ]
+   "data": "N4,M4,I4|"
   },
   {
    "id": "_daily",
    "name": "Daily",
-   "data": "K5,L5|",
-   "targets": [
-    150,
-    151
-   ]
+   "data": "K5,L5|"
   },
   {
    "id": "_classexp",
    "name": "Class EXP",
-   "data": "K6,L6,M6,M5|",
-   "targets": [
-    130,
-    131,
-    132,
-    152
-   ]
+   "data": "K6,L6,M6,M5|"
   },
   {
    "id": "_insight",
    "name": "Insight",
-   "data": "M8,L8|",
-   "targets": [
-    92,
-    91
-   ]
+   "data": "M8,L8|"
   },
   {
    "id": "_lumi",
    "name": "Lumi/hr",
-   "data": "F4,E4|",
-   "targets": [
-    165,
-    164
-   ]
+   "data": "F4,E4|"
   },
   {
    "id": "_jelly",
    "name": "Jelly operations",
-   "data": "F3,H3|",
-   "targets": [
-    185,
-    187
-   ]
+   "data": "F3,H3|"
   },
   {
    "id": "_sushi",
    "name": "Sushi income",
-   "data": "J3,F6|",
-   "targets": [
-    189,
-    125
-   ]
+   "data": "J3,F6|"
   },
   {
    "id": "_artifacts",
    "name": "Artifact hunting",
-   "data": "G7,J7,F6|",
-   "targets": [
-    106,
-    109,
-    125
-   ]
+   "data": "G7,J7,F6|"
   },
   {
    "id": "_megacrops",
    "name": "Megacrop farming",
-   "data": "H9,I8|",
-   "targets": [
-    67,
-    88
-   ]
+   "data": "H9,I8|"
   },
   {
    "id": "_gaming",
    "name": "Gaming",
-   "data": "H8,I7|",
-   "targets": [
-    87,
-    108
-   ]
+   "data": "H8,I7|"
   },
   {
    "id": "_construction",
    "name": "Construction",
-   "data": "J9,J8|",
-   "targets": [
-    69,
-    89
-   ]
+   "data": "J9,J8|"
   },
   {
    "id": "_cookingmastery",
    "name": "Cooking Mastery",
-   "data": "K3|",
-   "targets": [
-    190
-   ]
+   "data": "K3|"
   },
   {
    "id": "_equinox",
    "name": "Equinox",
-   "data": "G8|",
-   "targets": [
-    86
-   ]
+   "data": "G8|"
   },
   {
    "id": "_dailyworship",
    "name": "Daily Worship",
-   "data": "K4|",
-   "targets": [
-    170
-   ]
+   "data": "K4|"
   }
  ],
  "generatedFrom": {

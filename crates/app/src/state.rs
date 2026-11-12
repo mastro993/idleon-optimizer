@@ -141,6 +141,14 @@ impl SaveStatus {
     }
 }
 
+/// The inputs a stored shape-placement result was produced from.
+#[derive(Clone, Debug, PartialEq)]
+struct ShapeRunInputs {
+    simulation: Simulation,
+    context: SimContext,
+    effort: Effort,
+}
+
 /// The inputs a stored optimizer result was produced from.
 #[derive(Clone, Debug, PartialEq)]
 struct RunInputs {
@@ -285,6 +293,8 @@ pub struct AppState {
     save_revision: u64,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
+    /// The shared runner for the Shape Optimization tab's placement.
+    shape_run: Entity<TaskRunner<idleon_core::optimize::shapes::ShapesOutcome, ShapeRunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for the coral god rank beam search.
@@ -330,8 +340,10 @@ pub struct AppState {
     _combat_name_subscription: Subscription,
     _combat_talent_subscription: Subscription,
     _combat_overrides_subscription: Subscription,
+    _research_preset_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
+    _shape_run_subscription: Subscription,
     _killroy_run_subscription: Subscription,
     _coral_run_subscription: Subscription,
     _jelly_run_subscription: Subscription,
@@ -461,6 +473,36 @@ impl AppState {
                                 result.steps.len(),
                                 result.elapsed_ms
                             );
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        // The Shape Optimization tab runs the real placement optimizer through
+        // the same runner, so its preview is exactly what a run produced.
+        let shape_run = cx.new(|_| {
+            TaskRunner::<idleon_core::optimize::shapes::ShapesOutcome, ShapeRunInputs>::new()
+        });
+        let shape_run_subscription =
+            cx.subscribe(&shape_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Placing shapes… {:.0}%", progress.fraction * 100.0);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Shape placement cancelled; the previous layout is unchanged.".into()
+                        } else {
+                            "Shape placement cancelled; nothing was placed.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = result
+                                .steps
+                                .last()
+                                .cloned()
+                                .unwrap_or_else(|| "Shape placement finished.".into());
                         }
                     }
                 }
@@ -741,6 +783,16 @@ impl AppState {
                 }
                 cx.notify();
             });
+        let research = ResearchState::new(window, cx);
+        let research_preset = research.preset_name.clone();
+        let research_preset_subscription = cx.subscribe(
+            &research_preset,
+            |_state, _input, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            },
+        );
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
         let ladle_state = LadleSectionState::new(window, cx);
@@ -769,7 +821,7 @@ impl AppState {
             assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
-            research: ResearchState::default(),
+            research,
             killroy: KillroyState::default(),
             save: None,
             fleet: Fleet::default(),
@@ -853,8 +905,11 @@ impl AppState {
             _combat_name_subscription: combat_name_subscription,
             _combat_talent_subscription: combat_talent_subscription,
             _combat_overrides_subscription: combat_overrides_subscription,
+            _research_preset_subscription: research_preset_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
+            shape_run,
+            _shape_run_subscription: shape_run_subscription,
             _killroy_run_subscription: killroy_run_subscription,
             _coral_run_subscription: coral_run_subscription,
             _jelly_run_subscription: jelly_run_subscription,
@@ -2517,10 +2572,109 @@ impl AppState {
     }
 
     pub fn set_preset(&mut self, preset: String, cx: &mut Context<Self>) {
-        if game().presets.iter().any(|entry| entry.id == preset) {
-            self.simulation.preset = preset;
-            cx.notify();
+        let Some(entry) = game().presets.iter().find(|entry| entry.id == preset) else {
+            return;
+        };
+        let Some(tiers) = entry.tiers_for(&self.simulation) else {
+            self.status = format!("{} has no readable tier list.", entry.name);
+            return cx.notify();
+        };
+        self.simulation.shape_tiers = tiers;
+        self.simulation.preset = preset.clone();
+        self.research.active_shape_preset = Some(preset);
+        cx.notify();
+    }
+
+    /// Apply a built-in shape preset: a fresh copy of its tiers, never a link
+    /// back to the preset data, so a later edit detaches this run.
+    pub fn apply_shape_preset(&mut self, id: &str, cx: &mut Context<Self>) {
+        let Some(preset) = game().presets.iter().find(|preset| preset.id == id) else {
+            return;
+        };
+        let Some(tiers) = preset.tiers_for(&self.simulation) else {
+            self.status = format!("{} has no readable tier list.", preset.name);
+            return cx.notify();
+        };
+        self.simulation.shape_tiers = tiers;
+        self.simulation.preset = preset.id.clone();
+        self.research.active_shape_preset = Some(preset.id.clone());
+        self.status = format!("Shape priorities: {}.", preset.name);
+        cx.notify();
+    }
+
+    /// Apply a saved custom preset by name.
+    pub fn apply_custom_shape_preset(&mut self, name: &str, cx: &mut Context<Self>) {
+        let Some(preset) =
+            crate::sections::research::CustomPreset::find(&self.research.shape_presets, name)
+        else {
+            return;
+        };
+        self.simulation.shape_tiers = preset.tiers.clone();
+        self.simulation.preset = "_none".into();
+        self.research.active_shape_preset = Some(preset.name.clone());
+        self.status = format!("Shape priorities: {}.", preset.name);
+        cx.notify();
+    }
+
+    /// Save the current tiers under the name in the preset field.
+    pub fn save_shape_preset(&mut self, cx: &mut Context<Self>) {
+        let name = self.research.preset_name.read(cx).text().trim().to_string();
+        match crate::sections::research::CustomPreset::store(
+            &mut self.research.shape_presets,
+            &name,
+            &self.simulation.shape_tiers,
+        ) {
+            Ok(message) => {
+                self.research
+                    .preset_name
+                    .update(cx, |input, cx| input.set_text("", cx));
+                self.research.active_shape_preset = Some(name);
+                self.status = message;
+            }
+            Err(message) => self.status = message,
         }
+        cx.notify();
+    }
+
+    /// Forget the custom preset at `index`.
+    pub fn delete_shape_preset(&mut self, index: usize, cx: &mut Context<Self>) {
+        let Some(preset) = crate::sections::research::CustomPreset::delete(
+            &mut self.research.shape_presets,
+            index,
+        ) else {
+            return;
+        };
+        if self.research.active_shape_preset.as_deref() == Some(preset.name.as_str()) {
+            self.research.active_shape_preset = None;
+        }
+        self.status = format!("Deleted the shape preset “{}”.", preset.name);
+        cx.notify();
+    }
+
+    /// Move a node between the tier zones. Editing detaches the active preset:
+    /// the built-in or saved list it came from is never written.
+    pub fn move_tier_node(
+        &mut self,
+        cell: usize,
+        tier: idleon_core::Tier,
+        before: Option<usize>,
+        cx: &mut Context<Self>,
+    ) {
+        if !self.simulation.shape_tiers.move_node(cell, tier, before) {
+            return;
+        }
+        self.research.active_shape_preset = None;
+        self.simulation.preset = "_none".into();
+        let zone = match tier {
+            idleon_core::Tier::Above => "above",
+            idleon_core::Tier::Exp => "Res EXP",
+            idleon_core::Tier::Below => "below",
+        };
+        self.status = format!(
+            "Moved {} to the {zone} tier; the preset is detached.",
+            idleon_core::model::coord(cell)
+        );
+        cx.notify();
     }
 
     pub fn set_target_level(&mut self, level: f64, cx: &mut Context<Self>) {
@@ -2781,11 +2935,82 @@ impl AppState {
         }
     }
 
-    /// The Worship plan run: running, progress, result and staleness.
+    /// The Shape Optimization run: running, progress, result and staleness.
+    pub fn shape_optimize_state(
+        &self,
+        cx: &App,
+    ) -> TaskState<idleon_core::optimize::shapes::ShapesOutcome> {
+        self.shape_run.read(cx).state(&self.shape_inputs())
+    }
+
     pub fn worship_plan_task(&self, cx: &App) -> TaskState<WorshipRunResult> {
         self.worship_plan
             .read(cx)
             .state(&self.worship_plan_inputs())
+    }
+
+    /// The inputs a shape placement started now would use.
+    fn shape_inputs(&self) -> ShapeRunInputs {
+        ShapeRunInputs {
+            simulation: self.simulation.clone(),
+            context: self.context.clone(),
+            effort: self.effort,
+        }
+    }
+
+    /// Run the real shape optimizer for the current tiers off the UI thread.
+    pub fn optimize_shapes(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.shape_inputs();
+        let started = self.shape_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                let mut stopped = false;
+                let outcome = optimize::shapes::optimize(
+                    &inputs.simulation,
+                    &inputs.context,
+                    inputs.effort,
+                    &mut |progress| {
+                        let control = report(progress);
+                        stopped |= control == Control::Stop;
+                        control
+                    },
+                );
+                (!stopped).then_some(outcome)
+            })
+        });
+        if started {
+            self.status = "Placing shapes…".into();
+            cx.notify();
+        }
+    }
+
+    /// Stop the Shape Optimization run at its next report.
+    pub fn cancel_shape_optimize(&mut self, cx: &mut Context<Self>) {
+        if self.shape_run.update(cx, |runner, _cx| runner.cancel()) {
+            self.status = "Cancelling the shape placement…".into();
+            cx.notify();
+        }
+    }
+
+    /// Write the stored placement to the grid editor, so the shapes the tab
+    /// previewed are the ones the rest of the section reads.
+    pub fn apply_shape_layout(&mut self, cx: &mut Context<Self>) {
+        let run = self.shape_optimize_state(cx);
+        let Some(result) = run.result else {
+            self.status = "Run the placement optimizer first.".into();
+            return cx.notify();
+        };
+        if run.stale {
+            self.status = "The tiers changed after this run; run it again before applying.".into();
+            return cx.notify();
+        }
+        self.simulation.placements = result.placements;
+        self.simulation.saved_overlay = None;
+        self.status = format!(
+            "Applied {} shapes at {} EXP/hr.",
+            self.simulation.placements.len(),
+            sim::format_rate(result.rate)
+        );
+        cx.notify();
     }
 
     /// The inputs a plan run started now would use.

@@ -58,13 +58,49 @@ pub struct Observation {
     pub roll_req: f64,
 }
 
-/// A built-in shape-placement preset and the grid nodes it prioritises.
+/// A built-in shape-placement preset: its upstream `above|below` tier string.
 #[derive(Debug, Deserialize)]
 pub struct Preset {
     pub id: String,
     pub name: String,
     pub data: String,
-    pub targets: Vec<usize>,
+}
+
+impl Preset {
+    /// The preset's priority tiers, parsed from its upstream `data` string.
+    pub fn tiers(&self) -> Option<crate::tiers::Tiers> {
+        crate::tiers::Tiers::parse(&self.data)
+    }
+
+    /// The preset's tiers against the loaded grid: the two upstream presets
+    /// whose `build` only re-ranks a fixed node pool do so here, and every
+    /// other preset keeps its static string. `Minehead` and `Lumi/hr` need save
+    /// tables this build does not model, so they keep the static order too.
+    pub fn tiers_for(&self, simulation: &crate::model::Simulation) -> Option<crate::tiers::Tiers> {
+        let pool: &[usize] = match self.id.as_str() {
+            "_classexp" => &[130, 131, 132, 152],
+            "_insight" => &[92, 91],
+            _ => return self.tiers(),
+        };
+        if !simulation.grid.levels().iter().any(|level| *level > 0) {
+            return self.tiers();
+        }
+        let mut above: Vec<usize> = pool
+            .iter()
+            .copied()
+            .filter(|cell| simulation.grid.level(*cell) > 0)
+            .collect();
+        above.sort_by(|left, right| {
+            let value = |cell: usize| {
+                game()
+                    .node_at(cell)
+                    .map(|node| node.bonus_per_lv * f64::from(simulation.grid.level(cell)))
+                    .unwrap_or(0.0)
+            };
+            value(*right).total_cmp(&value(*left))
+        });
+        Some(crate::tiers::Tiers::from_above(above))
+    }
 }
 
 impl GameData {
@@ -151,15 +187,39 @@ mod tests {
     }
 
     #[test]
-    fn preset_targets_resolve_to_nodes() {
+    fn the_pool_presets_re_rank_against_the_grid() {
+        use crate::model::Simulation;
+        let mut simulation = Simulation::default();
+        let preset = game()
+            .presets
+            .iter()
+            .find(|preset| preset.id == "_insight")
+            .expect("the Insight preset");
+        // With no levels the static string is the fallback.
+        assert_eq!(preset.tiers_for(&simulation), preset.tiers());
+        simulation.grid.set(91, 4);
+        let tiers = preset.tiers_for(&simulation).expect("the tiers");
+        assert_eq!(tiers.above, vec![91], "only the live pool node is ranked");
+        simulation.grid.set(92, 1);
+        let tiers = preset.tiers_for(&simulation).expect("the tiers");
+        assert_eq!(
+            tiers.above,
+            vec![92, 91],
+            "the pool's bonus per level times its level orders the list"
+        );
+    }
+
+    #[test]
+    fn presets_resolve_to_tier_lists() {
         let game = game();
         let minehead = game
             .presets
             .iter()
             .find(|preset| preset.id == "_minehead")
             .expect("minehead preset");
-        assert!(minehead.targets.len() >= 5);
-        for target in &minehead.targets {
+        let tiers = minehead.tiers().expect("minehead tiers");
+        assert!(tiers.above.len() >= 5);
+        for target in &tiers.above {
             assert!(
                 game.node_at(*target).is_some(),
                 "target {target} is not a node"

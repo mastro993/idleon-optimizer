@@ -1,6 +1,7 @@
 //! Simulation state, its save-derived knobs, and the messages the optimizers take.
 
 use crate::data::game;
+use crate::tiers::Tiers;
 use serde::{Deserialize, Serialize};
 
 /// Levels of the grid squares, indexed by cell.
@@ -330,8 +331,12 @@ pub struct Simulation {
     /// reproduces, and the game's grid bonuses use it, so it wins until the
     /// shapes are edited.
     pub saved_overlay: Option<Vec<i32>>,
-    /// Preset whose priority drives shape placement (`"_none"` maximises EXP).
+    /// Preset whose priority drove shape placement (`"_none"` maximises EXP).
+    /// The tiers themselves are [`Simulation::shape_tiers`], which an edit
+    /// detaches from this preset without changing it.
     pub preset: String,
+    /// Priority tiers the shape optimizer places for.
+    pub shape_tiers: Tiers,
 }
 
 impl Default for Simulation {
@@ -345,6 +350,7 @@ impl Default for Simulation {
             placements: Vec::new(),
             saved_overlay: None,
             preset: "_none".into(),
+            shape_tiers: Tiers::default(),
         }
     }
 }
@@ -355,20 +361,6 @@ impl Simulation {
         self.saved_overlay
             .clone()
             .unwrap_or_else(|| crate::shape::overlay(&self.placements))
-    }
-
-    /// The preset this run optimises for, falling back to Res EXP.
-    pub fn preset(&self) -> &crate::data::Preset {
-        let game = game();
-        game.presets
-            .iter()
-            .find(|preset| preset.id == self.preset)
-            .unwrap_or_else(|| {
-                game.presets
-                    .iter()
-                    .find(|preset| preset.id == "_none")
-                    .expect("the Res EXP preset ships with the game data")
-            })
     }
 }
 
