@@ -149,7 +149,8 @@ const jarSave = () => {
 /// candidate rows and leave points unspent, night market 5 unlocking Land Rank
 /// XP, and twelve discovered crops so the assignment has candidates.
 const farmingSave = () => {
-  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
   const plots = Array.from({ length: 36 }, () => [-1, 0, 0, 0, 0, 0, 0]);
   plots[0] = [0, 1000, 2, 0, 1, 0, 0];
   plots[1] = [1, 0, 4, 0, 3, 1, 0];
@@ -1142,6 +1143,31 @@ const INTERACTIONS = {
     await waitForNode(lane, 'fountain-overview', 'fountain: the overview reopens');
   },
   farming: async (lane) => {
+    // The cards below the fold scroll with the pane, and a semantic click lands
+    // on the element's live bounds, so bring a row into view before pressing it.
+    const clickInView = async (id, label) => {
+      let previous = null;
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const node = (await lane.tree()).find((entry) => entry.id === id);
+        if (!node) throw new Error(`${label}: ${id} is not in the tree`);
+        const y = node.bounds?.y ?? 0;
+        if (y >= 110 && y <= 850) {
+          await lane.call('click_element', { id });
+          return;
+        }
+        // A row already at the pane's end cannot move further, so press it
+        // where it is instead of looping.
+        if (previous !== null && Math.abs(y - previous) < 1) {
+          await lane.call('click_element', { id });
+          return;
+        }
+        previous = y;
+        await lane.call('scroll', { x: 700, y: 460, delta_y: Math.ceil(y - 420) });
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      throw new Error(`${label}: ${id} did not scroll into view`);
+    };
+
     // The Overview tab leads: the priority signals, the Crop Scientist table
     // and the growth breakpoints from the save, then every plot's curve.
     await waitForNode(lane, 'farming-cards', 'farming: the overview cards render');
@@ -1164,7 +1190,7 @@ const INTERACTIONS = {
     );
     const curve = labelOf(await lane.tree(), 'farming-curve-title') ?? '';
     if (curve !== 'Plot 1 curve') throw new Error(`farming: the curve title reads ${curve}`);
-    await lane.call('click_element', { id: 'farming-curve-plot-7' });
+    await clickInView('farming-curve-plot-7', 'farming');
     await waitFor(
       lane,
       (nodes) => labelOf(nodes, 'farming-curve-title') === 'Plot 8 curve',
@@ -1172,7 +1198,7 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'plots' });
     await waitForNode(lane, 'farming-field', 'farming: the full plot grid opens');
-    await lane.call('click_element', { id: 'plot-1' });
+    await clickInView('plot-1', 'farming');
     await waitFor(
       lane,
       (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
@@ -1203,8 +1229,10 @@ const INTERACTIONS = {
       'farming: the loaded field is assigned for the objective'
     );
 
-    // Switching the objective re-plans the assignment.
+    // Switching the objective re-plans the assignment: the first Down opens
+    // the list, the second moves the highlight and Enter commits it.
     await lane.call('focus_element', { id: 'farming-objective' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
@@ -1214,7 +1242,7 @@ const INTERACTIONS = {
     );
 
     // The allocator runs off the UI thread and reports its plan.
-    await lane.call('click_element', { id: 'farming-run' });
+    await clickInView('farming-run', 'farming');
     await waitFor(
       lane,
       (nodes) => {
@@ -1228,8 +1256,47 @@ const INTERACTIONS = {
       throw new Error(`farming: the allocation summary reads ${summary}`);
     }
     // A different scope makes the stored allocation stale, not wrong.
-    await lane.call('click_element', { id: 'farming-mode-reset' });
+    await clickInView('farming-mode-reset', 'farming');
     await waitForNode(lane, 'farming-stale', 'farming: the scope change marks the result stale');
+
+    // A named preset keeps the goal, the baseline and the crop target.
+    await clickInView('farming-preset-name', 'farming');
+    await lane.call('type_text', { text: 'Farming EXP reset' });
+    await clickInView('farming-preset-save', 'farming');
+    await waitForNode(lane, 'farming-preset-0', 'farming: a named preset is saved');
+
+    // The comparison plans every upstream goal from the current baseline.
+    await clickInView('farming-compare-run', 'farming');
+    await waitFor(
+      lane,
+      (nodes) => {
+        const row = labelOf(nodes, 'farming-compare-rankXp') ?? '';
+        const evolution = labelOf(nodes, 'farming-compare-evolution') ?? '';
+        return (
+          has(nodes, 'farming-compare-rows') &&
+          row.startsWith('Land Rank XP:') &&
+          evolution.startsWith('Crop Evolution:')
+        );
+      },
+      'farming: the comparison plans every goal'
+    );
+
+    // Applying the preset restores the goal it saved, not the current one.
+    await lane.call('focus_element', { id: 'farming-objective' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'farming-assignment') ?? '') === 'Plot assignment: Crop Evolution',
+      'farming: the objective selector moves past the saved goal'
+    );
+    await clickInView('farming-preset-apply-0', 'farming');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'farming-assignment') ?? '') === 'Plot assignment: Farming EXP',
+      'farming: applying the preset restores its goal'
+    );
   },
   fishing: async (lane) => {
     const importSave = async (text, ready, message) => {

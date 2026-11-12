@@ -17,6 +17,9 @@
 //! `farming-planner.js` and `farming.js`, and `crates/core/tests/farming_signals.rs`
 //! compares the snapshot, the diagnostics, the growth breakpoints, every plot's
 //! metrics, every plot's overgrowth curve and the Crop Scientist table.
+//! `script/farming-oracle.mjs` regenerates `fixtures/farming.json` from the same
+//! planner, carrying the page's seven preset goals and the allocation and
+//! comparison tables `crates/core/tests/farming_planner.rs` compares.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -244,15 +247,17 @@ mod crop_scientist;
 mod curves;
 mod growth;
 mod plot;
+mod presets;
 mod signals;
 
 pub use account::{RankTotals, Snapshot};
-pub use allocation::{Allocation, Mode};
+pub use allocation::{Allocation, Mode, UpgradeChange};
 pub use assignment::{Assignment, CropRow, Objective};
 pub use crop_scientist::{CropScientistBonus, CropScientistUnit};
 pub use curves::{OvergrowthAdvice, OvergrowthCurve, OvergrowthRow};
 pub use growth::GrowthBreakpoint;
 pub use plot::{CropValue, PlotMetrics, land_rank_requirement, overgrowth_multiplier};
+pub use presets::Comparison;
 pub use signals::Diagnostics;
 
 #[cfg(test)]

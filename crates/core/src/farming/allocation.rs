@@ -59,6 +59,24 @@ pub struct Allocation {
     pub points_spent: u32,
     pub initial_score: f64,
     pub final_score: f64,
+    /// The rows the allocation moved, largest absolute move first, as the
+    /// upstream `changes` list sorts them.
+    pub changes: Vec<UpgradeChange>,
+}
+
+/// One Land Rank row a level moved, as `optimizeLandRank` reports it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct UpgradeChange {
+    pub id: usize,
+    pub before: u32,
+    pub after: u32,
+}
+
+impl UpgradeChange {
+    /// The levels the allocation added to the row.
+    pub fn delta(&self) -> i64 {
+        i64::from(self.after) - i64::from(self.before)
+    }
 }
 
 impl Allocation {
@@ -406,6 +424,17 @@ impl Farm {
             fraction: 1.0,
             message: format!("Allocated {spent} point(s) for {}.", objective.label()),
         });
+        // The upstream list walks the rows in order and then sorts by the size
+        // of the move, so equal moves keep their row order.
+        let mut changes: Vec<UpgradeChange> = (0..RANK_UPGRADES)
+            .filter(|index| levels[*index] != initial_levels[*index])
+            .map(|index| UpgradeChange {
+                id: index,
+                before: initial_levels[index],
+                after: levels[index],
+            })
+            .collect();
+        changes.sort_by_key(|change| std::cmp::Reverse(change.delta().abs()));
         Some(Allocation {
             objective,
             mode,
@@ -415,6 +444,7 @@ impl Farm {
             points_spent: spent,
             initial_score,
             final_score: score,
+            changes,
         })
     }
 }
@@ -422,6 +452,7 @@ impl Farm {
 #[cfg(test)]
 mod tests {
     use super::at_least_one_chance;
+    use super::*;
 
     #[test]
     fn at_least_one_chance_keeps_the_rolls_independent() {
@@ -430,5 +461,34 @@ mod tests {
         assert!((at_least_one_chance([0.3]) - 0.3).abs() < 1e-12);
         assert!((at_least_one_chance([0.3, 0.3]) - 0.51).abs() < 1e-12);
         assert!((at_least_one_chance([1.0, 0.0]) - 1.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn the_change_list_holds_the_moved_rows_largest_first() {
+        let mut farm = Farm {
+            rank_ranks: vec![30; PLOTS],
+            ..Farm::default()
+        };
+        farm.plots[0].seed_family = 0;
+        farm.plots[1].seed_family = 1;
+        let allocation = farm.plan(Objective::Overgrowth, Mode::Reset, None);
+        assert!(allocation.points_spent > 0);
+        assert!(!allocation.changes.is_empty());
+        // Only rows the levels moved appear.
+        let moved: Vec<usize> = (0..RANK_UPGRADES)
+            .filter(|index| allocation.levels[*index] != allocation.initial_levels[*index])
+            .collect();
+        let mut reported: Vec<usize> = allocation.changes.iter().map(|change| change.id).collect();
+        reported.sort_unstable();
+        assert_eq!(reported, moved);
+        assert!(
+            allocation
+                .changes
+                .windows(2)
+                .all(|pair| pair[0].delta() >= pair[1].delta()),
+            "the largest moves lead"
+        );
+        let spent: i64 = allocation.changes.iter().map(UpgradeChange::delta).sum();
+        assert_eq!(spent, i64::from(allocation.points_spent));
     }
 }

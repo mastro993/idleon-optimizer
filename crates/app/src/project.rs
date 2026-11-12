@@ -743,6 +743,7 @@ pub fn assign(
                 target_crop: config.target_crop,
                 objective: config.objective,
                 mode: config.mode,
+                presets: crate::sections::farming::CustomPreset::sanitise(config.presets),
                 ..FarmingState::default()
             };
             // The assignment follows the farm this document already carries.
@@ -1297,6 +1298,12 @@ mod tests {
             target_crop: 12,
             objective: idleon_core::farming::Objective::Beans,
             mode: idleon_core::farming::Mode::Reset,
+            presets: vec![crate::sections::farming::CustomPreset {
+                name: "Beans run".into(),
+                objective: idleon_core::farming::Objective::Beans,
+                mode: idleon_core::farming::Mode::Reset,
+                target_crop: 230,
+            }],
             ..FarmingState::default()
         });
         assert_eq!(farming.tab, crate::sections::farming::Tab::Plots);
@@ -1304,6 +1311,9 @@ mod tests {
         assert_eq!(farming.target_crop, 12);
         assert_eq!(farming.objective, idleon_core::farming::Objective::Beans);
         assert_eq!(farming.mode, idleon_core::farming::Mode::Reset);
+        assert_eq!(farming.presets.len(), 1);
+        assert_eq!(farming.presets[0].name, "Beans run");
+        assert_eq!(farming.presets[0].target_crop, 230);
         let monument = round_trip(&MonumentState {
             tab: crate::sections::monument::Tab::Sources,
             character: 4,

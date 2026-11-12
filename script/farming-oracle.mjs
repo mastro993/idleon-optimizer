@@ -2,7 +2,7 @@
 // Rust port is tested against the source of truth rather than hand-picked
 // numbers.
 // Usage: node script/farming-oracle.mjs <path-to-idleon-research-optimizer>
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 
@@ -72,10 +72,12 @@ const save = {
 loadSaveData({ data: save, serverVars: {} });
 const saveData = state.saveData;
 const snapshot = planner.farmingAccountSnapshot(saveData, { activeCharIdx: 0 });
+/** The target crop the calculator's stepper held when the fixture was generated. */
+const TARGET_CROP = 240;
 
 /** One objective's assignment and allocation, as the calculator builds them. */
 function plan(objective, mode = 'unspent') {
-  const targetCropId = 240;
+  const targetCropId = TARGET_CROP;
   const assignment = planner.plotAssignmentPlan(saveData, snapshot, objective, { targetCropId });
   const allocation = planner.optimizeLandRank(saveData, 0, objective, { mode, targetCropId });
   return {
@@ -110,6 +112,35 @@ function plan(objective, mode = 'unspent') {
 const objectives = ['rankXp', 'farmingExp', 'evolution', 'overgrowth', 'cropValue', 'beans', 'growth'];
 if (!planner.optimizeLandRank) throw new Error('the upstream planner does not allocate Land Rank');
 
+// The page's own goal list is the built-in preset list, read from the page so a
+// renamed or added goal fails here instead of drifting from the port.
+const page = readFileSync(join(source, 'farming-calc.html'), 'utf8');
+const goals = page.match(/var OBJECTIVES = \[([\s\S]*?)\];/);
+if (!goals) throw new Error('the upstream page has no OBJECTIVES list');
+const presets = [...goals[1].matchAll(/'([A-Za-z]+)',\s*'([^']+)'/g)].map(
+  ([, id, name]) => ({ id, name }),
+);
+if (presets.length !== objectives.length) {
+  throw new Error(`the page lists ${presets.length} goals; the planner expects ${objectives.length}`);
+}
+
+/** One row of the page's Preset Comparison table. */
+function comparisonRow(objective, mode) {
+  const result = planner.optimizeLandRank(saveData, 0, objective, {
+    mode,
+    targetCropId: TARGET_CROP,
+  });
+  return {
+    objective,
+    relativeGain: result.relativeGain,
+    pointsSpent: result.pointsSpent,
+    pointsUnused: result.pointsUnused,
+    initialScore: result.initialScore,
+    finalScore: result.finalScore,
+    moves: result.changes.map(({ id, delta }) => ({ id, delta })),
+  };
+}
+
 const fixture = {
   source: 'purpose-built save in script/farming-oracle.mjs',
   modules: [
@@ -139,6 +170,13 @@ const fixture = {
     fifthColumnMax: planner.landRankFifthColumnMax(saveData),
   },
   plans: [...objectives.map((objective) => plan(objective)), plan('farmingExp', 'reset')],
+  presets: {
+    objectives: presets,
+    comparisons: ['unspent', 'reset'].map((mode) => ({
+      mode,
+      rows: objectives.map((objective) => comparisonRow(objective, mode)),
+    })),
+  },
 };
 
 writeFileSync(join(root, 'fixtures/farming.json'), `${JSON.stringify(fixture, null, 2)}\n`);

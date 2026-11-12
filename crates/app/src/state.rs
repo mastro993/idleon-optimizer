@@ -11,8 +11,9 @@ use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::endgame;
-use crate::sections::farming::RunInputs as FarmingRunInputs;
-use crate::sections::farming::State as FarmingState;
+use crate::sections::farming::{
+    CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
+};
 use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::State as FountainState;
 use crate::sections::jar::Tab as JarTab;
@@ -54,7 +55,9 @@ use idleon_core::cog::{
 };
 use idleon_core::cooking_mastery::Mastery;
 use idleon_core::coral::{Inputs as CoralInputs, Plan as CoralPlan};
-use idleon_core::farming::{Allocation as FarmingOutcome, Farm, Mode, Objective};
+use idleon_core::farming::{
+    Allocation as FarmingOutcome, Comparison as FarmingComparison, Farm, Mode, Objective,
+};
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
 use idleon_core::jelly::{Estimate as JellyEstimate, Jelly};
@@ -213,6 +216,8 @@ pub struct AppState {
     pub farm: Farm,
     /// The farming section's selection and crop target, kept alive too.
     pub farming: FarmingState,
+    /// The farming preset bar's name field.
+    pub farming_name: Entity<TextInput>,
     /// The fishing characters, rod and saved toolkit the last import carried.
     pub fishing_save: FishingSave,
     /// The fishing section's character, toolkit, pool and account values.
@@ -354,6 +359,8 @@ pub struct AppState {
     prisma_run: Entity<TaskRunner<PrismaOutcome, PrismaRunInputs>>,
     /// The shared runner for the Land Rank allocation.
     farming_run: Entity<TaskRunner<FarmingOutcome, FarmingRunInputs>>,
+    /// The shared runner for the preset comparison.
+    farming_compare_run: Entity<TaskRunner<FarmingComparison, FarmingCompareInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The research dashboard's four breakdown trees.
@@ -397,6 +404,7 @@ pub struct AppState {
     _worship_optimize_subscription: Subscription,
     _prisma_run_subscription: Subscription,
     _farming_run_subscription: Subscription,
+    _farming_compare_subscription: Subscription,
     _sailing_sim_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
@@ -897,6 +905,41 @@ impl AppState {
         // The Land Rank allocator streams its points through the same runner,
         // so progress, cancel and the stale marker read like every other run.
         let farming_run = cx.new(|_| TaskRunner::<FarmingOutcome, FarmingRunInputs>::new());
+        // The preset comparison plans every goal, so it streams through its
+        // own runner and keeps the table the previous run produced.
+        let farming_compare_run =
+            cx.new(|_| TaskRunner::<FarmingComparison, FarmingCompareInputs>::new());
+        let farming_compare_subscription = cx.subscribe(
+            &farming_compare_run,
+            |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!(
+                            "Comparing farming presets… {:.0}%",
+                            progress.fraction * 100.0
+                        );
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Preset comparison cancelled; the previous table is unchanged.".into()
+                        } else {
+                            "Preset comparison cancelled; no table was stored.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!("Compared {} farming goals.", result.rows.len());
+                        }
+                    }
+                }
+                cx.notify();
+            },
+        );
+        let farming_name = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("Preset name")
+                .label("Preset name")
+        });
         let farming_run_subscription =
             cx.subscribe(&farming_run, |state, runner, event: &TaskEvent, cx| {
                 match event {
@@ -1004,6 +1047,7 @@ impl AppState {
             sailing_sim,
             farm: Farm::default(),
             farming: FarmingState::default(),
+            farming_name,
             fishing_save: FishingSave::default(),
             fishing: FishingState::default(),
             monument: MonumentState::default(),
@@ -1072,6 +1116,7 @@ impl AppState {
             worship_optimize,
             prisma_run,
             farming_run,
+            farming_compare_run,
             breakdown,
             research_trees,
             cglunko_breakdown,
@@ -1106,6 +1151,7 @@ impl AppState {
             _worship_optimize_subscription: worship_optimize_subscription,
             _prisma_run_subscription: prisma_run_subscription,
             _farming_run_subscription: farming_run_subscription,
+            _farming_compare_subscription: farming_compare_subscription,
             _sailing_sim_subscription: sailing_sim_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
@@ -2098,6 +2144,85 @@ impl AppState {
             self.status = "Cancelling the Land Rank allocation…".into();
             cx.notify();
         }
+    }
+
+    /// The inputs a preset comparison started now would use.
+    pub fn farming_compare_inputs(&self) -> FarmingCompareInputs {
+        FarmingCompareInputs {
+            save_revision: self.save_revision,
+            mode: self.farming.mode,
+            target_crop: self.farming.target_crop,
+        }
+    }
+
+    /// The comparison run: running, progress, result and staleness.
+    pub fn farming_compare_task(&self, cx: &App) -> TaskState<FarmingComparison> {
+        self.farming_compare_run
+            .read(cx)
+            .state(&self.farming_compare_inputs())
+    }
+
+    /// Plan every upstream goal from the current baseline off the UI thread.
+    pub fn compare_farming(&mut self, cx: &mut Context<Self>) {
+        if !self.save_loaded {
+            self.status = "Import a save to compare the farming preset goals.".into();
+            cx.notify();
+            return;
+        }
+        let inputs = self.farming_compare_inputs();
+        let farm = self.farm.clone();
+        let (mode, target) = (self.farming.mode, Some(self.farming.target_crop));
+        let started = self.farming_compare_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_inputs, report| {
+                farm.comparison(mode, target, report)
+            })
+        });
+        if started {
+            self.status = "Comparing farming preset goals…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running comparison to stop; the previous table stays.
+    pub fn cancel_farming_compare(&mut self, cx: &mut Context<Self>) {
+        if self
+            .farming_compare_run
+            .update(cx, |runner, _| runner.cancel())
+        {
+            self.status = "Cancelling the preset comparison…".into();
+            cx.notify();
+        }
+    }
+
+    /// Save the preset bar's name against the section's goal, baseline and crop.
+    pub fn save_farming_preset(&mut self, cx: &mut Context<Self>) {
+        let name = self.farming_name.read(cx).text().trim().to_string();
+        match self.farming.save_preset(&name) {
+            Ok(message) => {
+                self.farming_name
+                    .update(cx, |input, cx| input.set_text("", cx));
+                self.status = message;
+            }
+            Err(message) => self.status = message,
+        }
+        cx.notify();
+    }
+
+    /// Apply a saved farming preset to the section's inputs.
+    pub fn apply_farming_preset(&mut self, index: usize, cx: &mut Context<Self>) {
+        if let Some(name) = self.farming.apply_preset(index) {
+            self.farming.adopt(&self.farm);
+            self.status = format!("Applied the farming preset “{name}”.");
+        }
+        cx.notify();
+    }
+
+    /// Forget one saved farming preset.
+    pub fn delete_farming_preset(&mut self, index: usize, cx: &mut Context<Self>) {
+        if let Some(preset) = self.farming.delete_preset(index) {
+            self.status = format!("Deleted the farming preset “{}”.", preset.name);
+        }
+        cx.notify();
     }
 
     /// Current research EXP per hour.

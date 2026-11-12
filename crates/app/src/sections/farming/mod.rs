@@ -1,16 +1,18 @@
 //! The Farming Planner section: the upstream Overview tab, the 9×4 field with
-//! the selected plot's detail, the plot assignment and the Land Rank
-//! allocation.
+//! the selected plot's detail, the plot assignment, the Land Rank allocation,
+//! the named presets and the preset comparison.
 //!
 //! FM-01 ports the upstream field tab: every plot renders from `farmPlotData`
 //! and the right rail reads the selected plot's saved row and formulas. FM-02
 //! adds `plotAssignmentPlan` and `optimizeLandRank`: the objective decides the
 //! crop each plot should grow, and the allocator spends the account's Land Rank
-//! points off the UI thread through the shared task runner. FM-05 adds the
+//! points off the UI thread through the shared task runner. FM-03 adds the
+//! upstream "Preset Comparison" table — every goal planned from the current
+//! baseline — and the named presets the project document keeps. FM-05 adds the
 //! upstream Overview tab — the priority signals, account multipliers, GMO
 //! thresholds, Crop Scientist bonuses, growth breakpoints and every plot's
-//! overgrowth curve. Presets and the evolution chain add their own tabs later
-//! in the milestone.
+//! overgrowth curve. The evolution chain adds its own tab later in the
+//! milestone.
 
 use crate::state::AppState;
 use crate::ui::format;
@@ -28,10 +30,14 @@ use idleon_core::farming::{self, Assignment, Farm, Mode, Objective, PlotMetrics,
 
 mod allocation;
 mod assignment;
+mod comparison;
 mod curves;
 mod detail;
 mod field;
 mod overview;
+mod presets;
+
+pub use presets::CustomPreset;
 
 /// The farming page's tabs, in the upstream order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -67,8 +73,9 @@ impl Tab {
 }
 
 /// The field's own state: the tab, the selected plot, the crop the evolution
-/// features aim at, the objective and the allocation mode, all kept alive
-/// across dashboard visits.
+/// features aim at, the objective, the allocation mode and the named presets,
+/// all kept alive across dashboard visits. The assignment is derived from the
+/// loaded farm, so the project document does not carry it.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct State {
@@ -79,6 +86,8 @@ pub struct State {
     pub objective: Objective,
     /// Whether the allocator keeps the saved levels or reallocates every point.
     pub mode: Mode,
+    /// The named presets the project document keeps.
+    pub presets: Vec<CustomPreset>,
     /// The field's assignment for `objective`; derived from the loaded farm, so
     /// the project document does not carry it.
     #[serde(skip)]
@@ -93,6 +102,7 @@ impl Default for State {
             target_crop: 1,
             objective: Objective::default(),
             mode: Mode::default(),
+            presets: Vec::new(),
             assignment: Assignment::default(),
         }
     }
@@ -129,6 +139,31 @@ impl State {
         self.mode = mode;
     }
 
+    /// Save the current goal, baseline and crop target under `name`.
+    pub fn save_preset(&mut self, name: &str) -> Result<String, String> {
+        CustomPreset::store(
+            &mut self.presets,
+            name,
+            self.objective,
+            self.mode,
+            self.target_crop,
+        )
+    }
+
+    /// Apply the preset at `index` to the section's inputs; returns its name.
+    pub fn apply_preset(&mut self, index: usize) -> Option<String> {
+        let preset = self.presets.get(index)?.clone();
+        self.objective = preset.objective;
+        self.mode = preset.mode;
+        self.target_crop = preset.target_crop;
+        Some(preset.name)
+    }
+
+    /// Forget the preset at `index`.
+    pub fn delete_preset(&mut self, index: usize) -> Option<CustomPreset> {
+        CustomPreset::delete(&mut self.presets, index)
+    }
+
     /// Rebuild the assignment for the field, objective and target crop.
     pub fn adopt(&mut self, farm: &Farm) {
         self.assignment = farm.assignment(self.objective, Some(self.target_crop));
@@ -157,7 +192,9 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             );
             let detail = detail::detail_pane(state, &plots[selected], &snapshot, cx);
             let assignment = assignment::assignment_card(state, cx);
+            let presets = presets::presets_card(state, cx);
             let allocation = allocation::allocation_card(state, cx);
+            let comparison = comparison::comparison_card(state, cx);
             let body = div()
                 .flex()
                 .flex_col()
@@ -170,7 +207,9 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                     px(360.0),
                 ))
                 .child(assignment)
-                .child(allocation);
+                .child(presets)
+                .child(allocation)
+                .child(comparison);
             ScrollArea::new("farming-scroll")
                 .vertical()
                 .flex_1()
@@ -208,6 +247,14 @@ fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             }
         })
         .into_any_element()
+}
+
+/// The inputs a comparison run captures, so a later edit marks its table stale.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CompareInputs {
+    pub save_revision: u64,
+    pub mode: Mode,
+    pub target_crop: u32,
 }
 
 /// The inputs a run captures, so a later edit marks its result stale.
@@ -362,16 +409,42 @@ mod tests {
     }
 
     #[test]
+    fn a_saved_preset_restores_the_section_inputs() {
+        let mut state = State::default();
+        state.set_objective(Objective::Beans);
+        state.set_mode(Mode::Reset);
+        state.set_target_crop(230.0);
+        state.save_preset(" Beans run ").expect("a name saves");
+        assert_eq!(state.presets.len(), 1);
+
+        state.set_objective(Objective::RankXp);
+        state.set_mode(Mode::Unspent);
+        state.set_target_crop(1.0);
+        assert_eq!(state.apply_preset(0).as_deref(), Some("Beans run"));
+        assert_eq!(state.objective, Objective::Beans);
+        assert_eq!(state.mode, Mode::Reset);
+        assert_eq!(state.target_crop, 230);
+        assert!(state.apply_preset(9).is_none());
+
+        let removed = state.delete_preset(0).expect("the preset deletes");
+        assert_eq!(removed.name, "Beans run");
+        assert!(state.presets.is_empty());
+    }
+
+    #[test]
     fn the_objective_and_mode_survive_a_project_round_trip() {
         let mut state = State::default();
         state.set_objective(Objective::Beans);
         state.set_mode(Mode::Reset);
         state.set_tab(Tab::Plots);
+        state.save_preset("Beans run").expect("a name saves");
         let text = serde_json::to_string(&state).expect("the farming state serializes");
         let restored: State = serde_json::from_str(&text).expect("the farming state parses");
         assert_eq!(restored.objective, Objective::Beans);
         assert_eq!(restored.mode, Mode::Reset);
         assert_eq!(restored.tab, Tab::Plots);
+        assert_eq!(restored.presets.len(), 1);
+        assert_eq!(restored.presets[0].name, "Beans run");
         assert_eq!(
             restored.assignment.rows.len(),
             farming::PLOTS,
