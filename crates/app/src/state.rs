@@ -19,6 +19,7 @@ use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::Trees as SailingTrees;
+use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
 use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
@@ -208,6 +209,10 @@ pub struct AppState {
     pub jar_breakdown: Entity<ui::formula::FormulaTree>,
     /// The Jar Cavern the loaded save carries, if it has one.
     pub jar: Option<Jar>,
+    /// The Spelunking section's controls and account inputs.
+    pub spelunking: SpelunkingState,
+    /// The Spelunking rows the loaded save carries, if it has them.
+    pub spelunking_save: Option<idleon_core::spelunking::Save>,
     /// The ladle optimizer's save-derived roster and counts.
     pub ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
@@ -715,6 +720,8 @@ impl AppState {
             jar_tier: 0,
             jar_breakdown,
             jar: None,
+            spelunking: SpelunkingState::default(),
+            spelunking_save: None,
             ladle: None,
             ladle_state,
             mastery: None,
@@ -1098,6 +1105,13 @@ impl AppState {
         self.clamworks_budget = self.clamworks.pearl_balance;
         self.clamworks_projection = None;
         self.jar = imported.jar;
+        self.spelunking_save = imported.spelunking;
+        if let Some(save) = self.spelunking_save.as_ref() {
+            // Seed from the save alone: a previous save's maximum-stamina
+            // overrides must not become the new save's saved stamina.
+            let inputs = save.inputs(&idleon_core::spelunking::Account::neutral());
+            self.spelunking.adopt(&inputs);
+        }
         self.ladle_state
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;

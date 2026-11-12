@@ -534,6 +534,7 @@ mod tests {
             clamworks: Default::default(),
             cog: Default::default(),
             jar: None,
+            spelunking: None,
             ladle: None,
             fountain: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),
