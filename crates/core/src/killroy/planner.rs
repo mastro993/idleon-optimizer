@@ -6,7 +6,9 @@
 //! upgrade, so every option is compared against the same baseline with the same
 //! seeds.
 
+use super::buffs::{self, CharacterBuffs};
 use super::forecast::{Encounter, encounter, rotation};
+use super::inventory::{self, Bag};
 use super::trial::UPGRADES;
 use super::{MAX_FORECAST_WEEKS, WEEK_SECONDS, data, number, options};
 use crate::save::{Save, at};
@@ -77,7 +79,8 @@ pub enum Comparisons {
     Only(Vec<usize>),
 }
 
-/// What to plan: the checked encounters, the trials and the upgrade filter.
+/// What to plan: the checked encounters, the trials, the upgrade filter and the
+/// two calculator options.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlanInput {
     pub selections: Vec<Selection>,
@@ -85,6 +88,11 @@ pub struct PlanInput {
     pub comparisons: Comparisons,
     /// The stand-in for the combat simulator's kill rate.
     pub kills_per_second: f64,
+    /// Keep the save's `BuffsActive` timers instead of starting from a fresh map
+    /// entry (`useSavedBuffs` upstream).
+    pub keep_buffs: bool,
+    /// Lift the bag-space limit on the run's pickups (`unlimitedInventory`).
+    pub unlimited_inventory: bool,
 }
 
 /// One configuration the plan runs: a baseline or one `+1`.
@@ -131,6 +139,12 @@ pub struct Plan {
     pub jobs: Vec<Job>,
     pub weeks: Vec<Week>,
     pub warnings: Vec<String>,
+    /// Whether the run keeps the save's buff timers.
+    pub keep_buffs: bool,
+    /// Whether the run's pickups ignore the bag limit.
+    pub unlimited_inventory: bool,
+    /// The buffs each selected character's run starts with.
+    pub characters: Vec<CharacterBuffs>,
 }
 
 impl Plan {
@@ -220,6 +234,22 @@ pub fn plan(save: &Save, input: &PlanInput) -> Result<Plan, KillroyError> {
     let mut rows: Vec<Row> = Vec::new();
     let mut seen: Vec<Selection> = Vec::new();
     let mut warnings: Vec<String> = Vec::new();
+    let mut cis: Vec<usize> = input
+        .selections
+        .iter()
+        .map(|selection| selection.ci)
+        .collect();
+    cis.sort_unstable();
+    cis.dedup();
+    for ci in &cis {
+        if !input.unlimited_inventory && !inventory::bag(save, *ci).room_for(inventory::SKULLS) {
+            warnings.push(format!(
+                "{}: the bag has no room for a skull stack, so collected skulls stay at zero. \
+                 Free a slot or turn on unlimited inventory.",
+                save.character_name(*ci)
+            ));
+        }
+    }
 
     for selection in &input.selections {
         if selection.week_offset > MAX_FORECAST_WEEKS {
@@ -247,8 +277,14 @@ pub fn plan(save: &Save, input: &PlanInput) -> Result<Plan, KillroyError> {
         };
         let character = save.character_name(selection.ci);
         let time = killroy_levels(save).levels[0];
+        let bag = if input.unlimited_inventory {
+            Bag::unlimited()
+        } else {
+            inventory::bag(save, selection.ci)
+        };
         let base = super::TrialInputs {
             kills_per_second: input.kills_per_second.max(0.0),
+            bag,
             ..killroy_levels(save)
         };
         rows.push(Row {
@@ -365,6 +401,9 @@ pub fn plan(save: &Save, input: &PlanInput) -> Result<Plan, KillroyError> {
         jobs,
         weeks,
         warnings,
+        keep_buffs: input.keep_buffs,
+        unlimited_inventory: input.unlimited_inventory,
+        characters: buffs::character_buffs(save, &cis, input.keep_buffs),
     })
 }
 
@@ -395,6 +434,7 @@ fn killroy_levels(save: &Save) -> super::TrialInputs {
         // them runs the base skull factor.
         meritoc: 0.0,
         kills_per_second: 0.0,
+        bag: Bag::default(),
     }
 }
 
@@ -424,6 +464,8 @@ mod tests {
             seeds: vec![1, 2, 3],
             comparisons,
             kills_per_second: 3.0,
+            keep_buffs: false,
+            unlimited_inventory: false,
         }
     }
 
@@ -579,6 +621,78 @@ mod tests {
             plan(&save, &bad).expect_err("duplicate seeds").to_string(),
             "Trial seeds must be distinct"
         );
+    }
+
+    #[test]
+    fn the_plan_keeps_the_buff_option_and_lists_the_saved_rows() {
+        let save = save();
+        let selection = Selection {
+            week_offset: 0,
+            ci: 0,
+            slot: 1,
+        };
+        let mut input = input(vec![selection], Comparisons::Off);
+        let fresh = plan(&save, &input).expect("the plan builds");
+        assert!(!fresh.keep_buffs);
+        assert!(!fresh.unlimited_inventory);
+        assert_eq!(fresh.characters.len(), 1);
+        assert_eq!(fresh.characters[0].ci, 0);
+        assert!(!fresh.characters[0].buffs.is_empty());
+        assert!(
+            fresh.characters[0]
+                .buffs
+                .iter()
+                .all(|buff| buff.kept == buff.form),
+            "a fresh run keeps only the form toggles"
+        );
+
+        input.keep_buffs = true;
+        input.unlimited_inventory = true;
+        let kept = plan(&save, &input).expect("the plan builds");
+        assert!(kept.keep_buffs);
+        assert!(kept.unlimited_inventory);
+        assert!(kept.characters[0].buffs.iter().all(|buff| buff.kept));
+        assert!(kept.rows.iter().all(|row| row.trial.bag.room_for("Pearl4")));
+    }
+
+    #[test]
+    fn a_bag_without_room_for_skulls_warns_and_unlimited_lifts_it() {
+        let path = format!("{}/../../fixtures/data.json", env!("CARGO_MANIFEST_DIR"));
+        let fixture: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(path).expect("the fixture is committed"))
+                .expect("fixture JSON");
+        let mut wrapped = json!({ "data": fixture, "serverVars": { "KillroySwap": 7 } });
+        wrapped["data"]["InventoryOrder_0"] = json!(["Pearl4"]);
+        let save = import(&wrapped.to_string())
+            .expect("the wrapped fixture imports")
+            .save;
+        let selection = Selection {
+            week_offset: 0,
+            ci: 0,
+            slot: 1,
+        };
+        let mut input = input(vec![selection], Comparisons::Off);
+        let full = plan(&save, &input).expect("the plan builds");
+        assert!(
+            full.warnings
+                .iter()
+                .any(|warning| warning.contains("no room for a skull stack")),
+            "{:?}",
+            full.warnings
+        );
+        assert!(!full.rows[0].trial.bag.room_for("Quest69"));
+
+        input.unlimited_inventory = true;
+        let lifted = plan(&save, &input).expect("the plan builds");
+        assert!(
+            lifted
+                .warnings
+                .iter()
+                .all(|warning| !warning.contains("no room for a skull stack")),
+            "{:?}",
+            lifted.warnings
+        );
+        assert!(lifted.rows[0].trial.bag.room_for("Quest69"));
     }
 
     #[test]

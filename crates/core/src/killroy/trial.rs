@@ -11,6 +11,12 @@
 //! simulator, which is a later section. [`TrialInputs::kills_per_second`] stands
 //! in for it, so the trial models the encounter's supply and drop maths rather
 //! than the character's power.
+//!
+//! The drops share the bag the combat simulator models: a skull, talent-point,
+//! dungeon-credit or pearl stack is picked up into its own stack or a blank
+//! slot, and a full bag loses it. Unlimited inventory lifts that limit.
+
+use super::inventory::{self, Bag};
 
 /// Monsters the encounter arms 50 ms into the run.
 const ARRIVALS: usize = 300;
@@ -34,6 +40,8 @@ pub struct TrialInputs {
     pub meritoc: f64,
     /// Stand-in for the combat simulator's kill rate.
     pub kills_per_second: f64,
+    /// The bag space the run's drops share.
+    pub bag: Bag,
 }
 
 impl Default for TrialInputs {
@@ -43,6 +51,7 @@ impl Default for TrialInputs {
             talent_drops: 0.0,
             meritoc: 0.0,
             kills_per_second: 3.0,
+            bag: Bag::default(),
         }
     }
 }
@@ -56,7 +65,7 @@ pub struct Record {
     /// Skulls the kills dropped.
     pub skulls_dropped: u64,
     /// Skulls collected. The game auto-loots within the run and its 2 s tail,
-    /// so every drop is picked up while inventory space lasts.
+    /// so a drop counts only while its stack or a blank bag slot is free.
     pub skulls_picked: u64,
     pub talent_points: u64,
     pub dungeon_credits: u64,
@@ -106,9 +115,11 @@ struct Run {
     talent_drops: f64,
     meritoc: f64,
     kills_per_second: f64,
+    bag: Bag,
     random: Random,
     kills: u64,
     skulls_dropped: u64,
+    skulls_picked: u64,
     spawned: u64,
     talent_points: u64,
     dungeon_credits: u64,
@@ -120,7 +131,8 @@ struct Run {
 
 impl Run {
     /// One kill, and the upstream drop rolls in their own order. Each drop
-    /// burns the same stream calls the game does, so the rolls stay in step.
+    /// burns the same stream calls the game does, so the rolls stay in step;
+    /// only the bag's answer decides whether the drop is collected.
     fn kill(&mut self) {
         if self.random.float() < 0.6 {
             self.queued += 1.0;
@@ -133,12 +145,12 @@ impl Run {
                 * (1.0 - 0.995 * self.kills as f64 / (self.kills as f64 + 50.0)).max(0.1))
             .min(0.25);
         if self.random.float() < factor {
-            self.skulls_dropped += 1;
             let kills = self.kills;
+            self.drop_skull();
             let bonus = kills < 150
                 && ((kills < 50 && self.random.float() < 0.16) || self.random.float() < 0.06);
             if bonus {
-                self.skulls_dropped += 1;
+                self.drop_skull();
             }
         }
         let talents = self.levels[1];
@@ -147,22 +159,46 @@ impl Run {
                 < (1.0 + 0.05 * talents)
                     / (self.talent_drops.powi(2) + 10.0 * (self.talent_drops + 1.0)).max(10.0)
         {
-            self.talent_points += 1;
+            // The item's tab is chosen from the pre-increment drop counter.
+            let name = talent_point(self.talent_drops);
             self.talent_drops += 1.0;
+            if self.bag.take(name) {
+                self.talent_points += 1;
+            }
         }
         let credits = self.levels[4];
-        if credits > 0.5 {
-            let dropped = self.random.float() < 0.01 * (1.0 + credits / 100.0);
-            if dropped {
-                let _ = self.random.int(1, 2);
+        if credits > 0.5 && self.random.float() < 0.01 * (1.0 + credits / 100.0) {
+            // The name roll burns one stream call either way.
+            let name = if self.random.int(1, 2) == 1 {
+                "DungCredits1"
+            } else {
+                "DungCredits2"
+            };
+            if self.bag.take(name) {
                 self.dungeon_credits += 1;
             }
         }
         let pearls = self.levels[5];
-        // The name roll consumes one stream call, or two when it falls through.
-        let dropped = pearls > 0.5 && self.random.float() < 0.002 * (1.0 + pearls / 100.0);
-        if dropped && (self.random.float() < 0.5 || self.random.float() < 0.9) {
-            self.pearls += 1;
+        if pearls > 0.5 && self.random.float() < 0.002 * (1.0 + pearls / 100.0) {
+            // The name roll consumes one stream call, or two when it falls through.
+            let name = if self.random.float() < 0.5 {
+                "Pearl4"
+            } else if self.random.float() < 0.9 {
+                "Pearl5"
+            } else {
+                "Pearl6"
+            };
+            if self.bag.take(name) {
+                self.pearls += 1;
+            }
+        }
+    }
+
+    /// A dropped skull, counted whether or not the bag takes it.
+    fn drop_skull(&mut self) {
+        self.skulls_dropped += 1;
+        if self.bag.take(inventory::SKULLS) {
+            self.skulls_picked += 1;
         }
     }
 
@@ -177,6 +213,23 @@ impl Run {
     }
 }
 
+/// The talent-point item a drop rolls up for the pre-increment counter,
+/// matching `k.talentDrops % 9 === 7 ? 'TalentPoint6' : 'TalentPoint' + ...`.
+fn talent_point(drops: f64) -> &'static str {
+    if drops % 9.0 == 7.0 {
+        return "TalentPoint6";
+    }
+    let slot = (drops - 4.0 * (drops / 4.0).floor() + 1.0)
+        .round()
+        .clamp(1.0, 4.0) as usize;
+    match slot {
+        1 => "TalentPoint1",
+        2 => "TalentPoint2",
+        3 => "TalentPoint3",
+        _ => "TalentPoint4",
+    }
+}
+
 /// Run one trial for `seed`, following the upstream timers tick for tick.
 pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
     let mut run = Run {
@@ -184,9 +237,11 @@ pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
         talent_drops: inputs.talent_drops,
         meritoc: inputs.meritoc,
         kills_per_second: inputs.kills_per_second.max(0.0),
+        bag: inputs.bag,
         random: Random::new(seed),
         kills: 0,
         skulls_dropped: 0,
+        skulls_picked: 0,
         spawned: 0,
         talent_points: 0,
         dungeon_credits: 0,
@@ -240,7 +295,7 @@ pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
         seed,
         kills: run.kills,
         skulls_dropped: run.skulls_dropped,
-        skulls_picked: run.skulls_dropped,
+        skulls_picked: run.skulls_picked,
         talent_points: run.talent_points,
         dungeon_credits: run.dungeon_credits,
         pearls: run.pearls,
@@ -260,6 +315,7 @@ mod tests {
             talent_drops: 137.0,
             meritoc: 0.0,
             kills_per_second: 3.0,
+            bag: Bag::default(),
         }
     }
 
@@ -328,6 +384,59 @@ mod tests {
         assert_eq!(record.talent_points, 0, "talent points need level 1");
         assert!(record.dungeon_credits > 0);
         assert!(record.pearls > 0);
+    }
+
+    #[test]
+    fn an_empty_inventory_starts_from_the_default_bag() {
+        let mut inputs = fixture_levels();
+        inputs.kills_per_second = 10.0;
+        inputs.bag = crate::killroy::inventory::bag(
+            &crate::save::Save::new(serde_json::json!({ "InventoryOrder_0": [] })),
+            0,
+        );
+        let record = trial(&inputs, 5);
+        assert!(record.skulls_dropped > 0);
+        assert_eq!(record.skulls_picked, record.skulls_dropped);
+    }
+
+    #[test]
+    fn a_bag_without_a_blank_or_a_skull_stack_loses_every_skull() {
+        let mut inputs = fixture_levels();
+        inputs.kills_per_second = 10.0;
+        inputs.bag = crate::killroy::inventory::bag(
+            &crate::save::Save::new(serde_json::json!({ "InventoryOrder_0": ["Pearl4"] })),
+            0,
+        );
+        let record = trial(&inputs, 5);
+        assert!(record.skulls_dropped > 0);
+        assert_eq!(record.skulls_picked, 0);
+        assert_eq!(record.talent_points, 0, "no blank slot for a talent stack");
+        assert_eq!(record.dungeon_credits, 0);
+    }
+
+    #[test]
+    fn an_existing_skull_stack_keeps_collecting() {
+        let mut inputs = fixture_levels();
+        inputs.kills_per_second = 10.0;
+        inputs.bag = crate::killroy::inventory::bag(
+            &crate::save::Save::new(serde_json::json!({ "InventoryOrder_0": ["Quest69"] })),
+            0,
+        );
+        assert!(!inputs.bag.room_for("Pearl4"), "no blank slot is free");
+        let record = trial(&inputs, 5);
+        assert!(record.skulls_dropped > 0);
+        assert_eq!(record.skulls_picked, record.skulls_dropped);
+        assert_eq!(record.pearls, 0);
+    }
+
+    #[test]
+    fn unlimited_inventory_collects_with_a_full_bag() {
+        let mut inputs = fixture_levels();
+        inputs.kills_per_second = 10.0;
+        inputs.bag = Bag::unlimited();
+        let record = trial(&inputs, 5);
+        assert!(record.skulls_dropped > 0);
+        assert_eq!(record.skulls_picked, record.skulls_dropped);
     }
 
     #[test]

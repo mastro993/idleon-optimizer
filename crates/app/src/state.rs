@@ -619,11 +619,11 @@ impl AppState {
                         };
                     }
                     TaskEvent::Finished { cancelled: false } => {
-                        if let Some(rows) = runner.read(cx).result() {
-                            let best = rows.iter().filter(|row| row.best).count();
+                        if let Some(outcome) = runner.read(cx).result() {
+                            let best = outcome.rows.iter().filter(|row| row.best).count();
                             state.status = format!(
                                 "Killroy trials finished: {} configurations, {best} best.",
-                                rows.len()
+                                outcome.rows.len()
                             );
                         }
                     }

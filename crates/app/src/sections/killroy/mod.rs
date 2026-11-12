@@ -1,11 +1,13 @@
-//! The Killroy Calculator: the weekly forecast and the `+1` upgrade comparison.
+//! The Killroy Calculator: the weekly forecast, the `+1` upgrade comparison and
+//! the run's results.
 //!
 //! Ported from `js/ui/killroy.js` and
-//! `js/stats/systems/common/killroy-planner.js`. KL-01 ported the forecast; this
-//! pane adds the Baseline and Upgrade comparisons tabs, the upgrade list, the
+//! `js/stats/systems/common/killroy-planner.js`. KL-01 ported the forecast; KL-02
+//! added the Baseline and Upgrade comparisons tabs, the upgrade list, the
 //! selection preview, the trials and the comparison that highlights the best
-//! option. The shared [`crate::task::TaskRunner`] runs the trials off the UI
-//! thread, and the results table, saved buffs and export stay with KL-03.
+//! option; KL-03 adds the run options (saved buffs and unlimited inventory), the
+//! saved-buff table, the results export and the assumptions the numbers rest on.
+//! The shared [`crate::task::TaskRunner`] runs the trials off the UI thread.
 
 mod comparison;
 mod forecast_view;
@@ -68,6 +70,10 @@ pub struct State {
     /// The combat simulator stand-in: how many monsters the character kills a
     /// second.
     pub kills_per_second: f64,
+    /// Start with the save's `BuffsActive` timers instead of a fresh map entry.
+    pub keep_buffs: bool,
+    /// Lift the bag-space limit on the run's pickups.
+    pub unlimited_inventory: bool,
     /// The weeks the run covers; this week is checked by default.
     pub checked_weeks: Vec<usize>,
     /// The encounters the run covers.
@@ -84,6 +90,8 @@ impl Default for State {
             trials: 3,
             seed: 1,
             kills_per_second: 3.0,
+            keep_buffs: false,
+            unlimited_inventory: false,
             checked_weeks: vec![0],
             selection: Vec::new(),
             upgrades: (0..killroy::UPGRADES).collect(),
@@ -186,7 +194,8 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                     .min_h_0()
                     .gap_3()
                     .child(primary)
-                    .child(comparison::results_card(state, window, cx));
+                    .child(comparison::results_card(state, window, cx))
+                    .child(comparison::buffs_card(state, save, cx));
                 let mut side = div()
                     .id("killroy-rail")
                     .flex()
@@ -290,6 +299,26 @@ mod tests {
         }
         .normalized();
         assert_eq!(state.checked_weeks, vec![0]);
+    }
+
+    #[test]
+    fn the_run_options_default_to_a_fresh_map_entry() {
+        let state = State::default();
+        assert!(!state.keep_buffs);
+        assert!(!state.unlimited_inventory);
+        // The options survive a project round trip with the rest of the config.
+        let text = serde_json::to_string(&State {
+            keep_buffs: true,
+            unlimited_inventory: true,
+            ..State::default()
+        })
+        .expect("the state serializes");
+        let back: State = serde_json::from_str(&text).expect("the state deserializes");
+        assert!(back.keep_buffs);
+        assert!(back.unlimited_inventory);
+        let normalized = back.normalized();
+        assert!(normalized.keep_buffs);
+        assert!(normalized.unlimited_inventory);
     }
 
     #[test]

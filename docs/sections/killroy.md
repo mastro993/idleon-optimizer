@@ -5,10 +5,16 @@
 - Milestone: `M12`
 - Section key: `killroy`
 - Group: `w2`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.
+
+## Current build
+
+- KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics, pinned against an oracle fixture of the upstream planner's own output.
+- KL-02 +1 upgrade comparison: the upgrade list with saved levels and availability, the selection preview, the trials through the shared task runner and the comparison table that marks the best option per baseline and flags a stale result.
+- KL-03 Saved buffs and results: the save's `BuffsActive` rows with kept/dropped markers, the Keep saved buffs and Unlimited inventory options, the bag-limited skull pickups the trial models, progress/cancel and the results export document. The combat simulator is still M2, so kills per second stands in for the character's damage; the encounter, respawn and drop maths are the game's own.
 
 ## Upstream sources
 

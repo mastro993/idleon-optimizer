@@ -13,8 +13,9 @@ use crate::task::TaskState;
 use crate::ui::{layout, task};
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::NumberInput;
+use ely_gpui_component::forms::{Checkbox, NumberInput};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
+use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
@@ -134,7 +135,8 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let trials = state.killroy.trials;
     let kills = state.killroy.kills_per_second;
     let seed = state.killroy.seed;
-    let running = state.killroy_task(cx).running;
+    let task_state = state.killroy_task(cx);
+    let running = task_state.running;
 
     let trials_input = NumberInput::new("killroy-trials", trials as f64)
         .range(1.0, 20.0)
@@ -187,7 +189,6 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             run_entity.update(cx, |state, cx| state.run_killroy(cx));
         });
 
-    let task_state = state.killroy_task(cx);
     let mut body = div()
         .id("killroy-trials")
         .flex()
@@ -204,6 +205,7 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .child(labelled("Kills / second", kills_input))
                 .child(labelled("Seed", seed_input)),
         )
+        .child(options(state, cx))
         .child(preview(state, &plan, attempts, cx))
         .child(run);
     if let TaskState {
@@ -222,10 +224,10 @@ pub fn run_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             },
         ));
     }
-    if state.killroy_task(cx).cancelled {
+    if task_state.cancelled {
         body = body.child(task::cancelled_banner(
             "killroy-cancelled",
-            state.killroy_task(cx).result.is_some(),
+            task_state.result.is_some(),
         ));
     }
     body = body.child(div().text_size(px(11.0)).text_color(muted).child(
@@ -247,6 +249,45 @@ fn labelled(label: &'static str, input: impl IntoElement) -> AnyElement {
         .gap_1()
         .child(Caption::new(label))
         .child(input)
+        .into_any_element()
+}
+
+/// The upstream Options block: saved buffs and unlimited inventory.
+fn options(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let keep_entity = cx.entity();
+    let unlimited_entity = cx.entity();
+    let keep = Checkbox::new("killroy-keep-buffs", state.killroy.keep_buffs)
+        .label("Keep saved buffs")
+        .on_change(move |on, _window, cx| {
+            keep_entity.update(cx, |state, cx| state.set_killroy_keep_buffs(on, cx));
+        });
+    let unlimited = Checkbox::new("killroy-unlimited", state.killroy.unlimited_inventory)
+        .label("Unlimited inventory (hypothetical)")
+        .on_change(move |on, _window, cx| {
+            unlimited_entity.update(cx, |state, cx| {
+                state.set_killroy_unlimited_inventory(on, cx)
+            });
+        });
+    div()
+        .id("killroy-options")
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child(
+            div()
+                .flex()
+                .flex_wrap()
+                .items_center()
+                .gap_4()
+                .child(keep)
+                .child(unlimited),
+        )
+        .child(div().text_size(px(11.0)).text_color(muted).child(
+            "A run starts as a fresh map entry: timed buffs are dropped unless kept, \
+                     the permanent form toggles always stay. Without unlimited inventory a \
+                     drop needs its own stack or a blank bag slot.",
+        ))
         .into_any_element()
 }
 
@@ -365,19 +406,21 @@ fn queue_row(plan: &Plan, row: &Row) -> [AnyElement; 4] {
 
 /// The comparison: every configuration's average, its delta and the best option.
 pub fn results_card(
-    state: &mut AppState,
+    state: &AppState,
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let task_state = state.killroy_task(cx);
-    let Some(rows) = task_state.result.clone() else {
+    let Some(outcome) = task_state.result.clone() else {
         return div().into_any_element();
     };
+    let rows = &outcome.rows;
+    let plan = &outcome.plan;
     let height = layout::table_height(f32::from(window.viewport_size().height));
     let muted = cx.theme().colors.fg_muted;
     let comparing = rows.iter().any(RowSummary::comparing);
     let runs = rows.iter().map(|row| row.runs).max().unwrap_or(0);
-    let table = ordered(&rows).into_iter().fold(
+    let table = ordered(rows).into_iter().fold(
         Table::new([
             "Character",
             "Configuration",
@@ -390,6 +433,13 @@ pub fn results_card(
         ]),
         |table, row| table.row(result_row(row)),
     );
+    let export_entity = cx.entity();
+    let export = Button::new("killroy-export", "Copy results JSON")
+        .icon(IconName::Copy)
+        .size(ControlSize::Sm)
+        .on_click(move |_event, _window, cx| {
+            export_entity.update(cx, |state, cx| state.copy_killroy_results(cx));
+        });
 
     let mut card = Card::new().header(
         CardHeader::new(if comparing {
@@ -403,7 +453,8 @@ pub fn results_card(
                 1 => "1 trial".to_string(),
                 runs => format!("{runs} trials"),
             }
-        )),
+        ))
+        .action(export),
     );
     if task_state.stale {
         card = card.child(
@@ -438,9 +489,158 @@ pub fn results_card(
             .child(
                 "The combat simulator is not built yet, so the kill rate is the trials' stand-in \
                  input; the encounter, respawn and drop maths are the game's own.",
-            ),
+            )
+            .child(
+                div()
+                    .id("killroy-result-details")
+                    .role(gpui::Role::Label)
+                    .aria_label(run_details(plan))
+                    .child(run_details(plan)),
+            )
+            .children(plan.warnings.iter().enumerate().map(|(index, warning)| {
+                div()
+                    .id(SharedString::from(format!("killroy-warning-{index}")))
+                    .child(SharedString::from(warning.clone()))
+            })),
     )
     .into_any_element()
+}
+
+/// What the run's inputs were, as the upstream Run details line reads them.
+fn run_details(plan: &Plan) -> String {
+    format!(
+        "{} · {}",
+        if plan.keep_buffs {
+            "Saved buffs kept"
+        } else {
+            "Fresh map-entry buffs"
+        },
+        if plan.unlimited_inventory {
+            "Unlimited inventory"
+        } else {
+            "Real inventory limits"
+        }
+    )
+}
+
+/// The saved buffs every selected character's run starts from.
+pub fn buffs_card(state: &AppState, save: &Save, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let keep = state.killroy.keep_buffs;
+    let mut cis: Vec<usize> = state
+        .killroy
+        .selection
+        .iter()
+        .map(|selection| selection.ci)
+        .collect();
+    cis.sort_unstable();
+    cis.dedup();
+    let characters = idleon_core::killroy::character_buffs(save, &cis, keep);
+    let buffs: usize = characters
+        .iter()
+        .map(|character| character.buffs.len())
+        .sum();
+    let table = characters
+        .iter()
+        .flat_map(|character| character.buffs.iter().map(move |buff| (character, buff)))
+        .fold(
+            Table::new(["Character", "Buff", "Stacks", "Time left", "Start"]),
+            |table, (character, buff)| {
+                table.row([
+                    div()
+                        .id(SharedString::from(format!(
+                            "killroy-buff-{}-{}",
+                            character.ci, buff.id
+                        )))
+                        .role(gpui::Role::Label)
+                        .aria_label(format!(
+                            "{} buff {}: {} stacks, {} time left — {}",
+                            character.name,
+                            buff.id,
+                            metric(buff.stacks),
+                            metric(buff.time),
+                            if buff.kept { "kept" } else { "dropped" }
+                        ))
+                        .flex()
+                        .flex_col()
+                        .child(div().child(SharedString::from(character.name.clone())))
+                        .child(Caption::new(format!("Character {}", character.ci + 1)))
+                        .into_any_element(),
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .child(div().child(SharedString::from(buff.id.to_string())))
+                        .children(buff.form.then(|| {
+                            div()
+                                .id(SharedString::from(format!(
+                                    "killroy-form-{}-{}",
+                                    character.ci, buff.id
+                                )))
+                                .child(Badge::new("Form toggle").tone(Tone::Neutral))
+                        }))
+                        .into_any_element(),
+                    div().child(metric(buff.stacks)).into_any_element(),
+                    div().child(metric(buff.time)).into_any_element(),
+                    if buff.kept {
+                        div()
+                            .child(Badge::new("Kept").tone(Tone::Success))
+                            .into_any_element()
+                    } else {
+                        div()
+                            .child(Badge::new("Dropped").tone(Tone::Neutral))
+                            .into_any_element()
+                    },
+                ])
+            },
+        );
+
+    let body = if characters.is_empty() {
+        div()
+            .p_3()
+            .child(Caption::new(
+                "Check a character in the forecast to see the buffs its run starts with.",
+            ))
+            .into_any_element()
+    } else {
+        div()
+            .id("killroy-buffs")
+            .p_3()
+            .child(
+                ScrollArea::new("killroy-buffs-scroll")
+                    .vertical()
+                    .h(px(200.0))
+                    .child(table),
+            )
+            .into_any_element()
+    };
+
+    Card::new()
+        .header(
+            CardHeader::new("Saved buffs").description(format!(
+                "{buffs} {} from BuffsActive · {} · snapshot timers",
+                if buffs == 1 { "row" } else { "rows" },
+                if keep {
+                    "every saved buff kept"
+                } else {
+                    "form toggles kept, timed buffs dropped"
+                }
+            )),
+        )
+        .child(body)
+        .child(
+            div()
+                .id("killroy-buffs-notes")
+                .px_3()
+                .pb_3()
+                .text_size(px(11.0))
+                .text_color(muted)
+                .child(
+                    "These are the save's own rows: a run starts as a fresh map entry, so a timed \
+                     buff only starts active when Keep saved buffs is on. Form toggles always stay.",
+                ),
+        )
+        .into_any_element()
 }
 
 /// The rows in reading order: each baseline, then its options best first.
@@ -561,10 +761,52 @@ mod tests {
                 seeds: trial_seeds(1, 3),
                 comparisons: Comparisons::Only(vec![0, 2]),
                 kills_per_second: 3.0,
+                keep_buffs: false,
+                unlimited_inventory: false,
             },
         )
         .expect("the plan builds");
         idleon_core::killroy::run(&plan, |_, _| false).expect("the run finishes")
+    }
+
+    fn plan(keep_buffs: bool, unlimited_inventory: bool) -> idleon_core::killroy::Plan {
+        build(
+            &save(),
+            &PlanInput {
+                selections: vec![Selection {
+                    week_offset: 0,
+                    ci: 0,
+                    slot: 1,
+                }],
+                seeds: trial_seeds(1, 1),
+                comparisons: Comparisons::Off,
+                kills_per_second: 3.0,
+                keep_buffs,
+                unlimited_inventory,
+            },
+        )
+        .expect("the plan builds")
+    }
+
+    #[test]
+    fn the_run_details_name_the_starting_buffs_and_the_bag() {
+        assert_eq!(
+            run_details(&plan(false, false)),
+            "Fresh map-entry buffs · Real inventory limits"
+        );
+        assert_eq!(
+            run_details(&plan(true, true)),
+            "Saved buffs kept · Unlimited inventory"
+        );
+    }
+
+    #[test]
+    fn the_saved_buff_table_reads_the_selected_characters() {
+        let plan = plan(false, false);
+        let buffs = idleon_core::killroy::character_buffs(&save(), &[0], plan.keep_buffs);
+        assert_eq!(buffs.len(), 1);
+        assert!(!buffs[0].buffs.is_empty());
+        assert_eq!(buffs[0].buffs, plan.characters[0].buffs);
     }
 
     #[test]
@@ -628,6 +870,8 @@ mod tests {
                 seeds: trial_seeds(1, 2),
                 comparisons: Comparisons::All,
                 kills_per_second: 3.0,
+                keep_buffs: false,
+                unlimited_inventory: false,
             },
         )
         .expect("the plan builds");

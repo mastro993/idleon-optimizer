@@ -3,12 +3,18 @@
 use super::Mode;
 use crate::state::AppState;
 use crate::task::TaskState;
-use gpui::{App, Context};
+use gpui::{App, ClipboardItem, Context};
 use idleon_core::killroy::{self, Comparisons, Plan, PlanInput, RowSummary, Selection};
 use idleon_core::model::{Control, Progress};
 
-/// What the section's runner stores: one summary row per configuration.
-pub type KillroyOutcome = Vec<RowSummary>;
+/// What a finished run stores: the plan it ran and one summary row per
+/// configuration. The plan rides along so the results export writes the inputs
+/// and saved buffs the rows were produced from, not a later edit's.
+#[derive(Clone, Debug, PartialEq)]
+pub struct KillroyOutcome {
+    pub plan: Plan,
+    pub rows: Vec<RowSummary>,
+}
 
 impl AppState {
     /// The inputs a run started now would use.
@@ -23,6 +29,8 @@ impl AppState {
             seeds: killroy::trial_seeds(state.seed, state.trials),
             comparisons,
             kills_per_second: state.kills_per_second,
+            keep_buffs: state.keep_buffs,
+            unlimited_inventory: state.unlimited_inventory,
         }
     }
 
@@ -87,13 +95,14 @@ impl AppState {
         let attempts = plan.attempts();
         let started = self.killroy_run.update(cx, |runner, cx| {
             runner.start(cx, plan, move |plan, report| {
-                killroy::run(&plan, |done, total| {
+                let rows = killroy::run(&plan, |done, total| {
                     let progress = Progress {
                         fraction: (done as f32 / total.max(1) as f32).min(0.99),
                         message: format!("{done} of {total} attempts"),
                     };
                     report(progress) == Control::Stop
-                })
+                })?;
+                Some(KillroyOutcome { plan, rows })
             })
         });
         if started {
@@ -108,6 +117,22 @@ impl AppState {
             self.status = "Cancelling the Killroy run…".into();
             cx.notify();
         }
+    }
+
+    /// Copy the last finished run's results document, the section's JSON export.
+    pub fn copy_killroy_results(&mut self, cx: &mut Context<Self>) {
+        let Some(outcome) = self.killroy_run.read(cx).result().cloned() else {
+            self.status = "Run the trials before exporting the results.".into();
+            cx.notify();
+            return;
+        };
+        let json = killroy::results_json(&outcome.plan, &outcome.rows);
+        cx.write_to_clipboard(ClipboardItem::new_string(json.clone()));
+        self.status = format!(
+            "Copied the Killroy results JSON to the clipboard ({} bytes).",
+            json.len()
+        );
+        cx.notify();
     }
 
     /// The trials a new save, or the section's first render, starts with.
@@ -193,6 +218,18 @@ impl AppState {
         } else {
             3.0
         };
+        cx.notify();
+    }
+
+    /// Keep the save's buff timers instead of starting from a fresh map entry.
+    pub fn set_killroy_keep_buffs(&mut self, keep: bool, cx: &mut Context<Self>) {
+        self.killroy.keep_buffs = keep;
+        cx.notify();
+    }
+
+    /// Lift the bag-space limit on the run's pickups.
+    pub fn set_killroy_unlimited_inventory(&mut self, unlimited: bool, cx: &mut Context<Self>) {
+        self.killroy.unlimited_inventory = unlimited;
         cx.notify();
     }
 
