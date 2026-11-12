@@ -1465,12 +1465,1524 @@
    "formula": "decay"
   }
  ],
+ "coverage": {
+  "sourceHash": "955b2ebe976e85f48b1de2ed14c61c9b2514703be0dca9d47516bc00fc110206",
+  "scope": "Direct native cache reads and literal BubbleBonus calls, not a proof of complete downstream numerical coverage.",
+  "reads": [
+   {
+    "kind": "cache",
+    "effect": "conEXPACTIVE",
+    "owner": "scripts.ActorEvents_116",
+    "method": "_event_SkillsInfo",
+    "mode": null,
+    "line": 64464
+   },
+   {
+    "kind": "cache",
+    "effect": "nonFoodACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "FoodNOTconsume",
+    "line": 65952
+   },
+   {
+    "kind": "cache",
+    "effect": "CashSTR",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "MonsterCash",
+    "line": 65953
+   },
+   {
+    "kind": "cache",
+    "effect": "CashAGI",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "MonsterCash",
+    "line": 65953
+   },
+   {
+    "kind": "cache",
+    "effect": "CashWIS",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "MonsterCash",
+    "line": 65953
+   },
+   {
+    "kind": "cache",
+    "effect": "kpkACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "KillPerKill",
+    "line": 65954
+   },
+   {
+    "kind": "cache",
+    "effect": "ProwessMulti",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": null,
+    "line": 65966
+   },
+   {
+    "kind": "cache",
+    "effect": "CardDropz",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ArbitraryCode",
+    "mode": "CardChanceMulti",
+    "line": 65967
+   },
+   {
+    "kind": "cache",
+    "effect": "CritChance",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_CritChance",
+    "mode": null,
+    "line": 66077
+   },
+   {
+    "kind": "cache",
+    "effect": "critDMG",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_CritDamage",
+    "mode": null,
+    "line": 66086
+   },
+   {
+    "kind": "cache",
+    "effect": "Mastery",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Mastery",
+    "line": 66099
+   },
+   {
+    "kind": "cache",
+    "effect": "W6",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "A6",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "M6",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "bdmgHP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "bdmgSPD",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "bdmgMP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66104
+   },
+   {
+    "kind": "cache",
+    "effect": "W12",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "A12",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "M12",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "pctDmg1",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "pctDmg2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "pctDmg3",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "W5",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "A5",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "M5",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_DamageDealed",
+    "mode": "Max",
+    "line": 66109
+   },
+   {
+    "kind": "cache",
+    "effect": "BaseHP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_PlayerHPmax",
+    "mode": null,
+    "line": 66225
+   },
+   {
+    "kind": "cache",
+    "effect": "BaseMP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_PlayerMPmax",
+    "mode": null,
+    "line": 66227
+   },
+   {
+    "kind": "cache",
+    "effect": "AccPct",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_PlayerAccTot",
+    "mode": null,
+    "line": 66236
+   },
+   {
+    "kind": "cache",
+    "effect": "TotalSTR",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "STR",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W8",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "STR",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W4",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "STR",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "TotalAGI",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "AGI",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A9",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "AGI",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A4",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "AGI",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "TotalWIS",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "WIS",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M9",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "WIS",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M4",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "WIS",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "TotalLUK",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "LUK",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A4",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "LUK",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "DefPct",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Defence",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W1",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Weapon_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A1",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Weapon_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M1",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Weapon_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Mining_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W7",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Mining_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Choppin_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M7",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Choppin_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Fishing_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "W7",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Fishing_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Catching_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A8",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Catching_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Trapping_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "A8",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Trapping_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M2",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Worship_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "M7",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Worship_Power",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "DropRate",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_TotalStats",
+    "mode": "Drop_Rarity",
+    "line": 66313
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolW",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66334
+   },
+   {
+    "kind": "cache",
+    "effect": "MinEff",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66334
+   },
+   {
+    "kind": "cache",
+    "effect": "MiningACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "MiningMultiOre",
+    "line": 66335
+   },
+   {
+    "kind": "cache",
+    "effect": "MinFishEXP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "MiningEXPmulti",
+    "line": 66338
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolM",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66346
+   },
+   {
+    "kind": "cache",
+    "effect": "ChopEff",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66346
+   },
+   {
+    "kind": "cache",
+    "effect": "MultiLogACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "ChoppinMultiOre",
+    "line": 66347
+   },
+   {
+    "kind": "cache",
+    "effect": "ChopAlchEXP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "ChoppinEXPmulti",
+    "line": 66350
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolW",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66357
+   },
+   {
+    "kind": "cache",
+    "effect": "FishingACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "FishingMultiOre",
+    "line": 66358
+   },
+   {
+    "kind": "cache",
+    "effect": "MinFishEXP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "FishingEXPmulti",
+    "line": 66361
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolA",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": null,
+    "line": 66367
+   },
+   {
+    "kind": "cache",
+    "effect": "CatchingACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_SkillStats",
+    "mode": "CatchingMultiOre",
+    "line": 66367
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolA",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": null,
+    "line": 66381
+   },
+   {
+    "kind": "cache",
+    "effect": "TrapACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "TrappingEfficiency",
+    "line": 66381
+   },
+   {
+    "kind": "cache",
+    "effect": "ToolM",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": null,
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "worshipACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "WorshipSpeed",
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "maxCharge",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "WorshipChargeMax",
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "worshipACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "WorshipChargeMax",
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "LabXpACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "LaboratoryEXPmulti",
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "LabXpACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_skillstats2",
+    "mode": "LaboratoryEXPmulti_DispA",
+    "line": 66383
+   },
+   {
+    "kind": "cache",
+    "effect": "BAspd",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ActionWaitTime",
+    "mode": null,
+    "line": 66395
+   },
+   {
+    "kind": "cache",
+    "effect": "BAspd",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ActionWaitTime",
+    "mode": "BOW",
+    "line": 66395
+   },
+   {
+    "kind": "cache",
+    "effect": "BAspd",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ActionWaitTime",
+    "mode": "WAND",
+    "line": 66395
+   },
+   {
+    "kind": "cache",
+    "effect": "BAspd",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ActionWaitTime",
+    "mode": "AFK",
+    "line": 66395
+   },
+   {
+    "kind": "cache",
+    "effect": "expACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ExpMulti",
+    "mode": 0,
+    "line": 66413
+   },
+   {
+    "kind": "cache",
+    "effect": "ChopAlchEXP",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ExpMulti",
+    "mode": 5,
+    "line": 66415
+   },
+   {
+    "kind": "cache",
+    "effect": "AlchemyACTIVE",
+    "owner": "scripts.ActorEvents_12",
+    "method": "_customBlock_ExpMulti",
+    "mode": 5,
+    "line": 66415
+   },
+   {
+    "kind": "cache",
+    "effect": "TalArchers",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TotalTalentPoints",
+    "mode": null,
+    "line": 66786
+   },
+   {
+    "kind": "cache",
+    "effect": "TalWarrior",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TotalTalentPoints",
+    "mode": null,
+    "line": 66786
+   },
+   {
+    "kind": "cache",
+    "effect": "TalWiz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TotalTalentPoints",
+    "mode": null,
+    "line": 66786
+   },
+   {
+    "kind": "cache",
+    "effect": "MinFshAFK",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_AFKgainrates",
+    "mode": "Mining",
+    "line": 66956
+   },
+   {
+    "kind": "cache",
+    "effect": "ChoppinAFK",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_AFKgainrates",
+    "mode": "Choppin",
+    "line": 66956
+   },
+   {
+    "kind": "cache",
+    "effect": "MinFshAFK",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_AFKgainrates",
+    "mode": "Fishing",
+    "line": 66956
+   },
+   {
+    "kind": "cache",
+    "effect": "CatchinAFK",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_AFKgainrates",
+    "mode": "Catching",
+    "line": 66956
+   },
+   {
+    "kind": "cache",
+    "effect": "Opassz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67073
+   },
+   {
+    "kind": "cache",
+    "effect": "Gpassz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67073
+   },
+   {
+    "kind": "cache",
+    "effect": "Ppassz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67073
+   },
+   {
+    "kind": "cache",
+    "effect": "MultiOr",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67075
+   },
+   {
+    "kind": "cache",
+    "effect": "MultiGr",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67075
+   },
+   {
+    "kind": "cache",
+    "effect": "MultiPu",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67075
+   },
+   {
+    "kind": "cache",
+    "effect": "MealSpdz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67077
+   },
+   {
+    "kind": "cache",
+    "effect": "W8",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "A9",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "M9",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "W10AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "A10AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "M10AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "W7",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "A8",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "M7",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67078
+   },
+   {
+    "kind": "cache",
+    "effect": "W9AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67079
+   },
+   {
+    "kind": "cache",
+    "effect": "A7AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67079
+   },
+   {
+    "kind": "cache",
+    "effect": "M8AllCharz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67079
+   },
+   {
+    "kind": "cache",
+    "effect": "Y6",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_TalentCalc",
+    "mode": null,
+    "line": 67081
+   },
+   {
+    "kind": "cache",
+    "effect": "AlchemyACTIVE",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_MonsterKill",
+    "mode": null,
+    "line": 67164
+   },
+   {
+    "kind": "cache",
+    "effect": "GiantsACTIVE",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_MonsterKill",
+    "mode": null,
+    "line": 67192
+   },
+   {
+    "kind": "cache",
+    "effect": "CardDropz",
+    "owner": "scripts.ActorEvents_124",
+    "method": "_customBlock_dungeonKill",
+    "mode": null,
+    "line": 67250
+   },
+   {
+    "kind": "cache",
+    "effect": "AlchemyACTIVE",
+    "owner": "scripts.ActorEvents_148",
+    "method": "_customBlock_CastAttack2",
+    "mode": 490,
+    "line": 67598
+   },
+   {
+    "kind": "cache",
+    "effect": "AnvilACTIVE",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_AnvilProduceStats",
+    "mode": "ProdSpdBonus",
+    "line": 68919
+   },
+   {
+    "kind": "cache",
+    "effect": "AnvilProdCost",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_AnvilProduceStats",
+    "mode": "Costs1",
+    "line": 68929
+   },
+   {
+    "kind": "cache",
+    "effect": "AnvilProdCost",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_AnvilProduceStats",
+    "mode": "Costs2",
+    "line": 68930
+   },
+   {
+    "kind": "cache",
+    "effect": "GFoodz",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_GoldFoodBonuses",
+    "mode": null,
+    "line": 69113
+   },
+   {
+    "kind": "cache",
+    "effect": "BubbleCostOr",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "CauldronCosts",
+    "line": 69302
+   },
+   {
+    "kind": "cache",
+    "effect": "BubbleCostGr",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "CauldronCosts",
+    "line": 69302
+   },
+   {
+    "kind": "cache",
+    "effect": "BubbleCostPu",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "CauldronCosts",
+    "line": 69302
+   },
+   {
+    "kind": "cache",
+    "effect": "BubbleCostYe",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "CauldronCosts",
+    "line": 69302
+   },
+   {
+    "kind": "cache",
+    "effect": "BubbleCost",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "CauldronCosts",
+    "line": 69302
+   },
+   {
+    "kind": "cache",
+    "effect": "BrewSpd",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "ResearchSpeed",
+    "line": 69311
+   },
+   {
+    "kind": "cache",
+    "effect": "LqdCap",
+    "owner": "scripts.ActorEvents_189",
+    "method": "_customBlock_CauldronStats",
+    "mode": "LiquidCap",
+    "line": 69324
+   },
+   {
+    "kind": "cache",
+    "effect": "DubEXP",
+    "owner": "scripts.ActorEvents_203",
+    "method": "_customEvent_AFKclaim",
+    "mode": null,
+    "line": 71133
+   },
+   {
+    "kind": "cache",
+    "effect": "A3ACTIVE",
+    "owner": "scripts.ActorEvents_203",
+    "method": "_customEvent_AFKclaim",
+    "mode": null,
+    "line": 71171
+   },
+   {
+    "kind": "cache",
+    "effect": "W3ACTIVE",
+    "owner": "scripts.ActorEvents_203",
+    "method": "_customEvent_AFKclaim",
+    "mode": null,
+    "line": 71171
+   },
+   {
+    "kind": "cache",
+    "effect": "AlchemyACTIVE",
+    "owner": "scripts.ActorEvents_209",
+    "method": "init",
+    "mode": null,
+    "line": 71407
+   },
+   {
+    "kind": "cache",
+    "effect": "W8",
+    "owner": "scripts.ActorEvents_229",
+    "method": "init",
+    "mode": null,
+    "line": 72034
+   },
+   {
+    "kind": "cache",
+    "effect": "A9",
+    "owner": "scripts.ActorEvents_229",
+    "method": "init",
+    "mode": null,
+    "line": 72034
+   },
+   {
+    "kind": "cache",
+    "effect": "M9",
+    "owner": "scripts.ActorEvents_229",
+    "method": "init",
+    "mode": null,
+    "line": 72034
+   },
+   {
+    "kind": "cache",
+    "effect": "Y6",
+    "owner": "scripts.ActorEvents_232",
+    "method": "_event_4",
+    "mode": null,
+    "line": 72513
+   },
+   {
+    "kind": "cache",
+    "effect": "DoubleBubbleUpg",
+    "owner": "scripts.ActorEvents_232",
+    "method": "_customEvent_BubbleHoldDown",
+    "mode": null,
+    "line": 72754
+   },
+   {
+    "kind": "cache",
+    "effect": "DoubleBubbleUpg",
+    "owner": "scripts.ActorEvents_232",
+    "method": "_customEvent_BubbleHoldDown",
+    "mode": null,
+    "line": 72758
+   },
+   {
+    "kind": "cache",
+    "effect": "AttackAfk",
+    "owner": "scripts.ActorEvents_266",
+    "method": "_customBlock_afkAttackBonses",
+    "mode": "D",
+    "line": 75112
+   },
+   {
+    "kind": "cache",
+    "effect": "StatueStartEXP",
+    "owner": "scripts.ActorEvents_29",
+    "method": "_event_StatueBars",
+    "mode": null,
+    "line": 76205
+   },
+   {
+    "kind": "cache",
+    "effect": "LevelUpACTIVE",
+    "owner": "scripts.ActorEvents_29",
+    "method": "_event_LevelUps",
+    "mode": null,
+    "line": 76832
+   },
+   {
+    "kind": "cache",
+    "effect": "CritShiny",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_TrappingStuffs",
+    "mode": "TotalRareChance",
+    "line": 79782
+   },
+   {
+    "kind": "cache",
+    "effect": "MKtierACTIVE",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "MultiKill_perTier",
+    "line": 79869
+   },
+   {
+    "kind": "cache",
+    "effect": "CogMakeSpd",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "CogBuildSpdBonus",
+    "line": 79902
+   },
+   {
+    "kind": "cache",
+    "effect": "Construction",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "PlayerBuildSpd",
+    "line": 79914
+   },
+   {
+    "kind": "cache",
+    "effect": "Construction",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "PlayerBuildSpd",
+    "line": 79919
+   },
+   {
+    "kind": "cache",
+    "effect": "conEXPACTIVE",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "PlayerConExp",
+    "line": 79923
+   },
+   {
+    "kind": "base-call",
+    "effect": "conEXPACTIVE",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "PlayerConExp",
+    "line": 79923
+   },
+   {
+    "kind": "cache",
+    "effect": "Opassz",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "PlayerConExp",
+    "line": 79923
+   },
+   {
+    "kind": "cache",
+    "effect": "SampleSize",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "SampleSizeBONUS",
+    "line": 79923
+   },
+   {
+    "kind": "cache",
+    "effect": "booksSpeed",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_WorkbenchStuff",
+    "mode": "BookReqTime",
+    "line": 79923
+   },
+   {
+    "kind": "cache",
+    "effect": "MealSpdz",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_CookingR",
+    "mode": "CookingSPEED",
+    "line": 80162
+   },
+   {
+    "kind": "cache",
+    "effect": "MealSpdz",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_CookingR",
+    "mode": "CookingFIRE",
+    "line": 80163
+   },
+   {
+    "kind": "cache",
+    "effect": "NewPetRift",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_Breeding",
+    "mode": "TotalBreedChance",
+    "line": 80340
+   },
+   {
+    "kind": "cache",
+    "effect": "EggInc",
+    "owner": "scripts.ActorEvents_345",
+    "method": "_customBlock_Breeding",
+    "mode": "TotalTimeForEgg",
+    "line": 80343
+   },
+   {
+    "kind": "cache",
+    "effect": "Y4",
+    "owner": "scripts.ActorEvents_577",
+    "method": "_event_4",
+    "mode": null,
+    "line": 90080
+   },
+   {
+    "kind": "cache",
+    "effect": "Y1",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Sailing",
+    "mode": "BoatSpeed",
+    "line": 91313
+   },
+   {
+    "kind": "cache",
+    "effect": "Y3",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_GamingStatType",
+    "mode": "LogBookBitBonus",
+    "line": 91496
+   },
+   {
+    "kind": "cache",
+    "effect": "MinEff",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Divinity",
+    "mode": "BlesssBonus",
+    "line": 91543
+   },
+   {
+    "kind": "cache",
+    "effect": "ChopEff",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Divinity",
+    "mode": "BlesssBonus",
+    "line": 91543
+   },
+   {
+    "kind": "cache",
+    "effect": "Y2ACTIVE",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Divinity",
+    "mode": "DivMinorBonus",
+    "line": 91567
+   },
+   {
+    "kind": "cache",
+    "effect": "M3ACTIVE",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Divinity",
+    "mode": "DivPerHr_EXP",
+    "line": 91567
+   },
+   {
+    "kind": "cache",
+    "effect": "Y5",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_AtomCollider",
+    "mode": "AtomCost",
+    "line": 91589
+   },
+   {
+    "kind": "cache",
+    "effect": "W10AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_FarmingStuffs",
+    "mode": "NextCropChance",
+    "line": 91821
+   },
+   {
+    "kind": "cache",
+    "effect": "Y6",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_FarmingStuffs",
+    "mode": "NextCropChance",
+    "line": 91821
+   },
+   {
+    "kind": "cache",
+    "effect": "A10AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Ninja",
+    "mode": "Stealth",
+    "line": 91867
+   },
+   {
+    "kind": "cache",
+    "effect": "Y10",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Ninja",
+    "mode": "JadeUpgCost",
+    "line": 91871
+   },
+   {
+    "kind": "cache",
+    "effect": "Y8",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Ninja",
+    "mode": "door",
+    "line": 91884
+   },
+   {
+    "kind": "cache",
+    "effect": "Y9ACTIVE",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Ninja",
+    "mode": "ItemFindOdds",
+    "line": 91888
+   },
+   {
+    "kind": "cache",
+    "effect": "W13",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning",
+    "mode": "GrimoireBonesDropDEC",
+    "line": 91963
+   },
+   {
+    "kind": "cache",
+    "effect": "W8",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning",
+    "mode": "TomeBonus",
+    "line": 92034
+   },
+   {
+    "kind": "cache",
+    "effect": "A9",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning",
+    "mode": "TomeBonus",
+    "line": 92034
+   },
+   {
+    "kind": "cache",
+    "effect": "M9",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning",
+    "mode": "TomeBonus",
+    "line": 92034
+   },
+   {
+    "kind": "cache",
+    "effect": "M10AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning2",
+    "mode": "SummRockEssGen",
+    "line": 92108
+   },
+   {
+    "kind": "cache",
+    "effect": "A7AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning2",
+    "mode": "SummRockEssGen",
+    "line": 92108
+   },
+   {
+    "kind": "cache",
+    "effect": "Y7",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning2",
+    "mode": "SummRockEssGen",
+    "line": 92108
+   },
+   {
+    "kind": "cache",
+    "effect": "M8AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning2",
+    "mode": "SummRockEssGen",
+    "line": 92108
+   },
+   {
+    "kind": "cache",
+    "effect": "W9AllCharz",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Summoning2",
+    "mode": "SummRockEssGen",
+    "line": 92108
+   },
+   {
+    "kind": "cache",
+    "effect": "Y12",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Thingies",
+    "mode": "KrukBubblesDaily",
+    "line": 92154
+   },
+   {
+    "kind": "cache",
+    "effect": "A13",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Windwalker",
+    "mode": "ExtraDust",
+    "line": 92522
+   },
+   {
+    "kind": "cache",
+    "effect": "M13",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_ArcaneType",
+    "mode": "ExtraTachyon",
+    "line": 92609
+   },
+   {
+    "kind": "cache",
+    "effect": "Y11",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Spelunk",
+    "mode": "StaminaRegenRate",
+    "line": 92687
+   },
+   {
+    "kind": "cache",
+    "effect": "M11",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Spelunk",
+    "mode": "HolesToNextFloor",
+    "line": 92731
+   },
+   {
+    "kind": "cache",
+    "effect": "A11",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Spelunk",
+    "mode": "SpelunkingEfficiency",
+    "line": 92751
+   },
+   {
+    "kind": "cache",
+    "effect": "W11",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Spelunk",
+    "mode": "SpelunkingMultiOre",
+    "line": 92753
+   },
+   {
+    "kind": "cache",
+    "effect": "Y13",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_Gallery",
+    "mode": "GalleryBonusMulti",
+    "line": 92781
+   },
+   {
+    "kind": "cache",
+    "effect": "W14",
+    "owner": "scripts.ActorEvents_579",
+    "method": "_customBlock_RoyalG",
+    "mode": "OutpostResourceRate",
+    "line": 93209
+   },
+   {
+    "kind": "cache",
+    "effect": "AlchemyACTIVE",
+    "owner": "scripts.Design_23_23_EveryScene",
+    "method": "_event_AttackQueue",
+    "mode": null,
+    "line": 121727
+   },
+   {
+    "kind": "cache",
+    "effect": "MultiLogACTIVE",
+    "owner": "scripts.SceneEvents_33",
+    "method": "_event_EveryNsecs",
+    "mode": null,
+    "line": 163219
+   }
+  ],
+  "unresolved": 8
+ },
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer",
   "files": [
    "js/stats/data/w2/alchemy.js",
    "js/stats/data/common/encoding.js",
-   "js/stats/entity-names.js"
+   "js/stats/entity-names.js",
+   "js/stats/data/prisma-source-coverage.js"
   ]
  }
 }

@@ -2,8 +2,9 @@
 //!
 //! Extracted from the upstream JS by `script/extract-prisma-data.mjs`:
 //! `js/stats/data/w2/alchemy.js` (`bubbleDefinitions`, `bubbleParams`) reads
-//! `AlchemyDescription`, the display labels come from `js/stats/entity-names.js`
-//! and the bubble-code letters from `js/stats/data/common/encoding.js` (`N2L`).
+//! `AlchemyDescription`, the display labels come from `js/stats/entity-names.js`,
+//! the bubble-code letters from `js/stats/data/common/encoding.js` (`N2L`) and
+//! the native consumer audit from `js/stats/data/prisma-source-coverage.js`.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -12,10 +13,56 @@ const PRISMA_JSON: &str = include_str!("../../data/prisma.json");
 
 /// The extracted table, parsed once.
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(super) struct Data {
     /// `N2L`: the letter a Prisma ownership code prefixes the bubble index with.
     pub(super) letters: String,
     pub(super) bubbles: Vec<Bubble>,
+    pub(super) coverage: SourceCoverage,
+}
+
+/// The direct native references upstream's audit traced for each effect.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct SourceCoverage {
+    pub(super) reads: Vec<Consumer>,
+}
+
+/// The `StatType`/mode value a native reference passes: some are names, some
+/// are numeric modes and a few pass a talent id.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum Mode {
+    Text(String),
+    Number(f64),
+}
+
+impl Mode {
+    /// The mode as the upstream UI prints it.
+    pub fn label(&self) -> String {
+        match self {
+            Mode::Text(text) => text.clone(),
+            Mode::Number(number) if number.fract() == 0.0 => format!("{}", *number as i64),
+            Mode::Number(number) => format!("{number}"),
+        }
+    }
+}
+
+/// One native reference that reads a bubble effect.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct Consumer {
+    /// `cache` or `base-call`: a cache read or a literal bubble-bonus call.
+    pub kind: String,
+    /// The effect key the reference reads.
+    pub effect: String,
+    /// The game script that carries the reference, e.g. `scripts.ActorEvents_12`.
+    pub owner: String,
+    /// The script-level method, e.g. `_customBlock_TotalStats`.
+    pub method: String,
+    /// The `StatType`/mode the reference passes, when it passes one.
+    pub mode: Option<Mode>,
+    /// The source line in the dumped game script.
+    pub line: usize,
 }
 
 /// One bubble the cauldrons carry.
@@ -66,6 +113,15 @@ pub(super) fn letter(cauldron: usize) -> Option<char> {
     data().letters.chars().nth(cauldron)
 }
 
+/// The native references upstream's audit traced for one effect.
+pub(super) fn consumers(effect: &str) -> impl Iterator<Item = &'static Consumer> + '_ {
+    data()
+        .coverage
+        .reads
+        .iter()
+        .filter(move |consumer| consumer.effect == effect)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,5 +157,20 @@ mod tests {
         assert_eq!(cauldron_label(0), Some("Power"));
         assert_eq!(cauldron_label(3), Some("Kazam"));
         assert_eq!(cauldron_label(4), None);
+    }
+
+    #[test]
+    fn the_coverage_table_names_the_native_consumers_of_each_effect() {
+        let total = data().coverage.reads.len();
+        assert!(total > 150, "the audit traces {total} direct references");
+        let strength: Vec<&str> = consumers("TotalSTR")
+            .map(|consumer| consumer.method.as_str())
+            .collect();
+        assert!(strength.contains(&"_customBlock_TotalStats"));
+        let statue = consumers("StatueStartEXP").collect::<Vec<_>>();
+        assert_eq!(statue.len(), 1);
+        assert_eq!(statue[0].kind, "cache");
+        assert_eq!(statue[0].mode, None);
+        assert!(consumers("NOT_AN_EFFECT").next().is_none());
     }
 }
