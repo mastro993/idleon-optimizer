@@ -2483,6 +2483,45 @@ const INTERACTIONS = {
     if (!additive.includes('+30%')) {
       throw new Error(`cglunko: the additive group reads ${additive}`);
     }
+    // The Upgrades tab lists the selected page's twelve upgrades with the stone
+    // that funds each one.
+    await lane.call('click_element', { id: 'upgrades' });
+    await waitForNode(lane, 'cglunko-upgrades', 'cglunko: the upgrades tab opens');
+    await waitForNode(lane, 'cglunko-upgrade-0', 'cglunko: the blue page lists Opal Find');
+    if (has(await lane.tree(), 'cglunko-upgrade-12')) {
+      throw new Error('cglunko: the blue page lists a purple upgrade');
+    }
+    // The page selector drives the list: purple shows upgrades 12..23 and the
+    // priority table below switches to the purple drop-rate upgrades.
+    await lane.call('click_element', { id: 'cglunko-page-toggle-1' });
+    await waitForNode(lane, 'cglunko-upgrade-12', 'cglunko: purple shows Purp Collector');
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cglunko-upgrade-0'),
+      'cglunko: purple hides the blue page',
+    );
+    // The Optimizer tab ranks the selected page and spends its stones: blue
+    // buys a level, and switching page marks that plan stale instead of
+    // dropping it.
+    await lane.call('click_element', { id: 'optimizer' });
+    await waitForNode(lane, 'cglunko-optimizer', 'cglunko: the optimizer tab opens');
+    await waitForNode(lane, 'cglunko-priority-12', 'cglunko: purple priority ranks Purp Collector first');
+    if (has(await lane.tree(), 'cglunko-priority-10')) {
+      throw new Error('cglunko: the purple priority lists a blue upgrade');
+    }
+    await lane.call('click_element', { id: 'cglunko-page-toggle-0' });
+    await waitForNode(lane, 'cglunko-priority-10', 'cglunko: blue priority ranks Blue Collector');
+    await lane.call('click_element', { id: 'run-cglunko-plan' });
+    await waitForNode(lane, 'cglunko-plan-result', 'cglunko: the plan lists its purchases');
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'cglunko-plan-upgrade-1') || has(nodes, 'cglunko-plan-upgrade-3'),
+      'cglunko: the plan buys a blue drop-rate upgrade',
+    );
+    await lane.call('click_element', { id: 'cglunko-page-toggle-1' });
+    await waitForNode(lane, 'cglunko-plan-badge', 'cglunko: another page marks the plan stale');
+    await lane.call('click_element', { id: 'overview' });
+    await waitForNode(lane, 'cglunko-overview', 'cglunko: the overview tab reopens');
     // A save without the Cove rows reads zero and names the missing field.
     await importSave(cglunkoSave({ rows: false }), 'cglunko-missing', 'cglunko');
     const empty = labelOf(await lane.tree(), 'cglunko-summary') ?? '';

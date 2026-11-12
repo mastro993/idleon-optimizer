@@ -1,6 +1,7 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
 use crate::assets::Manifest;
+use crate::sections::cglunko::Tab as CglunkoTab;
 use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
 use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
@@ -42,6 +43,7 @@ use crate::ui::import::{self, Import, Pending};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_core::clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_core::cog::{
     CogResult, Goal as CogGoal, OptimizeOptions, PerfectBoard, optimize as optimize_cog_board,
@@ -217,6 +219,10 @@ pub struct AppState {
     pub monument_save: Option<monument::Save>,
     /// The Cglunko state the last imported save carried.
     pub cglunko: Cglunko,
+    /// The Cglunko tab the section was left on.
+    pub cglunko_tab: CglunkoTab,
+    /// The page the Cglunko upgrade list and plan work on.
+    pub cglunko_page: CglunkoPage,
     /// The Clamworks state the last imported save carried.
     pub clamworks: Clamworks,
     /// The cog board section: the decoded save and the board on screen.
@@ -324,6 +330,8 @@ pub struct AppState {
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for the perfect cog board.
     pub(crate) cog_perfect_run: Entity<TaskRunner<PerfectBoard, CogPerfectInputs>>,
+    /// The shared runner for the Cglunko upgrade plan.
+    cglunko_run: Entity<TaskRunner<CglunkoPlan, CglunkoPage>>,
     /// The shared runner for the Clamworks upgrade plan.
     clamworks_run: Entity<TaskRunner<ClamworksPlan, ClamworksPlanInput>>,
     /// The shared runner for a Worship TD plan simulation.
@@ -370,6 +378,7 @@ pub struct AppState {
     _jelly_run_subscription: Subscription,
     _cog_subscription: Subscription,
     _cog_perfect_subscription: Subscription,
+    _cglunko_run_subscription: Subscription,
     _clamworks_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
@@ -595,6 +604,34 @@ impl AppState {
                                 perfect.layers.len(),
                                 perfect.excogia_blocks,
                                 perfect.yang_placed
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
+        // The Cglunko plan is a short bounded greedy run that reports every
+        // purchase and stops where the saved stones run out.
+        let cglunko_run = cx.new(|_| TaskRunner::<CglunkoPlan, CglunkoPage>::new());
+        let cglunko_run_subscription =
+            cx.subscribe(&cglunko_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Planning Cglunko upgrades… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Cglunko plan cancelled; the previous plan is unchanged.".into()
+                        } else {
+                            "Cglunko plan cancelled; nothing was planned.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(plan) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Cglunko plan ready: {} purchases, {:.2}× DR.",
+                                plan.steps.len(),
+                                plan.dr_after()
                             );
                         }
                     }
@@ -932,6 +969,8 @@ impl AppState {
             monument_save: None,
             cog: CogState::default(),
             cglunko: Cglunko::default(),
+            cglunko_tab: CglunkoTab::default(),
+            cglunko_page: CglunkoPage::default(),
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
@@ -982,6 +1021,7 @@ impl AppState {
             jelly_run,
             cog_run,
             cog_perfect_run,
+            cglunko_run,
             clamworks_run,
             worship_plan,
             worship_optimize,
@@ -1014,6 +1054,7 @@ impl AppState {
             _jelly_run_subscription: jelly_run_subscription,
             _cog_subscription: cog_subscription,
             _cog_perfect_subscription: cog_perfect_subscription,
+            _cglunko_run_subscription: cglunko_run_subscription,
             _clamworks_run_subscription: clamworks_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
@@ -1351,6 +1392,11 @@ impl AppState {
         self.farming.adopt(&self.farm);
         self.cog.load(imported.cog);
         self.cglunko = imported.cglunko;
+        // A plan from the previous save describes inputs this one no longer has.
+        self.cglunko_run.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
         self.clamworks = imported.clamworks;
         // The plan's default budget follows the new balance; a projection from
         // the previous save no longer describes this one.
@@ -2126,6 +2172,53 @@ impl AppState {
             },
             self.monument.remaining_hp,
         ))
+    }
+
+    pub fn set_cglunko_tab(&mut self, tab: CglunkoTab, cx: &mut Context<Self>) {
+        self.cglunko_tab = tab;
+        cx.notify();
+    }
+
+    /// Pick the page the upgrade list and the plan work on. A stored plan is
+    /// marked stale by the runner, not dropped, so the previous numbers stay
+    /// readable until the next run.
+    pub fn set_cglunko_page(&mut self, page: CglunkoPage, cx: &mut Context<Self>) {
+        self.cglunko_page = page;
+        cx.notify();
+    }
+
+    /// The plan run's progress, result and staleness for the selected page.
+    pub fn cglunko_task(&self, cx: &App) -> TaskState<CglunkoPlan> {
+        self.cglunko_run.read(cx).state(&self.cglunko_page)
+    }
+
+    /// Plan the selected page's purchases off the UI thread through the shared
+    /// runner.
+    pub fn run_cglunko_plan(&mut self, cx: &mut Context<Self>) {
+        if !self.save_loaded {
+            self.status = "Cglunko plan: import a save first.".into();
+            cx.notify();
+            return;
+        }
+        let page = self.cglunko_page;
+        let cglunko = self.cglunko.clone();
+        let started = self.cglunko_run.update(cx, |runner, cx| {
+            runner.start(cx, page, move |page, report| {
+                cglunko.plan_with(page, report)
+            })
+        });
+        if started {
+            self.status = format!("Planning Cglunko {} upgrades…", page.label());
+            cx.notify();
+        }
+    }
+
+    /// Ask a running plan to stop at its next purchase.
+    pub fn cancel_cglunko_plan(&mut self, cx: &mut Context<Self>) {
+        if self.cglunko_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Cglunko plan…".into();
+            cx.notify();
+        }
     }
 
     pub fn set_clamworks_tab(&mut self, tab: ClamworksTab, cx: &mut Context<Self>) {

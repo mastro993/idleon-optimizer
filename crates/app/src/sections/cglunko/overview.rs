@@ -1,19 +1,18 @@
 //! The Cglunko overview: the summary cards and the drop-rate formula tree.
 //!
 //! Every card and the tree read the same [`idleon_core::Cglunko`] state, so the
-//! KPI figures and the breakdown's total cannot disagree.
+//! KPI figures and the breakdown's total cannot disagree. The section header
+//! prints the one-line summary; the page below is the cards and the tree.
 
 use crate::state::AppState;
-use crate::ui::format;
 use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
-use ely_gpui_component::typography::Caption;
+use ely_gpui_component::theme::TextSize;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::cglunko;
 
-/// The overview page: the summary line, the upstream cards and the DR tree.
+/// The overview page: the upstream cards and the DR tree.
 pub fn overview_pane(
     state: &mut AppState,
     _window: &mut Window,
@@ -22,15 +21,6 @@ pub fn overview_pane(
     let cglunko = state.cglunko.clone();
     let tree = state.cglunko_breakdown.clone();
     tree.update(cx, |tree, cx| tree.set_root(cglunko.breakdown(), cx));
-    let muted = cx.theme().colors.fg_muted;
-    let summary = format!(
-        "DR ×{:.2} · {} blue digits · {} purple digits · {} Glunko kills · normal DR {}",
-        cglunko.dr(),
-        cglunko.blue_digits(),
-        cglunko.purple_digits(),
-        format::fmt_val(cglunko.kills),
-        format::fmt_val(cglunko.normal_dr)
-    );
 
     let first_row = div()
         .id("cglunko-kpi-row-1")
@@ -154,13 +144,6 @@ pub fn overview_pane(
         .flex_col()
         .gap_3()
         .p_3()
-        .child(
-            div()
-                .id("cglunko-summary")
-                .role(Role::Label)
-                .aria_label(summary.clone())
-                .child(Caption::new(summary).text_color(muted)),
-        )
         .child(first_row)
         .child(second_row)
         .child(third_row)
