@@ -25,6 +25,7 @@ pub mod jelly_operator;
 pub mod killroy;
 pub mod ladle;
 pub mod monument;
+pub mod opal;
 pub mod pickle;
 pub mod prisma;
 pub mod research;
@@ -407,9 +408,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W5,
         description: "Villager EXP rates, opal distribution optimizer, all bonus terms",
         spec: "docs/sections/opal.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: opal::view,
         keys: no_keys,
     },
     Section {

@@ -150,6 +150,46 @@ fn split_pane_inner(
     }
 }
 
+/// A headline figure as the upstream `_card` draws it: its label, its value and
+/// a one-line explanation, all in one card.
+pub fn figure(
+    id: &'static str,
+    label: &'static str,
+    value: impl Into<SharedString>,
+    caption: impl Into<SharedString>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    use ely_gpui_component::layout::{Card, CardHeader};
+    use ely_gpui_component::typography::Caption;
+
+    let muted = cx.theme().colors.fg_muted;
+    let value = value.into();
+    div()
+        .id(id)
+        .role(Role::Label)
+        .aria_label(format!("{label}: {value}"))
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_w(px(190.0))
+        .child(
+            Card::new().header(CardHeader::new(label)).child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap_1()
+                    .child(
+                        div()
+                            .text_size(px(20.0))
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .child(value),
+                    )
+                    .child(Caption::new(caption.into()).text_color(muted)),
+            ),
+        )
+        .into_any_element()
+}
+
 /// The shared section header: back, icon, title, world badge, save status, import.
 pub fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let Some(section) = state.current_section() else {

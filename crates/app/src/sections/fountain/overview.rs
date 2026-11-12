@@ -2,6 +2,7 @@
 
 use super::bonuses;
 use crate::state::AppState;
+use crate::ui::layout::figure;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::tables::Table;
@@ -505,42 +506,6 @@ pub(super) fn odds(chance: f64) -> String {
         return "Guaranteed".into();
     }
     format!("1 in {:.2}", 1.0 / chance)
-}
-
-/// A headline figure as the upstream `_card` draws it: value, then context.
-pub(super) fn figure(
-    id: &'static str,
-    label: &'static str,
-    value: impl Into<SharedString>,
-    caption: impl Into<SharedString>,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let value = value.into();
-    div()
-        .id(id)
-        .role(gpui::Role::Label)
-        .aria_label(format!("{label}: {value}"))
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_w(px(190.0))
-        .child(
-            Card::new().header(CardHeader::new(label)).child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(
-                        div()
-                            .text_size(px(20.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child(value),
-                    )
-                    .child(Caption::new(caption.into()).text_color(muted)),
-            ),
-        )
-        .into_any_element()
 }
 
 /// A smaller figure inside another card.

@@ -85,7 +85,11 @@ fn count(value: f64) -> String {
 
 fn rate(value: f64) -> String {
     let magnitude = value.abs();
-    let (scaled, suffix) = if magnitude >= 1e9 {
+    let (scaled, suffix) = if magnitude >= 1e15 {
+        (value / 1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (value / 1e12, "T")
+    } else if magnitude >= 1e9 {
         (value / 1e9, "B")
     } else if magnitude >= 1e6 {
         (value / 1e6, "M")
@@ -321,6 +325,9 @@ mod tests {
         assert_eq!(ValueFormat::Multiplier.format(1.25), "×1.25");
         assert_eq!(ValueFormat::Count.format(1234.0), "1,234");
         assert_eq!(ValueFormat::Rate.format(1652.1), "1.65K/hr");
+        assert_eq!(ValueFormat::Rate.format(2.5e9), "2.5B/hr");
+        assert_eq!(ValueFormat::Rate.format(2.5e12), "2.5T/hr");
+        assert_eq!(ValueFormat::Rate.format(2.5e15), "2.5Q/hr");
         assert_eq!(ValueFormat::Raw.format(1652.1), "1652.1");
         assert_eq!(ValueFormat::Raw.format(f64::INFINITY), "—");
     }

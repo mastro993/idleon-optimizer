@@ -537,6 +537,7 @@ mod tests {
             spelunking: None,
             ladle: None,
             fountain: None,
+            opal: None,
             royal: None,
             save: idleon_core::save::Save::new(serde_json::Value::Null),
             companion: None,

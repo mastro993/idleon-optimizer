@@ -1,11 +1,11 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
-the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Royal Guardian
-overview, the Coral God Rank planner, the Spelunking controls and depth estimates, the combat
-simulator's loadout editor, the cog board optimizer and the Jelly Operator overview and layout
-editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and the All Stats
-context built, 5 sections planned.** The live breakdown is
+the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
+state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
+estimates, the combat simulator's loadout editor, the cog board optimizer, the Clamworks optimizer
+and the Jelly Operator overview and layout editor partial, shadow-ban, endgame and BoneJoePickle
+done, Monument Bravery and the All Stats context built, 4 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -248,6 +248,8 @@ script/extract-account-data.mjs     extract the account tables the multiplier tr
 script/extract-stats-data.mjs       extract the map and class tables the stats context reads
 script/extract-prisma-data.mjs      extract the bubble table the Prisma calculator reads
 script/prisma-oracle.mjs            regenerate the Prisma plan and bonus oracle fixture
+script/extract-opal-data.mjs       extract the opal tables (cosmo, compass, statue, grimoire, lore)
+script/opal-oracle.mjs             regenerate the villager EXP oracle fixture from opal-calc.html
 script/extract-fountain-data.mjs    extract the fountain upgrade table and its account rows
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and shop tables
@@ -390,6 +392,15 @@ four configurations and nineteen rejected inputs, compared field for field by
 `script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir and shop tables. Missing: the
 run simulator, amber policies and the optimizer (SP-02 to SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
+
+The Opal Optimizer section implements OP-01: the current state of the five villagers, their levels,
+invested opals and stars, the six overview figures, the villagers table and the shared formula tree,
+with the tree switchable between the total and one villager. `idleon_core::opal::Opal` decodes
+`buildExt` out of the save — the villager rows, the cosmo upgrades and every cross-system term through
+the account decoder — and `script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to
+regenerate `fixtures/opal.json`, which `crates/core/tests/opal.rs` pins. Missing: the distribution
+optimizer (OP-02) and the manual simulator (OP-03).
+Details: [`docs/sections/opal.md`](sections/opal.md).
 
 The Prisma section implements PR-01: the plan for one character and cauldron (every bubble's saved
 level, its saved Prisma ownership and the four statuses upstream distinguishes), the save's Prisma

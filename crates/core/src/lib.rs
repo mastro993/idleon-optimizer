@@ -5,13 +5,14 @@
 //! extracted from that repo by `script/extract-research-data.mjs`,
 //! `script/extract-statue-data.mjs`, `script/extract-farming-data.mjs`,
 //! `script/extract-clamworks-data.mjs`, `script/extract-worship-td-data.mjs`,
-//! `script/extract-stats-data.mjs` and `script/extract-cglunko-data.mjs`; the
-//! maths follow `js/stats/systems/w7/research-math.js`,
+//! `script/extract-stats-data.mjs`, `script/extract-cglunko-data.mjs` and
+//! `script/extract-opal-data.mjs`; the maths follow
+//! `js/stats/systems/w7/research-math.js`,
 //! `js/stats/systems/common/statue-leveling.js`,
 //! `js/stats/systems/w6/farming-planner.js`,
 //! `js/stats/systems/w7/clamworks.js`,
-//! `js/stats/systems/w3/worship-td.js` and
-//! `js/stats/systems/w5/cglunko.js`.
+//! `js/stats/systems/w3/worship-td.js`,
+//! `js/stats/systems/w5/cglunko.js` and the inline script of `opal-calc.html`.
 
 pub mod breakdown;
 pub mod cglunko;
@@ -34,6 +35,7 @@ pub mod killroy;
 pub mod ladle;
 pub mod model;
 pub mod monument;
+pub mod opal;
 pub mod optimize;
 pub mod pickle;
 pub mod prisma;
@@ -63,5 +65,6 @@ pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+pub use opal::Opal;
 pub use royal_guardian::RoyalGuardian;
 pub use sailing::{AssignmentMode, Boat, Captain, Fleet, Goal, RouteContext, RouteMetrics};

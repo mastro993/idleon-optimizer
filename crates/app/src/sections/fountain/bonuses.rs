@@ -1,9 +1,10 @@
 //! The Overview's bonus cards: missing sources, lucky coins and ducks, the ground
 //! stacks, the cross-system bonuses and the shared multiplier tree.
 
-use super::overview::{figure, num, pct, time};
+use super::overview::{num, pct, time};
 use crate::state::AppState;
 use crate::ui::formula::FormulaTree;
+use crate::ui::layout::figure;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Callout;
 use ely_gpui_component::layout::{Card, CardHeader};

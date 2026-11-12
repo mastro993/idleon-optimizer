@@ -336,7 +336,7 @@ impl Jar {
 
     /// `collectibleBonus`: a collectible's total bonus at its saved level, raised
     /// by the legend talent points every collectible level shares.
-    fn collectible_bonus(&self, index: usize, legend_pts: f64) -> f64 {
+    pub fn collectible_bonus(&self, index: usize, legend_pts: f64) -> f64 {
         let per_level = COLLECTIBLE_BONUS_PER_LEVEL
             .get(index)
             .copied()

@@ -5,7 +5,7 @@
 - Milestone: `M23`
 - Section key: `opal`
 - Group: `w5`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.
