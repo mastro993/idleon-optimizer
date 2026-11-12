@@ -265,3 +265,28 @@ fn a_caller_can_add_the_warnings_the_reader_cannot_know() {
         document.warnings()
     );
 }
+
+#[test]
+fn an_exported_state_string_reads_back_through_the_pipeline() {
+    use idleon_core::model::{SimContext, Simulation};
+
+    let simulation = Simulation::default();
+    let context = SimContext {
+        server_var_res_xp: 1.3,
+        extra_shapes: 2,
+        extra_magnifiers: 1,
+        bonus_grid_points: 30,
+        ..SimContext::default()
+    };
+    let text = project::write_state(&simulation, &context);
+    let document = import::read(&text).expect("the export reads back");
+    assert_eq!(document.format(), "upstream state");
+    assert_eq!(document.research_level(), Some(simulation.research_level));
+    // An upstream state carries no save, so nothing else decodes one.
+    assert_eq!(document.characters(), None);
+    let Document::Project(project) = document else {
+        panic!("a state string is a project document");
+    };
+    assert_eq!(project.document.simulation, simulation);
+    assert_eq!(project.document.context, context);
+}

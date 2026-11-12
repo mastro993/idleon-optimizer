@@ -373,7 +373,7 @@ pub fn apply(
             changes.extend(research_changes(&state.simulation, &simulation));
             changes.extend(supplement_changes(&state.context, &context));
             state.simulation = simulation;
-            state.context = context;
+            state.replace_context(context);
         }
     }
     for config in configs {

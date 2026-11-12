@@ -5,7 +5,9 @@
 //! state as gzip+base64 behind an `ROv2:` prefix and a `_version` field. The
 //! project file keeps the same research shape in plain JSON so it stays
 //! diffable, and adds what the upstream state never carried: the decoded save
-//! and one config object per section.
+//! and one config object per section. [`write_state`] writes the upstream
+//! string back out, so a run copies to the upstream tool and returns to this
+//! one with its supplements intact.
 //!
 //! ```json
 //! {
@@ -58,6 +60,8 @@ const STATE_PREFIX: &str = "ROv2:";
 
 /// The upstream state's format marker.
 const UPSTREAM_FORMAT: &str = "research-optimizer-state";
+/// The upstream schema version [`write_state`] writes.
+const UPSTREAM_STATE_VERSION: u32 = 2;
 /// The upstream schema versions this build migrates.
 const UPSTREAM_VERSIONS: [u32; 2] = [1, 2];
 
@@ -199,6 +203,61 @@ pub fn write(project: &Project) -> String {
     );
     object.insert("sections".into(), Value::Object(project.sections.clone()));
     serde_json::to_string_pretty(&Value::Object(object)).unwrap_or_default()
+}
+
+/// Write the research state as the upstream `ROv2:` string: the state object,
+/// gzip-compressed and base64-encoded behind its prefix.
+///
+/// The object carries every field the upstream export carries that this build
+/// models, plus the whole [`SimContext`] under `supplements`. The flat scalars
+/// keep the string usable in the upstream tool; `supplements` makes it come
+/// back here exactly, including the user supplements upstream has no field for.
+/// A save is never embedded: the upstream format does not carry one.
+pub fn write_state(simulation: &Simulation, context: &SimContext) -> String {
+    let mut object = Map::new();
+    object.insert("_format".into(), Value::from(UPSTREAM_FORMAT));
+    object.insert("_version".into(), Value::from(UPSTREAM_STATE_VERSION));
+    if let Some(research) = research_value(simulation).as_object() {
+        for (key, value) in research {
+            // The upstream state names the stored EXP `cachedResearchExp`.
+            let key = if key == "researchExp" {
+                "cachedResearchExp"
+            } else {
+                key.as_str()
+            };
+            object.insert(key.to_string(), value.clone());
+        }
+    }
+    object.insert(
+        "serverVarResXP".into(),
+        Value::from(context.server_var_res_xp),
+    );
+    object.insert("allBonusMulti".into(), Value::from(context.all_bonus_multi));
+    object.insert(
+        "cachedExtPctExSticker".into(),
+        Value::from(context.extra_pct),
+    );
+    object.insert("comp52TrueMulti".into(), Value::from(context.companion_52));
+    object.insert(
+        "supplements".into(),
+        serde_json::to_value(context).unwrap_or(Value::Null),
+    );
+    encode_state(&Value::Object(object))
+}
+
+/// gzip a state object and base64 it behind the prefix.
+fn encode_state(value: &Value) -> String {
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write as _;
+
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    let _ = encoder.write_all(value.to_string().as_bytes());
+    let bytes = encoder.finish().unwrap_or_default();
+    format!(
+        "{STATE_PREFIX}{}",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    )
 }
 
 /// The decoded research state behind a simulation, in the shape both the
@@ -484,6 +543,7 @@ fn migrate(object: &Map<String, Value>, _version: u32) -> Project {
         "insightProgress",
         "magData",
         "shapePositions",
+        "preset",
     ] {
         if let Some(value) = object.get(key) {
             state.insert(key.to_string(), value.clone());
@@ -493,25 +553,32 @@ fn migrate(object: &Map<String, Value>, _version: u32) -> Project {
         state.insert("researchExp".into(), value.clone());
     }
     let simulation = simulation(&Value::Object(state), &mut warnings);
-    let mut context = SimContext::default();
-    if let Some(value) = object.get("serverVarResXP").and_then(json::number) {
-        context.server_var_res_xp = value;
-    }
-    if let Some(value) = object.get("allBonusMulti").and_then(json::number) {
-        context.all_bonus_multi = value;
-    }
-    // The state's additive account percentage; newer exports split the sticker
-    // half into `cachedExtPctExSticker`, which is the value this app models.
-    if let Some(value) = object
-        .get("cachedExtPctExSticker")
-        .or_else(|| object.get("externalResearchPct"))
-        .and_then(json::number)
-    {
-        context.extra_pct = value;
-    }
-    if let Some(value) = object.get("comp52TrueMulti").and_then(json::number) {
-        context.companion_52 = value;
-    }
+    // A state this build wrote carries the whole context; one from upstream only
+    // carries the four scalars that exist there.
+    let context = if object.get("supplements").is_some_and(Value::is_object) {
+        supplements(object.get("supplements"), &mut warnings)
+    } else {
+        let mut context = SimContext::default();
+        if let Some(value) = object.get("serverVarResXP").and_then(json::number) {
+            context.server_var_res_xp = value;
+        }
+        if let Some(value) = object.get("allBonusMulti").and_then(json::number) {
+            context.all_bonus_multi = value;
+        }
+        // The state's additive account percentage; newer exports split the
+        // sticker half into `cachedExtPctExSticker`, the value this app models.
+        if let Some(value) = object
+            .get("cachedExtPctExSticker")
+            .or_else(|| object.get("externalResearchPct"))
+            .and_then(json::number)
+        {
+            context.extra_pct = value;
+        }
+        if let Some(value) = object.get("comp52TrueMulti").and_then(json::number) {
+            context.companion_52 = value;
+        }
+        context
+    };
     let mapped = [
         "_format",
         "_version",
@@ -529,6 +596,8 @@ fn migrate(object: &Map<String, Value>, _version: u32) -> Project {
         "externalResearchPct",
         "cachedExtPctExSticker",
         "comp52TrueMulti",
+        "preset",
+        "supplements",
     ];
     let skipped: Vec<&str> = object
         .keys()
@@ -651,6 +720,82 @@ mod tests {
         let imported = save::import(&research.to_string()).expect("the research half imports");
         assert_eq!(imported.simulation, simulation_fixture());
         assert_eq!(imported.format, save::Format::ResearchState);
+    }
+
+    /// Decode a state string back to the object it was written from.
+    fn decoded_state(text: &str) -> Value {
+        let payload = text.strip_prefix(STATE_PREFIX).expect("the state prefix");
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(payload)
+            .expect("base64");
+        let mut json = String::new();
+        GzDecoder::new(&bytes[..])
+            .read_to_string(&mut json)
+            .expect("gzip");
+        serde_json::from_str(&json).expect("json")
+    }
+
+    #[test]
+    fn an_exported_state_string_imports_back_to_the_same_state() {
+        let simulation = simulation_fixture();
+        let context = SimContext {
+            server_var_res_xp: 1.4,
+            all_bonus_multi: 1.5,
+            extra_pct: 120.0,
+            companion_52: 1.75,
+            // The four below are this build's own supplements: no upstream key
+            // carries them, so only `supplements` can bring them back.
+            extra_multiplier: 1.25,
+            bonus_grid_points: 40,
+            extra_shapes: 3,
+            extra_magnifiers: 5,
+            ..SimContext::default()
+        };
+        let text = write_state(&simulation, &context);
+        assert!(text.starts_with(STATE_PREFIX), "{}", text);
+
+        let Document::Project(back) = read(&text).expect("the export reads back") else {
+            panic!("a state string is a project document");
+        };
+        assert_eq!(back.origin, Origin::UpstreamState);
+        assert_eq!(back.simulation, simulation);
+        assert_eq!(back.context, context);
+        assert!(back.save.is_none());
+        // The only warning is the save an upstream state cannot carry.
+        assert_eq!(back.warnings.len(), 1, "{:?}", back.warnings);
+        assert!(
+            back.warnings[0].starts_with("save: "),
+            "{:?}",
+            back.warnings
+        );
+    }
+
+    #[test]
+    fn an_exported_state_string_carries_the_upstream_fields() {
+        let simulation = simulation_fixture();
+        let context = SimContext {
+            server_var_res_xp: 1.4,
+            all_bonus_multi: 1.5,
+            extra_pct: 120.0,
+            companion_52: 1.75,
+            ..SimContext::default()
+        };
+        let state = decoded_state(&write_state(&simulation, &context));
+        assert_eq!(state["_format"], "research-optimizer-state");
+        assert_eq!(state["_version"], 2);
+        assert_eq!(state["researchLevel"], 122);
+        assert_eq!(state["cachedResearchExp"], 4_200.0);
+        assert!(state.get("researchExp").is_none(), "{state}");
+        assert_eq!(state["serverVarResXP"], 1.4);
+        assert_eq!(state["allBonusMulti"], 1.5);
+        assert_eq!(state["cachedExtPctExSticker"], 120.0);
+        assert_eq!(state["comp52TrueMulti"], 1.75);
+        assert_eq!(
+            state["gridLevels"].as_array().map(Vec::len),
+            Some(game().cells())
+        );
+        assert_eq!(state["preset"], "_none");
+        assert!(state["supplements"].is_object(), "{state}");
     }
 
     #[test]
@@ -814,6 +959,11 @@ mod tests {
         let wrong_format = encode(json!({ "_format": "something-else", "_version": 2 }));
         assert!(matches!(read(&wrong_format), Err(Error::StateFormat(_))));
         assert!(matches!(read("ROv2:not-base64!"), Err(Error::Base64(_))));
+        // A payload that is not an object names the shape, never a panic.
+        assert!(matches!(
+            read(&encode(json!([1, 2, 3]))),
+            Err(Error::Shape(_))
+        ));
     }
 
     #[test]

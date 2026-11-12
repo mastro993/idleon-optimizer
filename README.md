@@ -80,7 +80,8 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   placement priorities.
 - **Supplements** — the save-derived multipliers that live outside the grid (`serverVarResXP`,
   all-bonus multiplier, extra account %, extra multiplier, flat grid points, extra shapes and
-  magnifiers), editable in the Rates pane; the displayed rate follows each change.
+  magnifiers), editable in the Rates pane; the displayed rate follows each change and Reset returns
+  to what the last save or document set.
 - **Killroy weekly forecast** — the server's Killroy rotation, every saved character's three
   encounter slots for the next 1–52 weeks, family and room frequency, class eligibility, unlock
   reasons and the save's monster records. The rotation, unlocks and records stay at the imported
@@ -105,12 +106,14 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
 - **Project export and import** — Export in the same header writes the whole window state as one
   versioned JSON document (`format` + `version`): the decoded save, the research state, the
   supplements and one config object per section. Copying it and pasting it back into Import
-  reproduces every section's visible state, including which section was open. The dialog also takes
-  one section's config (`idleon-optimizer-section`) on its own and the upstream optimizer's
-  gzip+base64 `ROv2:` state string, which is decompressed and migrated; fields this build does not
-  model are named in a warning instead of failing the document, while an unknown version or format
-  gets its own message. A project whose embedded save cannot be read fails as a whole, named by the
-  save field, instead of applying its research half.
+  reproduces every section's visible state, including which section was open. The same dialog
+  copies the upstream optimizer's gzip+base64 `ROv2:` state string: the research state and the
+  supplements, which import back exactly and still open in the upstream tool. Import also takes
+  one section's config (`idleon-optimizer-section`) on its own and an upstream `ROv2:` state
+  string, which is decompressed and migrated; fields this build does not model are named in a
+  warning instead of failing the document, while an unknown version or format gets its own
+  message. A project whose embedded save cannot be read fails as a whole, named by the save field,
+  instead of applying its research half.
 - **Monument Bravery** — Paying Respect training and its save-derived sources, sword damage and
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
@@ -218,10 +221,12 @@ section root and shared header, drives one interaction (the statue table's searc
 research grid's tabs) and writes a screenshot plus a JSON sidecar under `target/mcp-sections/`.
 `--baseline` compares those captures with a previous run (pixels, not bytes), and `--parallel N`
 proves the lanes stay isolated by checking shards in N windows at once. The section gate also proves
-the import round trip in one lane: Export opens over the window state, then a project document, an
-`ROv2:` state string and a research section config each preview, apply and leave a visible mark,
-the change log names the applied field, and malformed JSON, an unknown format, an unsupported
-version, an unreadable embedded save and a malformed section config each report their own message
+the import round trip in one lane: Export opens over the window state and carries both the project
+JSON and the `ROv2:` state string, then a project document, an exported state string and a research
+section config each preview, apply and leave a visible mark (the state string brings back the
+supplement set by hand before the export), the change log names the applied field, and malformed
+JSON, an unknown format, an unsupported version, an unreadable embedded save, a malformed section
+config and a malformed `ROv2:` state string each report their own message
 without touching the applied state.
 These scripts need the `gpui-mcp` binary
 (`cargo install --git https://github.com/mastro993/gpui-mcp --branch gpui-pre-0.3.9 gpui-mcp-server`)

@@ -888,6 +888,28 @@ mod tests {
     }
 
     #[test]
+    fn the_user_supplements_reach_the_rate_and_the_owned_pools() {
+        let (mut sim, mut ctx) = filled();
+        sim.mags = vec![Mag::new(MagKind::Regular, Some(3))];
+        let plain = exp_rate(&sim, &ctx).total;
+        let shapes = shapes_owned(sim.research_level, &ctx);
+        let magnifiers = magnifiers_owned(&sim, &ctx);
+        let earned = grid_points(&sim, &ctx).earned;
+
+        ctx.extra_multiplier = 2.0;
+        assert!((exp_rate(&sim, &ctx).total - plain * 2.0).abs() < 1e-6);
+        ctx.extra_multiplier = 1.0;
+        ctx.extra_pct = 100.0;
+        assert!(exp_rate(&sim, &ctx).total > plain);
+        ctx.extra_shapes = 2;
+        assert_eq!(shapes_owned(sim.research_level, &ctx), shapes + 2);
+        ctx.extra_magnifiers = 2;
+        assert_eq!(magnifiers_owned(&sim, &ctx), magnifiers + 2);
+        ctx.bonus_grid_points = 10;
+        assert_eq!(grid_points(&sim, &ctx).earned, earned + 10);
+    }
+
+    #[test]
     fn the_afk_rate_caps_at_one() {
         let (sim, mut ctx) = filled();
         ctx.companion_28 = 1_000.0;
