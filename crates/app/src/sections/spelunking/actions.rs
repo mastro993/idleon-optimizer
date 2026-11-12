@@ -3,9 +3,13 @@
 //! Each action fits the request to the save (capacity, unlocked speeds) and
 //! notifies the window; the arithmetic lives in [`State`] and the core crate.
 
+use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::state::AppState;
 use gpui::Context;
-use idleon_core::spelunking::{Inputs, Policy, Preset, ReferenceTool, StaminaMode};
+use idleon_core::spelunking::{
+    Entry, Inputs, Policy, Preset, ReferenceTool, RunOptions, StaminaMode, ToolChoice, normalize,
+    simulate,
+};
 
 impl AppState {
     /// The Spelunking inputs for the loaded save and the account inputs on screen.
@@ -117,6 +121,24 @@ impl AppState {
         cx.notify();
     }
 
+    /// Set the manual Amber multiplier.
+    pub fn set_spelunk_amber(&mut self, amber: f64, cx: &mut Context<Self>) {
+        self.spelunking.set_amber(amber);
+        cx.notify();
+    }
+
+    /// Set the manual stamina regeneration per hour.
+    pub fn set_spelunk_regen(&mut self, regen: f64, cx: &mut Context<Self>) {
+        self.spelunking.set_regen(regen);
+        cx.notify();
+    }
+
+    /// Set the Grand Discovery chance, entered as a percentage.
+    pub fn set_spelunk_grand_pct(&mut self, percent: f64, cx: &mut Context<Self>) {
+        self.spelunking.set_grand_pct(percent);
+        cx.notify();
+    }
+
     /// Override one character's maximum stamina.
     pub fn set_spelunk_max_stamina(
         &mut self,
@@ -153,5 +175,78 @@ impl AppState {
         self.spelunking.inspect = depth;
         self.spelunking.clamp_inspect();
         cx.notify();
+    }
+
+    /// Set the seed the next run uses.
+    pub fn set_spelunk_sim_seed(&mut self, seed: u32, cx: &mut Context<Self>) {
+        self.spelunking.sim_seed = seed;
+        cx.notify();
+    }
+
+    /// Set the manual reaction time the run waits between actions.
+    pub fn set_spelunk_sim_reaction(&mut self, reaction_ms: f64, cx: &mut Context<Self>) {
+        if reaction_ms.is_finite() {
+            self.spelunking.sim_reaction_ms = reaction_ms.clamp(100.0, 5_000.0);
+        }
+        cx.notify();
+    }
+
+    /// Choose the manual tool: adaptive, or one unlocked tool.
+    pub fn set_spelunk_sim_tool(&mut self, tool: ToolChoice, cx: &mut Context<Self>) {
+        self.spelunking.sim_tool = tool;
+        cx.notify();
+    }
+
+    /// Choose where the run starts.
+    pub fn set_spelunk_sim_entry(&mut self, entry: Entry, cx: &mut Context<Self>) {
+        self.spelunking.sim_entry = entry;
+        cx.notify();
+    }
+
+    /// Run the expedition off the UI thread through the shared task runner.
+    pub fn run_spelunk_simulation(&mut self, cx: &mut Context<Self>) {
+        let Some(spelunk_inputs) = self.spelunk_inputs() else {
+            return;
+        };
+        let requested = self.spelunking.run_requested();
+        let config = match normalize(&spelunk_inputs, &requested) {
+            Ok(config) => config,
+            Err(error) => {
+                self.status = format!("This expedition cannot run: {error}");
+                cx.notify();
+                return;
+            }
+        };
+        if config.policy == Policy::AmberFarm {
+            self.status = "Phased Amber farming arrives with SP-03.".into();
+            cx.notify();
+            return;
+        }
+        let run_inputs = SpelunkRunInputs {
+            requested,
+            account: self.spelunking.account.clone(),
+            seed: self.spelunking.sim_seed,
+            revision: self.save_revision,
+        };
+        let seed = run_inputs.seed;
+        let started = self.spelunk_sim.update(cx, |runner, cx| {
+            runner.start(cx, run_inputs, move |_, report| {
+                simulate(&spelunk_inputs, config, RunOptions { seed }, report)
+                    .ok()
+                    .flatten()
+            })
+        });
+        if started {
+            self.status = format!("Running the expedition with seed {seed}…");
+            cx.notify();
+        }
+    }
+
+    /// Ask a running expedition to stop; the previous result stays.
+    pub fn cancel_spelunk_simulation(&mut self, cx: &mut Context<Self>) {
+        if self.spelunk_sim.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the expedition…".into();
+            cx.notify();
+        }
     }
 }

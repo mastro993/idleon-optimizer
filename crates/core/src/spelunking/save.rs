@@ -8,7 +8,7 @@
 //! `None` and the section shows its import prompt instead of zeros.
 
 use super::{Account, Character, Inputs, data, game_log, js_round};
-use crate::save::{self as imported_save, number, row_values};
+use crate::save::{self as imported_save, formula, json, number, row_values};
 use serde_json::Value;
 
 /// The decoded save, narrowed to the rows the Spelunking formulas read.
@@ -25,6 +25,12 @@ pub struct Save {
     characters: Vec<Row>,
     /// `shopUpgBonus` for all 80 rows.
     shop: Vec<f64>,
+    /// `Gaming[12]`: the Super Bit keys the account owns.
+    gaming: String,
+    /// `Sailing[3][35]`: the Pointagon tier `chapterBonus` reads.
+    pointagon: f64,
+    /// Menagerie unlock 1, which the saved shortcut entry needs.
+    shortcut: bool,
     /// Whether the wrapper carried the companion roster.
     partial: bool,
 }
@@ -79,12 +85,28 @@ impl Save {
             .collect();
         let shop = shop_upgrades(&rows, &characters);
         let partial = !companion_roster(save);
+        let sailing = save.get("Sailing");
+        let pointagon = sailing
+            .as_ref()
+            .and_then(|sailing| json::index(sailing, &[3, 35]))
+            .and_then(number)
+            .unwrap_or(0.0)
+            .max(0.0);
+        let menagerie = save.get("Menagerie");
+        let shortcut = menagerie
+            .as_ref()
+            .and_then(|menagerie| json::index(menagerie, &[2, 1]))
+            .and_then(number)
+            .is_some_and(|owned| owned >= 1.0);
         Some(Self {
             rows,
             gem_items,
             options,
             characters,
             shop,
+            gaming: field_text(save, "Gaming", 12),
+            pointagon,
+            shortcut,
             partial,
         })
     }
@@ -165,10 +187,21 @@ impl Save {
             shop: self.shop.clone(),
             power: account.power,
             holes_bonus: account.holes_bonus,
+            amber: account.amber,
+            regen: account.regen,
+            grand: account.grand,
             elixir_owned,
             slots,
             dupes,
             memory_slots,
+            nonconsume: self.nonconsume(),
+            overuse: !spelunk.overuse_super_bit.is_empty()
+                && self.gaming.contains(&spelunk.overuse_super_bit),
+            switch_nova: self.cell(5, 38) >= 1.0,
+            bags: self.gem_item(44).max(0.0),
+            prisma: self.cell(4, 4),
+            exalt: self.cell(4, 3),
+            shortcut: self.shortcut,
             saved_elixirs,
             memorized,
             saved_manic: self.cell(4, 10) == 1.0,
@@ -178,8 +211,48 @@ impl Save {
             manic: self.shop_at(53) >= 1.0,
             depths: self.row(1),
             manic_depths: self.row(47),
+            bosses: self.row(0),
+            grands: self.row(44),
+            discoveries: self
+                .rows
+                .get(6)
+                .map(|row| {
+                    row.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_string)
+                        .collect()
+                })
+                .unwrap_or_default(),
             partial: self.partial,
         }
+    }
+
+    /// `min(.6, (shop[26] + chapterBonus(3, 2)) / 100)`: the chance a used
+    /// elixir charge survives.
+    fn nonconsume(&self) -> f64 {
+        ((self.shop_at(26) + self.chapter_bonus(3, 2)) / 100.0).min(0.6)
+    }
+
+    /// `chapterBonus`: `Spelunk[8]` holds one level per chapter bonus, and a row
+    /// flagged with the artifact scales by Pointagon's bonus.
+    fn chapter_bonus(&self, chapter: usize, bonus: usize) -> f64 {
+        let Some(row) = data()
+            .chapters
+            .get(chapter)
+            .and_then(|rows| rows.get(bonus))
+        else {
+            return 0.0;
+        };
+        let level = self.cell(8, 4 * chapter + bonus);
+        if level <= 0.0 {
+            return 0.0;
+        }
+        let artifact = if row.artifact == 1.0 {
+            1.0 + crate::sailing::artifact_bonus(35, self.pointagon as u32) / 100.0
+        } else {
+            1.0
+        };
+        artifact * formula::eval(&row.kind, row.x1, row.x2, level)
     }
 
     /// `Spelunk[row][column]`, through the number coercion the formulas use.
@@ -218,6 +291,17 @@ fn companion_roster(save: &imported_save::Save) -> bool {
         .as_ref()
         .and_then(|companion| companion.get("l"))
         .is_some_and(|list| list.is_array() || list.is_object())
+}
+
+/// One decoded row cell as text, for the encoded Super Bit lists.
+fn field_text(save: &imported_save::Save, field: &str, index: usize) -> String {
+    save.get(field)
+        .and_then(|value| json::index(&value, &[index]).cloned())
+        .map(|cell| match cell {
+            Value::String(text) => text,
+            other => other.to_string(),
+        })
+        .unwrap_or_default()
 }
 
 /// `shopUpgBonus` for every row: `SpelunkUpg[idx][4] * level`, with the

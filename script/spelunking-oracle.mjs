@@ -41,8 +41,21 @@ loader.loadSaveData({ data: save });
 const built = inputs.buildSpelunkInputs(state.saveData, 0);
 
 // The account inputs the port asks the user for instead of deriving them.
-const ACCOUNT = { power: 2500, holesBonus: 0.5 };
-const controlled = { ...built, pow: ACCOUNT.power, holesBonus: ACCOUNT.holesBonus };
+const ACCOUNT = {
+  power: 2500,
+  holesBonus: 0.5,
+  amber: built.amber,
+  regen: built.regen,
+  grand: built.grand,
+};
+const controlled = {
+  ...built,
+  pow: ACCOUNT.power,
+  holesBonus: ACCOUNT.holesBonus,
+  amber: ACCOUNT.amber,
+  regen: ACCOUNT.regen,
+  grand: ACCOUNT.grand,
+};
 
 /** One configuration the Rust port must reproduce, with the fields it reads. */
 const CONFIGS = [
@@ -122,6 +135,105 @@ function rejected(input, requested) {
     return error.message;
   }
 }
+
+// A cave whose boss is still unbeaten and whose nova, potion and charge
+// upgrades are bought, so the run exercises the boss, nova, potion, Grand
+// Discovery and radar branches the default save has already finished.
+const UNBEATEN = {
+  ...controlled,
+  bosses: controlled.bosses.map(() => 0),
+  grands: controlled.grands.map(() => 0),
+  discoveries: [],
+  shop: controlled.shop.map((value, index) => ([36, 39, 40].includes(index) ? 1 : value)),
+};
+const RUN_INPUTS = { controlled, unbeaten: UNBEATEN };
+
+/** One whole simulated expedition, compacted for the fixture. */
+function run(entry) {
+  const input = RUN_INPUTS[entry.input ?? 'controlled'];
+  const config = expedition.normalizeSpelunkConfig(input, entry.requested);
+  const result = expedition.simulateSpelunkExpedition(input, config, {
+    seed: entry.seed,
+  });
+  return {
+    label: entry.label,
+    requested: entry.requested,
+    input: entry.input ?? 'controlled',
+    seed: entry.seed,
+    config: result.config,
+    status: result.status,
+    settled: result.settled,
+    seconds: result.seconds,
+    startDepth: result.startDepth,
+    depth: result.depth,
+    actions: result.actions,
+    spent: result.spent,
+    hits: result.hits,
+    misses: result.misses,
+    broken: result.broken,
+    rewards: result.rewards,
+    grossRewards: result.grossRewards,
+    exit: result.exit,
+    stamina: result.stamina,
+    diagnostics: result.diagnostics,
+    grands: result.grands,
+    discoveries: result.discoveries,
+    rngCalls: result.rngCalls,
+    eventsDropped: result.eventsDropped,
+    // The trace is compared as `[type, depth]` pairs: the times and stamina
+    // reads are already pinned by the run's own figures, and the full list
+    // would make the fixture megabytes wide.
+    events: result.events.map((event) => [event.type, event.depth]),
+    notes: result.notes,
+  };
+}
+
+/** The configurations whose whole run the port must reproduce. */
+const RUNS = [
+  { label: 'saved defaults, seed 1', requested: {}, seed: 1 },
+  {
+    label: 'manual dive with a belt, seed 7',
+    requested: {
+      cave: 1,
+      party: [0, 1],
+      elixirs: [0, 2, 7],
+      memorized: [0, 2],
+      policy: 'dive',
+      tool: 2,
+      stamina: 'full',
+      fullClear: false,
+    },
+    seed: 7,
+  },
+  {
+    label: 'first boss with nova, radar and discovery, seed 11',
+    input: 'unbeaten',
+    requested: {
+      cave: 0,
+      party: [0, 1],
+      elixirs: [1, 4, 8, 9, 10],
+      memorized: [1, 9],
+      policy: 'efficient',
+      stamina: 'saved',
+      fullClear: false,
+    },
+    seed: 11,
+  },
+  {
+    label: 'surface full clear, seed 3',
+    requested: {
+      cave: 0,
+      party: [0],
+      manic: false,
+      elixirs: [-1, -1, -1, -1, -1],
+      memorized: [],
+      policy: 'clear',
+      entry: 'surface',
+      stamina: 'saved',
+    },
+    seed: 3,
+  },
+];
 
 // The fixture's characters are all at full stamina and Manic is unlocked, so
 // the two run-state rejections need a copy of the input with that state set.
@@ -250,7 +362,18 @@ const payload = {
   partial: built.partial,
   depths: built.depths,
   manicDepths: built.manicDepths,
+  bosses: built.bosses,
+  grands: built.grands,
+  discoveries: built.discoveries,
+  nonconsume: built.nonconsume,
+  overuse: built.overuse,
+  switchNova: built.switchNova,
+  bags: built.bags,
+  prisma: built.prisma,
+  exalt: built.exalt,
+  shortcut: built.shortcut === 1,
   configs: CONFIGS.map(profile),
+  runs: RUNS.map(run),
   rejections: parties.map((entry) => ({
     label: entry.label,
     requested: entry.requested,
@@ -262,5 +385,6 @@ const payload = {
 const out = new URL('../fixtures/spelunking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
-  `wrote ${payload.configs.length} profiles, ${payload.rejections.length} rejections, ${payload.characters.length} characters`,
+  `wrote ${payload.configs.length} profiles, ${payload.rejections.length} rejections, ` +
+    `${payload.runs.length} runs, ${payload.characters.length} characters`,
 );

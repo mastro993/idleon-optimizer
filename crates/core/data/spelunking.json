@@ -1554,12 +1554,1205 @@
   1,
   1
  ],
+ "chapters": [
+  [
+   {
+    "label": "+{_Base|Spelunking_Efficiency",
+    "x1": 5,
+    "x2": 0,
+    "kind": "add",
+    "artifact": 1
+   },
+   {
+    "label": "+{%_Total|Spelunking_Efficiency",
+    "x1": 1000,
+    "x2": 1000,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "+{%_Faster|Spelunking_Speed",
+    "x1": 30,
+    "x2": 2000,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "+{_Base|Spelunking_Efficiency",
+    "x1": 10,
+    "x2": 0,
+    "kind": "add",
+    "artifact": 1
+   },
+   {
+    "label": "+{%|Spelunking_EXP_gain",
+    "x1": 30,
+    "x2": 500,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Spelunking_POW",
+    "x1": 4,
+    "x2": 1000,
+    "kind": "decayMulti",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Amber_Found",
+    "x1": 4,
+    "x2": 1000,
+    "kind": "decayMulti",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "+{_Max|Stamina_for_All_Players",
+    "x1": 25,
+    "x2": 500,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "+{%_Faster|Stamina_Regeneration",
+    "x1": 50,
+    "x2": 600,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "{%_extra|Overstim_Fill_Rate",
+    "x1": 250,
+    "x2": 1000,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "+{%_Max|Stamina_for_All_Players",
+    "x1": 10,
+    "x2": 400,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "+{%|Spelunking_EXP_gain",
+    "x1": 50,
+    "x2": 600,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "+{%_chance_to|not_use_up_Elixir",
+    "x1": 3,
+    "x2": 1000,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "{%_extra|Chapter_LVs_from_Pages",
+    "x1": 50,
+    "x2": 2000,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "+{%_Grand|Discovery_Chance",
+    "x1": 25,
+    "x2": 1000,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Amber_Found",
+    "x1": 3,
+    "x2": 3500,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Spelunking_POW",
+    "x1": 3,
+    "x2": 3500,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "}x_Total|Spelunking_POW",
+    "x1": 10,
+    "x2": 3500,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Amber_Found",
+    "x1": 10,
+    "x2": 3500,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "+{%_Faster|Stamina_Regeneration",
+    "x1": 60,
+    "x2": 6000,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ],
+  [
+   {
+    "label": "+{%|Spelunking_EXP_gain",
+    "x1": 80,
+    "x2": 1000,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Grand|Discovery_Chance",
+    "x1": 2,
+    "x2": 3000,
+    "kind": "decay",
+    "artifact": 1
+   },
+   {
+    "label": "}x_Total|Spelunking_POW",
+    "x1": 12,
+    "x2": 3500,
+    "kind": "decay",
+    "artifact": 1
+   }
+  ]
+ ],
+ "overuseSuperBit": "J",
+ "rewards": [
+  "Amber",
+  "Prisma Bubbles",
+  "Exalted Stamp Fragments",
+  "Snail Mail",
+  "Blinding Lanterns",
+  "Sigil Syrup",
+  "Spirit Offerings",
+  "Strange Gold Pieces",
+  "Rockenstone",
+  "Sheetmetal",
+  "Popcorn",
+  "Pillario"
+ ],
+ "sprites": {
+  "CaveRock_0": [
+   28,
+   14
+  ],
+  "CaveRock_1": [
+   29,
+   22
+  ],
+  "CaveRock_2": [
+   36,
+   24
+  ],
+  "CaveRock_3": [
+   30,
+   31
+  ],
+  "CaveRock_4": [
+   35,
+   40
+  ],
+  "CaveRock_5": [
+   42,
+   44
+  ],
+  "CaveBoss0": [
+   91,
+   63
+  ],
+  "CaveRockExit0": [
+   49,
+   25
+  ],
+  "CaveTile0": [
+   72,
+   61
+  ],
+  "CaveDoor0": [
+   80,
+   70
+  ],
+  "CaveRocka0": [
+   23,
+   17
+  ],
+  "CaveRocka1": [
+   28,
+   21
+  ],
+  "CaveRocka2": [
+   28,
+   23
+  ],
+  "CaveRocka3": [
+   32,
+   27
+  ],
+  "CaveRocka4": [
+   36,
+   30
+  ],
+  "CaveRocka5": [
+   36,
+   32
+  ],
+  "CaveRocka6": [
+   54,
+   40
+  ],
+  "CaveBoss1": [
+   75,
+   78
+  ],
+  "CaveRockExit1": [
+   57,
+   25
+  ],
+  "CaveTile1": [
+   72,
+   61
+  ],
+  "CaveDoor1": [
+   80,
+   70
+  ],
+  "CaveRockb0": [
+   30,
+   22
+  ],
+  "CaveRockb1": [
+   29,
+   24
+  ],
+  "CaveRockb2": [
+   28,
+   35
+  ],
+  "CaveRockb3": [
+   35,
+   34
+  ],
+  "CaveRockb4": [
+   21,
+   40
+  ],
+  "CaveRockb5": [
+   47,
+   39
+  ],
+  "CaveRockb6": [
+   46,
+   44
+  ],
+  "CaveRockb7": [
+   57,
+   65
+  ],
+  "CaveBoss2": [
+   95,
+   75
+  ],
+  "CaveRockExit2": [
+   57,
+   25
+  ],
+  "CaveTile2": [
+   72,
+   61
+  ],
+  "CaveDoor2": [
+   80,
+   70
+  ],
+  "CaveRockc0": [
+   24,
+   18
+  ],
+  "CaveRockc1": [
+   31,
+   26
+  ],
+  "CaveRockc2": [
+   20,
+   36
+  ],
+  "CaveRockc3": [
+   33,
+   39
+  ],
+  "CaveRockc4": [
+   46,
+   31
+  ],
+  "CaveRockc5": [
+   52,
+   38
+  ],
+  "CaveRockc6": [
+   34,
+   50
+  ],
+  "CaveRockc7": [
+   55,
+   60
+  ],
+  "CaveRockc8": [
+   51,
+   63
+  ],
+  "CaveBoss3": [
+   98,
+   79
+  ],
+  "CaveRockExit3": [
+   57,
+   25
+  ],
+  "CaveTile3": [
+   72,
+   61
+  ],
+  "CaveDoor3": [
+   80,
+   70
+  ],
+  "CaveRockd0": [
+   23,
+   22
+  ],
+  "CaveRockd1": [
+   17,
+   20
+  ],
+  "CaveRockd2": [
+   28,
+   23
+  ],
+  "CaveRockd3": [
+   30,
+   27
+  ],
+  "CaveRockd4": [
+   38,
+   24
+  ],
+  "CaveRockd5": [
+   44,
+   33
+  ],
+  "CaveRockd6": [
+   45,
+   35
+  ],
+  "CaveRockd7": [
+   44,
+   42
+  ],
+  "CaveRockd8": [
+   33,
+   44
+  ],
+  "CaveRockd9": [
+   55,
+   45
+  ],
+  "CaveBoss4": [
+   120,
+   75
+  ],
+  "CaveRockExit4": [
+   57,
+   25
+  ],
+  "CaveTile4": [
+   72,
+   61
+  ],
+  "CaveDoor4": [
+   80,
+   70
+  ],
+  "CaveRocke0": [
+   34,
+   19
+  ],
+  "CaveRocke1": [
+   25,
+   33
+  ],
+  "CaveRocke2": [
+   24,
+   39
+  ],
+  "CaveRocke3": [
+   42,
+   27
+  ],
+  "CaveRocke4": [
+   49,
+   25
+  ],
+  "CaveRocke5": [
+   46,
+   42
+  ],
+  "CaveRocke6": [
+   37,
+   49
+  ],
+  "CaveRocke7": [
+   50,
+   52
+  ],
+  "CaveRocke8": [
+   38,
+   56
+  ],
+  "CaveRocke9": [
+   58,
+   55
+  ],
+  "CaveRocke10": [
+   49,
+   65
+  ],
+  "CaveBoss5": [
+   114,
+   79
+  ],
+  "CaveRockExit5": [
+   57,
+   25
+  ],
+  "CaveTile5": [
+   72,
+   61
+  ],
+  "CaveDoor5": [
+   80,
+   70
+  ],
+  "CaveRockf0": [
+   23,
+   21
+  ],
+  "CaveRockf1": [
+   37,
+   33
+  ],
+  "CaveRockf2": [
+   26,
+   35
+  ],
+  "CaveRockf3": [
+   31,
+   30
+  ],
+  "CaveRockf4": [
+   39,
+   41
+  ],
+  "CaveRockf5": [
+   35,
+   37
+  ],
+  "CaveRockf6": [
+   40,
+   47
+  ],
+  "CaveRockf7": [
+   34,
+   44
+  ],
+  "CaveRockf8": [
+   23,
+   53
+  ],
+  "CaveRockf9": [
+   52,
+   46
+  ],
+  "CaveRockf10": [
+   46,
+   55
+  ],
+  "CaveRockf11": [
+   53,
+   65
+  ],
+  "CaveBoss6": [
+   97,
+   91
+  ],
+  "CaveRockExit6": [
+   57,
+   25
+  ],
+  "CaveTile6": [
+   72,
+   61
+  ],
+  "CaveDoor6": [
+   80,
+   70
+  ],
+  "CaveRockg0": [
+   21,
+   17
+  ],
+  "CaveRockg1": [
+   22,
+   23
+  ],
+  "CaveRockg2": [
+   23,
+   27
+  ],
+  "CaveRockg3": [
+   29,
+   31
+  ],
+  "CaveRockg4": [
+   37,
+   33
+  ],
+  "CaveRockg5": [
+   42,
+   37
+  ],
+  "CaveRockg6": [
+   39,
+   41
+  ],
+  "CaveRockg7": [
+   37,
+   41
+  ],
+  "CaveRockg8": [
+   30,
+   44
+  ],
+  "CaveRockg9": [
+   39,
+   48
+  ],
+  "CaveRockg10": [
+   44,
+   52
+  ],
+  "CaveRockg11": [
+   44,
+   56
+  ],
+  "CaveRockg12": [
+   57,
+   60
+  ],
+  "CaveBoss7": [
+   109,
+   75
+  ],
+  "CaveRockExit7": [
+   57,
+   25
+  ],
+  "CaveTile7": [
+   72,
+   61
+  ],
+  "CaveDoor7": [
+   80,
+   70
+  ],
+  "CaveRockh0": [
+   39,
+   22
+  ],
+  "CaveRockh1": [
+   18,
+   35
+  ],
+  "CaveRockh2": [
+   25,
+   38
+  ],
+  "CaveRockh3": [
+   28,
+   26
+  ],
+  "CaveRockh4": [
+   42,
+   61
+  ],
+  "CaveRockh5": [
+   61,
+   38
+  ],
+  "CaveRockh6": [
+   33,
+   39
+  ],
+  "CaveRockh7": [
+   47,
+   45
+  ],
+  "CaveRockh8": [
+   38,
+   47
+  ],
+  "CaveRockh9": [
+   41,
+   50
+  ],
+  "CaveRockh10": [
+   41,
+   57
+  ],
+  "CaveRockh11": [
+   48,
+   60
+  ],
+  "CaveRockh12": [
+   49,
+   59
+  ],
+  "CaveRockh13": [
+   47,
+   60
+  ],
+  "CaveBoss8": [
+   123,
+   93
+  ],
+  "CaveRockExit8": [
+   57,
+   25
+  ],
+  "CaveTile8": [
+   72,
+   62
+  ],
+  "CaveDoor8": [
+   80,
+   70
+  ],
+  "CaveRocki0": [
+   20,
+   23
+  ],
+  "CaveRocki1": [
+   14,
+   21
+  ],
+  "CaveRocki2": [
+   29,
+   17
+  ],
+  "CaveRocki3": [
+   23,
+   25
+  ],
+  "CaveRocki4": [
+   30,
+   29
+  ],
+  "CaveRocki5": [
+   22,
+   32
+  ],
+  "CaveRocki6": [
+   38,
+   34
+  ],
+  "CaveRocki7": [
+   28,
+   51
+  ],
+  "CaveRocki8": [
+   25,
+   44
+  ],
+  "CaveRocki9": [
+   30,
+   42
+  ],
+  "CaveRocki10": [
+   40,
+   62
+  ],
+  "CaveRocki11": [
+   45,
+   63
+  ],
+  "CaveRocki12": [
+   28,
+   65
+  ],
+  "CaveRocki13": [
+   52,
+   66
+  ],
+  "CaveRocki14": [
+   51,
+   85
+  ],
+  "CaveBoss9": [
+   87,
+   90
+  ],
+  "CaveRockExit9": [
+   57,
+   25
+  ],
+  "CaveTile9": [
+   72,
+   61
+  ],
+  "CaveDoor9": [
+   80,
+   70
+  ],
+  "CaveElix0": [
+   46,
+   46
+  ],
+  "CaveElix1": [
+   46,
+   46
+  ],
+  "CaveElix2": [
+   46,
+   46
+  ],
+  "CaveElix3": [
+   46,
+   46
+  ],
+  "CaveElix4": [
+   46,
+   46
+  ],
+  "CaveElix5": [
+   46,
+   46
+  ],
+  "CaveElix6": [
+   46,
+   46
+  ],
+  "CaveElix7": [
+   46,
+   46
+  ],
+  "CaveElix8": [
+   46,
+   46
+  ],
+  "CaveElix9": [
+   46,
+   46
+  ],
+  "CaveElix10": [
+   46,
+   46
+  ],
+  "CaveElix11": [
+   46,
+   46
+  ],
+  "CaveRope": [
+   34,
+   207
+  ],
+  "CaveTool0": [
+   27,
+   27
+  ],
+  "CaveTool1": [
+   27,
+   27
+  ],
+  "CaveTool2": [
+   27,
+   27
+  ],
+  "CaveTool3": [
+   27,
+   27
+  ],
+  "CaveTool4": [
+   27,
+   27
+  ],
+  "CaveAmber0": [
+   30,
+   27
+  ],
+  "CaveAmber1": [
+   30,
+   27
+  ],
+  "CaveAmber2": [
+   27,
+   27
+  ],
+  "CaveAmber3": [
+   28,
+   27
+  ],
+  "CaveAmber4": [
+   28,
+   27
+  ],
+  "CaveElixSq": [
+   92,
+   94
+  ],
+  "CaveSelectPlayer": [
+   49,
+   49
+  ],
+  "CaveStamC": [
+   21,
+   21
+  ],
+  "Blingbag": [
+   37,
+   37
+  ],
+  "Quest99_x1": [
+   38,
+   38
+  ],
+  "ExaltFrag": [
+   31,
+   22
+  ],
+  "SnailMail": [
+   29,
+   28
+  ],
+  "Quest90_x1": [
+   36,
+   36
+  ],
+  "SigilSyrup": [
+   29,
+   28
+  ],
+  "Quest102_x1": [
+   36,
+   36
+  ],
+  "CaveGoldPiece_x1": [
+   36,
+   36
+  ],
+  "W7item0_x1": [
+   36,
+   36
+  ],
+  "W7item1_x1": [
+   36,
+   36
+  ],
+  "W7item2_x1": [
+   36,
+   36
+  ],
+  "W7item3_x1": [
+   36,
+   36
+  ],
+  "ClassIcons0": [
+   38,
+   36
+  ],
+  "ClassIcons1": [
+   38,
+   36
+  ],
+  "ClassIcons10": [
+   38,
+   36
+  ],
+  "ClassIcons11": [
+   38,
+   36
+  ],
+  "ClassIcons12": [
+   38,
+   36
+  ],
+  "ClassIcons13": [
+   38,
+   36
+  ],
+  "ClassIcons14": [
+   38,
+   36
+  ],
+  "ClassIcons15": [
+   38,
+   36
+  ],
+  "ClassIcons16": [
+   38,
+   36
+  ],
+  "ClassIcons17": [
+   38,
+   36
+  ],
+  "ClassIcons18": [
+   38,
+   36
+  ],
+  "ClassIcons19": [
+   38,
+   36
+  ],
+  "ClassIcons2": [
+   38,
+   36
+  ],
+  "ClassIcons20": [
+   38,
+   36
+  ],
+  "ClassIcons21": [
+   38,
+   36
+  ],
+  "ClassIcons22": [
+   38,
+   36
+  ],
+  "ClassIcons23": [
+   38,
+   36
+  ],
+  "ClassIcons24": [
+   38,
+   36
+  ],
+  "ClassIcons25": [
+   38,
+   36
+  ],
+  "ClassIcons26": [
+   38,
+   36
+  ],
+  "ClassIcons27": [
+   38,
+   36
+  ],
+  "ClassIcons28": [
+   38,
+   36
+  ],
+  "ClassIcons29": [
+   38,
+   36
+  ],
+  "ClassIcons3": [
+   38,
+   36
+  ],
+  "ClassIcons30": [
+   38,
+   36
+  ],
+  "ClassIcons31": [
+   38,
+   36
+  ],
+  "ClassIcons32": [
+   38,
+   36
+  ],
+  "ClassIcons33": [
+   38,
+   36
+  ],
+  "ClassIcons34": [
+   38,
+   36
+  ],
+  "ClassIcons35": [
+   38,
+   36
+  ],
+  "ClassIcons36": [
+   38,
+   36
+  ],
+  "ClassIcons37": [
+   38,
+   36
+  ],
+  "ClassIcons38": [
+   38,
+   36
+  ],
+  "ClassIcons39": [
+   38,
+   36
+  ],
+  "ClassIcons4": [
+   38,
+   36
+  ],
+  "ClassIcons40": [
+   38,
+   36
+  ],
+  "ClassIcons41": [
+   38,
+   36
+  ],
+  "ClassIcons42": [
+   38,
+   36
+  ],
+  "ClassIcons43": [
+   38,
+   36
+  ],
+  "ClassIcons44": [
+   38,
+   36
+  ],
+  "ClassIcons45": [
+   38,
+   36
+  ],
+  "ClassIcons46": [
+   38,
+   36
+  ],
+  "ClassIcons47": [
+   38,
+   36
+  ],
+  "ClassIcons48": [
+   38,
+   36
+  ],
+  "ClassIcons49": [
+   38,
+   36
+  ],
+  "ClassIcons5": [
+   38,
+   36
+  ],
+  "ClassIcons50": [
+   38,
+   36
+  ],
+  "ClassIcons51": [
+   38,
+   36
+  ],
+  "ClassIcons52": [
+   38,
+   36
+  ],
+  "ClassIcons53": [
+   38,
+   36
+  ],
+  "ClassIcons54": [
+   38,
+   36
+  ],
+  "ClassIcons55": [
+   38,
+   36
+  ],
+  "ClassIcons56": [
+   38,
+   36
+  ],
+  "ClassIcons57": [
+   38,
+   36
+  ],
+  "ClassIcons58": [
+   38,
+   36
+  ],
+  "ClassIcons59": [
+   38,
+   36
+  ],
+  "ClassIcons6": [
+   38,
+   36
+  ],
+  "ClassIcons60": [
+   38,
+   36
+  ],
+  "ClassIcons61": [
+   41,
+   37
+  ],
+  "ClassIcons62": [
+   38,
+   36
+  ],
+  "ClassIcons63": [
+   38,
+   36
+  ],
+  "ClassIcons64": [
+   38,
+   36
+  ],
+  "ClassIcons65": [
+   38,
+   36
+  ],
+  "ClassIcons7": [
+   38,
+   36
+  ],
+  "ClassIcons8": [
+   38,
+   36
+  ],
+  "ClassIcons9": [
+   38,
+   36
+  ]
+ },
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer",
   "caves": "SpelunkRocks / Spelunky[0,6,7,8,9]",
   "tools": "Spelunky[10..13]",
   "elixirs": "Spelunky[3,16,17]",
   "shop": "SpelunkUpg[idx][4]",
+  "chapters": "SpelunkChapters",
+  "rewards": "js/stats/systems/w7/spelunk-expedition.js SPELUNK_REWARDS",
+  "sprites": "js/stats/data/game/spelunk-sprites.js SPELUNK_SPRITES",
   "ui": "js/ui/spelunking.js elixirNames/elixirPresets"
  }
 }
