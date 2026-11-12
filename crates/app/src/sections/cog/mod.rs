@@ -3,11 +3,14 @@
 //!
 //! Ported from `cog-optimizer.html` and `js/cogs/cog-optimizer.js`. CG-01
 //! covers the three single-objective runs (build speed, construction EXP and
-//! Flaggy rate), the shared background runner and reset; weighted objectives,
-//! the perfect board, insights, shelf browsing and the step-by-step walkthrough
-//! are the later CG-02 to CG-04 features.
+//! Flaggy rate), the shared background runner and reset. CG-04 adds the
+//! step-by-step swap walkthrough: Next applies the run's swap list in order,
+//! Previous restores the prior board and Done keeps the optimized board.
+//! Weighted objectives, the perfect board, insights, shelf browsing and roll
+//! ranges are the later CG-02 and CG-03 features.
 
 mod board;
+mod walkthrough;
 
 use crate::state::AppState;
 use crate::ui::format;
@@ -21,7 +24,8 @@ use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::cog::{
-    BOARD_SIZE, Board, Cog, CogResult, CogSave, Goal, SwapStep, compute_totals, empty_board,
+    BOARD_SIZE, Board, Cog, CogResult, CogSave, Goal, SwapStep, SwapWalkthrough, compute_totals,
+    empty_board,
 };
 
 /// The inputs a stored result was produced from, so a later edit marks it stale.
@@ -32,12 +36,14 @@ pub struct RunInputs {
     pub goal: Goal,
 }
 
-/// The section's own state: the save board, the board on screen and the goal.
+/// The section's own state: the save board, the board on screen, the goal and
+/// the swap walkthrough while one is open.
 #[derive(Clone, Debug)]
 pub struct State {
     pub save: CogSave,
     pub board: Board,
     pub goal: Goal,
+    pub walkthrough: Option<SwapWalkthrough>,
 }
 
 impl Default for State {
@@ -46,6 +52,7 @@ impl Default for State {
             save: CogSave::default(),
             board: empty_board(),
             goal: Goal::ConExp,
+            walkthrough: None,
         }
     }
 }
@@ -55,11 +62,13 @@ impl State {
     pub fn load(&mut self, save: CogSave) {
         self.board = save.board.clone();
         self.save = save;
+        self.walkthrough = None;
     }
 
     /// Restore the save board, dropping any optimized placement.
     pub fn reset(&mut self) {
         self.board = self.save.board.clone();
+        self.walkthrough = None;
     }
 
     /// The inputs a run started now would use.
@@ -70,6 +79,51 @@ impl State {
             goal: self.goal,
         }
     }
+
+    /// Start replaying a finished run from the board the run started on. A run
+    /// with no swaps has nothing to walk through, so its board is kept at once.
+    pub fn begin_walkthrough(&mut self, result: &CogResult) {
+        if result.swaps.is_empty() {
+            self.board = result.board.clone();
+            self.walkthrough = None;
+            return;
+        }
+        let start = self.board.clone();
+        self.walkthrough = Some(SwapWalkthrough::new(
+            &start,
+            &result.board,
+            &self.save.shelf_slots,
+            &result.swaps,
+        ));
+    }
+
+    /// Apply the next swap step.
+    pub fn next_swap(&mut self) -> bool {
+        self.walkthrough
+            .as_mut()
+            .is_some_and(SwapWalkthrough::next_step)
+    }
+
+    /// Restore the board before the last applied swap step.
+    pub fn previous_swap(&mut self) -> bool {
+        self.walkthrough
+            .as_mut()
+            .is_some_and(SwapWalkthrough::previous)
+    }
+
+    /// Keep the optimized board and close the walkthrough.
+    pub fn finish_walkthrough(&mut self) -> bool {
+        let Some(mut walkthrough) = self.walkthrough.take() else {
+            return false;
+        };
+        self.board = walkthrough.finish();
+        true
+    }
+
+    /// Drop a walkthrough without keeping its result, as a new run or reset does.
+    pub fn dismiss_walkthrough(&mut self) {
+        self.walkthrough = None;
+    }
 }
 
 /// The section view: controls, summaries, the board and the swap list.
@@ -78,15 +132,15 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         return empty_state(cx);
     }
     let task = state.cog_task(cx);
-    let board = task
-        .result
-        .as_ref()
-        .map_or(&state.cog.board, |result| &result.board);
+    let preview = state.cog.walkthrough.as_ref().map(SwapWalkthrough::board);
+    let board = preview.unwrap_or(&state.cog.board);
     let now = compute_totals(board);
     let before = compute_totals(&state.cog.save.board);
     let filled = board.iter().flatten().count();
     let board_changed = board != &state.cog.save.board;
-    let has_result = task.result.is_some() || (task.cancelled && board_changed);
+    let has_result = task.result.is_some()
+        || state.cog.walkthrough.is_some()
+        || (task.cancelled && board_changed);
 
     let mut body = div()
         .id("cog-body")
@@ -118,7 +172,10 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
     }
     if let Some(result) = task.result.clone() {
         body = body.child(result_card(&result, &before, task.stale));
-        body = body.child(swaps(&result.swaps));
+        body = body.child(match state.cog.walkthrough.as_ref() {
+            Some(walkthrough) => walkthrough::card(walkthrough, cx),
+            None => swaps(&result.swaps),
+        });
     }
 
     ScrollArea::new("cog-scroll")
@@ -477,5 +534,78 @@ mod tests {
         assert_eq!(inputs.board, state.board);
         assert_eq!(inputs.shelf.len(), 1);
         assert_eq!(inputs.goal, Goal::ConExp);
+    }
+
+    fn swap_result() -> CogResult {
+        let mut target = empty_board();
+        target[13] = Some(Cog::named("Player_Ana", 14));
+        target[14] = Some(Cog::named("Cog3A00", 13));
+        CogResult {
+            board: target,
+            score: 2.0,
+            initial_score: 1.0,
+            improvement: 1.0,
+            improvement_pct: 100.0,
+            swaps: vec![SwapStep {
+                slot: 14,
+                from: "Player_Ana".into(),
+                to: "Cog3A00".into(),
+                src_slot: Some(13),
+                col: 2,
+                row: 1,
+            }],
+        }
+    }
+
+    #[test]
+    fn the_walkthrough_steps_in_order_and_done_keeps_the_final_board() {
+        let mut state = State::default();
+        state.load(sample_save());
+        let save_board = state.save.board.clone();
+        let result = swap_result();
+        state.begin_walkthrough(&result);
+        assert_eq!(
+            state.walkthrough.as_ref().map(SwapWalkthrough::applied),
+            Some(0)
+        );
+        assert_eq!(
+            state.walkthrough.as_ref().map(SwapWalkthrough::board),
+            Some(&save_board)
+        );
+
+        assert!(state.next_swap());
+        assert_eq!(
+            state.walkthrough.as_ref().map(SwapWalkthrough::board),
+            Some(&result.board)
+        );
+        assert_eq!(state.board, save_board, "the board is only kept after Done");
+        assert!(state.previous_swap());
+        assert_eq!(
+            state.walkthrough.as_ref().map(SwapWalkthrough::board),
+            Some(&save_board)
+        );
+        assert!(!state.previous_swap(), "there is no step before the first");
+
+        assert!(state.next_swap());
+        assert!(state.finish_walkthrough());
+        assert_eq!(state.board, result.board);
+        assert!(state.walkthrough.is_none());
+        assert!(
+            !state.finish_walkthrough(),
+            "a closed walkthrough has nothing to finish"
+        );
+    }
+
+    #[test]
+    fn a_run_without_swaps_keeps_its_board_without_a_walkthrough() {
+        let mut state = State::default();
+        state.load(sample_save());
+        let result = CogResult {
+            swaps: Vec::new(),
+            ..swap_result()
+        };
+        state.begin_walkthrough(&result);
+        assert!(state.walkthrough.is_none());
+        assert_eq!(state.board, result.board);
     }
 }

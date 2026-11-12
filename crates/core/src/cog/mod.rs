@@ -13,16 +13,19 @@
 //!    `c × (1 + gT/100)`, construction EXP is the sum of every `d`, and the
 //!    player's EXP/hr is `b × (1 + fT/100) × (1 + totalD/100)`.
 //!
-//! The optimizer lives in [`optimize`]. Save decoding lives in [`save`].
+//! The optimizer lives in [`optimize`]. Save decoding lives in [`save`] and the
+//! step-by-step replay of a finished swap list lives in [`SwapWalkthrough`].
 
 mod display;
 mod optimize;
 mod save;
+mod walkthrough;
 
 pub use display::{CogKind, classify, display_name, small_cog};
 pub use optimize::{CogResult, OptimizeOptions, SwapStep, apply_swaps, optimize};
 pub use save::CogSave;
 pub(crate) use save::has_cog;
+pub use walkthrough::SwapWalkthrough;
 
 /// The board is 12 slots wide.
 pub const BOARD_W: usize = 12;

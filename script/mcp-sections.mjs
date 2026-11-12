@@ -1921,6 +1921,40 @@ const INTERACTIONS = {
     await waitForNode(lane, 'cog-result', 'cog: optimize produces a result', 60000);
     const result = labelOf(await lane.tree(), 'cog-result') ?? '';
     check('cog: the result names its swaps', result.includes('swaps'), result);
+    // A finished run opens the walkthrough at its first step: Next applies it,
+    // Previous restores the prior board and Done keeps the optimized one.
+    await waitForNode(lane, 'cog-swap-next', 'cog: the walkthrough opens');
+    const firstStep = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
+    await lane.call('click_element', { id: 'cog-swap-next' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') !== firstStep,
+      'cog: Next applies the first swap',
+    );
+    const secondStep = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
+    await lane.call('click_element', { id: 'cog-swap-prev' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') === firstStep,
+      'cog: Previous restores the prior board',
+    );
+    check('cog: the second step differs from the first', secondStep !== firstStep);
+    for (let step = 0; !has(await lane.tree(), 'cog-swap-done'); step += 1) {
+      if (step > 200) throw new Error('cog: the walkthrough never reaches Done');
+      const before = labelOf(await lane.tree(), 'cog-swap-progress') ?? '';
+      await lane.call('click_element', { id: 'cog-swap-next' });
+      await waitFor(
+        lane,
+        (nodes) => (labelOf(nodes, 'cog-swap-progress') ?? '') !== before,
+        `cog: walkthrough step ${step + 2}`,
+      );
+    }
+    await lane.call('click_element', { id: 'cog-swap-done' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cog-walkthrough') && has(nodes, 'cog-result'),
+      'cog: Done keeps the final board and closes the walkthrough',
+    );
     await lane.call('click_element', { id: 'cog-reset' });
     await waitFor(
       lane,

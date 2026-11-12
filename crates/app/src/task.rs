@@ -152,6 +152,14 @@ impl<R: 'static, I: 'static> TaskRunner<R, I> {
         self.cancelled = false;
     }
 
+    /// Move a stored result's inputs after the section applies that result, so
+    /// the change the result itself made is not reported as a later edit.
+    pub fn commit_inputs(&mut self, inputs: I) {
+        if let Some(stored) = self.stored.as_mut() {
+            stored.inputs = inputs;
+        }
+    }
+
     /// Store a finished run; `true` when it was cancelled.
     ///
     /// A cancelled run stores nothing, so the result the section already shows
@@ -322,6 +330,16 @@ mod tests {
             !runner.is_stale(&24),
             "a taken result has nothing to compare"
         );
+    }
+
+    #[test]
+    fn committing_inputs_keeps_an_applied_result_fresh() {
+        let mut runner = stored(12, 24);
+        runner.commit_inputs(30);
+        assert_eq!(runner.result(), Some(&12));
+        assert!(!runner.cancelled());
+        assert!(!runner.is_stale(&30));
+        assert!(runner.is_stale(&24));
     }
 
     #[test]
