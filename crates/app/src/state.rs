@@ -6,11 +6,11 @@ use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
 use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
 };
-use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
 use crate::sections::coin_multi;
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
+use crate::sections::damage::State as DamageState;
 use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::endgame;
 use crate::sections::farming::{
@@ -324,6 +324,8 @@ pub struct AppState {
     pub drop_rate: DropRateState,
     /// The Coin Multiplier Calculator's cards and damage field.
     pub coin_multi: coin_multi::State,
+    /// The Damage Breakdown's character/map context and summary.
+    pub damage: DamageState,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -1189,6 +1191,7 @@ impl AppState {
             stats_breakdown,
             drop_rate: DropRateState::new(window, cx),
             coin_multi: sections::coin_multi::State::new(window, cx),
+            damage: DamageState::default(),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -1330,17 +1333,7 @@ impl AppState {
         match self.route.section() {
             Some(section) => {
                 self.last_section = Some(section.id);
-                self.status = match section.status {
-                    sections::Status::Ready => {
-                        format!("{} · {}", section.title, section.description)
-                    }
-                    sections::Status::Planned => {
-                        format!(
-                            "{} is planned; its spec is {}.",
-                            section.title, section.spec
-                        )
-                    }
-                };
+                self.status = format!("{} · {}", section.title, section.description);
             }
             None => self.status = format!("Unknown section: {id}."),
         }
@@ -1587,6 +1580,7 @@ impl AppState {
         self.stats_all
             .load(&imported.save, &self.simulation, &self.context);
         self.drop_rate.load(&imported.save);
+        self.damage.load(&imported.save);
         self.save = Some(imported.save);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
@@ -3503,6 +3497,35 @@ impl AppState {
         self.stats_context_changed(cx);
     }
 
+    /// Pick the damage context's character; the map follows its current map.
+    pub fn set_damage_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        self.damage.select_character(character);
+        self.damage_context_changed(cx);
+    }
+
+    /// Pick the damage context's map, from the all-maps list.
+    pub fn set_damage_map(&mut self, map: usize, cx: &mut Context<Self>) {
+        self.damage.select_map(map);
+        self.damage_context_changed(cx);
+    }
+
+    /// A damage context change refreshes the summary the page shows.
+    fn damage_context_changed(&mut self, cx: &mut Context<Self>) {
+        let Some(snapshot) = self.damage.snapshot.as_ref() else {
+            self.status = "Load a save to resolve the damage context.".into();
+            cx.notify();
+            return;
+        };
+        let class = idleon_core::stats::classify(self.damage.context.map);
+        self.status = format!(
+            "Damage context: {} · {} · {}",
+            snapshot.name(self.damage.context.character),
+            class.name,
+            class.category.label()
+        );
+        cx.notify();
+    }
+
     /// Pick the stats context's map, from the current map list.
     pub fn set_stats_map(&mut self, map: usize, cx: &mut Context<Self>) {
         if !self
@@ -4524,7 +4547,7 @@ mod tests {
         let route = Route::open("damage");
         let section = route.section().expect("the damage page is registered");
         assert!(!section.dashboard);
-        assert_eq!(section.status, sections::Status::Planned);
+        assert_eq!(section.status, sections::Status::Ready);
     }
 
     #[test]

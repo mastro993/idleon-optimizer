@@ -7,7 +7,8 @@ Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout,
 formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog
 board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout editor and operation
 simulator, the drop-rate inputs and dungeon total partial, the Coin Multiplier inputs
-and partial total, sailing, shadow-ban, endgame, Fishing,
+and partial total, the Damage Breakdown context and
+summary shell partial, sailing, shadow-ban, endgame, Fishing,
 Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context and breakdowns
 built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
@@ -409,6 +410,15 @@ with either field blank the card shows the upstream reason. Every other map's to
 descriptor's whole pool chain, which is the shared stat pipeline the All Stats breakdowns (SA-02)
 still name as a gap, so the card names that gap instead of guessing a number. Missing: the formula
 tree (DR-02). Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
+
+The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
+selectors, their save defaults and the all-maps list from `damage-calc.html`, the summary cards and
+mastery bar, the upstream dungeon and missing-metadata states, project/session persistence, and the
+layer arithmetic ported from the final combine in `js/stats/defs/damage.js`. The three layers
+themselves need the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for
+its other fifty descriptors, so the page reports the missing-pipeline state instead of a guessed
+number. Details:
+[`docs/sections/damage.md`](sections/damage.md).
 
 The Fountain section has its overview (FN-01) and its currency and upgrade tabs (FN-02): the
 fountain summary, the fill and income rates per currency, lucky coins and rubber ducks, the ground

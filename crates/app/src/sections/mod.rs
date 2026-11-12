@@ -17,6 +17,7 @@ pub mod coin_multi;
 pub mod combat_sim;
 pub mod cooking_mastery;
 pub mod coral_god_rank;
+pub mod damage;
 pub mod drop_rate;
 pub mod endgame;
 pub mod farming;
@@ -41,7 +42,6 @@ pub mod statue;
 pub mod worship_td;
 
 use crate::state::AppState;
-use crate::ui::section;
 use gpui::{AnyElement, App, Context, Window};
 
 /// A section's own renderer: the module that owns its upstream tab strip and content.
@@ -55,8 +55,6 @@ pub type Keys = fn(&mut App);
 pub enum Status {
     /// Built: the entry's view is the section module's own renderer.
     Ready,
-    /// Specced and tracked by a milestone, not built: the shared placeholder renders.
-    Planned,
 }
 
 impl Status {
@@ -64,7 +62,6 @@ impl Status {
     pub fn label(self) -> &'static str {
         match self {
             Status::Ready => "Ready",
-            Status::Planned => "Planned",
         }
     }
 }
@@ -507,9 +504,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::Tools,
         description: "Min and max damage, mastery and the damage layer formula tree",
         spec: "docs/sections/damage.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: false,
-        view: PLACEHOLDER,
+        view: damage::view,
         keys: no_keys,
     },
     Section {
@@ -584,9 +581,6 @@ pub fn manifest() -> String {
         .collect();
     serde_json::to_string(&sections).expect("the section manifest is plain JSON")
 }
-
-/// The shared renderer for every planned section.
-const PLACEHOLDER: View = section::planned;
 
 /// A planned section registers no shortcuts of its own.
 fn no_keys(_: &mut App) {}

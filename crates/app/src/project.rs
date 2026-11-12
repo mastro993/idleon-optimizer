@@ -472,6 +472,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     insert("sneaking", value(&state.sneaking_state));
     insert("stats-all", value(&state.stats_all.context));
     insert("drop-rate", value(&state.drop_rate.selection));
+    insert("damage", value(&state.damage.context));
     insert(
         "ladle",
         value(&LadleConfig {
@@ -596,6 +597,7 @@ pub enum Config {
     Worship(WorshipConfig),
     StatsAll(idleon_core::stats::Context),
     DropRate(idleon_core::drop_rate::Selection),
+    Damage(idleon_core::damage::Context),
 }
 
 /// What decoding one section config found.
@@ -1034,6 +1036,7 @@ pub fn assign(
                 state.drop_rate.selection = selection;
             }
         }
+        Config::Damage(context) => crate::sections::damage::restore(state, context, warnings),
         Config::Worship(config) => {
             let last_trial = idleon_core::worship::data().trials.len().saturating_sub(1);
             state.worship.trial = config.trial.min(last_trial);
@@ -1096,6 +1099,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "cooking-mastery" => decode!(CookingMastery, CookingMasteryState),
         "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
         "drop-rate" => decode!(DropRate, idleon_core::drop_rate::Selection),
+        "damage" => decode!(Damage, idleon_core::damage::Context),
         "worship-td" => decode!(Worship, WorshipConfig),
         _ => Decoded::Unknown,
     }
@@ -1754,6 +1758,24 @@ mod tests {
         assert_eq!(selection.map, 118);
     }
 
+    #[test]
+    fn prepare_decodes_the_damage_context_from_a_project() {
+        let text = json!({
+            "format": idleon_core::project::FORMAT,
+            "version": idleon_core::project::VERSION,
+            "research": { "researchLevel": 120, "gridLevels": vec![0; 240] },
+            "sections": { "damage": { "character": 3, "map": 120 } },
+        })
+        .to_string();
+        let mut document = pipeline::read(&text).expect("the project reads");
+        let configs = prepare(&mut document).expect("the damage config fits");
+        let Config::Damage(context) = &configs[0] else {
+            panic!("the config is a damage context");
+        };
+        assert_eq!(context.character, 3);
+        assert_eq!(context.map, 120);
+    }
+
     /// A project document carrying one killroy config, for the prepare tests.
     fn project_text(config: serde_json::Value) -> String {
         json!({
@@ -1930,16 +1952,14 @@ mod tests {
                 "worship-td",
                 "combat-sim",
                 "stats-all",
+                "damage",
                 "royal-guardian",
                 "sneaking",
                 "drop-rate",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);
-            assert!(
-                covered || section.status == sections::Status::Planned,
-                "{id} has no project config"
-            );
+            assert!(covered, "{id} has no project config");
         }
     }
 }

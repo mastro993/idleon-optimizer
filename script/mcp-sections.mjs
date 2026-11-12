@@ -2117,6 +2117,35 @@ const INTERACTIONS = {
       'statue: the farming breakdown follows the selected statue',
     );
   },
+  damage: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'damage: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: statsSave() });
+    await waitForNode(lane, 'import-format', 'damage: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'damage-context-note') ?? '').startsWith(
+          'Ana · Blunder Hills · The account stats engine (SA-02) is not built yet',
+        ),
+      'damage: the summary reports the missing account stats engine',
+    );
+    await waitForNode(lane, 'damage-game', 'damage: the summary cards render');
+    await waitForNode(lane, 'damage-mastery-bar', 'damage: the mastery bar renders');
+
+    // A character switch follows that character's current map.
+    await lane.call('focus_element', { id: 'damage-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'damage-context-note') ?? '').startsWith('Bo · YumYum Grotto · '),
+      'damage: the character selector switches to that character\'s current map',
+    );
+  },
   'stats-all': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
     await waitForNode(lane, 'import-input', 'stats-all: the import dialog opens');

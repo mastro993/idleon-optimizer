@@ -16,7 +16,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M1 | Research Optimizer: full upstream parity | World 7 | 13 | partial | foundation | [research](sections/research.md) |
 | M2 | Combat Simulator | General | 7 | partial | foundation | [combat-sim](sections/combat-sim.md) |
 | M3 | All Stats Dashboard | General | 4 | in-progress | foundation | [stats-all](sections/stats-all.md) |
-| M4 | Damage Breakdown | Tools | 3 | planned | foundation, stats-all | [damage](sections/damage.md) |
+| M4 | Damage Breakdown | Tools | 3 | partial | foundation, stats-all | [damage](sections/damage.md) |
 | M5 | Drop Rate Calculator | Tools | 2 | in-progress | foundation, stats-all | [drop-rate](sections/drop-rate.md) |
 | M6 | Coin Multiplier Calculator | Tools | 2 | partial | foundation, stats-all | [coin-multi](sections/coin-multi.md) |
 | M7 | Shadow Ban Check | General | 1 | done | foundation | [shadow](sections/shadow.md) |
