@@ -188,7 +188,7 @@ impl Decoder<'_> {
     }
 
     /// `computeCompassBonus`: a compass upgrade's value.
-    fn compass(&self, index: usize) -> f64 {
+    pub(super) fn compass(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Compass", &[0, index]).unwrap_or(0.0);
         if level <= 0.0 {
             return 0.0;
@@ -222,7 +222,7 @@ impl Decoder<'_> {
     /// The statue's own level × its per-level base, then the Zenith, artifact,
     /// vault, Dragon statue, event shop, All Statues talent and meritocracy
     /// factors, in the page's order.
-    fn statue(&self, index: usize) -> f64 {
+    pub(super) fn statue(&self, index: usize) -> f64 {
         let level = self.statue_level(index);
         if level <= 0.0 {
             return 0.0;
@@ -259,12 +259,12 @@ impl Decoder<'_> {
     ///
     /// The game writes `StatueLevels_<char>` as `[level, exp]` pairs, and the
     /// page reads the first character's row.
-    fn statue_level(&self, index: usize) -> f64 {
+    pub(super) fn statue_level(&self, index: usize) -> f64 {
         fields::at(self.save, "StatueLevels_0", &[index, 0]).unwrap_or(0.0)
     }
 
     /// `maxTalentBonus(56, -1)`: the All Statues talent at its best character.
-    fn statue_talent(&self) -> f64 {
+    pub(super) fn statue_talent(&self) -> f64 {
         let curve = data::talent_curve();
         (0..self.save_character_count())
             .map(|character| curve.value(self.talent_level(character, 56)))
@@ -273,7 +273,7 @@ impl Decoder<'_> {
 
     /// A talent level: `SL_<char>[talent]`, written as an array or a keyed
     /// object.
-    fn talent_level(&self, character: usize, talent: usize) -> f64 {
+    pub(super) fn talent_level(&self, character: usize, talent: usize) -> f64 {
         let key = format!("SL_{character}");
         let Some(value) = fields::field(self.save, &key) else {
             return 0.0;
@@ -289,7 +289,7 @@ impl Decoder<'_> {
     }
 
     /// How many characters the save's talent rows cover.
-    fn save_character_count(&self) -> usize {
+    pub(super) fn save_character_count(&self) -> usize {
         self.save
             .keys()
             .filter_map(|key| key.strip_prefix("SL_"))
@@ -337,7 +337,7 @@ impl Decoder<'_> {
     }
 
     /// `computeMonumentROGbonus(t, index)`: a monument's villager EXP.
-    fn monument(&self, row: usize, index: usize) -> f64 {
+    pub(super) fn monument(&self, row: usize, index: usize) -> f64 {
         let slot = 10 * row + index;
         let level = fields::at(self.save, "Holes", &[15, slot]).unwrap_or(0.0);
         if level <= 0.0 {

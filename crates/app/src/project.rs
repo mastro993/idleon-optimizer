@@ -955,6 +955,11 @@ pub fn assign(
                 login: config.login.filter(|index| *index < players.max(1)),
                 twin: config.twin.filter(|index| *index < players.max(1)),
                 slot: config.slot.filter(|slot| *slot < 4),
+                workspace: config.workspace,
+                formula_tab: config.formula_tab,
+                breakdown_twin: config
+                    .breakdown_twin
+                    .filter(|index| *index < players.max(1)),
             };
         }
         Config::Ladle(config) => {

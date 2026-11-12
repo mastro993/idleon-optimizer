@@ -40,7 +40,7 @@
 //! model reads. Account-wide sailing loot, speed and artifact multipliers that
 //! the route model does not read stay neutral.
 
-mod account;
+pub(crate) mod account;
 pub(crate) mod companion;
 mod coral;
 mod farming;

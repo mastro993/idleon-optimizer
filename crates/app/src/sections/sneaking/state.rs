@@ -11,8 +11,85 @@ use gpui::Context;
 use idleon_core::sneaking::{Loadout, SlotKind};
 use serde::{Deserialize, Serialize};
 
+/// The two workspaces the section shows.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Workspace {
+    #[default]
+    Loadout,
+    Breakdowns,
+}
+
+impl Workspace {
+    pub const ALL: [Workspace; 2] = [Workspace::Loadout, Workspace::Breakdowns];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            Workspace::Loadout => "loadout",
+            Workspace::Breakdowns => "breakdowns",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Workspace::Loadout => "Loadout",
+            Workspace::Breakdowns => "Breakdowns",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|entry| entry.id() == id)
+    }
+}
+
+/// The formula tabs inside the breakdowns workspace.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum FormulaTab {
+    #[default]
+    Stealth,
+    Jade,
+    Exp,
+    Door,
+    Runtime,
+}
+
+impl FormulaTab {
+    pub const ALL: [FormulaTab; 5] = [
+        FormulaTab::Stealth,
+        FormulaTab::Jade,
+        FormulaTab::Exp,
+        FormulaTab::Door,
+        FormulaTab::Runtime,
+    ];
+
+    pub fn id(self) -> &'static str {
+        match self {
+            FormulaTab::Stealth => "stealth",
+            FormulaTab::Jade => "jade",
+            FormulaTab::Exp => "exp",
+            FormulaTab::Door => "door",
+            FormulaTab::Runtime => "runtime",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            FormulaTab::Stealth => "Stealth",
+            FormulaTab::Jade => "Jade",
+            FormulaTab::Exp => "EXP",
+            FormulaTab::Door => "Door",
+            FormulaTab::Runtime => "Runtime",
+        }
+    }
+
+    pub fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|entry| entry.id() == id)
+    }
+}
+
 /// The sneak workspace's selection.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct State {
     /// The login context, or `None` for the first twin.
@@ -21,6 +98,25 @@ pub struct State {
     pub twin: Option<usize>,
     /// The slot index, `0..4`: hat, weapon, charm one, charm two.
     pub slot: Option<usize>,
+    /// The workspace the section opens.
+    pub workspace: Workspace,
+    /// The formula tab inside the breakdowns workspace.
+    pub formula_tab: FormulaTab,
+    /// The twin the breakdown trees read.
+    pub breakdown_twin: Option<usize>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            login: None,
+            twin: None,
+            slot: None,
+            workspace: Workspace::Loadout,
+            formula_tab: FormulaTab::Stealth,
+            breakdown_twin: None,
+        }
+    }
 }
 
 impl State {
@@ -41,6 +137,13 @@ impl State {
     pub fn select(&mut self, twin: usize, slot: usize) {
         self.twin = Some(twin);
         self.slot = Some(slot.min(3));
+    }
+
+    /// The twin the breakdown trees read, clamped to the roster.
+    pub fn breakdown_twin(&self, players: usize) -> usize {
+        self.breakdown_twin
+            .filter(|index| *index < players.max(1))
+            .unwrap_or_else(|| self.login(players))
     }
 }
 
@@ -107,6 +210,25 @@ impl AppState {
         cx.notify();
     }
 
+    /// Switch the section's workspace.
+    pub fn sneak_workspace(&mut self, workspace: Workspace, cx: &mut Context<Self>) {
+        self.sneaking_state.workspace = workspace;
+        cx.notify();
+    }
+
+    /// Switch the breakdown formula tab.
+    pub fn sneak_formula_tab(&mut self, tab: FormulaTab, cx: &mut Context<Self>) {
+        self.sneaking_state.formula_tab = tab;
+        cx.notify();
+    }
+
+    /// Point the breakdown trees at one twin.
+    pub fn sneak_breakdown_twin(&mut self, index: usize, cx: &mut Context<Self>) {
+        let players = self.sneaking.as_ref().map_or(0, Loadout::players);
+        self.sneaking_state.breakdown_twin = (index < players).then_some(index);
+        cx.notify();
+    }
+
     /// Put every edited slot back to the save.
     pub fn sneak_reset(&mut self, cx: &mut Context<Self>) {
         if let Some(loadout) = self.sneaking.as_mut() {
@@ -142,6 +264,7 @@ mod tests {
             login: Some(2),
             twin: Some(1),
             slot: Some(3),
+            ..State::default()
         };
         let text = serde_json::to_string(&state).expect("the state serializes");
         let back: State = serde_json::from_str(&text).expect("the state reads back");

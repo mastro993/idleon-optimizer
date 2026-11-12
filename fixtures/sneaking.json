@@ -4190,6 +4190,1475 @@
    }
   ]
  },
+ "breakdowns": {
+  "stealthFactors": {
+   "Land Rank Stealth": 1673.5521045288378,
+   "Equipped Charm: EXP, Jade & Stealth": 1,
+   "Compass: Sneaking Stealth": 3758096385,
+   "Gambit: Sneaking Stealth": 2.7085638167225725,
+   "Equipped Charm: Total Stealth": 11478.955342303889,
+   "Equipped Charm: Total Stealth II": 19148.77357660745,
+   "Gold Inventory: Total Stealth": 810.6457695127382,
+   "Alchemy + Star Sign": 8.219107953301911,
+   "Sneaking Statue": 166.4598885745349,
+   "Crystal 5 Card": 1.28,
+   "Achievement 368": 1.05,
+   "Gemstone: Stealth": 1075.0910088677942,
+   "Voting: Sneaking Stealth": 1,
+   "Lamp: Sneaking Stealth": 258.25,
+   "Holes Upgrade 54": 22.186111067404354,
+   "Fractal Island": 1,
+   "Emperor: Sneaking Stealth": 10.81,
+   "RoG: Sneaking Stealth": 2,
+   "Jelly Operator: Sneaking Stealth": 3,
+   "Shh! Ninja Knowledge": 67.55,
+   "Companion 163": 1
+  },
+  "jadeFactors": {
+   "Total Jade Multiplier": 3.347492009872025e+30,
+   "Sneaking Level Jade": 41913.71,
+   "Ninja Knowledge 8 bonus per level": 3461,
+   "Sneaking level": 1211,
+   "Combined bonus": 962699.6019133617,
+   "Primary Jade Multipliers": 85188730769.49152,
+   "Gem Shop Jade Multiplier": 128,
+   "Solo Jade Charms": 1,
+   "Jade charm (type 14)": 0,
+   "EXP + Jade charm (type 19)": 0,
+   "Solo status": 0,
+   "Monument: Jade": 487.68,
+   "Bonus": 0,
+   "Pristine Charm: Jade": 1.4,
+   "Ninja Knowledge 28": 21.04,
+   "Gold Inventory: Jade": 163.5877276254041,
+   "Killroy Jade Multiplier": 2.397590361445783,
+   "Vial + Meal + Card": 118.12389471180799,
+   "Jade Vial": 365.81999999999994,
+   "Jade Meal": 11318.5694711808,
+   "W6B4 Card": 28,
+   "Card level": 7,
+   "Bonus per level": 3,
+   "Equipped Jade Charms": 1,
+   "Jade at 0% Detection (type 6)": 0,
+   "EXP, Jade & Stealth (type 7)": 0,
+   "Jade (type 15)": 0,
+   "Slab + Stamp": 18.39414511624204,
+   "Slab Bonus": 1070.7086000000002,
+   "Jade Coin Stamps": 668.7059116242038,
+   "Crop Scientist: Jade": 83.47787545558272,
+   "Summoning Winner: Jade": 72.19839999999999,
+   "Account Jade Multipliers": 80.97276019900498,
+   "MSA + Sigil + Arcade + Vault": 25.303987562189054,
+   "MSA Bonus": 234,
+   "Sigil Bonus": 1750,
+   "Arcade Bonus": 50.24875621890547,
+   "Vault Bonus": 396.15000000000003,
+   "Jade Star Sign": 2,
+   "Task Shop Jade": 1.6,
+   "Task level": 20,
+   "Rift + Compass + Companion": 17.6,
+   "Rift Skill Bonus": 1.1,
+   "Rift value": 1,
+   "Compass: Jade": 16,
+   "Companion 163": 1,
+   "Owned": 0,
+   "Jade Achievements": 1.15,
+   "Achievement 366": 3,
+   "Achievement 369": 5,
+   "Achievement 367": 7,
+   "Gemstone + Meritoc + Exotic": 535.9414834143989,
+   "Jade Gemstone": 535.9414834143989,
+   "Meritoc: Jade": 1,
+   "Exotic Crop: Jade": 1,
+   "Gold Inventory per 10 Sneaking Levels": 9627.996019133618,
+   "Bonus per 10 levels": 7956.195057135221,
+   "Sneaking level groups": 121
+  },
+  "expFactors": {
+   "Floor Base EXP": 1.2207031250000001e+54,
+   "Shared Skill EXP Multiplier": 3.25,
+   "Ninja Knowledge": 1531.5625000000002,
+   "Arcade": 1.2805755395683454,
+   "Gold Inventory: Sneaking EXP": 313.1846409900925,
+   "Compass: Sneaking EXP": 11,
+   "Gemstone: Sneaking EXP": 107.9279812125644,
+   "Additive Account Sources": 156.76032879673076,
+   "Equipped EXP Charms": 1,
+   "No-item-find Penalty": 1,
+   "Summoning Winner": 25.474449999999997,
+   "Companion: Smoke Devil": 1,
+   "Talent: Sneaky Skilling Multiplier": 6.3106682297772565,
+   "EXP Recipient: Twin 1": 1
+  },
+  "roots": {
+   "stealth": [
+    1.4206904855001534e+53,
+    9.832972983082106e+52,
+    7.479876187860864e+52,
+    5.836670574858324e+52,
+    3.253833208027287e+52,
+    3.230205638587108e+52,
+    3.4088136563203355e+44,
+    1.757062604766397e+44,
+    1.7485555248294543e+44,
+    3.0603477866925857e+44,
+    5.491459855502097e+35
+   ],
+   "jade": [
+    1.0141933618177383e+89,
+    7.577265710008907e+88,
+    6.0526031924276134e+88,
+    4.9626478365854764e+88,
+    2.9000487518255578e+88,
+    2.8305170441293526e+88,
+    1.4745447530527815e+80,
+    2.280732700607143e+79,
+    2.207914479462657e+79,
+    1.3224619913301598e+80,
+    0
+   ],
+   "exp": [
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+67,
+    7.290828264567289e+69
+   ],
+   "door": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "trees": {
+   "stealth": {
+    "name": "Twin 1 Stealth",
+    "value": 1.4206904855001534e+53,
+    "children": [
+     {
+      "name": "Base Stealth",
+      "value": 7746777,
+      "children": [
+       {
+        "name": "Base",
+        "value": 10,
+        "children": []
+       },
+       {
+        "name": "Way of Stealth contribution",
+        "value": 7746767,
+        "children": [
+         {
+          "name": "Bonus per Sneaking level",
+          "value": 6397,
+          "children": []
+         },
+         {
+          "name": "Sneaking level",
+          "value": 1211,
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "Core Multipliers",
+      "value": 1.5063409045090134e+38,
+      "children": [
+       {
+        "name": "Land Rank Stealth",
+        "value": 1673.5521045288378,
+        "children": [
+         {
+          "name": "Land Rank bonus per Farming level",
+          "value": 344.1465235656045,
+          "children": []
+         },
+         {
+          "name": "Login character Farming level",
+          "value": 486,
+          "children": []
+         },
+         {
+          "name": "Combined bonus",
+          "value": 167255.2104528838,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Equipped Charm: EXP, Jade & Stealth",
+        "value": 1,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Compass: Sneaking Stealth",
+        "value": 3758096385,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 375809638400,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Gambit: Sneaking Stealth",
+        "value": 2.7085638167225725,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 170.85638167225724,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Equipped Charm: Total Stealth",
+        "value": 11478.955342303889,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 1147795.534230389,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Equipped Charm: Total Stealth II",
+        "value": 19148.77357660745,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 1914777.3576607453,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Gold Inventory: Total Stealth",
+        "value": 810.6457695127382,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 80964.57695127382,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Alchemy + Star Sign",
+        "value": 8.219107953301911,
+        "children": [
+         {
+          "name": "A10AllCharz bubble",
+          "value": 601.9107953301911,
+          "children": []
+         },
+         {
+          "name": "S. Tealio star sign",
+          "value": 120,
+          "children": []
+         },
+         {
+          "name": "Combined bonus",
+          "value": 721.9107953301911,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Sneaking Statue",
+        "value": 166.4598885745349,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 16545.98885745349,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Crystal 5 Card",
+        "value": 1.28,
+        "children": [
+         {
+          "name": "Card level",
+          "value": 7,
+          "children": []
+         },
+         {
+          "name": "Bonus per level",
+          "value": 4,
+          "children": []
+         },
+         {
+          "name": "Combined bonus",
+          "value": 28,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Achievement 368",
+        "value": 1.05,
+        "children": [
+         {
+          "name": "Achievement status",
+          "value": 1,
+          "children": []
+         },
+         {
+          "name": "Combined bonus",
+          "value": 5,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Gemstone: Stealth",
+        "value": 1075.0910088677942,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 107409.10088677943,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Voting: Sneaking Stealth",
+        "value": 1,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Lamp: Sneaking Stealth",
+        "value": 258.25,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 25725,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Holes Upgrade 54",
+        "value": 22.186111067404354,
+        "children": [
+         {
+          "name": "Raw multiplier",
+          "value": 22.186111067404354,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Fractal Island",
+        "value": 1,
+        "children": [
+         {
+          "name": "Unlock status",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Sneaking level",
+          "value": 1211,
+          "children": []
+         },
+         {
+          "name": "Combined bonus",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Emperor: Sneaking Stealth",
+        "value": 10.81,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 981,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "RoG: Sneaking Stealth",
+        "value": 2,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 100,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Jelly Operator: Sneaking Stealth",
+        "value": 3,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 200,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Shh! Ninja Knowledge",
+        "value": 67.55,
+        "children": [
+         {
+          "name": "Bonus",
+          "value": 6655,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Companion 163",
+        "value": 1,
+        "children": [
+         {
+          "name": "Owned",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Multiplier contribution",
+          "value": 0,
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "Ally Stealth Multiplier",
+      "value": 36536.01319900688,
+      "children": [
+       {
+        "name": "Twin 2",
+        "value": 0,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 3",
+        "value": 0,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 4",
+        "value": 0,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 5",
+        "value": 0,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 6",
+        "value": 0,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 7",
+        "value": 758411.1573269574,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 758411.1573269574,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 8",
+        "value": 919952.4243830248,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 919952.4243830248,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 9",
+        "value": 920765.856853978,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 920765.856853978,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Twin 10",
+        "value": 1054371.8813367276,
+        "children": [
+         {
+          "name": "Floor Stealth charm",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Floor Stealth charm II",
+          "value": 1054371.8813367276,
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "Funeral Flowers Multiplier",
+      "value": 3332.2225,
+      "children": [
+       {
+        "name": "Flowers on floor 4",
+        "value": 17532.75,
+        "children": []
+       },
+       {
+        "name": "Bonus per flower",
+        "value": 19,
+        "children": []
+       },
+       {
+        "name": "Combined bonus",
+        "value": 333122.25,
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   "jade": {
+    "name": "Twin 1 Jade per Hour",
+    "value": 1.0141933618177383e+89,
+    "children": [
+     {
+      "name": "Jade per Successful Action",
+      "value": 5.622501139653211e+87,
+      "children": [
+       {
+        "name": "Floor Base Jade",
+        "value": 1.679616e+57,
+        "children": [
+         {
+          "name": "Floor",
+          "value": 4,
+          "children": []
+         },
+         {
+          "name": "Mastery",
+          "value": 7,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Total Jade Multiplier",
+        "value": 3.347492009872025e+30,
+        "children": [
+         {
+          "name": "Sneaking Level Jade",
+          "value": 41913.71,
+          "children": [
+           {
+            "name": "Ninja Knowledge 8 bonus per level",
+            "value": 3461,
+            "children": []
+           },
+           {
+            "name": "Sneaking level",
+            "value": 1211,
+            "children": []
+           },
+           {
+            "name": "Combined bonus",
+            "value": 4191271,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Primary Jade Multipliers",
+          "value": 85188730769.49152,
+          "children": [
+           {
+            "name": "Gem Shop Jade Multiplier",
+            "value": 128,
+            "children": []
+           },
+           {
+            "name": "Solo Jade Charms",
+            "value": 1,
+            "children": [
+             {
+              "name": "Jade charm (type 14)",
+              "value": 0,
+              "children": []
+             },
+             {
+              "name": "EXP + Jade charm (type 19)",
+              "value": 0,
+              "children": []
+             },
+             {
+              "name": "Solo status",
+              "value": 0,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Monument: Jade",
+            "value": 487.68,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 48668,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Pristine Charm: Jade",
+            "value": 1.4,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 40,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Ninja Knowledge 28",
+            "value": 21.04,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 2004,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Gold Inventory: Jade",
+            "value": 163.5877276254041,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 16258.772762540411,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Killroy Jade Multiplier",
+            "value": 2.397590361445783,
+            "children": []
+           },
+           {
+            "name": "Vial + Meal + Card",
+            "value": 118.12389471180799,
+            "children": [
+             {
+              "name": "Jade Vial",
+              "value": 365.81999999999994,
+              "children": []
+             },
+             {
+              "name": "Jade Meal",
+              "value": 11318.5694711808,
+              "children": []
+             },
+             {
+              "name": "W6B4 Card",
+              "value": 28,
+              "children": [
+               {
+                "name": "Card level",
+                "value": 7,
+                "children": []
+               },
+               {
+                "name": "Bonus per level",
+                "value": 4,
+                "children": []
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "name": "Equipped Jade Charms",
+          "value": 1,
+          "children": [
+           {
+            "name": "Jade at 0% Detection (type 6)",
+            "value": 0,
+            "children": []
+           },
+           {
+            "name": "EXP, Jade & Stealth (type 7)",
+            "value": 0,
+            "children": []
+           },
+           {
+            "name": "Jade (type 15)",
+            "value": 0,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Slab + Stamp",
+          "value": 18.39414511624204,
+          "children": [
+           {
+            "name": "Slab Bonus",
+            "value": 1070.7086000000002,
+            "children": []
+           },
+           {
+            "name": "Jade Coin Stamps",
+            "value": 668.7059116242038,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Crop Scientist: Jade",
+          "value": 83.47787545558272,
+          "children": [
+           {
+            "name": "Bonus",
+            "value": 8247.787545558273,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Summoning Winner: Jade",
+          "value": 72.19839999999999,
+          "children": [
+           {
+            "name": "Bonus",
+            "value": 7119.839999999999,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Account Jade Multipliers",
+          "value": 80.97276019900498,
+          "children": [
+           {
+            "name": "MSA + Sigil + Arcade + Vault",
+            "value": 25.303987562189054,
+            "children": [
+             {
+              "name": "MSA Bonus",
+              "value": 234,
+              "children": []
+             },
+             {
+              "name": "Sigil Bonus",
+              "value": 1750,
+              "children": []
+             },
+             {
+              "name": "Arcade Bonus",
+              "value": 50.24875621890547,
+              "children": []
+             },
+             {
+              "name": "Vault Bonus",
+              "value": 396.15000000000003,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Jade Star Sign",
+            "value": 2,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 100,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Task Shop Jade",
+            "value": 1.6,
+            "children": [
+             {
+              "name": "Bonus per level",
+              "value": 3,
+              "children": []
+             },
+             {
+              "name": "Task level",
+              "value": 20,
+              "children": []
+             },
+             {
+              "name": "Combined bonus",
+              "value": 60,
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "name": "Rift + Compass + Companion",
+          "value": 17.6,
+          "children": [
+           {
+            "name": "Rift Skill Bonus",
+            "value": 1.1,
+            "children": [
+             {
+              "name": "Rift value",
+              "value": 1,
+              "children": []
+             },
+             {
+              "name": "Combined bonus",
+              "value": 10,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Compass: Jade",
+            "value": 16,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 1500,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Companion 163",
+            "value": 1,
+            "children": [
+             {
+              "name": "Owned",
+              "value": 0,
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "name": "Jade Achievements",
+          "value": 1.15,
+          "children": [
+           {
+            "name": "Achievement 366",
+            "value": 3,
+            "children": []
+           },
+           {
+            "name": "Achievement 369",
+            "value": 5,
+            "children": []
+           },
+           {
+            "name": "Achievement 367",
+            "value": 7,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Gemstone + Meritoc + Exotic",
+          "value": 535.9414834143989,
+          "children": [
+           {
+            "name": "Jade Gemstone",
+            "value": 535.9414834143989,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 53494.14834143989,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Meritoc: Jade",
+            "value": 1,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 0,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Exotic Crop: Jade",
+            "value": 1,
+            "children": [
+             {
+              "name": "Bonus",
+              "value": 0,
+              "children": []
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "name": "Gold Inventory per 10 Sneaking Levels",
+          "value": 9627.996019133618,
+          "children": [
+           {
+            "name": "Bonus per 10 levels",
+            "value": 7956.195057135221,
+            "children": []
+           },
+           {
+            "name": "Sneaking level groups",
+            "value": 121,
+            "children": [
+             {
+              "name": "Sneaking level",
+              "value": 1211,
+              "children": []
+             }
+            ]
+           },
+           {
+            "name": "Combined bonus",
+            "value": 962699.6019133617,
+            "children": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "Game Display Actions per Hour",
+      "value": 18.03811749658965,
+      "children": [
+       {
+        "name": "Action Speed",
+        "value": 58.901426445917444,
+        "children": []
+       },
+       {
+        "name": "Action Hit Chance",
+        "value": 33.820909211602654,
+        "children": [
+         {
+          "name": "Detection Chance",
+          "value": 66.17909078839735,
+          "children": []
+         },
+         {
+          "name": "A detected action is consumed even when dodged",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "KO Chance per Attempt",
+        "value": 66.17909078839735,
+        "children": [
+         {
+          "name": "Detection Chance",
+          "value": 66.17909078839735,
+          "children": []
+         },
+         {
+          "name": "Dodge Chance (capped at 90%)",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "KO Duration (internal seconds)",
+        "value": 567.8233438485804,
+        "children": []
+       },
+       {
+        "name": "Expected KO cycles per successful action",
+        "value": 1.9567507891152092,
+        "children": []
+       }
+      ]
+     }
+    ]
+   },
+   "exp": {
+    "name": "Twin 1 Sneaking EXP per Successful Action",
+    "value": 7.290828264567289e+67,
+    "children": [
+     {
+      "name": "Floor Base EXP",
+      "value": 1.2207031250000001e+54,
+      "children": [
+       {
+        "name": "Floor",
+        "value": 4,
+        "children": []
+       },
+       {
+        "name": "Mastery",
+        "value": 7,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Shared Skill EXP Multiplier",
+      "value": 3.25,
+      "children": []
+     },
+     {
+      "name": "Ninja Knowledge",
+      "value": 1531.5625000000002,
+      "children": [
+       {
+        "name": "Sneaking EXP",
+        "value": 8025,
+        "children": []
+       },
+       {
+        "name": "Mastery Sneaking EXP",
+        "value": 1785,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Arcade",
+      "value": 1.2805755395683454,
+      "children": [
+       {
+        "name": "Arcade Bonus 52",
+        "value": 28.057553956834532,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Gold Inventory: Sneaking EXP",
+      "value": 313.1846409900925,
+      "children": [
+       {
+        "name": "Bonus",
+        "value": 31218.464099009245,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Compass: Sneaking EXP",
+      "value": 11,
+      "children": [
+       {
+        "name": "Bonus",
+        "value": 1000,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Gemstone: Sneaking EXP",
+      "value": 107.9279812125644,
+      "children": [
+       {
+        "name": "Bonus",
+        "value": 10692.798121256441,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Additive Account Sources",
+      "value": 156.76032879673076,
+      "children": [
+       {
+        "name": "Sneaking EXP Vial",
+        "value": 209.03999999999996,
+        "children": []
+       },
+       {
+        "name": "Sneaking EXP Meal",
+        "value": 3871.1079614976,
+        "children": []
+       },
+       {
+        "name": "Rift Skill Bonus",
+        "value": 25,
+        "children": []
+       },
+       {
+        "name": "Pristine Charm",
+        "value": 50,
+        "children": []
+       },
+       {
+        "name": "W6A4 Card",
+        "value": 18,
+        "children": []
+       },
+       {
+        "name": "Mainframe",
+        "value": 50,
+        "children": []
+       },
+       {
+        "name": "Sneaking EXP Stamps",
+        "value": 263.134918175478,
+        "children": []
+       },
+       {
+        "name": "Sneaking EXP Star Sign",
+        "value": 150,
+        "children": []
+       },
+       {
+        "name": "Guild Bonus",
+        "value": 6,
+        "children": []
+       },
+       {
+        "name": "Talent: Sneaky Skilling additive bonus",
+        "value": 10736.1,
+        "children": []
+       },
+       {
+        "name": "Achievement 370",
+        "value": 10,
+        "children": []
+       },
+       {
+        "name": "Voting Bonus",
+        "value": 0,
+        "children": []
+       },
+       {
+        "name": "Vault Upgrade",
+        "value": 187.65,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Equipped EXP Charms",
+      "value": 1,
+      "children": [
+       {
+        "name": "Solo Sneaking EXP",
+        "value": 0,
+        "children": []
+       },
+       {
+        "name": "Solo EXP + Jade",
+        "value": 0,
+        "children": []
+       },
+       {
+        "name": "Highest-twin EXP transfer",
+        "value": 0,
+        "children": []
+       },
+       {
+        "name": "EXP, Jade & Stealth",
+        "value": 0,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "No-item-find Penalty",
+      "value": 1,
+      "children": [
+       {
+        "name": "Item Find charm value",
+        "value": 0,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Summoning Winner",
+      "value": 25.474449999999997,
+      "children": [
+       {
+        "name": "Bonus",
+        "value": 2447.4449999999997,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Companion: Smoke Devil",
+      "value": 1,
+      "children": [
+       {
+        "name": "Effective companion value",
+        "value": 0,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Talent: Sneaky Skilling Multiplier",
+      "value": 6.3106682297772565,
+      "children": [
+       {
+        "name": "Best tab-2 talent value",
+        "value": 6.3106682297772565,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "EXP Recipient: Twin 1",
+      "value": 1,
+      "children": []
+     }
+    ]
+   },
+   "door": {
+    "name": "Twin 1 Door Damage per Hour",
+    "value": 0,
+    "children": [
+     {
+      "name": "Twin 1 Door Damage / Hit",
+      "value": 0,
+      "children": [
+       {
+        "name": "No Nunchaku equipped",
+        "value": 0,
+        "children": [
+         {
+          "name": "Equipped weapon",
+          "value": 0,
+          "children": []
+         },
+         {
+          "name": "Item level",
+          "value": 2331,
+          "children": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "name": "Hit Chance per Action",
+      "value": 0,
+      "children": [
+       {
+        "name": "Detection Chance",
+        "value": 66.17909078839735,
+        "children": []
+       },
+       {
+        "name": "Detected actions deal no damage, even when dodged",
+        "value": 0,
+        "children": []
+       }
+      ]
+     },
+     {
+      "name": "Door Hits per Hour",
+      "value": 0,
+      "children": [
+       {
+        "name": "Action Speed",
+        "value": 58.901426445917444,
+        "children": []
+       },
+       {
+        "name": "Runtime Attempts per Hour",
+        "value": 53.33421814219431,
+        "children": [
+         {
+          "name": "Base progress per attempt",
+          "value": 3600,
+          "children": []
+         },
+         {
+          "name": "Net KO progress per attempt",
+          "value": 375.7803262432657,
+          "children": [
+           {
+            "name": "KO Chance per Attempt",
+            "value": 66.17909078839735,
+            "children": []
+           },
+           {
+            "name": "KO Duration (internal seconds)",
+            "value": 567.8233438485804,
+            "children": []
+           }
+          ]
+         },
+         {
+          "name": "Expected progress per attempt",
+          "value": 3975.780326243266,
+          "children": []
+         },
+         {
+          "name": "Taunting Mark coupled model",
+          "value": 0,
+          "children": []
+         }
+        ]
+       },
+       {
+        "name": "Hit Chance per Attempt",
+        "value": 0.33820909211602657,
+        "children": []
+       },
+       {
+        "name": "KO Chance per Attempt",
+        "value": 66.17909078839735,
+        "children": [
+         {
+          "name": "Detection Chance",
+          "value": 66.17909078839735,
+          "children": []
+         },
+         {
+          "name": "Dodge Chance (capped at 90%)",
+          "value": 0,
+          "children": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  }
+ },
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer",
   "files": [

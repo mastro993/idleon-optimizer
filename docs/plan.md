@@ -3,11 +3,12 @@
 Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks, the Cglunko
 overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's
 current state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and
-depth estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout
-editor and mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator
-overview, layout editor and operation simulator, the drop-rate inputs and dungeon total partial,
-sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument Bravery and Wisdom,
-the All Stats context and breakdowns built, 2 sections planned.** The live breakdown is
+depth estimates, the Sneaking loadout, inventory and formula breakdown workspaces, the combat
+simulator's loadout editor and mechanics overrides, the cog board optimizer, the Clamworks optimizer,
+the Jelly Operator overview, layout editor and operation simulator, the drop-rate inputs and dungeon
+total partial, sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument
+Bravery and Wisdom, the All Stats context and breakdowns built, 2 sections planned.** The live
+breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -468,7 +469,7 @@ regenerate `fixtures/opal.json` (the page's rates and optimizer plans), which
 `crates/core/tests/opal.rs` pins. Missing: the manual simulator (OP-03).
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
-The Sneaking section has its loadout and inventory workspaces (SN-01):
+The Sneaking section has its loadout, inventory and formula breakdown workspaces (SN-01 and SN-02):
 `idleon_core::sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
 equipment rows per twin, the 39-slot inventory and the Ninja Knowledge levels — and computes the
 item stats, the charm bonus map, the Gold inventory scan, action speed, KO recovery, the level,
@@ -476,10 +477,17 @@ charm, ally and flower stealth factors and the detection chance they give. Slots
 inventory (two items trade places, so the editor cannot invent a charm), a repeated charm without
 the Charmed emporium perk and a second Scroll of Power are flagged, and a save without `Ninja` rows
 says so. The saved floor assignments line names each floor's twins, their action and the loadout's
-try rate. `script/extract-sneaking-data.mjs` extracts the catalog and the floor tables, and
-`script/sneaking-oracle.mjs` regenerates `fixtures/sneaking.json` from the upstream formulas.
-Missing: the breakdown trees (SN-02, which also brings the account-wide stealth stack), the
-placement optimizer (SN-03) and the floor × mastery table with the door ETA (SN-04).
+try rate. `idleon_core::sneaking::account` reads the account-wide stack — Land Rank, compass,
+statues, cards, achievements, gemstones, lamps, Hole upgrades, Emperor, RoG, Jelly and companions —
+and `idleon_core::sneaking::breakdown` builds the five upstream trees: Stealth, Jade per hour, EXP
+per action, door damage per hour and the runtime action loop. The breakdowns workspace selects a
+twin and a formula tab and renders each tree through the shared formula tree with its search,
+expand and copy controls. `script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
+and the account tables, and `script/sneaking-oracle.mjs` regenerates `fixtures/sneaking.json` from
+the upstream formulas, including the breakdown factor map the account decoder is compared against.
+The Gambit point chain and the terms that the All-Talent resolver rescales stay explicit inputs, and
+each such node says so in its note. Missing: the placement optimizer (SN-03) and the floor × mastery
+table with the door ETA (SN-04).
 Details: [`docs/sections/sneaking.md`](sections/sneaking.md).
 
 The Prisma section implements PR-01 and PR-02: the plan for one character and cauldron (every

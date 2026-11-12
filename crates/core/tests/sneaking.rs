@@ -10,11 +10,12 @@
 //! multiplier inside the gemstone bonus; the oracle records upstream's value and
 //! the test hands it to [`idleon_core::sneaking::Account`].
 
+use idleon_core::formula::FormulaNode;
 use idleon_core::save::Save;
 use idleon_core::sneaking::{
-    Account, EquipError, Issue, Job, Loadout, SlotKind, action_speed, can_equip_pair, charm_stat,
-    detection_base, detection_chance, door_hp, ko_duration, ninja_bonus, stealth_for_detection,
-    stealth_value, weapon_stat,
+    Account, EquipError, Issue, Job, Loadout, SlotKind, action_speed, breakdown, can_equip_pair,
+    charm_stat, detection_base, detection_chance, door_hp, ko_duration, ninja_bonus,
+    stealth_for_detection, stealth_value, weapon_stat,
 };
 use serde_json::{Value, json};
 
@@ -150,6 +151,7 @@ fn the_gold_inventory_bonuses_match_upstream() {
     let inputs = &oracle["inputs"];
     let loadout = loadout().with_account(Account {
         talent_432: inputs["talent432"].as_f64().expect("talent 432"),
+        ..Account::default()
     });
     assert_eq!(
         loadout.legend_points(6),
@@ -200,6 +202,7 @@ fn the_charm_maps_and_action_speeds_match_upstream() {
     let oracle = oracle();
     let loadout = loadout().with_account(Account {
         talent_432: oracle["inputs"]["talent432"].as_f64().unwrap(),
+        ..Account::default()
     });
     let maps = oracle["charmMaps"].as_array().expect("charm maps");
     for (twin, map) in loadout.twins().iter().zip(maps) {
@@ -564,4 +567,90 @@ fn the_saved_placement_and_jobs_read_from_the_save() {
 #[test]
 fn a_save_without_ninja_rows_has_no_loadout() {
     assert!(Loadout::from_save(&Save::new(json!({ "Lv0_0": json!([]) }))).is_none());
+}
+
+fn find<'a>(node: &'a FormulaNode, label: &str) -> Option<&'a FormulaNode> {
+    if node.label == label {
+        return Some(node);
+    }
+    node.children.iter().find_map(|child| find(child, label))
+}
+
+/// The account systems the port decodes exactly. The trees also carry terms
+/// that need the All-Talent resolver, the vials/meals/stamps chains and the
+/// Gambit point chain; those are explicit inputs in this build, so their nodes
+/// are not compared to the upstream tree yet.
+fn assert_factors(tree: &FormulaNode, factors: &serde_json::Map<String, Value>, labels: &[&str]) {
+    for label in labels {
+        let expected = factors
+            .get(*label)
+            .unwrap_or_else(|| panic!("the oracle records {label}"))
+            .as_f64()
+            .unwrap();
+        let node = find(tree, label).unwrap_or_else(|| panic!("the tree carries {label}"));
+        close(node.value, expected, label);
+    }
+}
+
+#[test]
+fn the_modelled_account_factors_match_upstream() {
+    let oracle = oracle();
+    let loadout = loadout();
+    let breakdowns = &oracle["breakdowns"];
+
+    assert_factors(
+        &breakdown::stealth(&loadout, 0),
+        breakdowns["stealthFactors"]
+            .as_object()
+            .expect("stealth factors"),
+        &[
+            "Compass: Sneaking Stealth",
+            "Sneaking Statue",
+            "Crystal 5 Card",
+            "Achievement 368",
+            "Lamp: Sneaking Stealth",
+            "Holes Upgrade 54",
+            "Fractal Island",
+            "Emperor: Sneaking Stealth",
+            "RoG: Sneaking Stealth",
+            "Jelly Operator: Sneaking Stealth",
+            "Shh! Ninja Knowledge",
+            "Companion 163",
+            "Equipped Charm: EXP, Jade & Stealth",
+            "Voting: Sneaking Stealth",
+        ],
+    );
+    assert_factors(
+        &breakdown::jade(&loadout, 0),
+        breakdowns["jadeFactors"].as_object().expect("jade factors"),
+        &[
+            "Sneaking Level Jade",
+            "Equipped Jade Charms",
+            "Summoning Winner: Jade",
+            "Jade Achievements",
+            "Monument: Jade",
+            "Pristine Charm: Jade",
+            "Ninja Knowledge 28",
+            "Killroy Jade Multiplier",
+            "MSA + Sigil + Arcade + Vault",
+            "Jade Star Sign",
+            "Task Shop Jade",
+            "Rift + Compass + Companion",
+            "Crop Scientist: Jade",
+        ],
+    );
+    assert_factors(
+        &breakdown::exp(&loadout, 0),
+        breakdowns["expFactors"].as_object().expect("exp factors"),
+        &[
+            "Shared Skill EXP Multiplier",
+            "Ninja Knowledge",
+            "Arcade",
+            "Compass: Sneaking EXP",
+            "Equipped EXP Charms",
+            "No-item-find Penalty",
+            "Summoning Winner",
+            "Companion: Smoke Devil",
+        ],
+    );
 }

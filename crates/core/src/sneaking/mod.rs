@@ -20,24 +20,31 @@
 //! (SN-02); [`Account`] carries the one all-talent term those terms need and the
 //! neutral default is exact when the multiplier is absent.
 
-mod data;
+mod account;
+pub mod breakdown;
+pub(crate) mod data;
 mod loadout;
 mod math;
 mod placement;
+mod rates;
 mod save;
 #[cfg(test)]
 mod tests;
 
+pub use account::{Account, DoorAccount, ExpAccount, JadeAccount};
 pub use data::{ItemDef, charm_bonus_label, item};
 pub use loadout::{
-    Account, Bonuses, EquipError, EquipInfo, GoldBonuses, GoldPick, Issue, Job, Loadout,
-    SCROLL_OF_POWER, Twin, can_equip_pair, charmed_perk, equip_info,
+    Bonuses, EquipError, EquipInfo, GoldBonuses, GoldPick, Issue, Job, Loadout, SCROLL_OF_POWER,
+    Twin, can_equip_pair, charmed_perk, equip_info,
 };
 pub use math::{
-    action_speed, charm_stat, detection_base, detection_chance, ko_duration, ninja_bonus,
-    stealth_for_detection, stealth_value, weapon_stat,
+    AllyContribution, action_speed, charm_stat, detection_base, detection_chance, ko_duration,
+    ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
 };
 pub use placement::door_hp;
+pub use rates::{
+    ActionMode, DoorDamage, DoorState, ExpAction, JadeCoin, JadeHour, Runtime, UntieProgress,
+};
 
 use serde::{Deserialize, Serialize};
 

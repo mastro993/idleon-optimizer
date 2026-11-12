@@ -133,8 +133,8 @@ pub fn saved_floors(state: &AppState, loadout: &Loadout, cx: &mut Context<AppSta
     }
     Card::new()
         .header(CardHeader::new("Saved floor assignments").description(
-            "Where the save has each twin. The jade and EXP rates those actions pay arrive with the \
-             breakdowns; this line names the action, the attempt time and the detection chance.",
+            "Where the save has each twin. The Breakdowns workspace splits the Jade, EXP, door and \
+             runtime formulas; this line names the action, the attempt time and the detection chance.",
         ))
         .child(grid)
         .into_any_element()
@@ -246,9 +246,9 @@ pub fn loadout_card(state: &AppState, loadout: &Loadout, cx: &mut Context<AppSta
     Card::new()
         .header(
             CardHeader::new("Loadout").description(
-                "Pick a slot, then an inventory item, to swap it in. The stealth line is the \
-                 loadout's own: the level base, the charm stealth factors, the floor allies and the \
-                 flowers. The account-wide stack arrives with the breakdowns.",
+                "Pick a slot, then an inventory item, to swap it in. The stealth line is the full \
+                 stack: the level base, the charm and account factors, the floor allies and the \
+                 flowers. The Breakdowns workspace splits every factor.",
             ),
         )
         .child(cards)
