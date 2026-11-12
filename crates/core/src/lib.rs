@@ -10,7 +10,8 @@
 //! `js/stats/systems/w7/research-math.js`,
 //! `js/stats/systems/common/statue-leveling.js`,
 //! `js/stats/systems/w6/farming-planner.js`,
-//! `js/stats/systems/w7/clamworks.js`,
+//! `js/stats/systems/w7/clamworks.js` (with the AFK claim from
+//! `js/stats/systems/w7/clamworks-afk.js`),
 //! `js/stats/systems/w3/worship-td.js`,
 //! `js/stats/systems/w5/cglunko.js` and the inline script of `opal-calc.html`.
 

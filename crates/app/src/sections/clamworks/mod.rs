@@ -1,16 +1,23 @@
-//! The Clamworks section: the overview, the upgrade tables, the plan and the promotion.
+//! The Clamworks section: the overview, the upgrade tables, the AFK claim, the
+//! plan and the promotion.
 //!
-//! Summary, pearl value, the upgrade priority, the budgeted plan and the
-//! promotion tracker are ports of the upstream `clamworks-calc.html` tabs and
+//! Summary, pearl value, the upgrade priority, the claim, the budgeted plan and
+//! the promotion tracker are ports of the upstream `clamworks-calc.html` tabs and
 //! `js/stats/systems/w7/clamworks.js`. The save-derived inputs (pearl balance,
 //! upgrade and promotion levels) come from the shared import; the multikill
-//! total and the plan's budget are manual inputs until the combat simulator
-//! lands, exactly like the upstream's own supplement fields.
+//! total, the plan's budget, and the claim's kills per hour and drop rate are
+//! manual inputs until the combat simulator lands, exactly like the upstream's
+//! own supplement fields.
 
+pub mod claim;
+pub mod compare;
 pub mod optimizer;
 pub mod overview;
 pub mod promotion;
+pub mod state;
 pub mod upgrades;
+
+pub use state::State;
 
 use crate::state::AppState;
 use crate::ui::format;
@@ -32,6 +39,8 @@ pub enum Tab {
     Overview,
     /// Every upgrade, in the game's order.
     Upgrades,
+    /// One AFK claim and the `+1` comparison.
+    Claim,
     /// The budgeted plan and the upstream priority ranking.
     Optimizer,
     /// The promotion tracker and the worker-class rewards.
@@ -39,12 +48,19 @@ pub enum Tab {
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Overview, Tab::Upgrades, Tab::Optimizer, Tab::Promotion];
+    pub const ALL: [Tab; 5] = [
+        Tab::Overview,
+        Tab::Upgrades,
+        Tab::Claim,
+        Tab::Optimizer,
+        Tab::Promotion,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Upgrades => "upgrades",
+            Tab::Claim => "claim",
             Tab::Optimizer => "optimizer",
             Tab::Promotion => "promotion",
         }
@@ -54,6 +70,7 @@ impl Tab {
         match self {
             Tab::Overview => "Overview",
             Tab::Upgrades => "Upgrades",
+            Tab::Claim => "AFK claim",
             Tab::Optimizer => "Optimizer",
             Tab::Promotion => "Promotion",
         }
@@ -126,6 +143,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .child(match tab {
             Tab::Overview => overview::overview_pane(state, window, cx),
             Tab::Upgrades => upgrades::upgrades_pane(state, window, cx),
+            Tab::Claim => claim::claim_pane(state, window, cx),
             Tab::Optimizer => optimizer::optimizer_pane(state, window, cx),
             Tab::Promotion => promotion::promotion_pane(state, window, cx),
         })

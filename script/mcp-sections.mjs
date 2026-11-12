@@ -1733,6 +1733,37 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
+    // The AFK claim tab: an entry outside the credited range is refused with the
+    // upstream message, and a valid one shows the claim and its comparison.
+    await lane.call('click_element', { id: 'claim' });
+    await waitForNode(lane, 'clamworks-claim', 'clamworks: the claim tab opens');
+    await lane.call('click_element', { id: 'clamworks-claim-hours' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: '60000' });
+    await lane.call('click_element', { id: 'clamworks-claim-calculate' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'clamworks-claim-error') ?? '').includes(
+          'Enter AFK hours between 0 and 55,555.',
+        ),
+      'clamworks: hours outside the credited range are refused',
+    );
+    await lane.call('click_element', { id: 'clamworks-claim-hours' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: '8' });
+    await lane.call('click_element', { id: 'clamworks-claim-calculate' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        !has(nodes, 'clamworks-claim-error') && has(nodes, 'clamworks-claim-pearls'),
+      'clamworks: a valid entry shows the claim',
+    );
+    await waitForNode(
+      lane,
+      'clamworks-compare-baseline',
+      'clamworks: the comparison lists its baseline',
+    );
     // The optimizer spends the imported balance and the applied plan's levels
     // take over the section until the saved levels are shown again.
     await lane.call('click_element', { id: 'optimizer' });

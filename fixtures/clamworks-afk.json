@@ -1,0 +1,244 @@
+{
+ "source": "js/stats/systems/w7/clamworks-afk.js, js/stats/systems/common/combat-afk.js",
+ "map": "w7a6",
+ "multikillTotal": 1234.5,
+ "pearlDropRate": 0.0007852125251520002,
+ "blackPearlDropRate": 0.000003926062625760001,
+ "claims": [
+  {
+   "hours": 8,
+   "killsPerHour": 2000,
+   "dropRate": 2,
+   "phase": "entry",
+   "batch": 16000,
+   "rolls": 16000,
+   "regular": {
+    "expected": 32,
+    "chance": 1,
+    "minimum": 32,
+    "guaranteed": true,
+    "pearls": 63940.56084210526
+   },
+   "pure": {
+    "expected": 0.15936952490273237,
+    "chance": 0.1478568927524715,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 541353.1426817176
+   },
+   "value": 379.64707999999996,
+   "luckyChance": 0.4736842105263158,
+   "pureMultiplier": 1700,
+   "expectedPearls": 605293.703523823
+  },
+  {
+   "hours": 8,
+   "killsPerHour": 2000,
+   "dropRate": 2,
+   "phase": "settled",
+   "batch": 16000,
+   "rolls": 16000,
+   "regular": {
+    "expected": 25,
+    "chance": 1,
+    "minimum": 25,
+    "guaranteed": true,
+    "pearls": 49953.563157894736
+   },
+   "pure": {
+    "expected": 0.12532355936740014,
+    "chance": 0.11806286169164937,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 425704.36698614835
+   },
+   "value": 379.64707999999996,
+   "luckyChance": 0.4736842105263158,
+   "pureMultiplier": 1700,
+   "expectedPearls": 475657.93014404306
+  },
+  {
+   "hours": 0.5,
+   "killsPerHour": 1400,
+   "dropRate": 2,
+   "phase": "settled",
+   "batch": 700,
+   "rolls": 700,
+   "regular": {
+    "expected": 0.9679247298280201,
+    "chance": 0.6671827113050117,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 1934.0515649420881
+   },
+   "pure": {
+    "expected": 0.005496460193831321,
+    "chance": 0.005481431087175248,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 18670.608457743692
+   },
+   "value": 379.64707999999996,
+   "luckyChance": 0.4736842105263158,
+   "pureMultiplier": 1700,
+   "expectedPearls": 20604.66002268578
+  },
+  {
+   "hours": 0.03,
+   "killsPerHour": 2000,
+   "dropRate": 2,
+   "phase": "settled",
+   "batch": 60,
+   "rolls": 0,
+   "regular": {
+    "expected": 0,
+    "chance": 0,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 0
+   },
+   "pure": {
+    "expected": 0,
+    "chance": 0,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 0
+   },
+   "value": 379.64707999999996,
+   "luckyChance": 0.4736842105263158,
+   "pureMultiplier": 1700,
+   "expectedPearls": 0
+  }
+ ],
+ "pureLocked": [
+  {
+   "phase": "entry",
+   "pure": {
+    "expected": 0,
+    "chance": 0,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 0
+   },
+   "expectedPearls": 2321.949479501892
+  },
+  {
+   "phase": "settled",
+   "pure": {
+    "expected": 0,
+    "chance": 0,
+    "minimum": 0,
+    "guaranteed": false,
+    "pearls": 0
+   },
+   "expectedPearls": 1934.0515649420881
+  }
+ ],
+ "compare": {
+  "hours": 8,
+  "killsPerHour": 2000,
+  "dropRate": 2,
+  "phase": "entry",
+  "planWarnings": [],
+  "rows": [
+   {
+    "key": "current",
+    "label": "Current loadout",
+    "index": null,
+    "from": null,
+    "to": null,
+    "cost": null,
+    "affordable": null,
+    "expectedPearls": 605293.703523823,
+    "pureChance": 0.1478568927524715,
+    "gain": null,
+    "paybackClaims": null,
+    "paybackHours": null
+   },
+   {
+    "key": "upgrade:0",
+    "label": "PEARL VALUE",
+    "index": 0,
+    "from": 123,
+    "to": 124,
+    "cost": 969328.7961268134,
+    "affordable": true,
+    "expectedPearls": 610175.1043586925,
+    "pureChance": 0.1478568927524715,
+    "gain": 4881.400834869593,
+    "paybackClaims": 198.57594754410474,
+    "paybackHours": 1588.6075803528379
+   },
+   {
+    "key": "upgrade:1",
+    "label": "CLAM COMRADES",
+    "index": 1,
+    "from": 12,
+    "to": 13,
+    "cost": 1435800.476318851,
+    "affordable": true,
+    "expectedPearls": 605293.703523823,
+    "pureChance": 0.1478568927524715,
+    "gain": 0,
+    "paybackClaims": null,
+    "paybackHours": null
+   },
+   {
+    "key": "upgrade:2",
+    "label": "LUCKY DAY",
+    "index": 2,
+    "from": 30,
+    "to": 31,
+    "cost": 21662.466866164355,
+    "affordable": true,
+    "expectedPearls": 613761.5428995448,
+    "pureChance": 0.1478568927524715,
+    "gain": 8467.839375721873,
+    "paybackClaims": 2.5582047444443474,
+    "paybackHours": 20.46563795555478
+   },
+   {
+    "key": "upgrade:3",
+    "label": "MULTI-SCALPING",
+    "index": 3,
+    "from": 43,
+    "to": 44,
+    "cost": 1064256.116352529,
+    "affordable": true,
+    "expectedPearls": 610174.9289792128,
+    "pureChance": 0.1478568927524715,
+    "gain": 4881.225455389824,
+    "paybackClaims": 218.03051837677012,
+    "paybackHours": 1744.244147014161
+   },
+   {
+    "key": "upgrade:5",
+    "label": "PURE PEARLS",
+    "index": 5,
+    "from": 33,
+    "to": 34,
+    "cost": 94342063.6169579,
+    "affordable": true,
+    "expectedPearls": 621215.8547791676,
+    "pureChance": 0.1478568927524715,
+    "gain": 15922.151255344623,
+    "paybackClaims": 5925.208353066606,
+    "paybackHours": 47401.66682453285
+   },
+   {
+    "key": "upgrade:6",
+    "label": "ENCYSTATION UP",
+    "index": 6,
+    "from": 9,
+    "to": 10,
+    "cost": 17788122.49204394,
+    "affordable": true,
+    "expectedPearls": 605293.703523823,
+    "pureChance": 0.1478568927524715,
+    "gain": 0,
+    "paybackClaims": null,
+    "paybackHours": null
+   }
+  ]
+ }
+}

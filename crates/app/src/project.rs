@@ -11,6 +11,7 @@
 
 use crate::sections;
 use crate::sections::clamworks::Tab as ClamworksTab;
+use crate::sections::clamworks::state::StandIn;
 use crate::sections::combat_sim::Tab as CombatTab;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
@@ -29,6 +30,7 @@ use crate::sections::statue::Sort as StatueSort;
 use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
 use gpui::Context;
+use idleon_core::clamworks::afk::Phase as ClaimPhase;
 use idleon_core::cog::Goal as CogGoal;
 use idleon_core::combat::Preset as CombatPreset;
 use idleon_core::coral;
@@ -42,6 +44,7 @@ use idleon_core::sailing::{AssignmentMode, Goal};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
 
 /// The research section's config: its tab, selection, target and supplements.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
@@ -134,15 +137,20 @@ impl Default for WorshipConfig {
     }
 }
 
-/// The Clamworks section's config: its tab, the entered multikill total and the
-/// plan's budget. A document written before the budget existed leaves the
-/// current budget alone rather than zeroing it.
+/// The Clamworks section's config: its tab, the entered multikill total, the
+/// plan's budget and the AFK claim's character, hours, pearl table and
+/// per-character stand-ins. A document written before the budget existed leaves
+/// the current budget alone rather than zeroing it.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ClamworksConfig {
     tab: ClamworksTab,
     multikill: f64,
     budget: Option<f64>,
+    character: usize,
+    hours: f64,
+    phase: ClaimPhase,
+    stand_ins: BTreeMap<usize, StandIn>,
 }
 
 /// The Ladle section's config: its tab, selectors, panel inputs and the checked
@@ -325,6 +333,10 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             tab: state.clamworks_tab,
             multikill: state.clamworks_multikill,
             budget: Some(state.clamworks_budget),
+            character: state.clamworks_claim.character,
+            hours: state.clamworks_claim.hours,
+            phase: state.clamworks_claim.phase,
+            stand_ins: state.clamworks_claim.stand_ins.clone(),
         }),
     );
     insert(
@@ -701,6 +713,15 @@ pub fn assign(
                     0.0
                 };
             }
+            let count = state.save.as_ref().map_or(0, |save| save.character_count());
+            state.clamworks_claim.adopt(
+                config.character,
+                config.stand_ins,
+                config.hours,
+                config.phase,
+                count,
+                cx,
+            );
         }
         Config::Cog(config) => {
             state.cog.goal = config.goal;
@@ -1095,13 +1116,33 @@ mod tests {
         assert_eq!(research.effort, Effort::Thorough);
         assert!(!research.supplements_open);
         let clamworks = round_trip(&ClamworksConfig {
-            tab: ClamworksTab::Upgrades,
+            tab: ClamworksTab::Claim,
             multikill: 7.0,
             budget: Some(2_500_000.0),
+            character: 2,
+            hours: 8.5,
+            phase: ClaimPhase::Settled,
+            stand_ins: BTreeMap::from([(
+                2,
+                StandIn {
+                    kills_per_hour: 2_000.0,
+                    drop_rate: 1.5,
+                },
+            )]),
         });
-        assert_eq!(clamworks.tab, ClamworksTab::Upgrades);
+        assert_eq!(clamworks.tab, ClamworksTab::Claim);
         assert_eq!(clamworks.multikill, 7.0);
         assert_eq!(clamworks.budget, Some(2_500_000.0));
+        assert_eq!(clamworks.character, 2);
+        assert_eq!(clamworks.hours, 8.5);
+        assert_eq!(clamworks.phase, ClaimPhase::Settled);
+        assert_eq!(
+            clamworks.stand_ins.get(&2),
+            Some(&StandIn {
+                kills_per_hour: 2_000.0,
+                drop_rate: 1.5,
+            })
+        );
         let legacy: ClamworksConfig = serde_json::from_value(serde_json::json!({
             "tab": "promotion",
             "multikill": 7.0,

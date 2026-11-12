@@ -14,6 +14,7 @@ fn fixture_state() -> Clamworks {
         pearl_balance: 2_960_058_875.172_09,
         promotion_level: 6,
         upgrades: [123, 12, 30, 43, 79, 33, 9, 0, 0],
+        unlocked: 6,
         scurge_level: 122,
         scurge_upgrades: [18, 2, 3, 18, 27, 54, 0, 0, 0],
     }
