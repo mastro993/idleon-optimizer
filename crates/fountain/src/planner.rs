@@ -158,8 +158,6 @@ pub struct PlannerRow {
     pub cost: f64,
     pub currency: usize,
     pub affordable: bool,
-    /// The goal's value once this upgrade gains one level.
-    pub value: f64,
     pub delta: f64,
     pub pct_gain: f64,
     /// The ranking key: percentage gain per unit (or per hour of) cost.
@@ -174,7 +172,6 @@ pub struct PlannerRow {
     pub royal_delta: f64,
     pub duck_chance: f64,
     pub duck_delta: f64,
-    pub lucky_chance: f64,
     pub lucky_delta: f64,
     /// For `optimal`: the fill-speed and stack-value halves of the gain.
     pub speed_pct: f64,
@@ -335,7 +332,6 @@ impl Fountain {
                     cost,
                     currency,
                     affordable,
-                    value,
                     delta,
                     pct_gain,
                     efficiency,
@@ -347,7 +343,6 @@ impl Fountain {
                     royal_delta: simulated.royal_chance() - base_royal,
                     duck_chance: simulated.duck_chance(),
                     duck_delta: simulated.duck_chance() - base_duck,
-                    lucky_chance: simulated.lucky_coin_base_chance(),
                     lucky_delta: simulated.lucky_coin_base_chance() - base_lucky,
                     speed_pct,
                     value_pct,

@@ -241,6 +241,8 @@ impl AppState {
         }
         self.fountain = imported.fountain;
         self.fountain_state.adopt(self.fountain.as_ref());
+        // A plan from the previous cavern describes inputs this one no longer has.
+        discard_run(&self.fountain_plan, cx);
         self.opal = imported.opal;
         self.opal_selected = None;
         self.opal_target = None;
