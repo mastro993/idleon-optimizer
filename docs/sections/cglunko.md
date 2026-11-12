@@ -5,7 +5,7 @@
 - Milestone: `M20`
 - Section key: `cglunko`
 - Group: `w5`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.

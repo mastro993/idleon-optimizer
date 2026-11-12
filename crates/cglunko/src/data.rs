@@ -5,7 +5,8 @@
 //! names, `[12]` their descriptions, `[13]` their per-level bonus values and
 //! `[14]` the base of their cost curve, which
 //! `js/stats/systems/w5/cglunko.js` reads as `_names`, `_descs`, `_perLv` and
-//! `_costB`. `UPGRADE_CATEGORIES` says which upgrades feed the drop rate.
+//! `_costB`. `UPGRADE_CATEGORIES` says which upgrades feed the drop rate and
+//! `STONE_BASE_RATES` the drop rate of each of the twelve stones.
 //! Nothing is hand-typed.
 
 use serde::Deserialize;
@@ -17,6 +18,8 @@ const CGLUNKO_JSON: &str = include_str!("../data/cglunko.json");
 #[derive(Debug, Deserialize)]
 struct Data {
     upgrades: Vec<Upgrade>,
+    #[serde(rename = "stoneBaseRates")]
+    stone_base_rates: Vec<f64>,
 }
 
 /// One upgrade: its display name, description template, the bonus one level
@@ -84,6 +87,12 @@ pub fn locked(index: usize) -> bool {
         .is_some_and(|row| row.category == "locked")
 }
 
+/// A stone's base drop rate: `STONE_BASE_RATES[index]`, six blue then six
+/// purple.
+pub fn stone_base_rate(index: usize) -> f64 {
+    data().stone_base_rates.get(index).copied().unwrap_or(0.0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -95,6 +104,15 @@ mod tests {
         assert_eq!(description(24), "");
         assert_eq!(cost_base(24), 0.0);
         assert!(!is_dr(24));
+        assert_eq!(stone_base_rate(12), 0.0);
+    }
+
+    #[test]
+    fn the_stone_base_rates_run_from_blue_to_purple() {
+        assert_eq!(stone_base_rate(0), 0.1);
+        assert_eq!(stone_base_rate(5), 0.00001);
+        assert_eq!(stone_base_rate(6), 0.000001);
+        assert_eq!(stone_base_rate(11), 0.00000000001);
     }
 
     #[test]

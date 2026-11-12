@@ -342,6 +342,274 @@
    "balance": 0
   }
  ],
+ "stones": [
+  {
+   "index": 0,
+   "color": "blue",
+   "current": 3400.1,
+   "digits": 4,
+   "nextPow10": 10000,
+   "deficit": 6599.9,
+   "baseRate": 0.1,
+   "dropsPerKill": 5.89336132,
+   "killsNeeded": 1119.8872157392175,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 1,
+   "color": "blue",
+   "current": 959.1,
+   "digits": 3,
+   "nextPow10": 1000,
+   "deficit": 40.89999999999998,
+   "baseRate": 0.02,
+   "dropsPerKill": 23.57344528,
+   "killsNeeded": 1.7350030729152703,
+   "focused": true,
+   "focusMulti": 20
+  },
+  {
+   "index": 2,
+   "color": "blue",
+   "current": 50.1,
+   "digits": 2,
+   "nextPow10": 100,
+   "deficit": 49.9,
+   "baseRate": 0.005,
+   "dropsPerKill": 0.294668066,
+   "killsNeeded": 169.34308721461522,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 3,
+   "color": "blue",
+   "current": 11,
+   "digits": 2,
+   "nextPow10": 100,
+   "deficit": 89,
+   "baseRate": 0.001,
+   "dropsPerKill": 0.0589336132,
+   "killsNeeded": 1510.1738238577914,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 4,
+   "color": "blue",
+   "current": 5.1,
+   "digits": 1,
+   "nextPow10": 10,
+   "deficit": 4.9,
+   "baseRate": 0.0002,
+   "dropsPerKill": 0.01178672264,
+   "killsNeeded": 415.72200769118973,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 5,
+   "color": "blue",
+   "current": 1.1,
+   "digits": 1,
+   "nextPow10": 10,
+   "deficit": 8.9,
+   "baseRate": 0.00001,
+   "dropsPerKill": 0.000589336132,
+   "killsNeeded": 15101.738238577913,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 0,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 0.000001,
+   "dropsPerKill": 0.00005893361319999999,
+   "killsNeeded": 16968.245211885296,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 1,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 1e-7,
+   "dropsPerKill": 0.00000589336132,
+   "killsNeeded": 169682.45211885296,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 2,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 1e-8,
+   "dropsPerKill": 5.89336132e-7,
+   "killsNeeded": 1696824.5211885294,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 3,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 1e-9,
+   "dropsPerKill": 5.89336132e-8,
+   "killsNeeded": 16968245.211885296,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 4,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 1e-10,
+   "dropsPerKill": 5.89336132e-9,
+   "killsNeeded": 169682452.11885294,
+   "focused": false,
+   "focusMulti": 1
+  },
+  {
+   "index": 5,
+   "color": "purple",
+   "current": 0,
+   "digits": 0,
+   "nextPow10": 1,
+   "deficit": 1,
+   "baseRate": 1e-11,
+   "dropsPerKill": 5.89336132e-10,
+   "killsNeeded": 1696824521.1885295,
+   "focused": false,
+   "focusMulti": 1
+  }
+ ],
+ "focus": [
+  {
+   "index": 1,
+   "color": "blue",
+   "stone": 1,
+   "deficit": 40.89999999999998,
+   "killsWithFocus": 1.7350030729152703,
+   "killsWithout": 34.700061458305406,
+   "drPerDigit": 1
+  },
+  {
+   "index": 2,
+   "color": "blue",
+   "stone": 2,
+   "deficit": 49.9,
+   "killsWithFocus": 8.467154360730762,
+   "killsWithout": 169.34308721461522,
+   "drPerDigit": 1
+  },
+  {
+   "index": 4,
+   "color": "blue",
+   "stone": 4,
+   "deficit": 4.9,
+   "killsWithFocus": 20.78610038455949,
+   "killsWithout": 415.72200769118973,
+   "drPerDigit": 1
+  },
+  {
+   "index": 0,
+   "color": "blue",
+   "stone": 0,
+   "deficit": 6599.9,
+   "killsWithFocus": 55.99436078696087,
+   "killsWithout": 1119.8872157392175,
+   "drPerDigit": 1
+  },
+  {
+   "index": 3,
+   "color": "blue",
+   "stone": 3,
+   "deficit": 89,
+   "killsWithFocus": 75.50869119288956,
+   "killsWithout": 1510.1738238577914,
+   "drPerDigit": 1
+  },
+  {
+   "index": 5,
+   "color": "blue",
+   "stone": 5,
+   "deficit": 8.9,
+   "killsWithFocus": 755.0869119288956,
+   "killsWithout": 15101.738238577913,
+   "drPerDigit": 1
+  },
+  {
+   "index": 6,
+   "color": "purple",
+   "stone": 0,
+   "deficit": 1,
+   "killsWithFocus": 16968.245211885296,
+   "killsWithout": 16968.245211885296,
+   "drPerDigit": 0
+  },
+  {
+   "index": 7,
+   "color": "purple",
+   "stone": 1,
+   "deficit": 1,
+   "killsWithFocus": 169682.45211885296,
+   "killsWithout": 169682.45211885296,
+   "drPerDigit": 0
+  },
+  {
+   "index": 8,
+   "color": "purple",
+   "stone": 2,
+   "deficit": 1,
+   "killsWithFocus": 1696824.5211885294,
+   "killsWithout": 1696824.5211885294,
+   "drPerDigit": 0
+  },
+  {
+   "index": 9,
+   "color": "purple",
+   "stone": 3,
+   "deficit": 1,
+   "killsWithFocus": 16968245.211885296,
+   "killsWithout": 16968245.211885296,
+   "drPerDigit": 0
+  },
+  {
+   "index": 10,
+   "color": "purple",
+   "stone": 4,
+   "deficit": 1,
+   "killsWithFocus": 169682452.11885294,
+   "killsWithout": 169682452.11885294,
+   "drPerDigit": 0
+  },
+  {
+   "index": 11,
+   "color": "purple",
+   "stone": 5,
+   "deficit": 1,
+   "killsWithFocus": 1696824521.1885295,
+   "killsWithout": 1696824521.1885295,
+   "drPerDigit": 0
+  }
+ ],
  "priority": {
   "blue": [
    10,

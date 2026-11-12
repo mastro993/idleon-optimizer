@@ -1,11 +1,13 @@
-//! The Cglunko upgrade priority and plan against the upstream JS.
+//! The Cglunko upgrade priority, plan and stone focus against the upstream JS.
 //!
 //! Every figure below comes from `crates/cglunko/tests/cglunko-oracle.json`, which
 //! `script/cglunko-oracle.mjs` regenerates by running the upstream
 //! `js/stats/systems/w5/cglunko.js` on `fixtures/data.json`. The priority rows
 //! are the upstream `rankUpgrades` table; the plan repeats this app's greedy
 //! rule on a fixed stone balance the fixture cannot afford, and the oracle
-//! prices every step through `upgNextCost` at the levels the plan reached.
+//! prices every step through `upgNextCost` at the levels the plan reached. The
+//! stone and focus rows are the upstream `stoneEfficiency` and
+//! `bestStoneFocus` tables at the fixture's own stones and focus slots.
 
 use idleon_cglunko::Page;
 use idleon_import::import;
@@ -49,6 +51,12 @@ fn close(actual: f64, expected: f64) {
 
 fn fixture_cglunko() -> idleon_cglunko::Cglunko {
     import(&fixture()).expect("the fixture imports").cglunko
+}
+
+/// The page an oracle row names by its upstream colour.
+fn page(value: &Value) -> Page {
+    Page::from_id(value.as_str().expect("the oracle writes colours"))
+        .expect("the oracle names a known page")
 }
 
 #[test]
@@ -162,4 +170,69 @@ fn the_plan_matches_the_upstream_costs_and_never_drops_dr() {
         assert!(plan.dr_after() >= plan.dr_before(), "{key}: never worse");
         assert!(!plan.capped);
     }
+}
+
+#[test]
+fn every_stone_row_matches_upstream() {
+    let cglunko = fixture_cglunko();
+    let oracle = oracle();
+    let expected = oracle["stones"]
+        .as_array()
+        .expect("the oracle lists the twelve stones");
+    let stones = cglunko.stone_rows();
+    assert_eq!(stones.len(), 12);
+    assert_eq!(stones.len(), expected.len(), "stone rows");
+    for (stone, row) in stones.iter().zip(expected) {
+        let at = format!("stone {} on {}", stone.index, stone.page.id());
+        // The upstream `idx` is the slot within the colour; the app keys its
+        // rows by the stone across both pages.
+        assert_eq!(stone.slot, index(&row["index"]), "{at}: slot");
+        assert_eq!(stone.page, page(&row["color"]), "{at}: colour");
+        close(stone.current, number(&row["current"]));
+        assert_eq!(
+            stone.digits,
+            u32::try_from(index(&row["digits"])).unwrap(),
+            "{at}: digits"
+        );
+        close(stone.next_pow10, number(&row["nextPow10"]));
+        close(stone.deficit, number(&row["deficit"]));
+        close(stone.base_rate, number(&row["baseRate"]));
+        close(stone.drops_per_kill, number(&row["dropsPerKill"]));
+        close(stone.kills_needed, number(&row["killsNeeded"]));
+        close(stone.focus_multi, number(&row["focusMulti"]));
+        assert_eq!(
+            stone.focused,
+            row["focused"]
+                .as_bool()
+                .expect("the oracle writes booleans"),
+            "{at}: focused"
+        );
+    }
+}
+
+#[test]
+fn the_focus_recommendation_matches_upstream() {
+    let cglunko = fixture_cglunko();
+    let oracle = oracle();
+    let expected = oracle["focus"]
+        .as_array()
+        .expect("the oracle lists the focus rows");
+    let focus = cglunko.best_focus();
+    assert_eq!(focus.len(), expected.len(), "focus rows");
+    for (row, want) in focus.iter().zip(expected) {
+        let at = format!("focus {}", row.index);
+        assert_eq!(row.index, index(&want["index"]), "{at}: index");
+        assert_eq!(row.page, page(&want["color"]), "{at}: colour");
+        assert_eq!(row.slot, index(&want["stone"]), "{at}: stone slot");
+        close(row.deficit, number(&want["deficit"]));
+        close(row.kills_with_focus, number(&want["killsWithFocus"]));
+        close(row.kills_without, number(&want["killsWithout"]));
+        close(row.dr_per_digit, number(&want["drPerDigit"]));
+    }
+    // The upstream sort: fewest kills with the focus slot first.
+    assert!(
+        focus
+            .windows(2)
+            .all(|pair| pair[0].kills_with_focus <= pair[1].kills_with_focus)
+    );
 }

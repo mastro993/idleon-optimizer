@@ -4,7 +4,8 @@
 // The upgrade names, descriptions, per-level values and cost bases are the
 // game's own `RandoListo2[11]`, `[12]`, `[13]` and `[14]` rows, which
 // `js/stats/systems/w5/cglunko.js` reads as `_names`, `_descs`, `_perLv` and
-// `_costB`; its `UPGRADE_CATEGORIES` table says which upgrades feed DR.
+// `_costB`; its `UPGRADE_CATEGORIES` table says which upgrades feed DR, and its
+// `STONE_BASE_RATES` the base drop rate of each of the twelve stones.
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -36,6 +37,12 @@ for (const [row, values] of Object.entries({ names, descs, perLv, costBase, cate
   }
 }
 
+const stoneBaseRates = cglunko.STONE_BASE_RATES;
+const STONES = 12; // six blue shapes and six purple ones
+if (stoneBaseRates.length !== STONES) {
+  throw new Error(`the stone rows moved: ${stoneBaseRates.length} base rates`);
+}
+
 const upgrades = names.map((name, index) => ({
   name: String(name).replace(/_/g, ' '),
   desc: String(descs[index]).replace(/_/g, ' '),
@@ -58,6 +65,7 @@ for (const upgrade of upgrades) {
 
 const payload = {
   upgrades,
+  stoneBaseRates: stoneBaseRates.map(Number),
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
 };
 

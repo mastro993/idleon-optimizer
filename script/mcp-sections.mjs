@@ -301,8 +301,9 @@ const cogSave = () => {
 
 /// A small flat `save.json` carrying the Cove's option rows: a few upgrade
 /// levels, five blue digits, 1K Glunko kills and a 100x normal drop rate, so the
-/// overview's DR tree multiplies out to 2.57712. `rows: false` shortens the row
-/// past index 630, which must read zero and warn.
+/// overview's DR tree multiplies out to 2.57712. Three levels of One Big Blue
+/// focus the third blue stone at ×30, which the Stones tab recommends.
+/// `rows: false` shortens the row past index 630, which must read zero and warn.
 const cglunkoSave = ({ rows = true } = {}) => {
   const options = Array(rows ? 669 : 30).fill(0);
   if (rows) {
@@ -313,6 +314,7 @@ const cglunkoSave = ({ rows = true } = {}) => {
     options[634] = 2; // Killionaire: 3 per level.
     options[636] = 3; // Big Hit Multkill: 1 per level.
     options[638] = 4; // Sleepy Drops: 1 per level.
+    options[639] = 3; // One Big Blue: 10 per level, so the focus is ×30.
     options[640] = 4; // Blue Collector: 1 per level.
     options[641] = 4; // Researchy: 1 per level.
     options[644] = 3; // Cavernicus: 10 per level.
@@ -321,6 +323,7 @@ const cglunkoSave = ({ rows = true } = {}) => {
     options[650] = 2; // Grandioso: 5 per level.
     options[654] = 1000; // Blue shape 1: three digits.
     options[655] = 100; // Blue shape 2: two digits.
+    options[666] = 3; // Blue focus: the third stone.
     options[668] = 1000; // Glunko kills: three digits.
     options[200] = 100; // Normal DR: two digits.
   }
@@ -3526,6 +3529,36 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'cglunko-page-toggle-1' });
     await waitForNode(lane, 'cglunko-plan-badge', 'cglunko: another page marks the plan stale');
+    // The Stones tab renders the selected colour's six stones, the DR a digit
+    // adds and the focus target the note explains: the save focuses Blue #3,
+    // which is also the stone whose next digit is fewest focused kills away.
+    await lane.call('click_element', { id: 'stones' });
+    await waitForNode(lane, 'cglunko-stones', 'cglunko: the stones tab opens');
+    await waitForNode(lane, 'cglunko-stone-6', 'cglunko: the purple page lists Purple #1');
+    if (has(await lane.tree(), 'cglunko-stone-0')) {
+      throw new Error('cglunko: the purple page lists a blue stone');
+    }
+    await lane.call('click_element', { id: 'cglunko-page-toggle-0' });
+    await waitForNode(lane, 'cglunko-stone-0', 'cglunko: the blue page lists Blue #1');
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cglunko-stone-6'),
+      'cglunko: the blue page hides the purple stones',
+    );
+    const impact = labelOf(await lane.tree(), 'cglunko-digit-impact') ?? '';
+    if (!impact.includes('+4.0% per blue-shape digit') || !impact.includes('5 = +20.0% DR')) {
+      throw new Error(`cglunko: the digit impact reads ${impact}`);
+    }
+    await waitForNode(lane, 'cglunko-stone-focus-2', 'cglunko: Blue #3 carries the saved focus');
+    await waitForNode(
+      lane,
+      'cglunko-focus-recommend-2',
+      'cglunko: Blue #3 is the recommended target',
+    );
+    const note = labelOf(await lane.tree(), 'cglunko-focus-note') ?? '';
+    if (!note.includes('Blue #3') || !note.includes('×30.0 on blue')) {
+      throw new Error(`cglunko: the focus note reads ${note}`);
+    }
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'cglunko-overview', 'cglunko: the overview tab reopens');
     // A save without the Cove rows reads zero and names the missing field.
