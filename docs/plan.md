@@ -258,8 +258,8 @@ script/extract-jar-data.mjs         extract the jar collectible, schematic and m
 script/jar-oracle.mjs               regenerate the jar formula oracle fixture
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
 script/clamworks-afk-oracle.mjs     regenerate the AFK claim and comparison oracle fixture
-script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and shop tables
-script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles and rejections
+script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir, chapter and sprite tables
+script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles, runs and rejections
 script/extract-royal-data.mjs       extract the Royal Guardian armory, resource and map tables
 script/royal-oracle.mjs             regenerate the Royal Guardian overview oracle fixture
 script/extract-farming-data.mjs     extract the farming tables, emporium encoding and gates
@@ -438,21 +438,26 @@ so. Missing: the outpost map, resource nodes and currencies (RG-02), the upgrade
 forecast (RG-03) and the optimizer, unit EXP and shelf steps (RG-04).
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
-The Spelunking section has its controls, party, elixir belt and depth estimates (SP-01).
-`idleon_core::spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir unlocks and
-depth records from the save, normalises the party, belt, mode and policy with the upstream
-`normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits profile from
-`spelunk-depth.js`. The four account multipliers upstream derives from its whole stat context —
-Spelunking Power, the amber multiplier, stamina regeneration and the Grand Discovery chance — stay
-explicit inputs here; the page carries Spelunking Power, the extra-exit bonus and each character's
-maximum stamina, and names what it cannot derive. The section renders the
-character/cave/mode/policy/full-clear/speed toolbar, the party with the half-stamina rule, the
-equipped and memorized belt with the built-in presets, and the two depth charts with a per-depth
-inspector. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
-four configurations and nineteen rejected inputs, compared field for field by
+The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run
+(SP-01, SP-02). `idleon_core::spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
+unlocks and depth records from the save, normalises the party, belt, mode and policy with the
+upstream `normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits
+profile from `spelunk-depth.js`. The four account multipliers upstream derives from its whole stat
+context — Spelunking Power, the amber multiplier, stamina regeneration and the Grand Discovery
+chance — stay explicit inputs here; the page carries all four, the extra-exit bonus and each
+character's maximum stamina. The section renders the character/cave/mode/policy/full-clear/speed
+toolbar, the party with the half-stamina rule, the equipped and memorized belt with the built-in
+presets, and the two depth charts with a per-depth inspector. `idleon_core::spelunking::sim` ports
+the whole expedition from `spelunk-expedition.js` — the seeded 10 ms tick, floor generation, digging,
+the elixir belt with its refills, party switching, exits, the Delve toll and the run log — so the same
+inputs and seed reproduce the run; the page runs it through the shared task runner with progress and
+cancel, and shows the outcome, rewards, stamina, per-member contributions and the event log. The
+phased Amber policy is not ported yet, so `amber-farm` is rejected instead of behaving like another
+policy. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
+four configurations, three whole runs and nineteen rejected inputs, compared field for field by
 `crates/core/tests/spelunking.rs`; regenerate it with `script/spelunking-oracle.mjs`, and
-`script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir and shop tables. Missing: the
-run simulator, amber policies and the optimizer (SP-02 to SP-04).
+`script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir, chapter and sprite tables.
+Missing: the Amber policies and the optimizer (SP-03, SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
 The Opal Optimizer section implements OP-01 and OP-02. The `Current state` tab shows the five

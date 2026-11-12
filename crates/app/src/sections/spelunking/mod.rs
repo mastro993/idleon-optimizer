@@ -1,10 +1,10 @@
-//! The Spelunking Simulator: expedition controls, party, elixir belt and depth
-//! estimates.
+//! The Spelunking Simulator: expedition controls, party, elixir belt, depth
+//! estimates and the expedition run.
 //!
 //! Ported from `spelunking-calc.html` and `js/ui/spelunking.js`. SP-01 covers the
-//! controls, the party and elixir belt, and the Depth limits tab; the run
-//! simulator, amber policies and the optimizer stay on the roadmap as SP-02 to
-//! SP-04.
+//! controls, the party and elixir belt, and the Depth limits tab; SP-02 adds the
+//! seeded run with its entry, tool, reaction time and event log. Amber policies
+//! and the optimizer stay on the roadmap as SP-03 and SP-04.
 //!
 //! The four account multipliers upstream derives from its whole stat context are
 //! user inputs here (see [`idleon_core::spelunking::Account`]); every other
@@ -16,8 +16,10 @@ mod chart;
 mod controls;
 mod depth;
 mod party;
+mod run;
 mod state;
 
+pub use run::RunInputs;
 pub use state::State;
 
 use crate::state::AppState;
@@ -65,6 +67,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             px(440.0),
         ))
         .child(controls::account_card(state, &inputs, cx))
+        .child(run::card(state, &inputs, cx))
         .child(depth::card(state, &inputs, cx));
     div()
         .id("spelunking-section")

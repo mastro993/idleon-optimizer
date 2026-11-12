@@ -201,6 +201,9 @@ pub fn account_card(state: &AppState, _inputs: &Inputs, cx: &mut Context<AppStat
     let entity = cx.entity();
     let power_entity = entity.clone();
     let exit_entity = entity.clone();
+    let amber_entity = entity.clone();
+    let regen_entity = entity.clone();
+    let grand_entity = entity.clone();
     let power = NumberInput::new("spelunk-power", state.spelunking.account.power)
         .range(0.0, 1e30)
         .step(1.0)
@@ -219,10 +222,38 @@ pub fn account_card(state: &AppState, _inputs: &Inputs, cx: &mut Context<AppStat
         .on_change(move |value, _window, cx| {
             exit_entity.update(cx, |state, cx| state.set_spelunk_holes_bonus(value, cx));
         });
+    let amber = NumberInput::new("spelunk-amber", state.spelunking.account.amber)
+        .range(0.0, 1e30)
+        .step(0.1)
+        .precision(4)
+        .size(ControlSize::Sm)
+        .label("Amber multiplier")
+        .on_change(move |value, _window, cx| {
+            amber_entity.update(cx, |state, cx| state.set_spelunk_amber(value, cx));
+        });
+    let regen = NumberInput::new("spelunk-regen", state.spelunking.account.regen)
+        .range(0.0, 1e9)
+        .step(1.0)
+        .precision(2)
+        .size(ControlSize::Sm)
+        .label("Stamina regeneration")
+        .on_change(move |value, _window, cx| {
+            regen_entity.update(cx, |state, cx| state.set_spelunk_regen(value, cx));
+        });
+    let grand = NumberInput::new("spelunk-grand", 100.0 * state.spelunking.account.grand)
+        .range(0.0, 100.0)
+        .step(0.001)
+        .precision(4)
+        .size(ControlSize::Sm)
+        .label("Grand Discovery chance (%)")
+        .on_change(move |value, _window, cx| {
+            grand_entity.update(cx, |state, cx| state.set_spelunk_grand_pct(value, cx));
+        });
     Card::new()
         .header(CardHeader::new("Account inputs").description(
-            "Spelunking Power and the extra-exit bonus are account multipliers the save does \
-                 not decode yet: read them in game. The save fixes everything else.",
+            "Spelunking Power, the extra-exit and Amber multipliers, stamina regeneration and \
+                 the Grand Discovery chance are account values the save does not decode yet: read \
+                 them in game. The save fixes everything else.",
         ))
         .child(
             div()
@@ -238,6 +269,18 @@ pub fn account_card(state: &AppState, _inputs: &Inputs, cx: &mut Context<AppStat
                 .child(crate::sections::spelunking::field(
                     "Extra exits (%)",
                     exits.into_any_element(),
+                ))
+                .child(crate::sections::spelunking::field(
+                    "Amber multiplier",
+                    amber.into_any_element(),
+                ))
+                .child(crate::sections::spelunking::field(
+                    "Stamina regen / hr",
+                    regen.into_any_element(),
+                ))
+                .child(crate::sections::spelunking::field(
+                    "Grand Discovery (%)",
+                    grand.into_any_element(),
                 ))
                 .child(div().flex().items_center().gap_2().child(
                     Caption::new("The saved belt and memory are the defaults.").text_color(muted),

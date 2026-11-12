@@ -783,6 +783,7 @@ const INTERACTIONS = {
     await waitForNode(lane, 'spelunk-depth-risk', 'spelunking: the exit chart renders');
     await waitForNode(lane, 'spelunk-depth-stamina', 'spelunking: the stamina chart renders');
     await waitForNode(lane, 'spelunk-belt', 'spelunking: the saved belt renders');
+    await bringIntoView(lane, 'spelunk-preset-amber');
     await lane.call('click_element', { id: 'spelunk-preset-amber' });
     await waitFor(
       lane,
@@ -795,6 +796,26 @@ const INTERACTIONS = {
     const stamina = valueOf(await lane.tree(), 'spelunk-stamina') ?? '';
     if (stamina !== 'Saved stamina') {
       throw new Error(`spelunking: the starting stamina reads ${stamina}`);
+    }
+    // The seeded run drives the whole expedition through the shared task runner
+    // and leaves its depth, loot and event log on the page.
+    await bringIntoView(lane, 'spelunk-run-start');
+    await lane.call('click_element', { id: 'spelunk-run-start' });
+    await waitForNode(
+      lane,
+      'spelunk-run-depth',
+      'spelunking: the expedition run reports a depth',
+      60000,
+    );
+    await waitForNode(
+      lane,
+      'spelunk-run-event-0',
+      'spelunking: the run log lists its first event',
+      60000,
+    );
+    const run = labelOf(await lane.tree(), 'spelunk-run-summary') ?? '';
+    if (!run.includes('depth ')) {
+      throw new Error(`spelunking: the run summary reads ${run}`);
     }
   },
   'jelly-operator': async (lane) => {

@@ -21,6 +21,26 @@ pub struct Data {
     pub policies: Vec<String>,
     /// `SpelunkUpg[idx][4]`: the per-level value of each shop upgrade.
     pub upgrade_per_level: Vec<f64>,
+    /// `SpelunkChapters[chapter][bonus]`: the chapter-bonus formula rows.
+    pub chapters: Vec<Vec<Chapter>>,
+    /// `N2L[36]`, the Super Bit token `superBitType(36, Gaming[12])` matches.
+    pub overuse_super_bit: String,
+    /// The twelve reward names the run reports, in reward-index order.
+    pub rewards: Vec<String>,
+    /// The native 1x `[width, height]` of each sprite the floor geometry reads.
+    pub sprites: std::collections::BTreeMap<String, [f64; 2]>,
+}
+
+/// One chapter-bonus row: the formula `chapterBonus` evaluates.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct Chapter {
+    pub label: String,
+    pub x1: f64,
+    pub x2: f64,
+    /// The game's formula kind, e.g. `decay`.
+    pub kind: String,
+    /// Whether the artifact bonus scales the row.
+    pub artifact: f64,
 }
 
 /// One tunnel's rock table.
@@ -108,4 +128,9 @@ pub fn data() -> &'static Data {
     DATA.get_or_init(|| {
         serde_json::from_str(SPELUNK_JSON).expect("data/spelunking.json is generated and valid")
     })
+}
+
+/// A sprite's native `[width, height]`, or `None` when the table lacks it.
+pub fn sprite(name: &str) -> Option<[f64; 2]> {
+    data().sprites.get(name).copied()
 }

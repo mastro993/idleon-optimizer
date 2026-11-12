@@ -2,8 +2,9 @@
 // Usage: node script/extract-spelunk-data.mjs <path-to-idleon-research-optimizer>
 //
 // The section reads the cave and rock tables, the tool and elixir rows, the
-// shop's per-level bonus column, and the elixir names/presets the upstream page
-// hardcodes. Everything else stays in the upstream checkout.
+// shop's per-level bonus column, the chapter-bonus formula rows, the reward
+// names and sprite sizes the run simulator reads, and the elixir names/presets
+// the upstream page hardcodes. Everything else stays in the upstream checkout.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -21,6 +22,8 @@ if (probe.status !== 0) throw new Error('node is required');
 writeFileSync(marker, JSON.stringify({ type: 'module' }));
 
 const game = await import(join(source, 'js/stats/data/game/customlists.js'));
+const hardcoded = await import(join(source, 'js/stats/data/game/hardcoded.js'));
+const sprites = await import(join(source, 'js/stats/data/game/spelunk-sprites.js'));
 const spelunking = await import(join(source, 'js/stats/data/w7/spelunking.js'));
 const expedition = await import(join(source, 'js/stats/systems/w7/spelunk-expedition.js'));
 
@@ -51,12 +54,33 @@ const payload = {
     { length: game.SpelunkUpg.length },
     (_, index) => number(game.SpelunkUpg[index]?.[4]),
   ),
+  // SpelunkChapters[chapter][bonus]: the label and the formula row
+  // `[x1, x2, kind, artifact]` `chapterBonus` evaluates.
+  chapters: game.SpelunkChapters.map((rows) =>
+    rows.map(([label, x1, x2, kind, artifact]) => ({
+      label,
+      x1: number(x1),
+      x2: number(x2),
+      kind,
+      artifact: number(artifact),
+    })),
+  ),
+  // `superBitType(36, Gaming[12])` reads the `N2L` token the Gaming string lists.
+  overuseSuperBit: hardcoded.N2L[36],
+  // The run's reward names and the native 1x sprite sizes its floor geometry reads.
+  rewards: expedition.SPELUNK_REWARDS,
+  sprites: Object.fromEntries(
+    Object.entries(sprites.SPELUNK_SPRITES).map(([name, art]) => [name, [art.w, art.h]]),
+  ),
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
     caves: 'SpelunkRocks / Spelunky[0,6,7,8,9]',
     tools: 'Spelunky[10..13]',
     elixirs: 'Spelunky[3,16,17]',
     shop: 'SpelunkUpg[idx][4]',
+    chapters: 'SpelunkChapters',
+    rewards: 'js/stats/systems/w7/spelunk-expedition.js SPELUNK_REWARDS',
+    sprites: 'js/stats/data/game/spelunk-sprites.js SPELUNK_SPRITES',
     ui: 'js/ui/spelunking.js elixirNames/elixirPresets',
   },
 };
@@ -64,5 +88,6 @@ const payload = {
 const out = new URL('../crates/core/data/spelunking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
-  `wrote ${payload.caves.length} caves, ${payload.tools.length} tools, ${payload.elixirs.length} elixirs, ${payload.upgradePerLevel.length} shop rows`,
+  `wrote ${payload.caves.length} caves, ${payload.tools.length} tools, ${payload.elixirs.length} elixirs, ` +
+    `${payload.upgradePerLevel.length} shop rows, ${Object.keys(payload.sprites).length} sprites`,
 );

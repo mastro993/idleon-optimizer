@@ -11,7 +11,8 @@
 
 use idleon_core::save::import;
 use idleon_core::spelunking::{
-    Account, ConfigError, DepthRange, ReferenceTool, Requested, Save, normalize, profile,
+    Account, ConfigError, DepthRange, ReferenceTool, Requested, RunOptions, RunResult, Save,
+    Status, normalize, profile, sim::Run,
 };
 use serde_json::Value;
 
@@ -39,6 +40,9 @@ fn inputs(oracle: &Value) -> idleon_core::spelunking::Inputs {
     save.inputs(&Account {
         power: number(&account["power"]),
         holes_bonus: number(&account["holesBonus"]),
+        amber: number(&account["amber"]),
+        regen: number(&account["regen"]),
+        grand: number(&account["grand"]),
         max_stamina,
     })
 }
@@ -164,6 +168,30 @@ fn the_save_derives_the_upstream_inputs() {
     for (index, expected) in oracle["manicDepths"].as_array().unwrap().iter().enumerate() {
         close(inputs.manic_depths[index], number(expected), "manicDepths");
     }
+    close(
+        inputs.nonconsume,
+        number(&oracle["nonconsume"]),
+        "nonconsume",
+    );
+    assert_eq!(inputs.overuse, oracle["overuse"].as_bool().unwrap());
+    assert_eq!(inputs.switch_nova, oracle["switchNova"].as_bool().unwrap());
+    close(inputs.bags, number(&oracle["bags"]), "bags");
+    close(inputs.prisma, number(&oracle["prisma"]), "prisma");
+    close(inputs.exalt, number(&oracle["exalt"]), "exalt");
+    assert_eq!(inputs.shortcut, oracle["shortcut"].as_bool().unwrap());
+    for (index, expected) in oracle["bosses"].as_array().unwrap().iter().enumerate() {
+        close(inputs.bosses[index], number(expected), "bosses");
+    }
+    for (index, expected) in oracle["grands"].as_array().unwrap().iter().enumerate() {
+        close(inputs.grands[index], number(expected), "grands");
+    }
+    let discoveries: Vec<String> = oracle["discoveries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|name| name.as_str().unwrap().to_string())
+        .collect();
+    assert_eq!(inputs.discoveries, discoveries);
 }
 
 #[test]
@@ -339,4 +367,325 @@ fn the_depth_range_is_bounded_like_upstream() {
             "Choose depths 1-10,000 spanning at most 1,001 floors."
         );
     }
+}
+
+#[test]
+fn every_simulated_run_matches_the_upstream_calculator() {
+    let oracle = oracle();
+    for entry in oracle["runs"].as_array().unwrap() {
+        let label = entry["label"].as_str().unwrap();
+        let mut inputs = inputs(&oracle);
+        // The unbeaten-boss run clears the saved boss, Grand and discovery
+        // state and buys the nova, potion and charge upgrades, so the run
+        // exercises the branches the fixture save has already finished.
+        if entry["input"].as_str() == Some("unbeaten") {
+            inputs.bosses.iter_mut().for_each(|boss| *boss = 0.0);
+            inputs.grands.iter_mut().for_each(|grand| *grand = 0.0);
+            inputs.discoveries.clear();
+            for index in [36, 39, 40] {
+                inputs.shop[index] = 1.0;
+            }
+        }
+        let requested: Requested =
+            serde_json::from_value(entry["requested"].clone()).expect("the request decodes");
+        let config =
+            normalize(&inputs, &requested).unwrap_or_else(|error| panic!("{label}: {error}"));
+        let expected_config = &entry["config"];
+        assert_eq!(
+            config.cave,
+            expected_config["cave"].as_u64().unwrap() as usize
+        );
+        assert_eq!(config.party, strings(&expected_config["party"]));
+        assert_eq!(
+            config.policy.id(),
+            expected_config["policy"].as_str().unwrap()
+        );
+        assert_eq!(
+            config.entry.id(),
+            expected_config["entry"].as_str().unwrap()
+        );
+        assert_eq!(
+            config.full_clear,
+            expected_config["fullClear"].as_bool().unwrap()
+        );
+        let seed = entry["seed"].as_u64().unwrap() as u32;
+        let mut run = Run::new(&inputs, config, RunOptions { seed })
+            .unwrap_or_else(|error| panic!("{label}: {error}"));
+        while !run.done() {
+            run.step(5_000);
+        }
+        let actual = run.result();
+        compare_run(&actual, entry, label);
+    }
+}
+
+/// Compare one ported run against the upstream result, field for field.
+fn compare_run(actual: &RunResult, expected: &Value, label: &str) {
+    assert_eq!(actual.seed, expected["seed"].as_u64().unwrap() as u32);
+    assert_eq!(
+        actual.status.id(),
+        expected["status"].as_str().unwrap(),
+        "{label}: status"
+    );
+    assert!(actual.status != Status::Running, "{label}: still running");
+    assert_eq!(
+        actual.settled,
+        expected["settled"].as_bool().unwrap(),
+        "{label}: settled"
+    );
+    close(
+        actual.seconds,
+        number(&expected["seconds"]),
+        &format!("{label} seconds"),
+    );
+    assert_eq!(
+        actual.start_depth as u64,
+        expected["startDepth"].as_u64().unwrap(),
+        "{label}: startDepth"
+    );
+    assert_eq!(
+        actual.depth as u64,
+        expected["depth"].as_u64().unwrap(),
+        "{label}: depth"
+    );
+    assert_eq!(
+        actual.actions,
+        expected["actions"].as_u64().unwrap(),
+        "{label}: actions"
+    );
+    close(
+        actual.spent,
+        number(&expected["spent"]),
+        &format!("{label} spent"),
+    );
+    assert_eq!(
+        actual.hits,
+        expected["hits"].as_u64().unwrap(),
+        "{label}: hits"
+    );
+    assert_eq!(
+        actual.misses,
+        expected["misses"].as_u64().unwrap(),
+        "{label}: misses"
+    );
+    assert_eq!(
+        actual.broken,
+        expected["broken"].as_u64().unwrap(),
+        "{label}: broken"
+    );
+    for index in 0..12 {
+        close(
+            actual.rewards[index],
+            number(&expected["rewards"][index]),
+            &format!("{label} rewards[{index}]"),
+        );
+        close(
+            actual.gross_rewards[index],
+            number(&expected["grossRewards"][index]),
+            &format!("{label} grossRewards[{index}]"),
+        );
+    }
+    match (&actual.exit, &expected["exit"]) {
+        (None, Value::Null) => {}
+        (Some(exit), Value::Object(_)) => {
+            let upstream = &expected["exit"];
+            close(
+                exit.retained,
+                number(&upstream["retained"]),
+                &format!("{label} retained"),
+            );
+            let items = upstream["items"].as_array().unwrap();
+            assert_eq!(exit.items.len(), items.len(), "{label}: exit items");
+            for (item, upstream) in exit.items.iter().zip(items) {
+                assert_eq!(item.reward, upstream["reward"].as_u64().unwrap() as usize);
+                close(
+                    item.gross,
+                    number(&upstream["gross"]),
+                    &format!("{label} item gross"),
+                );
+                close(
+                    item.expected,
+                    number(&upstream["expected"]),
+                    &format!("{label} item expected"),
+                );
+                close(
+                    item.collected,
+                    number(&upstream["collected"]),
+                    &format!("{label} item collected"),
+                );
+                assert_eq!(
+                    item.rounded_up,
+                    upstream["roundedUp"].as_bool(),
+                    "{label}: roundedUp"
+                );
+                match (&item.chance, &upstream["chance"]) {
+                    (None, Value::Null) => {}
+                    (Some(chance), Value::Number(_)) => close(
+                        *chance,
+                        number(&upstream["chance"]),
+                        &format!("{label} chance"),
+                    ),
+                    other => panic!("{label}: unexpected chance {other:?}"),
+                }
+            }
+        }
+        other => panic!("{label}: unexpected exit {other:?}"),
+    }
+    let stamina = expected["stamina"].as_array().unwrap();
+    assert_eq!(actual.stamina.len(), stamina.len(), "{label}: stamina rows");
+    for (member, upstream) in actual.stamina.iter().zip(stamina) {
+        assert_eq!(member.id, upstream["id"].as_u64().unwrap() as usize);
+        close(
+            member.start,
+            number(&upstream["start"]),
+            &format!("{label} stamina start"),
+        );
+        close(
+            member.end,
+            number(&upstream["end"]),
+            &format!("{label} stamina end"),
+        );
+        close(
+            member.max,
+            number(&upstream["max"]),
+            &format!("{label} stamina max"),
+        );
+    }
+    let diagnostics = &expected["diagnostics"];
+    assert_eq!(
+        actual.diagnostics.resist_stall,
+        diagnostics["resistStall"].as_bool().unwrap(),
+        "{label}: resistStall"
+    );
+    assert_eq!(
+        actual.diagnostics.unused,
+        diagnostics["unused"].as_u64().unwrap() as usize,
+        "{label}: unused"
+    );
+    assert_eq!(
+        actual.diagnostics.no_advance,
+        diagnostics["noAdvance"].as_u64().unwrap() as usize,
+        "{label}: noAdvance"
+    );
+    close(
+        actual.diagnostics.resisted_stamina,
+        number(&diagnostics["resistedStamina"]),
+        &format!("{label} resistedStamina"),
+    );
+    assert_eq!(
+        actual.diagnostics.blocked,
+        diagnostics["blocked"].as_bool().unwrap(),
+        "{label}: blocked"
+    );
+    let members = diagnostics["members"].as_array().unwrap();
+    assert_eq!(
+        actual.diagnostics.members.len(),
+        members.len(),
+        "{label}: member rows"
+    );
+    for (member, upstream) in actual.diagnostics.members.iter().zip(members) {
+        let path = format!("{label} member {}", member.id);
+        assert_eq!(member.id, upstream["id"].as_u64().unwrap() as usize);
+        assert_eq!(
+            member.start_depth,
+            upstream["startDepth"].as_u64().map(|depth| depth as usize),
+            "{path}: startDepth"
+        );
+        for (name, value, upstream) in [
+            ("digs", member.digs, &upstream["digs"]),
+            ("spent", member.spent, &upstream["spent"]),
+            (
+                "resistedStamina",
+                member.resisted_stamina,
+                &upstream["resistedStamina"],
+            ),
+            ("hits", member.hits, &upstream["hits"]),
+            ("misses", member.misses, &upstream["misses"]),
+            ("damage", member.damage, &upstream["damage"]),
+            ("broken", member.broken, &upstream["broken"]),
+            ("descents", member.descents, &upstream["descents"]),
+            ("grands", member.grands, &upstream["grands"]),
+        ] {
+            close(value, number(upstream), &format!("{path} {name}"));
+        }
+        for index in 0..12 {
+            close(
+                member.rewards[index],
+                number(&upstream["rewards"][index]),
+                &format!("{path} rewards[{index}]"),
+            );
+        }
+        for (name, value, upstream) in [
+            ("unused", member.unused, &upstream["unused"]),
+            ("exhausted", member.exhausted, &upstream["exhausted"]),
+            ("noAdvance", member.no_advance, &upstream["noAdvance"]),
+            (
+                "noFurtherFloor",
+                member.no_further_floor,
+                &upstream["noFurtherFloor"],
+            ),
+            ("resistStall", member.resist_stall, &upstream["resistStall"]),
+        ] {
+            assert_eq!(value, upstream.as_bool().unwrap(), "{path}: {name}");
+        }
+    }
+    close(
+        actual.grands,
+        number(&expected["grands"]),
+        &format!("{label} grands"),
+    );
+    let discoveries: Vec<&str> = expected["discoveries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|name| name.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        actual
+            .discoveries
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        discoveries,
+        "{label}: discoveries"
+    );
+    assert_eq!(
+        actual.rng_calls,
+        expected["rngCalls"].as_u64().unwrap(),
+        "{label}: rngCalls"
+    );
+    assert_eq!(
+        actual.events_dropped,
+        expected["eventsDropped"].as_u64().unwrap() as usize,
+        "{label}: eventsDropped"
+    );
+    let events: Vec<(&str, usize)> = expected["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|event| {
+            (
+                event[0].as_str().unwrap(),
+                event[1].as_u64().unwrap() as usize,
+            )
+        })
+        .collect();
+    let actual_events: Vec<(&str, usize)> = actual
+        .events
+        .iter()
+        .map(|event| (event.kind.id(), event.depth))
+        .collect();
+    assert_eq!(actual_events, events, "{label}: event trace");
+    let notes: Vec<&str> = expected["notes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|note| note.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        actual.notes.iter().map(String::as_str).collect::<Vec<_>>(),
+        notes,
+        "{label}: notes"
+    );
+    assert_eq!(actual.error, None, "{label}: error");
 }

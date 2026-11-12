@@ -37,6 +37,14 @@ pub struct State {
     pub depth_tool: ReferenceTool,
     /// The depth the inspector shows.
     pub inspect: usize,
+    /// The seed the next expedition run uses.
+    pub sim_seed: u32,
+    /// The manual reaction time, in milliseconds.
+    pub sim_reaction_ms: f64,
+    /// The manual tool: adaptive, or one unlocked tool.
+    pub sim_tool: ToolChoice,
+    /// Where the run starts.
+    pub sim_entry: Entry,
 }
 
 impl Default for State {
@@ -57,6 +65,10 @@ impl Default for State {
             depth_to: 150,
             depth_tool: ReferenceTool::Best,
             inspect: 1,
+            sim_seed: idleon_core::spelunking::DEFAULT_SEED,
+            sim_reaction_ms: 350.0,
+            sim_tool: ToolChoice::Adaptive,
+            sim_entry: Entry::Shortcut,
         }
     }
 }
@@ -92,12 +104,13 @@ impl State {
         self.account = Account {
             power: 1.0,
             holes_bonus: 0.0,
-            max_stamina: inputs
-                .characters
-                .iter()
-                .map(|character| character.stamina)
-                .collect(),
+            ..Account::neutral()
         };
+        self.account.max_stamina = inputs
+            .characters
+            .iter()
+            .map(|character| character.stamina)
+            .collect();
         self.reset_range(inputs);
     }
 
@@ -124,11 +137,23 @@ impl State {
             self.account.max_stamina.push(inputs.characters[id].stamina);
         }
         self.account.max_stamina.truncate(inputs.characters.len());
+        if let ToolChoice::Tool(id) = self.sim_tool
+            && !inputs.tools.iter().any(|tool| tool.id == id)
+        {
+            self.sim_tool = ToolChoice::Adaptive;
+        }
+        self.sim_reaction_ms = self.sim_reaction_ms.clamp(100.0, 5_000.0);
         self.clamp_range();
     }
 
     /// The request the section's depth estimate runs.
     pub fn requested(&self) -> Requested {
+        self.run_requested()
+    }
+
+    /// The request the expedition run reads: the estimate's fields plus the
+    /// run's own entry, tool and reaction time.
+    pub fn run_requested(&self) -> Requested {
         Requested {
             cave: Some(self.cave),
             party: Some(self.party_ids()),
@@ -143,11 +168,11 @@ impl State {
                     .map(|id| *id as usize)
                     .collect(),
             ),
-            tool: None::<ToolChoice>,
-            entry: None::<Entry>,
+            tool: Some(self.sim_tool),
+            entry: Some(self.sim_entry),
             full_clear: Some(self.full_clear),
             amber: None,
-            reaction_ms: None,
+            reaction_ms: Some(self.sim_reaction_ms),
             stamina: Some(self.starting),
         }
     }
@@ -295,6 +320,27 @@ impl State {
         }
     }
 
+    /// Set the account Amber multiplier.
+    pub fn set_amber(&mut self, amber: f64) {
+        if amber.is_finite() {
+            self.account.amber = amber.max(0.0);
+        }
+    }
+
+    /// Set the account stamina regeneration per hour.
+    pub fn set_regen(&mut self, regen: f64) {
+        if regen.is_finite() {
+            self.account.regen = regen.max(0.0);
+        }
+    }
+
+    /// Set the Grand Discovery chance from the percentage the user reads.
+    pub fn set_grand_pct(&mut self, percent: f64) {
+        if percent.is_finite() {
+            self.account.grand = (percent / 100.0).clamp(0.0, 1.0);
+        }
+    }
+
     /// Override one character's maximum stamina.
     pub fn set_max_stamina(&mut self, character: usize, value: f64) {
         if !value.is_finite() || value < 0.0 {
@@ -417,6 +463,33 @@ mod tests {
         let mut state = State::default();
         state.set_policy(Policy::AmberFarm);
         assert!(state.full_clear);
+    }
+
+    #[test]
+    fn the_memory_and_the_run_choices_survive_a_project_round_trip() {
+        let state = State {
+            memorized: vec![7, -1],
+            elixirs: vec![3, 3, 6, -1, -1],
+            sim_seed: 42,
+            sim_tool: ToolChoice::Tool(2),
+            sim_entry: Entry::Surface,
+            sim_reaction_ms: 500.0,
+            ..State::default()
+        };
+        let text = serde_json::to_string(&state).expect("the state serialises");
+        let restored: State = serde_json::from_str(&text).expect("the state decodes");
+        assert_eq!(restored, state);
+    }
+
+    #[test]
+    fn a_project_without_the_run_choices_starts_from_the_defaults() {
+        let restored: State =
+            serde_json::from_str(r#"{"cave":2}"#).expect("an older project decodes");
+        assert_eq!(restored.cave, 2);
+        assert_eq!(restored.sim_seed, idleon_core::spelunking::DEFAULT_SEED);
+        assert_eq!(restored.sim_tool, ToolChoice::Adaptive);
+        assert_eq!(restored.sim_entry, Entry::Shortcut);
+        assert_eq!(restored.sim_reaction_ms, 350.0);
     }
 
     #[test]

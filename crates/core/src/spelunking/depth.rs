@@ -173,7 +173,7 @@ pub fn exit_distribution(input: &Inputs) -> Distribution {
 }
 
 /// The normal-rock type mix on a zero-based depth, excluding the boss slot.
-fn rock_probabilities(cave: &data::Cave, depth: i64) -> Vec<f64> {
+pub(super) fn rock_probabilities(cave: &data::Cave, depth: i64) -> Vec<f64> {
     let mut probabilities = vec![0.0; cave.rocks.len().saturating_sub(1)];
     let mut current = 0usize;
     let mut remaining = 1.0f64;
@@ -193,7 +193,7 @@ fn rock_probabilities(cave: &data::Cave, depth: i64) -> Vec<f64> {
 }
 
 /// `spelunkRockStats`: the HP, power requirement and amber of one rock.
-fn rock_stats(cave: &data::Cave, kind: usize, depth: i64) -> (f64, f64, f64) {
+pub(super) fn rock_stats(cave: &data::Cave, kind: usize, depth: i64) -> (f64, f64, f64) {
     let rock = &cave.rocks[kind];
     let span = depth as f64 - rock.depth;
     let hp = if rock.scaled {
@@ -220,12 +220,12 @@ fn rock_stats(cave: &data::Cave, kind: usize, depth: i64) -> (f64, f64, f64) {
     (hp, requirement, amber)
 }
 
-fn shop(input: &Inputs, index: usize) -> f64 {
+pub(super) fn shop(input: &Inputs, index: usize) -> f64 {
     input.shop.get(index).copied().unwrap_or(0.0)
 }
 
 /// `spelunkEntryEffects`: the 13 effect slots the memorized elixirs set at entry.
-fn entry_effects(input: &Inputs, config: &Config) -> [f64; 13] {
+pub(super) fn entry_effects(input: &Inputs, config: &Config) -> [f64; 13] {
     let mut effects = [0.0; 13];
     let repeats = (1.0 + shop(input, 58) / 100.0).floor().max(0.0);
     for id in &config.memorized {
@@ -240,12 +240,12 @@ fn entry_effects(input: &Inputs, config: &Config) -> [f64; 13] {
 }
 
 /// `spelunkDigPower`: entry power after the power and discovery elixirs.
-fn dig_power(input: &Inputs, effects: &[f64; 13]) -> f64 {
+pub(super) fn dig_power(input: &Inputs, effects: &[f64; 13]) -> f64 {
     input.power * (100.0 * effects[10]).max(1.0) / (1.0 + (99.0 * effects[9]).min(99.0))
         * power_boost(input, effects)
 }
 
-fn power_boost(input: &Inputs, effects: &[f64; 13]) -> f64 {
+pub(super) fn power_boost(input: &Inputs, effects: &[f64; 13]) -> f64 {
     if effects[4] > 0.5 {
         let quantity = input.elixirs.get(4).map_or(0.0, |elixir| elixir.quantity);
         5.0 / (1.0 + quantity / 100.0).powf(effects[4] - 1.0)
@@ -255,14 +255,14 @@ fn power_boost(input: &Inputs, effects: &[f64; 13]) -> f64 {
 }
 
 /// `spelunkStaminaMultiplier`: the Manic and discovery-elixir cost multiplier.
-fn stamina_multiplier(config: &Config, effects: &[f64; 13]) -> f64 {
+pub(super) fn stamina_multiplier(config: &Config, effects: &[f64; 13]) -> f64 {
     (1.0 + (2.0 * effects[9]).min(2.0))
         * (4.0 * effects[10]).max(1.0)
         * if config.manic { 30.0 } else { 1.0 }
 }
 
 /// `spelunkHitDamage`: damage after the power-requirement and flat shop upgrades.
-fn hit_damage(input: &Inputs, damage: f64, ratio: f64) -> f64 {
+pub(super) fn hit_damage(input: &Inputs, damage: f64, ratio: f64) -> f64 {
     let mut damage = damage;
     if shop(input, 34) >= 1.0 {
         damage *= 1.0 + (game_log(ratio).floor() - 1.0).max(0.0);

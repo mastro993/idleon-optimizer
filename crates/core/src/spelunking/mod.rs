@@ -1,9 +1,10 @@
-//! Spelunking (W7): expedition controls, party, elixir belt and depth estimates.
+//! Spelunking (W7): expedition controls, party, elixir belt, depth estimates and
+//! the run simulator.
 //!
 //! Ported from `spelunking-calc.html`, `js/ui/spelunking.js`,
 //! `js/stats/systems/w7/spelunking.js`, `spelunk-inputs.js`,
-//! `spelunk-expedition.js` (the config normaliser and elixir effects) and
-//! `spelunk-depth.js`. The static tables come from
+//! `spelunk-expedition.js` (the config normaliser, the elixir effects and the
+//! expedition run) and `spelunk-depth.js`. The static tables come from
 //! `script/extract-spelunk-data.mjs`.
 //!
 //! The upstream page derives four account multipliers from its whole stat
@@ -15,28 +16,41 @@
 //!
 //! Depth estimates are pure: given the same [`Inputs`] and [`Requested`]
 //! configuration they produce the same [`Profile`] the upstream calculator
-//! prints, which `fixtures/spelunking.json` pins against the JS.
+//! prints, which `fixtures/spelunking.json` pins against the JS. A run is
+//! deterministic by seed: [`sim::Run`] replays the upstream 10 ms tick with the
+//! same seeded generator, so the same inputs and seed give the same result.
 
 pub mod config;
 pub mod data;
 pub mod depth;
 pub mod save;
+pub mod sim;
 
 pub use config::{Config, ConfigError, Requested, normalize};
 pub use data::{Cave, Elixir, Preset, PresetKind, Rock, Tool, data};
 pub use depth::{DepthRange, Object, Profile, ReferenceTool, Row, profile};
 pub use save::Save;
+pub use sim::{
+    Contribution, DEFAULT_SEED, Diagnostics, Event, EventKind, Exit, ExitItem, MemberStamina, Run,
+    RunOptions, RunResult, Status, simulate,
+};
 
 use std::fmt;
 
-/// The four account values the upstream stat context would supply.
-#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+/// The account values the upstream stat context would supply.
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Account {
     /// `Spelunking Power`, as the game's Skills panel shows it.
     pub power: f64,
     /// `SpelunkyBonus(1)` as a percentage: extra exits per depth.
     pub holes_bonus: f64,
+    /// `Amber` multiplier: how much Amber each Amber drop is worth.
+    pub amber: f64,
+    /// Stamina regeneration per hour, for the recovery a run costs.
+    pub regen: f64,
+    /// The Grand Discovery chance per Grand rock, as a probability.
+    pub grand: f64,
     /// Maximum stamina per character, when the save's current stamina is not it.
     /// A missing entry uses the saved stamina.
     pub max_stamina: Vec<f64>,
@@ -44,13 +58,23 @@ pub struct Account {
 
 impl Account {
     /// The defaults a save without user overrides starts from. Power 1 is the
-    /// neutral multiplier; the user reads the real value in game.
+    /// neutral multiplier and the other three are the game's base values; the
+    /// user reads the real ones in game.
     pub fn neutral() -> Self {
         Self {
             power: 1.0,
             holes_bonus: 0.0,
+            amber: 1.0,
+            regen: 5.0,
+            grand: 4e-5,
             max_stamina: Vec::new(),
         }
+    }
+}
+
+impl Default for Account {
+    fn default() -> Self {
+        Self::neutral()
     }
 }
 
@@ -86,11 +110,30 @@ pub struct Inputs {
     /// The account inputs the save cannot supply.
     pub power: f64,
     pub holes_bonus: f64,
+    /// The Amber multiplier each Amber drop is worth.
+    pub amber: f64,
+    /// Stamina regeneration per hour, for the recovery a run costs.
+    pub regen: f64,
+    /// The Grand Discovery chance per Grand rock, as a probability.
+    pub grand: f64,
     /// Unlocked elixir count, belt slots, duplicate limit and memory slots.
     pub elixir_owned: usize,
     pub slots: usize,
     pub dupes: usize,
     pub memory_slots: usize,
+    /// The chance a used elixir charge is not consumed.
+    pub nonconsume: f64,
+    /// Super Bit 36: a tool may dig below its own stamina cost.
+    pub overuse: bool,
+    /// Shop row 38: a party switch sets off a nova.
+    pub switch_nova: bool,
+    /// Amber bag gem purchases, which raise the bag drop chance.
+    pub bags: f64,
+    /// The saved Prisma and Exalt counts, which scale their drop odds.
+    pub prisma: f64,
+    pub exalt: f64,
+    /// Menagerie unlock 1: the saved shortcut entry is available.
+    pub shortcut: bool,
     /// Saved belt and memory, and the saved selections the defaults use.
     pub saved_elixirs: Vec<i32>,
     pub memorized: Vec<usize>,
@@ -102,6 +145,10 @@ pub struct Inputs {
     /// Normal and Manic depth records per cave, as the cave chips show them.
     pub depths: Vec<f64>,
     pub manic_depths: Vec<f64>,
+    /// `Spelunk`: `[0]` boss unlocks, `[44]` Grand Discoveries, `[6]` discoveries.
+    pub bosses: Vec<f64>,
+    pub grands: Vec<f64>,
+    pub discoveries: Vec<String>,
     /// Whether the account multipliers are partial.
     pub partial: bool,
 }

@@ -36,6 +36,7 @@ use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
+use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::{Sort as StatueSort, State as StatueState};
@@ -81,6 +82,7 @@ use idleon_core::sailing::{
     SimOptions as SailingSimOptions, SimResult, compare, optimize, saved, simulate,
 };
 use idleon_core::save::Shadow;
+use idleon_core::spelunking::RunResult as SpelunkRunResult;
 use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::statue::Estimate as StatueEstimate;
 use idleon_core::worship::Inputs as WorshipInputs;
@@ -269,6 +271,8 @@ pub struct AppState {
     pub spelunking: SpelunkingState,
     /// The Spelunking rows the loaded save carries, if it has them.
     pub spelunking_save: Option<idleon_core::spelunking::Save>,
+    /// The shared runner for the Spelunking expedition run.
+    pub(crate) spelunk_sim: Entity<TaskRunner<SpelunkRunResult, SpelunkRunInputs>>,
     /// The ladle optimizer's save-derived roster and counts.
     pub ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
@@ -339,7 +343,7 @@ pub struct AppState {
     /// Whether a save is loaded, for the shared page header.
     pub save_loaded: bool,
     /// How many saves this window has applied; a Prisma run captures it.
-    save_revision: u64,
+    pub(crate) save_revision: u64,
     /// The shared background runner for the research optimizer.
     optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for the Shape Optimization tab's placement.
@@ -419,6 +423,7 @@ pub struct AppState {
     _farming_run_subscription: Subscription,
     _farming_compare_subscription: Subscription,
     _sailing_sim_subscription: Subscription,
+    _spelunk_sim_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -1063,6 +1068,33 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The expedition run reports each progress line and keeps the previous
+        // result when a run is cancelled, like every other long run.
+        let spelunk_sim = cx.new(|_| TaskRunner::<SpelunkRunResult, SpelunkRunInputs>::new());
+        let spelunk_sim_subscription =
+            cx.subscribe(&spelunk_sim, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Running the expedition… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Expedition run cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Expedition run cancelled; nothing was stored.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Expedition run ready: depth {} with seed {}.",
+                                result.depth, result.seed
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         let ladle_state = LadleSectionState::new(window, cx);
         let cglunko_breakdown =
             cx.new(|cx| ui::formula::FormulaTree::new("cglunko-formula", window, cx));
@@ -1129,6 +1161,7 @@ impl AppState {
             jar: None,
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
+            spelunk_sim,
             ladle: None,
             ladle_state,
             mastery: None,
@@ -1216,6 +1249,7 @@ impl AppState {
             _farming_run_subscription: farming_run_subscription,
             _farming_compare_subscription: farming_compare_subscription,
             _sailing_sim_subscription: sailing_sim_subscription,
+            _spelunk_sim_subscription: spelunk_sim_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -1813,6 +1847,21 @@ impl AppState {
     pub fn set_fleet_minimum_tier(&mut self, tier: u32, cx: &mut Context<Self>) {
         self.sailing.minimum_tier = tier.min(5);
         cx.notify();
+    }
+
+    /// The stored expedition run and whether its inputs changed since the run.
+    pub fn spelunk_simulation(&self, cx: &App) -> TaskState<SpelunkRunResult> {
+        self.spelunk_sim.read(cx).state(&self.spelunk_sim_inputs())
+    }
+
+    /// The inputs a run started now would read.
+    fn spelunk_sim_inputs(&self) -> SpelunkRunInputs {
+        SpelunkRunInputs {
+            requested: self.spelunking.run_requested(),
+            account: self.spelunking.account.clone(),
+            seed: self.spelunking.sim_seed,
+            revision: self.save_revision,
+        }
     }
 
     /// The stored pile simulation and whether its inputs changed since the run.
