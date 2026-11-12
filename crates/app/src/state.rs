@@ -31,6 +31,7 @@ use crate::ui::import::{self, Import, Pending};
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
+use idleon_core::clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_core::cog::{
     CogResult, Goal as CogGoal, OptimizeOptions, optimize as optimize_cog_board,
 };
@@ -193,6 +194,10 @@ pub struct AppState {
     pub clamworks_tab: ClamworksTab,
     /// The multikill total Multi-Scalping reads, until the combat sim lands.
     pub clamworks_multikill: f64,
+    /// The pearls the Clamworks upgrade plan may spend.
+    pub clamworks_budget: f64,
+    /// The levels the applied plan previews; `None` shows the saved levels.
+    pub clamworks_projection: Option<[u32; 9]>,
     /// The endgame section's audit of the last applied save.
     pub endgame: endgame::State,
     /// The jar section's active tab, kept across dashboard visits.
@@ -252,6 +257,8 @@ pub struct AppState {
     pub(crate) coral_run: Entity<TaskRunner<CoralPlan, CoralInputs>>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
+    /// The shared runner for the Clamworks upgrade plan.
+    clamworks_run: Entity<TaskRunner<ClamworksPlan, ClamworksPlanInput>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
@@ -289,6 +296,7 @@ pub struct AppState {
     _killroy_run_subscription: Subscription,
     _coral_run_subscription: Subscription,
     _cog_subscription: Subscription,
+    _clamworks_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
     _prisma_run_subscription: Subscription,
@@ -439,6 +447,35 @@ impl AppState {
             }
             cx.notify();
         });
+        // The Clamworks plan is a short bounded greedy run, but it reports every
+        // purchase and stops where the budget runs out.
+        let clamworks_run = cx.new(|_| TaskRunner::<ClamworksPlan, ClamworksPlanInput>::new());
+        let clamworks_run_subscription =
+            cx.subscribe(&clamworks_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!("Planning Clamworks upgrades… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Clamworks plan cancelled; the previous plan is unchanged.".into()
+                        } else {
+                            "Clamworks plan cancelled; nothing was applied.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(plan) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Clamworks plan ready: {} purchases, {:.0} of {:.0} pearls.",
+                                plan.steps.len(),
+                                plan.spent,
+                                plan.budget
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // A plan run is a whole game run off the UI thread: the status line
         // carries its progress and its result stays in the runner for the pane.
         let worship_plan = cx.new(|_| TaskRunner::<WorshipRunResult, PlanRunInputs>::new());
@@ -671,6 +708,8 @@ impl AppState {
             clamworks: Clamworks::default(),
             clamworks_tab: ClamworksTab::default(),
             clamworks_multikill: 0.0,
+            clamworks_budget: 0.0,
+            clamworks_projection: None,
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar_tier: 0,
@@ -701,6 +740,7 @@ impl AppState {
             killroy_run,
             coral_run,
             cog_run,
+            clamworks_run,
             worship_plan,
             worship_optimize,
             prisma_run,
@@ -725,6 +765,7 @@ impl AppState {
             _killroy_run_subscription: killroy_run_subscription,
             _coral_run_subscription: coral_run_subscription,
             _cog_subscription: cog_subscription,
+            _clamworks_run_subscription: clamworks_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
             _prisma_run_subscription: prisma_run_subscription,
@@ -1052,6 +1093,10 @@ impl AppState {
         self.cog.load(imported.cog);
         self.cglunko = imported.cglunko;
         self.clamworks = imported.clamworks;
+        // The plan's default budget follows the new balance; a projection from
+        // the previous save no longer describes this one.
+        self.clamworks_budget = self.clamworks.pearl_balance;
+        self.clamworks_projection = None;
         self.jar = imported.jar;
         self.ladle_state
             .adopt(&imported.ladle.clone().unwrap_or_default());
@@ -1652,6 +1697,102 @@ impl AppState {
     pub fn set_clamworks_multikill(&mut self, multikill: f64, cx: &mut Context<Self>) {
         self.clamworks_multikill = multikill.max(0.0);
         cx.notify();
+    }
+
+    /// The Clamworks levels the section shows: the applied plan's, or the save's.
+    pub fn clamworks_view(&self) -> Clamworks {
+        let Some(levels) = self.clamworks_projection else {
+            return self.clamworks.clone();
+        };
+        Clamworks {
+            upgrades: levels,
+            ..self.clamworks.clone()
+        }
+    }
+
+    /// The inputs a Clamworks plan run started now would use.
+    pub fn clamworks_plan_input(&self) -> ClamworksPlanInput {
+        ClamworksPlanInput {
+            budget: self.clamworks_budget,
+            multikill_total: self.clamworks_multikill,
+        }
+    }
+
+    /// The plan run's progress, result and staleness.
+    pub fn clamworks_task(&self, cx: &App) -> TaskState<ClamworksPlan> {
+        self.clamworks_run
+            .read(cx)
+            .state(&self.clamworks_plan_input())
+    }
+
+    /// Set the pearls the plan may spend; the saved balance until it is changed.
+    pub fn set_clamworks_budget(&mut self, budget: f64, cx: &mut Context<Self>) {
+        self.clamworks_budget = if budget.is_finite() {
+            budget.max(0.0)
+        } else {
+            0.0
+        };
+        cx.notify();
+    }
+
+    /// Search the upgrade plans off the UI thread through the shared runner.
+    pub fn run_clamworks_plan(&mut self, cx: &mut Context<Self>) {
+        let input = self.clamworks_plan_input();
+        let clamworks = self.clamworks_view();
+        if input.budget <= 0.0 {
+            self.status = "Clamworks plan: set a pearl budget above zero.".into();
+            cx.notify();
+            return;
+        }
+        let started = self.clamworks_run.update(cx, |runner, cx| {
+            runner.start(cx, input, move |input, report| {
+                clamworks.plan_with(input, report)
+            })
+        });
+        if started {
+            self.status = "Planning Clamworks upgrades…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running plan to stop at its next purchase.
+    pub fn cancel_clamworks_plan(&mut self, cx: &mut Context<Self>) {
+        if self.clamworks_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Clamworks plan…".into();
+            cx.notify();
+        }
+    }
+
+    /// Preview the plan's levels across the section, as applying a layout does.
+    pub fn apply_clamworks_plan(&mut self, cx: &mut Context<Self>) {
+        let Some(plan) = self
+            .clamworks_run
+            .update(cx, |runner, _| runner.take_result())
+        else {
+            return;
+        };
+        self.clamworks_projection = Some(plan.end.upgrades);
+        self.status = format!(
+            "Clamworks plan applied: {} purchases, {:.2}× pearls per pearl.",
+            plan.steps.len(),
+            plan.pearl_value_after()
+        );
+        cx.notify();
+    }
+
+    /// Drop the stored plan without previewing it.
+    pub fn dismiss_clamworks_plan(&mut self, cx: &mut Context<Self>) {
+        self.clamworks_run.update(cx, |runner, _| runner.clear());
+        self.status = "Clamworks plan dismissed.".into();
+        cx.notify();
+    }
+
+    /// Go back to the saved upgrade levels after previewing a plan.
+    pub fn show_saved_clamworks_levels(&mut self, cx: &mut Context<Self>) {
+        if self.clamworks_projection.take().is_some() {
+            self.status = "Clamworks: showing the saved upgrade levels.".into();
+            cx.notify();
+        }
     }
 
     /// The cog optimizer's run: running, progress, result and staleness.

@@ -1,11 +1,11 @@
 //! The Clamworks overview: summary cards and the pearl value breakdown.
 
+use super::kpi;
 use crate::state::AppState;
 use crate::ui::format;
-use ely_gpui_component::data_display::{KpiCard, Statistic};
 use ely_gpui_component::forms::Stepper;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::{ActiveTheme as _, TextSize};
+use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
@@ -15,7 +15,7 @@ pub fn overview_pane(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let clamworks = state.clamworks.clone();
+    let clamworks = state.clamworks_view();
     let multikill = state.clamworks_multikill;
     let breakdown = clamworks.pearl_value_breakdown(multikill);
     let tree = state.clamworks_breakdown.clone();
@@ -178,24 +178,6 @@ pub fn overview_pane(
         .min_h_0()
         .child(body)
         .into_any_element()
-}
-
-/// One summary card: label, figure and a line of context.
-fn kpi(
-    id: &'static str,
-    label: &'static str,
-    value: f64,
-    decimals: usize,
-    suffix: Option<&'static str>,
-    caption: &str,
-) -> AnyElement {
-    let mut statistic = Statistic::new(id, label, value)
-        .decimals(decimals)
-        .size(TextSize::Xl);
-    if let Some(suffix) = suffix {
-        statistic = statistic.suffix(suffix);
-    }
-    KpiCard::new(statistic).caption(caption).into_any_element()
 }
 
 /// The shared formula tree, collapsed to a fixed height.

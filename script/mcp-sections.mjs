@@ -266,6 +266,31 @@ const cglunkoSave = ({ rows = true } = {}) => {
     OptLacc: JSON.stringify(options),
   });
 };
+/// A small flat `save.json` carrying the Clamworks rows: a pearl balance, nine
+/// upgrade levels, a worker-class level and a Scurge level, so the optimizer has
+/// a budget and the promotion tab has progress.
+const clamworksSave = () => {
+  const options = Array(470).fill(0);
+  options[454] = 5_000_000; // pearl balance
+  [120, 12, 30, 20, 40, 2, 8, 0, 0].forEach((level, index) => {
+    options[455 + index] = level;
+  });
+  options[464] = 4; // worker-class level
+  return JSON.stringify({
+    Research: '[]',
+    Lv0_0: JSON.stringify(Array(30).fill(0)),
+    OptLacc: JSON.stringify(options),
+    Menagerie: JSON.stringify([
+      [0, 0, 0, 0, 0, 0, 0, 0, 40],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0, 0, 0, 0, 0, 0],
+    ]),
+  });
+};
+
 /// A small flat `save.json` carrying two cauldrons of bubbles: one already
 /// Prisma-ed, one ready to add Prisma to, one unpurchased and one large bubble,
 /// so every status the plan knows is on screen.
@@ -1444,9 +1469,46 @@ const INTERACTIONS = {
     if (!empty.includes('DR ×1.00')) throw new Error(`cglunko: the empty summary reads ${empty}`);
   },
   clamworks: async (lane) => {
+    const importSave = async (text, ready, message) => {
+      await lane.call('click_element', { id: 'header-import' });
+      await waitForNode(lane, 'import-input', `${message}: the import dialog opens`);
+      await lane.call('click_element', { id: 'import-input' });
+      await lane.call('keyboard', { keystroke: 'secondary-a' });
+      await lane.call('type_text', { text });
+      await waitForNode(lane, 'import-format', `${message}: the save previews`);
+      await lane.call('click_element', { id: 'import-apply' });
+      await waitForNode(lane, ready, `${message}: ${ready} after Apply`);
+    };
+    await importSave(clamworksSave(), 'clamworks-overview', 'clamworks');
+    const summary = labelOf(await lane.tree(), 'clamworks-summary') ?? '';
+    if (!summary.includes('5.00M')) {
+      throw new Error(`clamworks: the imported balance reads ${summary}`);
+    }
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
+    // The optimizer spends the imported balance and the applied plan's levels
+    // take over the section until the saved levels are shown again.
+    await lane.call('click_element', { id: 'optimizer' });
+    await waitForNode(lane, 'clamworks-optimizer', 'clamworks: the optimizer tab opens');
+    await lane.call('click_element', { id: 'run-clamworks-plan' });
+    await waitForNode(lane, 'clamworks-plan-result', 'clamworks: the plan lists its purchases');
+    await lane.call('click_element', { id: 'apply-clamworks-plan' });
+    await waitForNode(
+      lane,
+      'clamworks-projection',
+      'clamworks: applying the plan previews its levels',
+    );
+    await lane.call('click_element', { id: 'promotion' });
+    await waitForNode(lane, 'clamworks-promotion-pane', 'clamworks: the promotion tab opens');
+    await waitFor(
+      lane,
+      (nodes) =>
+        Array.from({ length: 12 }, (_, index) => index + 1).every((level) =>
+          has(nodes, `clamworks-reward-${level}`),
+        ),
+      'clamworks: every worker-class reward is listed',
+    );
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'clamworks-overview', 'clamworks: the overview tab reopens');
   },

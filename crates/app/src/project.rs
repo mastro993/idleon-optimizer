@@ -132,12 +132,15 @@ impl Default for WorshipConfig {
     }
 }
 
-/// The Clamworks section's config: its tab and the entered multikill total.
+/// The Clamworks section's config: its tab, the entered multikill total and the
+/// plan's budget. A document written before the budget existed leaves the
+/// current budget alone rather than zeroing it.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ClamworksConfig {
     tab: ClamworksTab,
     multikill: f64,
+    budget: Option<f64>,
 }
 
 /// The Ladle section's config: its tab, selectors, panel inputs and the checked
@@ -287,6 +290,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         value(&ClamworksConfig {
             tab: state.clamworks_tab,
             multikill: state.clamworks_multikill,
+            budget: Some(state.clamworks_budget),
         }),
     );
     insert(
@@ -623,6 +627,13 @@ pub fn assign(
             } else {
                 0.0
             };
+            if let Some(budget) = config.budget {
+                state.clamworks_budget = if budget.is_finite() {
+                    budget.max(0.0)
+                } else {
+                    0.0
+                };
+            }
         }
         Config::Cog(config) => {
             state.cog.goal = config.goal;
@@ -972,9 +983,18 @@ mod tests {
         let clamworks = round_trip(&ClamworksConfig {
             tab: ClamworksTab::Upgrades,
             multikill: 7.0,
+            budget: Some(2_500_000.0),
         });
         assert_eq!(clamworks.tab, ClamworksTab::Upgrades);
         assert_eq!(clamworks.multikill, 7.0);
+        assert_eq!(clamworks.budget, Some(2_500_000.0));
+        let legacy: ClamworksConfig = serde_json::from_value(serde_json::json!({
+            "tab": "promotion",
+            "multikill": 7.0,
+        }))
+        .expect("a config without a budget still reads");
+        assert_eq!(legacy.tab, ClamworksTab::Promotion);
+        assert_eq!(legacy.budget, None);
         let cog = round_trip(&CogConfig {
             goal: CogGoal::Flaggy,
         });
