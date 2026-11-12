@@ -1,10 +1,12 @@
-//! The Jelly Operator section: the overview and the layout editor.
+//! The Jelly Operator section: the overview, the layout editor and the simulator.
 //!
 //! JO-01 ports the upstream page's Overview and Layout tabs: the save's board
 //! with every cell type placeable, the account snapshot and the seeded operation
-//! estimate with its outlook. The simulator (JO-02), upgrades and breakdowns
-//! (JO-03), section planner (JO-04) and coordinator optimizer (JO-05) are the
-//! later features on the same section and are not rendered here.
+//! estimate with its outlook. JO-02 adds the Simulator tab: a sandbox copy of
+//! the board with the stage, Fever, Stronkroid, revive policy, remove mode,
+//! board sections and one seeded operation through the shared task runner. The
+//! upgrades and breakdowns (JO-03), section planner (JO-04) and coordinator
+//! optimizer (JO-05) are the later features on the same section.
 //!
 //! The maths lives in `idleon_core::jelly`; this module owns the board on
 //! screen and the shared task runner's inputs.
@@ -14,6 +16,10 @@ mod grid;
 mod layout_editor;
 mod outlook;
 mod overview;
+mod simulator;
+
+pub use simulator::RunInputs as SimulatorRunInputs;
+pub use simulator::Simulator;
 
 use crate::state::AppState;
 use crate::ui::theme;
@@ -34,6 +40,7 @@ pub enum Tab {
     #[default]
     Overview,
     Layout,
+    Simulator,
 }
 
 impl Tab {
@@ -41,6 +48,7 @@ impl Tab {
         match self {
             Tab::Overview => "overview",
             Tab::Layout => "layout",
+            Tab::Simulator => "simulator",
         }
     }
 
@@ -48,6 +56,7 @@ impl Tab {
         match self {
             Tab::Overview => "Overview",
             Tab::Layout => "Layout",
+            Tab::Simulator => "Simulator",
         }
     }
 }
@@ -73,6 +82,8 @@ pub struct State {
     pub message: String,
     pub trials: u32,
     pub seed: u32,
+    /// The simulator tab's own sandbox board and knobs.
+    pub simulator: simulator::Simulator,
 }
 
 impl Default for State {
@@ -84,6 +95,7 @@ impl Default for State {
             message: String::new(),
             trials: 32,
             seed: 1,
+            simulator: simulator::Simulator::default(),
         }
     }
 }
@@ -94,6 +106,7 @@ impl State {
         self.layout = jelly.layout.clone();
         self.selected = 0;
         self.message = String::new();
+        self.simulator = simulator::Simulator::new(jelly);
     }
 
     /// Put the board back to the save's own layout.
@@ -151,7 +164,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     let entity = cx.entity();
     let active = state.jelly_state.tab;
     let tabs = div().id("jelly-tabs").flex().flex_none().gap_2().children(
-        [Tab::Overview, Tab::Layout].map(|tab| {
+        [Tab::Overview, Tab::Layout, Tab::Simulator].map(|tab| {
             let entity = entity.clone();
             Button::new(format!("jelly-tab-{}", tab.id()), tab.label())
                 .variant(if tab == active {
@@ -170,6 +183,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     let body = match state.jelly_state.tab {
         Tab::Overview => overview::overview(state, window, cx, &jelly),
         Tab::Layout => layout_editor::layout_editor(state, window, cx, &jelly),
+        Tab::Simulator => simulator::pane(state, window, cx, &jelly),
     };
     div()
         .id("jelly-operator")

@@ -4,7 +4,9 @@
 //! slots, the footprint joins, the cell sprites placed over their footprint
 //! area and the obstruction sprite the page draws at column 7, row 3. Slots are
 //! buttons, so a click places the picked palette cell or removes the cell under
-//! the pointer.
+//! the pointer. The layout tab and the simulator share the board and its
+//! palette; only the unlocked slots, the obstruction and the click handler
+//! differ.
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image_sized;
@@ -16,6 +18,14 @@ use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Role, Styled, 
 use idleon_core::jelly::PROXIMITY_ANCHORS;
 use idleon_core::jelly::board::{self, Layout};
 use idleon_core::jelly::data;
+
+/// Where a board click goes: the layout tab's editable save board or the
+/// simulator's sandbox.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BoardAction {
+    Layout,
+    Simulator,
+}
 
 /// The page's cell pitch and grid padding, in pixels (`JELLY_CELL_PITCH`).
 const PITCH: f32 = 37.0;
@@ -46,19 +56,34 @@ const CELL_COLORS: [(&str, &str); 8] = [
     ("#687080", "#e9fcff"),
 ];
 
+/// What one board view draws: the layout, its sandbox terms and where a click
+/// goes. `prefix` names its elements (`<prefix>-board`, `<prefix>-slot-…`), so
+/// the layout editor and the simulator never collide.
+pub struct BoardView<'a> {
+    pub prefix: &'static str,
+    pub layout: &'a Layout,
+    pub unlocked: &'a [bool],
+    pub obstruction: usize,
+    pub selected: Option<usize>,
+    pub action: BoardAction,
+}
+
 /// The board with its cells, clickable slots and obstruction sprite.
-pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(jelly) = state.jelly.as_ref() else {
-        return div().into_any_element();
-    };
+pub fn board(state: &AppState, view: BoardView<'_>, cx: &mut Context<AppState>) -> AnyElement {
+    let BoardView {
+        prefix,
+        layout,
+        unlocked,
+        obstruction,
+        selected,
+        action,
+    } = view;
     let data = data();
-    let unlocked = board::unlocked_slots(jelly);
     let occupied = board::occupancy(layout);
     let colors = &cx.theme().colors;
     let entity = cx.entity();
     let width = data.cols as f32 * PITCH + PADDING * 2.0;
     let height = data.rows as f32 * PITCH + PADDING * 2.0;
-    let selected = state.jelly_state.selected;
 
     let mut slots = Vec::with_capacity(data.size());
     for slot in 0..data.size() {
@@ -99,7 +124,7 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
         let entity = entity.clone();
         slots.push(
             div()
-                .id(("jelly-slot", slot))
+                .id(format!("{prefix}-slot-{slot}"))
                 .role(Role::Button)
                 .aria_label(aria.clone())
                 .absolute()
@@ -144,8 +169,9 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
                 .tooltip(Tooltip::text(hover))
                 .on_click(move |_event, _window, cx| {
                     let entity = entity.clone();
-                    entity.update(cx, |state, cx| {
-                        state.jelly_click_slot(slot, cx);
+                    entity.update(cx, |state, cx| match action {
+                        BoardAction::Layout => state.jelly_click_slot(slot, cx),
+                        BoardAction::Simulator => state.jelly_sim_click_slot(slot, cx),
                     });
                 })
                 .into_any_element(),
@@ -173,12 +199,12 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
         let top = PADDING + min_y as f32 * PITCH + (area_height - sprite_height) / 2.0;
         sprites.push(
             div()
-                .id(("jelly-sprite", *anchor))
+                .id(format!("{prefix}-sprite-{anchor}"))
                 .absolute()
                 .left(px(left))
                 .top(px(top))
                 .child(asset_image_sized(
-                    format!("jelly-sprite-image-{anchor}"),
+                    format!("{prefix}-sprite-image-{anchor}"),
                     &state.assets,
                     &format!("jelly-operator/JellyUnit{cell_type}.png"),
                     px(sprite_width),
@@ -188,14 +214,14 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
                 .into_any_element(),
         );
     }
-    let obstruction = jelly.progress.obstruction.min(71);
+    let obstruction = obstruction.min(71);
     let obstruction_name = data
         .reward(obstruction)
         .map(|reward| reward.name.clone())
         .unwrap_or_else(|| format!("Obstruction {}", obstruction + 1));
     sprites.push(
         div()
-            .id("jelly-obstruction-sprite")
+            .id(format!("{prefix}-obstruction-sprite"))
             .absolute()
             .left(px(PADDING
                 + 7.0 * PITCH
@@ -205,7 +231,7 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
                 + (4.0 * PITCH - OBSTRUCTION_SIZE) / 2.0))
             .tooltip(Tooltip::text(obstruction_name))
             .child(asset_image_sized(
-                "jelly-obstruction-image",
+                format!("{prefix}-obstruction-image"),
                 &state.assets,
                 &format!("jelly-operator/JellyOp{obstruction}.png"),
                 px(OBSTRUCTION_SIZE),
@@ -216,13 +242,13 @@ pub fn board(state: &AppState, layout: &Layout, cx: &mut Context<AppState>) -> A
     );
 
     div()
-        .id("jelly-board")
+        .id(format!("{prefix}-board"))
         .role(Role::Group)
         .aria_label(format!(
             "Jelly Operator board, {} cells, {} slots unlocked, palette pick {}",
             layout.len(),
             unlocked.iter().filter(|open| **open).count(),
-            data.cell_name(selected)
+            selected.map_or("remove mode", |cell_type| data.cell_name(cell_type))
         ))
         .relative()
         .flex_none()
@@ -268,4 +294,88 @@ pub fn legend(state: &AppState) -> AnyElement {
 pub fn cell_color(cell_type: usize) -> (Hsla, Hsla) {
     let (background, border) = CELL_COLORS[cell_type.min(7)];
     (format::hex(background), format::hex(border))
+}
+
+/// The eight cell types, with the ones the save has not unlocked disabled.
+///
+/// The layout tab and the simulator place the same cells, so they share one
+/// builder; `prefix` names its buttons (`<prefix>-<type>`).
+pub fn palette(
+    state: &AppState,
+    owned: usize,
+    selected: Option<usize>,
+    prefix: &'static str,
+    cx: &mut Context<AppState>,
+    on_pick: impl Fn(usize, &mut AppState, &mut Context<AppState>) + Clone + 'static,
+) -> AnyElement {
+    let data = data();
+    let entity = cx.entity();
+    let buttons = (0..8).map(|cell_type| {
+        let unlocked = cell_type < owned;
+        let (background, border) = cell_color(cell_type);
+        let entity = entity.clone();
+        let on_pick = on_pick.clone();
+        div()
+            .id((prefix, cell_type))
+            .role(Role::Button)
+            .aria_label(format!(
+                "{}{}",
+                data.cell_name(cell_type),
+                if unlocked { "" } else { ", locked" }
+            ))
+            .flex()
+            .items_center()
+            .gap_2()
+            .px_2()
+            .py_1()
+            .rounded(px(6.0))
+            .border_1()
+            .border_color(if selected == Some(cell_type) {
+                format::hex("#00d4ff")
+            } else {
+                border
+            })
+            .bg(background)
+            .when(!unlocked, |button| button.opacity(0.35))
+            .when(unlocked, |button| {
+                button.on_click(move |_event, _window, cx| {
+                    let entity = entity.clone();
+                    let on_pick = on_pick.clone();
+                    entity.update(cx, |state, cx| on_pick(cell_type, state, cx));
+                })
+            })
+            .child(asset_image_sized(
+                format!("{prefix}-image-{cell_type}"),
+                &state.assets,
+                &format!("jelly-operator/JellyUnit{cell_type}.png"),
+                px(30.0),
+                px(30.0),
+                cx,
+            ))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .child(
+                        div()
+                            .text_size(px(11.0))
+                            .font_weight(gpui::FontWeight::BOLD)
+                            .child(data.cell_name(cell_type).to_string()),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(9.0))
+                            .text_color(cx.theme().colors.fg_muted)
+                            .child(format!("{} slot(s)", data.footprint(cell_type).len())),
+                    ),
+            )
+            .into_any_element()
+    });
+    div()
+        .id(format!("{prefix}-choices"))
+        .flex()
+        .flex_wrap()
+        .gap_2()
+        .children(buttons)
+        .into_any_element()
 }

@@ -7,9 +7,11 @@
 mod common;
 
 use common::{close, close_opt, jelly};
+use idleon_core::jelly::OperationOptions;
 use idleon_core::jelly::Trial;
 use idleon_core::jelly::estimate::Estimate;
 use idleon_core::jelly::insights::Insights;
+use idleon_core::jelly::operation::{RevivePolicy, RoidTiming, simulate};
 use serde_json::Value;
 
 #[test]
@@ -225,6 +227,61 @@ fn estimate_matches_upstream() {
             );
         }
         compare_trial(&estimate.representative, &expected["representative"], name);
+    }
+}
+
+#[test]
+fn simulator_trials_match_upstream() {
+    for name in ["simulator", "simulator-empty"] {
+        let (jelly, case) = jelly(name);
+        let expected = &case["simulation"];
+        let trial = simulate(
+            &jelly,
+            &jelly.layout,
+            simulation_options(&jelly, &case["simulationOptions"]),
+        );
+        assert_eq!(
+            trial.valid,
+            expected["valid"].as_bool().unwrap(),
+            "{name}: valid"
+        );
+        compare_trial(&trial, &expected["trial"], name);
+    }
+}
+
+/// The simulator's knobs as the oracle wrote them: Stronkroid's activation
+/// second and the automatic revive policy, on the sandbox's own stage and Fever.
+fn simulation_options(jelly: &idleon_core::jelly::Jelly, value: &Value) -> OperationOptions {
+    let roid_timing = if value["useRoid"].as_bool() == Some(false) {
+        RoidTiming::Never
+    } else {
+        match &value["roidTiming"] {
+            Value::Number(seconds) => RoidTiming::At(seconds.as_f64().unwrap()),
+            Value::String(mode) => match mode.as_str() {
+                "none" => RoidTiming::Never,
+                "immediate" => RoidTiming::Immediate,
+                "five-seconds" => RoidTiming::FiveSeconds,
+                "critical" => RoidTiming::Critical,
+                other => panic!("unknown roid timing {other}"),
+            },
+            other => panic!("unknown roid timing {other}"),
+        }
+    };
+    let revive_policy = match value["revivePolicy"].as_str() {
+        Some("none") => RevivePolicy::None,
+        None | Some("immunoid-first") => RevivePolicy::ImmunoidFirst,
+        Some("anchor-first") => RevivePolicy::AnchorFirst,
+        Some("dps-first") => RevivePolicy::DpsFirst,
+        Some("soak-first") => RevivePolicy::SoakFirst,
+        Some(other) => panic!("unknown revive policy {other}"),
+    };
+    OperationOptions {
+        obstruction: Some(jelly.progress.obstruction),
+        fever: Some(jelly.progress.fever),
+        seed: value["seed"].as_u64().unwrap() as u32,
+        roid_timing,
+        revive_policy,
+        max_critical_seconds: None,
     }
 }
 

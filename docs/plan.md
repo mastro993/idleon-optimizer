@@ -1,13 +1,13 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks,
-the Cglunko overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal
-Optimizer's current state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking
-controls and depth estimates, the Sneaking loadout and inventory workspaces, the combat
-simulator's loadout editor and mechanics overrides, the cog board optimizer, the Clamworks
-optimizer, the Jelly Operator overview and layout editor, the drop-rate inputs and dungeon total
-partial, sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument Bravery
-and Wisdom, the All Stats context and breakdowns built, 2 sections planned.** The live breakdown is
+Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks, the Cglunko
+overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's
+current state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and
+depth estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout
+editor and mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator
+overview, layout editor and operation simulator, the drop-rate inputs and dungeon total partial,
+sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument Bravery and Wisdom,
+the All Stats context and breakdowns built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -599,26 +599,34 @@ upstream module, with a model whose account multipliers are neutral so every rat
 the Blue Jellyfish donation planner with its task runner (LD-04) stay on the roadmap.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
-The Jelly Operator section implements JO-01: the overview and the layout editor. The section decodes
-the save's own board (`Research[14]`), its progress row, the cell EXP and levels, the upgrade levels
-and the plot tokens, then reads the account systems the page multiplies (research grid nodes 185-187,
-Spelunking palette 1, Legend Talent 41, the Bloodclot artifact, arcade 72, Atom 15, the `ban_j`
-bundle, event shop 56/57, Sushi's `rogBonusQty(63)` and Menagerie's Upgrade Doubler row). The layout
-tab draws the 18×10 board with the upstream cell and obstruction sprites, the legend, the placement
-rules (`jellyValidateLayout`, `jellyPlaceCell`, `jellyRemoveCell`) and a palette that places every
-cell type the save unlocked; a click on a placed cell removes it and Reset restores the saved board.
-The overview shows the account snapshot and runs the seeded operation estimate through the shared
-task runner: `simulateJellyOperation` ported frame for frame (projectiles, the one-second Best DPS
-callback, Fever, Stronkroid, boss attacks and revives), its Monte Carlo aggregate, the cell
-contribution table, the critical target timeline and the progression outlook, whose obstruction rows
-come from the deterministic surrogate. `script/extract-jelly-data.mjs` writes the cell, plot and
-upgrade tables; `script/jelly-oracle.mjs` regenerates `fixtures/jelly.json` from the upstream JS for
-the committed save and three documented overrides, and `crates/core/tests/jelly.rs` compares the
-state, the multipliers, the layout metrics, the estimate and the outlook field for field. The
-interactive simulator (JO-02), the upgrades, bonuses and breakdowns (JO-03), the section planner
-(JO-04) and the coordinator optimizer (JO-05) stay on the roadmap. The upstream page's shape overrides
-for grid nodes 185 and 187 are not ported: they correct a save-export timing bug from the page's own
-local storage, and this app reads the save's shape overlay. Details:
+The Jelly Operator section implements JO-01 and JO-02: the overview, the layout editor and the
+operation simulator. The section decodes the save's own board (`Research[14]`), its progress row,
+the cell EXP and levels, the upgrade levels and the plot tokens, then reads the account systems the
+page multiplies (research grid nodes 185-187, Spelunking palette 1, Legend Talent 41, the Bloodclot
+artifact, arcade 72, Atom 15, the `ban_j` bundle, event shop 56/57, Sushi's `rogBonusQty(63)` and
+Menagerie's Upgrade Doubler row). The layout tab draws the 18×10 board with the upstream cell and
+obstruction sprites, the legend, the placement rules (`jellyValidateLayout`, `jellyPlaceCell`,
+`jellyRemoveCell`) and a palette that places every cell type the save unlocked; a click on a placed
+cell removes it and Reset restores the saved board. The overview shows the account snapshot and runs
+the seeded operation estimate through the shared task runner: `simulateJellyOperation` ported frame
+for frame (projectiles, the one-second Best DPS callback, Fever, Stronkroid, boss attacks and
+revives), its Monte Carlo aggregate, the cell contribution table, the critical target timeline and
+the progression outlook, whose obstruction rows come from the deterministic surrogate.
+`script/extract-jelly-data.mjs` writes the cell, plot and upgrade tables; `script/jelly-oracle.mjs`
+regenerates `fixtures/jelly.json` from the upstream JS for the committed save and three documented
+overrides, and `crates/core/tests/jelly.rs` compares the state, the multipliers, the layout metrics,
+the estimate and the outlook field for field. The simulator tab is a sandbox copy of the same slice:
+the stage and Fever selects, Stronkroid's activation second, the automatic revive policy, the seeded
+single operation through the shared task runner, the palette with remove mode, Clear cells and Reset
+from save, and hypothetical board sections that reflow the board through `board::normalize` (the
+page's `normalizeSimulatorLayout`). A run shows the outcome cards, the per-cell contribution table
+and the critical target timeline. `script/jelly-oracle.mjs` also writes two seeded single operations
+(Stronkroid at 5s with `dps-first` revives, and an empty sandbox board), and
+`crates/core/tests/jelly-estimate.rs` compares every trial field. The upgrades, bonuses and
+breakdowns (JO-03), the section planner (JO-04) and the coordinator optimizer (JO-05) stay on the
+roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
+a save-export timing bug from the page's own local storage, and this app reads the save's shape
+overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).
 
 The Coral God Rank section implements CR-01, CR-02 and CR-03: the upstream planner controls with
