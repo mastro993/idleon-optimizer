@@ -1,0 +1,3270 @@
+{
+  "source": "purpose-built save in script/farming-oracle.mjs",
+  "modules": [
+    "farming-calc.html",
+    "js/stats/data/w5/farming.js",
+    "js/stats/systems/w6/farming-planner.js"
+  ],
+  "save": {
+    "Research": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+    "FarmPlot": "[[0,1000,2,0,1,0,0],[1,0,4,0,3,1,0],[3,12000,5,0,2,0,0],[6,0,0,0,1,4,0],[2,0,1,1,1,2,0],[5,0,60,0,4,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0],[-1,0,0,0,0,0,0]]",
+    "FarmRank": "[[40,60,90,110,150,180,220,260,300,240,300,350,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[50,30,40,25,1,30,40,35,20,1,45,30,25,20,1,50,40,30,35,1]]",
+    "FarmUpg": "[0,0,10,4,0,2,3,0,0,5,0,3,4,2,0,1,3,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+    "FarmCrop": "{\"0\":150000,\"1\":3000,\"2\":1200,\"3\":500,\"21\":2500,\"25\":60,\"46\":1200,\"66\":11000,\"84\":250,\"107\":100,\"167\":45,\"230\":5}",
+    "Spelunk": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[5],[],[],[],[],[],[],[],[],[]]",
+    "GemItemsPurchased": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0]",
+    "Lv0_0": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,60,0,0,0,0,0,0,0]"
+  },
+  "snapshot": {
+    "growthRate": 1.072,
+    "nextCropCommon": 30644.899007650838,
+    "overgrowthCommon": 11.189429211142931,
+    "farmingExp": 3.2984056572569145,
+    "cropValueCap": 10000,
+    "productBonus": 0,
+    "expectedVines": 1.48,
+    "plotRankDisplay": 1.15,
+    "cropCounts": [
+      8,
+      6,
+      4,
+      2,
+      1
+    ],
+    "rankBonuses": [
+      163.6573007830493,
+      2.320958083832335,
+      14.183632734530939,
+      243.14798973481606,
+      2.0023952095808384,
+      41.77724550898204,
+      113.46906187624751,
+      62.16131215829211,
+      34.040718562874254,
+      10.011976047904191,
+      1838.1988023952094,
+      157.82514970059879,
+      44.57713145138295,
+      177.01173652694612,
+      20.023952095808383,
+      26185.168125287888,
+      124.81596806387226,
+      278.5149700598802,
+      777.0164019786514,
+      5.005988023952096
+    ],
+    "rankEvolution": 17481.976781223646,
+    "rankCropValue": 312.5556886227545,
+    "rankXp": 290.4807984031936,
+    "rankOvergrowth": 997.0028638375422,
+    "rankFarmingExp": 211.17034502423724,
+    "totalLandRank": 2300,
+    "pointsLeft": 1751,
+    "fifthColumnMax": 1
+  },
+  "plans": [
+    {
+      "objective": "rankXp",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 230,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": false
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 230,
+            "targetFamilyId": 6,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1751,
+        "pointsUnused": 0,
+        "initialScore": 0.3704810197134609,
+        "finalScore": 2.891780509145964,
+        "relativeGain": 6.8054754637161645,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          30,
+          805,
+          25,
+          1,
+          30,
+          382,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          664,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "changes": [
+          {
+            "id": 2,
+            "before": 40,
+            "after": 805,
+            "delta": 765
+          },
+          {
+            "id": 13,
+            "before": 20,
+            "after": 664,
+            "delta": 644
+          },
+          {
+            "id": 6,
+            "before": 40,
+            "after": 382,
+            "delta": 342
+          }
+        ]
+      }
+    },
+    {
+      "objective": "farmingExp",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 167,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": false
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1751,
+        "pointsUnused": 0,
+        "initialScore": 84420.09001348841,
+        "finalScore": 199613.8364878101,
+        "relativeGain": 1.3645300124166693,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          488,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          549,
+          20,
+          1,
+          50,
+          809,
+          30,
+          35,
+          1
+        ],
+        "changes": [
+          {
+            "id": 16,
+            "before": 40,
+            "after": 809,
+            "delta": 769
+          },
+          {
+            "id": 12,
+            "before": 25,
+            "after": 549,
+            "delta": 524
+          },
+          {
+            "id": 5,
+            "before": 30,
+            "after": 488,
+            "delta": 458
+          }
+        ]
+      }
+    },
+    {
+      "objective": "evolution",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 239,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 239,
+            "targetFamilyId": 6,
+            "targetEvolution": 9,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1751,
+        "pointsUnused": 0,
+        "initialScore": 3.2757034162194016e-17,
+        "finalScore": 1.0631521654461838e-15,
+        "relativeGain": 31.455690590975514,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          488,
+          30,
+          40,
+          461,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          483,
+          30,
+          25,
+          20,
+          1,
+          489,
+          40,
+          30,
+          35,
+          1
+        ],
+        "changes": [
+          {
+            "id": 15,
+            "before": 50,
+            "after": 489,
+            "delta": 439
+          },
+          {
+            "id": 0,
+            "before": 50,
+            "after": 488,
+            "delta": 438
+          },
+          {
+            "id": 10,
+            "before": 45,
+            "after": 483,
+            "delta": 438
+          },
+          {
+            "id": 3,
+            "before": 25,
+            "after": 461,
+            "delta": 436
+          }
+        ]
+      }
+    },
+    {
+      "objective": "overgrowth",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 0,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1751,
+        "pointsUnused": 0,
+        "initialScore": 0.00059289201761169,
+        "finalScore": 0.001693704120498491,
+        "relativeGain": 1.856682279719558,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          256,
+          20,
+          1,
+          45,
+          486,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          1109,
+          1
+        ],
+        "changes": [
+          {
+            "id": 18,
+            "before": 35,
+            "after": 1109,
+            "delta": 1074
+          },
+          {
+            "id": 11,
+            "before": 30,
+            "after": 486,
+            "delta": 456
+          },
+          {
+            "id": 7,
+            "before": 35,
+            "after": 256,
+            "delta": 221
+          }
+        ]
+      }
+    },
+    {
+      "objective": "cropValue",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 0,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1,
+        "pointsUnused": 1750,
+        "initialScore": 0.020896335488928088,
+        "finalScore": 0.020910844496701293,
+        "relativeGain": 0.0006943326393706872,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          31,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "changes": [
+          {
+            "id": 1,
+            "before": 30,
+            "after": 31,
+            "delta": 1
+          }
+        ]
+      }
+    },
+    {
+      "objective": "beans",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 167,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": false
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 1,
+        "pointsUnused": 1750,
+        "initialScore": 6.4949923903793145,
+        "finalScore": 6.638463047004275,
+        "relativeGain": 0.022089426438355098,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          31,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "changes": [
+          {
+            "id": 1,
+            "before": 30,
+            "after": 31,
+            "delta": 1
+          }
+        ]
+      }
+    },
+    {
+      "objective": "growth",
+      "mode": "unspent",
+      "assignment": {
+        "targetCropId": 0,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 0,
+            "targetFamilyId": 0,
+            "targetEvolution": 0,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 1751,
+        "pointsSpent": 0,
+        "pointsUnused": 1751,
+        "initialScore": 0.0002287040303089686,
+        "finalScore": 0.0002287040303089686,
+        "relativeGain": 0,
+        "initialLevels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "levels": [
+          50,
+          30,
+          40,
+          25,
+          1,
+          30,
+          40,
+          35,
+          20,
+          1,
+          45,
+          30,
+          25,
+          20,
+          1,
+          50,
+          40,
+          30,
+          35,
+          1
+        ],
+        "changes": []
+      }
+    },
+    {
+      "objective": "farmingExp",
+      "mode": "reset",
+      "assignment": {
+        "targetCropId": 167,
+        "rows": [
+          {
+            "plot": 0,
+            "currentCropId": 2,
+            "currentFamilyId": 0,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 1,
+            "currentCropId": 25,
+            "currentFamilyId": 1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 2,
+            "currentCropId": 66,
+            "currentFamilyId": 3,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 3,
+            "currentCropId": 230,
+            "currentFamilyId": 6,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 4,
+            "currentCropId": 47,
+            "currentFamilyId": 2,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 5,
+            "currentCropId": 167,
+            "currentFamilyId": 5,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": false
+          },
+          {
+            "plot": 6,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 7,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 8,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 9,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 10,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 11,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 12,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 13,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 14,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 15,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 16,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 17,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 18,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 19,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 20,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 21,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 22,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 23,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 24,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 25,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 26,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 27,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 28,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 29,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 30,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 31,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 32,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 33,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 34,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          },
+          {
+            "plot": 35,
+            "currentCropId": -1,
+            "currentFamilyId": -1,
+            "targetCropId": 167,
+            "targetFamilyId": 5,
+            "targetEvolution": 60,
+            "changeNeeded": true
+          }
+        ]
+      },
+      "allocation": {
+        "pointsAvailable": 2300,
+        "pointsSpent": 2300,
+        "pointsUnused": 0,
+        "initialScore": 27129.86355011204,
+        "finalScore": 203448.7517600819,
+        "relativeGain": 6.4990702177431965,
+        "initialLevels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "levels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          612,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          685,
+          0,
+          0,
+          0,
+          1003,
+          0,
+          0,
+          0
+        ],
+        "changes": [
+          {
+            "id": 16,
+            "before": 0,
+            "after": 1003,
+            "delta": 1003
+          },
+          {
+            "id": 12,
+            "before": 0,
+            "after": 685,
+            "delta": 685
+          },
+          {
+            "id": 5,
+            "before": 0,
+            "after": 612,
+            "delta": 612
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -123,6 +123,33 @@ const jarSave = () => {
   return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
 };
 
+/// A small flat save for the Farming planner: six planted plots across the
+/// families, one evolution-blocked, Land Rank ranks that unlock the allocation's
+/// candidate rows and leave points unspent, night market 5 unlocking Land Rank
+/// XP, and twelve discovered crops so the assignment has candidates.
+const farmingSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const plots = Array.from({ length: 36 }, () => [-1, 0, 0, 0, 0, 0, 0]);
+  plots[0] = [0, 1000, 2, 0, 1, 0, 0];
+  plots[1] = [1, 0, 4, 0, 3, 1, 0];
+  plots[2] = [3, 12000, 5, 0, 2, 0, 0];
+  plots[3] = [6, 0, 0, 0, 1, 4, 0];
+  plots[4] = [2, 0, 1, 1, 1, 2, 0];
+  plots[5] = [5, 0, 60, 0, 4, 0, 0];
+  const ranks = row(36, {
+    0: 10, 1: 20, 2: 30, 3: 40, 4: 50, 5: 60, 6: 70,
+    7: 80, 8: 90, 9: 100, 10: 110, 11: 120,
+  });
+  return JSON.stringify({
+    Research: '[]',
+    FarmPlot: JSON.stringify(plots),
+    FarmRank: JSON.stringify([ranks, row(36), row(20)]),
+    FarmUpg: JSON.stringify(row(100, { 15: 1 })),
+    FarmCrop: JSON.stringify({ 0: 150000, 1: 3000, 2: 1200, 3: 500, 21: 2500, 66: 11000, 230: 5 }),
+    Lv0_0: JSON.stringify(row(24, { 16: 60 })),
+  });
+};
+
 /// A small flat save carrying the three Monument rows Bravery reads: 600 saved
 /// training hours and two unlocked milestones, so the run-state odds have a
 /// damage range for a boost stack to move.
@@ -586,6 +613,50 @@ const INTERACTIONS = {
       (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
       'farming: the plot selection survives the dashboard round-trip'
     );
+
+    // The assignment and the allocator need a real field.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'farming: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: farmingSave() });
+    await waitForNode(lane, 'import-format', 'farming: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'farming-assignment') ?? '') === 'Plot assignment: Land Rank XP' &&
+        (labelOf(nodes, 'farming-assignment-summary') ?? '').includes('of 36 plots differ'),
+      'farming: the loaded field is assigned for the objective'
+    );
+
+    // Switching the objective re-plans the assignment.
+    await lane.call('focus_element', { id: 'farming-objective' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'farming-assignment') ?? '') === 'Plot assignment: Farming EXP',
+      'farming: the objective selector re-plans the assignment'
+    );
+
+    // The allocator runs off the UI thread and reports its plan.
+    await lane.call('click_element', { id: 'farming-run' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const gain = labelOf(nodes, 'farming-allocation-gain') ?? '';
+        return gain.startsWith('Projected gain:') && has(nodes, 'farming-allocation-rows');
+      },
+      'farming: the allocation renders its plan'
+    );
+    const summary = labelOf(await lane.tree(), 'farming-allocation-summary') ?? '';
+    if (!/\d+ of \d+ points assigned/.test(summary)) {
+      throw new Error(`farming: the allocation summary reads ${summary}`);
+    }
+    // A different scope makes the stored allocation stale, not wrong.
+    await lane.call('click_element', { id: 'farming-mode-reset' });
+    await waitForNode(lane, 'farming-stale', 'farming: the scope change marks the result stale');
   },
   fishing: async (lane) => {
     const importSave = async (text, ready, message) => {

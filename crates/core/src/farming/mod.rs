@@ -203,13 +203,18 @@ impl Farm {
 }
 
 mod account;
+mod allocation;
+mod assignment;
 mod plot;
 
 pub use account::{RankTotals, Snapshot};
+pub use allocation::{Allocation, Mode};
+pub use assignment::{Assignment, CropRow, Objective};
 pub use plot::{CropValue, PlotMetrics, land_rank_requirement, overgrowth_multiplier};
 
 #[cfg(test)]
 mod tests {
+    use super::assignment::crop_weight;
     use super::*;
 
     fn plot(family: i64, evolution: u32) -> Plot {
@@ -348,5 +353,52 @@ mod tests {
         farm.market_levels[10 + 3] = 2.0;
         assert!((farm.basket_upgrade(1, 3) - 1.02).abs() < 1e-12);
         assert_eq!(farm.basket_upgrade(2, 0), 0.0);
+    }
+
+    #[test]
+    fn the_objectives_and_modes_round_trip_their_upstream_ids() {
+        for objective in Objective::ALL {
+            assert_eq!(Objective::from_id(objective.id()), Some(objective));
+        }
+        assert_eq!(Objective::from_id("nope"), None);
+        assert_eq!(Objective::default(), Objective::RankXp);
+        for mode in Mode::ALL {
+            assert_eq!(Mode::from_id(mode.id()), Some(mode));
+        }
+        assert_eq!(Mode::default(), Mode::Unspent);
+    }
+
+    #[test]
+    fn bean_weight_grows_with_the_family_and_the_crop() {
+        assert!((crop_weight(0) - 1.0).abs() < 1e-12);
+        // Each family starts its own scale at 1 and multiplies by 2.5.
+        assert!((crop_weight(21) - 2.5).abs() < 1e-12);
+        assert!(crop_weight(1) > crop_weight(0));
+        assert!(crop_weight(45) > crop_weight(44));
+        assert!(crop_weight(230) > crop_weight(21));
+        assert_eq!(crop_weight(330), 0.0);
+    }
+
+    #[test]
+    fn the_growth_cycle_keeps_at_least_one_second() {
+        let farm = Farm::default();
+        let mut snapshot = farm.snapshot();
+        let plot = plot(0, 0);
+        snapshot.growth_rate = 1e9;
+        assert_eq!(farm.growth_cycle_seconds(&plot, &snapshot), 1.0);
+        snapshot.growth_rate = 1.0;
+        assert_eq!(farm.growth_cycle_seconds(&plot, &snapshot), 14_400.0);
+        assert!(
+            farm.growth_cycle_seconds(&Plot::default(), &snapshot)
+                .is_infinite()
+        );
+    }
+
+    #[test]
+    fn a_default_assignment_targets_nothing() {
+        let assignment = Assignment::default();
+        assert_eq!(assignment.rows.len(), PLOTS);
+        assert_eq!(assignment.changes(), 0);
+        assert!(assignment.rows.iter().all(|row| row.target_crop == -1));
     }
 }

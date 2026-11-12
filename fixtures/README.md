@@ -38,3 +38,10 @@ eight God Ranks. Regenerate it with
 `node script/coral-god-rank-oracle.mjs <upstream-repo>`; `crates/core/tests/coral_plan.rs` compares
 the port action by action. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
+
+`farming.json` is the upstream Farming planner's own output for one purpose-built save: the
+account snapshot, the plot assignment for all seven objectives and the Land Rank allocation in both
+modes, with the points, scores, levels and change list. Regenerate it with
+`node script/farming-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_planner.rs` compares
+the port field for field. Treat it as frozen for the same reason: it is the oracle's output, not
+this app's.

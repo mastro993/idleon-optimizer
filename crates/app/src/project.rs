@@ -517,7 +517,12 @@ pub fn assign(
             state.farming = FarmingState {
                 selected_plot: config.selected_plot.min(idleon_core::farming::PLOTS - 1),
                 target_crop: config.target_crop,
+                objective: config.objective,
+                mode: config.mode,
+                ..FarmingState::default()
             };
+            // The assignment follows the farm this document already carries.
+            state.farming.adopt(&state.farm);
         }
         Config::Combat(config) => {
             state.combat.tab = config.tab;
@@ -922,9 +927,14 @@ mod tests {
         let farming = round_trip(&FarmingState {
             selected_plot: 5,
             target_crop: 12,
+            objective: idleon_core::farming::Objective::Beans,
+            mode: idleon_core::farming::Mode::Reset,
+            ..FarmingState::default()
         });
         assert_eq!(farming.selected_plot, 5);
         assert_eq!(farming.target_crop, 12);
+        assert_eq!(farming.objective, idleon_core::farming::Objective::Beans);
+        assert_eq!(farming.mode, idleon_core::farming::Mode::Reset);
         let monument = round_trip(&MonumentState {
             tab: crate::sections::monument::Tab::Sources,
             wave: 42,
