@@ -6,6 +6,7 @@ use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::endgame;
+use crate::sections::farming::RunInputs as FarmingRunInputs;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
@@ -35,7 +36,7 @@ use idleon_core::cog::{
 };
 use idleon_core::cooking_mastery::Mastery;
 use idleon_core::coral::{Inputs as CoralInputs, Plan as CoralPlan};
-use idleon_core::farming::Farm;
+use idleon_core::farming::{Allocation as FarmingOutcome, Farm, Mode, Objective};
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
 use idleon_core::killroy::Plan as KillroyPlan;
@@ -251,6 +252,8 @@ pub struct AppState {
     pub(crate) worship_optimize: Entity<TaskRunner<SearchOutcome, OptimizeRunInputs>>,
     /// The shared runner for the Prisma bubble search.
     prisma_run: Entity<TaskRunner<PrismaOutcome, PrismaRunInputs>>,
+    /// The shared runner for the Land Rank allocation.
+    farming_run: Entity<TaskRunner<FarmingOutcome, FarmingRunInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub breakdown: Entity<ui::formula::FormulaTree>,
     /// The research dashboard's four breakdown trees.
@@ -283,6 +286,7 @@ pub struct AppState {
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
     _prisma_run_subscription: Subscription,
+    _farming_run_subscription: Subscription,
     _session_subscription: Option<Subscription>,
     _session_release_subscription: Option<Subscription>,
     _session_save_pending: bool,
@@ -587,6 +591,36 @@ impl AppState {
                 cx.notify();
             });
         let breakdown = cx.new(|cx| ui::formula::FormulaTree::new("formula", window, cx));
+        // The Land Rank allocator streams its points through the same runner,
+        // so progress, cancel and the stale marker read like every other run.
+        let farming_run = cx.new(|_| TaskRunner::<FarmingOutcome, FarmingRunInputs>::new());
+        let farming_run_subscription =
+            cx.subscribe(&farming_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status =
+                            format!("Allocating Land Rank… {:.0}%", progress.fraction * 100.0);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Land Rank allocation cancelled; the previous result is unchanged."
+                                .into()
+                        } else {
+                            "Land Rank allocation cancelled; nothing was assigned.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(result) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Allocated {} Land Rank point(s) for {}.",
+                                result.points_spent,
+                                result.objective.label()
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         let research_trees = crate::sections::research::Trees::new(window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
         let ladle_state = LadleSectionState::new(window, cx);
@@ -663,6 +697,7 @@ impl AppState {
             worship_plan,
             worship_optimize,
             prisma_run,
+            farming_run,
             breakdown,
             research_trees,
             cglunko_breakdown,
@@ -686,6 +721,7 @@ impl AppState {
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
             _prisma_run_subscription: prisma_run_subscription,
+            _farming_run_subscription: farming_run_subscription,
             _session_subscription: None,
             _session_release_subscription: None,
             _session_save_pending: false,
@@ -1004,6 +1040,7 @@ impl AppState {
         self.fleet = imported.fleet;
         self.sailing = imported.sailing;
         self.farm = imported.farming;
+        self.farming.adopt(&self.farm);
         self.cog.load(imported.cog);
         self.cglunko = imported.cglunko;
         self.clamworks = imported.clamworks;
@@ -1279,7 +1316,71 @@ impl AppState {
     /// Aim the later evolution features at a crop id, clamped to the families.
     pub fn set_target_crop(&mut self, value: f64, cx: &mut Context<Self>) {
         self.farming.set_target_crop(value);
+        self.farming.adopt(&self.farm);
         cx.notify();
+    }
+
+    /// The inputs a Land Rank allocation started now would use.
+    pub fn farming_inputs(&self) -> FarmingRunInputs {
+        FarmingRunInputs {
+            save_revision: self.save_revision,
+            objective: self.farming.objective,
+            mode: self.farming.mode,
+            target_crop: self.farming.target_crop,
+        }
+    }
+
+    /// The allocation run: running, progress, result and staleness.
+    pub fn farming_task(&self, cx: &App) -> TaskState<FarmingOutcome> {
+        self.farming_run.read(cx).state(&self.farming_inputs())
+    }
+
+    /// Plan the assignment and the allocation for another objective.
+    pub fn set_farming_objective(&mut self, objective: Objective, cx: &mut Context<Self>) {
+        self.farming.set_objective(objective);
+        self.farming.adopt(&self.farm);
+        self.status = format!("Farming objective: {}.", objective.label());
+        cx.notify();
+    }
+
+    /// Keep the saved Land Rank levels, or reallocate every point.
+    pub fn set_farming_mode(&mut self, mode: Mode, cx: &mut Context<Self>) {
+        self.farming.set_mode(mode);
+        self.status = format!("Land Rank allocation: {}.", mode.label());
+        cx.notify();
+    }
+
+    /// Spend the account's Land Rank points off the UI thread.
+    pub fn run_farming(&mut self, cx: &mut Context<Self>) {
+        if !self.save_loaded {
+            self.status = "Import a save to allocate Land Rank.".into();
+            cx.notify();
+            return;
+        }
+        let inputs = self.farming_inputs();
+        let farm = self.farm.clone();
+        let (objective, mode, target) = (
+            self.farming.objective,
+            self.farming.mode,
+            Some(self.farming.target_crop),
+        );
+        let started = self.farming_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_inputs, report| {
+                farm.allocation(objective, mode, target, report)
+            })
+        });
+        if started {
+            self.status = "Allocating Land Rank…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running allocation to stop; the previous result stays.
+    pub fn cancel_farming(&mut self, cx: &mut Context<Self>) {
+        if self.farming_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Land Rank allocation…".into();
+            cx.notify();
+        }
     }
 
     /// Current research EXP per hour.

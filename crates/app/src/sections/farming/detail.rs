@@ -164,6 +164,26 @@ pub(super) fn detail_pane(
                         muted,
                         accent,
                     ))
+                    .child(stat_row(
+                        "plot-target",
+                        "Goal target",
+                        state
+                            .farming
+                            .assignment
+                            .rows
+                            .get(metric.plot)
+                            .map(|row| {
+                                if row.target_crop < 0 {
+                                    "—".to_string()
+                                } else {
+                                    format!("#{}", row.target_crop)
+                                }
+                            })
+                            .unwrap_or_else(|| "—".into()),
+                        state.farming.objective.label().to_string(),
+                        muted,
+                        accent,
+                    ))
                     .child(
                         div()
                             .pt_2()

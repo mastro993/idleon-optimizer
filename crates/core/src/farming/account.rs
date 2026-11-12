@@ -92,15 +92,15 @@ impl Farm {
     }
 
     /// `FarmRankUpgBonusAtLevel(idx, level)`. Talent 207 is not imported, so
-    /// its multiplier stays at 1.
-    pub fn rank_bonus(&self, idx: usize) -> f64 {
-        let level = self.rank_levels.get(idx).copied().unwrap_or(0) as f64;
-        if level <= 0.0 {
+    /// its multiplier stays at 1. Every fifth row is linear, the rest decay.
+    pub fn rank_bonus_at(&self, idx: usize, level: u32) -> f64 {
+        if level == 0 {
             return 0.0;
         }
         let Some(base) = data().ninja_rank_bases.get(idx).copied() else {
             return 0.0;
         };
+        let level = f64::from(level);
         let exotic = 1.0 + self.exotic_bonus(14) / 100.0;
         if idx % 5 == 4 {
             exotic * base * level
@@ -109,19 +109,16 @@ impl Farm {
         }
     }
 
-    /// The Land Rank totals the planner groups upgrades into.
+    /// The Land Rank totals a candidate allocation produces.
+    pub fn rank_totals_at(&self, levels: &[u32]) -> RankTotals {
+        RankTotals::from_bonuses(std::array::from_fn(|idx| {
+            self.rank_bonus_at(idx, levels.get(idx).copied().unwrap_or(0))
+        }))
+    }
+
+    /// The Land Rank totals the saved levels produce.
     pub fn rank_totals(&self) -> RankTotals {
-        let bonuses: [f64; RANK_UPGRADES] = std::array::from_fn(|idx| self.rank_bonus(idx));
-        RankTotals {
-            bonuses,
-            evolution: (1.0 + bonuses[3] / 100.0)
-                * (1.0 + bonuses[10] / 100.0)
-                * (1.0 + bonuses[15] / 100.0),
-            crop_value: bonuses[8] + bonuses[17],
-            rank_xp: bonuses[6] + bonuses[13],
-            overgrowth: bonuses[7] + bonuses[11] + bonuses[18],
-            farming_exp: bonuses[5] + bonuses[12] + bonuses[16],
-        }
+        self.rank_totals_at(&self.rank_levels)
     }
 
     /// Total Land Rank across the plots (`farmRankData[0]`).
@@ -244,4 +241,20 @@ pub struct RankTotals {
     pub rank_xp: f64,
     pub overgrowth: f64,
     pub farming_exp: f64,
+}
+
+impl RankTotals {
+    /// Group the twenty bonuses into the totals the plot formulas read.
+    pub fn from_bonuses(bonuses: [f64; RANK_UPGRADES]) -> Self {
+        Self {
+            evolution: (1.0 + bonuses[3] / 100.0)
+                * (1.0 + bonuses[10] / 100.0)
+                * (1.0 + bonuses[15] / 100.0),
+            crop_value: bonuses[8] + bonuses[17],
+            rank_xp: bonuses[6] + bonuses[13],
+            overgrowth: bonuses[7] + bonuses[11] + bonuses[18],
+            farming_exp: bonuses[5] + bonuses[12] + bonuses[16],
+            bonuses,
+        }
+    }
 }

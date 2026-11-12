@@ -7,7 +7,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div, px, rgb};
-use idleon_core::farming::{self, PlotMetrics};
+use idleon_core::farming::{self, Assignment, CropRow, PlotMetrics};
 
 /// The 9×4 family colours from `farming-calc.html`.
 pub(super) fn family_color(family: i64) -> Hsla {
@@ -40,11 +40,12 @@ pub(super) fn family_name(family: i64) -> String {
         .unwrap_or_else(|| "Empty".into())
 }
 
-/// The full 9×4 field with its family legend.
+/// The full 9×4 field with its family legend and the assignment's targets.
 pub(super) fn field_card(
     plots: &[PlotMetrics],
     selected: usize,
     has_plots: bool,
+    assignment: &Assignment,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let colors = cx.theme().colors.clone();
@@ -61,7 +62,13 @@ pub(super) fn field_card(
         let mut line = div().id(("farming-row", row)).flex().gap_2();
         for column in 0..9 {
             let index = row * 9 + column;
-            line = line.child(plot_tile(&plots[index], index == selected, palette, cx));
+            line = line.child(plot_tile(
+                &plots[index],
+                index == selected,
+                assignment.rows.get(index),
+                palette,
+                cx,
+            ));
         }
         rows = rows.child(line);
     }
@@ -122,10 +129,12 @@ struct TilePalette {
     muted: Hsla,
 }
 
-/// One plot: family stripe, crop id, overgrowth, rank and the next roll.
+/// One plot: family stripe, crop id, overgrowth, rank, the next roll and the
+/// crop the objective wants there.
 fn plot_tile(
     metric: &PlotMetrics,
     selected: bool,
+    target: Option<&CropRow>,
     palette: TilePalette,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
@@ -176,6 +185,15 @@ fn plot_tile(
             format::duration(metric.growth_seconds)
         )
     };
+    let target = target
+        .filter(|row| row.change_needed())
+        .map(|row| format!("Target #{}", row.target_crop))
+        .unwrap_or_default();
+    let title = if target.is_empty() {
+        title
+    } else {
+        format!("{title} · {target}")
+    };
     div()
         .id(format!("plot-{index}"))
         .role(gpui::Role::Button)
@@ -183,7 +201,7 @@ fn plot_tile(
         .aria_selected(selected)
         .flex_1()
         .min_w_0()
-        .h(px(88.0))
+        .h(px(96.0))
         .flex()
         .flex_col()
         .overflow_hidden()
@@ -220,7 +238,8 @@ fn plot_tile(
                         .child(crop),
                 )
                 .child(div().text_size(px(10.0)).text_color(muted).child(detail))
-                .child(div().text_size(px(10.0)).text_color(muted).child(roll)),
+                .child(div().text_size(px(10.0)).text_color(muted).child(roll))
+                .child(div().text_size(px(10.0)).text_color(tint).child(target)),
         )
         .tooltip(ely_gpui_component::primitives::Tooltip::text(title))
         .on_click(cx.listener(move |state, _event, window, cx| {

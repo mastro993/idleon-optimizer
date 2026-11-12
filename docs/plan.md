@@ -382,6 +382,19 @@ returns a board worse than its input and that its swap list rebuilds the result.
 objectives, the perfect board, insights, the shelf view, roll ranges and the step-by-step swap
 walkthrough stay on the roadmap as CG-02 to CG-04. Details:
 [`docs/sections/cog.md`](sections/cog.md).
+The Farming section's assignment and Land Rank allocation are built (FM-02): the objective selector
+re-plans which crop each of the 36 plots should grow, the table names the current and target crop,
+family and change per plot and the field tiles carry the target, and the allocator spends the
+account's Land Rank points off the UI thread through the shared task runner. The allocator is the
+upstream greedy marginal search over the twenty upgrade rows, with the unlock rank and fifth-column
+cap rules and the per-objective candidate lists; a run reports progress, cancels without dropping
+the previous plan, and an objective, mode or save edit marks the stored plan stale. `fixtures/farming.json`
+is the upstream planner's own output for one purpose-built save, including all seven objectives and both
+allocation modes, so `crates/core/tests/farming_planner.rs` compares the assignment rows, the
+allocator's levels, points and scores, and the account snapshot field for field; regenerate it with
+`script/farming-oracle.mjs`. Presets and the preset comparison (FM-03), the evolution chain and
+overgrowth advice (FM-04) and the signals, thresholds and curves (FM-05) stay on the roadmap.
+Details: [`docs/sections/farming.md`](sections/farming.md).
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,
 the current EXP rate, the EXP the next level takes and the hours that needs, the upgrade comparison
 ranked by the gain one more point buys, and the EXP rate breakdown in the shared formula tree. Every

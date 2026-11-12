@@ -80,6 +80,16 @@ impl Farm {
         (required - plot.growth_progress).max(0.0) / snapshot.growth_rate
     }
 
+    /// `growthCycleSeconds`: the whole cycle at the active cadence, floored at
+    /// one second so an instantaneous cycle stays finite.
+    pub fn growth_cycle_seconds(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
+        let required = self.growth_requirement(plot, snapshot);
+        if required <= 0.0 || snapshot.growth_rate <= 0.0 {
+            return f64::INFINITY;
+        }
+        (required / snapshot.growth_rate).max(1.0)
+    }
+
     /// `nextCropChance`: the per-growth-tick evolution roll.
     pub fn next_crop_chance(&self, index: usize, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if plot.seed_family < 0 {
@@ -155,6 +165,13 @@ impl Farm {
 
     /// `rankXpPerHarvest`: the previous plot's rank and the Land Rank bonuses.
     pub fn rank_xp_per_harvest(&self, index: usize, snapshot: &Snapshot) -> f64 {
+        let plot = self.plots.get(index).copied().unwrap_or_default();
+        self.rank_xp_for(index, &plot, snapshot)
+    }
+
+    /// `rankXpPerHarvest` for a plot the farm may not carry, which the
+    /// assignment scores as a hypothetical crop.
+    pub(crate) fn rank_xp_for(&self, index: usize, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if self.basket_upgrade(99, 5) < 1.0 {
             return 0.0;
         }
@@ -162,7 +179,6 @@ impl Farm {
         if index > 0 && previous < 1 {
             return 0.0;
         }
-        let plot = self.plots.get(index).copied().unwrap_or_default();
         (1.0 + self.basket_upgrade(0, 7) / 100.0)
             * (1.0 + snapshot.rank.bonuses[2] * f64::from(previous) / 100.0)
             * (plot.seed_family + 1) as f64
