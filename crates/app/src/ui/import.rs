@@ -543,6 +543,7 @@ mod tests {
             coral: Default::default(),
             worship: Default::default(),
             mastery: None,
+            jelly: None,
             format,
             characters,
             named_characters: characters,

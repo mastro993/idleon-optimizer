@@ -29,6 +29,7 @@ pub mod formula;
 pub mod fountain;
 pub mod import;
 pub mod jar;
+pub mod jelly;
 pub mod killroy;
 pub mod ladle;
 pub mod model;

@@ -554,6 +554,28 @@ const spelunkSave = () => {
   return JSON.stringify(save);
 };
 
+/// A small flat `save.json` carrying a Jelly Operator board: eight cells
+/// unlocked, the starting slots open, two Plasmids on the saved board, three
+/// attempts banked and no account multipliers, so the estimate has a board to
+/// run and the palette has every cell type to place.
+const jellySave = () => {
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const research = Array.from({ length: 19 }, () => []);
+  research[7] = row(15, { 9: 0, 10: 3, 11: 1000, 12: 500, 13: 0, 14: 2000 });
+  research[14] = Array.from({ length: 180 }, () => -1);
+  research[14][77] = 1;
+  research[14][95] = 1;
+  research[15] = row(9);
+  research[16] = row(9);
+  research[17] = row(40, { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1 });
+  research[18] = [];
+  return JSON.stringify({
+    Research: JSON.stringify(research),
+    Lv0_0: JSON.stringify(row(30)),
+  });
+};
+
 const INTERACTIONS = {
   spelunking: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -584,6 +606,40 @@ const INTERACTIONS = {
     if (stamina !== 'Saved stamina') {
       throw new Error(`spelunking: the starting stamina reads ${stamina}`);
     }
+  },
+  jelly: async (lane) => {
+    await lane.call('click_element', { id: 'jelly-import' });
+    await waitForNode(lane, 'import-drop', 'jelly: the empty state opens the import');
+    await lane.call('click_element', { id: 'import-cancel' });
+    await waitFor(lane, (nodes) => !has(nodes, 'import-drop'), 'jelly: cancel closes the import');
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'jelly: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: jellySave() });
+    await waitForNode(lane, 'import-format', 'jelly: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'jelly-overview', 'jelly: the overview opens after Apply');
+    await waitForNode(lane, 'jelly-snapshot', 'jelly: the account snapshot renders');
+    // The layout editor places every cell type; a Plasmid sits on the saved board.
+    await lane.call('click_element', { id: 'jelly-tab-layout' });
+    await waitForNode(lane, 'jelly-board', 'jelly: the board renders');
+    await waitForNode(lane, 'jelly-palette-7', 'jelly: the palette lists every cell type');
+    await lane.call('click_element', { id: 'jelly-palette-0' });
+    await lane.call('click_element', { id: 'jelly-slot-96' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-message') ?? '').includes('Placed Amoeba at slot 96'),
+      'jelly: the palette places the picked cell',
+    );
+    // The estimate runs off the UI thread and stores its aggregate.
+    await lane.call('click_element', { id: 'jelly-tab-overview' });
+    await waitForNode(lane, 'jelly-overview', 'jelly: the overview reopens');
+    await lane.call('click_element', { id: 'jelly-run-estimate' });
+    await waitForNode(lane, 'jelly-estimate-result', 'jelly: the estimate stores a result', 120000);
+    await waitForNode(lane, 'jelly-contribution', 'jelly: the cell contribution renders');
+    await waitForNode(lane, 'jelly-obstruction-outlook', 'jelly: the outlook renders');
+
   },
   killroy: async (lane) => {
     await lane.call('click_element', { id: 'killroy-import' });

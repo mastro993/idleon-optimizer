@@ -1,0 +1,1247 @@
+{
+ "cols": 18,
+ "rows": 10,
+ "obstructionSlots": [
+  61,
+  62,
+  63,
+  64,
+  79,
+  80,
+  81,
+  82,
+  97,
+  98,
+  99,
+  100,
+  115,
+  116,
+  117,
+  118
+ ],
+ "cells": {
+  "names": [
+   "Amoeba",
+   "Plasmid",
+   "Ribosome",
+   "Organelle",
+   "Immunoid",
+   "Virus",
+   "Mitochondria",
+   "Gigacyst",
+   "Unused"
+  ],
+  "baseCooldowns": [
+   217.5,
+   90,
+   600,
+   240,
+   1125,
+   300,
+   15,
+   30,
+   45
+  ],
+  "baseDamage": [
+   5,
+   6,
+   60,
+   30,
+   100,
+   5,
+   10,
+   20,
+   5
+  ],
+  "footprints": [
+   [
+    0
+   ],
+   [
+    0,
+    1
+   ],
+   [
+    0,
+    18,
+    36
+   ],
+   [
+    0,
+    1,
+    -1,
+    18,
+    -18
+   ],
+   [
+    0,
+    1,
+    18,
+    19
+   ],
+   [
+    0
+   ],
+   [
+    0,
+    1,
+    2,
+    3,
+    18,
+    19,
+    20,
+    21,
+    36,
+    37,
+    38,
+    39,
+    54,
+    55,
+    56,
+    57
+   ],
+   [
+    -36,
+    -19,
+    -18,
+    -17,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    17,
+    18,
+    19,
+    36
+   ],
+   [
+    0
+   ]
+  ],
+  "projectiles": [
+   {
+    "offsetX": 0,
+    "offsetY": 0,
+    "spread": 15
+   },
+   {
+    "offsetX": 1,
+    "offsetY": 0,
+    "spread": 13
+   },
+   {
+    "offsetX": 0,
+    "offsetY": 2,
+    "spread": 13
+   },
+   {
+    "offsetX": 0,
+    "offsetY": 0,
+    "spread": 20
+   },
+   {
+    "offsetX": 1,
+    "offsetY": 1,
+    "spread": 15
+   },
+   {
+    "offsetX": 0,
+    "offsetY": 0,
+    "spread": 15
+   },
+   {
+    "offsetX": 3,
+    "offsetY": 3,
+    "spread": 60
+   },
+   {
+    "offsetX": 0,
+    "offsetY": 0,
+    "spread": 40
+   },
+   {
+    "offsetX": 0,
+    "offsetY": 0,
+    "spread": 0
+   }
+  ]
+ },
+ "plots": [
+  {
+   "plotId": 0,
+   "start": 0,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 1,
+   "start": 5,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 2,
+   "start": 9,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 3,
+   "start": 13,
+   "width": 3,
+   "height": 1
+  },
+  {
+   "plotId": 4,
+   "start": 16,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 5,
+   "start": 18,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 6,
+   "start": 23,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 7,
+   "start": 27,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 8,
+   "start": 31,
+   "width": 3,
+   "height": 1
+  },
+  {
+   "plotId": 9,
+   "start": 34,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 10,
+   "start": 36,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 11,
+   "start": 41,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 12,
+   "start": 45,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 13,
+   "start": 49,
+   "width": 3,
+   "height": 1
+  },
+  {
+   "plotId": 14,
+   "start": 52,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 15,
+   "start": 54,
+   "width": 7,
+   "height": 1
+  },
+  {
+   "plotId": 16,
+   "start": 65,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 17,
+   "start": 67,
+   "width": 1,
+   "height": 4
+  },
+  {
+   "plotId": 18,
+   "start": 68,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 19,
+   "start": 72,
+   "width": 3,
+   "height": 2
+  },
+  {
+   "plotId": 20,
+   "start": 83,
+   "width": 2,
+   "height": 2
+  },
+  {
+   "plotId": 21,
+   "start": 86,
+   "width": 2,
+   "height": 2
+  },
+  {
+   "plotId": 22,
+   "start": 88,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 23,
+   "start": 106,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 24,
+   "start": 108,
+   "width": 7,
+   "height": 1
+  },
+  {
+   "plotId": 25,
+   "start": 119,
+   "width": 2,
+   "height": 1
+  },
+  {
+   "plotId": 26,
+   "start": 122,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 27,
+   "start": 126,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 28,
+   "start": 131,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 29,
+   "start": 136,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 30,
+   "start": 140,
+   "width": 1,
+   "height": 3
+  },
+  {
+   "plotId": 31,
+   "start": 141,
+   "width": 1,
+   "height": 3
+  },
+  {
+   "plotId": 32,
+   "start": 142,
+   "width": 1,
+   "height": 3
+  },
+  {
+   "plotId": 33,
+   "start": 143,
+   "width": 1,
+   "height": 3
+  },
+  {
+   "plotId": 34,
+   "start": 144,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 35,
+   "start": 149,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 36,
+   "start": 154,
+   "width": 4,
+   "height": 1
+  },
+  {
+   "plotId": 37,
+   "start": 162,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 38,
+   "start": 167,
+   "width": 5,
+   "height": 1
+  },
+  {
+   "plotId": 39,
+   "start": 172,
+   "width": 4,
+   "height": 1
+  }
+ ],
+ "upgrades": [
+  {
+   "id": 0,
+   "name": "Amoeba Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Unlock the Amoeba Cell! Drag it from the Petri Dish onto any Jelly Slot, and it'll automatically attack during the Operation! @ Its passive effect of +10% Cell DMG affects all cells!"
+  },
+  {
+   "id": 23,
+   "name": "Bloodcell Coagulation",
+   "maxLevel": 9999,
+   "costScale": 1.1,
+   "perLevel": 5,
+   "baseCost": 0,
+   "description": "You now get +$ Bloodcells every 1 DMG dealt! @ This is currency, spend them on upgrades! @ This upgrade gives +{% Bloodcell Gain."
+  },
+  {
+   "id": 39,
+   "name": "Operational Bonuses",
+   "maxLevel": 1,
+   "costScale": 1.1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Each successful operation gives a new IdleOn bonus for the REST of the game! Check them out in the BONUS tap, top right corner."
+  },
+  {
+   "id": 1,
+   "name": "Plasmid Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 2,
+   "description": "Unlock the Plasmid Cell! It's bigger than the Amoeba, but has better stats and a different Passive Effect, which boosts all Cell SPD by +15%"
+  },
+  {
+   "id": 18,
+   "name": "Cell Destruction I",
+   "maxLevel": 9999,
+   "costScale": 1.15,
+   "perLevel": 5,
+   "baseCost": 0,
+   "description": "Boost the damage of all Cells by +{% during the Operation"
+  },
+  {
+   "id": 9,
+   "name": "Slot Unlocking",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "You can now unlock more slots to place Cells in! @ You currently have $ slot unlocks left, use them wisely!"
+  },
+  {
+   "id": 8,
+   "name": "Another Unlock",
+   "maxLevel": 25,
+   "costScale": 11.5,
+   "perLevel": 1,
+   "baseCost": 7,
+   "description": "Gives you +1 more 'slot unlocks' to use!"
+  },
+  {
+   "id": 24,
+   "name": "Bloodletting I",
+   "maxLevel": 9999,
+   "costScale": 1.15,
+   "perLevel": 10,
+   "baseCost": 0,
+   "description": "Earn +{% more Bloodcells during the Operation"
+  },
+  {
+   "id": 2,
+   "name": "Ribosome Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 3,
+   "description": "Unlock the Ribosome Cell! Tall, slender, with a massive +50% all Cell DMG passive effect!"
+  },
+  {
+   "id": 12,
+   "name": "DPS Biometrics",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 1.5,
+   "description": "Adds the DPS Biometer! Get a permanent multiplier to Bloodcell gain based on your best ever DPS!"
+  },
+  {
+   "id": 19,
+   "name": "Cell Destruction II",
+   "maxLevel": 9999,
+   "costScale": 1.22,
+   "perLevel": 10,
+   "baseCost": 0,
+   "description": "Boost the damage of all Cells by an extra +{% during the Operation"
+  },
+  {
+   "id": 38,
+   "name": "Daily Transfusion",
+   "maxLevel": 20,
+   "costScale": 2.5,
+   "perLevel": 10,
+   "baseCost": 0.15,
+   "description": "Automatically get +$ Bloodcells each day you login! @ This amount is equal to {% of the most Bloodcells you've ever earned in a single operation!"
+  },
+  {
+   "id": 10,
+   "name": "Cell Biology",
+   "maxLevel": 9999,
+   "costScale": 1.21,
+   "perLevel": 20,
+   "baseCost": 0,
+   "description": "Cells now gain +$ EXP every time they attack! @ Each LV boosts that cell's damage permanently by 1.01x @ Also this upgrade gives +{% Cell EXP gain, why not right?"
+  },
+  {
+   "id": 33,
+   "name": "Cell Dialysis",
+   "maxLevel": 25,
+   "costScale": 5.5,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Boost Bloodcell gain by +{% for every LV of all Cells. @ Total bonus: +$% Bloodcell gain"
+  },
+  {
+   "id": 3,
+   "name": "Organelle Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 1.3,
+   "description": "Unlock the Organelle Cell! This oddly shaped unit multiplies the attack SPD of all nearby cells it touches by 1.50x, not to mention its passive effect of +25% all Cell SPD!"
+  },
+  {
+   "id": 17,
+   "name": "Cell Mutilation",
+   "maxLevel": 20,
+   "costScale": 40,
+   "perLevel": 1,
+   "baseCost": 0.2,
+   "description": "Cells now get a +$% DMG multi per Cell LV!"
+  },
+  {
+   "id": 28,
+   "name": "Immuno Weakening",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Each individual hit from Amoeba Cell attacks weakens the obstruction, increasing all DMG by 1.01x for the rest of the operation! This is shown in the top-left."
+  },
+  {
+   "id": 36,
+   "name": "Critical Status",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "When you run out of time during the Operation, instead of immediate failure, the Jelly goes into 'Critical Condition' wherein your cells die one by one until they're all gone."
+  },
+  {
+   "id": 16,
+   "name": "Feverizer",
+   "maxLevel": 6,
+   "costScale": 250,
+   "perLevel": 1,
+   "baseCost": 0.04,
+   "description": "Unlock the Fever Inducer tool, allowing you to freely select from { different effects which last for the whole Operation!"
+  },
+  {
+   "id": 25,
+   "name": "Bloodletting II",
+   "maxLevel": 9999,
+   "costScale": 1.32,
+   "perLevel": 25,
+   "baseCost": 0,
+   "description": "Earn an extra +{% more Bloodcells during the Operation"
+  },
+  {
+   "id": 4,
+   "name": "Immunoid Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 5,
+   "description": "Unlock the Immunoid Cell! It takes aggro during Critical Condition, while also inflicting a stun effect on the obstruction, delaying its next attack further!"
+  },
+  {
+   "id": 14,
+   "name": "Cells of Three, Better They Be!",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Every 3rd, 6th, 9th, 12th, etc, of a specific cell type placed in the Jelly gives 2x more passive effect than normal! @ For example, the 3rd Amoeba gives +20% not +10% DMG!"
+  },
+  {
+   "id": 20,
+   "name": "Cell Destruction III",
+   "maxLevel": 9999,
+   "costScale": 1.51,
+   "perLevel": 25,
+   "baseCost": 0,
+   "description": "Boost the damage of all Cells by a further +{% during the Operation"
+  },
+  {
+   "id": 29,
+   "name": "Stronkroid",
+   "maxLevel": 150,
+   "costScale": 1.3,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Unlock the Steroid button! When pressed during the Operation, all cells attack $x faster for 5 seconds"
+  },
+  {
+   "id": 31,
+   "name": "Cell Adaptation II",
+   "maxLevel": 9999,
+   "costScale": 1.18,
+   "perLevel": 5,
+   "baseCost": 0,
+   "description": "Boost the EXP gain of all cells by +{%"
+  },
+  {
+   "id": 5,
+   "name": "Virus Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 20,
+   "description": "Unlock the Virus Cell! These infect every slot of nearby cells, with each infected slot multiplying all unit damage by 1.10x"
+  },
+  {
+   "id": 15,
+   "name": "Viral Injection",
+   "maxLevel": 4,
+   "costScale": 10000,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Increases the total number of Virus Cells you can place in the Jelly! Currently, you can only place $ Virus Cells."
+  },
+  {
+   "id": 32,
+   "name": "Cell Metabolism",
+   "maxLevel": 10,
+   "costScale": 65,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Boost the DMG of all cells by +{% for every 10 combined LVs of all Cells! @ Total bonus: +$% all Cell DMG"
+  },
+  {
+   "id": 21,
+   "name": "Cell Desolation I",
+   "maxLevel": 9999,
+   "costScale": 1.35,
+   "perLevel": 3,
+   "baseCost": 0,
+   "description": "Multiply the damage of all Cells by }x during the Operation"
+  },
+  {
+   "id": 27,
+   "name": "Blood Tribunal II",
+   "maxLevel": 9999,
+   "costScale": 1.85,
+   "perLevel": 5,
+   "baseCost": 0,
+   "description": "Multiply all Bloodcells gained during the Operation by }x"
+  },
+  {
+   "id": 6,
+   "name": "Mitochondria Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 30,
+   "description": "Unlock the Mitochondria Cell! Their passive effect is a massive 1.50x all Cell SPD multiplier!"
+  },
+  {
+   "id": 13,
+   "name": "Proximity Stimulus",
+   "maxLevel": 5,
+   "costScale": 2000,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "During the Operation, cells whose core are in any slot next to the obstruction deal }x DMG and SPD. This is designated by the green symbol!"
+  },
+  {
+   "id": 30,
+   "name": "Cell Adaptation I",
+   "maxLevel": 9999,
+   "costScale": 1.12,
+   "perLevel": 3,
+   "baseCost": 0,
+   "description": "Boost the EXP gain of all cells by +{%"
+  },
+  {
+   "id": 34,
+   "name": "Lower Cholesterol",
+   "maxLevel": 9999,
+   "costScale": 1.45,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Reduce the cost of all upgrades by $%"
+  },
+  {
+   "id": 7,
+   "name": "Gigacyst Cell Cultivation",
+   "maxLevel": 1,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 50,
+   "description": "Unlock the Gigacyst Cell! Their passive effect is a gigantic 3x all Cell DMG multiplier!"
+  },
+  {
+   "id": 35,
+   "name": "Revival Shots",
+   "maxLevel": 5,
+   "costScale": 1500,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "You can now click on dead cells during 'Critical Condition' of the Operation to revive them, up to { times!"
+  },
+  {
+   "id": 22,
+   "name": "Cell Desolation II",
+   "maxLevel": 9999,
+   "costScale": 2.1,
+   "perLevel": 15,
+   "baseCost": 0,
+   "description": "Multiply the damage of all Cells by }x during the Operation"
+  },
+  {
+   "id": 26,
+   "name": "Blood Tribunal I",
+   "maxLevel": 9999,
+   "costScale": 1.4,
+   "perLevel": 3,
+   "baseCost": 0,
+   "description": "Multiply all Bloodcells gained during the Operation by }x"
+  },
+  {
+   "id": 11,
+   "name": "Cell Evolution",
+   "maxLevel": 9999,
+   "costScale": 1.65,
+   "perLevel": 10,
+   "baseCost": 0,
+   "description": "Multiply the EXP gain for all cells by }x when dealing damage!"
+  },
+  {
+   "id": 37,
+   "name": "Rift Guy's Upgrade",
+   "maxLevel": 0,
+   "costScale": 1,
+   "perLevel": 1,
+   "baseCost": 0,
+   "description": "Huh? What?? ME again??? Get real, OF COURSE I'm here!"
+  }
+ ],
+ "upgradeOrder": [
+  0,
+  23,
+  39,
+  1,
+  18,
+  9,
+  8,
+  24,
+  2,
+  12,
+  19,
+  38,
+  10,
+  33,
+  3,
+  17,
+  28,
+  36,
+  16,
+  25,
+  4,
+  14,
+  20,
+  29,
+  31,
+  5,
+  15,
+  32,
+  21,
+  27,
+  6,
+  13,
+  30,
+  34,
+  7,
+  35,
+  22,
+  26,
+  11,
+  37,
+  40,
+  41,
+  42,
+  43,
+  44,
+  45,
+  46,
+  47,
+  48,
+  49,
+  50,
+  51,
+  52,
+  53,
+  54,
+  55,
+  56,
+  57,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67,
+  68,
+  69,
+  70,
+  71,
+  72,
+  73,
+  74,
+  75,
+  76,
+  77,
+  78,
+  79,
+  80,
+  81,
+  82,
+  83,
+  84,
+  85,
+  86,
+  87,
+  88,
+  89,
+  90,
+  91,
+  92,
+  93,
+  94,
+  95,
+  96,
+  97,
+  98,
+  99
+ ],
+ "rewards": [
+  {
+   "name": "Longbone",
+   "description": "}x multiplier to Research EXP gain @ Also, +2 Jelly Operator slots!",
+   "value": 50
+  },
+  {
+   "name": "Jawbone",
+   "description": "All Rank EXP gain is }x higher for all of your Royal Guardian's Outposts @ Also, +2 Jelly Operator slots!",
+   "value": 35
+  },
+  {
+   "name": "Spine",
+   "description": "All forms of Clearing Mobs in order to build Outposts on your Royal Guardian is }x higher",
+   "value": 25
+  },
+  {
+   "name": "Antler",
+   "description": "All Royal Guardian Outposts in World 1 get +{ PTS",
+   "value": 5
+  },
+  {
+   "name": "Vertebrae",
+   "description": "+{ Research Point",
+   "value": 1
+  },
+  {
+   "name": "Skull",
+   "description": "+{ Yellow PTS for Cooking Mastery",
+   "value": 1
+  },
+  {
+   "name": "Mawbone",
+   "description": "+{ Talent PTS specifically for the Royal Guardian Masterclass",
+   "value": 15
+  },
+  {
+   "name": "Reintler",
+   "description": "All Optical Monocles generate }x more Insight for your Research Observations!",
+   "value": 40
+  },
+  {
+   "name": "Fatbone",
+   "description": "+{% Crystal Monster spawn chance @ Also, }x Minehead Currency gain",
+   "value": 25
+  },
+  {
+   "name": "Invertedbrae",
+   "description": "Boost your Damage dealt during Mr. Minehead's Depth Charge by }x",
+   "value": 30
+  },
+  {
+   "name": "Spinine",
+   "description": "+{% total Golden Food bonus",
+   "value": 100
+  },
+  {
+   "name": "Demonicle",
+   "description": "The first 5 upgrades in the Royal Armory are {% cheaper",
+   "value": 50
+  },
+  {
+   "name": "Ruby Ring",
+   "description": "+{ maximum possible roll when rolling for new Observations",
+   "value": 1
+  },
+  {
+   "name": "Starry Bling",
+   "description": "+{ Purple PTS for Cooking Mastery",
+   "value": 1
+  },
+  {
+   "name": "Gold Bangle",
+   "description": "}x Drop Rate",
+   "value": 5
+  },
+  {
+   "name": "Emerald Broach",
+   "description": "All Royal Guardian Outposts in World 2 get +{ PTS",
+   "value": 4
+  },
+  {
+   "name": "Gildrose",
+   "description": "}x more Stealth for all your Ninja Twins in Sneaking",
+   "value": 200
+  },
+  {
+   "name": "Opal Pendant",
+   "description": "Unlocks a new Atom, which boosts Bloodcell gain",
+   "value": 1
+  },
+  {
+   "name": "Crescent Bling",
+   "description": "All Sushi upgrades are {% cheaper",
+   "value": 25
+  },
+  {
+   "name": "Sapphire Ring",
+   "description": "}x artifact find chance",
+   "value": 20
+  },
+  {
+   "name": "Stud Pendant",
+   "description": "}x Bluefin Fish gains from Poppy",
+   "value": 150
+  },
+  {
+   "name": "Wiltrose",
+   "description": "}x Spelunking POW",
+   "value": 30
+  },
+  {
+   "name": "Morning Glory",
+   "description": "All Spelunk Shop upgrades are permanently {% off",
+   "value": 10
+  },
+  {
+   "name": "Tiger Eye",
+   "description": "}x multiplier to Research EXP gain",
+   "value": 40
+  },
+  {
+   "name": "Apol",
+   "description": "Multiplies Bloodcell gain by }x",
+   "value": 30
+  },
+  {
+   "name": "Blubbury",
+   "description": "All your Kaleidoscopes multiply surrounding Magnifiers and Monocles by +{% more than before",
+   "value": 1
+  },
+  {
+   "name": "Pair",
+   "description": "The first 10 upgrades in the Royal Armory are an extra {% cheaper",
+   "value": 30
+  },
+  {
+   "name": "Mongo",
+   "description": "All Summoning upgrades are {% cheaper",
+   "value": 200
+  },
+  {
+   "name": "Strabbury",
+   "description": "All earned Emperor Bonuses are }x bigger than before!",
+   "value": 2
+  },
+  {
+   "name": "Cosmico",
+   "description": "When getting a new Tiny Cog, there's a {% chance it'll be +1 Tier higher, up to T10.",
+   "value": 20
+  },
+  {
+   "name": "Surrage",
+   "description": "}x Class EXP gain",
+   "value": 20
+  },
+  {
+   "name": "Big Nut",
+   "description": "}x Grand Discovery Chance in Spelunking",
+   "value": 25
+  },
+  {
+   "name": "Splega",
+   "description": "All Royal Guardian Outposts in World 3 get +{ PTS",
+   "value": 3
+  },
+  {
+   "name": "Onyx Apple",
+   "description": "+{% higher Multi Meritocracy bonus",
+   "value": 1
+  },
+  {
+   "name": "Rassbury",
+   "description": "+{ more weekly Exotic Market purchases for Farming",
+   "value": 1
+  },
+  {
+   "name": "Diamapair",
+   "description": "+{ Regal Mob spawned from your Royal Guardian's 'Regal Intervention' effect!",
+   "value": 1
+  },
+  {
+   "name": "Bowling Pin",
+   "description": "All your Prisma Bubbles give a 0.01x higher bonus than before",
+   "value": 1
+  },
+  {
+   "name": "Broken Ball",
+   "description": "}x Total DMG",
+   "value": 10
+  },
+  {
+   "name": "Sody Can",
+   "description": "}x Spelunking POW",
+   "value": 35
+  },
+  {
+   "name": "Balloon",
+   "description": "}x Tartar Fish gains from Poppy",
+   "value": 75
+  },
+  {
+   "name": "Arcade Ticket",
+   "description": "Verminous rats in the Royal Castle have a +{% higher chance to drop Parchments of Enchantment",
+   "value": 15
+  },
+  {
+   "name": "Proball",
+   "description": "Your Royal Guardian's Support Camps provide +{% higher bonuses to connected Outposts",
+   "value": 5
+  },
+  {
+   "name": "Empty Can",
+   "description": "}x higher odds of getting new crowns for the Rat King in Gaming",
+   "value": 25
+  },
+  {
+   "name": "Ceramic Ball",
+   "description": "All Royal Guardian Outposts in World 4 get +{ PTS",
+   "value": 3
+  },
+  {
+   "name": "Loveloon",
+   "description": "+{ slot unlock to use right here in Jelly Operator",
+   "value": 1
+  },
+  {
+   "name": "Mangled Ball",
+   "description": "+{ Golden Tile for Mr. Minehead's Depth Charge game",
+   "value": 1
+  },
+  {
+   "name": "Golden Ticket",
+   "description": "}x multiplier to Research EXP gain",
+   "value": 30
+  },
+  {
+   "name": "Angelpin",
+   "description": "+{% Multi Page Drop Chance while Spelunking for all characters",
+   "value": 6
+  },
+  {
+   "name": "Cool Gem",
+   "description": "All Royal Guardian Outposts in World 5 get +{ PTS",
+   "value": 3
+  },
+  {
+   "name": "Pointed Prism",
+   "description": "+{ Max LV for all Divinity Blessings",
+   "value": 25
+  },
+  {
+   "name": "Fancy Facet",
+   "description": "All your Exalted Stamps give a 0.01x higher bonus than before",
+   "value": 1
+  },
+  {
+   "name": "Smooth Stone",
+   "description": "+{% total Golden Food bonus",
+   "value": 200
+  },
+  {
+   "name": "Funky Rock",
+   "description": "All Royal Guardian Outposts in World 6 get +{ PTS",
+   "value": 3
+  },
+  {
+   "name": "Quirky Quartz",
+   "description": "All Symbols in Sneaking have a }x higher chance of being successful",
+   "value": 20
+  },
+  {
+   "name": "Janky Jewel",
+   "description": "}x multiplier to Research EXP gain",
+   "value": 60
+  },
+  {
+   "name": "Jaguar Shard",
+   "description": "+{% Burger",
+   "value": 5
+  },
+  {
+   "name": "Slick Sphere",
+   "description": "+0.1% Chance for Royal Guardian 'Royal Intervention' effect to trigger",
+   "value": 1
+  },
+  {
+   "name": "Barbed Ball",
+   "description": "+{ Research Point",
+   "value": 1
+  },
+  {
+   "name": "Jagged Mineral",
+   "description": "Bubba now produces }x more Meat Slices",
+   "value": 150
+  },
+  {
+   "name": "Conical Crystal",
+   "description": "+{ Talent PTS specifically for the Royal Guardian Masterclass",
+   "value": 20
+  },
+  {
+   "name": "Soldier Shiv",
+   "description": "Ribbons that are Tier 20 or above now give a +{% higher multiplier to meal bonus!",
+   "value": 5
+  },
+  {
+   "name": "Knightly Rapier",
+   "description": "All Royal Guardian Outposts in World 7 get +{ PTS",
+   "value": 3
+  },
+  {
+   "name": "Tribunal Helmet",
+   "description": "}x Class EXP gain",
+   "value": 25
+  },
+  {
+   "name": "Sharpened Axe",
+   "description": "+{ Max LV for all Divinity Blessings",
+   "value": 25
+  },
+  {
+   "name": "Hotforge Mace",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Lord Shield",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Molten Shiv",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Damascus Axe",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Coldsteel Mace",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Radiant Shield",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Eloquent Rapier",
+   "description": "Nothing yet...",
+   "value": 1
+  },
+  {
+   "name": "Centurion Helmet",
+   "description": "Nothing yet...",
+   "value": 1
+  }
+ ],
+ "atomJellyPerLevel": 1,
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/data/w7/jelly-operator.js",
+   "js/stats/data/game/customlists.js",
+   "js/stats/data/game/hardcoded.js"
+  ]
+ }
+}
