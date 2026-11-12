@@ -2,6 +2,7 @@
 //! them, against upstream `js/stats/systems/common/map-access.js`.
 
 use idleon_core::save::{Save, import};
+use idleon_core::sim;
 use idleon_core::stats::{
     ConstructionMode, Context, MapVisibility, Skill, Snapshot, build_options, classify,
 };
@@ -246,5 +247,103 @@ fn the_fixture_opens_on_its_saved_current_map() {
             option.class.map
         );
         assert!(!option.class.name.is_empty());
+    }
+}
+
+/// The upstream stats page's own output for the committed fixture, read by
+/// running `computeMaxCapacity` from
+/// `js/stats/systems/common/carry-capacity.js` over the same save.
+const FIXTURE_CAPACITY: [(&str, f64); 8] = [
+    ("carry-capacity-mining", 113_019_116.0),
+    ("carry-capacity-chopping", 123_532_522.0),
+    ("carry-capacity-fishing", 90_415_293.0),
+    ("carry-capacity-catching", 77_799_205.0),
+    ("carry-capacity-food", 10_513_406.0),
+    ("carry-capacity-critters", 10_513_406.0),
+    ("carry-capacity-souls", 10_513_406.0),
+    ("carry-capacity-materials", 542_813_368.0),
+];
+
+fn fixture_sheet() -> idleon_core::stats::Sheet {
+    let imported = import(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/data.json"
+        ))
+        .expect("fixtures/data.json is committed"),
+    )
+    .expect("the fixture imports");
+    let inputs = idleon_core::stats::BreakdownInputs {
+        save: &imported.save,
+        simulation: &imported.simulation,
+        sim_context: &imported.context,
+        character: 0,
+        map: 0,
+    };
+    idleon_core::stats::Sheet::build(&inputs)
+}
+
+#[test]
+fn the_fixture_capacity_matches_the_upstream_stats_page() {
+    let sheet = fixture_sheet();
+    for (id, expected) in FIXTURE_CAPACITY {
+        let row = sheet.get(id).unwrap_or_else(|| panic!("{id} is listed"));
+        assert_eq!(
+            row.resolution.value(),
+            Some(expected),
+            "{id} disagrees with the upstream page"
+        );
+    }
+    // The roster sits beside the save in an it.json and this fixture is flat,
+    // exactly like upstream's own partial reason for the same save.
+    let mining = sheet.get("carry-capacity-mining").expect("the row");
+    let warning = mining.warning().expect("the missing roster is named");
+    assert!(warning.contains("companion roster"), "{warning}");
+}
+
+#[test]
+fn the_fixture_research_rows_agree_with_the_simulator() {
+    let sheet = fixture_sheet();
+    let imported = import(
+        &std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/data.json"
+        ))
+        .expect("fixtures/data.json is committed"),
+    )
+    .expect("the fixture imports");
+    let exp = sheet.get("research-exp").expect("research-exp is listed");
+    assert_eq!(
+        exp.resolution.value(),
+        Some(sim::exp_rate(&imported.simulation, &imported.context).multi)
+    );
+    let afk = sheet
+        .get("research-afk-gains")
+        .expect("research-afk-gains is listed");
+    assert_eq!(
+        afk.resolution.value(),
+        Some(sim::afk_rate(&imported.simulation, &imported.context).rate * 100.0)
+    );
+}
+
+#[test]
+fn every_category_renders_and_unported_rows_name_their_source() {
+    let sheet = fixture_sheet();
+    let categories = idleon_core::stats::BreakdownCategory::ALL;
+    assert_eq!(categories.len(), 9);
+    for category in categories {
+        let rows: Vec<&idleon_core::stats::Breakdown> = sheet.in_category(category).collect();
+        assert!(!rows.is_empty(), "{} is empty", category.label());
+        for row in rows {
+            assert_eq!(row.category, category);
+            match &row.resolution {
+                idleon_core::stats::Resolution::Value { tree, .. } => {
+                    assert_eq!(Some(tree.value), row.resolution.value());
+                }
+                idleon_core::stats::Resolution::Unavailable { reason } => {
+                    assert!(reason.contains(row.source), "{}: {reason}", row.id);
+                }
+            }
+        }
     }
 }

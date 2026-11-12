@@ -266,8 +266,10 @@ pub struct AppState {
     pub statue: StatueState,
     /// The combat simulator's working loadout and named presets.
     pub combat: CombatState,
-    /// The All Stats Dashboard's calculation context and its save slice.
+    /// The All Stats Dashboard's calculation context, save slice and breakdowns.
     pub stats_all: StatsAllState,
+    /// The shared formula tree on the All Stats breakdown card.
+    pub stats_breakdown: Entity<ui::formula::FormulaTree>,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -808,6 +810,8 @@ impl AppState {
             cx.new(|cx| ui::formula::FormulaTree::new("fountain-formula", window, cx));
         let jar_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("jar-formula", window, cx));
         let opal_breakdown = cx.new(|cx| ui::formula::FormulaTree::new("opal-formula", window, cx));
+        let stats_breakdown =
+            cx.new(|cx| ui::formula::FormulaTree::new("stats-formula", window, cx));
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -866,6 +870,7 @@ impl AppState {
             statue,
             combat,
             stats_all: StatsAllState::default(),
+            stats_breakdown,
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -1231,7 +1236,8 @@ impl AppState {
         };
         let character_count = imported.save.character_count();
         self.combat.load(&imported.save, combat_character);
-        self.stats_all.load(&imported.save);
+        self.stats_all
+            .load(&imported.save, &self.simulation, &self.context);
         self.save = Some(imported.save);
         self.save_revision = self.save_revision.wrapping_add(1);
         self.prisma.adopt(self.save.as_ref());
@@ -2305,8 +2311,42 @@ impl AppState {
         self.stats_context_changed(cx);
     }
 
+    /// Switch the breakdown tab and select the first row of the new category.
+    pub fn set_stats_category(
+        &mut self,
+        category: idleon_core::stats::BreakdownCategory,
+        cx: &mut Context<Self>,
+    ) {
+        self.stats_all.category = category;
+        self.stats_all.select_first();
+        cx.notify();
+    }
+
+    /// Switch the breakdown row the formula tree shows.
+    pub fn set_stats_descriptor(&mut self, id: String, cx: &mut Context<Self>) {
+        if self
+            .stats_all
+            .sheet
+            .as_ref()
+            .is_some_and(|sheet| sheet.get(&id).is_some())
+        {
+            self.stats_all.selected = Some(id);
+            cx.notify();
+        }
+    }
+
+    /// Re-resolve the breakdowns from the save and the context.
+    pub(crate) fn rebuild_stats_breakdowns(&mut self) {
+        let Some(save) = self.save.as_ref() else {
+            return;
+        };
+        self.stats_all
+            .rebuild(save, &self.simulation, &self.context);
+    }
+
     /// A context change refreshes every value the page derives from it.
     fn stats_context_changed(&mut self, cx: &mut Context<Self>) {
+        self.rebuild_stats_breakdowns();
         let class = idleon_core::stats::classify(self.stats_all.context.map);
         let character = self
             .stats_all

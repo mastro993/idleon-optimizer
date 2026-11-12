@@ -6,8 +6,57 @@
 //! bubble lookups behind the gallery, palettes, and spelunking shop upgrades.
 
 use super::Decoder;
-use super::data::BubbleParam;
+use super::data::{BubbleParam, account_data};
 use super::fields;
+use serde_json::{Map, Value};
+
+/// `vaultUpgBonus` from `js/stats/systems/common/vault.js`.
+///
+/// The level is `UpgVault[index]`; the mastery levels that multiply every
+/// upgrade are the ones at 32, 61 and 89, and the upgrades in
+/// `VAULT_NO_MASTERY` skip them.
+pub(super) fn vault_upgrade_bonus(save: &Map<String, Value>, index: usize) -> f64 {
+    let data = account_data();
+    let level = fields::number_at(
+        &fields::numbers(save, "UpgVault").unwrap_or_default(),
+        index,
+    );
+    if level <= 0.0 {
+        return 0.0;
+    }
+    let per_level = data.vault_per_level.get(index).copied().unwrap_or(0.0);
+    if per_level == 0.0 {
+        return 0.0;
+    }
+    let mut base = level * per_level;
+    if index == 0 {
+        base += (level - 25.0).max(0.0) + (level - 50.0).max(0.0) + (level - 100.0).max(0.0);
+    }
+    if index == 60 {
+        base += (level - 25.0).max(0.0)
+            + (level - 50.0).max(0.0)
+            + 2.0 * (level - 100.0).max(0.0)
+            + 3.0 * (level - 200.0).max(0.0)
+            + 5.0 * (level - 300.0).max(0.0)
+            + 7.0 * (level - 400.0).max(0.0)
+            + 10.0 * (level - 450.0).max(0.0);
+        base *= 1.0 + (level / 25.0).floor() / 5.0;
+    }
+    if !data.vault_no_mastery.contains(&(index as u32)) {
+        let vault = fields::numbers(save, "UpgVault").unwrap_or_default();
+        let mastery = if index < 32 {
+            fields::number_at(&vault, 32)
+        } else if index <= 60 {
+            fields::number_at(&vault, 61)
+        } else if index <= 88 {
+            fields::number_at(&vault, 89)
+        } else {
+            0.0
+        };
+        base *= 1.0 + mastery / 100.0;
+    }
+    base
+}
 
 impl Decoder<'_> {
     /// `RoyalGuardian("outpostROGBonus", 1)`: the research focus selection.
@@ -98,41 +147,7 @@ impl Decoder<'_> {
 
     /// `vaultUpgBonus` from `js/stats/systems/common/vault.js`.
     pub(super) fn vault(&self, index: usize) -> f64 {
-        let level = self.row_at("UpgVault", index);
-        if level <= 0.0 {
-            return 0.0;
-        }
-        let per_level = self.data.vault_per_level.get(index).copied().unwrap_or(0.0);
-        if per_level == 0.0 {
-            return 0.0;
-        }
-        let mut base = level * per_level;
-        if index == 0 {
-            base += (level - 25.0).max(0.0) + (level - 50.0).max(0.0) + (level - 100.0).max(0.0);
-        }
-        if index == 60 {
-            base += (level - 25.0).max(0.0)
-                + (level - 50.0).max(0.0)
-                + 2.0 * (level - 100.0).max(0.0)
-                + 3.0 * (level - 200.0).max(0.0)
-                + 5.0 * (level - 300.0).max(0.0)
-                + 7.0 * (level - 400.0).max(0.0)
-                + 10.0 * (level - 450.0).max(0.0);
-            base *= 1.0 + (level / 25.0).floor() / 5.0;
-        }
-        if !self.data.vault_no_mastery.contains(&(index as u32)) {
-            let mastery = if index < 32 {
-                self.row_at("UpgVault", 32)
-            } else if index <= 60 {
-                self.row_at("UpgVault", 61)
-            } else if index <= 88 {
-                self.row_at("UpgVault", 89)
-            } else {
-                0.0
-            };
-            base *= 1.0 + mastery / 100.0;
-        }
-        base
+        vault_upgrade_bonus(self.save, index)
     }
 
     /// `grimoireUpgBonus22` from `js/stats/systems/mc/grimoire.js`.

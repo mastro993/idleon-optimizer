@@ -19,6 +19,32 @@ pub struct ExpRate {
     pub total: f64,
 }
 
+/// The terms behind `simTotalExp`'s multiplier, in the order they are applied.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ExpTerms {
+    /// Percentages that add together before the multiplier.
+    pub additive: Vec<(String, f64)>,
+    /// Factors that multiply the additive result.
+    pub multipliers: Vec<(String, f64)>,
+}
+
+impl ExpTerms {
+    /// The additive pool, as a percentage.
+    pub fn additive_total(&self) -> f64 {
+        self.additive.iter().map(|(_, value)| value).sum()
+    }
+
+    /// The product of the true multipliers.
+    pub fn multiplier(&self) -> f64 {
+        self.multipliers.iter().map(|(_, value)| value).product()
+    }
+
+    /// `(1 + additive / 100) * the true multipliers`.
+    pub fn total(&self) -> f64 {
+        (1.0 + self.additive_total() / 100.0) * self.multiplier()
+    }
+}
+
 /// What the level curves say about a run.
 #[derive(Clone, Debug, Default)]
 pub struct Projection {
@@ -321,7 +347,8 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
             * kal_multi;
     }
 
-    let multi = total_multiplier(sim, ctx, &|cell| grid_bonus(&sim.grid, &overlay, cell, ctx));
+    let terms = exp_terms_with(sim, ctx, &|cell| grid_bonus(&sim.grid, &overlay, cell, ctx));
+    let multi = terms.total();
     ExpRate {
         obs_base: obs_total,
         multi,
@@ -329,10 +356,25 @@ pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
     }
 }
 
-/// `simTotalExpWith`'s multiplier: the additive pool times every true
-/// multiplier. `grid` resolves one cell's bonus, so the shaped scoring path
-/// can feed the same formula a hypothetical overlay.
-fn total_multiplier(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> f64 {
+/// The terms behind the research EXP multiplier, for the All Stats dashboard.
+pub fn exp_terms(sim: &Simulation, ctx: &SimContext) -> ExpTerms {
+    let overlay = sim.overlay();
+    exp_terms_with(sim, ctx, &|cell| grid_bonus(&sim.grid, &overlay, cell, ctx))
+}
+
+/// A grid cell's label, as the breakdown tree names it.
+fn grid_label(cell: usize) -> String {
+    let name = game()
+        .node_at(cell)
+        .map(|node| node.name.replace('_', " "))
+        .unwrap_or_else(|| format!("Grid {cell}"));
+    format!("Grid {} · {name}", crate::model::coord(cell))
+}
+
+/// `simTotalExpWith`'s multiplier, split into the terms it applies. `grid`
+/// resolves one cell's bonus, so the shaped scoring path can feed the same
+/// formula a hypothetical overlay.
+fn exp_terms_with(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> ExpTerms {
     let to_find = observations_to_find(sim.research_level, &sim.observations.found);
     let found = sim
         .observations
@@ -358,44 +400,70 @@ fn total_multiplier(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) ->
     } else {
         1.0
     };
-    let additive = grid(50)
-        + grid(90)
-        + grid(110)
-        + grid(31)
-        + grid(51)
-        + ctx.extra_pct
-        + if ctx.sticker_multiplicative {
-            0.0
-        } else {
-            dynamic_sticker
-        }
-        + ctx.mastery_additive_pct
-        + grid(112) * found
-        + grid(94) * insight;
     let button0 = if ctx.button_base_no_grid > 0.0 {
         ctx.button_base_no_grid * (1.0 + grid(125) / 100.0)
     } else {
         ctx.button0
     };
-    (1.0 + additive / 100.0)
-        * (1.0 + grid(70) / 100.0)
-        * ctx.research_equipment_multi.clamp(1.0, 15.0)
-        * sticker_multi
-        * ctx.mastery_exp_multi
-        * (1.0 + 0.25 * ctx.clam_work9)
-        * (1.0 + 3.0 * ctx.dream14 / 100.0)
-        * (1.0 + button0 / 100.0)
-        * (1.0 + ctx.arcade63 / 100.0)
-        * ctx.killroy5.max(1.0)
-        * ctx.companion_52
-        * (1.0 + 0.5 * ctx.companion_54_level2)
-        * (1.0 + ctx.rog(0) / 100.0)
-        * (1.0 + ctx.cglunko11 / 100.0)
-        * (1.0 + ctx.fountain_2_16 / 100.0)
-        * ctx.jelly_research_multi
-        * (1.0 + ctx.menagerie_b3 / 100.0)
-        * ctx.royal_research.max(1.0)
-        * ctx.extra_multiplier.max(1.0)
+    let mut additive = Vec::with_capacity(9);
+    for cell in [50, 90, 110, 31, 51] {
+        additive.push((grid_label(cell), grid(cell)));
+    }
+    if !ctx.sticker_multiplicative {
+        additive.push(("Sticker Secured".into(), dynamic_sticker));
+    }
+    additive.push(("Account bonuses".into(), ctx.extra_pct));
+    additive.push(("Research Skill Mastery".into(), ctx.mastery_additive_pct));
+    additive.push((
+        format!("{} × {found} observations found", grid_label(112)),
+        grid(112) * found,
+    ));
+    additive.push((
+        format!("{} × {insight} insight levels", grid_label(94)),
+        grid(94) * insight,
+    ));
+    let multipliers = vec![
+        (grid_label(70), 1.0 + grid(70) / 100.0),
+        (
+            "Research equipment".into(),
+            ctx.research_equipment_multi.clamp(1.0, 15.0),
+        ),
+        ("Sticker multiplier".into(), sticker_multi),
+        (
+            "Research Skill Mastery multiplier".into(),
+            ctx.mastery_exp_multi,
+        ),
+        ("Clam Work promotion 9".into(), 1.0 + 0.25 * ctx.clam_work9),
+        ("Nonstop Studies".into(), 1.0 + 3.0 * ctx.dream14 / 100.0),
+        ("Button 0".into(), 1.0 + button0 / 100.0),
+        ("Arcade 63".into(), 1.0 + ctx.arcade63 / 100.0),
+        ("Killroy 5".into(), ctx.killroy5.max(1.0)),
+        ("Companions 52/153/54".into(), ctx.companion_52),
+        (
+            "Companion 54 enhanced".into(),
+            1.0 + 0.5 * ctx.companion_54_level2,
+        ),
+        ("Ring of Glory 0".into(), 1.0 + ctx.rog(0) / 100.0),
+        ("Cglunko 11".into(), 1.0 + ctx.cglunko11 / 100.0),
+        ("Fountain 2-16".into(), 1.0 + ctx.fountain_2_16 / 100.0),
+        ("Jelly Operator rewards".into(), ctx.jelly_research_multi),
+        ("Menagerie boost 3".into(), 1.0 + ctx.menagerie_b3 / 100.0),
+        (
+            "Royal Guardian research".into(),
+            ctx.royal_research.max(1.0),
+        ),
+        ("Account multiplier".into(), ctx.extra_multiplier.max(1.0)),
+    ];
+    ExpTerms {
+        additive,
+        multipliers,
+    }
+}
+
+/// `simTotalExpWith`'s multiplier: the additive pool times every true
+/// multiplier.
+fn total_multiplier(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> f64 {
+    exp_terms_with(sim, ctx, grid).total()
 }
 
 /// Research EXP/hour when every cell in `cells` carries a shape of `bonus_pct`.

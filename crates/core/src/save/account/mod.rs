@@ -396,6 +396,43 @@ impl Decoder<'_> {
 
 /// `getPrismaBonusMult` for the imported save, with no grid or character state.
 ///
+/// The App data needs the companion roster's bonus without building a full
+/// simulation: `companionBonusForSave`.
+pub(crate) fn companion_bonus(id: usize, enhanced: bool) -> f64 {
+    data::account_data().companion(id, enhanced)
+}
+
+/// `vaultUpgBonus(index)`: the App data uses upgrade 11 as flat carry capacity.
+pub(crate) fn vault_bonus(save: &Save) -> f64 {
+    let Some((fields, _)) = save.parts() else {
+        return 0.0;
+    };
+    bonuses::vault_upgrade_bonus(fields, 11)
+}
+
+/// `mainframeBonus(index)`: the lab's connected-mainframe bonus, when the save
+/// carries a lab layout. The stat breakdowns read node 7 (Certified Stamp Book).
+pub(crate) fn mainframe_bonus(save: &Save, index: usize) -> Option<f64> {
+    let (fields, root) = save.parts()?;
+    let characters = super::characters(fields);
+    let simulation = Simulation::default();
+    let overlay = simulation.overlay();
+    let mut warnings = Vec::new();
+    let mut decoder = Decoder {
+        save: fields,
+        root,
+        data: account_data(),
+        characters: &characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings: &mut warnings,
+    };
+    decoder.mainframe(index)
+}
+
 /// The Prisma calculator needs the multiplier the game applies to every
 /// Prisma-ed bubble; every term it sums comes from account fields, so this
 /// reads them without building a full simulation.
