@@ -119,14 +119,31 @@ pub fn card(
 fn headline(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
     let (value, suffix) = format::scale(plan.rate);
     let improved = plan.improvement > 0.01;
-    let reading = if improved {
-        format!(
-            "+{:.2}% vs the saved distribution · {} to the next level",
-            plan.improvement,
-            hours(plan.hours)
+    // The page only claims "already optimal" when nothing is better; a save
+    // that already spent more than this budget says so instead.
+    let (reading, verdict) = if improved {
+        (
+            format!(
+                "+{:.2}% vs the saved distribution · {} to the next level",
+                plan.improvement,
+                hours(plan.hours)
+            ),
+            format!("{:+.2}% vs saved", plan.improvement),
+        )
+    } else if plan.improvement < -0.01 {
+        (
+            format!(
+                "{:.2}% below the saved levels · {} to the next level",
+                plan.improvement,
+                hours(plan.hours)
+            ),
+            format!("{:.2}% below saved", plan.improvement),
         )
     } else {
-        "The saved distribution is already optimal for this budget.".to_string()
+        (
+            "The saved distribution is already optimal for this budget.".to_string(),
+            "Already optimal".to_string(),
+        )
     };
     // The label carries the budget and the rank the plan holds for, so the
     // harness reads the switch and the spend from the same node the cards show.
@@ -163,13 +180,11 @@ fn headline(plan: &Plan, muted: gpui::Hsla) -> AnyElement {
                 .flex()
                 .flex_col()
                 .gap_1()
-                .child(div().id("cooking-mastery-distribution-improvement").child(
-                    SharedString::from(if improved {
-                        format!("{:+.2}% vs saved", plan.improvement)
-                    } else {
-                        "Already optimal".to_string()
-                    }),
-                ))
+                .child(
+                    div()
+                        .id("cooking-mastery-distribution-improvement")
+                        .child(SharedString::from(verdict)),
+                )
                 .child(
                     Caption::new(format!(
                         "{} now · {} to the next level",

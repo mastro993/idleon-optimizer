@@ -13,6 +13,7 @@ use crate::sections;
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::sections::clamworks::state::StandIn;
 use crate::sections::combat_sim::Tab as CombatTab;
+use crate::sections::cooking_mastery::State as CookingMasteryState;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::Tab as FountainTab;
@@ -164,14 +165,6 @@ pub struct ClamworksConfig {
     hours: f64,
     phase: ClaimPhase,
     stand_ins: BTreeMap<usize, StandIn>,
-}
-
-/// The Mastery EXP tab's distribution config: its goal and the points it spends.
-#[derive(Clone, Copy, Debug, Default, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub struct CookingMasteryConfig {
-    goal: idleon_core::cooking_mastery::Goal,
-    budget: Option<f64>,
 }
 
 /// The Ladle section's config: its tab, selectors, panel inputs and the checked
@@ -445,13 +438,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert("coral-god-rank", value(&state.coral.inputs));
-    insert(
-        "cooking-mastery",
-        value(&CookingMasteryConfig {
-            goal: state.mastery_plan.goal,
-            budget: state.mastery_plan.budget,
-        }),
-    );
+    insert("cooking-mastery", value(&state.mastery_plan));
     insert(
         "worship-td",
         value(&WorshipConfig {
@@ -554,7 +541,7 @@ pub enum Config {
     Ladle(LadleConfig),
     Spelunking(SpelunkingState),
     Coral(coral::Inputs),
-    CookingMastery(CookingMasteryConfig),
+    CookingMastery(CookingMasteryState),
     Worship(WorshipConfig),
     StatsAll(idleon_core::stats::Context),
     DropRate(idleon_core::drop_rate::Selection),
@@ -917,8 +904,7 @@ pub fn assign(
             state.coral.inputs = config;
         }
         Config::CookingMastery(config) => {
-            state.mastery_plan.goal = config.goal;
-            state.mastery_plan.budget = config.budget;
+            state.mastery_plan = config;
         }
         Config::StatsAll(context) => stats_all::restore(state, context, warnings),
         Config::DropRate(selection) => {
@@ -1005,7 +991,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "ladle" => decode!(Ladle, LadleConfig),
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
-        "cooking-mastery" => decode!(CookingMastery, CookingMasteryConfig),
+        "cooking-mastery" => decode!(CookingMastery, CookingMasteryState),
         "stats-all" => decode!(StatsAll, idleon_core::stats::Context),
         "drop-rate" => decode!(DropRate, idleon_core::drop_rate::Selection),
         "worship-td" => decode!(Worship, WorshipConfig),
@@ -1460,14 +1446,14 @@ mod tests {
                 idleon_core::combat::Mode::On
             ))
         );
-        let mastery = round_trip(&CookingMasteryConfig {
+        let mastery = round_trip(&CookingMasteryState {
             goal: idleon_core::cooking_mastery::Goal::NextUnlock,
             budget: Some(12.0),
         });
         assert_eq!(mastery.goal, idleon_core::cooking_mastery::Goal::NextUnlock);
         assert_eq!(mastery.budget, Some(12.0));
         // A document that never touched the budget leaves it at every point.
-        let untouched = round_trip(&CookingMasteryConfig::default());
+        let untouched = round_trip(&CookingMasteryState::default());
         assert_eq!(untouched.goal, idleon_core::cooking_mastery::Goal::Now);
         assert_eq!(untouched.budget, None);
         let coral = round_trip(&coral::Inputs {

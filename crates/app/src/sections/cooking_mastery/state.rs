@@ -1,8 +1,8 @@
 //! The Mastery EXP tab's distribution controls: the goal and the budget.
 //!
-//! The page keeps both in module-level variables (`_masteryBudgetOverride` and
-//! the input's value), so a tab switch keeps them. This struct does the same for
-//! the app and is what a project document carries, like the other sections'.
+//! The page keeps the budget in a module-level `_masteryBudgetOverride`, so a tab
+//! switch keeps it; this struct does the same for the app, adds the goal the
+//! section's inputs ask for, and is what a project document carries.
 
 use idleon_core::cooking_mastery::{Goal, Mastery, Plan};
 
