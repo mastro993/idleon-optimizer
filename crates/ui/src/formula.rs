@@ -3,7 +3,9 @@
 //! The tree owns its search field, open branches and copy state. A section
 //! builds a [`FormulaNode`], hands it to [`FormulaTree::set_root`] and
 //! renders the entity; every calculator gets the same rows, search highlights
-//! and copy text from here.
+//! and copy text from here. Every element id carries the tree's own id, so two
+//! trees can share a page (the All Stats breakdown and formula cards do) without
+//! their rows answering to the same id.
 
 use std::collections::HashSet;
 
@@ -148,7 +150,7 @@ impl Render for FormulaTree {
             );
 
         let rows = div().flex().flex_col().p_2().child(node_tree(
-            root, "root", 0, searching, &query, &self.open, &entity, &colors,
+            &id, root, "root", 0, searching, &query, &self.open, &entity, &colors,
         ));
 
         div()
@@ -172,6 +174,7 @@ impl Render for FormulaTree {
 
 #[allow(clippy::too_many_arguments)]
 fn node_tree(
+    id: &str,
     node: &FormulaNode,
     key: &str,
     depth: usize,
@@ -190,7 +193,7 @@ fn node_tree(
     let toggle_key = key.to_string();
 
     let mut row = div()
-        .id(format!("formula-node-{path}"))
+        .id(format!("{id}-node-{path}"))
         .role(if has_children {
             Role::Button
         } else {
@@ -218,7 +221,7 @@ fn node_tree(
         });
 
     let disclosure: AnyElement = if has_children {
-        Disclosure::new(format!("formula-disclosure-{path}"), is_open).into_any_element()
+        Disclosure::new(format!("{id}-disclosure-{path}"), is_open).into_any_element()
     } else {
         div().w(px(14.0)).into_any_element()
     };
@@ -278,6 +281,7 @@ fn node_tree(
         for (index, child) in node.children.iter().enumerate() {
             let child_key = format!("{key}/{index}");
             tree = tree.child(node_tree(
+                id,
                 child,
                 &child_key,
                 depth + 1,

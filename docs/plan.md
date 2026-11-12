@@ -211,7 +211,9 @@ counts and field names, not save values.
 - Reuse Ely components for cards, tabs, tables, steppers, badges, banners, scroll areas and dialogs.
 - Every calculator's breakdown renders through the shared formula tree: expandable nodes with label,
   inputs, multiplier, source and result, plus search highlights and a copy action. The research
-  Rates pane is the first consumer.
+  Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
+  several trees (the All Stats breakdown card and its formula card, for instance) without the
+  accessibility tree collapsing their rows onto one another.
 - Match the upstream information architecture: same tab names and order, same panels, same column
   order in tables, same defaults.
 - One shared page header (back, section title, world badge, save status, import) and one tab strip;
@@ -391,7 +393,8 @@ The endgame check is complete: the joke verdict plus the 177-metric leaderboard 
 save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
 Details: [`docs/sections/endgame.md`](sections/endgame.md).
 
-The All Stats Dashboard has its calculation context (SA-01) and its category breakdowns (SA-02). The
+The All Stats Dashboard has its calculation context (SA-01), its category breakdowns (SA-02) and its
+system formula explorer (SA-03). The
 context is the character, map, map-list, skill and construction-mode selectors with their save
 defaults (character one and its current map), and the map access walk ported from
 `js/stats/systems/common/map-access.js`. The breakdowns are the upstream descriptor registry
@@ -405,8 +408,16 @@ two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's o
 fifty descriptors resolve to a warning naming their upstream def instead of a guessed number, since
 they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capacity rows match the
 upstream stats page exactly on the committed fixture; `crates/stats/tests/stats.rs` pins the eight
-values and checks every category renders. Missing: the formula explorer (SA-03) and the input ledger
-(SA-04). Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
+values and checks every category renders.
+
+The explorer is the registry's second view, built from those same rows so a formula card can never
+disagree with the breakdown above it: a search over names, upstream defs and every saved input a
+formula's terms read, a category filter and a computed/not-modelled filter, and one card per formula
+whose value, explanation and terms are the selected row's. The ledger line counts every category
+(`10 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
+its place instead of disappearing. Each formula links to the definition it ports in
+`Corgan/idleon-research-optimizer`. Missing: the input ledger (SA-04).
+Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
 
 The Drop Rate Calculator has its inputs and total (DR-01): the character and map selectors built the
 way `populateMapSel` builds them, the runtime panel that only a dungeon map shows, and the total

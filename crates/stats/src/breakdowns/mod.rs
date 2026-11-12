@@ -140,6 +140,9 @@ impl Resolution {
     }
 }
 
+/// The repository every ported definition is read from.
+pub const UPSTREAM: &str = "https://github.com/Corgan/idleon-research-optimizer/blob/main/";
+
 /// One row of the dashboard: an upstream descriptor and its result.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Breakdown {
@@ -153,6 +156,29 @@ pub struct Breakdown {
 }
 
 impl Breakdown {
+    /// Where the row's upstream definition lives: the repository the port
+    /// reads, at the path the row names.
+    pub fn source_url(&self) -> String {
+        format!("{UPSTREAM}{}", self.source)
+    }
+
+    /// Whether `query` names this row, its category, its upstream source or one
+    /// of its formula terms, case-insensitively.
+    pub fn matches(&self, query: &str) -> bool {
+        let query = query.trim().to_lowercase();
+        if query.is_empty() {
+            return false;
+        }
+        [self.id, self.name, self.source, self.scope.label()]
+            .into_iter()
+            .chain(std::iter::once(self.category.label()))
+            .any(|field| field.to_lowercase().contains(&query))
+            || self
+                .resolution
+                .tree()
+                .is_some_and(|tree| tree.match_count(&query) > 0)
+    }
+
     /// The value as the row shows it, when it has one.
     pub fn display_value(&self) -> Option<String> {
         self.resolution

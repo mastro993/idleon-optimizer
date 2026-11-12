@@ -1,5 +1,5 @@
-//! The All Stats Dashboard: the calculation context and the category
-//! breakdowns it resolves against.
+//! The All Stats Dashboard: the calculation context, the category breakdowns
+//! it resolves against and the formula explorer over the same descriptors.
 //!
 //! The context is ported from `js/stats/systems/common/map-access.js`, which
 //! decides which maps a character may pick, and from the
@@ -10,18 +10,22 @@
 mod access;
 pub mod breakdowns;
 pub mod context;
+pub mod explorer;
 use idleon_stats_data as data;
 pub mod maps;
 mod snapshot;
 
 pub use breakdowns::{
     Breakdown, CapacityKind, Category as BreakdownCategory, Inputs as BreakdownInputs, Resolution,
-    Scope, Sheet,
+    Scope, Sheet, UPSTREAM,
 };
 pub use context::{ConstructionMode, Context, MapVisibility, Skill};
 pub use data::{
     EquipmentSet, Monster, afk_target, class_name, equipment_set, kill_requirement, map_count,
     map_name, monster, monster_count, set_bonus, target_name,
+};
+pub use explorer::{
+    CategoryCoverage, Coverage, Filter as ExplorerFilter, Status as ExplorerStatus,
 };
 pub use maps::{
     Category, ClassVisibility, MapClass, MapOption, arcane_multi, build_options, classify,

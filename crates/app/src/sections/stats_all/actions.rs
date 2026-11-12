@@ -85,6 +85,39 @@ impl AppState {
         }
     }
 
+    /// Filter the formula explorer to one category, or to every category.
+    pub(crate) fn set_stats_explorer_category(
+        &mut self,
+        category: Option<idleon_stats::BreakdownCategory>,
+        cx: &mut Context<Self>,
+    ) {
+        self.stats_all.explorer.category = category;
+        cx.notify();
+    }
+
+    /// Filter the formula explorer by whether a formula is computed here.
+    pub(crate) fn set_stats_explorer_status(
+        &mut self,
+        status: idleon_stats::ExplorerStatus,
+        cx: &mut Context<Self>,
+    ) {
+        self.stats_all.explorer.status = status;
+        cx.notify();
+    }
+
+    /// Show one formula in the explorer's card.
+    pub(crate) fn set_stats_formula(&mut self, id: String, cx: &mut Context<Self>) {
+        if self
+            .stats_all
+            .sheet
+            .as_ref()
+            .is_some_and(|sheet| sheet.get(&id).is_some())
+        {
+            self.stats_all.explorer.selected = Some(id);
+            cx.notify();
+        }
+    }
+
     /// Re-resolve the breakdowns from the save and the context.
     pub(crate) fn rebuild_stats_breakdowns(&mut self) {
         let Some(save) = self.save.as_ref() else {
