@@ -70,6 +70,64 @@ fn the_bravery_tab_matches_the_upstream_calculator() {
 }
 
 #[test]
+fn the_wisdom_tab_matches_the_upstream_calculator() {
+    let save = fixture();
+    let snapshot = monument::wisdom_snapshot(&save, 0);
+    assert!(snapshot.available, "the fixture carries the Monument rows");
+    assert_close(
+        &serde_json::to_value(&snapshot).expect("the snapshot serialises"),
+        &oracle()["wisdom"],
+        "wisdom",
+    );
+}
+
+#[test]
+fn every_reward_charge_matches_the_upstream_calculator() {
+    let save = fixture();
+    let oracle = oracle();
+    let cases = oracle["charges"].as_array().expect("oracle charges");
+    assert_eq!(cases.len(), 3, "one charge per monument");
+    for case in cases {
+        let monument = case["monument"].as_u64().expect("a monument") as usize;
+        for (key, extra) in [
+            ("charge", 0.0),
+            ("tomorrow", 86_400.0),
+            ("extraWait", 3_600.0),
+        ] {
+            let charge = monument::reward_charge(&save, monument, 0, extra)
+                .unwrap_or_else(|error| panic!("monument {monument}: {error}"));
+            assert_close(
+                &serde_json::to_value(&charge).expect("the charge serialises"),
+                &case[key],
+                &format!("charges[{monument}].{key}"),
+            );
+        }
+    }
+}
+
+#[test]
+fn rejected_charge_inputs_keep_the_upstream_message() {
+    let save = fixture();
+    let oracle = oracle();
+    let cases = oracle["chargeErrors"]
+        .as_array()
+        .expect("oracle rejections");
+    for case in cases {
+        let label = case["label"].as_str().expect("a case label");
+        let monument = case["monument"].as_u64().expect("a monument") as usize;
+        let extra = case["extraSeconds"].as_f64().expect("an extra wait");
+        assert_eq!(
+            monument::reward_charge(&save, monument, 0, extra)
+                .err()
+                .unwrap_or_else(|| panic!("{label}: the port must reject the input"))
+                .to_string(),
+            case["message"].as_str().expect("a message"),
+            "{label}"
+        );
+    }
+}
+
+#[test]
 fn every_run_state_matches_the_upstream_odds() {
     let save = fixture();
     let oracle = oracle();

@@ -6,8 +6,8 @@ Optimizer's current state, the Royal Guardian overview, the Coral God Rank plann
 controls and depth estimates, the Sneaking loadout and inventory workspaces, the combat
 simulator's loadout editor and mechanics overrides, the cog board optimizer, the Clamworks
 optimizer, the Jelly Operator overview and layout editor, the drop-rate inputs and dungeon total
-partial, sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument Bravery,
-the All Stats context and breakdowns built, 2 sections planned.**
+partial, sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument Bravery
+and Wisdom, the All Stats context and breakdowns built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -498,14 +498,18 @@ table and the consumer audit. Missing: the damage, stats and skills outcome fami
 evaluator covers beyond the modelled one, and the bubble icons.
 Details: [`docs/sections/prisma.md`](sections/prisma.md).
 
-The Monument section's Bravery tab is built (MN-01): Paying Respect training and sources, saved
-Bravery stats, sword odds for the entered run state, milestones and permanent reward levels. The
-Justice and Wisdom tabs and the full permanent/charge summaries stay on the roadmap as MN-02 to
-MN-04. `fixtures/monument.json` is the upstream calculator's own output for the committed save,
-including seven run states (boost stacks, spent rethrows, an entered last-sword HP) and the
-rejected inputs, so `crates/core/tests/monument.rs` compares the port field for field; regenerate
-it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs` extracts the tables
-the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
+The Monument section's Bravery (MN-01) and Wisdom (MN-03) tabs are built: Paying Respect training and
+sources, saved Bravery stats and sword odds for the entered run state, saved Wisdom attempts and
+reveals, both milestones and permanent reward sets, and the reward charge a monument's saved wait
+pays (plus its 24-hour preview), including the Meritoc vote, sushi tier and gaming superbit behind
+it. The character selector supplies the Summoning access the charge reads. The Justice tab and the
+full permanent/charge summaries stay on the roadmap as MN-02 and MN-04. `fixtures/monument.json`
+is the upstream calculator's own output for the committed save, including seven Bravery run states
+(boost stacks, spent rethrows, an entered last-sword HP), the Wisdom snapshot, all three reward
+charges and the rejected inputs, so `crates/core/tests/monument.rs` compares the port field for
+field; regenerate it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs`
+extracts the tables the tabs read. Details:
+[`docs/sections/monument.md`](sections/monument.md).
 
 The Cog Board Optimizer implements CG-01 to CG-04: the saved 12×8 board and shelf decode from
 `CogO` and `CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate)

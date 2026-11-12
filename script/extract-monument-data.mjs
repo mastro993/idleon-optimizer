@@ -1,9 +1,11 @@
 // Extracts the Monument (W5) data the Rust app ships from the upstream JS repo.
 // Usage: node script/extract-monument-data.mjs <path-to-idleon-research-optimizer>
 //
-// The Bravery calculator reads only the tables its formulas touch. Everything
-// else stays in the upstream checkout; the JSON records where each row came
-// from so a later section can extend the extractor instead of guessing.
+// The Monument calculator reads only the tables its formulas touch: Bravery's
+// damage and odds, the shared permanent rewards and training pool, and the
+// Wisdom run, milestone and reward-charge rows. Everything else stays in the
+// upstream checkout; the JSON records where each row came from so a later
+// section can extend the extractor instead of guessing.
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -26,6 +28,9 @@ const fountain = await import(join(source, 'js/stats/systems/w5/fountain.js'));
 const jar = await import(join(source, 'js/stats/systems/w5/jar.js'));
 const minehead = await import(join(source, 'js/stats/data/w7/minehead.js'));
 const summon = await import(join(source, 'js/stats/data/w7/summon.js'));
+const meritoc = await import(join(source, 'js/stats/data/w7/meritoc.js'));
+const sushi = await import(join(source, 'js/stats/data/w7/sushi.js'));
+const encoding = await import(join(source, 'js/stats/data/common/encoding.js'));
 
 const holes = game.HolesInfo;
 const number = (value) => Number(value) || 0;
@@ -78,10 +83,18 @@ const payload = {
     [39, 45, 55, 80].map((index) => [String(index), game.CompassUpg[index]]),
   ),
   mineheadBonusQty: minehead.MINEHEAD_BONUS_QTY.map(number),
-  // Companion 27 (reindeer) doubles a maxed arcade upgrade.
-  companions: {
-    27: [number(game.CompanionDB[27]?.[2]), number(game.CompanionDB[27]?.[11])],
-  },
+  // Companion 27 (reindeer) doubles a maxed arcade upgrade; 39 and 161 raise
+  // the Meritoc vote the reward charge reads.
+  companions: Object.fromEntries(
+    [27, 39, 161].map((index) => [String(index), [number(game.CompanionDB[index]?.[2]),
+      number(game.CompanionDB[index]?.[11])]]),
+  ),
+  // MERITOC_BASE[7]: the vote whose bonus multiplies the reward charge.
+  meritocBase: (meritoc.MERITOC_BASE || []).map(number),
+  // ROG_BONUS_QTY[51]: the sushi tier the Meritoc vote counts.
+  rogBonusQty: (sushi.ROG_BONUS_QTY || []).map(number),
+  // N2L: item `t` is owned when a saved list carries `encoding[t]`.
+  encoding: String(encoding.N2L || ''),
   artifact32: number(game.ArtifactInfo[32]?.[3]),
   emperor: {
     val: (game.EmperorBon[1] || []).map(number),
@@ -96,6 +109,9 @@ const payload = {
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
     holesRows: [30, 31, 32, 37, 52, 55, 70],
+    meritocRows: ['MERITOC_BASE'],
+    sushiRows: ['ROG_BONUS_QTY'],
+    encodingRows: ['N2L'],
   },
 };
 
