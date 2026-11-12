@@ -898,7 +898,7 @@
       "key": "coin-multi",
       "title": "Coin Multiplier Calculator",
       "group": "tools",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.",
       "upstream": [
         "coin-multi-calc.html",

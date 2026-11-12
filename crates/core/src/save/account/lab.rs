@@ -32,7 +32,42 @@ impl Decoder<'_> {
         self.deriving_lab = true;
         let lab = self.lab();
         self.deriving_lab = false;
-        lab.mainframe(index)
+        let value = lab.mainframe(index)?;
+        if index == 9 {
+            // `mainframeBonus(9)` scales its row by the account's millions of
+            // Green Mushroom kills, on top of jewel 113.
+            let base = value + lab.mainframe(113).unwrap_or(0.0);
+            let millions = self.mush_kills() / 1e6;
+            return Some(
+                base * if millions < 1e8 {
+                    millions.floor()
+                } else {
+                    millions
+                },
+            );
+        }
+        Some(value)
+    }
+
+    /// `_totalMushGKills`: every character's kills on the map that fights `mushG`.
+    fn mush_kills(&self) -> f64 {
+        let Some(map) = (0..crate::stats::map_count())
+            .find(|map| crate::stats::afk_target(*map) == Some("mushG"))
+        else {
+            return 0.0;
+        };
+        let required = crate::stats::kill_requirement(map);
+        let mut total = 0.0;
+        for character in 0..self.characters.len() {
+            let Some(row) = fields::char_field(self.save, "KLA", character) else {
+                continue;
+            };
+            let Some(cells) = fields::object_row(&row, map) else {
+                continue;
+            };
+            total += required - cells.first().copied().flatten().unwrap_or(0.0);
+        }
+        total.max(0.0)
     }
 
     /// Derive the lab graph once per decode.

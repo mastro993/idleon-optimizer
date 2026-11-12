@@ -83,3 +83,14 @@ counts, pile summaries, slot statistics, tier composition and the three currency
 Rust port uses, so the upstream output is reproducible; regenerate it with
 `node script/sailing-simulation-oracle.mjs <upstream-repo>`. `crates/core/tests/sailing_simulation.rs`
 compares the port field for field.
+
+`coin-multi.json` is the upstream Coin Multiplier calculator's own output, from
+`js/stats/defs/coin-multi.js` run over `data.json` and over one purpose-built save whose unmodelled
+sources are all neutral. It carries every character's map, AFK target, monster HP, computed damage,
+overkill tier and the 23 multiplicative groups, so the port's own overkill tier and every resolved
+group are compared against upstream, and the simple save's total is compared end to end. Regenerate
+it with `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/core/tests/coin_multi.rs`
+compares the port field for field. Nine groups still need the account stats engine (total
+STR/AGI/WIS), the talent, meal, pet arena/friend/statue, Sneaking, prayer, Divinity/Crop Scientist,
+Gambit and card/golden-food/guild systems; the port reports them as not modelled instead of guessing.
+Treat it as frozen for the same reason: it is the oracle's output, not this app's.

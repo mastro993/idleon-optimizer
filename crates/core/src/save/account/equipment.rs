@@ -24,22 +24,36 @@ impl Decoder<'_> {
             );
             return None;
         }
-        let total = self.equipment_bonus(&stat)
-            + self.obol_bonus(&stat)
-            + self.nametag_bonus(&stat)
-            + self.trophy_bonus(&stat)
-            + self.hatrack_bonus(&stat)
-            + self.capevine_bonus(&stat);
+        let total = self.equipment_bonus(&stat, 0)
+            + self.obol_bonus(&stat, 0)
+            + self.nametag_bonus(&stat, 0)
+            + self.trophy_bonus(&stat, 0)
+            + self.hatrack_bonus(&stat, 0)
+            + self.capevine_bonus(&stat, 0);
         Some((1.0 + total / 100.0).clamp(1.0, 15.0))
     }
 
-    /// `equipment.resolve`: every gear slot's matching UQ stat.
-    fn equipment_bonus(&self, stat: &str) -> f64 {
-        let Some(order) = fields::field(self.save, "EquipOrder_0") else {
+    /// `EtcBonuses(index)` for one character: every gear source added up, as
+    /// `etcBonus.resolve` does. A save without the gear fields totals zero.
+    pub(super) fn etc(&self, index: usize, character: usize) -> f64 {
+        let Some(stat) = self.data.etc_stat(index).map(str::to_owned) else {
             return 0.0;
         };
-        let gear = fields::field(self.save, "EMm0_0");
-        let tools = fields::field(self.save, "EMm1_0");
+        self.equipment_bonus(&stat, character)
+            + self.obol_bonus(&stat, character)
+            + self.nametag_bonus(&stat, character)
+            + self.trophy_bonus(&stat, character)
+            + self.hatrack_bonus(&stat, character)
+            + self.capevine_bonus(&stat, character)
+    }
+
+    /// `equipment.resolve`: every gear slot's matching UQ stat.
+    pub(super) fn equipment_bonus(&self, stat: &str, character: usize) -> f64 {
+        let Some(order) = fields::field(self.save, &format!("EquipOrder_{character}")) else {
+            return 0.0;
+        };
+        let gear = fields::field(self.save, &format!("EMm0_{character}"));
+        let tools = fields::field(self.save, &format!("EMm1_{character}"));
         if gear.is_none() && tools.is_none() {
             return 0.0;
         }
@@ -49,9 +63,9 @@ impl Decoder<'_> {
         } else {
             1.0
         };
-        let gallery = self.gallery_on();
-        let premhat = self.premhat_on();
-        let capevine = self.capevine_on();
+        let gallery = self.gallery_on(character);
+        let premhat = self.premhat_on(character);
+        let capevine = self.capevine_on(character);
         let mut skip: Vec<usize> = Vec::new();
         if gallery {
             skip.extend([10, 14]);
@@ -63,18 +77,18 @@ impl Decoder<'_> {
             skip.push(12);
         }
         let mut chips: Vec<usize> = Vec::new();
-        if self.char_has_chip(0, "pend") {
+        if self.char_has_chip(character, "pend") {
             chips.push(3);
         }
-        if self.char_has_chip(0, "key1") {
+        if self.char_has_chip(character, "key1") {
             chips.push(9);
         }
-        if self.char_has_chip(0, "troph") {
+        if self.char_has_chip(character, "troph") {
             chips.push(10);
         }
         let mut total = 0.0;
         for (row, max_slot) in [(0usize, 15usize), (1, 7)] {
-            let Some(order_row) = super::super::json::index(&order, &[row]) else {
+            let Some(order_row) = cell(&order, row) else {
                 continue;
             };
             let emm_row = match row {
@@ -88,12 +102,10 @@ impl Decoder<'_> {
                 if skip.contains(&slot) {
                     continue;
                 }
-                let Some(item_name) =
-                    super::super::json::index(order_row, &[slot]).and_then(Value::as_str)
-                else {
+                let Some(item_name) = cell(order_row, slot).and_then(Value::as_str) else {
                     continue;
                 };
-                let saved = super::super::json::index(emm_row, &[slot]);
+                let saved = cell(emm_row, slot);
                 let mut value = 0.0;
                 for uq in 1..=2 {
                     let built_in = self
@@ -141,10 +153,10 @@ impl Decoder<'_> {
     }
 
     /// `obol.resolve`: personal and family obols with a matching built-in stat.
-    fn obol_bonus(&self, stat: &str) -> f64 {
+    pub(super) fn obol_bonus(&self, stat: &str, character: usize) -> f64 {
         let personal = self.scan_obols(
-            fields::field(self.save, "ObolEqO0_0"),
-            fields::field(self.save, "ObolEqMAP_0"),
+            fields::field(self.save, &format!("ObolEqO0_{character}")),
+            fields::field(self.save, &format!("ObolEqMAP_{character}")),
             stat,
         );
         let family = self.scan_obols(
@@ -159,12 +171,9 @@ impl Decoder<'_> {
         let (Some(names), Some(maps)) = (names, maps) else {
             return 0.0;
         };
-        let Some(names) = names.as_array() else {
-            return 0.0;
-        };
         let mut total = 0.0;
-        for (slot, name) in names.iter().enumerate() {
-            let Some(name) = name.as_str() else {
+        for slot in 0..row_len(&names) {
+            let Some(name) = cell(&names, slot).and_then(Value::as_str) else {
                 continue;
             };
             if name.is_empty() || name == "Blank" || name == "Null" {
@@ -183,7 +192,7 @@ impl Decoder<'_> {
             let Some((uq, value)) = built_in else {
                 continue;
             };
-            let rolled = super::super::json::index(&maps, &[slot])
+            let rolled = cell(&maps, slot)
                 .and_then(|row| row.get(format!("UQ{uq}val")))
                 .and_then(super::super::json::number)
                 .unwrap_or(0.0);
@@ -193,12 +202,12 @@ impl Decoder<'_> {
     }
 
     /// `nametag.resolve`: tier × gallery multiplier × UQ value.
-    fn nametag_bonus(&self, stat: &str) -> f64 {
-        if !self.gallery_on() {
+    fn nametag_bonus(&self, stat: &str, character: usize) -> f64 {
+        if !self.gallery_on(character) {
             return 0.0;
         }
         let levels = self.spelunk_row(17);
-        let gallery = self.gallery_bonus_multi();
+        let gallery = self.gallery_bonus_multi(character);
         let mut total = 0.0;
         for (index, level) in levels.iter().enumerate() {
             let level = level.unwrap_or(0.0);
@@ -224,12 +233,12 @@ impl Decoder<'_> {
     }
 
     /// `trophy.resolve`: slot tier × gallery multiplier × UQ value.
-    fn trophy_bonus(&self, stat: &str) -> f64 {
-        if !self.gallery_on() {
+    fn trophy_bonus(&self, stat: &str, character: usize) -> f64 {
+        if !self.gallery_on(character) {
             return 0.0;
         }
         let slots = self.spelunk_row(16);
-        let gallery = self.gallery_bonus_multi();
+        let gallery = self.gallery_bonus_multi(character);
         let mut total = 0.0;
         for (index, trophy) in slots.iter().enumerate() {
             let trophy_id = trophy.unwrap_or(0.0) as usize;
@@ -250,8 +259,8 @@ impl Decoder<'_> {
     }
 
     /// `premhat.resolve`: hatrack multiplier × UQ value.
-    fn hatrack_bonus(&self, stat: &str) -> f64 {
-        if !self.premhat_on() {
+    fn hatrack_bonus(&self, stat: &str, character: usize) -> f64 {
+        if !self.premhat_on(character) {
             return 0.0;
         }
         let hats = fields::strings(self.save, "Spelunk", &[46]).unwrap_or_default();
@@ -271,8 +280,8 @@ impl Decoder<'_> {
     }
 
     /// `capevine.resolve`: cape vine multiplier × UQ value.
-    fn capevine_bonus(&self, stat: &str) -> f64 {
-        if !self.capevine_on() {
+    fn capevine_bonus(&self, stat: &str, character: usize) -> f64 {
+        if !self.capevine_on(character) {
             return 0.0;
         }
         let capes = fields::strings(self.save, "Spelunk", &[54]).unwrap_or_default();
@@ -291,10 +300,10 @@ impl Decoder<'_> {
         total
     }
 
-    /// `GalleryBonusMulti`.
-    fn gallery_bonus_multi(&self) -> f64 {
+    /// `galleryBonusMulti`.
+    fn gallery_bonus_multi(&self, character: usize) -> f64 {
         let gallery_level = self.spelunk(13, 4);
-        let trophy_chip = if self.chip_count(0, 16) > 0.0 {
+        let trophy_chip = if self.chip_count(character, 16) > 0.0 {
             10.0
         } else {
             0.0
@@ -407,22 +416,22 @@ impl Decoder<'_> {
     }
 
     /// `galleryBonusSystemOn`: KLA map 250 cleared.
-    fn gallery_on(&self) -> bool {
-        self.map_cleared(250)
+    fn gallery_on(&self, character: usize) -> bool {
+        self.map_cleared(250, character)
     }
 
     /// `premHatBonusSystemOn`: KLA map 50 cleared.
-    fn premhat_on(&self) -> bool {
-        self.map_cleared(50)
+    fn premhat_on(&self, character: usize) -> bool {
+        self.map_cleared(50, character)
     }
 
     /// `capevineBonusSystemOn`: KLA map 100 cleared.
-    fn capevine_on(&self) -> bool {
-        self.map_cleared(100)
+    fn capevine_on(&self, character: usize) -> bool {
+        self.map_cleared(100, character)
     }
 
-    fn map_cleared(&self, map: usize) -> bool {
-        let Some(value) = fields::field(self.save, "KLA_0") else {
+    fn map_cleared(&self, map: usize, character: usize) -> bool {
+        let Some(value) = fields::char_field(self.save, "KLA", character) else {
             return false;
         };
         let Some(row) = super::super::json::index(&value, &[map]) else {
@@ -452,6 +461,28 @@ impl Decoder<'_> {
                 })
             })
             .unwrap_or(false)
+    }
+}
+
+/// How many slots a row carries, whether it is an array or a sparse object.
+fn row_len(value: &Value) -> usize {
+    match value {
+        Value::Array(items) => items.len(),
+        Value::Object(fields) => fields
+            .keys()
+            .filter_map(|key| key.parse::<usize>().ok())
+            .max()
+            .map_or(0, |last| last + 1),
+        _ => 0,
+    }
+}
+
+/// One slot of a row the game may write as an array or as a sparse object.
+fn cell(value: &Value, slot: usize) -> Option<&Value> {
+    match value {
+        Value::Array(items) => items.get(slot),
+        Value::Object(fields) => fields.get(&slot.to_string()),
+        _ => None,
     }
 }
 

@@ -6,7 +6,8 @@ current state, the Royal Guardian overview, outpost map, resource nodes and curr
 Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout, inventory and
 formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog
 board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout editor and operation
-simulator, the drop-rate inputs and dungeon total partial, sailing, shadow-ban, endgame, Fishing,
+simulator, the drop-rate inputs and dungeon total partial, the Coin Multiplier inputs
+and partial total, sailing, shadow-ban, endgame, Fishing,
 Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context and breakdowns
 built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
@@ -137,6 +138,13 @@ and acceptance criteria are generated into [`docs/sections/`](sections/).
 Sequencing: M0 first, then M1 (finish research), then the general tools and worlds in milestone
 order. Sections that share combat or save systems (M2, M26, M27) can reuse the combat core; sections
 that share a tree renderer reuse the formula-tree component.
+
+The Coin Multiplier Calculator (M6) is partial: the character selector, the map/target/HP/damage
+cards, the overkill tier and 14 of the 23 multiplicative groups are ported and compared against the
+upstream oracle. The other nine groups resolve through the account stats engine (total STR/AGI/WIS),
+the talent, meal, pet-arena/friend/statue, Sneaking, prayer, Divinity/Crop Scientist, Gambit and
+card/golden-food/guild systems, which this build does not carry yet; the section names each missing
+group and marks the total partial, so the figure is a lower bound until those systems land.
 
 ## 5. Shared data and JSON import
 

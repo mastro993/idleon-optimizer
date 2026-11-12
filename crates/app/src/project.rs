@@ -1898,7 +1898,14 @@ mod tests {
     fn every_built_section_is_a_config_id_or_a_page_the_save_alone_fills() {
         // The sections whose visible state is the save alone carry no config;
         // a planned section has no state at all yet.
-        let derived = ["cglunko", "endgame", "fountain", "shadow"];
+        let derived = [
+            "cglunko",
+            "coin-multi",
+            "cooking-mastery",
+            "endgame",
+            "fountain",
+            "shadow",
+        ];
         for section in sections::SECTIONS.iter() {
             let id = section.id;
             let configured = [

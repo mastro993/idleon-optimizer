@@ -157,6 +157,8 @@ pub struct Imported {
     pub warnings: Vec<String>,
     /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
     pub shadow: Shadow,
+    /// The coin multiplier calculator's per-character cards and groups.
+    pub coin: crate::coin_multi::Snapshot,
 }
 
 /// A save field that may be a JSON value or a string holding one.
@@ -347,6 +349,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let cog = CogSave::from_save(save, construction_level, &mut warnings);
     let worship = worship::inputs(save, &mut warnings);
     let shadow = Shadow::read(save);
+    let coin = account::coin(save, &characters, &simulation);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
     let spelunking = crate::spelunking::Save::from_parts(&document);
@@ -419,6 +422,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         named_characters,
         warnings,
         shadow,
+        coin,
     })
 }
 

@@ -5,7 +5,7 @@
 - Milestone: `M6`
 - Section key: `coin-multi`
 - Group: `tools`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`, `stats-all`
 
 Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.

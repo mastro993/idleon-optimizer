@@ -6,6 +6,8 @@ use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
 use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
 };
+use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
+use crate::sections::coin_multi;
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
@@ -320,6 +322,8 @@ pub struct AppState {
     pub stats_breakdown: Entity<ui::formula::FormulaTree>,
     /// The Drop Rate Calculator's context, save slice and live dungeon fields.
     pub drop_rate: DropRateState,
+    /// The Coin Multiplier Calculator's cards and damage field.
+    pub coin_multi: coin_multi::State,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -1184,6 +1188,7 @@ impl AppState {
             stats_all: StatsAllState::default(),
             stats_breakdown,
             drop_rate: DropRateState::new(window, cx),
+            coin_multi: sections::coin_multi::State::new(window, cx),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
@@ -1565,6 +1570,7 @@ impl AppState {
             self.monument.notice.clear();
         }
         self.endgame = endgame::State::audit(&imported);
+        self.coin_multi.load(&imported, cx);
         self.fishing_save = FishingSave::from_save(&imported.save);
         self.fishing.adopt(&self.fishing_save);
         self.simulation = imported.simulation;
@@ -3473,6 +3479,12 @@ impl AppState {
         } else {
             DEFAULT_TTK
         };
+        cx.notify();
+    }
+
+    /// Select the coin multiplier's character.
+    pub fn set_coin_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        self.coin_multi.character = character;
         cx.notify();
     }
 
