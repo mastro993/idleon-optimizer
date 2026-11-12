@@ -310,6 +310,8 @@ Research, shadow, endgame and BoneJoePickle are implemented; research is still p
 dashboard (summary, grid and observation previews, EXP/AFK/insight breakdowns and the grid-point
 split), grid, shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements,
 save import, the ROv2 state string export, projection chart, keyboard, canvas dragging, the
+manual editing surface (grid levels, shape add/drag/rotate/remove with a canvas rotation handle,
+per-observation magnifier assignment, and undo/redo over every edit), the
 shared searchable EXP formula tree, target validation, the three run toggles (assume
 observations unlocked, extended insight lookahead and the daily tournament +12h) and the
 target-aware engine: the run simulates to the target, spends each level's grid points and re-fits
@@ -317,8 +319,8 @@ magnifiers and shapes on the level-up events, the saved and optimized layouts ar
 target they reach, and the grid spend is scored with a forward simulation.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observation Unlocks, Shape
-Optimization, Decision Tree, Minehead, Sushi Station), strategy comparison, complete save-derived
-multipliers and undo.
+Optimization, Decision Tree, Minehead, Sushi Station), strategy comparison and complete
+save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an

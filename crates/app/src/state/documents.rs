@@ -185,6 +185,8 @@ impl AppState {
         self.fishing_save = FishingSave::from_save(&imported.save);
         self.fishing.adopt(&self.fishing_save);
         self.simulation = imported.simulation;
+        // A new save replaces the layout the trail would undo into.
+        self.research.history.clear();
         self.context = imported.context.clone();
         self.context_base = imported.context;
         self.normalize_target();

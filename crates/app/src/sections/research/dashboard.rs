@@ -99,18 +99,21 @@ pub(crate) fn dashboard_pane(
                         .gap_3()
                         .items_start()
                         .child(breakdown_card(
+                            "dash-exp-formula",
                             "EXP rate breakdown",
                             "Every factor in the EXP/hr result",
                             state.research_trees.exp.clone(),
                             340.0,
                         ))
                         .child(breakdown_card(
+                            "dash-afk-formula",
                             "AFK rate",
                             "The share of active EXP earned while away",
                             state.research_trees.afk.clone(),
                             340.0,
                         ))
                         .child(breakdown_card(
+                            "dash-insight-formula",
                             "Insight multiplier",
                             "What one monocle applies before neighbours",
                             state.research_trees.insight.clone(),
@@ -539,6 +542,7 @@ fn observation_cell(card: dashboard::ObservationCard, cx: &mut Context<AppState>
 }
 
 fn breakdown_card(
+    id: &'static str,
     title: &'static str,
     description: &'static str,
     tree: Entity<FormulaTree>,
@@ -546,6 +550,6 @@ fn breakdown_card(
 ) -> AnyElement {
     Card::new()
         .header(CardHeader::new(title).description(description))
-        .child(div().h(px(height)).min_h_0().flex_1().child(tree))
+        .child(div().id(id).h(px(height)).min_h_0().flex_1().child(tree))
         .into_any_element()
 }

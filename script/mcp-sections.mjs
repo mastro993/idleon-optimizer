@@ -87,6 +87,25 @@ const shadowSave = () => {
   });
 };
 
+/// A small flat save at research level 42 with every square at level 1, no saved
+/// shape overlay and one found observation holding a magnifier: enough for the
+/// grid, shape and magnifier editors, whatever save the previous section left.
+const researchSave = () => {
+  const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  return JSON.stringify({
+    Research: JSON.stringify([
+      Array(240).fill(1),
+      Array(240).fill(-1),
+      sparse(80, { 0: 1 }),
+      sparse(80, {}),
+      sparse(80, {}),
+      [0, 0],
+      [],
+    ]),
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+  });
+};
+
 /// A small flat `save.json` carrying a cavern: three jar types bought and one
 /// slot filling an Opal jar, so the jar calculator has something to read. Rows
 /// stay as short as the cells the jar reads.
@@ -1822,6 +1841,15 @@ const INTERACTIONS = {
     );
   },
   research: async (lane) => {
+    // The card lane carries the previous section's save, so start the research
+    // checks from a purpose-built account.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'research: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: researchSave() });
+    await waitForNode(lane, 'import-format', 'research: the research save previews');
+    await lane.call('click_element', { id: 'import-apply' });
     await waitForNode(lane, 'research-dashboard', 'research: the dashboard tab opens first');
     for (const id of [
       'dash-kpis',
@@ -1833,6 +1861,9 @@ const INTERACTIONS = {
     ]) {
       await waitForNode(lane, id, `research: the dashboard renders ${id}`);
     }
+    // The dashboard's cards own their own scroll areas, so the page scrolls
+    // from its margin.
+    await bringIntoView(lane, 'dash-cell-129', await wheelPoint(lane, 'dashboard-scroll'));
     await lane.call('click_element', { id: 'dash-cell-129' });
     await waitFor(
       lane,
@@ -1841,6 +1872,7 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'dashboard' });
     await waitForNode(lane, 'research-dashboard', 'research: the dashboard tab reopens');
+    await bringIntoView(lane, 'dash-obs-0', await wheelPoint(lane, 'dashboard-scroll'));
     await lane.call('click_element', { id: 'dash-obs-0' });
     await waitFor(
       lane,
@@ -1861,6 +1893,101 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'formula-collapse' });
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
+
+    // RES-13: every edit is undoable and redoable, the canvas handle turns a
+    // shape, and the keyboard agrees with the pointer.
+    await lane.call('click_element', { id: 'cell-129' });
+    const level = labelOf(await lane.tree(), 'square-level') ?? '';
+    await lane.call('click_element', { id: 'square-plus' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'square-level') ?? '') !== level,
+      'research: the inspector raises the selected square',
+    );
+    await lane.call('click_element', { id: 'grid-undo' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'square-level') ?? '') === level,
+      'research: undo takes the level change back',
+    );
+    await lane.call('click_element', { id: 'grid-redo' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'square-level') ?? '') !== level,
+      'research: redo re-applies the level change',
+    );
+    await lane.call('click_element', { id: 'shape-add' });
+    await waitForNode(lane, 'shape-rotate-handle', 'research: the new shape shows its rotation handle');
+    // The handle turns on the pointer's angle around the shape, so it takes a
+    // coordinate drag rather than a drag-and-drop handoff.
+    const centreOf = (node) => ({
+      x: node.bounds.x + node.bounds.width / 2,
+      y: node.bounds.y + node.bounds.height / 2,
+    });
+    const handle = centreOf((await lane.tree()).find((node) => node.id === 'shape-rotate-handle'));
+    const corner = centreOf((await lane.tree()).find((node) => node.id === 'cell-129'));
+    await lane.call('pointer_drag', {
+      from_x: handle.x,
+      from_y: handle.y,
+      to_x: corner.x,
+      to_y: corner.y,
+      steps: 12,
+    });
+    await waitFor(
+      lane,
+      (nodes) => !(labelOf(nodes, 'shape-rotate-handle') ?? '').includes('(0°)'),
+      'research: dragging the canvas handle turns the shape',
+    );
+    const turned = labelOf(await lane.tree(), 'shape-rotate-handle') ?? '';
+    await lane.call('keyboard', { keystroke: ']' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'shape-rotate-handle') !== turned,
+      'research: the ] key turns the picked shape',
+    );
+    await lane.call('keyboard', { keystroke: 'secondary-z' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'shape-rotate-handle') === turned,
+      'research: secondary-z undoes the keyboard turn',
+    );
+
+    // Magnifier assignment: pick an observation on Rates, then place and lift a
+    // glass on it from the grid inspector.
+    await lane.call('click_element', { id: 'rates' });
+    await waitForNode(lane, 'obs-name-0', 'research: the rate table lists its observations');
+    await lane.call('click_element', { id: 'obs-name-0' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'observations-selected') ?? '').startsWith('Selected:'),
+      'research: clicking an observation selects it for the magnifier pool',
+    );
+    await lane.call('click_element', { id: 'grid' });
+    await waitForNode(lane, 'mag-assign', 'research: the magnifier card edits the selected observation');
+    // A disabled button keeps its node but loses its click action.
+    const clickable = (nodes, id) =>
+      ((nodes.find((node) => node.id === id)?.actions) ?? []).includes('click');
+    if (clickable(await lane.tree(), 'mag-lift')) {
+      await lane.call('click_element', { id: 'mag-lift' });
+      await waitFor(
+        lane,
+        (nodes) => clickable(nodes, 'mag-add-Glass'),
+        'research: lifting a magnifier frees one in the pool',
+      );
+    }
+    const free = labelOf(await lane.tree(), 'mag-free-Glass') ?? '';
+    await lane.call('click_element', { id: 'mag-add-Glass' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'mag-free-Glass') ?? '') !== free,
+      'research: placing a glass takes it out of the pool',
+    );
+    await lane.call('click_element', { id: 'mag-lift' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'mag-free-Glass') ?? '') === free,
+      'research: removing it puts the glass back in the pool',
+    );
 
     // Shape Optimization: a built-in preset applies, a tier edit detaches it
     // without rewriting it, and the real optimizer fills the preview.
@@ -1889,6 +2016,7 @@ const INTERACTIONS = {
     );
     // The tier panel scrolls with the page, so save the preset while the rail
     // is still in view, then scroll the placement card up.
+    await bringIntoView(lane, 'shape-preset-name', await wheelPoint(lane, 'shape-opt-scroll'));
     await lane.call('click_element', { id: 'shape-preset-name' });
     await new Promise((resolve) => setTimeout(resolve, 250));
     await lane.call('type_text', { text: 'Minehead pin' });
@@ -1899,7 +2027,7 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'shape-custom-preset-0') ?? '').includes('Minehead pin'),
       'research: the custom shape preset is saved',
     );
-    await lane.call('scroll', { x: 720, y: 700, delta_y: 900 });
+    await bringIntoView(lane, 'shape-optimize', await wheelPoint(lane, 'shape-opt-scroll'));
     await lane.call('click_element', { id: 'shape-optimize' });
     await waitForNode(lane, 'shape-preview', 'research: the optimizer previews a placement', 120000);
     await waitForNode(lane, 'shape-breakdown-order-0', 'research: the coverage breakdown lists the first shape');
@@ -3319,14 +3447,22 @@ const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
 const waitForNode = (lane, id, label, timeoutMs) =>
   waitFor(lane, (nodes) => has(nodes, id), label, timeoutMs);
 
+/// A wheel point on a scrolling page, clear of the cards that own their own
+/// scroll areas: the right margin of the scroll container.
+const wheelPoint = async (lane, id) => {
+  const node = (await lane.tree()).find((candidate) => (candidate.id ?? '').endsWith(id));
+  const bounds = node?.bounds ?? { x: 0, width: 600 };
+  return { x: bounds.x + bounds.width - 6, y: 300 };
+};
+
 /// Scroll the pane until an element's bounds sit inside the viewport: a click
 /// goes through coordinates, so an element scrolled past the edge cannot be hit.
-const bringIntoView = async (lane, id) => {
+const bringIntoView = async (lane, id, { x = 600, y = 500 } = {}) => {
   for (let attempt = 0; attempt < 8; attempt += 1) {
     const node = (await lane.tree()).find((candidate) => (candidate.id ?? '').endsWith(id));
-    const y = node?.bounds?.y ?? 0;
-    if (y > 160 && y < 700) return;
-    await lane.call('scroll', { x: 600, y: 500, delta_y: y < 160 ? -300 : 300 });
+    const top = node?.bounds?.y ?? 0;
+    if (top > 160 && top < 700) return;
+    await lane.call('scroll', { x, y, delta_y: top < 160 ? -300 : 300 });
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 };

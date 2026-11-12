@@ -545,6 +545,7 @@ pub(crate) fn apply(
             changes.extend(research_changes(&state.simulation, &simulation));
             changes.extend(supplement_changes(&state.context, &context));
             state.simulation = simulation;
+            state.research.history.clear();
             state.replace_context(context);
         }
     }
