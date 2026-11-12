@@ -1,5 +1,6 @@
 //! Cog names and their display labels, ported from `classifyCog`,
-//! `parseSmallCog` and `cogDisplayName` in `js/cogs/cog-board.js`.
+//! `parseSmallCog` and `cogDisplayName` in `js/cogs/cog-board.js`, and from
+//! `cogStatTier` in `js/cogs/cog-judge.js`.
 
 /// Which family a cog name belongs to, for labels and colours.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -75,6 +76,17 @@ pub fn small_cog(name: &str) -> Option<(usize, usize)> {
         .and_then(|text| text.parse::<usize>().ok())
         .unwrap_or(0);
     Some((kind, level))
+}
+
+/// The stat-roll tier of a cog name, from `cogStatTier`: a standard cog's own
+/// tier 0-3, or 4 for every crystal cog (the `CogCry` number is its upgrade
+/// level, not its stat tier). `None` for a cog that does not roll stats.
+pub fn stat_tier(name: &str) -> Option<usize> {
+    match classify(name) {
+        CogKind::Crystal { .. } => Some(4),
+        CogKind::Standard { tier, .. } => Some(tier),
+        _ => None,
+    }
 }
 
 /// The display name from `cogDisplayName` upstream.

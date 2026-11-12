@@ -2000,6 +2000,20 @@ const INTERACTIONS = {
     await waitForNode(lane, 'import-format', 'cog: the save previews');
     await lane.call('click_element', { id: 'import-apply' });
     await waitForNode(lane, 'cog-board', 'cog: the board renders after Apply');
+    const insights = labelOf(await lane.tree(), 'cog-insights') ?? '';
+    check(
+      'cog: the insights name the weakest and strongest cogs',
+      insights.includes('Weakest') && insights.includes('Strongest'),
+      insights,
+    );
+    const ranges = labelOf(await lane.tree(), 'cog-roll-ranges') ?? '';
+    check(
+      'cog: the roll ranges use the effective construction level',
+      /^Roll ranges at level \d+/.test(ranges),
+      ranges,
+    );
+    const shelf = labelOf(await lane.tree(), 'cog-shelf') ?? '';
+    check('cog: the shelf is read-only', shelf.includes('read-only'), shelf);
     await lane.call('click_element', { id: 'cog-optimize' });
     await waitForNode(lane, 'cog-result', 'cog: optimize produces a result', 60000);
     const result = labelOf(await lane.tree(), 'cog-result') ?? '';

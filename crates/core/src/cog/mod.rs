@@ -13,16 +13,24 @@
 //!    `c × (1 + gT/100)`, construction EXP is the sum of every `d`, and the
 //!    player's EXP/hr is `b × (1 + fT/100) × (1 + totalD/100)`.
 //!
-//! The optimizer lives in [`optimize`]. Save decoding lives in [`save`] and the
-//! step-by-step replay of a finished swap list lives in [`SwapWalkthrough`].
+//! The optimizer lives in [`optimize`], the board advice in [`insights`], the
+//! game's roll maths in [`roll`] and save decoding in [`save`]; the step-by-step
+//! replay of a finished swap list lives in [`SwapWalkthrough`].
 
 mod display;
+mod insights;
 mod optimize;
+mod roll;
 mod save;
 mod walkthrough;
 
-pub use display::{CogKind, classify, display_name, small_cog};
+pub use display::{CogKind, classify, display_name, small_cog, stat_tier};
+pub use insights::{BoardInsights, Insight, RollTarget, board_insights};
 pub use optimize::{CogResult, OptimizeOptions, SwapStep, apply_swaps, optimize};
+pub use roll::{
+    RollRange, SHOWN_TIERS, infer_construction_level, max_rolls, min_rolls, raw_magnitude,
+    roll_range, roll_ranges, stat_from_value,
+};
 pub use save::CogSave;
 pub(crate) use save::has_cog;
 pub use walkthrough::SwapWalkthrough;
@@ -103,6 +111,23 @@ impl Direction {
             "everything" => Self::Everything,
             _ => return None,
         })
+    }
+
+    /// The save's own name for the direction, as `h` stores it.
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Adjacent => "adjacent",
+            Self::Diagonal => "diagonal",
+            Self::Left => "left",
+            Self::Right => "right",
+            Self::Up => "up",
+            Self::Down => "down",
+            Self::Corners => "corners",
+            Self::Around => "around",
+            Self::Row => "row",
+            Self::Column => "column",
+            Self::Everything => "everything",
+        }
     }
 
     /// The matrix offsets, or an empty slice for the row/column/everything
@@ -462,8 +487,10 @@ pub fn compute_totals(board: &Board) -> BoardTotals {
 }
 
 /// The goal's score without materialising the per-slot table, for the hot loop
-/// in the optimizer. The maths is exactly [`compute_totals`]'s.
-pub(crate) fn score(board: &Board, goal: Goal) -> f64 {
+/// in the optimizer and for the insights' contribution check. The maths is
+/// exactly [`compute_totals`]'s, so the score equals the goal's own total:
+/// build speed, Flaggy rate, or the best player's construction EXP/hr.
+pub fn score(board: &Board, goal: Goal) -> f64 {
     let active = active_yin(board);
     match goal {
         Goal::Build => {

@@ -10,10 +10,27 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
-use idleon_core::cog::{BOARD_SIZE, BOARD_W, Board, Cog, CogKind, Goal, classify, slot_to_pos};
+use idleon_core::cog::{
+    BOARD_SIZE, BOARD_W, Board, BoardInsights, Cog, CogKind, Goal, classify, slot_to_pos,
+};
 
-/// The placement card: a changed-slot badge and the grid.
-pub fn card(state: &AppState, board: &Board, cx: &mut Context<AppState>) -> AnyElement {
+/// What the insights measured a slot to be, so the grid can mark it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum CellRole {
+    #[default]
+    None,
+    Weakest,
+    Best,
+}
+
+/// The placement card: the grid, with the changed slots tinted and the two
+/// measured extremes marked.
+pub fn card(
+    state: &AppState,
+    board: &Board,
+    insights: Option<&BoardInsights>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let changed = (0..BOARD_SIZE)
         .filter(|slot| board[*slot] != state.cog.save.board[*slot])
         .count();
@@ -28,11 +45,16 @@ pub fn card(state: &AppState, board: &Board, cx: &mut Context<AppState>) -> AnyE
                 Badge::new(format!("{} · 12×8", state.cog.goal.label())).tone(Tone::Accent),
             ),
         )
-        .child(grid(state, board, cx))
+        .child(grid(state, board, insights, cx))
         .into_any_element()
 }
 
-fn grid(state: &AppState, board: &Board, cx: &mut Context<AppState>) -> AnyElement {
+fn grid(
+    state: &AppState,
+    board: &Board,
+    insights: Option<&BoardInsights>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let grid = div()
         .id("cog-board")
         .grid()
@@ -42,7 +64,16 @@ fn grid(state: &AppState, board: &Board, cx: &mut Context<AppState>) -> AnyEleme
         .children((0..BOARD_SIZE).map(|slot| {
             let cog = &board[slot];
             let changed = cog != &state.cog.save.board[slot];
-            cell(cog, slot, state.cog.goal, changed, cx)
+            let role = insights.map_or(CellRole::None, |insights| {
+                if insights.weakest.slot == slot {
+                    CellRole::Weakest
+                } else if insights.best.slot == slot {
+                    CellRole::Best
+                } else {
+                    CellRole::None
+                }
+            });
+            cell(cog, slot, state.cog.goal, changed, role, cx)
         }));
     div()
         .flex()
@@ -54,7 +85,7 @@ fn grid(state: &AppState, board: &Board, cx: &mut Context<AppState>) -> AnyEleme
                 .px_3()
                 .pb_2()
                 .child(Caption::new(
-                    "The badge marks a slot the optimizer changed. Player cogs and Yin blocks move too; the game only pays a Yin surround in its 2×2 order.",
+                    "The tint marks a slot the optimizer changed, and the red and green borders mark the weakest and strongest cog the insights measured. Player cogs and Yin blocks move too; the game only pays a Yin surround in its 2×2 order.",
                 )),
         )
         .into_any_element()
@@ -65,6 +96,7 @@ fn cell(
     slot: usize,
     goal: Goal,
     changed: bool,
+    role: CellRole,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let colors = &cx.theme().colors;
@@ -97,8 +129,13 @@ fn cell(
     } else {
         stat
     };
+    let marker = match role {
+        CellRole::None => "",
+        CellRole::Weakest => ", the board's weakest cog",
+        CellRole::Best => ", the board's strongest cog",
+    };
     let label = format!(
-        "Slot {slot}, column {col}, row {row}: {}, {detail}",
+        "Slot {slot}, column {col}, row {row}: {}, {detail}{marker}",
         cog.display_name()
     );
     div()
@@ -110,12 +147,17 @@ fn cell(
         .flex_col()
         .overflow_hidden()
         .rounded(px(4.0))
-        .bg(colors.surface)
-        .border_1()
-        .border_color(if changed {
-            colors.accent
+        .bg(if changed {
+            colors.accent.opacity(0.12)
         } else {
-            colors.border
+            colors.surface
+        })
+        .border_1()
+        .border_color(match role {
+            CellRole::Weakest => colors.danger,
+            CellRole::Best => colors.success,
+            CellRole::None if changed => colors.accent,
+            CellRole::None => colors.border,
         })
         .child(div().h(px(2.0)).w_full().bg(tint))
         .child(
