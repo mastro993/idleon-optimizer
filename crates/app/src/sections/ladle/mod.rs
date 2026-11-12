@@ -17,6 +17,7 @@ pub(crate) mod breakdowns;
 pub(crate) mod exp;
 pub(crate) mod forecast;
 pub(crate) mod kitchens;
+pub(crate) mod outcomes;
 pub(crate) mod summary;
 #[cfg(test)]
 mod tests;
@@ -33,9 +34,10 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
-use idleon_ladle::kitchen;
+use idleon_ladle::kitchen::{self, Scenario};
 use idleon_ladle::{EXP_BALLOONS, Panel};
 use idleon_ui::formula::FormulaTree;
+use outcomes::OutcomeSort;
 
 /// The ladle page's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -101,12 +103,16 @@ pub(crate) struct State {
     pub(crate) use_owned: bool,
     /// The reset whose layout the forecast draws, 1-based.
     pub(crate) day: usize,
+    /// The scenario the comparison and the forecast draw.
+    pub(crate) scenario: Scenario,
+    /// How the meal outcomes table orders its rows.
+    pub(crate) outcome_sort: OutcomeSort,
     /// The resets whose instructions are expanded, by day number.
     pub(crate) open_days: Vec<u32>,
     /// Whether the kitchen pins and meal exclusions are shown.
     pub(crate) show_layout: bool,
-    /// The plan the Kitchens tab last computed and the inputs it came from.
-    pub(crate) kitchen_plan: Option<KitchenPlan>,
+    /// The forecast the Kitchens tab last computed and the inputs it came from.
+    pub(crate) kitchen_plan: Option<KitchenForecast>,
     pub(crate) ladles_tree: Entity<FormulaTree>,
     pub(crate) claims_tree: Entity<FormulaTree>,
     pub(crate) balloons_tree: Entity<FormulaTree>,
@@ -130,6 +136,8 @@ impl State {
             kitchen: kitchen::Inputs::default(),
             use_owned: true,
             day: 1,
+            scenario: Scenario::Recommended,
+            outcome_sort: OutcomeSort::Gain,
             open_days: vec![1],
             show_layout: false,
             kitchen_plan: None,
@@ -163,32 +171,38 @@ impl State {
         self.breakdown_character = self.breakdown_character.min(characters.saturating_sub(1));
     }
 
-    /// The reset plan for the current inputs, recomputed only when they change.
+    /// The three forecast scenarios for the current inputs, recomputed only when
+    /// they change.
     ///
-    /// The plan simulates the whole horizon and searches each reset's layout, so
-    /// the pane caches it: a redraw reuses the stored plan, and the saved
-    /// signature rebuilds it whenever the save or an input moves.
-    pub(crate) fn plan(
+    /// Each scenario simulates the whole horizon and searches every reset's layout,
+    /// so the pane caches the result: a redraw reuses the stored forecast, and the
+    /// saved signature rebuilds it whenever the save or an input moves.
+    pub(crate) fn forecast(
         &mut self,
         reset: &kitchen::Reset,
         inputs: &kitchen::Inputs,
-    ) -> &Result<kitchen::Plan, kitchen::Problem> {
+    ) -> &Result<kitchen::Forecast, kitchen::Problem> {
         let signature = format!("{reset:?}{inputs:?}");
         let stale = self
             .kitchen_plan
             .as_ref()
             .is_none_or(|cached| cached.signature != signature);
         if stale {
-            self.kitchen_plan = Some(KitchenPlan {
+            self.kitchen_plan = Some(KitchenForecast {
                 signature,
-                plan: kitchen::plan(reset, inputs),
+                forecast: kitchen::forecast(reset, inputs),
             });
         }
         &self
             .kitchen_plan
             .as_ref()
-            .expect("the plan was just stored")
-            .plan
+            .expect("the forecast was just stored")
+            .forecast
+    }
+
+    /// Point one meal at a target level, or clear it with 0.
+    pub(crate) fn set_target(&mut self, meal: usize, level: f64) {
+        set_target(&mut self.kitchen.targets, meal, level);
     }
 
     /// Pin one kitchen to a meal, or let the optimizer choose with `None`.
@@ -221,10 +235,18 @@ impl State {
     }
 }
 
-/// The Kitchens tab's cached plan and the inputs it was built from.
-pub(crate) struct KitchenPlan {
+/// The Kitchens tab's cached forecast and the inputs it was built from.
+pub(crate) struct KitchenForecast {
     signature: String,
-    plan: Result<kitchen::Plan, kitchen::Problem>,
+    forecast: Result<kitchen::Forecast, kitchen::Problem>,
+}
+
+/// Set one meal's target, growing the list to reach it.
+fn set_target(targets: &mut Vec<f64>, meal: usize, level: f64) {
+    if targets.len() <= meal {
+        targets.resize(meal + 1, 0.0);
+    }
+    targets[meal] = level.max(0.0);
 }
 
 /// Count or stop counting one character, keeping the list in save order.

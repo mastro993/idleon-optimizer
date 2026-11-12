@@ -8,7 +8,8 @@
 //! own output; this test compares every field the section shows.
 
 use idleon_ladle::kitchen::{
-    self, CostInputs, Kitchen, LayoutChoice, LayoutMode, Meals, PhaseKind, Policy, Reset,
+    self, CostInputs, Kitchen, LayoutChoice, LayoutMode, Meals, Objective, PhaseKind, Policy,
+    Reset, Scenario,
 };
 use serde::Deserialize;
 
@@ -22,7 +23,8 @@ const ORACLE: &str = include_str!("ladle-kitchen-oracle.json");
 struct Oracle {
     cost_grid: Vec<CostCase>,
     batch_scenarios: Vec<Batch>,
-    plan_scenarios: Vec<Scenario>,
+    plan_scenarios: Vec<PlanScenario>,
+    forecast_scenarios: Vec<ForecastScenario>,
     nmlb_cases: Vec<NmlbCase>,
 }
 
@@ -68,6 +70,8 @@ struct Batch {
     max_level: f64,
     discount_days: f64,
     inputs: InputsCase,
+    objective: String,
+    targets: Vec<f64>,
     kitchen_layout: ChoiceCase,
     kitchens: Vec<KitchenCase>,
     expected: LayoutCase,
@@ -130,7 +134,7 @@ struct LayoutKitchenCase {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Scenario {
+struct PlanScenario {
     base_speed: f64,
     rates: Vec<f64>,
     levels: Vec<f64>,
@@ -163,6 +167,10 @@ struct SettingsCase {
     ladleable_only: bool,
     max_level: f64,
     policy: PolicyCase,
+    #[serde(default)]
+    objective: String,
+    #[serde(default)]
+    targets: Vec<f64>,
     kitchen_layout: ChoiceCase,
 }
 
@@ -192,6 +200,7 @@ struct PlanCase {
     stocks: Vec<f64>,
     gained: Vec<f64>,
     by_source: BySourceCase,
+    per_meal: Vec<PerMealCase>,
     ladles_used: f64,
     next_nmlb: f64,
     timeline: Vec<DayCase>,
@@ -204,6 +213,47 @@ struct JellyPlanCase {
     daily_hours_end: f64,
     total_hours: f64,
     owned_donation: f64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PerMealCase {
+    meal: usize,
+    start_level: f64,
+    ladle_levels: f64,
+    jelly_levels: f64,
+    nmlb_levels: f64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ForecastScenario {
+    base_speed: f64,
+    levels: Vec<f64>,
+    stocks: Vec<f64>,
+    kitchens: Vec<KitchenCase>,
+    jelly: JellyCase,
+    nmlb: f64,
+    inputs: InputsCase,
+    settings: SettingsCase,
+    expected: ForecastCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ForecastCase {
+    current: SummaryCase,
+    layout: SummaryCase,
+    recommended: SummaryCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SummaryCase {
+    ranks: f64,
+    donated: f64,
+    daily_hours_end: f64,
+    levels: Vec<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -334,6 +384,13 @@ fn choice(case: &ChoiceCase) -> LayoutChoice {
     }
 }
 
+fn objective(case: &str) -> Objective {
+    match case {
+        "targets" => Objective::Targets,
+        _ => Objective::Ranks,
+    }
+}
+
 fn policy(case: &PolicyCase) -> Policy {
     match case.kind.as_str() {
         "all" => Policy::All,
@@ -396,6 +453,8 @@ fn the_reset_batch_matches_the_upstream_search() {
             max_level: batch.max_level,
             cost: batch.inputs.cost_inputs(),
             discount_days: batch.discount_days,
+            objective: objective(&batch.objective),
+            targets: &batch.targets,
             choice: &choice,
         })
         .expect("the fixture's layout is valid");
@@ -431,6 +490,8 @@ fn the_daily_plan_matches_the_upstream_simulation() {
             passive: settings.passive,
             ladleable_only: settings.ladleable_only,
             max_level: settings.max_level,
+            objective: objective(&settings.objective),
+            targets: settings.targets.clone(),
             base_speed: scenario.base_speed,
             cost: scenario.inputs.cost_inputs(),
             policy: policy(&settings.policy),
@@ -462,6 +523,14 @@ fn the_daily_plan_matches_the_upstream_simulation() {
         close(plan.by_source.ladle, expected.by_source.ladle);
         close(plan.by_source.jelly, expected.by_source.jelly);
         close(plan.by_source.nmlb, expected.by_source.nmlb);
+        assert_eq!(plan.per_meal.len(), expected.per_meal.len());
+        for (outcome, expected) in plan.per_meal.iter().zip(&expected.per_meal) {
+            assert_eq!(outcome.meal, expected.meal);
+            close(outcome.start_level, expected.start_level);
+            close(outcome.ladle_levels, expected.ladle_levels);
+            close(outcome.jelly_levels, expected.jelly_levels);
+            close(outcome.nmlb_levels, expected.nmlb_levels);
+        }
         close(plan.ladles_used, expected.ladles_used);
         assert_eq!(
             plan.next_nmlb.map_or(-1.0, |meal| meal as f64),
@@ -471,6 +540,64 @@ fn the_daily_plan_matches_the_upstream_simulation() {
         for (actual, expected) in plan.timeline.iter().zip(&expected.timeline) {
             assert_day(actual, expected);
         }
+    }
+}
+
+#[test]
+fn the_forecast_scenarios_match_the_upstream_comparison() {
+    let oracle = oracle();
+    for scenario in &oracle.forecast_scenarios {
+        let kitchens: Vec<Kitchen> = scenario.kitchens.iter().map(kitchen).collect();
+        let reset = Reset {
+            meals: Meals {
+                levels: scenario.levels.clone(),
+                stocks: scenario.stocks.clone(),
+            },
+            kitchens,
+            jelly: kitchen::Jelly {
+                available: scenario.jelly.available,
+                unlocked: scenario.jelly.unlocked,
+                daily_hours: scenario.jelly.daily_hours,
+            },
+            nmlb: scenario.nmlb,
+        };
+        let settings = &scenario.settings;
+        let inputs = kitchen::Inputs {
+            days: settings.days,
+            hours_to_reset: settings.hours_to_reset,
+            ladles_per_day: settings.ladles_per_day,
+            start_ladles: settings.start_ladles,
+            ladle_multi: settings.ladle_multi,
+            passive: settings.passive,
+            ladleable_only: settings.ladleable_only,
+            max_level: settings.max_level,
+            objective: objective(&settings.objective),
+            targets: settings.targets.clone(),
+            base_speed: scenario.base_speed,
+            cost: scenario.inputs.cost_inputs(),
+            policy: policy(&settings.policy),
+            income_fraction: settings.policy.income_fraction,
+            donation_per_day: settings.policy.per_day,
+            owned_fraction: settings.policy.owned_fraction,
+            layout: choice(&settings.kitchen_layout),
+        };
+        let result = kitchen::forecast(&reset, &inputs).expect("the fixture's forecast is valid");
+        for (scenario, expected) in [
+            (Scenario::Current, &scenario.expected.current),
+            (Scenario::Layout, &scenario.expected.layout),
+            (Scenario::Recommended, &scenario.expected.recommended),
+        ] {
+            let plan = result.plan(scenario);
+            close(result.ranks(scenario), expected.ranks);
+            close(plan.jelly.donated, expected.donated);
+            close(plan.jelly.daily_hours_end, expected.daily_hours_end);
+            close_list(&plan.levels, &expected.levels);
+        }
+        assert_eq!(
+            result.plan(Scenario::Layout).jelly.donated,
+            0.0,
+            "the assignment-only baseline never donates"
+        );
     }
 }
 

@@ -136,6 +136,10 @@ const kitchenSets = [
   ],
 ];
 
+// The targets the target-objective cases aim for: one cheap meal already past
+// its target, one still short of it, and the rest untargeted.
+const targets = [0, 0, 0, 0, 0, 0, 0, 20, 12, 0];
+
 // The standalone batch: one reset's Blue Jellyfish grant in every kitchen.
 const batchScenarios = [];
 for (const [index, kitchens] of kitchenSets.entries()) {
@@ -155,7 +159,15 @@ for (const [index, kitchens] of kitchenSets.entries()) {
         ola193: 4,
         inputs: mealCostInputs({ dream11: 6, comp162: 10 }),
       },
+      {
+        hours: 40,
+        maxLevel: 30,
+        ola193: 4,
+        inputs: mealCostInputs({ dream11: 6, comp162: 10 }),
+        objective: 'targets',
+      },
     ]) {
+      const objective = options.objective || 'ranks';
       const batch = L.optimizeKitchenReset(
         {},
         {
@@ -167,7 +179,11 @@ for (const [index, kitchens] of kitchenSets.entries()) {
           hours: options.hours,
           ola193: options.ola193,
           cachedTurkeyStock: 0,
-          objective: 'ranks',
+          objective,
+          targets: targets.reduce((map, level, meal) => {
+            map[meal] = level;
+            return map;
+          }, {}),
           kitchenLayout,
         },
       );
@@ -181,6 +197,8 @@ for (const [index, kitchens] of kitchenSets.entries()) {
         maxLevel: options.maxLevel,
         discountDays: options.ola193,
         inputs: options.inputs,
+        objective,
+        targets,
         kitchenLayout,
         kitchens: kitchens.map((kitchen, position) => ({
           index: position,
@@ -254,6 +272,25 @@ for (const scenario of [
       kitchenLayout: { mode: 'saved' },
     },
   },
+  {
+    name: 'spend only toward the meal targets',
+    kitchens: kitchenSets[1],
+    inputs: mealCostInputs({ comp162: 4, dream11: 3 }),
+    settings: {
+      days: 3,
+      hoursToReset: 24,
+      ladlesPerDay: 18,
+      startLadles: 0,
+      ladleMulti: 1,
+      passive: true,
+      ladleableOnly: true,
+      maxLevel: 30,
+      objective: 'targets',
+      targets,
+      policy: { kind: 'none', incomeFraction: 1, ownedFraction: 0 },
+      kitchenLayout: { mode: 'optimized' },
+    },
+  },
 ]) {
   const { settings } = scenario;
   const model = speedModel(scenario.kitchens, 0);
@@ -303,6 +340,11 @@ for (const scenario of [
     hoursToReset: settings.hoursToReset,
     strategy: 'cheapest',
     floorGuard: false,
+    objective: settings.objective || 'ranks',
+    targets: (settings.targets || []).reduce((map, level, meal) => {
+      map[meal] = level;
+      return map;
+    }, {}),
     kitchenLayout: settings.kitchenLayout,
     jellyDonations: { owned, daily },
   });
@@ -340,6 +382,18 @@ for (const scenario of [
       stocks: plan.stocks,
       gained: plan.gained,
       bySource: plan.bySource,
+      // `perMeal` is filtered; the outcomes table reads every meal, so fill the
+      // meals it drops with their starting level and no gains.
+      perMeal: levels.map((level, meal) => {
+        const row = plan.perMeal.find((entry) => entry.meal === meal);
+        return {
+          meal,
+          startLevel: row ? row.startLevel : level,
+          ladleLevels: row ? row.ladleLevels : 0,
+          jellyLevels: row ? row.jellyLevels : 0,
+          nmlbLevels: row ? row.nmlbLevels : 0,
+        };
+      }),
       ladlesUsed: plan.ladlesUsed,
       nextNmlb: plan.nextNmlb,
       timeline: plan.timeline.map((day) => ({
@@ -411,6 +465,110 @@ for (const scenario of [
   });
 }
 
+// The forecast comparison: the same horizon under the saved assignments, the
+// optimized assignments and the selected donation policy. Only a fixed policy is
+// used, so the oracle never runs the donation search that belongs to LD-04.
+const forecastScenarios = [];
+for (const scenario of [
+  {
+    name: 'share half the income, three resets',
+    kitchens: kitchenSets[0],
+    inputs: mealCostInputs({ comp162: 25, dream11: 4 }),
+    settings: {
+      days: 3,
+      hoursToReset: 7.5,
+      ladlesPerDay: 12,
+      startLadles: 40,
+      ladleMulti: 1.5,
+      passive: true,
+      ladleableOnly: true,
+      maxLevel: 30,
+      policy: { kind: 'share', incomeFraction: 0.5, ownedFraction: 0.5 },
+      kitchenLayout: { mode: 'optimized' },
+    },
+  },
+  {
+    name: 'hold every ladle while targeting meals',
+    kitchens: kitchenSets[1],
+    inputs: mealCostInputs({ ach233: 1, cloud33: 0.5, dream11: 3 }),
+    settings: {
+      days: 2,
+      hoursToReset: 24,
+      ladlesPerDay: 30,
+      startLadles: 120,
+      ladleMulti: 1,
+      passive: true,
+      ladleableOnly: true,
+      maxLevel: 40,
+      objective: 'targets',
+      targets,
+      policy: { kind: 'none', incomeFraction: 1, ownedFraction: 0 },
+      kitchenLayout: { mode: 'optimized', excluded: [5] },
+    },
+  },
+]) {
+  const { settings } = scenario;
+  const model = speedModel(scenario.kitchens, 0);
+  const saved = {
+    menagerieData: [[0, 0, 0, 0, 0, 9], [], [0, 0, 0, 0, 0, 1], []],
+    menagerieDataAvailable: true,
+    ninjaData: { 102: { 9: 'p' } },
+    bundlesData: { bun_s: 1 },
+    mealsData: [levels, [], stocks],
+  };
+  const result = L.planKitchenForecast(saved, {
+    model,
+    levels,
+    stocks,
+    inputs: scenario.inputs,
+    maxLevel: settings.maxLevel,
+    ladleMulti: settings.ladleMulti,
+    days: settings.days,
+    ladlesPerDay: settings.ladlesPerDay,
+    startLadles: settings.startLadles,
+    passive: settings.passive,
+    ladleableOnly: settings.ladleableOnly,
+    hoursToReset: settings.hoursToReset,
+    objective: settings.objective || 'ranks',
+    targets: (settings.targets || []).reduce((map, level, meal) => {
+      map[meal] = level;
+      return map;
+    }, {}),
+    donationPolicy: settings.policy.kind,
+    incomeFraction: settings.policy.incomeFraction,
+    donationPerDay: settings.policy.perDay,
+    ownedFraction: settings.policy.ownedFraction,
+    kitchenLayout: settings.kitchenLayout,
+    floorGuard: false,
+  });
+  const summarize = (plan) => ({
+    ranks: plan.gained.reduce((sum, gained) => sum + gained, 0),
+    donated: plan.jelly.donated,
+    dailyHoursEnd: plan.jelly.dailyHoursEnd,
+    levels: plan.levels,
+  });
+  forecastScenarios.push({
+    name: scenario.name,
+    baseSpeed: baseSpeed(model, levels),
+    levels,
+    stocks,
+    kitchens: scenario.kitchens.map((kitchen, position) => ({
+      index: position,
+      ...kitchen,
+      doubler: false,
+    })),
+    jelly: { available: true, unlocked: true, dailyHours: 9 },
+    nmlb: 3,
+    inputs: scenario.inputs,
+    settings,
+    expected: {
+      current: summarize(result.currentPlan),
+      layout: summarize(result.baselinePlan),
+      recommended: summarize(result.plan),
+    },
+  });
+}
+
 // The rules the plan shares with the save: the lowest eligible NMLB meal.
 const nmlbCases = [];
 for (const candidate of [
@@ -441,6 +599,7 @@ const payload = {
   costGrid,
   batchScenarios,
   planScenarios,
+  forecastScenarios,
   nmlbCases,
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
@@ -455,5 +614,5 @@ writeFileSync(
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(
-  `ladle kitchen: ${costGrid.length} costs, ${batchScenarios.length} batches, ${planScenarios.length} plans, ${nmlbCases.length} NMLB cases`,
+  `ladle kitchen: ${costGrid.length} costs, ${batchScenarios.length} batches, ${planScenarios.length} plans, ${forecastScenarios.length} forecasts, ${nmlbCases.length} NMLB cases`,
 );

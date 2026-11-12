@@ -15,8 +15,8 @@
 
 use super::layout::{self, Layout, LayoutMeal};
 use super::{
-    CostInputs, DEFAULT_DAYS, MAX_DAYS, Problem, Reset, donation, meal_level_cost, meal_name,
-    meal_requirement, nmlb_result_level, nmlb_target,
+    CostInputs, DEFAULT_DAYS, MAX_DAYS, Objective, Problem, Reset, donation, meal_level_cost,
+    meal_name, meal_requirement, nmlb_result_level, nmlb_target,
 };
 
 /// What a daily reset plan is asked to do.
@@ -40,6 +40,11 @@ pub struct Inputs {
     pub ladleable_only: bool,
     /// The highest meal level the Cooking panel allows.
     pub max_level: f64,
+    /// How the plan and the reset layout rank their candidates.
+    pub objective: Objective,
+    /// `targets`: the level each meal aims for under [`Objective::Targets`]; 0 or
+    /// missing means the meal has no target.
+    pub targets: Vec<f64>,
     /// The Cooking speed /hr a kitchen has at Speed Lv 0.
     pub base_speed: f64,
     pub cost: CostInputs,
@@ -64,6 +69,8 @@ impl Default for Inputs {
             passive: true,
             ladleable_only: true,
             max_level: 30.0,
+            objective: Objective::Ranks,
+            targets: Vec::new(),
             base_speed: 10.0,
             cost: CostInputs::default(),
             policy: Policy::None,
@@ -228,6 +235,17 @@ pub struct BySource {
     pub nmlb: f64,
 }
 
+/// One meal's levels over the horizon, split by what bought them.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct MealOutcome {
+    pub meal: usize,
+    /// The level the horizon started at.
+    pub start_level: f64,
+    pub ladle_levels: f64,
+    pub jelly_levels: f64,
+    pub nmlb_levels: f64,
+}
+
 /// A reset horizon's plan.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Plan {
@@ -244,6 +262,8 @@ pub struct Plan {
     pub stocks: Vec<f64>,
     pub gained: Vec<f64>,
     pub by_source: BySource,
+    /// One row per meal, in save order.
+    pub per_meal: Vec<MealOutcome>,
     pub ladles_used: f64,
     /// The meal the next reset's No Meal Left Behind raises, when it has one.
     pub next_nmlb: Option<usize>,
@@ -281,6 +301,17 @@ pub fn plan(reset: &Reset, inputs: &Inputs) -> Result<Plan, Problem> {
         levels: reset.meals.levels.clone(),
         stocks: reset.meals.stocks.clone(),
         gained: vec![0.0; reset.meals.levels.len()],
+        per_meal: reset
+            .meals
+            .levels
+            .iter()
+            .enumerate()
+            .map(|(meal, level)| MealOutcome {
+                meal,
+                start_level: *level,
+                ..MealOutcome::default()
+            })
+            .collect(),
         max_level,
         ladle_multi,
         speed,
@@ -331,6 +362,7 @@ pub fn plan(reset: &Reset, inputs: &Inputs) -> Result<Plan, Problem> {
         stocks: run.stocks,
         gained: run.gained,
         by_source: run.by_source,
+        per_meal: run.per_meal,
         ladles_used: run.ladles_used,
         next_nmlb,
         timeline: run.timeline,
@@ -356,6 +388,7 @@ struct Run<'a> {
     levels: Vec<f64>,
     stocks: Vec<f64>,
     gained: Vec<f64>,
+    per_meal: Vec<MealOutcome>,
     max_level: f64,
     ladle_multi: f64,
     speed: f64,
@@ -454,11 +487,18 @@ impl Run<'_> {
     }
 
     /// `pickCheapest`: the meal whose next level costs the fewest kitchen hours.
+    ///
+    /// Under [`Objective::Targets`] only meals below their target are direct
+    /// candidates; once every target is reached the caller banks the time instead.
     fn pick_cheapest(&self) -> (Option<usize>, f64) {
+        let targeting = self.targeting();
         let mut pick = None;
         let mut cheapest = f64::INFINITY;
         for meal in 0..self.levels.len() {
             if !self.open(meal) || !self.ladleable(meal) {
+                continue;
+            }
+            if targeting && self.levels[meal] >= self.target(meal) {
                 continue;
             }
             let cost = meal_level_cost(self.levels[meal], self.inputs.cost, self.ola);
@@ -472,6 +512,25 @@ impl Run<'_> {
             }
         }
         (pick, cheapest)
+    }
+
+    /// `targets[m]`: the level a meal aims for, or 0 when it has none.
+    fn target(&self, meal: usize) -> f64 {
+        self.inputs
+            .targets
+            .get(meal)
+            .copied()
+            .unwrap_or(0.0)
+            .max(0.0)
+    }
+
+    /// Whether the target objective still has a discovered meal to buy toward.
+    fn targeting(&self) -> bool {
+        self.inputs.objective == Objective::Targets
+            && (0..self.levels.len()).any(|meal| {
+                self.levels[meal] >= 1.0
+                    && self.levels[meal] < self.max_level.min(self.target(meal))
+            })
     }
 
     /// `ladlesFor`: draw `hours` from the ladle pool first, then passive time.
@@ -511,9 +570,16 @@ impl Run<'_> {
         self.stocks[meal] = (self.stocks[meal] + used * self.speed / requirement - paid).max(0.0);
         self.levels[meal] += 1.0;
         self.gained[meal] += 1.0;
+        let outcome = &mut self.per_meal[meal];
         match self.source {
-            Source::Ladle => self.by_source.ladle += 1.0,
-            Source::Jelly => self.by_source.jelly += 1.0,
+            Source::Ladle => {
+                self.by_source.ladle += 1.0;
+                outcome.ladle_levels += 1.0;
+            }
+            Source::Jelly => {
+                self.by_source.jelly += 1.0;
+                outcome.jelly_levels += 1.0;
+            }
         }
         self.ola = 0.0;
         self.cumulative_ladles += step_ladles;
@@ -635,6 +701,8 @@ impl Run<'_> {
             max_level: self.max_level,
             cost: self.inputs.cost,
             discount_days: self.ola,
+            objective: self.inputs.objective,
+            targets: &self.inputs.targets,
             choice: &self.inputs.layout,
         })?;
         for meal in &batch.meals {
@@ -735,6 +803,7 @@ impl Run<'_> {
             let to = nmlb_result_level(nmlb_from, self.reset.nmlb, self.max_level);
             nmlb_saved = self.ladles_for_levels(meal, nmlb_from, to, 0.0);
             self.by_source.nmlb += to - nmlb_from;
+            self.per_meal[meal].nmlb_levels += to - nmlb_from;
             self.gained[meal] += to - nmlb_from;
             self.levels[meal] = to;
             if to > nmlb_from {

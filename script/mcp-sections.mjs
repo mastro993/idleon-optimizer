@@ -2200,6 +2200,13 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'kitchens' });
     await waitForNode(lane, 'kitchens-pane', 'ladle: the Kitchens & Jellyfish tab opens');
     await waitForNode(lane, 'kitchens-layout', 'ladle: the reset draws its kitchen layout');
+    await waitForNode(
+      lane,
+      'kitchens-comparison-objective',
+      'ladle: the forecast compares its scenarios'
+    );
+    await waitForNode(lane, 'kitchens-grant-chart', 'ladle: the comparison draws the grant trend');
+    await waitForNode(lane, 'kitchens-outcomes', 'ladle: the meal outcomes table renders');
     await lane.call('click_element', { id: 'kitchens-days-less' });
     await waitFor(
       lane,
@@ -2219,6 +2226,31 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'kitchens-day-header-1' });
     await waitForNode(lane, 'kitchens-day-body-1', 'ladle: expanding a reset shows its instructions');
     await waitForNode(lane, 'kitchens-day-copy-1', 'ladle: the reset instructions are copyable');
+
+    // The target objective without a target refuses the forecast but keeps its
+    // target inputs on screen, so the missing input can be fixed from the tab.
+    await lane.call('focus_element', { id: 'kitchens-objective' });
+    // The first Down opens the list, the second highlights the target objective.
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'kitchens-error') && has(nodes, 'kitchens-outcomes'),
+      'ladle: the target objective asks for a target and keeps the inputs'
+    );
+    // Five presses take Turkey's target past its saved level, and the forecast
+    // runs again under the objective the comparison now names.
+    await bringIntoView(lane, 'kitchens-target-0');
+    for (let press = 0; press < 5; press += 1) {
+      await lane.call('click_element', { id: 'kitchens-target-0-up' });
+    }
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'kitchens-comparison-objective') ?? '') === 'Selected meal targets',
+      'ladle: the objective switch ranks the selected meal targets'
+    );
 
     await lane.call('click_element', { id: 'ladles' });
     await waitForNode(lane, 'ladle-breakdowns', 'ladle: the Ladles tab reopens');

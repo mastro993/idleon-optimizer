@@ -3,10 +3,11 @@
 
 use super::exp::{exp_to_level, target_choice};
 use super::forecast::toggle_day;
-use super::kitchens::{inputs, parse_policy, policy_id};
+use super::kitchens::{inputs, objective_id, parse_objective, parse_policy, policy_id};
+use super::outcomes::{OutcomeSort, objective_label, sorted};
 use super::summary::{all, line, total};
-use super::{adopt, toggle};
-use idleon_ladle::kitchen::Policy;
+use super::{adopt, set_target, toggle};
+use idleon_ladle::kitchen::{self, Objective, Policy};
 use idleon_ladle::{Character, EXP_BALLOONS, Ladle, Panel};
 
 fn character(index: usize, cooking: bool) -> Character {
@@ -190,4 +191,73 @@ fn the_plan_inputs_come_from_the_checked_rates_and_the_save() {
         inputs(&settings, &[0, 2], panel, false, &ladle, &stats).start_ladles,
         0.0
     );
+}
+
+#[test]
+fn the_objective_round_trips_through_its_select_value() {
+    for (objective, id) in [(Objective::Ranks, "ranks"), (Objective::Targets, "targets")] {
+        assert_eq!(objective_id(objective), id);
+        assert_eq!(parse_objective(id), objective);
+    }
+    // An unknown value falls back to the rank objective rather than panicking.
+    assert_eq!(parse_objective("speed"), Objective::Ranks);
+    assert_eq!(objective_label(Objective::Ranks), "Most meal ranks");
+    assert_eq!(objective_label(Objective::Targets), "Selected meal targets");
+}
+
+#[test]
+fn a_target_grows_the_list_and_never_goes_negative() {
+    let mut targets = vec![0.0];
+    set_target(&mut targets, 2, 12.0);
+    assert_eq!(targets, vec![0.0, 0.0, 12.0]);
+    set_target(&mut targets, 0, -4.0);
+    assert_eq!(targets[0], 0.0);
+}
+
+/// A small plan over four meals: two discovered, one capped and one undiscovered.
+fn outcomes_plan() -> kitchen::Plan {
+    kitchen::Plan {
+        max_level: 30.0,
+        start_levels: vec![3.0, 0.0, 2.0, 5.0],
+        levels: vec![5.0, 0.0, 2.0, 6.0],
+        gained: vec![2.0, 0.0, 0.0, 1.0],
+        ..kitchen::Plan::default()
+    }
+}
+
+#[test]
+fn the_outcome_sort_orders_the_discovered_meals() {
+    let plan = outcomes_plan();
+    // Meal 1 is undiscovered, so it never appears.
+    assert_eq!(
+        sorted(&plan.start_levels, Some(&plan), OutcomeSort::Gain),
+        vec![0, 3, 2]
+    );
+    assert_eq!(
+        sorted(&plan.start_levels, Some(&plan), OutcomeSort::Level),
+        vec![3, 0, 2]
+    );
+    // Pie, Salad, Turkey: alphabetical, not index order.
+    assert_eq!(
+        sorted(&plan.start_levels, Some(&plan), OutcomeSort::Name),
+        vec![3, 2, 0]
+    );
+    // Without a plan the gain sort keeps index order and the level sort reads the
+    // current levels, as upstream draws them before the forecast runs.
+    assert_eq!(
+        sorted(&plan.start_levels, None, OutcomeSort::Gain),
+        vec![0, 2, 3]
+    );
+    assert_eq!(
+        sorted(&plan.start_levels, None, OutcomeSort::Level),
+        vec![3, 0, 2]
+    );
+    for (sort, id) in [
+        (OutcomeSort::Gain, "gain"),
+        (OutcomeSort::Level, "level"),
+        (OutcomeSort::Name, "name"),
+    ] {
+        assert_eq!(sort.id(), id);
+        assert_eq!(OutcomeSort::from_id(id), Some(sort));
+    }
 }

@@ -43,16 +43,17 @@ pub(crate) fn pane(
         ladle,
         &stats,
     );
-    state.ladle_state.plan(&reset, &inputs);
+    state.ladle_state.forecast(&reset, &inputs);
     let cached = state
         .ladle_state
         .kitchen_plan
         .as_ref()
-        .expect("the plan was just computed");
-    let plan = match &cached.plan {
-        Ok(plan) => plan,
-        Err(problem) => return refused(state, *problem, cx),
+        .expect("the forecast was just computed");
+    let forecast = match &cached.forecast {
+        Ok(forecast) => forecast,
+        Err(problem) => return refused(state, &reset, *problem, cx),
     };
+    let plan = forecast.plan(state.ladle_state.scenario);
     let message = format!(
         "{} resets, {} ladles donated, {} meal levels gained",
         plan.days,
@@ -80,7 +81,14 @@ pub(crate) fn pane(
                         .child(controls(state, cx))
                         .child(cards(state, &inputs, plan))
                         .child(cost_inputs(state, cx))
+                        .child(super::outcomes::comparison(state, forecast, cx))
                         .child(super::forecast::pane(state, &reset, plan, cx))
+                        .child(super::outcomes::meal_outcomes(
+                            state,
+                            &reset.meals.levels,
+                            Some(plan),
+                            cx,
+                        ))
                         .child(
                             div().px_1().child(
                                 Caption::new(
@@ -134,6 +142,7 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let use_owned = entity.clone();
     let passive = entity.clone();
     let ladleable = entity.clone();
+    let objective = entity.clone();
     let policy_choices: Vec<Choice> = [
         (Policy::None, "none", "No new donations"),
         (Policy::All, "all", "Donate all daily income"),
@@ -149,6 +158,28 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .flex_wrap()
         .items_end()
         .gap_3()
+        .child(
+            field("Objective", muted).child(
+                Select::new(
+                    "kitchens-objective",
+                    [
+                        Choice::new("ranks", "Most meal ranks"),
+                        Choice::new("targets", "Selected meal targets"),
+                    ],
+                )
+                .label("Objective")
+                .selected(objective_id(inputs.objective))
+                .on_change(move |value, _window, cx| {
+                    let chosen = parse_objective(value.as_ref());
+                    objective.update(cx, |state, cx| {
+                        state
+                            .ladle_state
+                            .set_kitchen(|inputs| inputs.objective = chosen);
+                        cx.notify();
+                    });
+                }),
+            ),
+        )
         .child(
             field("Donation policy", muted).child(
                 Select::new("kitchens-policy", policy_choices)
@@ -305,6 +336,22 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
             }),
     )
     .into_any_element()
+}
+
+/// The objective's id, as the select carries it.
+pub(crate) fn objective_id(objective: kitchen::Objective) -> &'static str {
+    match objective {
+        kitchen::Objective::Ranks => "ranks",
+        kitchen::Objective::Targets => "targets",
+    }
+}
+
+/// The objective a select value names.
+pub(crate) fn parse_objective(value: &str) -> kitchen::Objective {
+    match value {
+        "targets" => kitchen::Objective::Targets,
+        _ => kitchen::Objective::Ranks,
+    }
 }
 
 /// The donation policy's id, as the select carries it.
@@ -499,8 +546,14 @@ fn cost_inputs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The plan refused its inputs: say which.
-fn refused(state: &AppState, problem: kitchen::Problem, cx: &mut Context<AppState>) -> AnyElement {
+/// The forecast refused its inputs: say which, and keep the target inputs open so
+/// a target objective without a target can be fixed from the same tab.
+fn refused(
+    state: &AppState,
+    reset: &kitchen::Reset,
+    problem: kitchen::Problem,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     div()
         .id("kitchens-pane")
         .flex()
@@ -512,11 +565,17 @@ fn refused(state: &AppState, problem: kitchen::Problem, cx: &mut Context<AppStat
         .child(
             div().id("kitchens-error").child(
                 Callout::new(Severity::Warning)
-                    .title("The reset plan cannot run")
+                    .title("The reset forecast cannot run")
                     .child(Caption::new(problem.message())),
             ),
         )
         .child(controls(state, cx))
+        .child(super::outcomes::meal_outcomes(
+            state,
+            &reset.meals.levels,
+            None,
+            cx,
+        ))
         .into_any_element()
 }
 

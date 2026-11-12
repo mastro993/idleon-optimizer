@@ -39,6 +39,16 @@ fn reset() -> Reset {
 
 /// A nine-hour reset batch over the sample save's kitchens and meals.
 fn batch<'a>(reset: &'a Reset, choice: &'a LayoutChoice) -> layout::Input<'a> {
+    batch_with(reset, choice, Objective::Ranks, &[])
+}
+
+/// The same batch, ranked by an objective and its meal targets.
+fn batch_with<'a>(
+    reset: &'a Reset,
+    choice: &'a LayoutChoice,
+    objective: Objective,
+    targets: &'a [f64],
+) -> layout::Input<'a> {
     layout::Input {
         levels: &reset.meals.levels,
         stocks: &reset.meals.stocks,
@@ -48,6 +58,8 @@ fn batch<'a>(reset: &'a Reset, choice: &'a LayoutChoice) -> layout::Input<'a> {
         max_level: 30.0,
         cost: CostInputs::default(),
         discount_days: 0.0,
+        objective,
+        targets,
         choice,
     }
 }
@@ -320,4 +332,197 @@ fn a_grant_without_a_saved_meal_still_lays_out_the_kitchens() {
     assert_eq!(layout.ranks, 0.0);
     assert!(layout.purchase_order.is_empty());
     assert!(layout.kitchens.iter().all(|kitchen| kitchen.meal == -1));
+}
+
+/// A bare reset: one kitchen at Speed Lv 0 with no doubler, three discovered
+/// meals and no Blue Jellyfish or No Meal Left Behind.
+fn bare() -> Reset {
+    Reset {
+        meals: Meals {
+            levels: vec![3.0, 3.0, 3.0],
+            stocks: vec![0.0; 3],
+        },
+        kitchens: vec![Kitchen {
+            index: 0,
+            unlocked: true,
+            saved_meal: 0,
+            speed_level: 0.0,
+            doubler: false,
+        }],
+        jelly: Jelly::default(),
+        nmlb: 0.0,
+    }
+}
+
+/// One day of direct spending only, so a test reads the picks themselves.
+fn bare_inputs() -> Inputs {
+    Inputs {
+        days: 1,
+        hours_to_reset: 24.0,
+        ladles_per_day: 30.0,
+        passive: false,
+        max_level: 30.0,
+        base_speed: 100.0,
+        ..Inputs::default()
+    }
+}
+
+#[test]
+fn the_objective_switch_changes_which_meal_is_ranked_first() {
+    let reset = bare();
+    // The cheapest next level is Turkey, so the rank objective spends there.
+    let ranks = plan(&reset, &bare_inputs()).expect("the rank objective plans");
+    assert!(ranks.gained[0] > 0.0, "{:?}", ranks.gained);
+    assert_eq!(ranks.gained[2], 0.0, "{:?}", ranks.gained);
+    // A target only on Salad makes it the one direct candidate.
+    let targets = plan(
+        &reset,
+        &Inputs {
+            objective: Objective::Targets,
+            targets: vec![0.0, 0.0, 10.0],
+            ..bare_inputs()
+        },
+    )
+    .expect("the target objective plans");
+    assert_eq!(targets.gained[0], 0.0, "{:?}", targets.gained);
+    assert_eq!(targets.gained[2], 1.0, "{:?}", targets.gained);
+    // The outcome row keeps the level the horizon started from.
+    assert_eq!(targets.per_meal[2].start_level, 3.0);
+    assert_eq!(targets.per_meal[2].ladle_levels, 1.0);
+    assert_eq!(targets.per_meal[2].jelly_levels, 0.0);
+}
+
+#[test]
+fn the_target_objective_ranks_the_reset_layout_by_target_progress() {
+    let reset = bare();
+    let ranks = optimize(&batch(&reset, &LayoutChoice::default())).expect("the batch runs");
+    assert_eq!(ranks.kitchens[0].meal, 0, "{:?}", ranks.kitchens);
+    let targets = [0.0, 0.0, 10.0];
+    let targeted = optimize(&batch_with(
+        &reset,
+        &LayoutChoice::default(),
+        Objective::Targets,
+        &targets,
+    ))
+    .expect("the targeted batch runs");
+    assert_eq!(targeted.kitchens[0].meal, 2, "{:?}", targeted.kitchens);
+}
+
+#[test]
+fn meal_costs_use_the_dream_discount_once_a_purchase() {
+    let reset = bare();
+    let discount = CostInputs {
+        discount_days: 10.0,
+        dream_11: 10.0,
+        ..CostInputs::default()
+    };
+    // A discounted Turkey level fits in 0.6 ladles; the full price needs 5.5.
+    let discounted = plan(
+        &reset,
+        &Inputs {
+            ladles_per_day: 0.6,
+            cost: discount,
+            ..bare_inputs()
+        },
+    )
+    .expect("the discounted plan runs");
+    let full = plan(
+        &reset,
+        &Inputs {
+            ladles_per_day: 0.6,
+            ..bare_inputs()
+        },
+    )
+    .expect("the full-price plan runs");
+    assert_eq!(discounted.gained[0], 1.0, "{:?}", discounted.gained);
+    assert_eq!(full.gained[0], 0.0, "{:?}", full.gained);
+    // One purchase spends the day's discount: 20 ladles buy the discounted level
+    // and exactly one more at full price, not the four a standing discount would.
+    let pool = plan(
+        &reset,
+        &Inputs {
+            ladles_per_day: 20.0,
+            cost: discount,
+            ..bare_inputs()
+        },
+    )
+    .expect("the one-day plan runs");
+    assert_eq!(pool.gained[0], 2.0, "{:?}", pool.gained);
+}
+
+#[test]
+fn the_target_objective_needs_a_target() {
+    let reset = bare();
+    assert_eq!(
+        forecast(
+            &reset,
+            &Inputs {
+                objective: Objective::Targets,
+                targets: vec![0.0, 0.0, 0.0],
+                ..bare_inputs()
+            }
+        ),
+        Err(Problem::Targets)
+    );
+    assert!(
+        forecast(
+            &reset,
+            &Inputs {
+                objective: Objective::Targets,
+                targets: vec![0.0, 0.0, 10.0],
+                ..bare_inputs()
+            }
+        )
+        .is_ok()
+    );
+}
+
+#[test]
+fn the_forecast_compares_the_saved_layout_the_optimized_one_and_the_policy() {
+    let reset = reset();
+    let inputs = Inputs {
+        policy: Policy::Share,
+        income_fraction: 0.5,
+        owned_fraction: 0.0,
+        ..inputs()
+    };
+    let result = forecast(&reset, &inputs).expect("the forecast builds");
+    // Only the donation policy separates the optimized scenario from its
+    // assignment-only baseline.
+    assert!(result.recommended.jelly.donated > 0.0);
+    assert_eq!(result.layout.jelly.donated, 0.0);
+    assert_eq!(result.current.jelly.donated, 0.0);
+    // The saved kitchen 0 cooks meal 1 while the optimizer may assign both.
+    let current = result
+        .current
+        .timeline
+        .iter()
+        .find_map(|day| day.phases.iter().find_map(|phase| phase.layout.as_ref()))
+        .expect("the current scenario cooks a batch");
+    assert_eq!(current.kitchens[0].meal, 1);
+    assert_eq!(current.kitchens[1].meal, -1);
+    let optimized = result
+        .layout
+        .timeline
+        .iter()
+        .find_map(|day| day.phases.iter().find_map(|phase| phase.layout.as_ref()))
+        .expect("the optimized scenario cooks a batch");
+    assert!(
+        optimized.kitchens.iter().any(|kitchen| kitchen.meal != -1),
+        "{:?}",
+        optimized.kitchens
+    );
+    // Every scenario summary comes from its own plan.
+    assert_eq!(
+        result.ranks(Scenario::Layout),
+        result.layout.gained.iter().sum::<f64>()
+    );
+    assert_eq!(
+        result.ranks(Scenario::Current),
+        result.current.gained.iter().sum::<f64>()
+    );
+    assert_eq!(
+        result,
+        forecast(&reset, &inputs).expect("the forecast builds again")
+    );
 }

@@ -21,6 +21,7 @@ use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
+use crate::sections::ladle::outcomes::OutcomeSort as LadleOutcomeSort;
 use crate::sections::monument::State as MonumentState;
 use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
@@ -44,6 +45,7 @@ use idleon_drop_rate as drop_rate;
 use idleon_import::pipeline;
 use idleon_ladle::Panel as LadlePanel;
 use idleon_ladle::kitchen::Inputs as LadleKitchen;
+use idleon_ladle::kitchen::Scenario as LadleScenario;
 use idleon_project as project;
 use idleon_research::game;
 use idleon_research::model::{Effort, SimContext, SimOptions, Simulation};
@@ -208,6 +210,12 @@ pub(crate) struct LadleConfig {
     kitchen: LadleKitchen,
     /// Whether the reset plan spends the ladles the save carries.
     use_owned: bool,
+    /// The forecast scenario the comparison and the reset list draw.
+    #[serde(default)]
+    scenario: LadleScenario,
+    /// The meal outcomes table's order.
+    #[serde(default)]
+    outcome_sort: LadleOutcomeSort,
 }
 
 /// The cog board section's config: the objective and the custom weights. The
@@ -486,6 +494,8 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             split: state.ladle_state.split,
             kitchen: state.ladle_state.kitchen.clone(),
             use_owned: state.ladle_state.use_owned,
+            scenario: state.ladle_state.scenario,
+            outcome_sort: state.ladle_state.outcome_sort,
         }),
     );
     insert("coral-god-rank", value(&state.coral.inputs));
@@ -992,6 +1002,8 @@ pub(crate) fn assign(
             state.ladle_state.split = config.split;
             state.ladle_state.kitchen = config.kitchen;
             state.ladle_state.use_owned = config.use_owned;
+            state.ladle_state.scenario = config.scenario;
+            state.ladle_state.outcome_sort = config.outcome_sort;
         }
         Config::Coral(config) => {
             state.coral.inputs = config;
@@ -1546,6 +1558,8 @@ mod tests {
                 ..LadleKitchen::default()
             },
             use_owned: false,
+            scenario: LadleScenario::Layout,
+            outcome_sort: LadleOutcomeSort::Name,
         });
         assert_eq!(ladle.tab, LadleTab::Exp);
         assert_eq!(ladle.ladle_character, 3);
@@ -1562,6 +1576,8 @@ mod tests {
         assert_eq!(ladle.kitchen.policy, idleon_ladle::kitchen::Policy::Share);
         assert_eq!(ladle.kitchen.income_fraction, 0.25);
         assert!(!ladle.use_owned);
+        assert_eq!(ladle.scenario, LadleScenario::Layout);
+        assert_eq!(ladle.outcome_sort, LadleOutcomeSort::Name);
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,

@@ -4,8 +4,13 @@
 //! Ported from `js/stats/systems/w4/cooking-ladle.js` (`mealLevels`, `mealStocks`,
 //! `mealName`, `mealRequirement`, `mealCostInputs`, `mealLevelCost`,
 //! `blueJellyfishInfo`, `nmlbInfo`, `nmlbTarget`, `nmlbResultLevel`,
-//! `optimizeKitchenReset` and `planMealLeveling`) and the "Kitchens & Jellyfish"
-//! tab of `ladle-calc.html`.
+//! `optimizeKitchenReset`, `planMealLeveling` and `planKitchenForecast`) and the
+//! "Kitchens & Jellyfish" tab of `ladle-calc.html`.
+//!
+//! Upstream offers three objectives: the most meal ranks, the meal targets and
+//! kitchen speed. [`Objective`] carries the first two; the speed objective ranks by
+//! the meal-level `kitchenSpeedEvaluator`, which this build does not have, so it is
+//! not offered rather than ranked by a constant.
 //!
 //! The kitchen speed model upstream builds from the account stats engine
 //! (`cookingSpeedModel`) is one entered number here: the Cooking speed /hr a
@@ -15,13 +20,15 @@
 //! and their speed levels, the meal levels and stocks, the Blue Jellyfish grant
 //! and No Meal Left Behind's level count.
 
+pub mod forecast;
 pub mod layout;
 mod plan;
 #[cfg(test)]
 mod tests;
 
+pub use forecast::{Forecast, SCENARIOS, Scenario, forecast};
 pub use layout::{Layout, LayoutChoice, LayoutKitchen, LayoutMeal, LayoutMode};
-pub use plan::{Day, Inputs, Phase, PhaseKind, Plan, Policy, Saving, Spend, plan};
+pub use plan::{Day, Inputs, MealOutcome, Phase, PhaseKind, Plan, Policy, Saving, Spend, plan};
 
 use idleon_save::Save;
 use serde::Deserialize;
@@ -38,6 +45,22 @@ pub const MAX_DAYS: u32 = 3650;
 
 /// The horizon the upstream page starts on.
 pub const DEFAULT_DAYS: u32 = 30;
+
+/// How a plan and the reset layout rank their candidates.
+///
+/// Upstream also offers `speed`, which ranks by the Cooking speed the meal levels
+/// reach. That term is the `kitchenSpeedEvaluator` model this build does not have,
+/// so the objective stays out until the meal-level speed engine lands rather than
+/// ranking by a number the section cannot compute.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Objective {
+    /// Spend on the cheapest meal level, wherever it is: `_planObjective`'s `ranks`.
+    #[default]
+    Ranks,
+    /// Spend only on meals below their entered target: the `targets` objective.
+    Targets,
+}
 
 /// One meal's static row from `MealINFO`.
 #[derive(Clone, Debug, Deserialize)]
@@ -246,6 +269,8 @@ pub enum Problem {
     Locked,
     /// A meal level, stock, speed or horizon is not a finite number.
     Numbers,
+    /// The target objective was asked for without a target to spend toward.
+    Targets,
 }
 
 impl Problem {
@@ -260,6 +285,7 @@ impl Problem {
             }
             Problem::Locked => "Blue Jellyfish is not unlocked in this save.",
             Problem::Numbers => "Enter a finite horizon, speed and meal state.",
+            Problem::Targets => "Set at least one meal target level.",
         }
     }
 }
