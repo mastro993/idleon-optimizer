@@ -10,7 +10,9 @@
 //! repositions them, but there is nothing to re-roll on them — so the insight
 //! table skips them exactly as upstream does.
 
-use super::{Board, Cog, CogKind, Goal, affects_player, classify, score, slot_to_pos, stat_tier};
+use super::{
+    Board, Cog, CogKind, Goal, affects_player, classify, goal_score, slot_to_pos, stat_tier,
+};
 
 /// How much one board cog contributes to the objective: removing it changes the
 /// score by `delta`.
@@ -59,7 +61,7 @@ pub struct BoardInsights {
 /// The board insights for `goal`, or `None` when the board scores nothing or
 /// has nothing movable to re-roll.
 pub fn board_insights(board: &Board, goal: Goal) -> Option<BoardInsights> {
-    let base_score = score(board, goal);
+    let base_score = goal_score(board, goal);
     if base_score <= 0.0 {
         return None;
     }
@@ -76,7 +78,7 @@ pub fn board_insights(board: &Board, goal: Goal) -> Option<BoardInsights> {
             continue;
         }
         working[slot] = None;
-        let delta = base_score - score(&working, goal);
+        let delta = base_score - goal_score(&working, goal);
         working[slot] = Some(cog.clone());
         impacts.push(Insight {
             slot,
@@ -276,7 +278,7 @@ mod tests {
     fn the_insights_measure_each_removal_like_the_optimizer_scores() {
         let board = board();
         let insights = board_insights(&board, Goal::ConExp).expect("insights");
-        assert_eq!(insights.base_score, score(&board, Goal::ConExp));
+        assert_eq!(insights.base_score, goal_score(&board, Goal::ConExp));
         // The player, the Yin and the Yang cogs are not re-roll targets.
         assert!(!insights.impacts.iter().any(|impact| impact.slot >= 16));
         // The strongest cog carries the most EXP, so its removal costs most.
@@ -288,7 +290,8 @@ mod tests {
             let mut without = board.clone();
             without[impact.slot] = None;
             assert!(
-                (insights.base_score - score(&without, Goal::ConExp) - impact.delta).abs() < 1e-9
+                (insights.base_score - goal_score(&without, Goal::ConExp) - impact.delta).abs()
+                    < 1e-9
             );
             assert!((impact.delta / insights.base_score * 100.0 - impact.pct).abs() < 1e-12);
         }

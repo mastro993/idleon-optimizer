@@ -2103,6 +2103,68 @@ const INTERACTIONS = {
       (nodes) => !has(nodes, 'cog-result') && has(nodes, 'cog-board'),
       'cog: reset restores the save board and drops the result',
     );
+
+    // Custom weights replace the single goal. Set build-only weights and check
+    // the result names the weighted objective.
+    await lane.call('click_element', { id: 'cog-weighted' });
+    await waitForNode(lane, 'cog-weight-build', 'cog: custom weights show their fields');
+    const typeWeight = async (id, value) => {
+      await lane.call('click_element', { id });
+      await lane.call('keyboard', { keystroke: 'secondary-a' });
+      await lane.call('type_text', { text: value });
+    };
+    await typeWeight('cog-weight-conexp', '0');
+    await typeWeight('cog-weight-flaggy', '0');
+    await typeWeight('cog-weight-build', '100');
+    const weightValue = (nodes, label) =>
+      nodes.find((node) => node.role === 'text_input' && node.label === label)?.value?.value ?? '';
+    await waitFor(
+      lane,
+      (nodes) => weightValue(nodes, 'Build weight') === '100',
+      'cog: the build weight reads 100',
+    );
+    await lane.call('click_element', { id: 'cog-optimize' });
+    await waitForNode(lane, 'cog-result', 'cog: a weighted optimize produces a result', 60000);
+    const weighted = labelOf(await lane.tree(), 'cog-result') ?? '';
+    check('cog: the result names the weighted objective', weighted.includes('Custom weights'), weighted);
+    await lane.call('click_element', { id: 'cog-reset' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cog-result') && has(nodes, 'cog-board'),
+      'cog: reset drops the weighted result',
+    );
+
+    // All-zero weights are refused: the banner names the reason and Optimize
+    // carries no click action.
+    await typeWeight('cog-weight-build', '0');
+    await waitForNode(lane, 'cog-weight-error', 'cog: all-zero weights are rejected');
+    const error = labelOf(await lane.tree(), 'cog-weight-error') ?? '';
+    check('cog: the error names the reason', error.includes('above zero'), error);
+    const optimize = (await lane.tree()).find((node) => node.id === 'cog-optimize');
+    check('cog: invalid weights disable Optimize', !(optimize?.actions ?? []).includes('click'));
+    await typeWeight('cog-weight-build', '100');
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cog-weight-error'),
+      'cog: valid weights clear the error',
+    );
+
+    // The perfect board explains its layers.
+    await lane.call('click_element', { id: 'cog-perfect' });
+    await waitForNode(lane, 'cog-perfect-result', 'cog: the perfect board is built', 120000);
+    await waitForNode(lane, 'cog-perfect-layers', 'cog: the perfect board lists its layers');
+    const perfect = labelOf(await lane.tree(), 'cog-perfect-result') ?? '';
+    check(
+      'cog: the perfect board explains the player and its cogs',
+      perfect.includes('player at') && perfect.includes('Yang'),
+      perfect,
+    );
+    await lane.call('click_element', { id: 'cog-reset' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'cog-perfect-result') && has(nodes, 'cog-board'),
+      'cog: reset drops the perfect board',
+    );
   },
   'worship-td': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

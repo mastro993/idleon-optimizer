@@ -2,7 +2,9 @@
 
 use crate::assets::Manifest;
 use crate::sections::clamworks::{State as ClamworksState, Tab as ClamworksTab};
-use crate::sections::cog::{RunInputs as CogRunInputs, State as CogState};
+use crate::sections::cog::{
+    PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
+};
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::drop_rate::State as DropRateState;
@@ -40,7 +42,8 @@ use gpui::{App, AppContext as _, Context, Entity, FocusHandle, Subscription, Win
 use gpui_mcp::BridgeHandle;
 use idleon_core::clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_core::cog::{
-    CogResult, Goal as CogGoal, OptimizeOptions, optimize as optimize_cog_board,
+    CogResult, Goal as CogGoal, OptimizeOptions, PerfectBoard, optimize as optimize_cog_board,
+    perfect_board as perfect_cog_board,
 };
 use idleon_core::cooking_mastery::Mastery;
 use idleon_core::coral::{Inputs as CoralInputs, Plan as CoralPlan};
@@ -311,6 +314,8 @@ pub struct AppState {
     pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
+    /// The shared runner for the perfect cog board.
+    pub(crate) cog_perfect_run: Entity<TaskRunner<PerfectBoard, CogPerfectInputs>>,
     /// The shared runner for the Clamworks upgrade plan.
     clamworks_run: Entity<TaskRunner<ClamworksPlan, ClamworksPlanInput>>,
     /// The shared runner for a Worship TD plan simulation.
@@ -356,6 +361,7 @@ pub struct AppState {
     _coral_run_subscription: Subscription,
     _jelly_run_subscription: Subscription,
     _cog_subscription: Subscription,
+    _cog_perfect_subscription: Subscription,
     _clamworks_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
     _worship_optimize_subscription: Subscription,
@@ -553,6 +559,39 @@ impl AppState {
             }
             cx.notify();
         });
+        // The perfect board is a separate, heavier run: it rebuilds a candidate
+        // for every player slot. It keeps its own result so the optimizer's
+        // stored board is not overwritten.
+        let cog_perfect_run = cx.new(|_| TaskRunner::<PerfectBoard, CogPerfectInputs>::new());
+        let cog_perfect_subscription =
+            cx.subscribe(&cog_perfect_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status = format!(
+                            "Building the perfect cog board… {:.0}%",
+                            progress.fraction * 100.0
+                        );
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Perfect board cancelled; the previous result is unchanged.".into()
+                        } else {
+                            "Perfect board cancelled; the board is unchanged.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(perfect) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Perfect cog board ready: {} layer(s), {} Excogia block(s), {} Yang.",
+                                perfect.layers.len(),
+                                perfect.excogia_blocks,
+                                perfect.yang_placed
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // The Clamworks plan is a short bounded greedy run, but it reports every
         // purchase and stops where the budget runs out.
         let clamworks_run = cx.new(|_| TaskRunner::<ClamworksPlan, ClamworksPlanInput>::new());
@@ -903,6 +942,7 @@ impl AppState {
             coral_run,
             jelly_run,
             cog_run,
+            cog_perfect_run,
             clamworks_run,
             worship_plan,
             worship_optimize,
@@ -934,6 +974,7 @@ impl AppState {
             _coral_run_subscription: coral_run_subscription,
             _jelly_run_subscription: jelly_run_subscription,
             _cog_subscription: cog_subscription,
+            _cog_perfect_subscription: cog_perfect_subscription,
             _clamworks_run_subscription: clamworks_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
             _worship_optimize_subscription: worship_optimize_subscription,
@@ -1202,6 +1243,10 @@ impl AppState {
         }
         if self.cog.save != before_cog {
             self.cog_run.update(cx, |runner, _| {
+                runner.cancel();
+                runner.clear();
+            });
+            self.cog_perfect_run.update(cx, |runner, _| {
                 runner.cancel();
                 runner.clear();
             });
@@ -2150,6 +2195,13 @@ impl AppState {
         self.cog_run.read(cx).state(&self.cog.inputs())
     }
 
+    /// The perfect board's run: running, progress, result and staleness.
+    pub fn cog_perfect_task(&self, cx: &App) -> TaskState<PerfectBoard> {
+        self.cog_perfect_run
+            .read(cx)
+            .state(&self.cog.perfect_inputs())
+    }
+
     /// What the shared Jelly estimate runner shows against the current inputs.
     pub fn jelly_task(&self, cx: &App) -> TaskState<JellyEstimate> {
         let inputs = self.jelly_state.inputs(self.jelly.as_ref());
@@ -2270,21 +2322,57 @@ impl AppState {
         }
     }
 
+    /// Turn the custom weights on or off; a stored result becomes stale.
+    pub fn set_cog_weighted(&mut self, weighted: bool, cx: &mut Context<Self>) {
+        if self.cog.weighted != weighted {
+            self.cog.weighted = weighted;
+            self.status = if weighted {
+                "Cog objective: custom weights.".into()
+            } else {
+                format!("Cog objective: {}.", self.cog.goal.label())
+            };
+            cx.notify();
+        }
+    }
+
+    /// Replace one custom weight; the controls clamp it to 0..=100.
+    pub fn set_cog_weight(&mut self, goal: CogGoal, value: f64, cx: &mut Context<Self>) {
+        let mut weights = self.cog.weights;
+        weights.set(goal, value);
+        if self.cog.weights != weights {
+            self.cog.weights = weights;
+            self.status = match self.cog.weight_problem() {
+                Some(problem) => format!("Cog weights: {problem}"),
+                None => format!("Cog {} weight: {:.0}.", goal.label(), value),
+            };
+            cx.notify();
+        }
+    }
+
     /// Optimize the board off the UI thread through the shared task runner.
     pub fn optimize_cog(&mut self, cx: &mut Context<Self>) {
+        if let Some(problem) = self.cog.weight_problem() {
+            self.status = format!("Cog weights: {problem}");
+            cx.notify();
+            return;
+        }
         self.cog.dismiss_walkthrough();
+        self.cog.show_perfect = false;
         let inputs = self.cog.inputs();
         if inputs.board.iter().all(Option::is_none) {
             self.status = "Cog board: no cogs to place.".into();
             cx.notify();
             return;
         }
+        self.cog_perfect_run.update(cx, |runner, _| {
+            runner.cancel();
+        });
         let started = self.cog_run.update(cx, |runner, cx| {
             runner.start(cx, inputs, move |inputs, report| {
                 optimize_cog_board(
                     &inputs.board,
                     &inputs.shelf,
-                    inputs.goal,
+                    &inputs.objective,
                     &OptimizeOptions::default(),
                     report,
                 )
@@ -2362,10 +2450,53 @@ impl AppState {
         }
     }
 
-    /// Restore the save board and drop the stored result.
+    /// Build the perfect board off the UI thread. It needs a player cog on the
+    /// save board, which the section's button checks before calling this.
+    pub fn perfect_cog(&mut self, cx: &mut Context<Self>) {
+        if idleon_core::cog::player_slot(&self.cog.save.board).is_none() {
+            self.status = "Perfect board needs a player cog on the save board.".into();
+            cx.notify();
+            return;
+        }
+        self.cog.dismiss_walkthrough();
+        self.cog.show_perfect = true;
+        self.cog_run.update(cx, |runner, _| {
+            runner.cancel();
+        });
+        let inputs = self.cog.perfect_inputs();
+        let started = self.cog_perfect_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |inputs, report| {
+                perfect_cog_board(
+                    &inputs.board,
+                    &inputs.shelf,
+                    inputs.construction_level,
+                    inputs.goal,
+                    report,
+                )
+            })
+        });
+        if started {
+            self.status = "Building the perfect cog board…".into();
+            cx.notify();
+        }
+    }
+
+    /// Ask a running perfect-board build to stop at its next report.
+    pub fn cancel_cog_perfect(&mut self, cx: &mut Context<Self>) {
+        if self.cog_perfect_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the perfect board…".into();
+            cx.notify();
+        }
+    }
+
+    /// Restore the save board and drop both stored results.
     pub fn reset_cog(&mut self, cx: &mut Context<Self>) {
         self.cog.reset();
         self.cog_run.update(cx, |runner, _| {
+            runner.cancel();
+            runner.clear();
+        });
+        self.cog_perfect_run.update(cx, |runner, _| {
             runner.cancel();
             runner.clear();
         });
