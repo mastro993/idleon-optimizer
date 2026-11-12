@@ -58,7 +58,7 @@ Acceptance:
 
 ### CK-02 — Optimal daily distribution
 
-Allocate the daily reset budget across upgrades for the selected goal.
+Allocate the daily reset budget across upgrades for the selected goal: the EXP rate at the current mastery rank, or the rate the same points buy at the rank that unlocks the next upgrade.
 
 Depends on: CK-01 Mastery EXP and upgrade comparison
 

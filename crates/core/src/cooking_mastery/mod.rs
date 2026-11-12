@@ -16,6 +16,8 @@
 //!   the percentage gain one more point would give.
 //! - [`Mastery::breakdown`] is the page's `renderBreakdownTree` call: the same
 //!   factors as a formula tree, whose root is the rate the cards show.
+//! - [`Mastery::distribution`] is the page's `optimizeDistribution`: the daily
+//!   reset budget spent across the EXP upgrades, for a [`Goal`].
 //!
 //! SMOKY (ribbon rank chance) is not an EXP upgrade upstream and is left out of
 //! the ranking and the tree, exactly as the page's `EXP_UPGRADES` list leaves it
@@ -25,6 +27,9 @@
 //! field names; this module only does arithmetic, so its tests need no save.
 
 mod breakdown;
+mod distribution;
+
+pub use distribution::{Goal, Plan, Row};
 
 use crate::formula::FormulaNode;
 

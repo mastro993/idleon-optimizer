@@ -6,7 +6,7 @@
 //! external systems. Every assertion here compares the Rust port with those
 //! numbers, so a formula drift on either side fails loudly.
 
-use idleon_core::cooking_mastery::{EXP_UPGRADES, Mastery, REQUIRED_LEVEL, UPGRADE_NAMES};
+use idleon_core::cooking_mastery::{EXP_UPGRADES, Goal, Mastery, REQUIRED_LEVEL, UPGRADE_NAMES};
 use idleon_core::save::import;
 use serde_json::Value;
 
@@ -267,4 +267,110 @@ fn an_unlocked_rank_changes_the_ranking_but_not_the_save() {
         assert_eq!(row.required_level, REQUIRED_LEVEL[index]);
         assert_eq!(row.gain, 0.0);
     }
+}
+
+#[test]
+fn the_fixture_distribution_matches_upstream() {
+    let (mastery, oracle) = imported();
+    let distribution = &oracle["distribution"];
+    let total = number(distribution, "totalPts");
+    close(total, mastery.points_earned(), "the page's total points");
+    for variant in distribution["variants"]
+        .as_array()
+        .expect("variants is an array")
+    {
+        let request = number(variant, "request");
+        let what = &format!("budget {request}");
+        let plan = mastery.distribution(Goal::Now, request);
+        close(plan.budget, number(variant, "spendPts"), what);
+        let levels = variant["levels"].as_array().expect("levels is an array");
+        for (position, index) in EXP_UPGRADES.iter().enumerate() {
+            close(
+                plan.levels[*index],
+                levels[position].as_f64().unwrap_or_default(),
+                &format!("{what}: {}", UPGRADE_NAMES[*index]),
+            );
+        }
+        close(plan.rate, number(variant, "rate"), what);
+        close(
+            plan.hours,
+            number(variant, "hoursToNextLevel"),
+            &format!("{what}: hours to the next level"),
+        );
+    }
+    // The plan's rows are the page's table: current, optimal, change and bonus.
+    let rows = distribution["rows"].as_array().expect("rows is an array");
+    assert_eq!(plan_rows(&mastery).len(), rows.len());
+    for row in rows {
+        let index = row["t"].as_u64().expect("t is a number") as usize;
+        let port = plan_rows(&mastery)
+            .into_iter()
+            .find(|port| port.index == index)
+            .expect("every EXP upgrade is a row");
+        let what = UPGRADE_NAMES[index];
+        close(
+            port.current,
+            number(row, "curLv"),
+            &format!("{what} current"),
+        );
+        close(
+            port.planned,
+            number(row, "optLv"),
+            &format!("{what} planned"),
+        );
+        close(port.change, number(row, "diff"), &format!("{what} change"));
+        close(
+            port.bonus,
+            number(row, "optBonus"),
+            &format!("{what} bonus"),
+        );
+    }
+}
+
+/// The rows of the fixture save's full-budget plan.
+fn plan_rows(mastery: &Mastery) -> Vec<idleon_core::cooking_mastery::Row> {
+    mastery
+        .distribution(Goal::Now, mastery.points_earned())
+        .rows
+}
+
+#[test]
+fn the_allocator_invariant_holds_on_the_fixture() {
+    let (mastery, oracle) = imported();
+    let total = number(&oracle["distribution"], "totalPts");
+    // Every budget the section can ask for spends exactly the clamped budget and
+    // never touches a locked upgrade.
+    for request in [0.0, 1.0, total / 2.0, total, total + 7.0] {
+        let plan = mastery.distribution(Goal::Now, request);
+        let spent: f64 = plan.levels.iter().sum();
+        close(spent, plan.budget, "the plan spends its budget");
+        assert!(plan.budget <= total, "the plan respects the budget");
+        for row in &plan.rows {
+            assert!(row.planned >= 0.0, "{} has no negative levels", row.name);
+            if row.locked {
+                assert_eq!(row.planned, 0.0, "{} stays locked", row.name);
+            }
+        }
+        // The plan's rate is its own factors multiplied, so the table explains
+        // the number the card shows.
+        let factors: f64 = plan.rows.iter().map(|row| row.multiplier).product();
+        close(
+            plan.rate,
+            2.0 * mastery.external.total() * factors,
+            "the plan rate",
+        );
+        // The plan is deterministic: the same save plans the same way.
+        assert_eq!(mastery.distribution(Goal::Now, request), plan);
+    }
+    // The goal switch re-plans on this save: rank 18 leaves SOUR (25) and
+    // SAVORY (100) locked, so holding the budget until 25 buys SOUR.
+    let now = mastery.distribution(Goal::Now, total);
+    let later = mastery.distribution(Goal::NextUnlock, total);
+    assert_eq!(later.rank, 25.0);
+    assert_ne!(now.levels, later.levels, "the goal switch changes the plan");
+    assert_eq!(
+        later.levels[4].min(1.0),
+        1.0,
+        "SOUR takes points at rank 25"
+    );
 }

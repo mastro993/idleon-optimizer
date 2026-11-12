@@ -113,5 +113,112 @@
       "pctGain": 0,
       "newRate": 1697799.9089009636
     }
-  ]
+  ],
+  "distribution": {
+    "totalPts": 19,
+    "variants": [
+      {
+        "request": 19,
+        "spendPts": 19,
+        "levels": [
+          6,
+          6,
+          7,
+          0,
+          0
+        ],
+        "rate": 3723658.783951468,
+        "hoursToNextLevel": 390.7961516528823
+      },
+      {
+        "request": 9,
+        "spendPts": 9,
+        "levels": [
+          3,
+          3,
+          3,
+          0,
+          0
+        ],
+        "rate": 443134.08186762314,
+        "hoursToNextLevel": 3283.8627909269967
+      },
+      {
+        "request": 0,
+        "spendPts": 0,
+        "levels": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rate": 17.31775348837209,
+        "hoursToNextLevel": 84028885.3755636
+      },
+      {
+        "request": 24,
+        "spendPts": 19,
+        "levels": [
+          6,
+          6,
+          7,
+          0,
+          0
+        ],
+        "rate": 3723658.783951468,
+        "hoursToNextLevel": 390.7961516528823
+      },
+      {
+        "request": -3,
+        "spendPts": 0,
+        "levels": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "rate": 17.31775348837209,
+        "hoursToNextLevel": 84028885.3755636
+      }
+    ],
+    "rows": [
+      {
+        "t": 0,
+        "curLv": 7,
+        "optLv": 6,
+        "diff": -1,
+        "optBonus": 12484.335756973918
+      },
+      {
+        "t": 1,
+        "curLv": 3,
+        "optLv": 6,
+        "diff": 3,
+        "optBonus": 978
+      },
+      {
+        "t": 2,
+        "curLv": 5,
+        "optLv": 7,
+        "diff": 2,
+        "optBonus": 15750
+      },
+      {
+        "t": 4,
+        "curLv": 0,
+        "optLv": 0,
+        "diff": 0,
+        "optBonus": 0
+      },
+      {
+        "t": 5,
+        "curLv": 0,
+        "optLv": 0,
+        "diff": 0,
+        "optBonus": 0
+      }
+    ]
+  }
 }

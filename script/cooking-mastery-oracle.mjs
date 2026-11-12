@@ -190,6 +190,54 @@ const upgrades = EXP_UPGRADES.map((t) => {
 });
 upgrades.sort((a, b) => b.pctGain - a.pctGain || a.t - b.t);
 
+// ===== cooking-mastery-calc.html, optimizeDistribution, copied expression
+// for expression: the page's own greedy, so the Rust plan is compared against
+// the algorithm and not a re-derivation of it.
+function optimizeDistribution(totalPoints) {
+  const levels = {};
+  for (const t of EXP_UPGRADES) levels[t] = 0;
+
+  const mLv = getMasteryLevel();
+  for (let p = 0; p < totalPoints; p++) {
+    let bestT = -1;
+    let bestRatio = 0;
+    for (const t of EXP_UPGRADES) {
+      if (mLv < (RANK_REQ[t] || 0)) continue;
+      const curMulti = expMultiplier(t, levels[t]);
+      const newMulti = expMultiplier(t, levels[t] + 1);
+      const ratio = newMulti / curMulti;
+      if (ratio > bestRatio) { bestRatio = ratio; bestT = t; }
+    }
+    if (bestT >= 0) levels[bestT]++;
+  }
+
+  let optRate = 2 * external.total;
+  for (const t of EXP_UPGRADES) optRate *= expMultiplier(t, levels[t]);
+  return { levels, rate: optRate };
+}
+
+const totalPts = masteryLv + 1 + companionPoints;
+const budgets = [totalPts, Math.floor(totalPts / 2), 0, totalPts + 5, -3];
+const distribution = {
+  totalPts,
+  variants: budgets.map((request) => {
+    const spendPts = Math.min(totalPts, Math.max(0, request));
+    const optimal = optimizeDistribution(spendPts);
+    return {
+      request,
+      spendPts,
+      levels: EXP_UPGRADES.map((t) => optimal.levels[t]),
+      rate: optimal.rate,
+      hoursToNextLevel: optimal.rate > 0 ? expReq(masteryLv) / optimal.rate : null,
+    };
+  }),
+  rows: EXP_UPGRADES.map((t) => {
+    const curLv = getUpgLevel(t);
+    const optLv = optimizeDistribution(totalPts).levels[t];
+    return { t, curLv, optLv, diff: optLv - curLv, optBonus: bonusTotal(t, optLv) };
+  }),
+};
+
 const payload = {
   source: 'fixtures/data.json through the upstream js/save/loader.js',
   page: 'cooking-mastery-calc.html',
@@ -208,6 +256,7 @@ const payload = {
   hoursToNextLevel: currentRate > 0 ? expReq(masteryLv) / currentRate : null,
   external,
   upgrades,
+  distribution,
 };
 
 writeFileSync(
