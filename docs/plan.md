@@ -256,6 +256,8 @@ script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and sho
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles and rejections
 script/extract-royal-data.mjs       extract the Royal Guardian armory, resource and map tables
 script/royal-oracle.mjs             regenerate the Royal Guardian overview oracle fixture
+script/extract-farming-data.mjs     extract the farming tables, emporium encoding and gates
+script/farming-signals-oracle.mjs   regenerate the farming signals and curves fixture
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -445,9 +447,16 @@ the previous plan, and an objective, mode or save edit marks the stored plan sta
 is the upstream planner's own output for one purpose-built save, including all seven objectives and both
 allocation modes, so `crates/core/tests/farming_planner.rs` compares the assignment rows, the
 allocator's levels, points and scores, and the account snapshot field for field; regenerate it with
-`script/farming-oracle.mjs`. Presets and the preset comparison (FM-03), the evolution chain and
-overgrowth advice (FM-04) and the signals, thresholds and curves (FM-05) stay on the roadmap.
-Details: [`docs/sections/farming.md`](sections/farming.md).
+`script/farming-oracle.mjs`. FM-05 adds the upstream Overview tab: the priority signals, the account
+multipliers, the GMO thresholds, the ten Crop Scientist bonuses, the seven growth breakpoints and
+every plot's long-run overgrowth curve, with the plot selection switching the curve. The account
+snapshot applies only the terms the save carries, so every figure is a lower bound;
+`script/farming-signals-oracle.mjs` regenerates `fixtures/farming-signals.json` from the upstream
+`farming-planner.js` and `farming.js` on a purpose-built save whose unmodelled systems are all
+absent, and `crates/core/tests/farming_signals.rs` compares the snapshot, the diagnostics, the
+thresholds, the breakpoints, all 36 plots' metrics, all 36 curves and the Crop Scientist table
+against it. Presets and the preset comparison (FM-03) and the evolution chain with overgrowth advice
+(FM-04) stay on the roadmap. Details: [`docs/sections/farming.md`](sections/farming.md).
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,
 the current EXP rate, the EXP the next level takes and the hours that needs, the upgrade comparison
 ranked by the gain one more point buys, and the EXP rate breakdown in the shared formula tree. Every

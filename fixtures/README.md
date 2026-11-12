@@ -45,3 +45,13 @@ modes, with the points, scores, levels and change list. Regenerate it with
 `node script/farming-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_planner.rs` compares
 the port field for field. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
+
+`farming-signals.json` is the upstream Farming Planner's own output for the signals, thresholds and
+curves, and it carries the save it was evaluated on. The upstream account snapshot reads a dozen
+systems this port deliberately does not apply; the fixture's purpose-built save leaves every one of
+them out, so they fall back to their neutral values and the two calculators agree term for term: the
+account multipliers, the priority diagnostics, the GMO counts, the seven growth breakpoints, all 36
+plots' metrics, all 36 overgrowth curves and the ten Crop Scientist bonuses. Regenerate it with
+`node script/farming-signals-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_signals.rs`
+compares the port field for field. Treat it as frozen for the same reason: it is the oracle's
+output, not this app's.
