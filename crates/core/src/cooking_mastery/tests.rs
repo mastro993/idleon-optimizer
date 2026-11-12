@@ -253,11 +253,11 @@ fn the_distribution_spends_the_budget_and_never_more() {
             plan.budget <= available,
             "request {request} cannot overspend"
         );
-        // The page's input is a whole number of points, so the plan floors.
-        let fractional = mastery.distribution(Goal::Now, 6.7);
-        assert_eq!(fractional.budget, 6.0);
-        assert_eq!(fractional.requested, 6.7);
     }
+    // The page's input is a whole number of points, so the plan floors.
+    let fractional = mastery.distribution(Goal::Now, 6.7);
+    assert_eq!(fractional.budget, 6.0);
+    assert_eq!(fractional.requested, 6.7);
     // A negative request is the page's zero: nothing is spent and the plan is
     // the bare base rate with every upgrade at zero.
     let empty = mastery.distribution(Goal::Now, -5.0);
@@ -308,24 +308,22 @@ fn the_first_point_goes_to_the_biggest_marginal_multiplier() {
         ..sample()
     };
     let plan = mastery.distribution(Goal::Now, 1.0);
-    let ratios: Vec<(usize, f64)> = EXP_UPGRADES
+    let ratio = |index: usize| {
+        mastery.multiplier_at(index, 1.0, plan.rank) / mastery.multiplier_at(index, 0.0, plan.rank)
+    };
+    let unlocked: Vec<usize> = EXP_UPGRADES
         .iter()
-        .filter(|index| {
-            *index != &RIBBON_CHANCE && mastery.level >= f64::from(REQUIRED_LEVEL[**index])
-        })
-        .map(|index| {
-            (
-                *index,
-                mastery.multiplier_at(*index, 1.0, plan.rank)
-                    / mastery.multiplier_at(*index, 0.0, plan.rank),
-            )
-        })
+        .copied()
+        .filter(|index| mastery.level >= f64::from(REQUIRED_LEVEL[*index]))
         .collect();
-    let (best, _) =
-        ratios.iter().copied().fold(
-            (0, f64::MIN),
-            |best, row| if row.1 > best.1 { row } else { best },
-        );
+    // Ties keep the game's order, like the page's strict `>`.
+    let best = unlocked.iter().copied().fold(unlocked[0], |best, index| {
+        if ratio(index) > ratio(best) {
+            index
+        } else {
+            best
+        }
+    });
     assert_eq!(plan.levels[best], 1.0, "the first point buys the top ratio");
     assert_eq!(plan.levels.iter().sum::<f64>(), 1.0);
 }
