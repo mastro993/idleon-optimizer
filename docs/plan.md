@@ -560,17 +560,24 @@ for grid nodes 185 and 187 are not ported: they correct a save-export timing bug
 local storage, and this app reads the save's shape overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).
 
-The Coral God Rank section implements CR-01 and CR-02: the upstream planner controls with validation
-and the save's current coral state, then the bounded deterministic beam search through the shared
-task runner. A run keeps the best plan per beam, reports each step, can be cancelled and marks the
-stored plan stale when an input changes. The card shows what the plan commits, the projected coral
-state against the current one and the ordered Coral Kid and God Rank offering actions. The search is
-`idleon_core::coral::plan`: every unlocked upgrade and one offering per state, candidates that do not
-strictly improve the goal dropped, states deduped by level/rank signature with dominance pruning,
-then sorted by the goal, spend and signature before the beam is cut. `script/coral-god-rank-oracle.mjs`
-regenerates the upstream plans in `fixtures/coral-plan.json`, including the beam-dependent case, and
-`crates/core/tests/coral_plan.rs` compares action by action. Missing: the offering fit explanation
-and its missing-input warnings (CR-03). Details: [`docs/sections/coral-god-rank.md`](sections/coral-god-rank.md).
+The Coral God Rank section implements CR-01, CR-02 and CR-03: the upstream planner controls with
+validation and the save's current coral state, the bounded deterministic beam search through the
+shared task runner, then the offering fit and the current Coral Kid levels. A run keeps the best plan
+per beam, reports each step, can be cancelled and marks the stored plan stale when an input changes.
+The card shows what the plan commits, the projected coral state against the current one and the
+ordered Coral Kid and God Rank offering actions. The search is `idleon_core::coral::plan`: every
+unlocked upgrade and one offering per state, candidates that do not strictly improve the goal
+dropped, states deduped by level/rank signature with dominance pruning, then sorted by the goal,
+spend and signature before the beam is cut. The offering fit reads the upstream `offeringStats` row
+at the current God Rank: the tier's success chance, the paid cost and `expectedSpendForOneSuccess`,
+with a caption that turns the Y4 free chance and the planning confidence into the attempts and
+worst-case spend the plan reserves. The current-levels table adds each upgrade's unlock status, and
+both cards name the save fields they read as zero (Y4, DivCostAfter3, and the Coral Kid and
+Singularity level pages) instead of hiding the gap.
+`script/coral-god-rank-oracle.mjs` regenerates the upstream plans in `fixtures/coral-plan.json`,
+including the beam-dependent case and offering rows with and without a Y4 free chance, and
+`crates/core/tests/coral_plan.rs` compares the plan action by action and the fit figures. Details:
+[`docs/sections/coral-god-rank.md`](sections/coral-god-rank.md).
 
 ## 10. Verification
 

@@ -105,6 +105,34 @@ pub struct SaveInputs {
     pub missing: Vec<String>,
 }
 
+impl SaveInputs {
+    /// The offering model's inputs the save did not carry, in upstream
+    /// `offeringMissing` order. The fit reads them as zero until they are entered.
+    pub fn offering_missing(&self) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if self.y4.is_none() {
+            missing.push("Y4");
+        }
+        if self.div_cost_after3.is_none() {
+            missing.push("DivCostAfter3");
+        }
+        missing
+    }
+
+    /// The Coral Kid and Singularity level rows the save did not carry. The
+    /// current-levels table reads a missing page as level 0.
+    pub fn levels_missing(&self) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if self.levels.iter().all(Option::is_none) {
+            missing.push("Coral Kid levels (OptLacc 427-432)");
+        }
+        if self.singularity_levels.iter().all(Option::is_none) {
+            missing.push("Singularity levels (OptLacc 616-621)");
+        }
+        missing
+    }
+}
+
 /// Every upstream planner input plus the save's current Coral Kid level.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]

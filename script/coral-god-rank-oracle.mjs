@@ -137,17 +137,32 @@ const run = (name, options) => {
   };
 };
 
-const offeringRows = [0, 1, 5, 10, 31, 32, 38, 99].map((godRank) => {
+const offeringRows = [
+  { godRank: 0, y4: 0 },
+  { godRank: 1, y4: 0 },
+  { godRank: 5, y4: 0 },
+  { godRank: 10, y4: 0 },
+  { godRank: 31, y4: 0 },
+  { godRank: 32, y4: 0 },
+  { godRank: 38, y4: 0 },
+  { godRank: 99, y4: 0 },
+  { godRank: 0, y4: 20 },
+  { godRank: 31, y4: 20 },
+  { godRank: 31, y4: 100 },
+].map(({ godRank, y4 }) => {
   const stats = C.offeringStats(0, saveData, {
     godRank,
     divCostAfter3: inputs.divCostAfter3,
-    y4: inputs.y4,
+    y4,
     tier: inputs.tier,
   });
   return {
     godRank,
+    y4,
+    tier: inputs.tier,
     odds: stats.successChancePerAttempt,
     cost: stats.paidCost,
+    freeChance: stats.freeCostChance,
     expectedSpendForOneSuccess: stats.expectedSpendForOneSuccess,
     confidence: stats.confidence,
   };

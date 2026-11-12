@@ -63,6 +63,39 @@ fn slots_follow_the_upgrade_page() {
 }
 
 #[test]
+fn the_save_names_the_offering_and_level_data_it_lacks() {
+    let empty = SaveInputs::default();
+    assert_eq!(empty.offering_missing(), ["Y4", "DivCostAfter3"]);
+    assert_eq!(
+        empty.levels_missing(),
+        [
+            "Coral Kid levels (OptLacc 427-432)",
+            "Singularity levels (OptLacc 616-621)"
+        ]
+    );
+
+    let complete = SaveInputs {
+        y4: Some(10.0),
+        div_cost_after3: Some(5.0),
+        levels: [1, 2, 3, 4, 5, 6].map(Some),
+        singularity_levels: [1, 0, 0, 0, 0, 0].map(Some),
+        ..SaveInputs::default()
+    };
+    assert!(complete.offering_missing().is_empty());
+    assert!(complete.levels_missing().is_empty());
+
+    // One unreadable page is named on its own, not as the whole row.
+    let levels_only = SaveInputs {
+        levels: [1, 0, 0, 0, 0, 0].map(Some),
+        ..SaveInputs::default()
+    };
+    assert_eq!(
+        levels_only.levels_missing(),
+        ["Singularity levels (OptLacc 616-621)"]
+    );
+}
+
+#[test]
 fn unlock_levels_decide_when_the_save_knows_them() {
     let inputs = Inputs {
         assume_unlocked: false,

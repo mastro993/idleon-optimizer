@@ -1,11 +1,12 @@
 //! The Coral God Rank section: upstream planner inputs, the current summary and
 //! the beam-search plan.
 //!
-//! CR-01 landed the controls and the summary; this issue adds the shared task
-//! runner, the projected coral state and the ordered action list. The offering
-//! fit and its explanation are the next feature issue on the same plan.
+//! CR-01 landed the controls and the summary, CR-02 the shared task runner, the
+//! projected coral state and the ordered action list, and CR-03 the offering
+//! fit and the current-levels table with their missing-save warnings.
 
 mod controls;
+mod fit;
 mod plan;
 mod run;
 mod summary;
@@ -104,6 +105,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                 .gap_3()
                 .child(summary::kpis(state))
                 .child(plan::plan_pane(state, cx))
+                .child(fit::offering_pane(state, cx))
                 .child(summary::current_pane(state, window, cx)),
         )
         .into_any_element();

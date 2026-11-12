@@ -196,13 +196,22 @@ fn every_upstream_plan_matches_the_port() {
 #[test]
 fn the_offering_model_matches_upstream() {
     let oracle = oracle();
-    let inputs = inputs(&case("fixture"));
+    let base = inputs(&case("fixture"));
     for row in oracle["offering"].as_array().expect("offering rows") {
         let rank = row["godRank"].as_u64().expect("a rank") as u32;
+        let inputs = Inputs {
+            y4: at(row, "y4"),
+            tier: at(row, "tier") as u32,
+            ..base.clone()
+        };
         let offer = idleon_core::coral::offer(&inputs, rank);
         close(offer.odds, at(row, "odds"));
         close(offer.cost, at(row, "cost"));
-        close(offer.free_chance, 0.0);
+        close(offer.free_chance, at(row, "freeChance"));
+        close(
+            offer.expected_spend_per_success,
+            at(row, "expectedSpendForOneSuccess"),
+        );
         let confidence = &row["confidence"]["90"];
         assert_eq!(
             offer.attempts as u64,

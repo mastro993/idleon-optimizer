@@ -48,6 +48,16 @@ fn the_fixture_fills_every_save_derived_planner_input() {
         "the fixture carries Coral Kid levels: {:?}",
         coral.missing
     );
+    assert_eq!(
+        coral.offering_missing(),
+        ["Y4", "DivCostAfter3"],
+        "the fixture has no Y4 and no server vars"
+    );
+    assert!(
+        coral.levels_missing().is_empty(),
+        "the fixture carries both level pages: {:?}",
+        coral.levels_missing()
+    );
 }
 
 #[test]

@@ -899,8 +899,11 @@
   "offering": [
     {
       "godRank": 0,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 5,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 100,
       "confidence": {
         "50": {
@@ -922,8 +925,11 @@
     },
     {
       "godRank": 1,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 18,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 360,
       "confidence": {
         "50": {
@@ -945,8 +951,11 @@
     },
     {
       "godRank": 5,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 3557,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 71140,
       "confidence": {
         "50": {
@@ -968,8 +977,11 @@
     },
     {
       "godRank": 10,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 701955,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 14039100,
       "confidence": {
         "50": {
@@ -991,8 +1003,11 @@
     },
     {
       "godRank": 31,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 121974460772618.62,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 2439489215452372.5,
       "confidence": {
         "50": {
@@ -1014,8 +1029,11 @@
     },
     {
       "godRank": 32,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 287837599019884.06,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 5756751980397681,
       "confidence": {
         "50": {
@@ -1037,8 +1055,11 @@
     },
     {
       "godRank": 38,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 47771044499732130,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 955420889994642600,
       "confidence": {
         "50": {
@@ -1060,8 +1081,11 @@
     },
     {
       "godRank": 99,
+      "y4": 0,
+      "tier": 1,
       "odds": 0.05,
       "cost": 3.1830066601645777e+38,
+      "freeChance": 0,
       "expectedSpendForOneSuccess": 6.366013320329155e+39,
       "confidence": {
         "50": {
@@ -1078,6 +1102,84 @@
           "attempts": 59,
           "expectedSpend": 6.057296526628289e+39,
           "maxPaidSpend": 1.8779739294971007e+40
+        }
+      }
+    },
+    {
+      "godRank": 0,
+      "y4": 20,
+      "tier": 1,
+      "odds": 0.05,
+      "cost": 5,
+      "freeChance": 0.2,
+      "expectedSpendForOneSuccess": 80,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 40.98600167075764,
+          "maxPaidSpend": 70
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 72.04477944103262,
+          "maxPaidSpend": 225
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 76.12043798004615,
+          "maxPaidSpend": 295
+        }
+      }
+    },
+    {
+      "godRank": 31,
+      "y4": 20,
+      "tier": 1,
+      "odds": 0.05,
+      "cost": 121974460772618.62,
+      "freeChance": 0.2,
+      "expectedSpendForOneSuccess": 1951591372361898,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 999849090603261.9,
+          "maxPaidSpend": 1707642450816660.8
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 1757524624760439,
+          "maxPaidSpend": 5488850734767838
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 1856949875278337.8,
+          "maxPaidSpend": 7196493185584499
+        }
+      }
+    },
+    {
+      "godRank": 31,
+      "y4": 100,
+      "tier": 1,
+      "odds": 0.05,
+      "cost": 121974460772618.62,
+      "freeChance": 0.35,
+      "expectedSpendForOneSuccess": 1585667990044042,
+      "confidence": {
+        "50": {
+          "attempts": 14,
+          "expectedSpend": 812377386115150.2,
+          "maxPaidSpend": 1707642450816660.8
+        },
+        "90": {
+          "attempts": 45,
+          "expectedSpend": 1427988757617856.5,
+          "maxPaidSpend": 5488850734767838
+        },
+        "95": {
+          "attempts": 59,
+          "expectedSpend": 1508771773663649.2,
+          "maxPaidSpend": 7196493185584499
         }
       }
     }
