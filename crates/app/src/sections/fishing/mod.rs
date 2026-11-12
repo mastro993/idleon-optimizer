@@ -2,15 +2,17 @@
 //! versus panel EXP of every pool.
 //!
 //! FI-01 ports the upstream `fishing-calc.html` toolbar, the character context
-//! and the per-pool outcome from `js/stats/systems/w2/fishing.js`. The lure/line
-//! ranking (FI-02) and the Trench depth projection (FI-03) are later features in
-//! the same milestone: the toolbar and the location rows already switch pools,
-//! and the account values the upstream derives from the skill systems are
-//! entered in the account card until those systems are decoded.
+//! and the per-pool outcome from `js/stats/systems/w2/fishing.js`; FI-02 adds the
+//! lure/line ranking over all 225 combinations. The Trench depth projection
+//! (FI-03) is a later feature in the same milestone: the toolbar and the
+//! location rows already switch pools, and the account values the upstream
+//! derives from the skill systems are entered in the account card until those
+//! systems are decoded.
 
 pub mod detail;
 pub mod inputs;
 pub mod pools;
+pub mod ranking;
 pub mod toolbar;
 
 use crate::state::AppState;
@@ -23,7 +25,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_core::fishing::{self, AccountInputs, Evaluation, FishingSave};
+use idleon_core::fishing::{self, AccountInputs, Evaluation, FishingSave, Objective};
 
 /// The section's live state: the character, toolkit, location, hours and the
 /// account values the upstream derives.
@@ -37,6 +39,8 @@ pub struct State {
     pub location: String,
     /// Hours away; the AFK claim length.
     pub hours: f64,
+    /// What the lure/line ranking sorts by.
+    pub objective: Objective,
     pub account: AccountInputs,
 }
 
@@ -48,6 +52,7 @@ impl Default for State {
             line: 0,
             location: fishing::data().default_location().id.clone(),
             hours: 1.0,
+            objective: Objective::default(),
             account: AccountInputs::default(),
         }
     }
@@ -74,6 +79,13 @@ impl State {
         if let Some(location) = character.saved_location() {
             self.location = location.id.clone();
         }
+    }
+
+    /// Apply a ranked lure/line pair to the toolbar, clamped like the selectors.
+    pub fn use_toolkit(&mut self, lure: usize, line: usize) {
+        let data = fishing::data();
+        self.lure = lure.min(data.lures.len().saturating_sub(1));
+        self.line = line.min(data.lines.len().saturating_sub(1));
     }
 
     /// Normalize everything an imported config could carry out of range.
@@ -151,6 +163,14 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             )
         })
         .collect();
+    let ranked = fishing::rank(
+        &save,
+        &config.account,
+        config.character,
+        &config.location,
+        config.objective,
+        config.hours,
+    );
 
     // The shared tree owns its search and its open branches; the section only
     // hands it the tree for the current location.
@@ -191,7 +211,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     let warnings = warnings(state, &character);
     let toolbar = toolbar::pane(state, &save, breakpoint, cx);
     let account = inputs::card(state, cx);
-    let kpis = pools::kpis(&evaluation, config.hours, cx);
+    let kpis = pools::kpis(&evaluation, &ranked, config.objective, config.hours, cx);
     let pool_table = pools::location_table(
         &rows,
         &evaluation.location.id,
@@ -200,6 +220,13 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         cx,
     );
     let detail = detail::card(&evaluation, config.hours, cx);
+    let ranking = ranking::card(
+        state,
+        &ranked,
+        &evaluation,
+        layout::table_height(f32::from(window.viewport_size().height)),
+        cx,
+    );
     let formula = toolbar::formula_card(&state.fishing_breakdown);
 
     let panes = if breakpoint.is_compact() {
@@ -240,6 +267,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                         .when_some(warnings, |page, warnings| page.child(warnings))
                         .child(kpis)
                         .child(panes)
+                        .child(ranking)
                         .child(account)
                         .child(formula),
                 ),
@@ -325,6 +353,15 @@ mod tests {
         assert_eq!(state.character, 0);
         assert_eq!((state.lure, state.line), (8, 4));
         assert_eq!(state.location, "61:1");
+    }
+
+    #[test]
+    fn a_ranked_toolkit_lands_in_the_toolbar() {
+        let mut state = State::default();
+        state.use_toolkit(9, 4);
+        assert_eq!((state.lure, state.line), (9, 4));
+        state.use_toolkit(99, 99);
+        assert_eq!((state.lure, state.line), (14, 14));
     }
 
     #[test]

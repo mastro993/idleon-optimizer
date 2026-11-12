@@ -159,6 +159,123 @@ for (const poolKey of data.FISHING_POOL_KEYS) {
   });
 }
 
+// Lure/line rankings. The Rust port holds efficiency and the EXP multiplier
+// fixed across a ranking (it has no skill-system decode yet), so the evaluator
+// handed to the upstream `rankFishingToolkits` builds the per-toolkit inputs
+// from the same fixed account values: depth, catch time and the outcome still
+// come from the upstream formulas, and the ranking loop and sort are the
+// upstream's own.
+const rankCases = [
+  {
+    location: '54:0',
+    character: { level: 100, rodSpeed: 8 },
+    account: {
+      efficiency: 5000,
+      expMulti: 2.5,
+      afkRate: 0.42,
+      multiFish: 28,
+      speedBonus: 12,
+      attackFactor: 1.4,
+      prowess: 0.12,
+      equipmentDepth: [0, 0, 0],
+    },
+    objective: 'exp',
+    hours: 1,
+  },
+  {
+    location: '61:1',
+    character: { level: 250, rodSpeed: 8 },
+    account: {
+      efficiency: 120_000,
+      expMulti: 6.25,
+      afkRate: 0.9,
+      multiFish: 120,
+      speedBonus: 45,
+      attackFactor: 2.4,
+      prowess: 0.31,
+      equipmentDepth: [5, 4, 3],
+    },
+    objective: 'exp',
+    hours: 2,
+  },
+  {
+    location: 'x:MotherlodeFISH',
+    character: { level: 500, rodSpeed: 8 },
+    account: {
+      efficiency: 2_000_000,
+      expMulti: 10,
+      afkRate: 1,
+      multiFish: 350,
+      speedBonus: 200,
+      attackFactor: 3,
+      prowess: 1,
+      equipmentDepth: [40, 30, 20],
+    },
+    objective: 'fish',
+    hours: 8,
+  },
+  {
+    location: '72:FishBig',
+    character: { level: 1, rodSpeed: 0 },
+    account: {
+      efficiency: 0,
+      expMulti: 1,
+      afkRate: 0.01,
+      multiFish: 0,
+      speedBonus: 0,
+      attackFactor: 1,
+      prowess: 0,
+      equipmentDepth: [0, 0, 0],
+    },
+    objective: 'fish',
+    hours: 1,
+  },
+];
+
+const rankings = rankCases.map((rankCase) => {
+  const location = data.fishingLocations().find((entry) => entry.id === rankCase.location);
+  if (!location) throw new Error(`unknown fishing location ${rankCase.location}`);
+  const spotBonus = data.fishingSpotDepthBonus(location.mapIdx, location.spotIdx);
+  const account = rankCase.account;
+  const evaluator = {
+    inputsFor(selection) {
+      const toolkit = fishing.toolkitStats(selection);
+      const speedBonusPct = account.speedBonus + toolkit.stats.SPEED;
+      const speed = fishing.fishingSpeed({
+        efficiency: account.efficiency,
+        level: rankCase.character.level,
+        rodSpeed: rankCase.character.rodSpeed,
+        speedBonusPct,
+      });
+      return {
+        efficiency: account.efficiency,
+        depths: fishing.fishingDepths(toolkit.stats, account.equipmentDepth, spotBonus),
+        prowess: account.prowess,
+        catchesPerHour: fishing.fishingCatchesPerHour(speed, account.attackFactor),
+        afkRate: account.afkRate,
+        multiFish: account.multiFish,
+        expMulti: account.expMulti,
+      };
+    },
+  };
+  const rows = fishing.rankFishingToolkits(
+    evaluator,
+    location.poolKey,
+    location,
+    rankCase.objective,
+    rankCase.hours
+  );
+  return {
+    ...rankCase,
+    rows: rows.map((row) => ({
+      lure: row.selection.lure,
+      line: row.selection.line,
+      exp: round(row.outcome.exp),
+      fishTotal: round(row.outcome.fishTotal),
+    })),
+  };
+});
+
 const payload = {
   source: 'Corgan/idleon-research-optimizer js/stats/systems/w2/fishing.js',
   depths: depths.map((entry) => ({
@@ -176,6 +293,7 @@ const payload = {
   speed,
   catches,
   outcomes: outcomeCases,
+  rankings,
 };
 
 writeFileSync(
@@ -184,6 +302,6 @@ writeFileSync(
 );
 console.log(
   `wrote ${depths.length} depth, ${shares.length} split, ${oreValue.length} ore, ` +
-    `${multiFish.length} multi, ${speed.length} speed, ${catches.length} catch and ` +
-    `${outcomeCases.length} pool outcome cases`
+    `${multiFish.length} multi, ${speed.length} speed, ${catches.length} catch, ` +
+    `${outcomeCases.length} pool outcome and ${rankings.length} ranking cases`
 );

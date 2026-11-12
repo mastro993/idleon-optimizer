@@ -82,6 +82,33 @@ struct Fixture {
     speed: Vec<SpeedCase>,
     catches: Vec<CatchCase>,
     outcomes: Vec<OutcomeCase>,
+    rankings: Vec<RankCase>,
+}
+
+#[derive(Deserialize)]
+struct RankCase {
+    location: String,
+    character: RankCharacter,
+    account: AccountInputs,
+    objective: Objective,
+    hours: f64,
+    rows: Vec<RankRow>,
+}
+
+#[derive(Deserialize)]
+struct RankCharacter {
+    level: u32,
+    #[serde(rename = "rodSpeed")]
+    rod_speed: f64,
+}
+
+#[derive(Deserialize)]
+struct RankRow {
+    lure: usize,
+    line: usize,
+    exp: f64,
+    #[serde(rename = "fishTotal")]
+    fish_total: f64,
 }
 
 #[derive(Deserialize)]
@@ -355,6 +382,138 @@ fn the_save_decodes_levels_rods_toolkits_and_the_saved_spot() {
         Some("61:1")
     );
     assert_eq!(fishing.default_character(), 0);
+}
+
+#[test]
+fn the_toolkit_rankings_match_the_upstream_oracle() {
+    let fixture = fixture();
+    assert!(!fixture.rankings.is_empty(), "the oracle carries rankings");
+    for case in &fixture.rankings {
+        let save = FishingSave {
+            characters: vec![Character {
+                level: case.character.level,
+                rod_speed: case.character.rod_speed,
+                ..Character::default()
+            }],
+        };
+        let rows = rank(
+            &save,
+            &case.account,
+            0,
+            &case.location,
+            case.objective,
+            case.hours,
+        );
+        assert_eq!(
+            rows.len(),
+            225,
+            "{} covers every combination",
+            case.location
+        );
+        assert_eq!(rows.len(), case.rows.len(), "{} rows", case.location);
+        for (index, (ranked, expected)) in rows.iter().zip(&case.rows).enumerate() {
+            assert_eq!(
+                (ranked.lure.idx, ranked.line.idx),
+                (expected.lure, expected.line),
+                "{} rank {}",
+                case.location,
+                index + 1
+            );
+            assert!(
+                close(ranked.outcome.exp, expected.exp),
+                "{} rank {} EXP: {} != {}",
+                case.location,
+                index + 1,
+                ranked.outcome.exp,
+                expected.exp
+            );
+            assert!(
+                close(ranked.outcome.fish_total, expected.fish_total),
+                "{} rank {} fish: {} != {}",
+                case.location,
+                index + 1,
+                ranked.outcome.fish_total,
+                expected.fish_total
+            );
+        }
+    }
+}
+
+#[test]
+fn a_ranking_covers_every_pair_once_and_sorts_by_the_objective() {
+    let save = FishingSave {
+        characters: vec![Character {
+            level: 120,
+            rod_speed: 8.0,
+            ..Character::default()
+        }],
+    };
+    let account = AccountInputs {
+        efficiency: 5_000.0,
+        exp_multi: 2.5,
+        afk_rate: 0.42,
+        multi_fish: 28.0,
+        speed_bonus: 20.0,
+        attack_factor: 1.4,
+        prowess: 0.12,
+        equipment_depth: [0.0; 3],
+    };
+    let pairs = data().lures.len() * data().lines.len();
+    for (location, objective) in [
+        ("54:0", Objective::Exp),
+        ("54:0", Objective::Fish),
+        ("x:MotherlodeFISH", Objective::Exp),
+        ("72:FishBig", Objective::Fish),
+    ] {
+        let rows = rank(&save, &account, 0, location, objective, 2.0);
+        assert_eq!(rows.len(), pairs, "{location}");
+        let mut seen = vec![false; pairs];
+        for row in &rows {
+            let index = row.lure.idx * data().lines.len() + row.line.idx;
+            assert!(!seen[index], "{location} repeats {index}");
+            seen[index] = true;
+        }
+        assert!(seen.iter().all(|seen| *seen), "{location} misses a pair");
+        let best = objective.metric(&rows[0].outcome);
+        let tied = rows
+            .iter()
+            .take_while(|row| objective.metric(&row.outcome) == best)
+            .count();
+        assert_eq!(ties(&rows, objective), tied, "{location}");
+        for pair in rows.windows(2) {
+            let (first, second) = (&pair[0].outcome, &pair[1].outcome);
+            let metric = objective.metric(first).total_cmp(&objective.metric(second));
+            let tie_break = first
+                .exp
+                .total_cmp(&second.exp)
+                .then(first.fish_total.total_cmp(&second.fish_total));
+            assert!(
+                metric.is_ge() && (metric.is_ne() || tie_break.is_ge()),
+                "{location} sorts {first:?} before {second:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn floored_counts_tie_and_the_helper_counts_them() {
+    let save = FishingSave {
+        characters: vec![Character {
+            level: 1,
+            rod_speed: 0.0,
+            ..Character::default()
+        }],
+    };
+    let rows = rank(
+        &save,
+        &AccountInputs::default(),
+        0,
+        "72:FishBig",
+        Objective::Fish,
+        1.0,
+    );
+    assert!(ties(&rows, Objective::Fish) > 1, "the neutral account ties");
+    assert_eq!(ties(&[], Objective::Fish), 0);
 }
 
 #[test]

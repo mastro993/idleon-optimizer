@@ -16,6 +16,7 @@
 
 pub mod data;
 pub mod math;
+pub mod rank;
 pub mod save;
 
 pub use data::{FishingData, Location, Pool, Rod, ToolkitOption, ToolkitStats, data};
@@ -23,6 +24,7 @@ pub use math::{
     Depths, MultiFish, MultiFishInputs, SpeedInputs, catch_shares, catches_per_hour, depths,
     multi_fish, ore_value, speed,
 };
+pub use rank::{Objective, rank, ties};
 pub use save::{Character, FishingSave};
 
 use crate::formula::{FormulaNode, ValueFormat};

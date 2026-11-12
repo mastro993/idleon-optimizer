@@ -1812,5 +1812,5507 @@
         ]
       }
     }
+  ],
+  "rankings": [
+    {
+      "location": "54:0",
+      "character": {
+        "level": 100,
+        "rodSpeed": 8
+      },
+      "account": {
+        "efficiency": 5000,
+        "expMulti": 2.5,
+        "afkRate": 0.42,
+        "multiFish": 28,
+        "speedBonus": 12,
+        "attackFactor": 1.4,
+        "prowess": 0.12,
+        "equipmentDepth": [
+          0,
+          0,
+          0
+        ]
+      },
+      "objective": "exp",
+      "hours": 1,
+      "rows": [
+        {
+          "lure": 9,
+          "line": 4,
+          "exp": 5858,
+          "fishTotal": 797
+        },
+        {
+          "lure": 13,
+          "line": 4,
+          "exp": 5796,
+          "fishTotal": 809
+        },
+        {
+          "lure": 6,
+          "line": 4,
+          "exp": 5692,
+          "fishTotal": 769
+        },
+        {
+          "lure": 8,
+          "line": 4,
+          "exp": 5630,
+          "fishTotal": 741
+        },
+        {
+          "lure": 4,
+          "line": 4,
+          "exp": 5618,
+          "fishTotal": 786
+        },
+        {
+          "lure": 9,
+          "line": 12,
+          "exp": 5556,
+          "fishTotal": 815
+        },
+        {
+          "lure": 5,
+          "line": 4,
+          "exp": 5485,
+          "fishTotal": 752
+        },
+        {
+          "lure": 12,
+          "line": 4,
+          "exp": 5480,
+          "fishTotal": 774
+        },
+        {
+          "lure": 8,
+          "line": 12,
+          "exp": 5461,
+          "fishTotal": 758
+        },
+        {
+          "lure": 3,
+          "line": 4,
+          "exp": 5448,
+          "fishTotal": 764
+        },
+        {
+          "lure": 6,
+          "line": 12,
+          "exp": 5429,
+          "fishTotal": 786
+        },
+        {
+          "lure": 10,
+          "line": 4,
+          "exp": 5420,
+          "fishTotal": 740
+        },
+        {
+          "lure": 9,
+          "line": 3,
+          "exp": 5397,
+          "fishTotal": 764
+        },
+        {
+          "lure": 13,
+          "line": 12,
+          "exp": 5396,
+          "fishTotal": 824
+        },
+        {
+          "lure": 2,
+          "line": 4,
+          "exp": 5361,
+          "fishTotal": 758
+        },
+        {
+          "lure": 1,
+          "line": 4,
+          "exp": 5356,
+          "fishTotal": 741
+        },
+        {
+          "lure": 9,
+          "line": 9,
+          "exp": 5320,
+          "fishTotal": 757
+        },
+        {
+          "lure": 13,
+          "line": 3,
+          "exp": 5310,
+          "fishTotal": 775
+        },
+        {
+          "lure": 9,
+          "line": 14,
+          "exp": 5285,
+          "fishTotal": 774
+        },
+        {
+          "lure": 6,
+          "line": 3,
+          "exp": 5282,
+          "fishTotal": 735
+        },
+        {
+          "lure": 9,
+          "line": 8,
+          "exp": 5279,
+          "fishTotal": 746
+        },
+        {
+          "lure": 13,
+          "line": 9,
+          "exp": 5254,
+          "fishTotal": 769
+        },
+        {
+          "lure": 11,
+          "line": 4,
+          "exp": 5253,
+          "fishTotal": 742
+        },
+        {
+          "lure": 6,
+          "line": 9,
+          "exp": 5253,
+          "fishTotal": 729
+        },
+        {
+          "lure": 14,
+          "line": 4,
+          "exp": 5244,
+          "fishTotal": 741
+        },
+        {
+          "lure": 0,
+          "line": 4,
+          "exp": 5239,
+          "fishTotal": 741
+        },
+        {
+          "lure": 4,
+          "line": 12,
+          "exp": 5225,
+          "fishTotal": 803
+        },
+        {
+          "lure": 8,
+          "line": 3,
+          "exp": 5218,
+          "fishTotal": 707
+        },
+        {
+          "lure": 9,
+          "line": 7,
+          "exp": 5209,
+          "fishTotal": 741
+        },
+        {
+          "lure": 5,
+          "line": 12,
+          "exp": 5185,
+          "fishTotal": 769
+        },
+        {
+          "lure": 9,
+          "line": 13,
+          "exp": 5175,
+          "fishTotal": 758
+        },
+        {
+          "lure": 8,
+          "line": 14,
+          "exp": 5175,
+          "fishTotal": 718
+        },
+        {
+          "lure": 9,
+          "line": 1,
+          "exp": 5171,
+          "fishTotal": 746
+        },
+        {
+          "lure": 13,
+          "line": 8,
+          "exp": 5164,
+          "fishTotal": 758
+        },
+        {
+          "lure": 8,
+          "line": 9,
+          "exp": 5156,
+          "fishTotal": 701
+        },
+        {
+          "lure": 6,
+          "line": 14,
+          "exp": 5155,
+          "fishTotal": 746
+        },
+        {
+          "lure": 9,
+          "line": 2,
+          "exp": 5154,
+          "fishTotal": 728
+        },
+        {
+          "lure": 9,
+          "line": 6,
+          "exp": 5144,
+          "fishTotal": 735
+        },
+        {
+          "lure": 13,
+          "line": 14,
+          "exp": 5143,
+          "fishTotal": 786
+        },
+        {
+          "lure": 4,
+          "line": 3,
+          "exp": 5142,
+          "fishTotal": 752
+        },
+        {
+          "lure": 10,
+          "line": 12,
+          "exp": 5138,
+          "fishTotal": 758
+        },
+        {
+          "lure": 9,
+          "line": 11,
+          "exp": 5136,
+          "fishTotal": 741
+        },
+        {
+          "lure": 13,
+          "line": 7,
+          "exp": 5127,
+          "fishTotal": 751
+        },
+        {
+          "lure": 4,
+          "line": 9,
+          "exp": 5100,
+          "fishTotal": 745
+        },
+        {
+          "lure": 6,
+          "line": 7,
+          "exp": 5097,
+          "fishTotal": 713
+        },
+        {
+          "lure": 6,
+          "line": 8,
+          "exp": 5094,
+          "fishTotal": 718
+        },
+        {
+          "lure": 7,
+          "line": 4,
+          "exp": 5093,
+          "fishTotal": 740
+        },
+        {
+          "lure": 8,
+          "line": 8,
+          "exp": 5091,
+          "fishTotal": 690
+        },
+        {
+          "lure": 9,
+          "line": 10,
+          "exp": 5081,
+          "fishTotal": 729
+        },
+        {
+          "lure": 9,
+          "line": 5,
+          "exp": 5074,
+          "fishTotal": 729
+        },
+        {
+          "lure": 12,
+          "line": 12,
+          "exp": 5059,
+          "fishTotal": 792
+        },
+        {
+          "lure": 8,
+          "line": 13,
+          "exp": 5052,
+          "fishTotal": 701
+        },
+        {
+          "lure": 3,
+          "line": 12,
+          "exp": 5048,
+          "fishTotal": 781
+        },
+        {
+          "lure": 13,
+          "line": 11,
+          "exp": 5041,
+          "fishTotal": 752
+        },
+        {
+          "lure": 13,
+          "line": 1,
+          "exp": 5038,
+          "fishTotal": 758
+        },
+        {
+          "lure": 6,
+          "line": 13,
+          "exp": 5036,
+          "fishTotal": 729
+        },
+        {
+          "lure": 6,
+          "line": 11,
+          "exp": 5036,
+          "fishTotal": 712
+        },
+        {
+          "lure": 5,
+          "line": 3,
+          "exp": 5033,
+          "fishTotal": 719
+        },
+        {
+          "lure": 8,
+          "line": 7,
+          "exp": 5033,
+          "fishTotal": 684
+        },
+        {
+          "lure": 13,
+          "line": 13,
+          "exp": 5031,
+          "fishTotal": 768
+        },
+        {
+          "lure": 13,
+          "line": 6,
+          "exp": 5031,
+          "fishTotal": 746
+        },
+        {
+          "lure": 13,
+          "line": 2,
+          "exp": 5027,
+          "fishTotal": 740
+        },
+        {
+          "lure": 8,
+          "line": 1,
+          "exp": 5023,
+          "fishTotal": 689
+        },
+        {
+          "lure": 6,
+          "line": 1,
+          "exp": 5014,
+          "fishTotal": 718
+        },
+        {
+          "lure": 12,
+          "line": 3,
+          "exp": 5004,
+          "fishTotal": 741
+        },
+        {
+          "lure": 9,
+          "line": 0,
+          "exp": 5002,
+          "fishTotal": 729
+        },
+        {
+          "lure": 6,
+          "line": 6,
+          "exp": 4991,
+          "fishTotal": 707
+        },
+        {
+          "lure": 13,
+          "line": 10,
+          "exp": 4983,
+          "fishTotal": 741
+        },
+        {
+          "lure": 8,
+          "line": 11,
+          "exp": 4983,
+          "fishTotal": 685
+        },
+        {
+          "lure": 4,
+          "line": 8,
+          "exp": 4980,
+          "fishTotal": 736
+        },
+        {
+          "lure": 10,
+          "line": 3,
+          "exp": 4980,
+          "fishTotal": 707
+        },
+        {
+          "lure": 3,
+          "line": 3,
+          "exp": 4974,
+          "fishTotal": 729
+        },
+        {
+          "lure": 8,
+          "line": 6,
+          "exp": 4972,
+          "fishTotal": 679
+        },
+        {
+          "lure": 4,
+          "line": 14,
+          "exp": 4967,
+          "fishTotal": 763
+        },
+        {
+          "lure": 4,
+          "line": 7,
+          "exp": 4962,
+          "fishTotal": 729
+        },
+        {
+          "lure": 1,
+          "line": 12,
+          "exp": 4961,
+          "fishTotal": 758
+        },
+        {
+          "lure": 12,
+          "line": 9,
+          "exp": 4960,
+          "fishTotal": 735
+        },
+        {
+          "lure": 8,
+          "line": 2,
+          "exp": 4960,
+          "fishTotal": 672
+        },
+        {
+          "lure": 5,
+          "line": 9,
+          "exp": 4957,
+          "fishTotal": 712
+        },
+        {
+          "lure": 6,
+          "line": 10,
+          "exp": 4952,
+          "fishTotal": 701
+        },
+        {
+          "lure": 2,
+          "line": 12,
+          "exp": 4947,
+          "fishTotal": 775
+        },
+        {
+          "lure": 13,
+          "line": 5,
+          "exp": 4945,
+          "fishTotal": 740
+        },
+        {
+          "lure": 6,
+          "line": 2,
+          "exp": 4942,
+          "fishTotal": 701
+        },
+        {
+          "lure": 3,
+          "line": 9,
+          "exp": 4935,
+          "fishTotal": 724
+        },
+        {
+          "lure": 10,
+          "line": 9,
+          "exp": 4930,
+          "fishTotal": 701
+        },
+        {
+          "lure": 5,
+          "line": 14,
+          "exp": 4917,
+          "fishTotal": 729
+        },
+        {
+          "lure": 8,
+          "line": 10,
+          "exp": 4913,
+          "fishTotal": 673
+        },
+        {
+          "lure": 5,
+          "line": 8,
+          "exp": 4906,
+          "fishTotal": 701
+        },
+        {
+          "lure": 8,
+          "line": 5,
+          "exp": 4906,
+          "fishTotal": 672
+        },
+        {
+          "lure": 6,
+          "line": 5,
+          "exp": 4896,
+          "fishTotal": 701
+        },
+        {
+          "lure": 4,
+          "line": 11,
+          "exp": 4878,
+          "fishTotal": 729
+        },
+        {
+          "lure": 2,
+          "line": 3,
+          "exp": 4878,
+          "fishTotal": 723
+        },
+        {
+          "lure": 1,
+          "line": 3,
+          "exp": 4878,
+          "fishTotal": 706
+        },
+        {
+          "lure": 13,
+          "line": 0,
+          "exp": 4873,
+          "fishTotal": 740
+        },
+        {
+          "lure": 10,
+          "line": 14,
+          "exp": 4869,
+          "fishTotal": 718
+        },
+        {
+          "lure": 6,
+          "line": 0,
+          "exp": 4866,
+          "fishTotal": 701
+        },
+        {
+          "lure": 11,
+          "line": 12,
+          "exp": 4865,
+          "fishTotal": 758
+        },
+        {
+          "lure": 8,
+          "line": 0,
+          "exp": 4865,
+          "fishTotal": 673
+        },
+        {
+          "lure": 4,
+          "line": 1,
+          "exp": 4857,
+          "fishTotal": 735
+        },
+        {
+          "lure": 4,
+          "line": 6,
+          "exp": 4857,
+          "fishTotal": 723
+        },
+        {
+          "lure": 4,
+          "line": 13,
+          "exp": 4856,
+          "fishTotal": 747
+        },
+        {
+          "lure": 5,
+          "line": 7,
+          "exp": 4849,
+          "fishTotal": 696
+        },
+        {
+          "lure": 14,
+          "line": 12,
+          "exp": 4846,
+          "fishTotal": 758
+        },
+        {
+          "lure": 0,
+          "line": 12,
+          "exp": 4842,
+          "fishTotal": 759
+        },
+        {
+          "lure": 2,
+          "line": 9,
+          "exp": 4836,
+          "fishTotal": 719
+        },
+        {
+          "lure": 4,
+          "line": 2,
+          "exp": 4836,
+          "fishTotal": 718
+        },
+        {
+          "lure": 1,
+          "line": 9,
+          "exp": 4835,
+          "fishTotal": 700
+        },
+        {
+          "lure": 12,
+          "line": 8,
+          "exp": 4831,
+          "fishTotal": 724
+        },
+        {
+          "lure": 10,
+          "line": 8,
+          "exp": 4829,
+          "fishTotal": 689
+        },
+        {
+          "lure": 12,
+          "line": 7,
+          "exp": 4824,
+          "fishTotal": 719
+        },
+        {
+          "lure": 4,
+          "line": 10,
+          "exp": 4812,
+          "fishTotal": 717
+        },
+        {
+          "lure": 12,
+          "line": 14,
+          "exp": 4805,
+          "fishTotal": 752
+        },
+        {
+          "lure": 5,
+          "line": 13,
+          "exp": 4801,
+          "fishTotal": 712
+        },
+        {
+          "lure": 5,
+          "line": 1,
+          "exp": 4800,
+          "fishTotal": 701
+        },
+        {
+          "lure": 10,
+          "line": 7,
+          "exp": 4799,
+          "fishTotal": 684
+        },
+        {
+          "lure": 3,
+          "line": 8,
+          "exp": 4797,
+          "fishTotal": 711
+        },
+        {
+          "lure": 3,
+          "line": 7,
+          "exp": 4795,
+          "fishTotal": 707
+        },
+        {
+          "lure": 3,
+          "line": 14,
+          "exp": 4792,
+          "fishTotal": 741
+        },
+        {
+          "lure": 5,
+          "line": 2,
+          "exp": 4778,
+          "fishTotal": 684
+        },
+        {
+          "lure": 5,
+          "line": 11,
+          "exp": 4776,
+          "fishTotal": 696
+        },
+        {
+          "lure": 14,
+          "line": 3,
+          "exp": 4772,
+          "fishTotal": 707
+        },
+        {
+          "lure": 5,
+          "line": 6,
+          "exp": 4769,
+          "fishTotal": 690
+        },
+        {
+          "lure": 11,
+          "line": 3,
+          "exp": 4764,
+          "fishTotal": 706
+        },
+        {
+          "lure": 0,
+          "line": 3,
+          "exp": 4763,
+          "fishTotal": 707
+        },
+        {
+          "lure": 4,
+          "line": 5,
+          "exp": 4762,
+          "fishTotal": 719
+        },
+        {
+          "lure": 10,
+          "line": 13,
+          "exp": 4753,
+          "fishTotal": 702
+        },
+        {
+          "lure": 12,
+          "line": 11,
+          "exp": 4735,
+          "fishTotal": 718
+        },
+        {
+          "lure": 10,
+          "line": 1,
+          "exp": 4735,
+          "fishTotal": 690
+        },
+        {
+          "lure": 10,
+          "line": 11,
+          "exp": 4732,
+          "fishTotal": 684
+        },
+        {
+          "lure": 7,
+          "line": 12,
+          "exp": 4729,
+          "fishTotal": 758
+        },
+        {
+          "lure": 14,
+          "line": 9,
+          "exp": 4729,
+          "fishTotal": 700
+        },
+        {
+          "lure": 11,
+          "line": 9,
+          "exp": 4721,
+          "fishTotal": 701
+        },
+        {
+          "lure": 0,
+          "line": 9,
+          "exp": 4721,
+          "fishTotal": 700
+        },
+        {
+          "lure": 5,
+          "line": 10,
+          "exp": 4717,
+          "fishTotal": 684
+        },
+        {
+          "lure": 10,
+          "line": 6,
+          "exp": 4714,
+          "fishTotal": 678
+        },
+        {
+          "lure": 3,
+          "line": 11,
+          "exp": 4710,
+          "fishTotal": 706
+        },
+        {
+          "lure": 12,
+          "line": 6,
+          "exp": 4708,
+          "fishTotal": 712
+        },
+        {
+          "lure": 2,
+          "line": 8,
+          "exp": 4707,
+          "fishTotal": 707
+        },
+        {
+          "lure": 1,
+          "line": 8,
+          "exp": 4705,
+          "fishTotal": 690
+        },
+        {
+          "lure": 5,
+          "line": 5,
+          "exp": 4703,
+          "fishTotal": 684
+        },
+        {
+          "lure": 12,
+          "line": 13,
+          "exp": 4702,
+          "fishTotal": 736
+        },
+        {
+          "lure": 1,
+          "line": 14,
+          "exp": 4701,
+          "fishTotal": 719
+        },
+        {
+          "lure": 2,
+          "line": 14,
+          "exp": 4700,
+          "fishTotal": 735
+        },
+        {
+          "lure": 12,
+          "line": 1,
+          "exp": 4700,
+          "fishTotal": 724
+        },
+        {
+          "lure": 2,
+          "line": 7,
+          "exp": 4699,
+          "fishTotal": 700
+        },
+        {
+          "lure": 4,
+          "line": 0,
+          "exp": 4698,
+          "fishTotal": 718
+        },
+        {
+          "lure": 1,
+          "line": 7,
+          "exp": 4697,
+          "fishTotal": 684
+        },
+        {
+          "lure": 10,
+          "line": 2,
+          "exp": 4693,
+          "fishTotal": 673
+        },
+        {
+          "lure": 12,
+          "line": 2,
+          "exp": 4687,
+          "fishTotal": 707
+        },
+        {
+          "lure": 3,
+          "line": 6,
+          "exp": 4685,
+          "fishTotal": 700
+        },
+        {
+          "lure": 3,
+          "line": 13,
+          "exp": 4681,
+          "fishTotal": 723
+        },
+        {
+          "lure": 3,
+          "line": 1,
+          "exp": 4673,
+          "fishTotal": 712
+        },
+        {
+          "lure": 12,
+          "line": 10,
+          "exp": 4663,
+          "fishTotal": 706
+        },
+        {
+          "lure": 3,
+          "line": 2,
+          "exp": 4660,
+          "fishTotal": 697
+        },
+        {
+          "lure": 10,
+          "line": 10,
+          "exp": 4660,
+          "fishTotal": 673
+        },
+        {
+          "lure": 3,
+          "line": 10,
+          "exp": 4642,
+          "fishTotal": 697
+        },
+        {
+          "lure": 5,
+          "line": 0,
+          "exp": 4636,
+          "fishTotal": 684
+        },
+        {
+          "lure": 10,
+          "line": 5,
+          "exp": 4631,
+          "fishTotal": 673
+        },
+        {
+          "lure": 1,
+          "line": 11,
+          "exp": 4612,
+          "fishTotal": 684
+        },
+        {
+          "lure": 11,
+          "line": 14,
+          "exp": 4611,
+          "fishTotal": 718
+        },
+        {
+          "lure": 2,
+          "line": 11,
+          "exp": 4611,
+          "fishTotal": 701
+        },
+        {
+          "lure": 12,
+          "line": 5,
+          "exp": 4610,
+          "fishTotal": 707
+        },
+        {
+          "lure": 14,
+          "line": 8,
+          "exp": 4602,
+          "fishTotal": 690
+        },
+        {
+          "lure": 7,
+          "line": 3,
+          "exp": 4601,
+          "fishTotal": 706
+        },
+        {
+          "lure": 14,
+          "line": 7,
+          "exp": 4594,
+          "fishTotal": 684
+        },
+        {
+          "lure": 14,
+          "line": 14,
+          "exp": 4593,
+          "fishTotal": 719
+        },
+        {
+          "lure": 0,
+          "line": 8,
+          "exp": 4593,
+          "fishTotal": 688
+        },
+        {
+          "lure": 2,
+          "line": 6,
+          "exp": 4591,
+          "fishTotal": 696
+        },
+        {
+          "lure": 2,
+          "line": 13,
+          "exp": 4590,
+          "fishTotal": 718
+        },
+        {
+          "lure": 11,
+          "line": 8,
+          "exp": 4590,
+          "fishTotal": 689
+        },
+        {
+          "lure": 1,
+          "line": 6,
+          "exp": 4590,
+          "fishTotal": 678
+        },
+        {
+          "lure": 1,
+          "line": 13,
+          "exp": 4589,
+          "fishTotal": 702
+        },
+        {
+          "lure": 0,
+          "line": 14,
+          "exp": 4588,
+          "fishTotal": 719
+        },
+        {
+          "lure": 2,
+          "line": 1,
+          "exp": 4587,
+          "fishTotal": 707
+        },
+        {
+          "lure": 3,
+          "line": 5,
+          "exp": 4587,
+          "fishTotal": 696
+        },
+        {
+          "lure": 0,
+          "line": 7,
+          "exp": 4585,
+          "fishTotal": 684
+        },
+        {
+          "lure": 11,
+          "line": 7,
+          "exp": 4584,
+          "fishTotal": 684
+        },
+        {
+          "lure": 10,
+          "line": 0,
+          "exp": 4579,
+          "fishTotal": 673
+        },
+        {
+          "lure": 1,
+          "line": 1,
+          "exp": 4577,
+          "fishTotal": 689
+        },
+        {
+          "lure": 7,
+          "line": 9,
+          "exp": 4576,
+          "fishTotal": 701
+        },
+        {
+          "lure": 2,
+          "line": 2,
+          "exp": 4574,
+          "fishTotal": 690
+        },
+        {
+          "lure": 1,
+          "line": 2,
+          "exp": 4561,
+          "fishTotal": 672
+        },
+        {
+          "lure": 12,
+          "line": 0,
+          "exp": 4540,
+          "fishTotal": 706
+        },
+        {
+          "lure": 2,
+          "line": 10,
+          "exp": 4540,
+          "fishTotal": 690
+        },
+        {
+          "lure": 1,
+          "line": 10,
+          "exp": 4538,
+          "fishTotal": 672
+        },
+        {
+          "lure": 3,
+          "line": 0,
+          "exp": 4523,
+          "fishTotal": 696
+        },
+        {
+          "lure": 14,
+          "line": 11,
+          "exp": 4509,
+          "fishTotal": 684
+        },
+        {
+          "lure": 11,
+          "line": 13,
+          "exp": 4500,
+          "fishTotal": 701
+        },
+        {
+          "lure": 0,
+          "line": 11,
+          "exp": 4500,
+          "fishTotal": 684
+        },
+        {
+          "lure": 2,
+          "line": 5,
+          "exp": 4497,
+          "fishTotal": 688
+        },
+        {
+          "lure": 11,
+          "line": 1,
+          "exp": 4495,
+          "fishTotal": 689
+        },
+        {
+          "lure": 11,
+          "line": 11,
+          "exp": 4494,
+          "fishTotal": 684
+        },
+        {
+          "lure": 14,
+          "line": 6,
+          "exp": 4488,
+          "fishTotal": 678
+        },
+        {
+          "lure": 11,
+          "line": 2,
+          "exp": 4488,
+          "fishTotal": 672
+        },
+        {
+          "lure": 1,
+          "line": 5,
+          "exp": 4487,
+          "fishTotal": 673
+        },
+        {
+          "lure": 14,
+          "line": 13,
+          "exp": 4483,
+          "fishTotal": 702
+        },
+        {
+          "lure": 7,
+          "line": 14,
+          "exp": 4481,
+          "fishTotal": 719
+        },
+        {
+          "lure": 0,
+          "line": 13,
+          "exp": 4479,
+          "fishTotal": 701
+        },
+        {
+          "lure": 0,
+          "line": 6,
+          "exp": 4479,
+          "fishTotal": 679
+        },
+        {
+          "lure": 14,
+          "line": 1,
+          "exp": 4477,
+          "fishTotal": 689
+        },
+        {
+          "lure": 0,
+          "line": 1,
+          "exp": 4474,
+          "fishTotal": 688
+        },
+        {
+          "lure": 11,
+          "line": 6,
+          "exp": 4474,
+          "fishTotal": 679
+        },
+        {
+          "lure": 14,
+          "line": 2,
+          "exp": 4460,
+          "fishTotal": 672
+        },
+        {
+          "lure": 0,
+          "line": 2,
+          "exp": 4458,
+          "fishTotal": 673
+        },
+        {
+          "lure": 7,
+          "line": 8,
+          "exp": 4446,
+          "fishTotal": 690
+        },
+        {
+          "lure": 14,
+          "line": 10,
+          "exp": 4437,
+          "fishTotal": 672
+        },
+        {
+          "lure": 2,
+          "line": 0,
+          "exp": 4428,
+          "fishTotal": 690
+        },
+        {
+          "lure": 0,
+          "line": 10,
+          "exp": 4427,
+          "fishTotal": 672
+        },
+        {
+          "lure": 7,
+          "line": 7,
+          "exp": 4425,
+          "fishTotal": 685
+        },
+        {
+          "lure": 11,
+          "line": 10,
+          "exp": 4422,
+          "fishTotal": 673
+        },
+        {
+          "lure": 1,
+          "line": 0,
+          "exp": 4417,
+          "fishTotal": 672
+        },
+        {
+          "lure": 11,
+          "line": 5,
+          "exp": 4409,
+          "fishTotal": 672
+        },
+        {
+          "lure": 14,
+          "line": 5,
+          "exp": 4386,
+          "fishTotal": 672
+        },
+        {
+          "lure": 0,
+          "line": 5,
+          "exp": 4383,
+          "fishTotal": 672
+        },
+        {
+          "lure": 7,
+          "line": 13,
+          "exp": 4374,
+          "fishTotal": 702
+        },
+        {
+          "lure": 7,
+          "line": 1,
+          "exp": 4361,
+          "fishTotal": 690
+        },
+        {
+          "lure": 7,
+          "line": 2,
+          "exp": 4358,
+          "fishTotal": 673
+        },
+        {
+          "lure": 7,
+          "line": 11,
+          "exp": 4348,
+          "fishTotal": 684
+        },
+        {
+          "lure": 11,
+          "line": 0,
+          "exp": 4334,
+          "fishTotal": 672
+        },
+        {
+          "lure": 14,
+          "line": 0,
+          "exp": 4320,
+          "fishTotal": 672
+        },
+        {
+          "lure": 0,
+          "line": 0,
+          "exp": 4316,
+          "fishTotal": 672
+        },
+        {
+          "lure": 7,
+          "line": 6,
+          "exp": 4312,
+          "fishTotal": 679
+        },
+        {
+          "lure": 7,
+          "line": 5,
+          "exp": 4275,
+          "fishTotal": 673
+        },
+        {
+          "lure": 7,
+          "line": 10,
+          "exp": 4261,
+          "fishTotal": 672
+        },
+        {
+          "lure": 7,
+          "line": 0,
+          "exp": 4218,
+          "fishTotal": 672
+        }
+      ]
+    },
+    {
+      "location": "61:1",
+      "character": {
+        "level": 250,
+        "rodSpeed": 8
+      },
+      "account": {
+        "efficiency": 120000,
+        "expMulti": 6.25,
+        "afkRate": 0.9,
+        "multiFish": 120,
+        "speedBonus": 45,
+        "attackFactor": 2.4,
+        "prowess": 0.31,
+        "equipmentDepth": [
+          5,
+          4,
+          3
+        ]
+      },
+      "objective": "exp",
+      "hours": 2,
+      "rows": [
+        {
+          "lure": 13,
+          "line": 4,
+          "exp": 925983,
+          "fishTotal": 6267
+        },
+        {
+          "lure": 6,
+          "line": 4,
+          "exp": 921245,
+          "fishTotal": 6025
+        },
+        {
+          "lure": 9,
+          "line": 4,
+          "exp": 915454,
+          "fishTotal": 6196
+        },
+        {
+          "lure": 6,
+          "line": 12,
+          "exp": 911048,
+          "fishTotal": 6128
+        },
+        {
+          "lure": 4,
+          "line": 4,
+          "exp": 909932,
+          "fishTotal": 6129
+        },
+        {
+          "lure": 13,
+          "line": 12,
+          "exp": 895839,
+          "fishTotal": 6370
+        },
+        {
+          "lure": 3,
+          "line": 4,
+          "exp": 895130,
+          "fishTotal": 5990
+        },
+        {
+          "lure": 12,
+          "line": 4,
+          "exp": 894981,
+          "fishTotal": 6057
+        },
+        {
+          "lure": 1,
+          "line": 4,
+          "exp": 894285,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 9,
+          "line": 12,
+          "exp": 885818,
+          "fishTotal": 6298
+        },
+        {
+          "lure": 4,
+          "line": 12,
+          "exp": 883692,
+          "fishTotal": 6232
+        },
+        {
+          "lure": 8,
+          "line": 4,
+          "exp": 883445,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 2,
+          "line": 4,
+          "exp": 881014,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 11,
+          "line": 4,
+          "exp": 876934,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 6,
+          "line": 14,
+          "exp": 875147,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 10,
+          "line": 4,
+          "exp": 874706,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 5,
+          "line": 4,
+          "exp": 874507,
+          "fishTotal": 5919
+        },
+        {
+          "lure": 6,
+          "line": 3,
+          "exp": 872086,
+          "fishTotal": 5815
+        },
+        {
+          "lure": 3,
+          "line": 12,
+          "exp": 869112,
+          "fishTotal": 6093
+        },
+        {
+          "lure": 8,
+          "line": 12,
+          "exp": 867914,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 1,
+          "line": 12,
+          "exp": 867581,
+          "fishTotal": 5954
+        },
+        {
+          "lure": 12,
+          "line": 12,
+          "exp": 866887,
+          "fishTotal": 6165
+        },
+        {
+          "lure": 13,
+          "line": 3,
+          "exp": 865578,
+          "fishTotal": 6057
+        },
+        {
+          "lure": 0,
+          "line": 4,
+          "exp": 864678,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 14,
+          "line": 4,
+          "exp": 864563,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 6,
+          "line": 8,
+          "exp": 864091,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 13,
+          "line": 8,
+          "exp": 863962,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 13,
+          "line": 14,
+          "exp": 861877,
+          "fishTotal": 6129
+        },
+        {
+          "lure": 6,
+          "line": 1,
+          "exp": 860404,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 6,
+          "line": 9,
+          "exp": 859257,
+          "fishTotal": 5781
+        },
+        {
+          "lure": 6,
+          "line": 13,
+          "exp": 859257,
+          "fishTotal": 5781
+        },
+        {
+          "lure": 9,
+          "line": 3,
+          "exp": 855961,
+          "fishTotal": 5990
+        },
+        {
+          "lure": 9,
+          "line": 8,
+          "exp": 854196,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 10,
+          "line": 12,
+          "exp": 854026,
+          "fishTotal": 5954
+        },
+        {
+          "lure": 13,
+          "line": 2,
+          "exp": 852910,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 13,
+          "line": 1,
+          "exp": 852751,
+          "fishTotal": 5954
+        },
+        {
+          "lure": 2,
+          "line": 12,
+          "exp": 852266,
+          "fishTotal": 6057
+        },
+        {
+          "lure": 4,
+          "line": 3,
+          "exp": 851862,
+          "fishTotal": 5919
+        },
+        {
+          "lure": 9,
+          "line": 14,
+          "exp": 851855,
+          "fishTotal": 6057
+        },
+        {
+          "lure": 6,
+          "line": 2,
+          "exp": 850102,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 4,
+          "line": 14,
+          "exp": 849445,
+          "fishTotal": 5989
+        },
+        {
+          "lure": 4,
+          "line": 8,
+          "exp": 849017,
+          "fishTotal": 5815
+        },
+        {
+          "lure": 6,
+          "line": 7,
+          "exp": 848666,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 5,
+          "line": 12,
+          "exp": 847401,
+          "fishTotal": 6025
+        },
+        {
+          "lure": 13,
+          "line": 9,
+          "exp": 847401,
+          "fishTotal": 6025
+        },
+        {
+          "lure": 13,
+          "line": 13,
+          "exp": 847401,
+          "fishTotal": 6025
+        },
+        {
+          "lure": 11,
+          "line": 12,
+          "exp": 846906,
+          "fishTotal": 5954
+        },
+        {
+          "lure": 6,
+          "line": 6,
+          "exp": 845965,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 7,
+          "line": 4,
+          "exp": 845190,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 6,
+          "line": 11,
+          "exp": 843955,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 9,
+          "line": 1,
+          "exp": 843112,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 9,
+          "line": 2,
+          "exp": 842523,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 6,
+          "line": 5,
+          "exp": 842250,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 13,
+          "line": 6,
+          "exp": 841252,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 13,
+          "line": 7,
+          "exp": 840962,
+          "fishTotal": 5918
+        },
+        {
+          "lure": 6,
+          "line": 0,
+          "exp": 839654,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 13,
+          "line": 5,
+          "exp": 839263,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 4,
+          "line": 1,
+          "exp": 839121,
+          "fishTotal": 5814
+        },
+        {
+          "lure": 6,
+          "line": 10,
+          "exp": 838013,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 4,
+          "line": 2,
+          "exp": 837546,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 9,
+          "line": 9,
+          "exp": 837379,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 9,
+          "line": 13,
+          "exp": 837379,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 14,
+          "line": 12,
+          "exp": 837379,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 3,
+          "line": 3,
+          "exp": 836968,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 0,
+          "line": 12,
+          "exp": 836905,
+          "fishTotal": 5955
+        },
+        {
+          "lure": 12,
+          "line": 3,
+          "exp": 836160,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 4,
+          "line": 9,
+          "exp": 834848,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 4,
+          "line": 13,
+          "exp": 834848,
+          "fishTotal": 5887
+        },
+        {
+          "lure": 1,
+          "line": 3,
+          "exp": 834832,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 3,
+          "line": 14,
+          "exp": 834663,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 12,
+          "line": 8,
+          "exp": 834091,
+          "fishTotal": 5748
+        },
+        {
+          "lure": 3,
+          "line": 8,
+          "exp": 833932,
+          "fishTotal": 5678
+        },
+        {
+          "lure": 8,
+          "line": 14,
+          "exp": 832713,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 1,
+          "line": 14,
+          "exp": 832393,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 12,
+          "line": 14,
+          "exp": 832368,
+          "fishTotal": 5919
+        },
+        {
+          "lure": 13,
+          "line": 11,
+          "exp": 832368,
+          "fishTotal": 5919
+        },
+        {
+          "lure": 1,
+          "line": 8,
+          "exp": 831778,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 8,
+          "line": 3,
+          "exp": 831454,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 9,
+          "line": 7,
+          "exp": 831399,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 13,
+          "line": 10,
+          "exp": 831399,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 9,
+          "line": 6,
+          "exp": 831068,
+          "fishTotal": 5815
+        },
+        {
+          "lure": 13,
+          "line": 0,
+          "exp": 829512,
+          "fishTotal": 5852
+        },
+        {
+          "lure": 9,
+          "line": 5,
+          "exp": 829042,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 4,
+          "line": 7,
+          "exp": 827509,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 4,
+          "line": 6,
+          "exp": 827361,
+          "fishTotal": 5749
+        },
+        {
+          "lure": 8,
+          "line": 8,
+          "exp": 825195,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 4,
+          "line": 5,
+          "exp": 824984,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 3,
+          "line": 1,
+          "exp": 823730,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 12,
+          "line": 1,
+          "exp": 823267,
+          "fishTotal": 5748
+        },
+        {
+          "lure": 9,
+          "line": 11,
+          "exp": 822903,
+          "fishTotal": 5851
+        },
+        {
+          "lure": 3,
+          "line": 2,
+          "exp": 822371,
+          "fishTotal": 5574
+        },
+        {
+          "lure": 12,
+          "line": 2,
+          "exp": 822326,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 2,
+          "line": 3,
+          "exp": 822173,
+          "fishTotal": 5749
+        },
+        {
+          "lure": 9,
+          "line": 10,
+          "exp": 821274,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 3,
+          "line": 9,
+          "exp": 819981,
+          "fishTotal": 5749
+        },
+        {
+          "lure": 3,
+          "line": 13,
+          "exp": 819981,
+          "fishTotal": 5749
+        },
+        {
+          "lure": 10,
+          "line": 3,
+          "exp": 819934,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 1,
+          "line": 1,
+          "exp": 819800,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 4,
+          "line": 11,
+          "exp": 819689,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 2,
+          "line": 8,
+          "exp": 819523,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 9,
+          "line": 0,
+          "exp": 819410,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 10,
+          "line": 14,
+          "exp": 819388,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 1,
+          "line": 2,
+          "exp": 819331,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 8,
+          "line": 1,
+          "exp": 819323,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 2,
+          "line": 14,
+          "exp": 818287,
+          "fishTotal": 5816
+        },
+        {
+          "lure": 12,
+          "line": 9,
+          "exp": 817892,
+          "fishTotal": 5815
+        },
+        {
+          "lure": 12,
+          "line": 13,
+          "exp": 817892,
+          "fishTotal": 5815
+        },
+        {
+          "lure": 4,
+          "line": 10,
+          "exp": 817874,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 7,
+          "line": 12,
+          "exp": 817719,
+          "fishTotal": 5954
+        },
+        {
+          "lure": 8,
+          "line": 9,
+          "exp": 817132,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 8,
+          "line": 13,
+          "exp": 817132,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 1,
+          "line": 9,
+          "exp": 816818,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 1,
+          "line": 13,
+          "exp": 816818,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 4,
+          "line": 0,
+          "exp": 816557,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 5,
+          "line": 3,
+          "exp": 816359,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 11,
+          "line": 3,
+          "exp": 816231,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 10,
+          "line": 8,
+          "exp": 815224,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 11,
+          "line": 8,
+          "exp": 814436,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 5,
+          "line": 8,
+          "exp": 813411,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 5,
+          "line": 14,
+          "exp": 812881,
+          "fishTotal": 5780
+        },
+        {
+          "lure": 11,
+          "line": 14,
+          "exp": 812557,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 3,
+          "line": 7,
+          "exp": 812548,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 8,
+          "line": 2,
+          "exp": 811973,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 3,
+          "line": 6,
+          "exp": 811745,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 12,
+          "line": 7,
+          "exp": 811711,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 12,
+          "line": 6,
+          "exp": 811267,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 3,
+          "line": 5,
+          "exp": 809934,
+          "fishTotal": 5575
+        },
+        {
+          "lure": 1,
+          "line": 7,
+          "exp": 809756,
+          "fishTotal": 5502
+        },
+        {
+          "lure": 12,
+          "line": 5,
+          "exp": 809167,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 1,
+          "line": 6,
+          "exp": 809054,
+          "fishTotal": 5468
+        },
+        {
+          "lure": 2,
+          "line": 1,
+          "exp": 808415,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 2,
+          "line": 2,
+          "exp": 808298,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 8,
+          "line": 7,
+          "exp": 807836,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 10,
+          "line": 1,
+          "exp": 807374,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 1,
+          "line": 5,
+          "exp": 806569,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 14,
+          "line": 3,
+          "exp": 806176,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 0,
+          "line": 3,
+          "exp": 805910,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 8,
+          "line": 6,
+          "exp": 805781,
+          "fishTotal": 5468
+        },
+        {
+          "lure": 3,
+          "line": 11,
+          "exp": 804733,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 10,
+          "line": 9,
+          "exp": 804057,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 10,
+          "line": 13,
+          "exp": 804057,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 2,
+          "line": 9,
+          "exp": 803804,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 2,
+          "line": 13,
+          "exp": 803804,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 14,
+          "line": 8,
+          "exp": 803645,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 0,
+          "line": 8,
+          "exp": 803524,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 12,
+          "line": 11,
+          "exp": 803416,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 14,
+          "line": 14,
+          "exp": 803416,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 0,
+          "line": 14,
+          "exp": 802961,
+          "fishTotal": 5713
+        },
+        {
+          "lure": 5,
+          "line": 1,
+          "exp": 802856,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 3,
+          "line": 10,
+          "exp": 802855,
+          "fishTotal": 5574
+        },
+        {
+          "lure": 8,
+          "line": 5,
+          "exp": 802558,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 10,
+          "line": 2,
+          "exp": 802558,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 11,
+          "line": 2,
+          "exp": 802548,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 5,
+          "line": 2,
+          "exp": 802128,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 8,
+          "line": 11,
+          "exp": 802128,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 11,
+          "line": 1,
+          "exp": 801903,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 1,
+          "line": 11,
+          "exp": 801820,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 12,
+          "line": 10,
+          "exp": 801586,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 3,
+          "line": 0,
+          "exp": 801073,
+          "fishTotal": 5573
+        },
+        {
+          "lure": 12,
+          "line": 0,
+          "exp": 799767,
+          "fishTotal": 5641
+        },
+        {
+          "lure": 1,
+          "line": 10,
+          "exp": 799270,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 5,
+          "line": 9,
+          "exp": 798405,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 5,
+          "line": 13,
+          "exp": 798405,
+          "fishTotal": 5677
+        },
+        {
+          "lure": 8,
+          "line": 0,
+          "exp": 797876,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 8,
+          "line": 10,
+          "exp": 797375,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 11,
+          "line": 9,
+          "exp": 797353,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 11,
+          "line": 13,
+          "exp": 797353,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 2,
+          "line": 6,
+          "exp": 797258,
+          "fishTotal": 5575
+        },
+        {
+          "lure": 2,
+          "line": 7,
+          "exp": 797137,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 1,
+          "line": 0,
+          "exp": 796145,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 10,
+          "line": 7,
+          "exp": 795964,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 2,
+          "line": 5,
+          "exp": 795060,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 10,
+          "line": 6,
+          "exp": 794617,
+          "fishTotal": 5467
+        },
+        {
+          "lure": 14,
+          "line": 1,
+          "exp": 793217,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 0,
+          "line": 1,
+          "exp": 792877,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 5,
+          "line": 7,
+          "exp": 792023,
+          "fishTotal": 5574
+        },
+        {
+          "lure": 10,
+          "line": 5,
+          "exp": 791741,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 14,
+          "line": 2,
+          "exp": 791741,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 0,
+          "line": 2,
+          "exp": 791656,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 5,
+          "line": 6,
+          "exp": 791467,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 11,
+          "line": 7,
+          "exp": 791388,
+          "fishTotal": 5504
+        },
+        {
+          "lure": 11,
+          "line": 6,
+          "exp": 791028,
+          "fishTotal": 5466
+        },
+        {
+          "lure": 5,
+          "line": 5,
+          "exp": 789293,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 10,
+          "line": 11,
+          "exp": 789293,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 11,
+          "line": 5,
+          "exp": 788890,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 2,
+          "line": 11,
+          "exp": 788764,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 14,
+          "line": 9,
+          "exp": 788383,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 14,
+          "line": 13,
+          "exp": 788383,
+          "fishTotal": 5606
+        },
+        {
+          "lure": 0,
+          "line": 9,
+          "exp": 787937,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 0,
+          "line": 13,
+          "exp": 787937,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 2,
+          "line": 10,
+          "exp": 787567,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 10,
+          "line": 10,
+          "exp": 785656,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 2,
+          "line": 0,
+          "exp": 785393,
+          "fishTotal": 5538
+        },
+        {
+          "lure": 10,
+          "line": 0,
+          "exp": 785169,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 7,
+          "line": 14,
+          "exp": 784554,
+          "fishTotal": 5712
+        },
+        {
+          "lure": 7,
+          "line": 3,
+          "exp": 784221,
+          "fishTotal": 5642
+        },
+        {
+          "lure": 5,
+          "line": 11,
+          "exp": 783929,
+          "fishTotal": 5574
+        },
+        {
+          "lure": 7,
+          "line": 8,
+          "exp": 783610,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 11,
+          "line": 11,
+          "exp": 782713,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 5,
+          "line": 10,
+          "exp": 781898,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 14,
+          "line": 7,
+          "exp": 781898,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 0,
+          "line": 7,
+          "exp": 781599,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 14,
+          "line": 6,
+          "exp": 781283,
+          "fishTotal": 5468
+        },
+        {
+          "lure": 11,
+          "line": 10,
+          "exp": 781140,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 0,
+          "line": 6,
+          "exp": 781025,
+          "fishTotal": 5467
+        },
+        {
+          "lure": 5,
+          "line": 0,
+          "exp": 780123,
+          "fishTotal": 5504
+        },
+        {
+          "lure": 14,
+          "line": 5,
+          "exp": 779072,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 0,
+          "line": 5,
+          "exp": 778777,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 11,
+          "line": 0,
+          "exp": 777863,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 14,
+          "line": 11,
+          "exp": 773907,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 0,
+          "line": 11,
+          "exp": 773469,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 7,
+          "line": 2,
+          "exp": 772455,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 14,
+          "line": 10,
+          "exp": 771773,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 0,
+          "line": 10,
+          "exp": 771478,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 14,
+          "line": 0,
+          "exp": 770021,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 7,
+          "line": 9,
+          "exp": 769874,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 7,
+          "line": 13,
+          "exp": 769874,
+          "fishTotal": 5605
+        },
+        {
+          "lure": 0,
+          "line": 0,
+          "exp": 769550,
+          "fishTotal": 5431
+        },
+        {
+          "lure": 7,
+          "line": 1,
+          "exp": 767876,
+          "fishTotal": 5539
+        },
+        {
+          "lure": 7,
+          "line": 6,
+          "exp": 760006,
+          "fishTotal": 5468
+        },
+        {
+          "lure": 7,
+          "line": 7,
+          "exp": 759848,
+          "fishTotal": 5504
+        },
+        {
+          "lure": 7,
+          "line": 5,
+          "exp": 758208,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 7,
+          "line": 11,
+          "exp": 755738,
+          "fishTotal": 5503
+        },
+        {
+          "lure": 7,
+          "line": 10,
+          "exp": 750008,
+          "fishTotal": 5432
+        },
+        {
+          "lure": 7,
+          "line": 0,
+          "exp": 749000,
+          "fishTotal": 5431
+        }
+      ]
+    },
+    {
+      "location": "x:MotherlodeFISH",
+      "character": {
+        "level": 500,
+        "rodSpeed": 8
+      },
+      "account": {
+        "efficiency": 2000000,
+        "expMulti": 10,
+        "afkRate": 1,
+        "multiFish": 350,
+        "speedBonus": 200,
+        "attackFactor": 3,
+        "prowess": 1,
+        "equipmentDepth": [
+          40,
+          30,
+          20
+        ]
+      },
+      "objective": "fish",
+      "hours": 8,
+      "rows": [
+        {
+          "lure": 8,
+          "line": 4,
+          "exp": 137842795,
+          "fishTotal": 6870428
+        },
+        {
+          "lure": 8,
+          "line": 9,
+          "exp": 135145308,
+          "fishTotal": 6736576
+        },
+        {
+          "lure": 9,
+          "line": 4,
+          "exp": 141692811,
+          "fishTotal": 6605608
+        },
+        {
+          "lure": 8,
+          "line": 3,
+          "exp": 135521272,
+          "fishTotal": 6543476
+        },
+        {
+          "lure": 9,
+          "line": 9,
+          "exp": 138991253,
+          "fishTotal": 6480410
+        },
+        {
+          "lure": 8,
+          "line": 7,
+          "exp": 133943322,
+          "fishTotal": 6467997
+        },
+        {
+          "lure": 8,
+          "line": 11,
+          "exp": 133953429,
+          "fishTotal": 6360077
+        },
+        {
+          "lure": 9,
+          "line": 3,
+          "exp": 139340608,
+          "fishTotal": 6235242
+        },
+        {
+          "lure": 8,
+          "line": 12,
+          "exp": 139000242,
+          "fishTotal": 6219103
+        },
+        {
+          "lure": 8,
+          "line": 10,
+          "exp": 133179778,
+          "fishTotal": 6209458
+        },
+        {
+          "lure": 5,
+          "line": 4,
+          "exp": 138604053,
+          "fishTotal": 6201170
+        },
+        {
+          "lure": 8,
+          "line": 6,
+          "exp": 133594772,
+          "fishTotal": 6177918
+        },
+        {
+          "lure": 9,
+          "line": 7,
+          "exp": 137815971,
+          "fishTotal": 6167098
+        },
+        {
+          "lure": 8,
+          "line": 8,
+          "exp": 134359342,
+          "fishTotal": 6140973
+        },
+        {
+          "lure": 8,
+          "line": 14,
+          "exp": 136314828,
+          "fishTotal": 6098953
+        },
+        {
+          "lure": 5,
+          "line": 9,
+          "exp": 135902897,
+          "fishTotal": 6081020
+        },
+        {
+          "lure": 8,
+          "line": 13,
+          "exp": 135152484,
+          "fishTotal": 6046948
+        },
+        {
+          "lure": 9,
+          "line": 11,
+          "exp": 137825270,
+          "fishTotal": 6019028
+        },
+        {
+          "lure": 8,
+          "line": 1,
+          "exp": 134342153,
+          "fishTotal": 6011082
+        },
+        {
+          "lure": 8,
+          "line": 2,
+          "exp": 133196845,
+          "fishTotal": 5959077
+        },
+        {
+          "lure": 8,
+          "line": 5,
+          "exp": 133192964,
+          "fishTotal": 5959077
+        },
+        {
+          "lure": 8,
+          "line": 0,
+          "exp": 133190917,
+          "fishTotal": 5959077
+        },
+        {
+          "lure": 10,
+          "line": 4,
+          "exp": 137843813,
+          "fishTotal": 5870959
+        },
+        {
+          "lure": 9,
+          "line": 10,
+          "exp": 137065556,
+          "fishTotal": 5838522
+        },
+        {
+          "lure": 5,
+          "line": 3,
+          "exp": 136305849,
+          "fishTotal": 5806086
+        },
+        {
+          "lure": 9,
+          "line": 6,
+          "exp": 137413746,
+          "fishTotal": 5794831
+        },
+        {
+          "lure": 13,
+          "line": 4,
+          "exp": 142446367,
+          "fishTotal": 5768892
+        },
+        {
+          "lure": 10,
+          "line": 9,
+          "exp": 135144661,
+          "fishTotal": 5756578
+        },
+        {
+          "lure": 9,
+          "line": 12,
+          "exp": 142790303,
+          "fishTotal": 5745149
+        },
+        {
+          "lure": 5,
+          "line": 7,
+          "exp": 134741052,
+          "fishTotal": 5739506
+        },
+        {
+          "lure": 9,
+          "line": 8,
+          "exp": 138233022,
+          "fishTotal": 5732105
+        },
+        {
+          "lure": 13,
+          "line": 9,
+          "exp": 139744872,
+          "fishTotal": 5660137
+        },
+        {
+          "lure": 9,
+          "line": 14,
+          "exp": 140145296,
+          "fishTotal": 5638727
+        },
+        {
+          "lure": 6,
+          "line": 4,
+          "exp": 139773159,
+          "fishTotal": 5622603
+        },
+        {
+          "lure": 9,
+          "line": 13,
+          "exp": 138983096,
+          "fishTotal": 5591966
+        },
+        {
+          "lure": 5,
+          "line": 11,
+          "exp": 134736587,
+          "fishTotal": 5587514
+        },
+        {
+          "lure": 9,
+          "line": 1,
+          "exp": 138213515,
+          "fishTotal": 5561330
+        },
+        {
+          "lure": 6,
+          "line": 9,
+          "exp": 137063640,
+          "fishTotal": 5514569
+        },
+        {
+          "lure": 9,
+          "line": 0,
+          "exp": 137061917,
+          "fishTotal": 5514569
+        },
+        {
+          "lure": 9,
+          "line": 2,
+          "exp": 137057019,
+          "fishTotal": 5514569
+        },
+        {
+          "lure": 9,
+          "line": 5,
+          "exp": 137051794,
+          "fishTotal": 5514569
+        },
+        {
+          "lure": 10,
+          "line": 3,
+          "exp": 135506639,
+          "fishTotal": 5451683
+        },
+        {
+          "lure": 4,
+          "line": 4,
+          "exp": 140908622,
+          "fishTotal": 5449856
+        },
+        {
+          "lure": 5,
+          "line": 10,
+          "exp": 133936612,
+          "fishTotal": 5388798
+        },
+        {
+          "lure": 10,
+          "line": 7,
+          "exp": 133928671,
+          "fishTotal": 5388798
+        },
+        {
+          "lure": 4,
+          "line": 9,
+          "exp": 138222206,
+          "fishTotal": 5346005
+        },
+        {
+          "lure": 5,
+          "line": 6,
+          "exp": 134338479,
+          "fishTotal": 5339977
+        },
+        {
+          "lure": 13,
+          "line": 3,
+          "exp": 140133266,
+          "fishTotal": 5307480
+        },
+        {
+          "lure": 5,
+          "line": 8,
+          "exp": 135143825,
+          "fishTotal": 5262950
+        },
+        {
+          "lure": 12,
+          "line": 4,
+          "exp": 140157969,
+          "fishTotal": 5262310
+        },
+        {
+          "lure": 13,
+          "line": 7,
+          "exp": 138582503,
+          "fishTotal": 5248289
+        },
+        {
+          "lure": 5,
+          "line": 12,
+          "exp": 139741078,
+          "fishTotal": 5247262
+        },
+        {
+          "lure": 3,
+          "line": 4,
+          "exp": 139360190,
+          "fishTotal": 5232214
+        },
+        {
+          "lure": 10,
+          "line": 11,
+          "exp": 133937841,
+          "fishTotal": 5216126
+        },
+        {
+          "lure": 2,
+          "line": 4,
+          "exp": 138995747,
+          "fishTotal": 5181341
+        },
+        {
+          "lure": 1,
+          "line": 4,
+          "exp": 137844776,
+          "fishTotal": 5175031
+        },
+        {
+          "lure": 14,
+          "line": 4,
+          "exp": 137833359,
+          "fishTotal": 5175031
+        },
+        {
+          "lure": 6,
+          "line": 3,
+          "exp": 137437721,
+          "fishTotal": 5159983
+        },
+        {
+          "lure": 12,
+          "line": 9,
+          "exp": 137416736,
+          "fishTotal": 5159983
+        },
+        {
+          "lure": 0,
+          "line": 4,
+          "exp": 137833166,
+          "fishTotal": 5152821
+        },
+        {
+          "lure": 5,
+          "line": 14,
+          "exp": 137056062,
+          "fishTotal": 5146440
+        },
+        {
+          "lure": 3,
+          "line": 9,
+          "exp": 136659678,
+          "fishTotal": 5131392
+        },
+        {
+          "lure": 6,
+          "line": 7,
+          "exp": 135913558,
+          "fishTotal": 5102801
+        },
+        {
+          "lure": 5,
+          "line": 13,
+          "exp": 135893890,
+          "fishTotal": 5102801
+        },
+        {
+          "lure": 2,
+          "line": 9,
+          "exp": 136294503,
+          "fishTotal": 5081240
+        },
+        {
+          "lure": 1,
+          "line": 9,
+          "exp": 135143663,
+          "fishTotal": 5074209
+        },
+        {
+          "lure": 14,
+          "line": 9,
+          "exp": 135132468,
+          "fishTotal": 5074209
+        },
+        {
+          "lure": 5,
+          "line": 1,
+          "exp": 135124510,
+          "fishTotal": 5074209
+        },
+        {
+          "lure": 0,
+          "line": 9,
+          "exp": 135132117,
+          "fishTotal": 5052432
+        },
+        {
+          "lure": 13,
+          "line": 11,
+          "exp": 138563609,
+          "fishTotal": 5039846
+        },
+        {
+          "lure": 5,
+          "line": 2,
+          "exp": 133941237,
+          "fishTotal": 5029065
+        },
+        {
+          "lure": 5,
+          "line": 5,
+          "exp": 133936104,
+          "fishTotal": 5029065
+        },
+        {
+          "lure": 5,
+          "line": 0,
+          "exp": 133932628,
+          "fishTotal": 5029065
+        },
+        {
+          "lure": 11,
+          "line": 4,
+          "exp": 137822712,
+          "fishTotal": 5012155
+        },
+        {
+          "lure": 10,
+          "line": 10,
+          "exp": 133177279,
+          "fishTotal": 5000474
+        },
+        {
+          "lure": 4,
+          "line": 3,
+          "exp": 138583886,
+          "fishTotal": 4957958
+        },
+        {
+          "lure": 10,
+          "line": 6,
+          "exp": 133578827,
+          "fishTotal": 4936594
+        },
+        {
+          "lure": 11,
+          "line": 9,
+          "exp": 135134626,
+          "fishTotal": 4914506
+        },
+        {
+          "lure": 6,
+          "line": 11,
+          "exp": 135909787,
+          "fishTotal": 4905697
+        },
+        {
+          "lure": 4,
+          "line": 7,
+          "exp": 137059290,
+          "fishTotal": 4903475
+        },
+        {
+          "lure": 7,
+          "line": 4,
+          "exp": 137821996,
+          "fishTotal": 4901103
+        },
+        {
+          "lure": 10,
+          "line": 8,
+          "exp": 134343386,
+          "fishTotal": 4849276
+        },
+        {
+          "lure": 7,
+          "line": 9,
+          "exp": 135106274,
+          "fishTotal": 4805617
+        },
+        {
+          "lure": 13,
+          "line": 10,
+          "exp": 137803426,
+          "fishTotal": 4797454
+        },
+        {
+          "lure": 10,
+          "line": 12,
+          "exp": 138981903,
+          "fishTotal": 4793114
+        },
+        {
+          "lure": 12,
+          "line": 3,
+          "exp": 137818557,
+          "fishTotal": 4753033
+        },
+        {
+          "lure": 3,
+          "line": 3,
+          "exp": 137061288,
+          "fishTotal": 4726773
+        },
+        {
+          "lure": 13,
+          "line": 6,
+          "exp": 138218895,
+          "fishTotal": 4722304
+        },
+        {
+          "lure": 10,
+          "line": 14,
+          "exp": 136296843,
+          "fishTotal": 4700513
+        },
+        {
+          "lure": 12,
+          "line": 7,
+          "exp": 136293932,
+          "fishTotal": 4700513
+        },
+        {
+          "lure": 4,
+          "line": 11,
+          "exp": 137054338,
+          "fishTotal": 4682598
+        },
+        {
+          "lure": 1,
+          "line": 3,
+          "exp": 135505422,
+          "fishTotal": 4672871
+        },
+        {
+          "lure": 3,
+          "line": 7,
+          "exp": 135496631,
+          "fishTotal": 4672871
+        },
+        {
+          "lure": 14,
+          "line": 3,
+          "exp": 135494197,
+          "fishTotal": 4672871
+        },
+        {
+          "lure": 2,
+          "line": 3,
+          "exp": 136656213,
+          "fishTotal": 4668906
+        },
+        {
+          "lure": 6,
+          "line": 10,
+          "exp": 135148222,
+          "fishTotal": 4660433
+        },
+        {
+          "lure": 10,
+          "line": 13,
+          "exp": 135134653,
+          "fishTotal": 4660433
+        },
+        {
+          "lure": 0,
+          "line": 3,
+          "exp": 135493818,
+          "fishTotal": 4643757
+        },
+        {
+          "lure": 10,
+          "line": 1,
+          "exp": 134338184,
+          "fishTotal": 4632791
+        },
+        {
+          "lure": 14,
+          "line": 7,
+          "exp": 133929527,
+          "fishTotal": 4618970
+        },
+        {
+          "lure": 1,
+          "line": 7,
+          "exp": 133927254,
+          "fishTotal": 4618970
+        },
+        {
+          "lure": 2,
+          "line": 7,
+          "exp": 135131605,
+          "fishTotal": 4616877
+        },
+        {
+          "lure": 13,
+          "line": 8,
+          "exp": 138983928,
+          "fishTotal": 4606466
+        },
+        {
+          "lure": 10,
+          "line": 2,
+          "exp": 133180416,
+          "fishTotal": 4592710
+        },
+        {
+          "lure": 10,
+          "line": 5,
+          "exp": 133176003,
+          "fishTotal": 4592710
+        },
+        {
+          "lure": 10,
+          "line": 0,
+          "exp": 133173345,
+          "fishTotal": 4592710
+        },
+        {
+          "lure": 0,
+          "line": 7,
+          "exp": 133929152,
+          "fishTotal": 4590191
+        },
+        {
+          "lure": 6,
+          "line": 6,
+          "exp": 135509235,
+          "fishTotal": 4585528
+        },
+        {
+          "lure": 13,
+          "line": 12,
+          "exp": 143540024,
+          "fishTotal": 4495705
+        },
+        {
+          "lure": 11,
+          "line": 3,
+          "exp": 135482918,
+          "fishTotal": 4490906
+        },
+        {
+          "lure": 6,
+          "line": 8,
+          "exp": 136312624,
+          "fishTotal": 4466220
+        },
+        {
+          "lure": 12,
+          "line": 11,
+          "exp": 136288681,
+          "fishTotal": 4466220
+        },
+        {
+          "lure": 3,
+          "line": 11,
+          "exp": 135491546,
+          "fishTotal": 4439956
+        },
+        {
+          "lure": 11,
+          "line": 7,
+          "exp": 133931665,
+          "fishTotal": 4439103
+        },
+        {
+          "lure": 4,
+          "line": 10,
+          "exp": 136280110,
+          "fishTotal": 4422290
+        },
+        {
+          "lure": 13,
+          "line": 14,
+          "exp": 140895233,
+          "fishTotal": 4412869
+        },
+        {
+          "lure": 1,
+          "line": 11,
+          "exp": 133935462,
+          "fishTotal": 4388741
+        },
+        {
+          "lure": 14,
+          "line": 11,
+          "exp": 133924367,
+          "fishTotal": 4388741
+        },
+        {
+          "lure": 2,
+          "line": 11,
+          "exp": 135126344,
+          "fishTotal": 4384581
+        },
+        {
+          "lure": 13,
+          "line": 13,
+          "exp": 139733128,
+          "fishTotal": 4376472
+        },
+        {
+          "lure": 0,
+          "line": 11,
+          "exp": 133923939,
+          "fishTotal": 4359962
+        },
+        {
+          "lure": 7,
+          "line": 3,
+          "exp": 135481538,
+          "fishTotal": 4359891
+        },
+        {
+          "lure": 6,
+          "line": 12,
+          "exp": 140913122,
+          "fishTotal": 4359885
+        },
+        {
+          "lure": 13,
+          "line": 1,
+          "exp": 138977408,
+          "fishTotal": 4352625
+        },
+        {
+          "lure": 4,
+          "line": 6,
+          "exp": 136641455,
+          "fishTotal": 4331218
+        },
+        {
+          "lure": 13,
+          "line": 2,
+          "exp": 137820923,
+          "fishTotal": 4316228
+        },
+        {
+          "lure": 13,
+          "line": 5,
+          "exp": 137815669,
+          "fishTotal": 4316228
+        },
+        {
+          "lure": 13,
+          "line": 0,
+          "exp": 137812119,
+          "fishTotal": 4316228
+        },
+        {
+          "lure": 7,
+          "line": 7,
+          "exp": 133916827,
+          "fishTotal": 4309599
+        },
+        {
+          "lure": 6,
+          "line": 14,
+          "exp": 138227918,
+          "fishTotal": 4276804
+        },
+        {
+          "lure": 6,
+          "line": 13,
+          "exp": 137065665,
+          "fishTotal": 4240843
+        },
+        {
+          "lure": 6,
+          "line": 1,
+          "exp": 136308542,
+          "fishTotal": 4217283
+        },
+        {
+          "lure": 4,
+          "line": 8,
+          "exp": 137419698,
+          "fishTotal": 4200330
+        },
+        {
+          "lure": 11,
+          "line": 11,
+          "exp": 133926185,
+          "fishTotal": 4194485
+        },
+        {
+          "lure": 12,
+          "line": 10,
+          "exp": 135488030,
+          "fishTotal": 4192483
+        },
+        {
+          "lure": 6,
+          "line": 5,
+          "exp": 135145659,
+          "fishTotal": 4181323
+        },
+        {
+          "lure": 6,
+          "line": 2,
+          "exp": 135135516,
+          "fishTotal": 4181323
+        },
+        {
+          "lure": 6,
+          "line": 0,
+          "exp": 135130876,
+          "fishTotal": 4181323
+        },
+        {
+          "lure": 3,
+          "line": 10,
+          "exp": 134730805,
+          "fishTotal": 4168923
+        },
+        {
+          "lure": 14,
+          "line": 10,
+          "exp": 133163775,
+          "fishTotal": 4120562
+        },
+        {
+          "lure": 1,
+          "line": 10,
+          "exp": 133161515,
+          "fishTotal": 4120562
+        },
+        {
+          "lure": 2,
+          "line": 10,
+          "exp": 134325661,
+          "fishTotal": 4106009
+        },
+        {
+          "lure": 12,
+          "line": 6,
+          "exp": 135889604,
+          "fishTotal": 4102681
+        },
+        {
+          "lure": 0,
+          "line": 10,
+          "exp": 133163349,
+          "fishTotal": 4084793
+        },
+        {
+          "lure": 3,
+          "line": 6,
+          "exp": 135118791,
+          "fishTotal": 4079693
+        },
+        {
+          "lure": 4,
+          "line": 12,
+          "exp": 142016302,
+          "fishTotal": 4058906
+        },
+        {
+          "lure": 7,
+          "line": 11,
+          "exp": 133911186,
+          "fishTotal": 4057786
+        },
+        {
+          "lure": 14,
+          "line": 6,
+          "exp": 133565335,
+          "fishTotal": 4032508
+        },
+        {
+          "lure": 1,
+          "line": 6,
+          "exp": 133563042,
+          "fishTotal": 4032508
+        },
+        {
+          "lure": 2,
+          "line": 6,
+          "exp": 134713726,
+          "fishTotal": 4009693
+        },
+        {
+          "lure": 0,
+          "line": 6,
+          "exp": 133564882,
+          "fishTotal": 3996632
+        },
+        {
+          "lure": 4,
+          "line": 14,
+          "exp": 139331456,
+          "fishTotal": 3982171
+        },
+        {
+          "lure": 12,
+          "line": 8,
+          "exp": 136640636,
+          "fishTotal": 3956824
+        },
+        {
+          "lure": 4,
+          "line": 13,
+          "exp": 138209431,
+          "fishTotal": 3950103
+        },
+        {
+          "lure": 3,
+          "line": 8,
+          "exp": 135883229,
+          "fishTotal": 3934778
+        },
+        {
+          "lure": 4,
+          "line": 1,
+          "exp": 137399673,
+          "fishTotal": 3927198
+        },
+        {
+          "lure": 11,
+          "line": 10,
+          "exp": 133165636,
+          "fishTotal": 3913103
+        },
+        {
+          "lure": 4,
+          "line": 0,
+          "exp": 136288409,
+          "fishTotal": 3895129
+        },
+        {
+          "lure": 4,
+          "line": 2,
+          "exp": 136282885,
+          "fishTotal": 3895129
+        },
+        {
+          "lure": 4,
+          "line": 5,
+          "exp": 136277988,
+          "fishTotal": 3895129
+        },
+        {
+          "lure": 1,
+          "line": 8,
+          "exp": 134341080,
+          "fishTotal": 3889524
+        },
+        {
+          "lure": 14,
+          "line": 8,
+          "exp": 134316543,
+          "fishTotal": 3889524
+        },
+        {
+          "lure": 2,
+          "line": 8,
+          "exp": 135491952,
+          "fishTotal": 3872224
+        },
+        {
+          "lure": 0,
+          "line": 8,
+          "exp": 134329549,
+          "fishTotal": 3853443
+        },
+        {
+          "lure": 11,
+          "line": 6,
+          "exp": 133567228,
+          "fishTotal": 3817250
+        },
+        {
+          "lure": 12,
+          "line": 12,
+          "exp": 141235921,
+          "fishTotal": 3786721
+        },
+        {
+          "lure": 3,
+          "line": 12,
+          "exp": 140493161,
+          "fishTotal": 3766310
+        },
+        {
+          "lure": 7,
+          "line": 10,
+          "exp": 133150722,
+          "fishTotal": 3762874
+        },
+        {
+          "lure": 1,
+          "line": 12,
+          "exp": 138963620,
+          "fishTotal": 3725489
+        },
+        {
+          "lure": 14,
+          "line": 12,
+          "exp": 138952106,
+          "fishTotal": 3725489
+        },
+        {
+          "lure": 12,
+          "line": 14,
+          "exp": 138551437,
+          "fishTotal": 3714746
+        },
+        {
+          "lure": 2,
+          "line": 12,
+          "exp": 140127699,
+          "fishTotal": 3696415
+        },
+        {
+          "lure": 3,
+          "line": 14,
+          "exp": 137808323,
+          "fishTotal": 3694336
+        },
+        {
+          "lure": 0,
+          "line": 12,
+          "exp": 138951634,
+          "fishTotal": 3688159
+        },
+        {
+          "lure": 12,
+          "line": 13,
+          "exp": 137389496,
+          "fishTotal": 3683593
+        },
+        {
+          "lure": 11,
+          "line": 8,
+          "exp": 134332043,
+          "fishTotal": 3665822
+        },
+        {
+          "lure": 12,
+          "line": 1,
+          "exp": 136647456,
+          "fishTotal": 3663182
+        },
+        {
+          "lure": 3,
+          "line": 13,
+          "exp": 136646229,
+          "fishTotal": 3663182
+        },
+        {
+          "lure": 7,
+          "line": 6,
+          "exp": 133552270,
+          "fishTotal": 3659394
+        },
+        {
+          "lure": 1,
+          "line": 14,
+          "exp": 136278913,
+          "fishTotal": 3653514
+        },
+        {
+          "lure": 14,
+          "line": 14,
+          "exp": 136267622,
+          "fishTotal": 3653514
+        },
+        {
+          "lure": 3,
+          "line": 1,
+          "exp": 135876556,
+          "fishTotal": 3642772
+        },
+        {
+          "lure": 12,
+          "line": 5,
+          "exp": 135485758,
+          "fishTotal": 3632029
+        },
+        {
+          "lure": 12,
+          "line": 2,
+          "exp": 135477427,
+          "fishTotal": 3632029
+        },
+        {
+          "lure": 12,
+          "line": 0,
+          "exp": 135468717,
+          "fishTotal": 3632029
+        },
+        {
+          "lure": 2,
+          "line": 14,
+          "exp": 137402882,
+          "fishTotal": 3624538
+        },
+        {
+          "lure": 1,
+          "line": 13,
+          "exp": 135116876,
+          "fishTotal": 3622361
+        },
+        {
+          "lure": 14,
+          "line": 13,
+          "exp": 135105681,
+          "fishTotal": 3622361
+        },
+        {
+          "lure": 0,
+          "line": 14,
+          "exp": 136267159,
+          "fishTotal": 3616906
+        },
+        {
+          "lure": 3,
+          "line": 5,
+          "exp": 134728411,
+          "fishTotal": 3611619
+        },
+        {
+          "lure": 3,
+          "line": 0,
+          "exp": 134725076,
+          "fishTotal": 3611619
+        },
+        {
+          "lure": 3,
+          "line": 2,
+          "exp": 134719885,
+          "fishTotal": 3611619
+        },
+        {
+          "lure": 14,
+          "line": 1,
+          "exp": 134323247,
+          "fishTotal": 3600876
+        },
+        {
+          "lure": 1,
+          "line": 1,
+          "exp": 134320512,
+          "fishTotal": 3600876
+        },
+        {
+          "lure": 2,
+          "line": 13,
+          "exp": 136280899,
+          "fishTotal": 3594941
+        },
+        {
+          "lure": 0,
+          "line": 13,
+          "exp": 135105222,
+          "fishTotal": 3586065
+        },
+        {
+          "lure": 2,
+          "line": 1,
+          "exp": 135485000,
+          "fishTotal": 3573800
+        },
+        {
+          "lure": 1,
+          "line": 2,
+          "exp": 133177652,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 1,
+          "line": 0,
+          "exp": 133168666,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 14,
+          "line": 5,
+          "exp": 133161542,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 1,
+          "line": 5,
+          "exp": 133159282,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 14,
+          "line": 2,
+          "exp": 133153354,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 14,
+          "line": 0,
+          "exp": 133144794,
+          "fishTotal": 3569723
+        },
+        {
+          "lure": 0,
+          "line": 1,
+          "exp": 134309357,
+          "fishTotal": 3564795
+        },
+        {
+          "lure": 2,
+          "line": 2,
+          "exp": 134328557,
+          "fishTotal": 3543147
+        },
+        {
+          "lure": 2,
+          "line": 5,
+          "exp": 134323382,
+          "fishTotal": 3543147
+        },
+        {
+          "lure": 2,
+          "line": 0,
+          "exp": 134306407,
+          "fishTotal": 3543147
+        },
+        {
+          "lure": 0,
+          "line": 2,
+          "exp": 133166221,
+          "fishTotal": 3533954
+        },
+        {
+          "lure": 0,
+          "line": 0,
+          "exp": 133157607,
+          "fishTotal": 3533954
+        },
+        {
+          "lure": 0,
+          "line": 5,
+          "exp": 133147824,
+          "fishTotal": 3533954
+        },
+        {
+          "lure": 7,
+          "line": 8,
+          "exp": 134317160,
+          "fishTotal": 3499850
+        },
+        {
+          "lure": 11,
+          "line": 12,
+          "exp": 138967393,
+          "fishTotal": 3471648
+        },
+        {
+          "lure": 11,
+          "line": 14,
+          "exp": 136282613,
+          "fishTotal": 3404577
+        },
+        {
+          "lure": 11,
+          "line": 13,
+          "exp": 135120544,
+          "fishTotal": 3375547
+        },
+        {
+          "lure": 11,
+          "line": 1,
+          "exp": 134324508,
+          "fishTotal": 3355526
+        },
+        {
+          "lure": 11,
+          "line": 5,
+          "exp": 133163270,
+          "fishTotal": 3326495
+        },
+        {
+          "lure": 11,
+          "line": 0,
+          "exp": 133159202,
+          "fishTotal": 3326495
+        },
+        {
+          "lure": 11,
+          "line": 2,
+          "exp": 133155294,
+          "fishTotal": 3326495
+        },
+        {
+          "lure": 7,
+          "line": 12,
+          "exp": 138951468,
+          "fishTotal": 3292466
+        },
+        {
+          "lure": 7,
+          "line": 14,
+          "exp": 136266996,
+          "fishTotal": 3228857
+        },
+        {
+          "lure": 7,
+          "line": 13,
+          "exp": 135105060,
+          "fishTotal": 3201325
+        },
+        {
+          "lure": 7,
+          "line": 1,
+          "exp": 134296351,
+          "fishTotal": 3182337
+        },
+        {
+          "lure": 7,
+          "line": 5,
+          "exp": 133148250,
+          "fishTotal": 3154805
+        },
+        {
+          "lure": 7,
+          "line": 2,
+          "exp": 133140540,
+          "fishTotal": 3154805
+        },
+        {
+          "lure": 7,
+          "line": 0,
+          "exp": 133131130,
+          "fishTotal": 3154805
+        }
+      ]
+    },
+    {
+      "location": "72:FishBig",
+      "character": {
+        "level": 1,
+        "rodSpeed": 0
+      },
+      "account": {
+        "efficiency": 0,
+        "expMulti": 1,
+        "afkRate": 0.01,
+        "multiFish": 0,
+        "speedBonus": 0,
+        "attackFactor": 1,
+        "prowess": 0,
+        "equipmentDepth": [
+          0,
+          0,
+          0
+        ]
+      },
+      "objective": "fish",
+      "hours": 1,
+      "rows": [
+        {
+          "lure": 2,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 4,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 4,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 14,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 4,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 3,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 4,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 12,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 14,
+          "exp": 49,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 0,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 2,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 5,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 6,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 7,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 10,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 11,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 4,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 7,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 11,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 0,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 2,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 5,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 6,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 7,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 10,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 11,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 9,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 3,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 6,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 7,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 11,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 0,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 1,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 2,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 5,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 6,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 7,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 8,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 9,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 10,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 11,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 13,
+          "line": 13,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 4,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 12,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 14,
+          "exp": 45,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 0,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 1,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 2,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 3,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 5,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 6,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 7,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 8,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 10,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 11,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 12,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 0,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 1,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 2,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 3,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 5,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 6,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 7,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 8,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 9,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 10,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 11,
+          "exp": 40,
+          "fishTotal": 0
+        },
+        {
+          "lure": 14,
+          "line": 13,
+          "exp": 40,
+          "fishTotal": 0
+        }
+      ]
+    }
   ]
 }
