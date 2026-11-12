@@ -160,8 +160,9 @@ fn a_support_outpost_cannot_link_resources() {
 fn the_militia_rate_multiplies_the_talent_and_the_cross_system_factors() {
     let royal = RoyalGuardian::from_save(&save(json!(vec![json!([]); 24]), json!([])), None)
         .expect("the rows read");
-    // No Royal Guardian character: the talent falls back to 1, the factors to 0.
-    assert_eq!(royal.talent_multi(), 0.0);
+    // No Royal Guardian character: upstream reads the talent at one, and the
+    // clearing factors are zero.
+    assert_eq!(royal.talent_multi(), 1.0);
     assert_eq!(royal.xtra_clear_killz(), 1.0);
     assert_eq!(royal.unit_spec(4), 4000.0);
 
@@ -211,4 +212,254 @@ fn clearing_outpost(assign_militia: bool) -> RoyalGuardian {
     let mut maps = vec![json!([]); 4];
     maps[1] = json!([100.0]);
     RoyalGuardian::from_save(&save(json!(g), json!(maps)), None).expect("the rows read")
+}
+
+// ----- RG-02: connections, resource nodes, currencies and the drain -----
+
+#[test]
+fn a_saved_endpoint_is_a_resource_a_map_or_nothing() {
+    // A resource index sits below the offset, a map above it, and the game
+    // writes `-1` for an empty slot.
+    assert_eq!(
+        RoyalGuardian::parse_endpoint(Some(7.0)),
+        Endpoint::Resource(7)
+    );
+    assert_eq!(
+        RoyalGuardian::parse_endpoint(Some(1003.0)),
+        Endpoint::Map(3)
+    );
+    assert_eq!(RoyalGuardian::parse_endpoint(Some(-1.0)), Endpoint::Empty);
+    assert_eq!(RoyalGuardian::parse_endpoint(None), Endpoint::Empty);
+    assert_eq!(
+        RoyalGuardian::parse_endpoint(Some(f64::NAN)),
+        Endpoint::Empty
+    );
+    assert_eq!(Endpoint::Map(3).encode(), 1003);
+    assert_eq!(Endpoint::Resource(7).encode(), 7);
+    assert_eq!(Endpoint::Empty.encode(), -1);
+}
+
+#[test]
+fn a_support_outpost_links_its_target_and_collects_from_it() {
+    // Map 1 stays a Normal outpost; map 2 is built as a Support outpost whose
+    // first slot links map 1 and whose second slot is the legacy empty one.
+    let mut g = vec![json!([]); 24];
+    g[row::ARMORY] = json!(vec![0.0; 83]);
+    let mut maps = vec![json!([]); 4];
+    maps[1] = json!([0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 211_111_111, 0]);
+    maps[2] = json!([0, 0, 0, 0, 0, 0, 0, 0, 1001, -1, 1, 211_111_111, 0]);
+    let royal =
+        RoyalGuardian::from_save(&save(json!(g), json!(maps)), None).expect("the rows read");
+
+    let connections = royal.outpost_connections(2);
+    assert_eq!(connections[0].endpoint, Endpoint::Map(1));
+    assert_eq!(connections[1].endpoint, Endpoint::Empty);
+    assert!(royal.outpost_supports(2));
+    assert_eq!(royal.support_count(1), 1, "map 2 links map 1");
+    assert_eq!(royal.support_links(1)[0].slot, 0);
+    assert!(!royal.support_links(1)[0].legacy);
+    assert_eq!(royal.support_count(3), 0, "nothing links map 3");
+    // A Normal outpost has no support targets of its own.
+    assert!(royal.support_targets(1).is_empty());
+    // A Support outpost cannot link a resource node, so the node reports no
+    // reachable outpost at all.
+    assert!(!royal.resource_reachable(2, 0));
+    assert!(
+        royal
+            .reachable_outposts(0)
+            .iter()
+            .all(|outpost| outpost.map != 2)
+    );
+}
+
+#[test]
+fn a_node_capacity_scales_with_its_grade_and_world_tier() {
+    // `RoyalResources[0]` is 1M at grade zero, and the tier multiplies by five
+    // once per twenty rows of the catalogue.
+    assert_eq!(
+        RoyalGuardian::resource_capacity_at_grade(0, 0.0),
+        5.0 * 1_000_000.0
+    );
+    assert_eq!(
+        RoyalGuardian::resource_capacity_at_grade(0, 2.0),
+        5.0 * 1_000_000.0 * 1.5 * 1.5
+    );
+    // A grade is floored before it scales, and a negative one reads as zero.
+    assert_eq!(
+        RoyalGuardian::resource_capacity_at_grade(0, 2.9),
+        RoyalGuardian::resource_capacity_at_grade(0, 2.0)
+    );
+    assert_eq!(
+        RoyalGuardian::resource_capacity_at_grade(0, -4.0),
+        RoyalGuardian::resource_capacity_at_grade(0, 0.0)
+    );
+    // Row 20 opens the second tier.
+    assert!(
+        RoyalGuardian::resource_capacity_at_grade(20, 0.0) > 20f64.mul_add(0.0, 0.0) + 1.0,
+        "the second tier carries its own base"
+    );
+}
+
+#[test]
+fn a_drained_node_reads_full_and_a_collection_window_caps_at_what_is_left() {
+    let mut g = vec![json!([]); 24];
+    g[row::ARMORY] = json!(vec![0.0; 83]);
+    let mut grades = vec![0.0; 80];
+    grades[0] = 1.0;
+    g[row::GRADES] = json!(grades);
+    // Resource 0 is drained; resource 1 has collected a third of its capacity.
+    let third = RoyalGuardian::resource_capacity_at_grade(1, 0.0) / 3.0;
+    let mut progress = vec![0.0; 80];
+    progress[0] = -1.0;
+    progress[1] = third;
+    g[row::RESOURCES] = json!(progress);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+
+    let drained = royal.resource_node(0);
+    assert!(drained.drained);
+    assert_eq!(drained.collected, drained.capacity);
+    assert_eq!(drained.remaining, 0.0);
+    assert_eq!(royal.resource_collected_within(0, 1_000.0, 10.0), 0.0);
+
+    let partial = royal.resource_node(1);
+    assert!(!partial.drained);
+    assert!((partial.collected - third).abs() < 1e-6);
+    assert!((partial.remaining - (partial.capacity - third)).abs() < 1e-6);
+    let window = royal.resource_window(1, 1_000.0, 10.0);
+    assert_eq!(window.collected, 10_000.0);
+    assert!(!window.emptied);
+    // A rate that covers the rest empties the node.
+    let ample = royal.resource_window(1, 1e9, 10.0);
+    assert!(ample.emptied);
+    assert!(!ample.already_empty);
+    // Nothing drains a node at a zero rate.
+    assert!(royal.resource_drain_hours(1, 0.0).is_infinite());
+    assert_eq!(royal.resource_drain_hours(0, 0.0), 0.0);
+}
+
+#[test]
+fn the_next_cycle_needs_replenish_and_grades_only_where_it_is_unlocked() {
+    let mut g = vec![json!([]); 24];
+    let mut armory = vec![0.0; 83];
+    g[row::ARMORY] = json!(armory.clone());
+    let royal = RoyalGuardian::from_save(&save(json!(g.clone()), json!([])), None).expect("rows");
+    let cycle = royal.resource_cycle(0, 100.0);
+    assert!(!cycle.replenish_unlocked);
+    assert!(!cycle.next_cycle_available);
+    assert_eq!(cycle.next_capacity, None);
+    assert_eq!(cycle.next_rate, None);
+    // A quarter of the rate is the grade multiplier at grade one, so the
+    // ungraded rate is the rest.
+    assert!((cycle.full_rate - 100.0).abs() < 1e-9);
+
+    armory[70] = 1.0;
+    g[row::ARMORY] = json!(armory.clone());
+    let royal = RoyalGuardian::from_save(&save(json!(g.clone()), json!([])), None).expect("rows");
+    let cycle = royal.resource_cycle(0, 100.0);
+    assert!(cycle.replenish_unlocked);
+    assert!(cycle.next_cycle_available);
+    // Replenish alone refills at the same grade.
+    assert_eq!(cycle.next_grade, cycle.grade);
+    assert_eq!(cycle.next_capacity, Some(cycle.capacity));
+
+    armory[0] = 1.0;
+    g[row::ARMORY] = json!(armory);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("rows");
+    let cycle = royal.resource_cycle(0, 100.0);
+    assert!(cycle.grade_increase_unlocked);
+    assert_eq!(cycle.next_grade, cycle.grade + 1.0);
+    assert!(
+        cycle.next_capacity.expect("a capacity") > cycle.capacity,
+        "the refill is bigger at the higher grade"
+    );
+}
+
+#[test]
+fn a_save_without_the_reset_countdown_has_no_projection() {
+    let mut g = vec![json!([]); 24];
+    g[row::ARMORY] = json!(vec![0.0; 83]);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    let reset = royal.reset_timing();
+    assert!(!reset.available);
+    assert_eq!(reset.hours_remaining, None);
+    assert_eq!(reset.missing, vec!["TimeAway.ShopRestock".to_owned()]);
+    let allocation = royal.allocation_to_reset();
+    assert!(!allocation.reset_projection_available);
+    assert_eq!(allocation.collectable_before_reset, None);
+    assert!(
+        allocation
+            .missing
+            .contains(&"TimeAway.ShopRestock".to_owned())
+    );
+
+    // The countdown itself is seconds, floored at zero.
+    let mut save = save(json!(vec![json!([]); 24]), json!([]));
+    save.insert(
+        "TimeAway".into(),
+        Value::String(json!({"ShopRestock": 7200.0}).to_string()),
+    );
+    let royal = RoyalGuardian::from_save(&save, None).expect("the rows read");
+    let reset = royal.reset_timing();
+    assert!(reset.available);
+    assert_eq!(reset.hours_remaining, Some(2.0));
+    assert!(!reset.due);
+}
+
+#[test]
+fn the_banked_time_banks_only_with_armory_30_and_reads_in_hours() {
+    let mut g = vec![json!([]); 24];
+    let mut armory = vec![0.0; 83];
+    let mut banked = vec![0.0; 20];
+    banked[0] = 9_000.0;
+    g[row::ARMORY] = json!(armory.clone());
+    g[row::BANKED] = json!(banked);
+    let royal = RoyalGuardian::from_save(&save(json!(g.clone()), json!([])), None).expect("rows");
+    assert_eq!(royal.banked_hours(), 2.5);
+    assert!(!royal.banks_time(), "Armory 30 is not bought");
+
+    armory[30] = 1.0;
+    g[row::ARMORY] = json!(armory);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("rows");
+    assert!(royal.banks_time());
+}
+
+#[test]
+fn a_currency_balance_reads_its_slot_and_a_negative_slot_reads_zero() {
+    let mut g = vec![json!([]); 24];
+    g[row::ARMORY] = json!(vec![0.0; 83]);
+    let mut currencies = vec![0.0; 80];
+    currencies[5] = 1_234.0;
+    g[row::CURRENCIES] = json!(currencies);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    assert_eq!(royal.currency_balance(5), 1_234.0);
+    assert_eq!(royal.currency_balance(6), 0.0);
+    assert_eq!(royal.currency_balance(-1), 0.0);
+}
+
+#[test]
+fn a_stream_travels_from_its_outpost_to_its_node() {
+    // A built Normal outpost on map 1 links resource 7, which is a W1 node.
+    let mut g = vec![json!([]); 24];
+    g[row::ARMORY] = json!(vec![0.0; 83]);
+    let mut maps = vec![json!([]); 4];
+    maps[1] = json!([0, 0, 0, 0, 0, 0, 0, 0, 7, -1, 0, 211_111_111, 0]);
+    let royal =
+        RoyalGuardian::from_save(&save(json!(g), json!(maps)), None).expect("the rows read");
+    let (streams, invalid) = royal.resource_streams();
+    assert!(invalid.is_empty(), "{invalid:?}");
+    assert_eq!(streams.len(), 1);
+    let stream = &streams[0];
+    assert_eq!((stream.map, stream.slot, stream.resource), (1, 0, 7));
+    assert!(!stream.savage);
+    assert_eq!(stream.currency_rate, stream.rate, "a Normal outpost pays");
+    assert_eq!(stream.currency_slot, resource_currency(7));
+    // The node's allocation groups that one stream.
+    let allocation = royal.resource_allocation(24.0);
+    let detail = allocation
+        .details
+        .iter()
+        .find(|detail| detail.resource == 7)
+        .expect("the linked node reports");
+    assert_eq!(detail.streams.len(), 1);
+    assert_eq!(detail.rate, stream.rate);
 }

@@ -705,14 +705,20 @@ const jellySave = () => {
 };
 
 /// A small flat `save.json` carrying the Royal Guardian rows: one built W1
-/// outpost with three guards and its links, a second outpost the militia is
-/// clearing, and the Armory levels an overview reads. The Spelunk, Research and
-/// SL rows give the clearing rate its cross-system factors.
+/// outpost with three guards and its resource link, a second outpost the militia
+/// is clearing, the Armory levels an overview reads, one graded node with saved
+/// progress, a currency balance and two banked hours. The Spelunk, Research and
+/// SL rows give the clearing rate its cross-system factors, and `TimeAway`
+/// carries the daily reset countdown the drain projection reads.
 const royalSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
-  const armory = row(83, { 21: 20, 23: 10 });
+  const armory = row(83, { 21: 20, 23: 10, 70: 1 });
   const g = Array.from({ length: 24 }, () => []);
+  g[1] = row(80, { 0: 1234 });
   g[2] = armory;
+  g[3] = row(20, { 0: 7200 });
+  g[4] = row(80, { 7: 500 });
+  g[5] = row(80, { 7: 4 });
   g[6] = row(4, { 0: 4 });
   g[7] = row(4, { 0: 2 });
   g[23] = row(10, { 3: 4, 8: 1 });
@@ -731,6 +737,7 @@ const royalSave = () => {
     RoyalG: JSON.stringify(g),
     RoyalMaps: JSON.stringify(maps),
     Spelunk: JSON.stringify(Array.from({ length: 55 }, () => [])),
+    TimeAway: JSON.stringify({ GlobalTime: 1794296810.952, ShopRestock: 14400 }),
     CharacterClass_0: 16,
     Lv0_0: JSON.stringify(row(30, { 0: 1200, 20: 40 })),
     SL_0: JSON.stringify({ 231: 300 }),
@@ -893,6 +900,45 @@ const INTERACTIONS = {
     await waitForNode(lane, 'royal-clear-51', 'royal-guardian: the W2 tab lists its outposts');
     await lane.call('click_element', { id: 'royal-world-0' });
     await waitForNode(lane, 'royal-clear-2', 'royal-guardian: the W1 tab lists its clearing');
+    // The outpost map draws the built outpost, the node it drains and the line
+    // between them, and clicking the node opens the resources pane on it.
+    await lane.call('click_element', { id: 'royal-tab-outposts' });
+    await waitForNode(lane, 'royal-map', 'royal-guardian: the outpost map renders');
+    await waitForNode(
+      lane,
+      'royal-map-outpost-1',
+      'royal-guardian: the map draws the built outpost',
+    );
+    await waitForNode(lane, 'royal-map-resource-7', 'royal-guardian: the map draws its node');
+    await bringIntoView(lane, 'royal-map-resource-7');
+    await lane.call('click_element', { id: 'royal-map-resource-7' });
+    await waitForNode(
+      lane,
+      'royal-resource-detail',
+      'royal-guardian: the node opens the resources pane',
+    );
+    const node = labelOf(await lane.tree(), 'royal-resource-detail') ?? '';
+    if (!node.includes('Resource 8') || !node.includes('grade 4')) {
+      throw new Error(`royal-guardian: the node inspector reads ${node}`);
+    }
+    // Two banked hours and four hours to the reset come from the save itself.
+    const banked = labelOf(await lane.tree(), 'royal-kpi-banked-figure') ?? '';
+    if (!banked.includes('2')) throw new Error(`royal-guardian: the banked hours read ${banked}`);
+    const reset = labelOf(await lane.tree(), 'royal-kpi-reset-figure') ?? '';
+    if (!reset.includes('4')) throw new Error(`royal-guardian: the reset card reads ${reset}`);
+    // The currency pane opens on the slot the save banked.
+    await lane.call('click_element', { id: 'royal-tab-currencies' });
+    await waitForNode(
+      lane,
+      'royal-currency-summary',
+      'royal-guardian: the currency pane renders',
+    );
+    const balance = labelOf(await lane.tree(), 'royal-kpi-currency-balance-figure') ?? '';
+    if (!balance.includes('1,234')) {
+      throw new Error(`royal-guardian: the currency balance reads ${balance}`);
+    }
+    await lane.call('click_element', { id: 'royal-tab-overview' });
+    await waitForNode(lane, 'royal-overview', 'royal-guardian: the overview reopens');
   },
   killroy: async (lane) => {
     await lane.call('click_element', { id: 'killroy-import' });

@@ -1,12 +1,13 @@
 //! The Overview tab: counters, world progress, raw clearing values and range
 //! targets, in the upstream page's order.
 
+use super::world_rail;
 use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::shell::{TabBar, WindowTab};
+
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
@@ -29,7 +30,7 @@ pub fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     }
     pane.child(counters(royal))
         .child(world_progress(royal, cx))
-        .child(world_tabs(world, cx))
+        .child(world_rail(world, cx))
         .child(clearing_values(royal, world, cx))
         .child(range_targets(royal, world, state.royal_state.outpost, cx))
         .child(rate_note(royal, cx))
@@ -174,33 +175,6 @@ fn world_progress(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyEleme
                  outposts the game data carries",
         ))
         .child(div().id("royal-world-progress").child(grid))
-        .into_any_element()
-}
-
-/// The world rail: which world the two tables below list.
-fn world_tabs(world: usize, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    let mut tabs = TabBar::new("royal-worlds-tabs").selected(format!("royal-world-{world}"));
-    for index in 0..royal_guardian::WORLDS {
-        tabs = tabs.tab(WindowTab::new(
-            format!("royal-world-{index}"),
-            format!("W{}", index + 1),
-        ));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(world) = id
-            .strip_prefix("royal-world-")
-            .and_then(|rest| rest.parse::<usize>().ok())
-        {
-            entity.update(cx, |state, cx| state.set_royal_world(world, cx));
-        }
-    });
-    div()
-        .id("royal-world-rail")
-        .flex()
-        .items_center()
-        .gap_2()
-        .child(tabs)
         .into_any_element()
 }
 
@@ -448,7 +422,7 @@ fn rate_note(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
                 .gap_1()
                 .child(format!(
                     "Xtra Clear Killz: talent 231 at level {} (×{:.4}), ×{:.4} from the clearing rate",
-                    format::value(royal.talent_level()),
+                    format::value(royal.xtra_clear_level()),
                     royal.talent_multi(),
                     royal.xtra_clear_killz()
                 ))
@@ -466,7 +440,7 @@ fn rate_note(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
 // ----- shared formatting and cells -----
 
 /// A headline figure as a KPI card, labelled so the harness reads the number.
-fn kpi(
+pub(super) fn kpi(
     id: &'static str,
     label: &'static str,
     value: f64,
@@ -489,7 +463,7 @@ fn kpi(
 }
 
 /// A figure as the card prints it: whole numbers grouped, rates as `fmtVal`.
-fn figure_text(value: f64) -> String {
+pub(super) fn figure_text(value: f64) -> String {
     if value.fract() == 0.0 && value.abs() < 1e15 {
         format::count(value.max(0.0) as u64)
     } else {
@@ -515,7 +489,7 @@ fn state_cell(clear: &Clear) -> AnyElement {
 }
 
 /// A right-aligned number.
-fn number_cell(value: f64) -> AnyElement {
+pub(super) fn number_cell(value: f64) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -526,7 +500,7 @@ fn number_cell(value: f64) -> AnyElement {
 }
 
 /// A rate, dimmed when nothing is clearing.
-fn rate_cell(value: f64) -> AnyElement {
+pub(super) fn rate_cell(value: f64) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -541,7 +515,7 @@ fn rate_cell(value: f64) -> AnyElement {
 }
 
 /// An ETA in hours, or a dash when the outpost is not clearing.
-fn eta_cell(hours: Option<f64>) -> AnyElement {
+pub(super) fn eta_cell(hours: Option<f64>) -> AnyElement {
     div()
         .flex()
         .flex_col()
@@ -555,7 +529,7 @@ fn eta_cell(hours: Option<f64>) -> AnyElement {
 }
 
 /// An outpost's type, by the upstream names.
-fn type_label(kind: f64) -> &'static str {
+pub(super) fn type_label(kind: f64) -> &'static str {
     match kind as i64 {
         1 => "Support",
         2 => "Savage",

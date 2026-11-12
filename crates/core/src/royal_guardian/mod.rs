@@ -1,37 +1,60 @@
-//! The Royal Guardian (W7): the outpost overview, world progress, raw clearing
-//! values and range targets.
+//! The Royal Guardian (W7): the outpost overview, the outpost map, the resource
+//! nodes, the currencies and the range targets.
 //!
-//! Ported from `royal-guardian-calc.html` and
-//! `js/stats/systems/w7/royal-guardian.js`. The upstream reads a decoded save
+//! Ported from `royal-guardian-calc.html`,
+//! `js/stats/systems/w7/royal-guardian.js`,
+//! `js/stats/systems/w7/royal-guardian-optimizer.js` and
+//! `js/stats/systems/w7/royal-collect.js`. The upstream reads a decoded save
 //! through `royalGData` and `royalMapsData`; here the same rows come from the
 //! save's `RoyalG` and `RoyalMaps` fields, so every accessor below is a direct
 //! transcription of one upstream reader.
 //!
 //! RG-01 covers the overview: the counters, the world progress cards, the raw
 //! clearing values every outpost reports and the range target behind an
-//! outpost's Advanced Logistics plan. The outpost map, the resource nodes and
-//! the currencies are RG-02; the upgrades, the breakdown tree and the forecast
-//! are RG-03; the optimizer, unit EXP and shelf steps are RG-04.
+//! outpost's Advanced Logistics plan. RG-02 adds the outpost map, the resource
+//! nodes, the currencies, the drain staffing and the banked hours; the reset
+//! projection travels with the drain because the upstream computes both in one
+//! pass. The upgrade list, the breakdown tree and the forecast tab are RG-03;
+//! the optimizer, unit EXP and shelf steps are RG-04.
 //!
 //! The clearing rate multiplies the Royal Guardian talent 231 (Xtra Clear Killz)
 //! by the Orblet, Spelunk big-fish and Jelly Operator factors; the Jelly one is
-//! the shared [`crate::jelly::Jelly`] port's completion bonus. The talent reads
-//! the purchased level; the all-talent bonus levels that raise it are not
-//! decoded yet, so a save whose Royal Guardian carries them reads a lower rate
-//! than the game shows. [`RoyalGuardian::missing_sources`] names the sources the
-//! save itself does not carry.
+//! the shared [`crate::jelly::Jelly`] port's completion bonus. The collection
+//! rate reads the same talent machinery for 225, 226 and 230 plus the Orblet,
+//! sushi, arcade and Armory factors; the W14 alchemy bubble and the companion
+//! roster it also multiplies in are not decoded, so
+//! [`rates::CollectionInputs`] names them instead of guessing.
+//!
+//! A talent reads its purchased level; the all-talent bonus levels that raise it
+//! are not decoded yet, so a save whose Royal Guardian carries them reads a
+//! lower rate than the game shows. [`RoyalGuardian::missing_sources`] names the
+//! sources the save itself does not carry.
 
 mod clearing;
+mod collect;
+mod connections;
 mod counters;
 mod data;
 mod outposts;
 mod ranges;
+mod rates;
+mod resources;
 
 #[cfg(test)]
 mod tests;
 
 use crate::save::json;
 use serde_json::{Map, Value};
+use std::collections::BTreeMap;
+
+pub use collect::{
+    Allocation, Banked, CurrencyIncome, NodeAllocation, ResetTiming, ResourceStream,
+};
+pub use connections::{
+    Connection, Endpoint, ReachableOutpost, ReachableResource, SupportLink, SupportTarget,
+};
+pub use rates::{CollectionInputs, Factor, Rate, TotalStats};
+pub use resources::{NodeCycle, ResourceNode, WindowMetrics, resource_position};
 
 /// How many worlds the game ships outposts for.
 pub const WORLDS: usize = 7;
@@ -63,6 +86,10 @@ mod cell {
     pub const LOGISTICS: usize = 1;
     /// The first of the five rank EXP bars.
     pub const RANK_EXP: usize = 3;
+    /// The first of the two connection endpoints.
+    pub const LINKS: usize = 8;
+    /// The outpost type: 0 Normal, 1 Support, 2 Savage.
+    pub const KIND: usize = 10;
     /// The packed unit slots, one digit per slot.
     pub const UNITS: usize = 11;
     /// Whether the outpost is glorified.
@@ -73,6 +100,14 @@ mod cell {
 mod row {
     /// The armory levels.
     pub const ARMORY: usize = 2;
+    /// The currency balances, indexed by currency slot.
+    pub const CURRENCIES: usize = 1;
+    /// The resource node progress: one cell per node, `-1` once drained.
+    pub const RESOURCES: usize = 4;
+    /// The resource node grades: one cell per node.
+    pub const GRADES: usize = 5;
+    /// The seconds of Royal Guardian time the account banks.
+    pub const BANKED: usize = 3;
     /// The Orblet market levels.
     pub const ORBLET: usize = 23;
     /// The first world's militia assignment types; the map row follows.
@@ -233,12 +268,20 @@ pub struct RoyalGuardian {
     maps: Vec<Value>,
     /// `Spelunk`: the big-fish levels the clearing rate reads.
     spelunk: Vec<Value>,
+    /// `Sushi`: the tiers the unique-sushi count reads.
+    sushi: Vec<Value>,
+    /// `ArcadeUpg`: the arcade levels the collection rate reads.
+    arcade: Vec<Value>,
+    /// `Lv0_<n>`: one row per character, whose first cell is its level.
+    levels: Vec<Value>,
+    /// `TimeAway.ShopRestock`: the seconds left before the daily reset.
+    reset_seconds: Option<f64>,
     /// The Jelly Operator state its completion bonus reads.
     jelly: Option<crate::jelly::Jelly>,
-    /// The highest purchased Xtra Clear Killz level across the characters.
-    talent_level: f64,
-    /// Whether the save carries a Royal Guardian character.
-    character: bool,
+    /// The purchased level of each talent the section reads, by talent id.
+    talents: BTreeMap<usize, f64>,
+    /// The index of the save's Royal Guardian character, when it carries one.
+    character: Option<usize>,
     /// The bonus sources the save does not carry.
     missing: Vec<String>,
 }
@@ -257,13 +300,18 @@ impl RoyalGuardian {
         let spelunk = json::parsed_field(save, "Spelunk")
             .and_then(|value| value.as_array().cloned())
             .unwrap_or_default();
-        let (character, talent_level) = talent_read(save);
+        let levels = levels(save);
+        let (character, talents) = talent_read(save, &levels);
         let mut royal = Self {
             g,
             maps,
             spelunk,
+            sushi: cells(save, "Sushi"),
+            arcade: cells(save, "ArcadeUpg"),
+            levels,
+            reset_seconds: reset_seconds(save),
             jelly: jelly.cloned(),
-            talent_level,
+            talents,
             character,
             missing: Vec::new(),
         };
@@ -284,7 +332,7 @@ impl RoyalGuardian {
         if !self.jelly_available() {
             missing.push("Jelly Operator obstructions (Research[7][9])".to_owned());
         }
-        if !self.character {
+        if self.character.is_none() {
             missing.push("Royal Guardian character (CharacterClass_<n> 16)".to_owned());
         }
         missing
@@ -313,10 +361,12 @@ impl RoyalGuardian {
 
     /// One cell of a `RoyalMaps` row.
     fn map_cell(&self, map: usize, cell: usize) -> f64 {
-        self.map_row(map)
-            .get(cell)
-            .and_then(json::number)
-            .unwrap_or(0.0)
+        self.map_saved(map, cell).unwrap_or(0.0)
+    }
+
+    /// One cell of a `RoyalMaps` row, or `None` when the row is too short.
+    fn map_saved(&self, map: usize, cell: usize) -> Option<f64> {
+        self.map_row(map).get(cell).and_then(json::number)
     }
 
     /// A cell of `Spelunk`.
@@ -325,6 +375,26 @@ impl RoyalGuardian {
             .get(row)
             .and_then(Value::as_array)
             .and_then(|cells| cells.get(cell))
+            .and_then(json::number)
+            .unwrap_or(0.0)
+    }
+
+    /// Whether the save carries a Royal Guardian character.
+    pub fn has_character(&self) -> bool {
+        self.character.is_some()
+    }
+
+    /// The index of the save's Royal Guardian character.
+    pub fn character(&self) -> Option<usize> {
+        self.character
+    }
+
+    /// The character's level, when the save carries the row.
+    pub fn character_level(&self) -> f64 {
+        self.character
+            .and_then(|index| self.levels.get(index))
+            .and_then(Value::as_array)
+            .and_then(|cells| cells.first())
             .and_then(json::number)
             .unwrap_or(0.0)
     }
@@ -409,9 +479,30 @@ pub fn resource_currency(resource: usize) -> i64 {
         .unwrap_or(-1)
 }
 
-/// The highest purchased Xtra Clear Killz level and whether the save carries a
-/// Royal Guardian character at all.
-fn talent_read(save: &Map<String, Value>) -> (bool, f64) {
+/// How many resource nodes the game ships.
+pub fn resource_count() -> usize {
+    data::resource_count()
+}
+
+/// Every currency slot a resource node pays, in slot order: upstream
+/// `validCurrencySlots`.
+pub fn currency_slots() -> Vec<i64> {
+    let mut slots: Vec<i64> = (0..data::resource_count())
+        .map(resource_currency)
+        .filter(|slot| *slot >= 0)
+        .collect();
+    slots.sort_unstable();
+    slots.dedup();
+    slots
+}
+
+/// The save's Royal Guardian character - the highest-level one when several
+/// carry the class, the way upstream picks it - and each read talent's highest
+/// purchased level.
+fn talent_read(
+    save: &Map<String, Value>,
+    levels: &[Value],
+) -> (Option<usize>, BTreeMap<usize, f64>) {
     let mut classes = Vec::new();
     let mut index = 0;
     while let Some(value) = json::parsed_field(save, &format!("CharacterClass_{index}")) {
@@ -423,22 +514,65 @@ fn talent_read(save: &Map<String, Value>) -> (bool, f64) {
     {
         classes.extend(array.as_array().cloned().unwrap_or_default());
     }
-    let character = classes
-        .iter()
-        .filter_map(json::number)
-        .any(|class| class == ROYAL_GUARDIAN_CLASS);
-    let mut level: f64 = 0.0;
-    for index in 0..classes.len() {
-        let Some(levels) = json::parsed_field(save, &format!("SL_{index}")) else {
+    let mut character = None;
+    let mut best = 0.0;
+    for (index, class) in classes.iter().enumerate() {
+        if json::number(class) != Some(ROYAL_GUARDIAN_CLASS) {
             continue;
-        };
-        let Some(level_value) = levels
-            .as_object()
-            .and_then(|map| map.get(&XTRA_CLEAR_KILLZ.to_string()))
-        else {
-            continue;
-        };
-        level = level.max(json::number(level_value).unwrap_or(0.0));
+        }
+        let level = levels
+            .get(index)
+            .and_then(Value::as_array)
+            .and_then(|cells| cells.first())
+            .and_then(json::number)
+            .unwrap_or(0.0);
+        if character.is_none() || level > best {
+            character = Some(index);
+            best = level;
+        }
     }
-    (character, level)
+    let mut levels = BTreeMap::new();
+    for index in 0..classes.len() {
+        let Some(rows) = json::parsed_field(save, &format!("SL_{index}")) else {
+            continue;
+        };
+        for talent in data::talents() {
+            let Some(level) = rows
+                .as_object()
+                .and_then(|map| map.get(&talent.to_string()))
+                .and_then(json::number)
+            else {
+                continue;
+            };
+            let slot: &mut f64 = levels.entry(*talent).or_insert(0.0);
+            *slot = (*slot).max(level);
+        }
+    }
+    (character, levels)
+}
+
+/// Every `SL_<n>` row's saved levels are read through [`data::talents`]; a talent
+/// the save's characters never bought reads zero.
+fn levels(save: &Map<String, Value>) -> Vec<Value> {
+    let mut rows = Vec::new();
+    let mut index = 0;
+    while let Some(value) = json::parsed_field(save, &format!("Lv0_{index}")) {
+        rows.push(value);
+        index += 1;
+    }
+    rows
+}
+
+/// A saved account row, as a flat list of cells.
+fn cells(save: &Map<String, Value>, key: &str) -> Vec<Value> {
+    json::parsed_field(save, key)
+        .and_then(|value| value.as_array().cloned())
+        .unwrap_or_default()
+}
+
+/// The seconds the save has left before the daily reset.
+fn reset_seconds(save: &Map<String, Value>) -> Option<f64> {
+    json::parsed_field(save, "TimeAway")
+        .and_then(|row| row.as_object().cloned())
+        .and_then(|row| row.get("ShopRestock").and_then(json::number))
 }
