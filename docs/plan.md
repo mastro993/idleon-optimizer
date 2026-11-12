@@ -295,14 +295,18 @@ Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, 
 complete save-derived multipliers and undo.
 Details: [`docs/sections/research.md`](sections/research.md).
 
-The Fishing section implements FI-01: the character/toolkit/location toolbar, an
+The Fishing section implements FI-01 and FI-02: the character/toolkit/location toolbar, an
 every-location table that switches the selected pool, the selected pool's fish split,
-real-versus-panel EXP and the shared formula tree. The pure formulas are pinned against
-an oracle fixture evaluated from the upstream JS; the save supplies the character, rod,
-saved toolkit, spot and AFK target, while the account skill values (efficiency, EXP
-multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are
-entered in the account card until the stats dashboard decodes them. Missing: the
-best lure/line ranking (FI-02) and the Trench depth projection with other characters
+real-versus-panel EXP, the shared formula tree, and the ranking of all 225 lure/line
+combinations for the selected pool and depth by either Fishing EXP or fish quantity, with
+the selected and saved rows marked, a `Use` action, the tie explanation and the
+best-combination KPI. The pure formulas and the ranking are pinned against oracle fixtures
+evaluated from the upstream JS; the save supplies the character, rod, saved toolkit, spot
+and AFK target, while the account skill values (efficiency, EXP multiplier, AFK rate,
+Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card
+until the stats dashboard decodes them, and the ranking holds efficiency and the EXP
+multiplier fixed across combinations because the upstream recomputes them per toolkit
+through the skill systems. Missing: the Trench depth projection with other characters
 (FI-03). Details: [`docs/sections/fishing.md`](sections/fishing.md).
 
 The Clamworks section implements CW-01, CW-02 and CW-03: the overview with the pearl-value

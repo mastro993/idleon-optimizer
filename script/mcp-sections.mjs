@@ -984,6 +984,55 @@ const INTERACTIONS = {
     );
     const detail = labelOf(await lane.tree(), 'fishing-detail') ?? '';
     if (!detail.includes('Small Fish')) throw new Error(`fishing: the split reads ${detail}`);
+    // FI-02: every lure/line pair is ranked for the selected pool and depth.
+    await waitForNode(lane, 'fishing-ranking', 'fishing: the all-combination ranking renders');
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'fishing-ranking-objective') ?? '') ===
+        'Ranking by Fishing EXP · 225 combinations',
+      'fishing: the ranking covers 225 combinations by EXP'
+    );
+    await lane.call('focus_element', { id: 'fishing-objective' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'fishing-ranking-objective') ?? '') ===
+        'Ranking by Fish quantity · 225 combinations',
+      'fishing: the objective selector re-ranks by fish quantity'
+    );
+    const ranked = await lane.tree();
+    const best = labelOf(ranked, 'fishing-best-toolkit') ?? '';
+    const match = /^Best lure \+ line: (.+ \+ .+)$/.exec(best);
+    if (!match) throw new Error(`fishing: the best combination reads ${best}`);
+    const toolkit = match[1];
+    const top = labelOf(ranked, 'fishing-rank-1') ?? '';
+    if (!top.endsWith('· best')) throw new Error(`fishing: rank 1 reads ${top}`);
+    // A tie with the top row is marked on the row and explained under the table.
+    const tied = (labelOf(ranked, 'fishing-rank-2') ?? '').endsWith('· tied for best');
+    if (tied && !(labelOf(ranked, 'fishing-tie-note') ?? '').includes('share the top')) {
+      throw new Error('fishing: a tied row has no tie explanation');
+    }
+    // The best row applies to the toolbar; a best that is already selected has
+    // no button to press. The ranking sits below the fold, so scroll it into
+    // view before the real pointer click.
+    const useBest = ranked.find((node) => node.id === 'fishing-use-best');
+    if (useBest) {
+      const y = useBest.bounds?.y ?? 0;
+      if (y > 600) {
+        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await waitForNode(lane, 'fishing-use-best', 'fishing: the ranking scrolls into view');
+      }
+      await lane.call('click_element', { id: 'fishing-use-best' });
+      await waitFor(
+        lane,
+        (nodes) => (labelOf(nodes, 'fishing-summary') ?? '').includes(toolkit),
+        'fishing: Use best applies the rank-1 lure and line'
+      );
+    }
     // A save without PVFishingToolkit_0 defaults to Fly + Fishing Twine and says so.
     await importSave(
       fishingSave({ toolkit: false }),

@@ -1464,6 +1464,22 @@ impl AppState {
         cx.notify();
     }
 
+    /// Apply a ranked lure/line pair from the all-combination table.
+    pub fn use_fishing_toolkit(&mut self, lure: usize, line: usize, cx: &mut Context<Self>) {
+        self.fishing.use_toolkit(lure, line);
+        cx.notify();
+    }
+
+    /// Switch the lure/line ranking between Fishing EXP and fish quantity.
+    pub fn set_fishing_objective(
+        &mut self,
+        objective: idleon_core::fishing::Objective,
+        cx: &mut Context<Self>,
+    ) {
+        self.fishing.objective = objective;
+        cx.notify();
+    }
+
     /// Switch the selected pool by its location id.
     pub fn set_fishing_location(&mut self, id: String, cx: &mut Context<Self>) {
         if idleon_core::fishing::data().location(&id).is_some() {

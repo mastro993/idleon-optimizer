@@ -10,10 +10,16 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Pixels, Role, Styled, div, px};
-use idleon_core::fishing::Evaluation;
+use idleon_core::fishing::{Evaluation, Objective, ties};
 
 /// The character's fishing context as one wrap of cards.
-pub fn kpis(evaluation: &Evaluation, hours: f64, cx: &mut Context<AppState>) -> AnyElement {
+pub fn kpis(
+    evaluation: &Evaluation,
+    ranking: &[Evaluation],
+    objective: Objective,
+    hours: f64,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let outcome = &evaluation.outcome;
     let account = &evaluation.account;
@@ -21,6 +27,22 @@ pub fn kpis(evaluation: &Evaluation, hours: f64, cx: &mut Context<AppState>) -> 
         (outcome.exp / outcome.hours) / outcome.panel_exp_per_hour
     } else {
         0.0
+    };
+    let best = &ranking[0];
+    let reference = objective.metric(outcome);
+    let gain = if reference > 0.0 {
+        (objective.metric(&best.outcome) / reference - 1.0) * 100.0
+    } else {
+        0.0
+    };
+    let is_selected = (best.lure.idx, best.line.idx) == (evaluation.lure.idx, evaluation.line.idx);
+    let tied = ties(ranking, objective);
+    let best_caption = if is_selected && tied > 1 {
+        format!("The selected lure + line · ties with {} others", tied - 1)
+    } else if is_selected {
+        "The selected lure + line".to_string()
+    } else {
+        format!("{} {gain:+.1}% vs selected", objective.unit())
     };
     div()
         .id("fishing-kpis")
@@ -108,6 +130,13 @@ pub fn kpis(evaluation: &Evaluation, hours: f64, cx: &mut Context<AppState>) -> 
             "Fishing EXP",
             format::number(outcome.exp),
             format!("×{} EXP multiplier", format::number(account.exp_multi)),
+            muted,
+        ))
+        .child(card(
+            "fishing-kpi-best",
+            "Best lure + line",
+            format!("{} + {}", best.lure.name, best.line.name),
+            best_caption,
             muted,
         ))
         .child(card(

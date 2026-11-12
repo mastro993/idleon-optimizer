@@ -13,7 +13,8 @@ Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, de
 ## Current build
 
 - FI-01 AFK catches and fish split: the character/toolkit/location toolbar, the every-location table, the selected pool split, real-versus-panel EXP and the shared formula tree, with the upstream pure formulas pinned against an oracle fixture.
-- The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target.
+- FI-02 Best lure and line per pool: all 225 lure/line combinations ranked for the selected pool and depth, switchable between Fishing EXP and fish quantity, with the selected and saved rows marked, a Use action, the tie explanation and the best-combination KPI; the ranking is pinned against an oracle fixture of every row.
+- The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target. The ranking holds efficiency and the EXP multiplier fixed across combinations, because the upstream recomputes them from the toolkit's POW and EXP through the skill systems.
 
 ## Upstream sources
 
