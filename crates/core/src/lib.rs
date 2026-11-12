@@ -38,6 +38,7 @@ pub mod optimize;
 pub mod pickle;
 pub mod prisma;
 pub mod project;
+pub mod royal_guardian;
 pub mod sailing;
 pub mod save;
 pub mod shape;
@@ -62,4 +63,5 @@ pub use model::{
     Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
     SimContext, Simulation, Target,
 };
+pub use royal_guardian::RoyalGuardian;
 pub use sailing::{AssignmentMode, Boat, Captain, Fleet, Goal, RouteContext, RouteMetrics};

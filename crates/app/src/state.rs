@@ -19,6 +19,7 @@ use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
+use crate::sections::royal_guardian::State as RoyalState;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::Trees as SailingTrees;
@@ -61,7 +62,9 @@ use idleon_core::stats::{ConstructionMode, MapVisibility, Skill};
 use idleon_core::statue::Estimate as StatueEstimate;
 use idleon_core::worship::Inputs as WorshipInputs;
 use idleon_core::worship::{self, Run, RunResult as WorshipRunResult};
-use idleon_core::{Cglunko, Clamworks, Fountain, Jar, game, monument, optimize, save, shape, sim};
+use idleon_core::{
+    Cglunko, Clamworks, Fountain, Jar, RoyalGuardian, game, monument, optimize, save, shape, sim,
+};
 
 /// What a strategy search stored: its recommendation, or why it could not run.
 pub type SearchOutcome = Result<worship::Search, String>;
@@ -229,6 +232,10 @@ pub struct AppState {
     pub mastery: Option<Mastery>,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub fountain: Option<Fountain>,
+    /// The Royal Guardian rows the loaded save carries, if it has them.
+    pub royal: Option<RoyalGuardian>,
+    /// The Royal Guardian section's world and selected outpost.
+    pub royal_state: RoyalState,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -740,6 +747,8 @@ impl AppState {
             fleet: Fleet::default(),
             sailing: RouteContext::default(),
             sailing_state: SailingState::default(),
+            royal: None,
+            royal_state: RoyalState::default(),
             sailing_trees,
             farm: Farm::default(),
             farming: FarmingState::default(),
@@ -1164,6 +1173,7 @@ impl AppState {
             self.jelly_state.adopt(&jelly);
         }
         self.fountain = imported.fountain;
+        self.royal = imported.royal;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet
@@ -1673,6 +1683,19 @@ impl AppState {
     pub fn open_observation(&mut self, obs: usize, cx: &mut Context<Self>) {
         self.research.tab = Tab::Rates;
         self.research.selected_observation = Some(obs);
+        cx.notify();
+    }
+
+    /// The world the Royal Guardian tables list.
+    pub fn set_royal_world(&mut self, world: usize, cx: &mut Context<Self>) {
+        self.royal_state.world = world.min(idleon_core::royal_guardian::WORLDS - 1);
+        self.royal_state.outpost = None;
+        cx.notify();
+    }
+
+    /// The outpost whose next range target the panel explains.
+    pub fn set_royal_outpost(&mut self, map: usize, cx: &mut Context<Self>) {
+        self.royal_state.outpost = Some(map);
         cx.notify();
     }
 

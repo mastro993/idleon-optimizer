@@ -183,6 +183,15 @@ pub struct JellyConfig {
     seed: u32,
 }
 
+/// The Royal Guardian section's config: the world the tables list and the
+/// outpost the range panel explains.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RoyalConfig {
+    world: usize,
+    outpost: Option<usize>,
+}
+
 /// The Jar section's config: its tab and the tier the rupie value projects.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -338,6 +347,13 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             tier: state.jar_tier,
         }),
     );
+    insert(
+        "royal-guardian",
+        value(&RoyalConfig {
+            world: state.royal_state.world,
+            outpost: state.royal_state.outpost,
+        }),
+    );
     insert("stats-all", value(&state.stats_all.context));
     insert(
         "ladle",
@@ -447,6 +463,7 @@ pub enum Config {
     Cog(CogConfig),
     Jelly(JellyConfig),
     Jar(JarConfig),
+    Royal(RoyalConfig),
     Ladle(LadleConfig),
     Spelunking(SpelunkingState),
     Coral(coral::Inputs),
@@ -708,6 +725,12 @@ pub fn assign(
                 state.spelunking.clamp(&inputs);
             }
         }
+        Config::Royal(config) => {
+            state.royal_state = crate::sections::royal_guardian::State {
+                world: config.world.min(idleon_core::royal_guardian::WORLDS - 1),
+                outpost: config.outpost,
+            };
+        }
         Config::Ladle(config) => {
             let characters = state
                 .ladle
@@ -792,6 +815,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "cog" => decode!(Cog, CogConfig),
         "jelly-operator" => decode!(Jelly, JellyConfig),
         "jar" => decode!(Jar, JarConfig),
+        "royal-guardian" => decode!(Royal, RoyalConfig),
         "ladle" => decode!(Ladle, LadleConfig),
         "spelunking" => decode!(Spelunking, SpelunkingState),
         "coral-god-rank" => decode!(Coral, coral::Inputs),
@@ -1435,6 +1459,7 @@ mod tests {
                 "worship-td",
                 "combat-sim",
                 "stats-all",
+                "royal-guardian",
             ]
             .contains(&id);
             let covered = configured || derived.contains(&id);

@@ -1,0 +1,2910 @@
+{
+ "counters": {
+  "builtOutposts": 54,
+  "outposts": 117,
+  "worldsUnlocked": 4,
+  "armoryLevels": 1999,
+  "units": 225,
+  "purified": 0,
+  "support": 0,
+  "savage": 0,
+  "militiaClearing": 1,
+  "militiaClearsPerHour": 588617.491749175
+ },
+ "talent": {
+  "purchasedLevel": 307,
+  "purchasedMulti": 3.171145685997171,
+  "allTalentLevels": 0,
+  "xtraClearKillz": 4.562926292629264,
+  "xtraClearKillzPurchasedOnly": 4.562926292629264
+ },
+ "crossSystem": {
+  "bigFish6": 1.1111111111111112,
+  "jelly2": 25
+ },
+ "worlds": [
+  {
+   "world": 0,
+   "unlocked": true,
+   "outposts": 22,
+   "built": 22,
+   "clearing": 0
+  },
+  {
+   "world": 1,
+   "unlocked": true,
+   "outposts": 16,
+   "built": 16,
+   "clearing": 0
+  },
+  {
+   "world": 2,
+   "unlocked": true,
+   "outposts": 15,
+   "built": 15,
+   "clearing": 0
+  },
+  {
+   "world": 3,
+   "unlocked": true,
+   "outposts": 14,
+   "built": 1,
+   "clearing": 1
+  },
+  {
+   "world": 4,
+   "unlocked": false,
+   "outposts": 13,
+   "built": 0,
+   "clearing": 0
+  },
+  {
+   "world": 5,
+   "unlocked": false,
+   "outposts": 14,
+   "built": 0,
+   "clearing": 0
+  },
+  {
+   "world": 6,
+   "unlocked": false,
+   "outposts": 23,
+   "built": 0,
+   "clearing": 0
+  }
+ ],
+ "built": [
+  {
+   "map": 1,
+   "type": 0,
+   "range": 224,
+   "units": 6,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 2,
+   "type": 0,
+   "range": 134,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 6,
+   "type": 0,
+   "range": 135,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 7,
+   "type": 0,
+   "range": 135,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 10,
+   "type": 0,
+   "range": 126,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 11,
+   "type": 0,
+   "range": 124,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 12,
+   "type": 0,
+   "range": 351,
+   "units": 11,
+   "guards": 3,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 13,
+   "type": 0,
+   "range": 143,
+   "units": 2,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 14,
+   "type": 0,
+   "range": 126,
+   "units": 5,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 15,
+   "type": 0,
+   "range": 131,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 16,
+   "type": 0,
+   "range": 135,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 17,
+   "type": 0,
+   "range": 126,
+   "units": 5,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 18,
+   "type": 0,
+   "range": 126,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 19,
+   "type": 0,
+   "range": 126,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 24,
+   "type": 0,
+   "range": 126,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 26,
+   "type": 0,
+   "range": 132,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 27,
+   "type": 0,
+   "range": 228,
+   "units": 9,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 28,
+   "type": 0,
+   "range": 134,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 30,
+   "type": 0,
+   "range": 134,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 31,
+   "type": 0,
+   "range": 200,
+   "units": 9,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 32,
+   "type": 0,
+   "range": 132,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 42,
+   "type": 0,
+   "range": 111,
+   "units": 5,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 51,
+   "type": 0,
+   "range": 208,
+   "units": 6,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 52,
+   "type": 0,
+   "range": 189,
+   "units": 2,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 53,
+   "type": 0,
+   "range": 126,
+   "units": 2,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 54,
+   "type": 0,
+   "range": 213,
+   "units": 7,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 55,
+   "type": 0,
+   "range": 122,
+   "units": 2,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 57,
+   "type": 0,
+   "range": 126,
+   "units": 2,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 58,
+   "type": 0,
+   "range": 115,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 59,
+   "type": 0,
+   "range": 115,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 60,
+   "type": 0,
+   "range": 111,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 61,
+   "type": 0,
+   "range": 286,
+   "units": 9,
+   "guards": 2,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 62,
+   "type": 0,
+   "range": 113,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 63,
+   "type": 0,
+   "range": 208,
+   "units": 4,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 64,
+   "type": 0,
+   "range": 184,
+   "units": 8,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 65,
+   "type": 0,
+   "range": 191,
+   "units": 5,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 67,
+   "type": 0,
+   "range": 113,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 73,
+   "type": 0,
+   "range": 111,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 101,
+   "type": 0,
+   "range": 186,
+   "units": 3,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 102,
+   "type": 0,
+   "range": 97,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 103,
+   "type": 0,
+   "range": 97,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 104,
+   "type": 0,
+   "range": 97,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 105,
+   "type": 0,
+   "range": 97,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 106,
+   "type": 0,
+   "range": 95,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 107,
+   "type": 0,
+   "range": 184,
+   "units": 6,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 108,
+   "type": 0,
+   "range": 171,
+   "units": 5,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 109,
+   "type": 0,
+   "range": 98,
+   "units": 4,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 110,
+   "type": 0,
+   "range": 95,
+   "units": 3,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 111,
+   "type": 0,
+   "range": 228,
+   "units": 4,
+   "guards": 2,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 112,
+   "type": 0,
+   "range": 179,
+   "units": 6,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 113,
+   "type": 0,
+   "range": 92,
+   "units": 2,
+   "guards": 0,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 116,
+   "type": 0,
+   "range": 294,
+   "units": 5,
+   "guards": 3,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 117,
+   "type": 0,
+   "range": 163,
+   "units": 3,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  },
+  {
+   "map": 151,
+   "type": 0,
+   "range": 155,
+   "units": 3,
+   "guards": 1,
+   "purified": false,
+   "glorified": false
+  }
+ ],
+ "rangeTargets": [
+  {
+   "map": 1,
+   "range": 224,
+   "target": {
+    "resource": 11,
+    "distance": 239.17566765873153,
+    "reach": 239,
+    "possible": true,
+    "currentLevel": 29,
+    "requiredRange": 225,
+    "targetLevel": 30,
+    "levelsNeeded": 1,
+    "reason": null
+   }
+  },
+  {
+   "map": 2,
+   "range": 134,
+   "target": {
+    "resource": 9,
+    "distance": 176.9547964876906,
+    "reach": 149,
+    "possible": true,
+    "currentLevel": 27,
+    "requiredRange": 162,
+    "targetLevel": 48,
+    "levelsNeeded": 21,
+    "reason": null
+   }
+  },
+  {
+   "map": 6,
+   "range": 135,
+   "target": {
+    "resource": 1,
+    "distance": 183.273020382161,
+    "reach": 150,
+    "possible": true,
+    "currentLevel": 28,
+    "requiredRange": 169,
+    "targetLevel": 55,
+    "levelsNeeded": 27,
+    "reason": null
+   }
+  },
+  {
+   "map": 7,
+   "range": 135,
+   "target": {
+    "resource": 8,
+    "distance": 219.61101975993827,
+    "reach": 150,
+    "possible": true,
+    "currentLevel": 28,
+    "requiredRange": 205,
+    "targetLevel": 99,
+    "levelsNeeded": 71,
+    "reason": null
+   }
+  },
+  {
+   "map": 10,
+   "range": 126,
+   "target": {
+    "resource": 8,
+    "distance": 166.48123017325406,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 152,
+    "targetLevel": 40,
+    "levelsNeeded": 18,
+    "reason": null
+   }
+  },
+  {
+   "map": 11,
+   "range": 124,
+   "target": {
+    "resource": 8,
+    "distance": 144.66858677681208,
+    "reach": 139,
+    "possible": true,
+    "currentLevel": 21,
+    "requiredRange": 130,
+    "targetLevel": 25,
+    "levelsNeeded": 4,
+    "reason": null
+   }
+  },
+  {
+   "map": 12,
+   "range": 351,
+   "target": {
+    "resource": 15,
+    "distance": 379.52733761878073,
+    "reach": 366,
+    "possible": true,
+    "currentLevel": 21,
+    "requiredRange": 365,
+    "targetLevel": 30,
+    "levelsNeeded": 9,
+    "reason": null
+   }
+  },
+  {
+   "map": 13,
+   "range": 143,
+   "target": {
+    "resource": 15,
+    "distance": 159.53056133543816,
+    "reach": 158,
+    "possible": true,
+    "currentLevel": 33,
+    "requiredRange": 145,
+    "targetLevel": 35,
+    "levelsNeeded": 2,
+    "reason": null
+   }
+  },
+  {
+   "map": 14,
+   "range": 126,
+   "target": {
+    "resource": 8,
+    "distance": 151.3803157613301,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 137,
+    "targetLevel": 29,
+    "levelsNeeded": 7,
+    "reason": null
+   }
+  },
+  {
+   "map": 15,
+   "range": 131,
+   "target": {
+    "resource": 2,
+    "distance": 161.1986352299547,
+    "reach": 146,
+    "possible": true,
+    "currentLevel": 25,
+    "requiredRange": 147,
+    "targetLevel": 36,
+    "levelsNeeded": 11,
+    "reason": null
+   }
+  },
+  {
+   "map": 16,
+   "range": 135,
+   "target": {
+    "resource": 9,
+    "distance": 153.00326793895613,
+    "reach": 150,
+    "possible": true,
+    "currentLevel": 28,
+    "requiredRange": 139,
+    "targetLevel": 31,
+    "levelsNeeded": 3,
+    "reason": null
+   }
+  },
+  {
+   "map": 17,
+   "range": 126,
+   "target": {
+    "resource": 10,
+    "distance": 154.98387012847496,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 140,
+    "targetLevel": 31,
+    "levelsNeeded": 9,
+    "reason": null
+   }
+  },
+  {
+   "map": 18,
+   "range": 126,
+   "target": {
+    "resource": 15,
+    "distance": 154.32433379088343,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 140,
+    "targetLevel": 31,
+    "levelsNeeded": 9,
+    "reason": null
+   }
+  },
+  {
+   "map": 19,
+   "range": 126,
+   "target": {
+    "resource": 9,
+    "distance": 173.0028901492689,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 159,
+    "targetLevel": 46,
+    "levelsNeeded": 24,
+    "reason": null
+   }
+  },
+  {
+   "map": 24,
+   "range": 126,
+   "target": {
+    "resource": 13,
+    "distance": 149.30840565755165,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 135,
+    "targetLevel": 28,
+    "levelsNeeded": 6,
+    "reason": null
+   }
+  },
+  {
+   "map": 26,
+   "range": 132,
+   "target": {
+    "resource": 6,
+    "distance": 155.283611498445,
+    "reach": 147,
+    "possible": true,
+    "currentLevel": 26,
+    "requiredRange": 141,
+    "targetLevel": 32,
+    "levelsNeeded": 6,
+    "reason": null
+   }
+  },
+  {
+   "map": 27,
+   "range": 228,
+   "target": {
+    "resource": 13,
+    "distance": 271.89703933658416,
+    "reach": 243,
+    "possible": true,
+    "currentLevel": 28,
+    "requiredRange": 257,
+    "targetLevel": 50,
+    "levelsNeeded": 22,
+    "reason": null
+   }
+  },
+  {
+   "map": 28,
+   "range": 134,
+   "target": {
+    "resource": 3,
+    "distance": 193.6517492820553,
+    "reach": 149,
+    "possible": true,
+    "currentLevel": 27,
+    "requiredRange": 179,
+    "targetLevel": 65,
+    "levelsNeeded": 38,
+    "reason": null
+   }
+  },
+  {
+   "map": 30,
+   "range": 134,
+   "target": {
+    "resource": 14,
+    "distance": 173.78722622793654,
+    "reach": 149,
+    "possible": true,
+    "currentLevel": 27,
+    "requiredRange": 159,
+    "targetLevel": 46,
+    "levelsNeeded": 19,
+    "reason": null
+   }
+  },
+  {
+   "map": 31,
+   "range": 200,
+   "target": {
+    "resource": 7,
+    "distance": 242.83739415501887,
+    "reach": 215,
+    "possible": true,
+    "currentLevel": 17,
+    "requiredRange": 228,
+    "targetLevel": 35,
+    "levelsNeeded": 18,
+    "reason": null
+   }
+  },
+  {
+   "map": 32,
+   "range": 132,
+   "target": {
+    "resource": 8,
+    "distance": 175.41379649275027,
+    "reach": 147,
+    "possible": true,
+    "currentLevel": 26,
+    "requiredRange": 161,
+    "targetLevel": 48,
+    "levelsNeeded": 22,
+    "reason": null
+   }
+  },
+  {
+   "map": 42,
+   "range": 111,
+   "target": {
+    "resource": 7,
+    "distance": 134.9518432626987,
+    "reach": 126,
+    "possible": true,
+    "currentLevel": 14,
+    "requiredRange": 120,
+    "targetLevel": 19,
+    "levelsNeeded": 5,
+    "reason": null
+   }
+  },
+  {
+   "map": 51,
+   "range": 208,
+   "target": {
+    "resource": 29,
+    "distance": 240.84019598065436,
+    "reach": 223,
+    "possible": true,
+    "currentLevel": 16,
+    "requiredRange": 226,
+    "targetLevel": 27,
+    "levelsNeeded": 11,
+    "reason": null
+   }
+  },
+  {
+   "map": 52,
+   "range": 189,
+   "target": {
+    "resource": 31,
+    "distance": 222.29934772733813,
+    "reach": 204,
+    "possible": true,
+    "currentLevel": 21,
+    "requiredRange": 208,
+    "targetLevel": 33,
+    "levelsNeeded": 12,
+    "reason": null
+   }
+  },
+  {
+   "map": 53,
+   "range": 126,
+   "target": {
+    "resource": 26,
+    "distance": 143.58621103713267,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 129,
+    "targetLevel": 24,
+    "levelsNeeded": 2,
+    "reason": null
+   }
+  },
+  {
+   "map": 54,
+   "range": 213,
+   "target": {
+    "resource": 28,
+    "distance": 243.8708674688307,
+    "reach": 228,
+    "possible": true,
+    "currentLevel": 21,
+    "requiredRange": 229,
+    "targetLevel": 31,
+    "levelsNeeded": 10,
+    "reason": null
+   }
+  },
+  {
+   "map": 55,
+   "range": 122,
+   "target": {
+    "resource": 24,
+    "distance": 158.3161394173064,
+    "reach": 137,
+    "possible": true,
+    "currentLevel": 20,
+    "requiredRange": 144,
+    "targetLevel": 34,
+    "levelsNeeded": 14,
+    "reason": null
+   }
+  },
+  {
+   "map": 57,
+   "range": 126,
+   "target": {
+    "resource": 32,
+    "distance": 206.02184350209083,
+    "reach": 141,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 192,
+    "targetLevel": 80,
+    "levelsNeeded": 58,
+    "reason": null
+   }
+  },
+  {
+   "map": 58,
+   "range": 115,
+   "target": {
+    "resource": 28,
+    "distance": 172.69916039170545,
+    "reach": 130,
+    "possible": true,
+    "currentLevel": 16,
+    "requiredRange": 158,
+    "targetLevel": 45,
+    "levelsNeeded": 29,
+    "reason": null
+   }
+  },
+  {
+   "map": 59,
+   "range": 115,
+   "target": {
+    "resource": 25,
+    "distance": 140.11780757633912,
+    "reach": 130,
+    "possible": true,
+    "currentLevel": 16,
+    "requiredRange": 126,
+    "targetLevel": 22,
+    "levelsNeeded": 6,
+    "reason": null
+   }
+  },
+  {
+   "map": 60,
+   "range": 111,
+   "target": {
+    "resource": 32,
+    "distance": 134.18271125595876,
+    "reach": 126,
+    "possible": true,
+    "currentLevel": 14,
+    "requiredRange": 120,
+    "targetLevel": 19,
+    "levelsNeeded": 5,
+    "reason": null
+   }
+  },
+  {
+   "map": 61,
+   "range": 286,
+   "target": {
+    "resource": 30,
+    "distance": 354.53913747286066,
+    "reach": 301,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 340,
+    "targetLevel": 66,
+    "levelsNeeded": 44,
+    "reason": null
+   }
+  },
+  {
+   "map": 62,
+   "range": 113,
+   "target": {
+    "resource": 31,
+    "distance": 137.6117727521886,
+    "reach": 128,
+    "possible": true,
+    "currentLevel": 15,
+    "requiredRange": 123,
+    "targetLevel": 21,
+    "levelsNeeded": 6,
+    "reason": null
+   }
+  },
+  {
+   "map": 63,
+   "range": 208,
+   "target": {
+    "resource": 29,
+    "distance": 223.0201784592596,
+    "reach": 223,
+    "possible": true,
+    "currentLevel": 23,
+    "requiredRange": 209,
+    "targetLevel": 24,
+    "levelsNeeded": 1,
+    "reason": null
+   }
+  },
+  {
+   "map": 64,
+   "range": 184,
+   "target": {
+    "resource": 29,
+    "distance": 224.2074931843269,
+    "reach": 199,
+    "possible": true,
+    "currentLevel": 18,
+    "requiredRange": 210,
+    "targetLevel": 35,
+    "levelsNeeded": 17,
+    "reason": null
+   }
+  },
+  {
+   "map": 65,
+   "range": 191,
+   "target": {
+    "resource": 33,
+    "distance": 217.94724132229797,
+    "reach": 206,
+    "possible": true,
+    "currentLevel": 22,
+    "requiredRange": 203,
+    "targetLevel": 30,
+    "levelsNeeded": 8,
+    "reason": null
+   }
+  },
+  {
+   "map": 67,
+   "range": 113,
+   "target": {
+    "resource": 26,
+    "distance": 142.00352108310554,
+    "reach": 128,
+    "possible": true,
+    "currentLevel": 15,
+    "requiredRange": 128,
+    "targetLevel": 24,
+    "levelsNeeded": 9,
+    "reason": null
+   }
+  },
+  {
+   "map": 73,
+   "range": 111,
+   "target": {
+    "resource": 27,
+    "distance": 131.2173768980313,
+    "reach": 126,
+    "possible": true,
+    "currentLevel": 14,
+    "requiredRange": 117,
+    "targetLevel": 17,
+    "levelsNeeded": 3,
+    "reason": null
+   }
+  },
+  {
+   "map": 101,
+   "range": 186,
+   "target": {
+    "resource": 47,
+    "distance": 201.37527157027003,
+    "reach": 201,
+    "possible": true,
+    "currentLevel": 10,
+    "requiredRange": 187,
+    "targetLevel": 11,
+    "levelsNeeded": 1,
+    "reason": null
+   }
+  },
+  {
+   "map": 102,
+   "range": 97,
+   "target": {
+    "resource": 40,
+    "distance": 151.74320413119003,
+    "reach": 112,
+    "possible": true,
+    "currentLevel": 7,
+    "requiredRange": 137,
+    "targetLevel": 29,
+    "levelsNeeded": 22,
+    "reason": null
+   }
+  },
+  {
+   "map": 103,
+   "range": 97,
+   "target": {
+    "resource": 43,
+    "distance": 142.84257068535274,
+    "reach": 112,
+    "possible": true,
+    "currentLevel": 7,
+    "requiredRange": 128,
+    "targetLevel": 24,
+    "levelsNeeded": 17,
+    "reason": null
+   }
+  },
+  {
+   "map": 104,
+   "range": 97,
+   "target": {
+    "resource": 46,
+    "distance": 127.09445306542689,
+    "reach": 112,
+    "possible": true,
+    "currentLevel": 7,
+    "requiredRange": 113,
+    "targetLevel": 15,
+    "levelsNeeded": 8,
+    "reason": null
+   }
+  },
+  {
+   "map": 105,
+   "range": 97,
+   "target": {
+    "resource": 44,
+    "distance": 144.2220510185596,
+    "reach": 112,
+    "possible": true,
+    "currentLevel": 7,
+    "requiredRange": 130,
+    "targetLevel": 25,
+    "levelsNeeded": 18,
+    "reason": null
+   }
+  },
+  {
+   "map": 106,
+   "range": 95,
+   "target": {
+    "resource": 45,
+    "distance": 120.4865137681392,
+    "reach": 110,
+    "possible": true,
+    "currentLevel": 6,
+    "requiredRange": 106,
+    "targetLevel": 12,
+    "levelsNeeded": 6,
+    "reason": null
+   }
+  },
+  {
+   "map": 107,
+   "range": 184,
+   "target": {
+    "resource": 54,
+    "distance": 205.30221625691235,
+    "reach": 199,
+    "possible": true,
+    "currentLevel": 9,
+    "requiredRange": 191,
+    "targetLevel": 13,
+    "levelsNeeded": 4,
+    "reason": null
+   }
+  },
+  {
+   "map": 108,
+   "range": 171,
+   "target": {
+    "resource": 52,
+    "distance": 220.3020653557292,
+    "reach": 186,
+    "possible": true,
+    "currentLevel": 5,
+    "requiredRange": 206,
+    "targetLevel": 23,
+    "levelsNeeded": 18,
+    "reason": null
+   }
+  },
+  {
+   "map": 109,
+   "range": 98,
+   "target": {
+    "resource": 51,
+    "distance": 120.15406776301833,
+    "reach": 113,
+    "possible": true,
+    "currentLevel": 5,
+    "requiredRange": 106,
+    "targetLevel": 9,
+    "levelsNeeded": 4,
+    "reason": null
+   }
+  },
+  {
+   "map": 110,
+   "range": 95,
+   "target": {
+    "resource": 51,
+    "distance": 125.32358118087753,
+    "reach": 110,
+    "possible": true,
+    "currentLevel": 6,
+    "requiredRange": 111,
+    "targetLevel": 14,
+    "levelsNeeded": 8,
+    "reason": null
+   }
+  },
+  {
+   "map": 111,
+   "range": 228,
+   "target": {
+    "resource": 46,
+    "distance": 283.82565070831777,
+    "reach": 243,
+    "possible": true,
+    "currentLevel": 4,
+    "requiredRange": 269,
+    "targetLevel": 25,
+    "levelsNeeded": 21,
+    "reason": null
+   }
+  },
+  {
+   "map": 112,
+   "range": 179,
+   "target": {
+    "resource": 53,
+    "distance": 226.15260334561705,
+    "reach": 194,
+    "possible": true,
+    "currentLevel": 5,
+    "requiredRange": 212,
+    "targetLevel": 22,
+    "levelsNeeded": 17,
+    "reason": null
+   }
+  },
+  {
+   "map": 113,
+   "range": 92,
+   "target": {
+    "resource": 51,
+    "distance": 124.47088012864697,
+    "reach": 107,
+    "possible": true,
+    "currentLevel": 5,
+    "requiredRange": 110,
+    "targetLevel": 14,
+    "levelsNeeded": 9,
+    "reason": null
+   }
+  },
+  {
+   "map": 116,
+   "range": 294,
+   "target": {
+    "resource": 54,
+    "distance": 397.0604487984166,
+    "reach": 309,
+    "possible": true,
+    "currentLevel": 2,
+    "requiredRange": 383,
+    "targetLevel": 60,
+    "levelsNeeded": 58,
+    "reason": null
+   }
+  },
+  {
+   "map": 117,
+   "range": 163,
+   "target": {
+    "resource": 45,
+    "distance": 183.8069639594757,
+    "reach": 178,
+    "possible": true,
+    "currentLevel": 3,
+    "requiredRange": 169,
+    "targetLevel": 6,
+    "levelsNeeded": 3,
+    "reason": null
+   }
+  },
+  {
+   "map": 151,
+   "range": 155,
+   "target": {
+    "resource": 76,
+    "distance": 170.41713528867925,
+    "reach": 170,
+    "possible": true,
+    "currentLevel": 4,
+    "requiredRange": 156,
+    "targetLevel": 5,
+    "levelsNeeded": 1,
+    "reason": null
+   }
+  }
+ ],
+ "clearing": [
+  {
+   "map": 1,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 156.39405897989235,
+   "remaining": 154.39405897989235,
+   "ratePerHour": 2354469.9669967,
+   "assignments": 4,
+   "etaHours": null
+  },
+  {
+   "map": 2,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 188.29877301257415,
+   "remaining": 186.29877301257415,
+   "ratePerHour": 2354469.9669967,
+   "assignments": 4,
+   "etaHours": null
+  },
+  {
+   "map": 6,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 8000,
+   "remaining": 7998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 7,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 15000,
+   "remaining": 14998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 10,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 25000,
+   "remaining": 24997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 11,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 60000,
+   "remaining": 59997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 12,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 250000,
+   "remaining": 249997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 13,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 75000,
+   "remaining": 74999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 14,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 500,
+   "remaining": 497,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 15,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 230985,
+   "remaining": 230983,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 16,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 1000,
+   "remaining": 998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 17,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 5000,
+   "remaining": 4997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 18,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 200000,
+   "remaining": 199997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 19,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 2000,
+   "remaining": 1997,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 24,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 3,
+   "requirement": 7500,
+   "remaining": 7497,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 26,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 20000,
+   "remaining": 19998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 27,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 60000,
+   "remaining": 59998,
+   "ratePerHour": 588617.491749175,
+   "assignments": 1,
+   "etaHours": null
+  },
+  {
+   "map": 28,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 100000,
+   "remaining": 99998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 30,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 125000,
+   "remaining": 124998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 31,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 4,
+   "requirement": 500000,
+   "remaining": 499996,
+   "ratePerHour": 588617.491749175,
+   "assignments": 1,
+   "etaHours": null
+  },
+  {
+   "map": 32,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 750000,
+   "remaining": 749998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 42,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 4,
+   "requirement": 60000,
+   "remaining": 59996,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 51,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 38720.91344224774,
+   "remaining": 38718.91344224774,
+   "ratePerHour": 1177234.98349835,
+   "assignments": 2,
+   "etaHours": null
+  },
+  {
+   "map": 52,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 48687.12010730218,
+   "remaining": 48686.12010730218,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 53,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 63784.041720274705,
+   "remaining": 63783.041720274705,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 54,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 250000,
+   "remaining": 249999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 55,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 800000,
+   "remaining": 799999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 57,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 103769.05823069968,
+   "remaining": 103768.05823069968,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 58,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 136210.18969859064,
+   "remaining": 136208.18969859064,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 59,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 171758.96475738438,
+   "remaining": 171756.96475738438,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 60,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 300513.00000000006,
+   "remaining": 300511.00000000006,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 61,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 1500000,
+   "remaining": 1499999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 62,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 664316.9255880131,
+   "remaining": 664314.9255880131,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 63,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 1396956.7576894553,
+   "remaining": 1396955.7576894553,
+   "ratePerHour": 1765852.4752475251,
+   "assignments": 3,
+   "etaHours": null
+  },
+  {
+   "map": 64,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 2204341.645370259,
+   "remaining": 2204339.645370259,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 65,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 3000000,
+   "remaining": 2999999,
+   "ratePerHour": 1765852.4752475251,
+   "assignments": 3,
+   "etaHours": null
+  },
+  {
+   "map": 67,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 125000,
+   "remaining": 124998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 73,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 250000,
+   "remaining": 249998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 101,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1514470.0153365699,
+   "remaining": 1514470.0153365699,
+   "ratePerHour": 588617.491749175,
+   "assignments": 1,
+   "etaHours": null
+  },
+  {
+   "map": 102,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 6359399.280013278,
+   "remaining": 6359397.280013278,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 103,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 3341404.690226821,
+   "remaining": 3341402.690226821,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 104,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 5264857.409761662,
+   "remaining": 5264855.409761662,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 105,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 7374450,
+   "remaining": 7374448,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 106,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 11620583.517784858,
+   "remaining": 11620581.517784858,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 107,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 16277633.35683399,
+   "remaining": 16277631.35683399,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 108,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 23513779.21919682,
+   "remaining": 23513777.21919682,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 109,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 33686333.42247464,
+   "remaining": 33686331.42247464,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 110,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 42469053,
+   "remaining": 42469051,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 111,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 54533197.5768036,
+   "remaining": 54533195.5768036,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 112,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 80000000,
+   "remaining": 79999999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 113,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 120000000,
+   "remaining": 119999999,
+   "ratePerHour": 2354469.9669967,
+   "assignments": 4,
+   "etaHours": null
+  },
+  {
+   "map": 116,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 2,
+   "requirement": 40000000,
+   "remaining": 39999998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 117,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 1,
+   "requirement": 75000000,
+   "remaining": 74999999,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 151,
+   "state": "built",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 30212514.367711663,
+   "remaining": 30212514.367711663,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 152,
+   "state": "clearing",
+   "active": true,
+   "accruing": true,
+   "progress": 55423464.4733687,
+   "requirement": 76056907.94396187,
+   "remaining": 20633443.470593177,
+   "ratePerHour": 588617.491749175,
+   "assignments": 1,
+   "etaHours": 35.05407800450758
+  },
+  {
+   "map": 153,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 119670146.34872115,
+   "remaining": 119670146.34872115,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 154,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 174345767.99050865,
+   "remaining": 174345767.99050865,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 155,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 292610400,
+   "remaining": 292610400,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 156,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 460405472.3639257,
+   "remaining": 460405472.3639257,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 157,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 724422046.7912369,
+   "remaining": 724422046.7912369,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 158,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1013189618.0858392,
+   "remaining": 1013189618.0858392,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 159,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1328499038.3876758,
+   "remaining": 1328499038.3876758,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 160,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1765160235,
+   "remaining": 1765160235,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 161,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2436302001.8841066,
+   "remaining": 2436302001.8841066,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 162,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 3066712216.0829034,
+   "remaining": 3066712216.0829034,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 163,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 3753016673.638796,
+   "remaining": 3753016673.638796,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 166,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4000000000,
+   "remaining": 4000000000,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 201,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 361952474.8243044,
+   "remaining": 361952474.8243044,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 202,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 631790128.4119037,
+   "remaining": 631790128.4119037,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 203,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1058683325.8514674,
+   "remaining": 1058683325.8514674,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 204,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1385957450.8044214,
+   "remaining": 1385957450.8044214,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 205,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2177283150,
+   "remaining": 2177283150,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 206,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 3040377997.5241566,
+   "remaining": 3040377997.5241566,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 207,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 6368416375.99199,
+   "remaining": 6368416375.99199,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 208,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 10004531140.296366,
+   "remaining": 10004531140.296366,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 209,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 15716725151.222141,
+   "remaining": 15716725151.222141,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 210,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 21946985625.000004,
+   "remaining": 21946985625.000004,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 211,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 38308726129.804375,
+   "remaining": 38308726129.804375,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 212,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 120363012659.24863,
+   "remaining": 120363012659.24863,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 213,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2521144312.2146845,
+   "remaining": 2521144312.2146845,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 251,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2890988075.0043516,
+   "remaining": 2890988075.0043516,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 252,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 5038216291.730625,
+   "remaining": 5038216291.730625,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 253,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 10536312266.4056,
+   "remaining": 10536312266.4056,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 254,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 27542955878.953068,
+   "remaining": 27542955878.953068,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 255,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 46080003900,
+   "remaining": 46080003900,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 256,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 132503448019.36615,
+   "remaining": 132503448019.36615,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 257,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 403056998868.45,
+   "remaining": 403056998868.45,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 258,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1053630843585.5599,
+   "remaining": 1053630843585.5599,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 259,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1652577123597.184,
+   "remaining": 1652577123597.184,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 260,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 3600000003975,
+   "remaining": 3600000003975,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 261,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 10540046694110.035,
+   "remaining": 10540046694110.035,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 262,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 15744413868788.207,
+   "remaining": 15744413868788.207,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 263,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 24694472808095.62,
+   "remaining": 24694472808095.62,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 264,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 17218379.996220667,
+   "remaining": 17218379.996220667,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 301,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 38484588415.86567,
+   "remaining": 38484588415.86567,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 302,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 100441030555.11948,
+   "remaining": 100441030555.11948,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 303,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4194261162099.7334,
+   "remaining": 4194261162099.7334,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 304,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2189322854876.4438,
+   "remaining": 2189322854876.4438,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 305,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 9142272004650,
+   "remaining": 9142272004650,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 307,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 124546872182828.12,
+   "remaining": 124546872182828.12,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 308,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 31205303016344.215,
+   "remaining": 31205303016344.215,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 309,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4710,
+   "remaining": 4710,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 310,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 283410432004725,
+   "remaining": 283410432004725,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 311,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 591738960911250.5,
+   "remaining": 591738960911250.5,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 312,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4755,
+   "remaining": 4755,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 315,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1405715747519.9998,
+   "remaining": 1405715747519.9998,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 316,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4402537873959.438,
+   "remaining": 4402537873959.438,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 317,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 766013082649312.2,
+   "remaining": 766013082649312.2,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 318,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 47981273915556.83,
+   "remaining": 47981273915556.83,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 319,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 104355387255328.56,
+   "remaining": 104355387255328.56,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 320,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 217885940126474.94,
+   "remaining": 217885940126474.94,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 321,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 318450239206337.75,
+   "remaining": 318450239206337.75,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 322,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 474928111244484.1,
+   "remaining": 474928111244484.1,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 323,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 743709745620953.5,
+   "remaining": 743709745620953.5,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 324,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 1035205441529583.4,
+   "remaining": 1035205441529583.4,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 325,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 2161428526011221.5,
+   "remaining": 2161428526011221.5,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  },
+  {
+   "map": 326,
+   "state": "waiting-militia",
+   "active": false,
+   "accruing": false,
+   "progress": 0,
+   "requirement": 4965,
+   "remaining": 4965,
+   "ratePerHour": 0,
+   "assignments": 0,
+   "etaHours": null
+  }
+ ],
+ "names": {
+  "1": "Spore_Meadows",
+  "2": "Froggy_Fields",
+  "6": "Tunnels_Entrance",
+  "7": "Freefall_Caverns",
+  "10": "The_Ol'_Straightaway",
+  "11": "Echoing_Egress",
+  "12": "Slip_Slidy_Ledges",
+  "13": "The_Base_Of_The_Bark",
+  "14": "Valley_Of_The_Beans",
+  "15": "Rats_Nest",
+  "16": "Jungle_Perimeter",
+  "17": "Birch_Enclave",
+  "18": "Hollowed_Trunk",
+  "19": "Winding_Willows",
+  "24": "Vegetable_Patch",
+  "26": "Forest_Outskirts",
+  "27": "Encroaching_Forest_Villas",
+  "28": "Tucked_Away",
+  "30": "The_Roots",
+  "31": "Where_the_Branches_End",
+  "32": "Motherlode_Pit",
+  "42": "Grand_Owl_Perch",
+  "51": "Jar_Bridge",
+  "52": "The_Mimic_Hole",
+  "53": "Dessert_Dunes",
+  "54": "Salty_Shores",
+  "55": "Faraway_Piers",
+  "57": "The_Grandioso_Canyon",
+  "58": "Shifty_Sandbox",
+  "59": "Pincer_Plateau",
+  "60": "Slamabam_Straightaway",
+  "61": "Deepwater_Docks",
+  "62": "The_Ring",
+  "63": "Up_Up_Down_Down",
+  "64": "Sands_of_Time",
+  "65": "Djonnuttown",
+  "67": "Bandit_Bob's_Hideout",
+  "73": "The_Oasis",
+  "101": "Steep_Sheep_Ledge",
+  "102": "Trappers_Folley",
+  "103": "Snowfield_Outskirts",
+  "104": "The_Stache_Split",
+  "105": "Refrigeration_Station",
+  "106": "Mamooooth_Mountain",
+  "107": "Rollin'_Tundra",
+  "108": "Signature_Slopes",
+  "109": "Thermonuclear_Climb",
+  "110": "Waterlogged_Entrance",
+  "111": "Cryo_Catacombs",
+  "112": "Overpass_of_Sound",
+  "113": "Crystal_Basecamp",
+  "116": "Wam_Wonderland",
+  "117": "Hell_Hath_Frozen_Over",
+  "151": "Spaceway_Raceway",
+  "152": "TV_Outpost",
+  "153": "Donut_Drive-In",
+  "154": "Outskirts_of_Fallstar_Isle",
+  "155": "Mountainous_Deugh",
+  "156": "Wurm_Highway",
+  "157": "Jelly_Cube_Bridge",
+  "158": "Cocoa_Tunnel",
+  "159": "Standstill_Plains",
+  "160": "Shelled_Shores",
+  "161": "The_Untraveled_Octopath",
+  "162": "Flamboyant_Bayou",
+  "163": "Enclave_of_Eyes",
+  "166": "The_Rift",
+  "201": "Naut_Sake_Perimeter",
+  "202": "Niagrilled_Falls",
+  "203": "The_Killer_Roundabout",
+  "204": "Cracker_Jack_Lake",
+  "205": "The_Great_Molehill",
+  "206": "Erruption_River",
+  "207": "Mount_Doomish",
+  "208": "OJ_Bay",
+  "209": "Lampar_Lake",
+  "210": "Spitfire_River",
+  "211": "Miner_Mole_Outskirts",
+  "212": "Crawly_Catacombs",
+  "213": "The_Worm_Nest",
+  "251": "Gooble_Goop_Creek",
+  "252": "Picnic_Bridgeways",
+  "253": "Irrigation_Station",
+  "254": "Troll_Playground",
+  "255": "Edge_of_the_Valley",
+  "256": "Bamboo_Laboredge",
+  "257": "Lightway_Path",
+  "258": "Troll_Broodnest",
+  "259": "Above_the_Clouds",
+  "260": "Sleepy_Skyline",
+  "261": "Dozey_Dogpark",
+  "262": "Yolkrock_Basin",
+  "263": "Chieftain_Stairway",
+  "264": "Emperor's_Castle_Doorstep",
+  "301": "Refraction_Bend",
+  "302": "Doodle_Reef",
+  "303": "Seaweed_Street",
+  "304": "Barnacle_Curb",
+  "305": "Balloon_Bay",
+  "307": "Plastic_Basin",
+  "308": "Puffpuff_Overpass",
+  "309": "Pinpoint_Summit",
+  "310": "Middle_of_Nowhere",
+  "311": "Coralcave_Outskirts",
+  "312": "Coralcave_Perimeter",
+  "315": "Deep_End_of_the_Koipond",
+  "316": "Minefield",
+  "317": "Pirate_Upper_Deck",
+  "318": "Sushi_Perimeter",
+  "319": "Jellofish_Fields",
+  "320": "Where_the_Kelp_Meets_Trench",
+  "321": "Trench_Precipice",
+  "322": "The_Glowing_Underbelly",
+  "323": "Ancient_Fissure",
+  "324": "Molten_Edge",
+  "325": "Pirate_Mess_Hall",
+  "326": "Dreadnaught_Chamber"
+ },
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/systems/w7/royal-guardian.js",
+   "js/stats/data/w7/royal-guardian.js",
+   "js/stats/data/common/talent.js"
+  ],
+  "save": "fixtures/data.json"
+ }
+}
