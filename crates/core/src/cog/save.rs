@@ -12,7 +12,10 @@
 
 use serde_json::{Map, Value};
 
-use super::{BOARD_SIZE, Board, Cog, Direction, compute_totals, empty_board};
+use super::{
+    BOARD_SIZE, Board, Cog, Direction, compute_totals, empty_board, infer_construction_level,
+    stat_tier,
+};
 use crate::save::json;
 
 /// The first shelf slot.
@@ -34,6 +37,11 @@ pub struct CogSave {
     /// The highest saved Construction level (`Lv0_<n>[8]`), or the upstream
     /// fallback of 100 when the save carries none.
     pub construction_level: u32,
+    /// The effective level the board's own rolls reveal, from `findMaxConLevel`:
+    /// talents, stamps and star signs lift it above the saved level, and a roll
+    /// that could only have happened at a higher level raises it. Roll ranges
+    /// and roll targets use this one.
+    pub max_construction_level: u32,
     /// Whether the save carried `CogO` at all, even if every slot is Blank.
     pub loaded: bool,
 }
@@ -45,6 +53,7 @@ impl Default for CogSave {
             shelf: Vec::new(),
             shelf_slots: vec![None; SHELF_SLOTS],
             construction_level: 100,
+            max_construction_level: 100,
             loaded: false,
         }
     }
@@ -71,6 +80,7 @@ impl CogSave {
             warnings.push("CogO: not in the save; the cog board stays empty".into());
             return Self {
                 construction_level,
+                max_construction_level: construction_level,
                 ..Self::default()
             };
         }
@@ -112,11 +122,14 @@ impl CogSave {
             shelf_slots[slot - SHELF_START] = Some(cog);
         }
 
+        let max_construction_level =
+            effective_construction_level(construction_level, &board, &shelf_slots);
         Self {
             board,
             shelf,
             shelf_slots,
             construction_level,
+            max_construction_level,
             loaded: true,
         }
     }
@@ -173,6 +186,27 @@ fn recover_raw_player_stats(board: &mut Board) {
             cog.b /= divisor;
         }
     }
+}
+
+/// `findMaxConLevel`: the saved level, raised when a cog's own `d` could only
+/// have rolled at a higher level. The player and tiny-board slots carry no stat
+/// tier, so the board and shelf the section decodes hold every cog that counts.
+fn effective_construction_level(
+    construction_level: u32,
+    board: &Board,
+    shelf_slots: &[Option<Cog>],
+) -> u32 {
+    let mut max = construction_level;
+    for cog in board.iter().chain(shelf_slots.iter()).flatten() {
+        let Some(tier) = stat_tier(&cog.name) else {
+            continue;
+        };
+        if cog.d <= 0.0 {
+            continue;
+        }
+        max = max.max(infer_construction_level(cog.d, tier));
+    }
+    max
 }
 
 /// Whether a save carries cog fields, so a cog-only document still imports.

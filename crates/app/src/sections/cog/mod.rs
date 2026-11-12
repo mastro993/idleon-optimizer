@@ -1,15 +1,16 @@
 //! The Cog Board Optimizer section: the save board, the objective controls,
-//! the optimized placement and its swap list.
+//! the optimized placement, its insight, roll ranges and the read-only shelf.
 //!
 //! Ported from `cog-optimizer.html` and `js/cogs/cog-optimizer.js`. CG-01
 //! covers the three single-objective runs (build speed, construction EXP and
-//! Flaggy rate), the shared background runner and reset. CG-04 adds the
-//! step-by-step swap walkthrough: Next applies the run's swap list in order,
-//! Previous restores the prior board and Done keeps the optimized board.
-//! Weighted objectives, the perfect board, insights, shelf browsing and roll
-//! ranges are the later CG-02 and CG-03 features.
+//! Flaggy rate), the shared background runner and reset; CG-03 adds the board
+//! insights, the roll ranges and the shelf; CG-04 adds the step-by-step swap
+//! walkthrough: Next applies the run's swap list in order, Previous restores the
+//! prior board and Done keeps the optimized board. Weighted objectives and the
+//! perfect board are the later CG-02 feature.
 
 mod board;
+mod insights;
 mod walkthrough;
 
 use crate::state::AppState;
@@ -19,13 +20,13 @@ use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::{ControlSize, TextSize};
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_core::cog::{
-    BOARD_SIZE, Board, Cog, CogResult, CogSave, Goal, SwapStep, SwapWalkthrough, compute_totals,
-    empty_board,
+    BOARD_SIZE, Board, Cog, CogResult, CogSave, Goal, SwapStep, SwapWalkthrough, board_insights,
+    compute_totals, empty_board,
 };
 
 /// The inputs a stored result was produced from, so a later edit marks it stale.
@@ -141,6 +142,8 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
     let has_result = task.result.is_some()
         || state.cog.walkthrough.is_some()
         || (task.cancelled && board_changed);
+    let insights = board_insights(board, state.cog.goal);
+    let muted = cx.theme().colors.fg_muted;
 
     let mut body = div()
         .id("cog-body")
@@ -149,7 +152,18 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         .gap_3()
         .child(summary(state, &now, &before, filled))
         .child(controls(state, cx, has_result, task.running))
-        .child(board::card(state, board, cx));
+        .child(board::card(state, board, insights.as_ref(), cx))
+        .child(insights::insights_card(
+            insights.as_ref(),
+            state.cog.goal,
+            muted,
+        ))
+        .child(insights::roll_ranges_card(
+            state.cog.goal,
+            state.cog.save.max_construction_level,
+            state.cog.save.construction_level,
+        ))
+        .child(insights::shelf_card(&state.cog.save, state.cog.goal, muted));
     if task.running
         && let Some(progress) = task.progress.clone()
     {
@@ -508,6 +522,7 @@ mod tests {
             shelf: vec![Cog::named("CogCry2", 108)],
             shelf_slots: Vec::new(),
             construction_level: 42,
+            max_construction_level: 42,
             loaded: true,
         }
     }
@@ -524,6 +539,20 @@ mod tests {
         state.reset();
         assert_eq!(state.board, state.save.board);
         assert_eq!(state.goal, Goal::Flaggy);
+    }
+
+    #[test]
+    fn the_shelf_is_read_only_across_load_reset_and_a_run_snapshot() {
+        let mut state = State::default();
+        state.load(sample_save());
+        let saved = state.save.shelf.clone();
+        // The board changes, the save board comes back, and a run clones the
+        // shelf: the shelf itself is never edited.
+        state.board[0] = Some(Cog::named("Cog3le", 0));
+        state.reset();
+        let inputs = state.inputs();
+        assert_eq!(state.save.shelf, saved);
+        assert_eq!(inputs.shelf, saved);
     }
 
     #[test]
