@@ -4,18 +4,19 @@
 //! builds the overview (the fountain summary, fill and income rates, lucky
 //! coins and ducks, the ground coin stacks and the cross-system bonuses); FN-02
 //! adds the currency values, the desired-currency simulator and the upgrade
-//! list with its cost curve. The planner and marble tabs arrive with FN-03 and
-//! FN-04.
+//! list with its cost curve; FN-03 adds the upgrade planner and the greedy
+//! optimizer. The marble tab arrives with FN-04.
 
 mod actions;
 
 mod bonuses;
 mod currency;
 mod overview;
+mod planner;
 pub(crate) mod state;
 mod upgrades;
 
-pub(crate) use state::{State, Tab};
+pub(crate) use state::{STEP_CHOICES, State, Tab};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -95,6 +96,7 @@ pub(crate) fn view(
         Tab::Overview => overview::overview(state, cx),
         Tab::Currency => currency::currency_pane(state, cx),
         Tab::Upgrades => upgrades::upgrades_pane(state, cx),
+        Tab::Planner => planner::planner_pane(state, cx),
     };
     div()
         .id("fountain-section")

@@ -61,7 +61,7 @@ use idleon_cooking_mastery::Mastery;
 use idleon_coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_farming::{Allocation as FarmingOutcome, Comparison as FarmingComparison, Farm};
 use idleon_fishing::FishingSave;
-use idleon_fountain::Fountain;
+use idleon_fountain::{Fountain, OptimizerPlan, PlanRequest};
 use idleon_import::Shadow;
 use idleon_jar::Jar;
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
@@ -282,6 +282,8 @@ pub(crate) struct AppState {
     pub(crate) fountain: Option<Fountain>,
     /// The Fountain section's tab, water, desired currency and curve pick.
     pub(crate) fountain_state: FountainState,
+    /// The shared runner for the fountain upgrade optimizer.
+    pub(crate) fountain_plan: Entity<TaskRunner<OptimizerPlan, PlanRequest>>,
     /// The Opal Optimizer's villagers and account bonuses, when the save has them.
     pub(crate) opal: Option<Opal>,
     /// The villager the opal breakdown is switched to, or the total.
@@ -551,6 +553,24 @@ impl AppState {
                     "Cglunko plan ready: {} purchases, {:.2}× DR.",
                     plan.steps.len(),
                     plan.dr_after()
+                ))
+            },
+        );
+        let fountain_plan = report_run::<OptimizerPlan, PlanRequest>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Planning fountain upgrades…"),
+                cancelled_kept: "Fountain plan cancelled; the previous plan is unchanged.",
+                cancelled_empty: "Fountain plan cancelled; nothing was planned.",
+            },
+            |_, plan| {
+                Some(format!(
+                    "Fountain plan ready: {} steps, {} → {} ({:+.1}%).",
+                    plan.steps.len(),
+                    idleon_fountain::short_number(plan.start_value),
+                    idleon_fountain::short_number(plan.end_value),
+                    plan.gain_pct
                 ))
             },
         );
@@ -850,6 +870,7 @@ impl AppState {
             mastery_plan: MasteryPlanState::default(),
             fountain: None,
             fountain_state: FountainState::default(),
+            fountain_plan,
             opal: None,
             opal_selected: None,
             opal_tab: OpalTab::default(),
