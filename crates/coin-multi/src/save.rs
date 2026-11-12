@@ -20,11 +20,12 @@ const GROUP_COUNT: usize = 23;
 /// Decode every character's coin groups, indexed like [`crate::GROUPS`].
 fn coin_groups(
     save: &Map<String, Value>,
+    root: &Map<String, Value>,
     characters: &[idleon_save::Character],
     simulation: &idleon_research::model::Simulation,
 ) -> Vec<[Option<f64>; GROUP_COUNT]> {
     let mut warnings = Vec::new();
-    let mut decoder = Decoder::new(save, save, characters, simulation, &mut warnings);
+    let mut decoder = Decoder::new(save, root, characters, simulation, &mut warnings);
 
     let killz = vault_killz(&decoder);
     let mut groups = vec![[None; GROUP_COUNT]; characters.len()];
@@ -69,14 +70,20 @@ fn coin_groups(
 }
 
 /// The whole coin snapshot, cards included.
+///
+/// `root` is the `it.json` wrapper the save may sit in: the character names,
+/// the companion roster and the winning vote live beside `data`, so the decoder
+/// reads them there.
 pub fn coin(
     save: &Map<String, Value>,
+    root: &Map<String, Value>,
     characters: &[idleon_save::Character],
     simulation: &idleon_research::model::Simulation,
 ) -> crate::Snapshot {
-    let decoded = coin_groups(save, characters, simulation);
+    let decoded = coin_groups(save, root, characters, simulation);
     let highest_damage = fields::at(save, "TaskZZ0", &[1, 0]).unwrap_or(0.0);
-    let names: Vec<String> = fields::field(save, "charNames")
+    let names: Vec<String> = fields::field(root, "charNames")
+        .or_else(|| fields::field(save, "charNames"))
         .and_then(|value| {
             value.as_array().map(|names| {
                 names

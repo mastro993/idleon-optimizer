@@ -183,3 +183,35 @@ fn a_save_without_its_character_rows_has_no_coin_cards() {
     assert!(imported.coin.characters.is_empty());
     assert!(coin_multi::evaluate(&imported.coin, &Inputs::default()).is_err());
 }
+
+#[test]
+fn the_wrapper_supplies_the_names_and_the_winning_vote() {
+    // An `it.json` save: `data` holds the save, the names and the vote sit beside it.
+    let wrapped = serde_json::json!({
+        "data": {
+            "Lv0_0": "[1]",
+            "Research": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+        },
+        "charNames": ["Ana"],
+        "serverVars": { "voteCategories": [34] },
+    });
+    let imported = import(&wrapped.to_string()).expect("the wrapped save imports");
+    let character = imported.coin.character(0).expect("one character");
+    assert_eq!(character.name, "Ana");
+    // Vote 34 pays its 52 % base into the meal/pet group; the rest stays neutral.
+    let with_vote = character.groups[16].value.expect("the group is modelled");
+    assert!(close(with_vote, 1.52), "got {with_vote}");
+
+    let unwrapped = serde_json::json!({
+        "data": {
+            "Lv0_0": "[1]",
+            "Research": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+        },
+        "charNames": ["Ana"],
+    });
+    let imported = import(&unwrapped.to_string()).expect("the save imports");
+    let without_vote = imported.coin.character(0).expect("one character").groups[16]
+        .value
+        .expect("the group is modelled");
+    assert!(close(without_vote, 1.0), "got {without_vote}");
+}
