@@ -421,10 +421,13 @@ tree (DR-02). Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
 selectors, their save defaults and the all-maps list from `damage-calc.html`, the summary cards and
 mastery bar, the upstream dungeon and missing-metadata states, project/session persistence, and the
-layer arithmetic ported from the final combine in `js/stats/defs/damage.js`. The three layers
-themselves need the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for
-its other fifty descriptors, so the page reports the missing-pipeline state instead of a guessed
-number. Details:
+layer arithmetic ported from the final combine in `js/stats/defs/damage.js`.
+`script/damage-oracle.mjs` pins the combine against the upstream calculator in
+`fixtures/damage.json`: every character's three layers recombine into upstream's own minimum and
+maximum, and the descriptor's dungeon reason matches the page's. The three layers themselves need
+the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for its other
+fifty descriptors, so the page reports the missing-pipeline state instead of a guessed number.
+Details:
 [`docs/sections/damage.md`](sections/damage.md).
 
 The Fountain section has its overview (FN-01) and its currency and upgrade tabs (FN-02): the
