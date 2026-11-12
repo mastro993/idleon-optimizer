@@ -3,10 +3,10 @@
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
-estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor, the
-cog board optimizer, the Clamworks optimizer and the Jelly Operator overview and layout editor
-partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and the All Stats context
-built, 5 sections planned.** The live breakdown is
+estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor and
+mechanics overrides, the cog board optimizer, the Clamworks optimizer and the Jelly Operator
+overview and layout editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and
+the All Stats context built, 5 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 

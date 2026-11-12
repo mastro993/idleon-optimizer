@@ -1,0 +1,1064 @@
+{
+  "groups": [
+    "Drops",
+    "Kills",
+    "EXP",
+    "Crystals",
+    "Giants",
+    "Royal",
+    "Zenith",
+    "Forms",
+    "Monsters",
+    "Player",
+    "Loot"
+  ],
+  "toggles": [
+    {
+      "id": "dropRate",
+      "group": "Drops",
+      "kind": "mult",
+      "label": "Drop rate",
+      "desc": "Total Drop Rarity multiplier applied to every drop-table roll.",
+      "keys": [
+        "dropRate"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "monsterCash",
+      "group": "Drops",
+      "kind": "mult",
+      "label": "Coin multiplier",
+      "desc": "Monster coin multiplier (MonsterCash). Each coin drop is base × (random + 0.5) × this.",
+      "keys": [
+        "monsterCash"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "cardChanceMulti",
+      "group": "Drops",
+      "kind": "mult",
+      "label": "Card drop chance multiplier",
+      "desc": "Multiplier on every card drop chance.",
+      "keys": [
+        "cardChanceMulti"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent29",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Rares Everywhere! bonus",
+      "desc": "Talent bonus that boosts rare drop-table rows.",
+      "keys": [
+        "talent29"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "bribe1",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Tracking Chips bribe",
+      "desc": "Bribe bonus used by card drop rolls.",
+      "keys": [
+        "bribe1"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "bribe8",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Tagged Indicators bribe",
+      "desc": "Bribe bonus used by card drop rolls.",
+      "keys": [
+        "bribe8"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "ringDrop",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Star sign ring drop bonus",
+      "desc": "Star sign bonus to ring drops.",
+      "keys": [
+        "ringDrop"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "doubleItemDropz0",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Arcanist double drop (type 0)",
+      "desc": "Arcanist DoubleItemDropz chance for the first item family.",
+      "keys": [
+        "doubleItemDropz0"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "doubleItemDropz1",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Arcanist double drop (type 1)",
+      "desc": "Arcanist DoubleItemDropz chance for the second item family.",
+      "keys": [
+        "doubleItemDropz1"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "legend2",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Legend statue/golden food doubling",
+      "desc": "Legend talent bonus that can double statue and golden food drops.",
+      "keys": [
+        "legend2"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "shopUpg48",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Spelunk shop statue doubling",
+      "desc": "Spelunking shop bonus that can double statue drops.",
+      "keys": [
+        "shopUpg48"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent318_1",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Pirate Flag bonus",
+      "desc": "Pirate Flag talent drop bonus (first value).",
+      "keys": [
+        "talent318_1"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent318_2",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Pirate Flag secondary",
+      "desc": "Pirate Flag talent secondary value.",
+      "keys": [
+        "talent318_2"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent594_1",
+      "group": "Drops",
+      "kind": "pct",
+      "label": "Primo Prisma (Prisma bubble drops)",
+      "desc": "Chance bonus for Prisma bubble drops.",
+      "keys": [
+        "talent594_1"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "compass3",
+      "group": "Drops",
+      "kind": "flag",
+      "label": "Medallions already found",
+      "desc": "Medallion types already found. On marks every medallion found, so none drop; Off clears the list, so every eligible medallion can drop.",
+      "keys": [
+        "compass3"
+      ],
+      "neutral": null,
+      "on": [
+        {
+          "key": "compass3",
+          "kind": "list",
+          "items": [
+            "mushG",
+            "frogG",
+            "beanG",
+            "slimeG",
+            "snakeG",
+            "carrotO",
+            "goblinG",
+            "plank",
+            "frogBIG",
+            "branch",
+            "acorn",
+            "mushW",
+            "poopSmall",
+            "ratB",
+            "poopD",
+            "Crystal0",
+            "jarSand",
+            "mimicA",
+            "crabcake",
+            "coconut",
+            "sandcastle",
+            "pincermin",
+            "potato",
+            "steak",
+            "moonman",
+            "sandgiant",
+            "snailZ",
+            "Crystal1",
+            "sheep",
+            "flake",
+            "stache",
+            "bloque",
+            "mamoth",
+            "snowball",
+            "penguin",
+            "thermostat",
+            "glass",
+            "snakeB",
+            "speaker",
+            "eye",
+            "ram",
+            "skele2",
+            "skele",
+            "rockS",
+            "Crystal2",
+            "mushP",
+            "w4a2",
+            "w4a3",
+            "demonP",
+            "w4b2",
+            "w4b1",
+            "w4b3",
+            "w4b4",
+            "w4b5",
+            "w4c1",
+            "w4c2",
+            "w4c3",
+            "w4c4",
+            "Crystal3",
+            "w5a1",
+            "w5a2",
+            "w5a3",
+            "w5a4",
+            "w5a5",
+            "w5b1",
+            "w5b2",
+            "w5b3",
+            "w5b4",
+            "w5b5",
+            "w5b6",
+            "w5c1",
+            "w5c2",
+            "caveA",
+            "caveB",
+            "caveC",
+            "Crystal4",
+            "w6a1",
+            "w6a2",
+            "w6a3",
+            "w6a4",
+            "w6a5",
+            "w6b1",
+            "w6b2",
+            "w6b3",
+            "w6b4",
+            "w6c1",
+            "w6c2",
+            "w6d1",
+            "w6d2",
+            "w6d3",
+            "Crystal5",
+            "reindeer",
+            "mushR",
+            "shovelR",
+            "slimeB",
+            "babayaga",
+            "poopBig",
+            "babaHour",
+            "babaMummy",
+            "mini3a",
+            "mini4a",
+            "mini5a",
+            "mini6a",
+            "ghost",
+            "slimeR",
+            "sheepB",
+            "snakeY",
+            "crabcakeB",
+            "shovelY",
+            "Meteor",
+            "frogGR",
+            "rocky",
+            "snakeZ",
+            "iceknight",
+            "ChestA1",
+            "ChestB1",
+            "ChestC1",
+            "ChestA2",
+            "ChestB2",
+            "ChestC2",
+            "ChestA3",
+            "ChestB3",
+            "ChestC3",
+            "ChestA4",
+            "ChestB4",
+            "ChestC4",
+            "ChestA5",
+            "ChestB5",
+            "ChestC5",
+            "ChestA6",
+            "ChestB6",
+            "ChestC6"
+          ]
+        }
+      ],
+      "off": [
+        {
+          "key": "compass3",
+          "kind": "list",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "killPerKill",
+      "group": "Kills",
+      "kind": "mult",
+      "label": "Kills credited per kill",
+      "desc": "Overrides the live KillPerKill credit (multikill, chain, overkill). Off = 1 credit per kill.",
+      "keys": [
+        "killPerKill"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "multikillTotal",
+      "group": "Kills",
+      "kind": "pct",
+      "label": "Multikill total %",
+      "desc": "Overrides the live MultiKillTOTAL used while overkill is active.",
+      "keys": [
+        "multikillTotal"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "overkillActive",
+      "group": "Kills",
+      "kind": "flag",
+      "label": "Overkill active",
+      "desc": "Forces overkill on or off instead of comparing max damage against the AFK target.",
+      "keys": [
+        "overkillActive"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "overkillExponent",
+      "group": "Kills",
+      "kind": "value",
+      "label": "Overkill exponent",
+      "desc": "Damage-to-HP ratio per overkill tier (2 normally, 5 on World 7 maps).",
+      "keys": [
+        "overkillExponent"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "multiKillPlay",
+      "group": "Kills",
+      "kind": "pct",
+      "label": "Multikill vial bonus",
+      "desc": "Alchemy vial bonus added to every kill credit (÷ 100).",
+      "keys": [
+        "multiKillPlay"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "vault43",
+      "group": "Kills",
+      "kind": "pct",
+      "label": "Active Murdering (kill credit)",
+      "desc": "Vault upgrade bonus to active kill credit.",
+      "keys": [
+        "vault43"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "xtraMushKillz",
+      "group": "Kills",
+      "kind": "mult",
+      "label": "Extra cave kills",
+      "desc": "Cavern kill-counter multiplier for cave monsters.",
+      "keys": [
+        "xtraMushKillz"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "expMulti",
+      "group": "EXP",
+      "kind": "mult",
+      "label": "EXP multiplier",
+      "desc": "Monster EXP multiplier (ExpMulti).",
+      "keys": [
+        "expMulti"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "fam40",
+      "group": "EXP",
+      "kind": "pct",
+      "label": "Family EXP bonus",
+      "desc": "Family bonus to monster EXP.",
+      "keys": [
+        "fam40"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "card20",
+      "group": "EXP",
+      "kind": "pct",
+      "label": "Card EXP bonus",
+      "desc": "Card bonus to monster EXP.",
+      "keys": [
+        "card20"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "vault39",
+      "group": "EXP",
+      "kind": "pct",
+      "label": "Active Learning",
+      "desc": "Vault upgrade bonus to active monster EXP.",
+      "keys": [
+        "vault39"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "expActive",
+      "group": "EXP",
+      "kind": "pct",
+      "label": "Star sign active EXP",
+      "desc": "Star sign bonus to active EXP.",
+      "keys": [
+        "expActive"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "shrine6",
+      "group": "EXP",
+      "kind": "pct",
+      "label": "Crescent Shrine",
+      "desc": "Shrine EXP bonus (map-gated).",
+      "keys": [
+        "shrine6"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "crystalEmbiggener",
+      "group": "Crystals",
+      "kind": "mult",
+      "label": "Crystal mob drop & EXP multiplier",
+      "desc": "Crystal Embiggener: max(1, Crystal Spawn ÷ cap). Multiplies crystal-mob drops, orb credit, and crystal EXP. Off = 1×.",
+      "keys": [
+        "crystalEmbiggener"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "crystalSpawnRaw",
+      "group": "Crystals",
+      "kind": "chance",
+      "label": "Crystal spawn chance",
+      "desc": "Uncapped crystal spawn chance per kill, before the cap. The Embiggener is a separate input.",
+      "keys": [
+        "crystalSpawnRaw"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "crystalSpawnCap",
+      "group": "Crystals",
+      "kind": "chance",
+      "label": "Crystal spawn chance cap",
+      "desc": "Cap on the per-kill crystal spawn chance (0.1 in the source).",
+      "keys": [
+        "crystalSpawnCap"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "chipCrys",
+      "group": "Crystals",
+      "kind": "pct",
+      "label": "Crystal respawn chip",
+      "desc": "Lab chip chance for a killed crystal to respawn.",
+      "keys": [
+        "chipCrys"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent41_2",
+      "group": "Crystals",
+      "kind": "pct",
+      "label": "Crystal Countdown",
+      "desc": "Talent value gating extra crystal behavior on crystal kills.",
+      "keys": [
+        "talent41_2"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "giantMob",
+      "group": "Giants",
+      "kind": "chance",
+      "label": "Giant mob spawn chance",
+      "desc": "Chance per kill for a giant mob to spawn.",
+      "keys": [
+        "giantMob"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "giantsActive",
+      "group": "Giants",
+      "kind": "pct",
+      "label": "Giant spawn bubble",
+      "desc": "Alchemy bubble bonus to giant spawns.",
+      "keys": [
+        "giantsActive"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "prayer18",
+      "group": "Giants",
+      "kind": "pct",
+      "label": "Glitterbug (giant → crystals)",
+      "desc": "Prayer that converts giant kills into crystal spawns.",
+      "keys": [
+        "prayer18"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "marbleDrop",
+      "group": "Royal",
+      "kind": "chance",
+      "label": "Marble drop chance",
+      "desc": "Royal marble drop chance before the active streak factor.",
+      "keys": [
+        "marbleDrop"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "parchmentDrop",
+      "group": "Royal",
+      "kind": "chance",
+      "label": "Parchment drop chance",
+      "desc": "Royal parchment drop chance per kill.",
+      "keys": [
+        "parchmentDrop"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "parchmentDouble",
+      "group": "Royal",
+      "kind": "pct",
+      "label": "Parchment double chance",
+      "desc": "Chance for a parchment drop to double.",
+      "keys": [
+        "parchmentDouble"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "royalActiveKillClear",
+      "group": "Royal",
+      "kind": "value",
+      "label": "Active kill outpost clearing",
+      "desc": "Royal outpost clearing from active kills (0 = locked).",
+      "keys": [
+        "royalActiveKillClear"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "riChance",
+      "group": "Royal",
+      "kind": "chance",
+      "label": "Regal Intervention chance",
+      "desc": "Chance per kill to trigger Regal Intervention.",
+      "keys": [
+        "riChance"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "riMobs",
+      "group": "Royal",
+      "kind": "count",
+      "label": "Regal Intervention mobs",
+      "desc": "Extra mobs spawned by Regal Intervention.",
+      "keys": [
+        "riMobs"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "grid191",
+      "group": "Royal",
+      "kind": "count",
+      "label": "L3 Royal Rewards (orb counter)",
+      "desc": "Research grid bonus added to the orb kill counter per kill.",
+      "keys": [
+        "grid191"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "gi77",
+      "group": "Royal",
+      "kind": "count",
+      "label": "Starting orb kill count",
+      "desc": "Orb kill counter at the start of the run.",
+      "keys": [
+        "gi77"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "zenithMarket3",
+      "group": "Zenith",
+      "kind": "pct",
+      "label": "Zenith extra cluster drops",
+      "desc": "Zenith Market bonus to Zenith cluster drops.",
+      "keys": [
+        "zenithMarket3"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "zenithAutoExpChance",
+      "group": "Zenith",
+      "kind": "pct",
+      "label": "Zenith statue EXP chance",
+      "desc": "Chance, each time a Zenith Cluster forms, to add the whole statue stack as Statue EXP. The game always uses 69% because of a code bug, so EMULSION levels have no effect.",
+      "keys": [
+        "zenithAutoExpChance"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "wraith",
+      "group": "Forms",
+      "kind": "tri",
+      "label": "Grimoire Wraith form",
+      "desc": "Death Bringer Wraith form. On starts the run already in form (cast before entering the map), so its stats and drops apply; Off removes a saved form buff; Auto uses the save.",
+      "keys": [
+        "wraith"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "tempest",
+      "group": "Forms",
+      "kind": "tri",
+      "label": "Compass Tempest form",
+      "desc": "Wind Walker Tempest form. On starts the run already in form (cast before entering the map), so its stats and drops apply; Off removes a saved form buff; Auto uses the save.",
+      "keys": [
+        "tempest"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "arcanist",
+      "group": "Forms",
+      "kind": "tri",
+      "label": "Tesseract Arcanist form",
+      "desc": "Arcane Cultist Arcanist form. On starts the run already in form (cast before entering the map), so its stats and drops apply; Off removes a saved form buff; Auto uses the save.",
+      "keys": [
+        "arcanist"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "monsterHpRescale",
+      "group": "Monsters",
+      "kind": "mult",
+      "label": "Monster HP scale",
+      "desc": "Multiplier on monster HP after all reductions.",
+      "keys": [
+        "monsterHpRescale"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "respawnBonusPct",
+      "group": "Monsters",
+      "kind": "objscale",
+      "label": "Respawn rate bonus",
+      "desc": "Per-monster respawn bonus %. Off removes every bonus; Scale multiplies each.",
+      "keys": [
+        "respawnBonusPct"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "damageMax",
+      "group": "Player",
+      "kind": "mult",
+      "label": "Max damage",
+      "desc": "Player max damage per hit.",
+      "keys": [
+        "damageMax"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "critChance",
+      "group": "Player",
+      "kind": "pct",
+      "label": "Crit chance %",
+      "desc": "Player critical hit chance (percent; over 100 enables multi-crits).",
+      "keys": [
+        "critChance"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "critDamage",
+      "group": "Player",
+      "kind": "mult",
+      "label": "Crit damage multiplier",
+      "desc": "Critical hit damage multiplier.",
+      "keys": [
+        "critDamage"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "hitChancePct",
+      "group": "Player",
+      "kind": "pct",
+      "label": "Hit chance %",
+      "desc": "Chance for a player hit to land.",
+      "keys": [
+        "hitChancePct"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "accuracy",
+      "group": "Player",
+      "kind": "value",
+      "label": "Accuracy",
+      "desc": "Total accuracy (also gates overkill).",
+      "keys": [
+        "accuracy"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "attackSpeedPct",
+      "group": "Player",
+      "kind": "pct",
+      "label": "Attack speed %",
+      "desc": "Attack speed pool used by the auto-attack wait time.",
+      "keys": [
+        "attackSpeedPct"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "atkCooldownDec",
+      "group": "Player",
+      "kind": "mult",
+      "label": "Skill cooldown divisor",
+      "desc": "Attack cooldown reduction divisor.",
+      "keys": [
+        "atkCooldownDec"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "playerSpeed",
+      "group": "Player",
+      "kind": "value",
+      "label": "Movement speed",
+      "desc": "Player movement speed (pixels per frame).",
+      "keys": [
+        "playerSpeed"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "playerMaxHp",
+      "group": "Player",
+      "kind": "value",
+      "label": "Max HP",
+      "desc": "Player max HP.",
+      "keys": [
+        "playerMaxHp"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "playerMaxMp",
+      "group": "Player",
+      "kind": "value",
+      "label": "Max MP",
+      "desc": "Player max MP.",
+      "keys": [
+        "playerMaxMp"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "playerDefence",
+      "group": "Player",
+      "kind": "value",
+      "label": "Defence",
+      "desc": "Player total defence.",
+      "keys": [
+        "playerDefence"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "bossMulti",
+      "group": "Player",
+      "kind": "mult",
+      "label": "Boss damage multiplier",
+      "desc": "Damage multiplier against bosses.",
+      "keys": [
+        "bossMulti"
+      ],
+      "neutral": 1,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "autoRespawnSec",
+      "group": "Player",
+      "kind": "value",
+      "label": "Auto-respawn time (s)",
+      "desc": "Seconds before the player respawns after dying.",
+      "keys": [
+        "autoRespawnSec"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "talent627_1",
+      "group": "Player",
+      "kind": "pct",
+      "label": "Kill heal %",
+      "desc": "Percent of max HP healed per kill.",
+      "keys": [
+        "talent627_1"
+      ],
+      "neutral": 0,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "arcane20",
+      "group": "Player",
+      "kind": "flag",
+      "label": "Wand hits Arcane-shielded mobs",
+      "desc": "Tesseract upgrade that lets wand attacks hit monsters with an Arcane status shield.",
+      "keys": [
+        "arcane20"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    },
+    {
+      "id": "autoLoot",
+      "group": "Loot",
+      "kind": "flag",
+      "label": "Auto loot",
+      "desc": "Auto-loot bundle pickup. Off leaves drops on the ground for the player to collect. Inventory slots still come from the saved bundle.",
+      "keys": [
+        "bunI",
+        "ola83"
+      ],
+      "neutral": null,
+      "on": [
+        {
+          "key": "bunI",
+          "kind": "number",
+          "number": 1
+        },
+        {
+          "key": "ola83",
+          "kind": "number",
+          "number": 0
+        }
+      ],
+      "off": [
+        {
+          "key": "ola83",
+          "kind": "number",
+          "number": 1
+        }
+      ]
+    },
+    {
+      "id": "inventorySlotsOwned",
+      "group": "Loot",
+      "kind": "count",
+      "label": "Inventory slots",
+      "desc": "Inventory slots owned (bag-full behavior).",
+      "keys": [
+        "inventorySlotsOwned"
+      ],
+      "neutral": null,
+      "on": [],
+      "off": []
+    }
+  ]
+}

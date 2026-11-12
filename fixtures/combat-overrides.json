@@ -1,0 +1,448 @@
+{
+  "source": [
+    "js/stats/systems/common/combat-sim-toggles.js",
+    "js/stats/data/game/customlists.js RANDOlist[112]"
+  ],
+  "groups": [
+    "Drops",
+    "Kills",
+    "EXP",
+    "Crystals",
+    "Giants",
+    "Royal",
+    "Zenith",
+    "Forms",
+    "Monsters",
+    "Player",
+    "Loot"
+  ],
+  "entries": {
+    "dropRate": 1,
+    "monsterCash": 2,
+    "cardChanceMulti": 3,
+    "talent29": 4,
+    "bribe1": 5,
+    "bribe8": 1,
+    "ringDrop": 2,
+    "doubleItemDropz0": 3,
+    "doubleItemDropz1": 4,
+    "legend2": 5,
+    "shopUpg48": 1,
+    "talent318_1": 2,
+    "talent318_2": 3,
+    "talent594_1": 4,
+    "compass3": 5,
+    "killPerKill": 1,
+    "multikillTotal": 2,
+    "overkillActive": 3,
+    "overkillExponent": 4,
+    "multiKillPlay": 5,
+    "vault43": 1,
+    "xtraMushKillz": 2,
+    "expMulti": 3,
+    "fam40": 4,
+    "card20": 5,
+    "vault39": 1,
+    "expActive": 2,
+    "shrine6": 3,
+    "crystalEmbiggener": 4,
+    "crystalSpawnRaw": 5,
+    "crystalSpawnCap": 1,
+    "chipCrys": 2,
+    "talent41_2": 3,
+    "giantMob": 4,
+    "giantsActive": 5,
+    "prayer18": 1,
+    "marbleDrop": 2,
+    "parchmentDrop": 3,
+    "parchmentDouble": 4,
+    "royalActiveKillClear": 5,
+    "riChance": 1,
+    "riMobs": 2,
+    "grid191": 3,
+    "gi77": 4,
+    "zenithMarket3": 5,
+    "zenithAutoExpChance": 1,
+    "wraith": 2,
+    "tempest": 3,
+    "arcanist": 4,
+    "monsterHpRescale": 5,
+    "respawnBonusPct": {
+      "mushG": 10,
+      "frogG": 2.5
+    },
+    "damageMax": 2,
+    "critChance": 3,
+    "critDamage": 4,
+    "hitChancePct": 5,
+    "accuracy": 1,
+    "attackSpeedPct": 2,
+    "atkCooldownDec": 3,
+    "playerSpeed": 4,
+    "playerMaxHp": 5,
+    "playerMaxMp": 1,
+    "playerDefence": 2,
+    "bossMulti": 3,
+    "autoRespawnSec": 4,
+    "talent627_1": 5,
+    "arcane20": 1,
+    "bunI": 2,
+    "inventorySlotsOwned": 3,
+    "filterSlots": 12,
+    "someOtherInput": 7
+  },
+  "cases": [
+    {
+      "name": "off-set-scale",
+      "state": {
+        "dropRate": {
+          "mode": "off"
+        },
+        "damageMax": {
+          "mode": "set",
+          "value": 1234
+        },
+        "killPerKill": {
+          "mode": "scale",
+          "value": 2
+        },
+        "multikillTotal": {
+          "mode": "off"
+        },
+        "raw:filterSlots": {
+          "mode": "set",
+          "value": 9
+        },
+        "raw:someOtherInput": {
+          "mode": "scale",
+          "value": 0.5
+        }
+      },
+      "normalized": {
+        "dropRate": {
+          "mode": "off"
+        },
+        "damageMax": {
+          "mode": "set",
+          "value": 1234
+        },
+        "killPerKill": {
+          "mode": "scale",
+          "value": 2
+        },
+        "multikillTotal": {
+          "mode": "off"
+        },
+        "raw:filterSlots": {
+          "mode": "set",
+          "value": 9
+        },
+        "raw:someOtherInput": {
+          "mode": "scale",
+          "value": 0.5
+        }
+      },
+      "active": 6,
+      "needsBase": true,
+      "overrides": {
+        "dropRate": 1,
+        "damageMax": 1234,
+        "killPerKill": 2,
+        "multikillTotal": 0,
+        "filterSlots": 9,
+        "someOtherInput": 3.5
+      },
+      "described": [
+        "Drop rate off",
+        "Max damage = 1234",
+        "Kills credited per kill × 2",
+        "Multikill total % off",
+        "Filter Slots = 9",
+        "Some Other Input × 0.5"
+      ]
+    },
+    {
+      "name": "flags-and-tris",
+      "state": {
+        "wraith": {
+          "mode": "on"
+        },
+        "arcanist": {
+          "mode": "off"
+        },
+        "compass3": {
+          "mode": "on"
+        },
+        "autoLoot": {
+          "mode": "off"
+        },
+        "overkillActive": {
+          "mode": "on"
+        }
+      },
+      "normalized": {
+        "wraith": {
+          "mode": "on"
+        },
+        "arcanist": {
+          "mode": "off"
+        },
+        "compass3": {
+          "mode": "on"
+        },
+        "autoLoot": {
+          "mode": "off"
+        },
+        "overkillActive": {
+          "mode": "on"
+        }
+      },
+      "active": 5,
+      "needsBase": false,
+      "overrides": {
+        "wraith": 1,
+        "arcanist": 0,
+        "compass3": [
+          "mushG",
+          "frogG",
+          "beanG",
+          "slimeG",
+          "snakeG",
+          "carrotO",
+          "goblinG",
+          "plank",
+          "frogBIG",
+          "branch",
+          "acorn",
+          "mushW",
+          "poopSmall",
+          "ratB",
+          "poopD",
+          "Crystal0",
+          "jarSand",
+          "mimicA",
+          "crabcake",
+          "coconut",
+          "sandcastle",
+          "pincermin",
+          "potato",
+          "steak",
+          "moonman",
+          "sandgiant",
+          "snailZ",
+          "Crystal1",
+          "sheep",
+          "flake",
+          "stache",
+          "bloque",
+          "mamoth",
+          "snowball",
+          "penguin",
+          "thermostat",
+          "glass",
+          "snakeB",
+          "speaker",
+          "eye",
+          "ram",
+          "skele2",
+          "skele",
+          "rockS",
+          "Crystal2",
+          "mushP",
+          "w4a2",
+          "w4a3",
+          "demonP",
+          "w4b2",
+          "w4b1",
+          "w4b3",
+          "w4b4",
+          "w4b5",
+          "w4c1",
+          "w4c2",
+          "w4c3",
+          "w4c4",
+          "Crystal3",
+          "w5a1",
+          "w5a2",
+          "w5a3",
+          "w5a4",
+          "w5a5",
+          "w5b1",
+          "w5b2",
+          "w5b3",
+          "w5b4",
+          "w5b5",
+          "w5b6",
+          "w5c1",
+          "w5c2",
+          "caveA",
+          "caveB",
+          "caveC",
+          "Crystal4",
+          "w6a1",
+          "w6a2",
+          "w6a3",
+          "w6a4",
+          "w6a5",
+          "w6b1",
+          "w6b2",
+          "w6b3",
+          "w6b4",
+          "w6c1",
+          "w6c2",
+          "w6d1",
+          "w6d2",
+          "w6d3",
+          "Crystal5",
+          "reindeer",
+          "mushR",
+          "shovelR",
+          "slimeB",
+          "babayaga",
+          "poopBig",
+          "babaHour",
+          "babaMummy",
+          "mini3a",
+          "mini4a",
+          "mini5a",
+          "mini6a",
+          "ghost",
+          "slimeR",
+          "sheepB",
+          "snakeY",
+          "crabcakeB",
+          "shovelY",
+          "Meteor",
+          "frogGR",
+          "rocky",
+          "snakeZ",
+          "iceknight",
+          "ChestA1",
+          "ChestB1",
+          "ChestC1",
+          "ChestA2",
+          "ChestB2",
+          "ChestC2",
+          "ChestA3",
+          "ChestB3",
+          "ChestC3",
+          "ChestA4",
+          "ChestB4",
+          "ChestC4",
+          "ChestA5",
+          "ChestB5",
+          "ChestC5",
+          "ChestA6",
+          "ChestB6",
+          "ChestC6"
+        ],
+        "ola83": 1,
+        "overkillActive": 1
+      },
+      "described": [
+        "Grimoire Wraith form on",
+        "Tesseract Arcanist form off",
+        "Medallions already found on",
+        "Auto loot off",
+        "Overkill active on"
+      ]
+    },
+    {
+      "name": "object-scale",
+      "state": {
+        "respawnBonusPct": {
+          "mode": "scale",
+          "value": 2
+        }
+      },
+      "normalized": {
+        "respawnBonusPct": {
+          "mode": "scale",
+          "value": 2
+        }
+      },
+      "active": 1,
+      "needsBase": true,
+      "overrides": {
+        "respawnBonusPct": {
+          "mushG": 20,
+          "frogG": 5
+        }
+      },
+      "described": [
+        "Respawn rate bonus × 2"
+      ]
+    },
+    {
+      "name": "object-off",
+      "state": {
+        "respawnBonusPct": {
+          "mode": "off"
+        }
+      },
+      "normalized": {
+        "respawnBonusPct": {
+          "mode": "off"
+        }
+      },
+      "active": 1,
+      "needsBase": false,
+      "overrides": {
+        "respawnBonusPct": {
+          "mushG": 0,
+          "frogG": 0
+        }
+      },
+      "described": [
+        "Respawn rate bonus off"
+      ]
+    },
+    {
+      "name": "raw-scale-without-a-saved-input",
+      "state": {
+        "raw:notAnInput": {
+          "mode": "scale",
+          "value": 3
+        }
+      },
+      "normalized": {
+        "raw:notAnInput": {
+          "mode": "scale",
+          "value": 3
+        }
+      },
+      "active": 1,
+      "needsBase": true,
+      "overrides": {},
+      "described": [
+        "Not An Input × 3"
+      ]
+    },
+    {
+      "name": "invalid-rows-are-dropped",
+      "state": {
+        "nope": {
+          "mode": "off"
+        },
+        "dropRate": {
+          "mode": "on"
+        },
+        "monsterCash": {
+          "mode": "set"
+        },
+        "raw:": {
+          "mode": "set",
+          "value": 1
+        },
+        "extraMushKillz": {
+          "mode": "peak"
+        }
+      },
+      "normalized": {},
+      "active": 0,
+      "needsBase": false,
+      "overrides": {},
+      "described": []
+    }
+  ]
+}
