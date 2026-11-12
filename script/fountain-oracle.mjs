@@ -17,6 +17,7 @@ writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 const loader = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const F = await import(join(source, 'js/stats/systems/w5/fountain.js'));
+const { fmtVal } = await import(join(source, 'js/renderers/format.js'));
 
 const save = JSON.parse(
   readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'),
@@ -131,10 +132,203 @@ for (let level = fLv; level < Math.min(fLv + 15, fLv + 50); level++) {
   });
 }
 
+// The page's own number, description and cap wording, transcribed from
+// `fountain-calc.html` so the currency and upgrade tabs are compared as text.
+function fmtNum(n) {
+  if (n === 0) return '0';
+  if (n === Math.floor(n) && Math.abs(n) < 1e3) return String(n);
+  return fmtVal(n);
+}
+
+function formatUpgradeDescription(w, u) {
+  const d = F.UPG_DATA[w][u];
+  const bon = F.bonTOT(uLvs, mLvs, w, u);
+  let desc = d[7]
+    .replace(/\}x/g, fmtNum(1 + bon / 100) + 'x')
+    .replace(/\+\{%/g, '+' + fmtNum(bon) + '%')
+    .replace(/\+\{/g, '+' + fmtNum(bon));
+  const key = w + '_' + u;
+  let tokenValue = bon;
+  if (key === '0_8') tokenValue = (F.currencyKeep(uLvs, mLvs) * 100).toFixed(1);
+  else if (key === '0_10') tokenValue = F.spacesOwned(uLvs, mLvs);
+  else if (key === '0_11') tokenValue = F.maxStackSize(saveData, uLvs, mLvs);
+  else if (key === '0_12') tokenValue = F.activeSpeedMultiDisplay(uLvs, mLvs).toFixed(2);
+  else if (key === '1_8') {
+    let chance = F.royalChance(uLvs, mLvs);
+    if (chance <= 0) {
+      const preview = F.cloneUpgLvs(uLvs);
+      preview[1][8] = 1;
+      chance = F.royalChance(preview, mLvs);
+      desc += ' Level 1 chance shown.';
+    } else {
+      desc += ' Current chance shown.';
+    }
+    tokenValue = fmtNum(1 / chance);
+  } else if (key === '1_9') tokenValue = F.royalMulti(uLvs, mLvs).toFixed(2);
+  else if (key === '1_10') tokenValue = fmtNum(F.marblePerFill(saveData, uLvs, mLvs));
+  else if (key === '2_8') {
+    let chance = F.luckyCoinBaseChance(uLvs, mLvs);
+    if (chance <= 0) {
+      const preview = F.cloneUpgLvs(uLvs);
+      preview[2][8] = 1;
+      chance = F.luckyCoinBaseChance(preview, mLvs);
+      desc += ' Level 1 base chance shown; each lucky coin of that currency makes the next one 4x rarer.';
+    } else {
+      desc += ' Current base chance shown; each lucky coin of that currency makes the next one 4x rarer.';
+    }
+    tokenValue = fmtNum(1 / chance);
+  } else if (key === '2_9') tokenValue = fmtNum(F.luckyCoinValuePer(uLvs, mLvs));
+  else if (key === '2_12') {
+    let chance = F.duckChance(saveData, uLvs, mLvs);
+    if (chance <= 0) {
+      const preview = F.cloneUpgLvs(uLvs);
+      preview[2][12] = 1;
+      chance = F.duckChance(saveData, preview, mLvs);
+      desc += ' Level 1 chance shown; each owned duck makes the next one 5x rarer.';
+    } else {
+      desc += ' Current chance shown; each owned duck makes the next one 5x rarer.';
+    }
+    tokenValue = fmtNum(1 / chance);
+  }
+  return desc.replace(/\$/g, String(tokenValue));
+}
+
+function upgradeCap(w, u, bon) {
+  const hints = [];
+  if (w === 0 && u === 10) {
+    const cur = F.spacesOwned(uLvs, mLvs);
+    hints.push(cur >= 16
+      ? { label: 'Capped', detail: 'Spaces maxed at 16' }
+      : { label: 'Near cap', detail: cur + '/16 spaces' });
+  }
+  if (w === 0 && u === 11) {
+    const cur = F.maxStackSize(saveData, uLvs, mLvs);
+    hints.push(cur >= 50
+      ? { label: 'Capped', detail: 'Stack size maxed at 50' }
+      : { label: 'Near cap', detail: cur + '/50 stack' });
+  }
+  if (w === 0 && u === 12 && bon >= 1) {
+    hints.push({
+      label: 'Soft cap',
+      detail: '4x term maxed. Extra levels give +' + F.UPG_DATA[w][u][6] / 100 + '/lv only',
+    });
+  }
+  if (w === 0 && u === 0) {
+    const owned = F.watersOwned(uLvs, mLvs);
+    if (owned >= F.WATERS_IMPLEMENTED) {
+      hints.push({ label: 'Max water', detail: owned + '/' + F.WATERS_IMPLEMENTED + ' waters' });
+    }
+  }
+  return hints[0] || null;
+}
+
+// ----- Currency tab -----
+const stackValueMultiplier =
+  1 + F.maxStackSize(saveData, uLvs, mLvs) * F._sizeMatterBonus(saveData) / 100;
+const ignoreOn = F.ignoreUnlocked(uLvs, mLvs);
+const currencyRows = [];
+for (let type = 0; type < 9; type++) {
+  const unlocked = F.currencyUnlocked(uLvs, mLvs, type);
+  const active = activeTypes.includes(type);
+  const total = F.currencyTotalValue(saveData, uLvs, mLvs, type, desired);
+  const fullStack = total * maxStack * stackValueMultiplier;
+  currencyRows.push({
+    type,
+    base: F.currencyBaseValue(saveData, uLvs, mLvs, type),
+    lucky: F.luckyCoinValue(saveData, uLvs, mLvs, type),
+    total,
+    fullStack,
+    royalStack: fullStack * royalMulti,
+    unlocked,
+    ignored: F.currencyIgnored(saveData, type),
+    active,
+    create: unlocked ? (active ? 1 / activeTypes.length : 0) : 0,
+  });
+}
+
+const log10 = (x) => Math.log(Math.max(x, 1)) / 2.30259;
+const perWater = [3, 16, 20].map((index, water) => ({
+  water,
+  shared: F.currencyAllMulti(saveData, uLvs, mLvs),
+  own: 1 + log10(Number((saveData.holesData[9] || [])[index]) || 0)
+    * F.bonTOT(uLvs, mLvs, water, 19) / 100,
+}));
+
+const desireRows = [];
+let bestDesire = -1;
+let bestGround = 0;
+for (let type = 0; type < 9; type++) {
+  if (!F.currencyUnlocked(uLvs, mLvs, type)) continue;
+  let sum = 0;
+  for (const active of activeTypes) {
+    sum += F.currencyTotalValue(saveData, uLvs, mLvs, active, type);
+  }
+  const average = activeTypes.length > 0 ? sum / activeTypes.length : 0;
+  const weighted = average * (1 - royalChance) + average * royalMulti * royalChance;
+  const ground = weighted * spaces * maxStack * stackValueMultiplier;
+  desireRows.push({ type, average, weighted, ground, current: type === desired });
+  if (ground > bestGround) {
+    bestGround = ground;
+    bestDesire = type;
+  }
+}
+for (const row of desireRows) row.best = row.type === bestDesire;
+
+const unlockRows = [
+  [1, 0, 3], [2, 0, 4], [3, 1, 2], [4, 1, 3],
+  [5, 1, 4], [6, 2, 2], [7, 2, 3], [8, 2, 4],
+]
+  .filter(([type]) => !F.currencyUnlocked(uLvs, mLvs, type))
+  .map(([type, w, u]) => ({
+    type,
+    upgrade: F.UPG_DATA[w][u][0],
+    water: w,
+    level: uLvs[w][u] || 0,
+    prerequisiteUnlocked: F.upgradeAccessible(uLvs, w, u),
+  }));
+
+// ----- Upgrades tab -----
+const earnRates = F.earnRatesPerHr(saveData, uLvs, mLvs);
+const upgradeRows = [];
+for (let w = 0; w < 3; w++) {
+  const water = [];
+  for (let u = 0; u < 20; u++) {
+    const d = F.UPG_DATA[w][u];
+    const lv = uLvs[w][u] || 0;
+    const ml = mLvs[w][u] || 0;
+    const bon = F.bonTOT(uLvs, mLvs, w, u);
+    const nextCost = F.upgCost(w, u, lv);
+    const currency = d[3];
+    const available = F.fountCurrencyAvail(saveData, currency);
+    const remaining = Math.max(0, nextCost - available);
+    const rate = earnRates[currency] || 0;
+    const seconds = remaining <= 0 ? 0 : (rate > 0 ? remaining / rate * 3600 : null);
+    water.push({
+      level: lv,
+      marble: ml,
+      marbleBonus: F.marbleBon(ml),
+      bonus: bon,
+      unlocked: F.upgradeAccessible(uLvs, w, u),
+      nextCost,
+      currency,
+      seconds,
+      marbleCost: F.marbleCost(w, u, ml),
+      marbable: F.canMarble(w, u),
+      description: formatUpgradeDescription(w, u),
+      cap: upgradeCap(w, u, bon),
+      costs: Array.from({ length: 51 }, (_, step) => F.upgCost(w, u, lv + step)),
+    });
+  }
+  upgradeRows.push(water);
+}
+
 const payload = {
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
-    files: ['js/stats/systems/w5/fountain.js', 'JavaScript copied from the fountain-calc.html overview inline rates'],
+    files: [
+      'js/stats/systems/w5/fountain.js',
+      'JavaScript copied from the fountain-calc.html overview, currency and upgrade inline rows',
+    ],
     save: 'fixtures/data.json wrapped as { data: save } with no companion roster',
   },
   summary: {
@@ -204,6 +398,22 @@ const payload = {
   cross,
   stacks,
   levels,
+  currency: {
+    allMulti: F.currencyAllMulti(saveData, uLvs, mLvs),
+    royalMulti,
+    desireMulti: F.desireMulti(uLvs, mLvs),
+    ignoreOn,
+    stackSize: maxStack,
+    stackValueMultiplier,
+    rows: currencyRows,
+    perWater,
+    desired: desireRows,
+    unlocks: unlockRows,
+  },
+  upgrades: {
+    earnRates,
+    waters: upgradeRows,
+  },
 };
 
 writeFileSync(

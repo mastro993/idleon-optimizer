@@ -10,6 +10,7 @@ use crate::sections::endgame;
 use crate::sections::farming::RunInputs as FarmingRunInputs;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
+use crate::sections::fountain::State as FountainState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
     RunInputs as JellyRunInputs, State as JellyState, Tab as JellyTab,
@@ -247,6 +248,8 @@ pub struct AppState {
     pub mastery: Option<Mastery>,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub fountain: Option<Fountain>,
+    /// The Fountain section's tab, water, desired currency and curve pick.
+    pub fountain_state: FountainState,
     /// The Opal Optimizer's villagers and account bonuses, when the save has them.
     pub opal: Option<Opal>,
     /// The villager the opal breakdown is switched to, or the total.
@@ -871,6 +874,7 @@ impl AppState {
             ladle_state,
             mastery: None,
             fountain: None,
+            fountain_state: FountainState::default(),
             opal: None,
             opal_selected: None,
             sneaking: None,
@@ -1285,6 +1289,7 @@ impl AppState {
             self.jelly_state.adopt(&jelly);
         }
         self.fountain = imported.fountain;
+        self.fountain_state.adopt(self.fountain.as_ref());
         self.opal = imported.opal;
         self.opal_selected = None;
         self.royal = imported.royal;
@@ -1951,6 +1956,37 @@ impl AppState {
 
     pub fn set_clamworks_tab(&mut self, tab: ClamworksTab, cx: &mut Context<Self>) {
         self.clamworks_tab = tab;
+        cx.notify();
+    }
+
+    /// The desired currency the fountain currency tab simulates.
+    pub fn fountain_desired(&self) -> usize {
+        self.fountain_state
+            .desired
+            .or_else(|| self.fountain.as_ref().map(Fountain::desired_currency))
+            .unwrap_or(0)
+    }
+
+    pub fn set_fountain_tab(&mut self, tab: sections::fountain::Tab, cx: &mut Context<Self>) {
+        self.fountain_state.tab = tab;
+        cx.notify();
+    }
+
+    pub fn set_fountain_water(&mut self, water: usize, cx: &mut Context<Self>) {
+        self.fountain_state.water = water.min(idleon_core::fountain::WATERS - 1);
+        cx.notify();
+    }
+
+    /// Simulate a desired currency; `None` returns to the save's choice.
+    pub fn set_fountain_desired(&mut self, desired: Option<usize>, cx: &mut Context<Self>) {
+        self.fountain_state.desired =
+            desired.filter(|currency| *currency < idleon_core::fountain::CURRENCIES);
+        cx.notify();
+    }
+
+    /// Pick the upgrade the upgrade tab's cost curve plots.
+    pub fn set_fountain_upgrade(&mut self, upgrade: Option<usize>, cx: &mut Context<Self>) {
+        self.fountain_state.upgrade = upgrade;
         cx.notify();
     }
 

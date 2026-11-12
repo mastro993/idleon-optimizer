@@ -47,15 +47,6 @@ fn summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
     let level = fountain.level();
     let currency = fountain::level_currency(level);
     let cost = Fountain::opal_cost(level);
-    let label = format!(
-        "Fountain level {level} · {} · {} spaces × {} coins",
-        fountain::water_names()
-            .get(currency)
-            .map(String::as_str)
-            .unwrap_or("Unknown"),
-        fountain.spaces(),
-        num(fountain.max_stack())
-    );
     let marble = if fountain.marble_bar_unlocked() {
         format!("Per fill: {}", num(fountain.marble_per_fill()))
     } else {
@@ -66,12 +57,6 @@ fn summary(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
         .flex()
         .flex_col()
         .gap_2()
-        .child(
-            div()
-                .id("fountain-summary-line")
-                .role(gpui::Role::Label)
-                .aria_label(label),
-        )
         .child(
             div()
                 .id("fountain-summary-row")
@@ -459,13 +444,7 @@ fn level_plan(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
 
 /// The upstream `fmtNum`: whole numbers under 1000 stay whole, the rest scale.
 pub(super) fn num(value: f64) -> String {
-    if value == 0.0 {
-        return "0".into();
-    }
-    if value == value.floor() && value.abs() < 1e3 {
-        return format!("{value:.0}");
-    }
-    crate::ui::format::fmt_val(value)
+    fountain::short_number(value)
 }
 
 /// The upstream `fmtTimeFull`: hours, minutes, seconds and milliseconds.
