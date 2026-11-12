@@ -1,0 +1,1022 @@
+{
+ "items": {
+  "NjItem0": {
+   "type": 0,
+   "bonusType": 0,
+   "name": "Straw_Hat",
+   "stat": "A_basic_hat_made_of_straw_held_together_by_string!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem1": {
+   "type": 0,
+   "bonusType": 1,
+   "name": "Wig_Bandana",
+   "stat": "Really_makes_you_FEEL_like_you_have_cool_ninja_hair!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem2": {
+   "type": 0,
+   "bonusType": 2,
+   "name": "Funky_Hat",
+   "stat": "Woah_what_the_heck_is_this?_What_does_this_have_to_do_with_ninjas?",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem3": {
+   "type": 0,
+   "bonusType": 3,
+   "name": "Reinforced_Headband",
+   "stat": "The_metal_plate_protects_against_downward_strikes_from_opponents!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem4": {
+   "type": 0,
+   "bonusType": 4,
+   "name": "Shogun_Helmet",
+   "stat": "Symbolizes_the_leader_of_feudalism_itself!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem5": {
+   "type": 0,
+   "bonusType": 5,
+   "name": "Gilded_Headband",
+   "stat": "It's_like_the_other_headband,_but_recoloured_to_save_time...",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem6": {
+   "type": 0,
+   "bonusType": 6,
+   "name": "Bamboo_Hat",
+   "stat": "Shaved_bamboo_held_together_by_a_collective_desire_to_be_a_hat!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem7": {
+   "type": 0,
+   "bonusType": 7,
+   "name": "Festive_Beast_Mask",
+   "stat": "Calm_down_it's_not_real,_everyone_knows_masks_aren't_real!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem8": {
+   "type": 0,
+   "bonusType": 8,
+   "name": "Heiress_Headdress",
+   "stat": "It's_blue,_it's_ugly,_and_it_doesn't_deserve_a_full_descri",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem9": {
+   "type": 0,
+   "bonusType": 9,
+   "name": "Spirited_Mane",
+   "stat": "Elicits_a_sense_of_awe_in_all_who_gaze_upon_it.",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem10": {
+   "type": 0,
+   "bonusType": 10,
+   "name": "Fiery_Mane",
+   "stat": "Elicits_a_sense_of_awe_in_all_who_gaze_upon_it,_but_like,_red.",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem11": {
+   "type": 0,
+   "bonusType": 11,
+   "name": "Guardian_Mane",
+   "stat": "Really_makes_you_FEEL_like_you_have_endgame_monster_hair!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem12": {
+   "type": 0,
+   "bonusType": 12,
+   "name": "Fanned_Blossomage",
+   "stat": "Bowing_to_someone_with_this_on_will_really_blow_them_away!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem13": {
+   "type": 0,
+   "bonusType": 13,
+   "name": "Dainty_Brim",
+   "stat": "Fancy_a_spot_of_tea_daaahling?_Be_a_dear_and_pass_the_crumpets!",
+   "desc": "filler",
+   "max": 0
+  },
+  "NjItem14": {
+   "type": 0,
+   "bonusType": 14,
+   "name": "Charcoal_Hat",
+   "stat": "A_basic_hat_made_of_straw,_with_some_charcoal_tossed_in.",
+   "desc": "filler",
+   "max": 0
+  },
+  "Blank": {
+   "type": 0,
+   "bonusType": 0,
+   "name": "Nothing",
+   "stat": "0",
+   "desc": "0",
+   "max": 0
+  },
+  "NjWep0": {
+   "type": 1,
+   "bonusType": 1,
+   "name": "Wood_Nunchaku",
+   "stat": "10",
+   "desc": "0",
+   "max": 0
+  },
+  "NjWep5": {
+   "type": 1,
+   "bonusType": 1,
+   "name": "Bamboo_Nunchaku",
+   "stat": "23",
+   "desc": "1",
+   "max": 0
+  },
+  "NjWep6": {
+   "type": 1,
+   "bonusType": 1,
+   "name": "Charcoal_Nunchaku",
+   "stat": "45",
+   "desc": "2",
+   "max": 0
+  },
+  "NjWep7": {
+   "type": 1,
+   "bonusType": 1,
+   "name": "Ignited_Nunchaku",
+   "stat": "80",
+   "desc": "3",
+   "max": 0
+  },
+  "NjWep8": {
+   "type": 1,
+   "bonusType": 1,
+   "name": "Spiral_Nunchaku",
+   "stat": "110",
+   "desc": "4",
+   "max": 0
+  },
+  "NjWep1": {
+   "type": 1,
+   "bonusType": 2,
+   "name": "Basic_Kunai",
+   "stat": "5",
+   "desc": "0",
+   "max": 0
+  },
+  "NjWep2": {
+   "type": 1,
+   "bonusType": 2,
+   "name": "Jagged_Kunai",
+   "stat": "9",
+   "desc": "0",
+   "max": 0
+  },
+  "NjWep3": {
+   "type": 1,
+   "bonusType": 2,
+   "name": "Serrated_Kunai",
+   "stat": "16",
+   "desc": "0",
+   "max": 0
+  },
+  "NjWep4": {
+   "type": 1,
+   "bonusType": 2,
+   "name": "Damascus_Kunai",
+   "stat": "28",
+   "desc": "0",
+   "max": 0
+  },
+  "NjGl0": {
+   "type": 1,
+   "bonusType": 0,
+   "name": "Leather_Gloves",
+   "stat": "5",
+   "desc": "0",
+   "max": 0
+  },
+  "NjGl1": {
+   "type": 1,
+   "bonusType": 0,
+   "name": "Chainmail_Gloves",
+   "stat": "7",
+   "desc": "0",
+   "max": 0
+  },
+  "NjGl2": {
+   "type": 1,
+   "bonusType": 0,
+   "name": "Thundergloves",
+   "stat": "10",
+   "desc": "0",
+   "max": 0
+  },
+  "NjTr0": {
+   "type": 2,
+   "bonusType": 0,
+   "name": "Ninja_Log",
+   "stat": "8",
+   "desc": "If_detected,_+{%_chance_to_not_be_knocked_out",
+   "max": 13
+  },
+  "NjTr1": {
+   "type": 2,
+   "bonusType": 1,
+   "name": "Taunting_Mark",
+   "stat": "10",
+   "desc": "If_another_ninja_on_this_floor_is_detected,_you_are_instead_(if_youre_not_already_KO'd)_Also,_-{%_KO_time",
+   "max": 40
+  },
+  "NjTr2": {
+   "type": 2,
+   "bonusType": 2,
+   "name": "Yellow_Belt",
+   "stat": "5",
+   "desc": "Performs_actions_+{%_faster._If_there_are_no_other_ninjas_on_floor,_this_bonus_is_doubled",
+   "max": 30
+  },
+  "NjTr3": {
+   "type": 2,
+   "bonusType": 3,
+   "name": "Strange_Comb",
+   "stat": "5",
+   "desc": "Gives_all_EXP_earned_to_ninja_with_highest_Sneak_LV._Also,_+{%_Sneaking_EXP",
+   "max": 50
+  },
+  "NjTr4": {
+   "type": 2,
+   "bonusType": 4,
+   "name": "Silk_Veil",
+   "stat": "20",
+   "desc": "Gives_you_}x_Total_Stealth",
+   "max": 1000
+  },
+  "NjTr5": {
+   "type": 2,
+   "bonusType": 5,
+   "name": "Meteorite",
+   "stat": "15",
+   "desc": "Boosts_Item_Find_Chance_by_+{%,_but_you_gain_no_Sneaking_Exp",
+   "max": 50
+  },
+  "NjTr6": {
+   "type": 2,
+   "bonusType": 6,
+   "name": "Shiny_Smoke",
+   "stat": "20",
+   "desc": "Find_+{%_more_Jade_coins._If_you_have_0%_Detection_Rate,_this_bonus_is_doubled",
+   "max": 200
+  },
+  "NjTr7": {
+   "type": 2,
+   "bonusType": 7,
+   "name": "Scroll_of_Power",
+   "stat": "30",
+   "desc": "+{%_Sneaking_EXP,_Jade_Coins,_and_Total_Stealth._Can_only_be_equipped_by_one_ninja_at_a_time",
+   "max": 300
+  },
+  "NjTr8": {
+   "type": 2,
+   "bonusType": 8,
+   "name": "Smoke_Bomb",
+   "stat": "15",
+   "desc": "All_other_Ninjas_on_same_floor_get_+{%_Stealth",
+   "max": 400
+  },
+  "NjTr9": {
+   "type": 2,
+   "bonusType": 9,
+   "name": "Gold_Coin",
+   "stat": "5",
+   "desc": "If_in_Inventory,_all_ninjas_find_}x_Jade_Coins._Doesn't_stack_with_other_Gold_Coins",
+   "max": 100
+  },
+  "NjTr10": {
+   "type": 2,
+   "bonusType": 10,
+   "name": "Gold_Eye",
+   "stat": "3",
+   "desc": "If_in_Inventory,_all_ninjas_get_+{%_Sneaking_EXP._Doesn't_stack_with_other_Gold_Eyes",
+   "max": 200
+  },
+  "NjTr11": {
+   "type": 2,
+   "bonusType": 11,
+   "name": "Gold_Coupon",
+   "stat": "3",
+   "desc": "If_in_Inventory,_all_Ninja_Knowledge_is_{%_cheaper._Doesn't_stack_with_other_Gold_Coupons",
+   "max": 60
+  },
+  "NjTr12": {
+   "type": 2,
+   "bonusType": 12,
+   "name": "Gold_Scroll",
+   "stat": "3",
+   "desc": "If_in_Inventory,_most_charms_give_}x_higher_bonus_than_displayed._Doesn't_stack_with_other_Gold_Scrolls",
+   "max": 125
+  },
+  "NjTr13": {
+   "type": 2,
+   "bonusType": 13,
+   "name": "Blue_Belt",
+   "stat": "10",
+   "desc": "Gives_+{%_Sneaking_EXP._If_there_are_no_other_ninjas_on_floor,_this_bonus_is_tripled",
+   "max": 200
+  },
+  "NjTr14": {
+   "type": 2,
+   "bonusType": 14,
+   "name": "Green_Belt",
+   "stat": "10",
+   "desc": "Find_+{%_more_Jade_Coins._If_there_are_no_other_ninjas_on_floor,_this_bonus_is_tripled.",
+   "max": 200
+  },
+  "NjTr15": {
+   "type": 2,
+   "bonusType": 15,
+   "name": "Goodie_Bag",
+   "stat": "25",
+   "desc": "Find_+{%_more_Jade_Coins.",
+   "max": 250
+  },
+  "NjTr16": {
+   "type": 2,
+   "bonusType": 16,
+   "name": "Lotus_Flower",
+   "stat": "25",
+   "desc": "All_other_Ninjas_on_same_floor_get_+{%_Stealth",
+   "max": 700
+  },
+  "NjTr17": {
+   "type": 2,
+   "bonusType": 17,
+   "name": "Rosaries",
+   "stat": "35",
+   "desc": "Gives_you_}x_Total_Stealth",
+   "max": 1700
+  },
+  "NjTr18": {
+   "type": 2,
+   "bonusType": 18,
+   "name": "Gold_Dagger",
+   "stat": "5",
+   "desc": "If_in_Inventory,_all_ninjas_get_+{%_Nunchaku_Damage._Doesn't_stack_with_other_Gold_Daggers",
+   "max": 200
+  },
+  "NjTr19": {
+   "type": 2,
+   "bonusType": 19,
+   "name": "Black_Belt",
+   "stat": "20",
+   "desc": "+{%_Sneaking_EXP_and_Jade_coins._If_there_are_no_other_ninjas_on_floor,_this_bonus_is_tripled.",
+   "max": 400
+  },
+  "NjTr20": {
+   "type": 2,
+   "bonusType": 20,
+   "name": "Gold_Beads",
+   "stat": "25",
+   "desc": "If_in_Inventory,_all_ninjas_get_+{%_Total_Stealth._Doesn't_stack_with_other_Gold_Beads",
+   "max": 500
+  },
+  "NjTr21": {
+   "type": 2,
+   "bonusType": 21,
+   "name": "Gold_Star",
+   "stat": "2",
+   "desc": "If_in_Inventory,_charms_found_have_a_+{_higher_Max_LV._Doesn't_stack_with_other_Gold_Stars",
+   "max": 25
+  },
+  "NjTr22": {
+   "type": 2,
+   "bonusType": 22,
+   "name": "Gold_Sai",
+   "stat": "4",
+   "desc": "If_in_Inventory,_all_ninjas_get_+{%_Nunchaku_Dmg_Per_10_Sneak_LV._Doesn't_stack_with_other_Gold_Sais",
+   "max": 25
+  },
+  "NjTr23": {
+   "type": 2,
+   "bonusType": 23,
+   "name": "Gold_Envelope",
+   "stat": "5",
+   "desc": "If_in_Inventory,_all_ninjas_find_+{%_Jade_Per_10_Sneak_LV._Doesn't_stack_with_other_Gold_Envelope",
+   "max": 50
+  },
+  "NjTr24": {
+   "type": 2,
+   "bonusType": 24,
+   "name": "Gold_Q_Mark",
+   "stat": "3",
+   "desc": "If_in_Inventory,_all_ninjas_perform_actions_+{%_faster._Doesn't_stack_with_other_Gold_Q_Marks",
+   "max": 30
+  },
+  "NjGem0": {
+   "type": 4,
+   "bonusType": 130,
+   "name": "Aquamarine",
+   "stat": "40",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 10000
+  },
+  "NjGem1": {
+   "type": 4,
+   "bonusType": 70,
+   "name": "Malachite",
+   "stat": "15",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 5000
+  },
+  "NjGem2": {
+   "type": 4,
+   "bonusType": 285,
+   "name": "Garnet",
+   "stat": "12",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 2500
+  },
+  "NjGem3": {
+   "type": 4,
+   "bonusType": 0,
+   "name": "Starite",
+   "stat": "5",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 200
+  },
+  "NjGem4": {
+   "type": 4,
+   "bonusType": -35,
+   "name": "Topaz",
+   "stat": "10",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 1000
+  },
+  "NjGem5": {
+   "type": 4,
+   "bonusType": 230,
+   "name": "Moissanite",
+   "stat": "3",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 300
+  },
+  "NjGem6": {
+   "type": 4,
+   "bonusType": 70,
+   "name": "Emerald",
+   "stat": "1",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 2500
+  },
+  "NjGem7": {
+   "type": 4,
+   "bonusType": 290,
+   "name": "Firefrost",
+   "stat": "1",
+   "desc": "Hold_down_to_add_this_Gemstone_to_your_collection._View_collection_and_bonuses_in_Ninja_Knowledge.",
+   "max": 30
+  },
+  "NjSym0": {
+   "type": 5,
+   "bonusType": 4,
+   "name": "Lesser_Symbol",
+   "stat": "1",
+   "desc": "Hold_down_for_a_{_chance_to_boost_this_slot_to_Lv_}._Charms_here_will_then_give_a_$x_higher_bonus!",
+   "max": 1
+  },
+  "NjSym1": {
+   "type": 5,
+   "bonusType": 4,
+   "name": "Modest_Symbol",
+   "stat": "5",
+   "desc": "Hold_down_for_a_{_chance_to_boost_this_slot_to_Lv_}._Charms_here_will_then_give_a_$x_higher_bonus!",
+   "max": 1
+  },
+  "NjSym2": {
+   "type": 5,
+   "bonusType": 4,
+   "name": "Grand_Symbol",
+   "stat": "20",
+   "desc": "Hold_down_for_a_{_chance_to_boost_this_slot_to_Lv_}._Charms_here_will_then_give_a_$x_higher_bonus!",
+   "max": 1
+  },
+  "NjSym3": {
+   "type": 5,
+   "bonusType": 4,
+   "name": "Supra_Symbol",
+   "stat": "50",
+   "desc": "Hold_down_for_a_{_chance_to_boost_this_slot_to_Lv_}._Charms_here_will_then_give_a_$x_higher_bonus!",
+   "max": 1
+  },
+  "NjTrP0": {
+   "type": 3,
+   "bonusType": 0,
+   "name": "Sparkle_Log",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP1": {
+   "type": 3,
+   "bonusType": 1,
+   "name": "Fruit_Rolle",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP2": {
+   "type": 3,
+   "bonusType": 2,
+   "name": "Glowing_Veil",
+   "stat": "40",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP3": {
+   "type": 3,
+   "bonusType": 3,
+   "name": "Cotton_Candy",
+   "stat": "15",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP4": {
+   "type": 3,
+   "bonusType": 4,
+   "name": "Sugar_Bomb",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP5": {
+   "type": 3,
+   "bonusType": 5,
+   "name": "Gumm_Eye",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP6": {
+   "type": 3,
+   "bonusType": 6,
+   "name": "Bubblegum_Law",
+   "stat": "25",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP7": {
+   "type": 3,
+   "bonusType": 7,
+   "name": "Sour_Wowzer",
+   "stat": "50",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP8": {
+   "type": 3,
+   "bonusType": 8,
+   "name": "Crystal_Comb",
+   "stat": "30",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP9": {
+   "type": 3,
+   "bonusType": 9,
+   "name": "Rock_Candy",
+   "stat": "50",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP10": {
+   "type": 3,
+   "bonusType": 10,
+   "name": "Lollipop_Law",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP11": {
+   "type": 3,
+   "bonusType": 11,
+   "name": "Taffy_Disc",
+   "stat": "50",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP12": {
+   "type": 3,
+   "bonusType": 12,
+   "name": "Stick_of_Chew",
+   "stat": "30",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP13": {
+   "type": 3,
+   "bonusType": 13,
+   "name": "Treat_Sack",
+   "stat": "40",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP14": {
+   "type": 3,
+   "bonusType": 14,
+   "name": "Gumm_Stick",
+   "stat": "50",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP15": {
+   "type": 3,
+   "bonusType": 15,
+   "name": "Lolly_Flower",
+   "stat": "25",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP16": {
+   "type": 3,
+   "bonusType": 16,
+   "name": "Gumball_Necklace",
+   "stat": "40",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP17": {
+   "type": 3,
+   "bonusType": 17,
+   "name": "Liqorice_Rolle",
+   "stat": "25",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP18": {
+   "type": 3,
+   "bonusType": 18,
+   "name": "Glimmerchain",
+   "stat": "30",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP19": {
+   "type": 3,
+   "bonusType": 19,
+   "name": "Twinkle_Taffy",
+   "stat": "30",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP20": {
+   "type": 3,
+   "bonusType": 20,
+   "name": "Jellypick",
+   "stat": "20",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP21": {
+   "type": 3,
+   "bonusType": 21,
+   "name": "Candy_Cache",
+   "stat": "40",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  },
+  "NjTrP22": {
+   "type": 3,
+   "bonusType": 22,
+   "name": "Mystery_Fizz",
+   "stat": "30",
+   "desc": "Hold_down_to_add_this_Pristine_Charm_to_your_collection_in_the_Lobby._Click_it_there_to_see_its_bonus.",
+   "max": 0
+  }
+ },
+ "upgrades": [
+  {
+   "name": "Centurion_Lineage",
+   "desc": "Each_Ninja_Knowledge_upgrade_costs_}x_less_every_100th_level_it_has!",
+   "perLevel": 5
+  },
+  {
+   "name": "Way_of_Bargain",
+   "desc": "Decreases_the_cost_of_all_Ninja_Knowledge_upgrades_by_}x.",
+   "perLevel": 1
+  },
+  {
+   "name": "Respectful_Minded",
+   "desc": "+{%_bonus_Sneaking_EXP_gain.",
+   "perLevel": 3
+  },
+  {
+   "name": "Mastery_Loot",
+   "desc": "Raise_the_max_LV_of_all_items_found_by_+{_per_Mastery_you_are_currently_on.",
+   "perLevel": 1
+  },
+  {
+   "name": "Way_of_Haste",
+   "desc": "+{%_action_speed._So_instead_of_actions_taking_an_hour,_it's_under_an_hour!",
+   "perLevel": 1
+  },
+  {
+   "name": "Mahjong_Boosters",
+   "desc": "+{%_Door_Damage_and_Untie_Rate.",
+   "perLevel": 4
+  },
+  {
+   "name": "Gemstone_Pilfer",
+   "desc": "Raise_the_max_LV_of_Gemstones_found_to_+{,_counting_as_more_for_collection_when_used",
+   "perLevel": 1
+  },
+  {
+   "name": "Kunai_Knowledge",
+   "desc": "Raise_the_max_LV_of_Kunai_found_to_+{,_also_increases_rarity_of_Kunai_found.",
+   "perLevel": 1
+  },
+  {
+   "name": "Currency_Conduit",
+   "desc": "+{%_bonus_Jade_Coins_found_per_Sneaking_LV",
+   "perLevel": 1
+  },
+  {
+   "name": "Name",
+   "desc": "Desc",
+   "perLevel": 0
+  },
+  {
+   "name": "Glove_Ingenuity",
+   "desc": "Raise_the_max_LV_of_Gloves_found_to_+{,_also_increases_rarity_of_Gloves_found.",
+   "perLevel": 1
+  },
+  {
+   "name": "Charm_Collector",
+   "desc": "Raise_the_max_LV_of_Charms_found_to_+{,_also_increases_rarity_of_Charms_found.",
+   "perLevel": 1
+  },
+  {
+   "name": "Nunchaku_Grip",
+   "desc": "Raise_the_max_LV_of_Nunchaku_found_to_+{,_also_increases_rarity_of_Nunchaku_found.",
+   "perLevel": 1
+  },
+  {
+   "name": "Way_of_Stealth",
+   "desc": "+{_Stealth_per_Sneaking_Lv._Stealth_is_what_lowers_detection_rate.",
+   "perLevel": 1
+  },
+  {
+   "name": "Looting_Ambition",
+   "desc": "Successfully_sneaking_now_has_a_small_chance_of_finding_items._}x_Item_Find_Chance.",
+   "perLevel": 1
+  },
+  {
+   "name": "Thick_Skin",
+   "desc": "When_detected,_getting_Knocked_Out_lasts_for_}x_less_time.",
+   "perLevel": 2
+  },
+  {
+   "name": "Star_Sweeping",
+   "desc": "Insta-revive_a_knocked_out_ninja_by_dragging_them_to_the_Safe_Area,_up_to_{_times_a_day.",
+   "perLevel": 1
+  },
+  {
+   "name": "Strange_Symbols",
+   "desc": "Symbols_now_drop_from_any_floor,_and_are_successful_}x_more_often",
+   "perLevel": 2
+  },
+  {
+   "name": "Cheaper_Stealth",
+   "desc": "The_cost_of_'Way_of_Stealth'_upgrade_goes_up_}x_slower.",
+   "perLevel": 1
+  },
+  {
+   "name": "Admiring_the_Art",
+   "desc": "}x_Sneaking_EXP_Gain_for_all_Ninja.",
+   "perLevel": 5
+  },
+  {
+   "name": "Charming_Symbols",
+   "desc": "Symbols_can_now_be_used_on_charm_slots,_and_}x_chance_to_find_rarer_symbols!",
+   "perLevel": 2
+  },
+  {
+   "name": "Funeral_Flowers",
+   "desc": "Getting_KO'd_boosts_Stealth_on_that_floor_by_+{%._Resets_when_changing_mastery.",
+   "perLevel": 1
+  },
+  {
+   "name": "Double_Gemstones",
+   "desc": "Gemstones_have_a_{%_chance_of_being_worth_2x_as_much_when_added_to_collection",
+   "perLevel": 1
+  },
+  {
+   "name": "Shhhhhhhhhhh",
+   "desc": "}x_Total_Stealth_for_all_Ninjas.",
+   "perLevel": 5
+  },
+  {
+   "name": "Cheaper_Mastery",
+   "desc": "The_cost_of_'Mastery_Loot'_upgrade_is_}x_cheaper.",
+   "perLevel": 50
+  },
+  {
+   "name": "Cheaper_Haste",
+   "desc": "The_cost_of_'Way_of_Haste'_upgrade_is_}x_cheaper.",
+   "perLevel": 15
+  },
+  {
+   "name": "Cheaper_Bargain",
+   "desc": "The_cost_of_'Way_of_Bargain'_upgrade_goes_up_}x_slower.",
+   "perLevel": 1
+  },
+  {
+   "name": "True_Battering",
+   "desc": "}x_more_Door_Damage_for_all_Ninjas.",
+   "perLevel": 2
+  },
+  {
+   "name": "Jadevalanche",
+   "desc": "}x_higher_Jade_Gain_for_all_Ninjas.",
+   "perLevel": 3
+  },
+  {
+   "name": "Successful_Symbols",
+   "desc": "There_is_now_a_4th_symbol_type,_and_all_symbols_are_successful_}x_more_often.",
+   "perLevel": 5
+  },
+  {
+   "name": "Grievance_Garlands",
+   "desc": "Get_}x_more_Funeral_Flowers_whenever_a_Ninja_gets_KO'd.",
+   "perLevel": 25
+  },
+  {
+   "name": "Omnijade_Usable",
+   "desc": "Get_+{_Omnijade,_apply_to_upgrades_to_get_+1_LV/day_without_raising_cost.",
+   "perLevel": 1
+  }
+ ],
+ "info": {
+  "doorHp": [
+   1,
+   150,
+   800,
+   5000,
+   25000,
+   200000,
+   1500000,
+   20000000,
+   100000000,
+   2000000000,
+   40000000000,
+   45000000000000
+  ],
+  "captiveFloor": [
+   0,
+   2,
+   3,
+   4,
+   4,
+   5,
+   6,
+   6,
+   6,
+   7,
+   10,
+   11
+  ],
+  "untieRequired": [
+   0,
+   10,
+   60,
+   750,
+   3000,
+   17000,
+   80000,
+   500000,
+   1500000,
+   7000000,
+   30000000,
+   200000000
+  ],
+  "detectionBase": [
+   0.01,
+   15,
+   80,
+   500,
+   2500,
+   8000,
+   40000,
+   170000,
+   800000,
+   3000000,
+   10000000,
+   20000000
+  ]
+ },
+ "scales": {
+  "detection": 20000000,
+  "doorHp": 40000000000,
+  "jade": 60000000
+ },
+ "charmBonusTypes": {
+  "0": "Dodge %",
+  "1": "KO reduction %",
+  "2": "Action speed %",
+  "3": "EXP redirect %",
+  "4": "Total Stealth x",
+  "5": "Item Find %",
+  "6": "Jade % (2x if 0% det)",
+  "7": "EXP+Jade+Stealth %",
+  "8": "Floor Stealth %",
+  "9": "Inv: Jade x",
+  "10": "Inv: EXP %",
+  "11": "Inv: NK cost -%",
+  "12": "Inv: Charm bonus x",
+  "13": "EXP % (3x solo)",
+  "14": "Jade % (3x solo)",
+  "15": "Jade %",
+  "16": "Floor Stealth %",
+  "17": "Total Stealth x",
+  "18": "Inv: Damage %",
+  "19": "EXP+Jade % (3x solo)",
+  "20": "Inv: Total Stealth %",
+  "21": "Inv: Charm max LV +",
+  "22": "Inv: Dmg/10 sneak LV %",
+  "23": "Inv: Jade/10 sneak LV %",
+  "24": "Inv: Action speed %"
+ },
+ "emporiumLetters": "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ肥肢肖肋肉職耐者箱管算箔策答筒筍白発癒痛痕病疾疲潤潜漬漠演漏漁滞毎殻殺段殖残歳歯歩武歓欲次欠櫛機色村材杉本末未木授掃捧彼役影彫彩胃堪城坑努助加功力創割借候倒老個景是明昇早既掴担想扉戻懸懲憩態感蛮蛍虫虚蘇薬薄蔵",
+ "legendTalentPerPoint": [
+  30,
+  500,
+  100,
+  10,
+  40,
+  10,
+  25,
+  10,
+  100,
+  2,
+  25,
+  15,
+  100,
+  1,
+  100,
+  150,
+  200,
+  5,
+  2,
+  75,
+  75,
+  15,
+  25,
+  8,
+  20,
+  500,
+  200,
+  50,
+  15,
+  20,
+  25,
+  150,
+  900,
+  75,
+  100,
+  25,
+  3,
+  300,
+  1,
+  1,
+  50,
+  50,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/data/game/customlists.js",
+   "js/stats/data/game/custommaps.js",
+   "js/stats/data/game/hardcoded.js",
+   "js/stats/systems/w6/sneaking-math.js"
+  ]
+ }
+}

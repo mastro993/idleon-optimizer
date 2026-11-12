@@ -2408,7 +2408,7 @@
       "key": "sneaking",
       "title": "Sneaking Optimizer",
       "group": "w6",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.",
       "upstream": [
         "sneaking-calc.html",

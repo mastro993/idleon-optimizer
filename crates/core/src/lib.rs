@@ -46,6 +46,7 @@ pub mod sailing;
 pub mod save;
 pub mod shape;
 pub mod sim;
+pub mod sneaking;
 pub mod spelunking;
 pub mod stats;
 pub mod statue;

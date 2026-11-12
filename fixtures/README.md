@@ -8,7 +8,8 @@ It exists for testing and debugging only. The game formulas, save decoding and o
 come from the upstream [`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer)
 repo; do not reverse-engineer logic from this file or tune behaviour to match it.
 
-Used by `crates/core/tests/fixture.rs` and `crates/core/tests/statue.rs`. To exercise the app by
+Used by `crates/core/tests/fixture.rs`, `crates/core/tests/statue.rs` and
+`crates/core/tests/sneaking.rs`. To exercise the app by
 hand, open the header's Import dialog and paste the file's contents, or drop the file on it.
 
 `endgame-stats.json` is the upstream `js/endgame-stats.js` leaderboard audit of `data.json`: all 177
@@ -55,3 +56,12 @@ plots' metrics, all 36 overgrowth curves and the ten Crop Scientist bonuses. Reg
 `node script/farming-signals-oracle.mjs <upstream-repo>`; `crates/core/tests/farming_signals.rs`
 compares the port field for field. Treat it as frozen for the same reason: it is the oracle's
 output, not this app's.
+
+`sneaking.json` is the upstream Sneaking calculator's own output for `data.json`: the saved roster
+(twin placements, untie state and four equipment rows per twin), the parsed 39-slot inventory, the
+Gold inventory scan with the charm it selects per bonus type, the charm bonus map and action speed
+per twin, and the pure formulas (Ninja Knowledge bonuses, action speed, KO recovery, detection
+bases and chances, stealth, door HP and the target-stealth inverse) over the save's own rows and
+over the whole `NjEQ` catalog. Regenerate it with `node script/sneaking-oracle.mjs <upstream-repo>`;
+`crates/core/tests/sneaking.rs` compares the port field for field. Treat it as frozen for the same
+reason: it is the oracle's output, not this app's.

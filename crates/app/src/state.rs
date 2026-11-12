@@ -243,6 +243,10 @@ pub struct AppState {
     pub royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
     pub royal_state: RoyalState,
+    /// The ninja loadout and inventory the loaded save carries, if it has any.
+    pub sneaking: Option<idleon_core::sneaking::Loadout>,
+    /// The sneaking workspace's login context and selected slot.
+    pub sneaking_state: crate::sections::sneaking::State,
     /// The BoneJoePickle section's inputs, kept alive the same way.
     pub pickle: PickleState,
     /// The Prisma calculator's controls and the plan for the save.
@@ -789,6 +793,8 @@ impl AppState {
             fountain: None,
             opal: None,
             opal_selected: None,
+            sneaking: None,
+            sneaking_state: Default::default(),
             pickle: PickleState::default(),
             prisma,
             statue,
@@ -1192,6 +1198,7 @@ impl AppState {
         self.opal = imported.opal;
         self.opal_selected = None;
         self.royal = imported.royal;
+        self.sneaking = imported.sneaking;
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet

@@ -497,6 +497,10 @@ const sectionConfig = (id, config) =>
 /// A small flat `save.json` carrying a cavern: a level-10 fountain with the
 /// upgrade levels that unlock six currencies, a coin stack and a duck bar, so
 /// the overview has rates, stacks and a bonus warning to read.
+/// The committed synthetic account: it carries the full `Ninja` rows, so the
+/// loadout, the inventory and the saved floor assignments all have data.
+const sneakingSave = () => readFileSync(join(process.cwd(), 'fixtures/data.json'), 'utf8');
+
 const fountainSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   const holes = Array.from({ length: 35 }, () => []);
@@ -819,6 +823,33 @@ const INTERACTIONS = {
       lane,
       (nodes) => (labelOf(nodes, 'formula-node-root') ?? '').includes('Total EXP/hr'),
       'opal: the total control readdresses the tree',
+    );
+  },
+  sneaking: async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'sneaking: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: sneakingSave() });
+    await waitForNode(lane, 'import-format', 'sneaking: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'sneaking-loadout', 'sneaking: the loadout opens after Apply');
+    await waitForNode(lane, 'sneaking-inventory', 'sneaking: the inventory renders');
+    await waitForNode(lane, 'sneaking-saved-floors', 'sneaking: the saved floors render');
+    const before = labelOf(await lane.tree(), 'sneak-slot-0-3') ?? '';
+    await lane.call('click_element', { id: 'sneak-slot-0-3' });
+    // Inventory row 24 holds a non-Gold Lotus Flower, a legal second charm.
+    await lane.call('click_element', { id: 'sneak-inv-23' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') !== before,
+      'sneaking: the inventory charm swaps into the slot'
+    );
+    await lane.call('click_element', { id: 'sneak-reset-loadout' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') === before,
+      'sneaking: reset restores the saved charm'
     );
   },
   fountain: async (lane) => {
