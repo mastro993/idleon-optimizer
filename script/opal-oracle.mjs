@@ -45,6 +45,8 @@ const exported = [
   'buildExt',
   'villagerExpRate',
   'totalExpRate',
+  'optimizeTotal',
+  'optimizeForTarget',
   'bellBonus',
   'measBonus',
   'holeozDxp',
@@ -72,6 +74,19 @@ function allLength(tier) {
   const row = state.saveData.holesData?.[4 + tier];
   return Array.isArray(row) ? row.length : 0;
 }
+
+const totalOpals = opals.reduce((sum, count) => sum + count, 0);
+// The page's own optimizer, so the port is held to at least the plans the
+// upstream shapes find. Its greedy splits miss some plans, so the Rust port
+// searching further is compared with an "at least" bound, not field for field.
+const totalPlan = page.optimizeTotal(totalOpals, ext);
+const optimizer = {
+  total: { opals: totalPlan, rate: page.totalExpRate(totalPlan, ext) },
+  targets: Array.from({ length: 5 }, (_, v) => {
+    const plan = page.optimizeForTarget(v, totalOpals, ext);
+    return { villager: v, opals: plan, rate: page.villagerExpRate(v, plan, ext) };
+  }),
+};
 
 const b = ext._breakdown;
 // `arcadeBonus` returns a `{val, children}` node for some indices; the page
@@ -134,10 +149,11 @@ const payload = {
     loreEpi1: b.loreEpi1,
     bundleU: b.bundleU,
   },
+  optimizer,
   current: {
     minOpals: minOpals(opals, ext),
     equalSpread: ext.cosmoBonus_1_5 * Math.floor(minOpals(opals, ext) / 5),
-    totalOpals: opals.reduce((sum, count) => sum + count, 0),
+    totalOpals,
     rates: Array.from({ length: 5 }, (_, v) => page.villagerExpRate(v, opals, ext)),
     total: page.totalExpRate(opals, ext),
   },

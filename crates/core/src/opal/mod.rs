@@ -1,4 +1,5 @@
-//! The Opal Optimizer (W5): villager EXP rates and the current opal state.
+//! The Opal Optimizer (W5): villager EXP rates, the current opal state and the
+//! best way to split a total across the villagers.
 //!
 //! The upstream page keeps its maths inline in `opal-calc.html`, so every
 //! function here names the page function it rewrites:
@@ -10,6 +11,10 @@
 //!   Spread factor and `1 + additive %`.
 //! - [`Opal::total_exp_rate`] is `totalExpRate`: the unlocked villagers' rates
 //!   added together.
+//! - [`Opal::plan`] is the page's `optimizeTotal` and `optimizeForTarget`: the
+//!   distribution of a total that earns the most for the chosen target. The port
+//!   searches every placement the page's two greedy shapes can miss, so its plan
+//!   is never worse than the saved distribution.
 //! - [`Terms`] is the page's `_breakdown` object: every account bonus
 //!   `buildExt` reads, kept apart so the tree can show where each came from.
 //!   [`Terms::additive`] sums its additive terms and [`Terms::base_multiplier`]
@@ -20,9 +25,12 @@
 
 mod breakdown;
 pub(crate) mod data;
+mod optimize;
 
 #[cfg(test)]
 mod tests;
+
+pub use optimize::{Input as PlanInput, Plan, Target as PlanTarget};
 
 use crate::formula::{FormulaNode, ValueFormat};
 

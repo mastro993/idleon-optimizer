@@ -22,6 +22,7 @@ use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
 use crate::sections::monument::State as MonumentState;
+use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::CustomPreset;
 use crate::sections::research::Tab as ResearchTab;
@@ -262,12 +263,17 @@ pub struct FountainConfig {
     upgrade: Option<usize>,
 }
 
-/// The opal section's config: the villager the breakdown is switched to, or the
-/// total. The villagers themselves come from the save.
+/// The opal section's config: the villager the breakdown is switched to, and the
+/// optimizer's tab, target and total. The villagers themselves come from the
+/// save; a document from before the optimizer has no `total`, so it falls back
+/// to the save's own.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct OpalConfig {
     selected: Option<usize>,
+    tab: OpalTab,
+    target: Option<usize>,
+    total: Option<f64>,
 }
 
 /// The combat simulator's config: the selected character, its tab, the named
@@ -451,6 +457,9 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         "opal",
         value(&OpalConfig {
             selected: state.opal_selected,
+            tab: state.opal_tab,
+            target: state.opal_target,
+            total: Some(state.opal_total),
         }),
     );
     insert("sneaking", value(&state.sneaking_state));
@@ -927,6 +936,12 @@ pub fn assign(
         }
         Config::Opal(config) => {
             state.set_opal_villager(config.selected, cx);
+            state.set_opal_tab(config.tab, cx);
+            state.set_opal_target(config.target, cx);
+            match config.total {
+                Some(total) => state.set_opal_total(total, cx),
+                None => state.use_saved_opal_total(cx),
+            }
         }
         Config::Sneaking(config) => {
             let players = state
