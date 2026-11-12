@@ -576,6 +576,39 @@ const jellySave = () => {
   });
 };
 
+/// A small flat `save.json` carrying the Royal Guardian rows: one built W1
+/// outpost with three guards and its links, a second outpost the militia is
+/// clearing, and the Armory levels an overview reads. The Spelunk, Research and
+/// SL rows give the clearing rate its cross-system factors.
+const royalSave = () => {
+  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const armory = row(83, { 21: 20, 23: 10 });
+  const g = Array.from({ length: 24 }, () => []);
+  g[2] = armory;
+  g[6] = row(4, { 0: 4 });
+  g[7] = row(4, { 0: 2 });
+  g[23] = row(10, { 3: 4, 8: 1 });
+  const maps = Array.from({ length: 200 }, () => []);
+  // A built Normal outpost on map 1: barracks, logistics, education, five rank
+  // bars, two links, the type, the packed units and the glorified flag.
+  maps[1] = [3, 20, 4, 5000, 900, 400, 200, 0, 7, -1, 0, 444111111, 0];
+  // Map 2 has progress saved and a militia assignment, so it is clearing.
+  maps[2] = [120];
+  const research = row(19, {}).map(() => []);
+  research[7] = row(20, { 9: 5 });
+  research[14] = row(9, {});
+  research[17] = row(10, {});
+  return JSON.stringify({
+    Research: JSON.stringify(research),
+    RoyalG: JSON.stringify(g),
+    RoyalMaps: JSON.stringify(maps),
+    Spelunk: JSON.stringify(Array.from({ length: 55 }, () => [])),
+    CharacterClass_0: 16,
+    Lv0_0: JSON.stringify(row(30, { 0: 1200, 20: 40 })),
+    SL_0: JSON.stringify({ 231: 300 }),
+  });
+};
+
 const INTERACTIONS = {
   spelunking: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -639,7 +672,26 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-estimate-result', 'jelly: the estimate stores a result', 120000);
     await waitForNode(lane, 'jelly-contribution', 'jelly: the cell contribution renders');
     await waitForNode(lane, 'jelly-obstruction-outlook', 'jelly: the outlook renders');
-
+  },
+  'royal-guardian': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-drop', 'royal-guardian: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: royalSave() });
+    await waitForNode(lane, 'import-format', 'royal-guardian: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitForNode(lane, 'royal-overview', 'royal-guardian: the overview opens after Apply');
+    const world = labelOf(await lane.tree(), 'royal-world-card-0') ?? '';
+    if (!world.includes('1 / 22')) throw new Error(`royal-guardian: W1 reads ${world}`);
+    // The range panel explains the world's first built outpost.
+    const panel = labelOf(await lane.tree(), 'royal-range-target') ?? '';
+    if (!panel.includes('Resource ')) throw new Error(`royal-guardian: the range panel reads ${panel}`);
+    await waitForNode(lane, 'royal-world-1', 'royal-guardian: the world rail lists W2');
+    await lane.call('click_element', { id: 'royal-world-1' });
+    await waitForNode(lane, 'royal-clear-51', 'royal-guardian: the W2 tab lists its outposts');
+    await lane.call('click_element', { id: 'royal-world-0' });
+    await waitForNode(lane, 'royal-clear-2', 'royal-guardian: the W1 tab lists its clearing');
   },
   killroy: async (lane) => {
     await lane.call('click_element', { id: 'killroy-import' });

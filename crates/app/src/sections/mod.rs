@@ -28,6 +28,7 @@ pub mod monument;
 pub mod pickle;
 pub mod prisma;
 pub mod research;
+pub mod royal_guardian;
 pub mod sailing;
 pub mod shadow;
 pub mod spelunking;
@@ -454,9 +455,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W7,
         description: "Outposts, resources and currencies, Armory, statues, and map quick views",
         spec: "docs/sections/royal-guardian.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: royal_guardian::view,
         keys: no_keys,
     },
     Section {

@@ -124,6 +124,8 @@ pub struct Imported {
     pub ladle: Option<crate::ladle::Ladle>,
     /// The Fountain Cavern state, when the save carries its `Holes` rows.
     pub fountain: Option<Fountain>,
+    /// The Royal Guardian rows, when the save carries `RoyalG` and `RoyalMaps`.
+    pub royal: Option<crate::royal_guardian::RoyalGuardian>,
     /// The decoded save with its `it.json` wrapper, kept whole so read-only
     /// sections can read raw fields and audit it.
     pub save: Save,
@@ -346,6 +348,13 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         );
     }
     let fountain = Fountain::from_save(save, companion::read(companion.as_ref()));
+    let royal = crate::royal_guardian::RoyalGuardian::from_save(save, jelly.as_ref());
+    if royal.is_none() {
+        warnings.push(
+            "RoyalG/RoyalMaps: not in the save; the Royal Guardian calculator has no outposts to read"
+                .into(),
+        );
+    }
     if jar.is_none() {
         warnings.push("Holes: not in the save; the jar calculator has no jar state to read".into());
     }
@@ -375,6 +384,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         spelunking,
         ladle,
         fountain,
+        royal,
         save: document,
         companion,
         statues,

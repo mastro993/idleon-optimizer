@@ -1,11 +1,11 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
-the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Coral God Rank planner,
-the Spelunking controls and depth estimates, the combat simulator's loadout editor, the cog board
-optimizer and the Jelly Operator overview and layout editor partial, shadow-ban, endgame and
-BoneJoePickle done, Monument Bravery and the All Stats context built, 8 sections planned.** The live
-breakdown is
+the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Royal Guardian
+overview, the Coral God Rank planner, the Spelunking controls and depth estimates, the combat
+simulator's loadout editor, the cog board optimizer and the Jelly Operator overview and layout
+editor partial, shadow-ban, endgame and BoneJoePickle done, Monument Bravery and the All Stats
+context built, 5 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -252,6 +252,8 @@ script/extract-fountain-data.mjs    extract the fountain upgrade table and its a
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir and shop tables
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles and rejections
+script/extract-royal-data.mjs       extract the Royal Guardian armory, resource and map tables
+script/royal-oracle.mjs             regenerate the Royal Guardian overview oracle fixture
 ```
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
@@ -359,6 +361,18 @@ source the save does not carry; `script/fountain-oracle.mjs` regenerates the ups
 `fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
 the currency tab, upgrade list, planner, marble planner and simulator (FN-02 to FN-04).
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
+
+The Royal Guardian section implements RG-01: the overview with the counters (built outposts, worlds
+unlocked, Armory levels, stationed units, militia clearing), the world progress cards, the raw
+clearing values every unbuilt outpost reports (progress, requirement, remaining, militia, rate, ETA)
+and the range target behind an outpost's Advanced Logistics plan. `idleon_core::royal_guardian`
+reads `RoyalG` and `RoyalMaps`, `script/extract-royal-data.mjs` extracts the Armory, resource and map
+tables, and `script/royal-oracle.mjs` regenerates `fixtures/royal-guardian.json` from the upstream
+JS. The clearing rate reads talent 231's purchased level and the shared Jelly Operator completion
+bonus; the all-talent bonus levels that raise the talent are not decoded yet, so the rate card says
+so. Missing: the outpost map, resource nodes and currencies (RG-02), the upgrades, breakdown tree and
+forecast (RG-03) and the optimizer, unit EXP and shelf steps (RG-04).
+Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt and depth estimates (SP-01).
 `idleon_core::spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir unlocks and

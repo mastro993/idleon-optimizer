@@ -5,7 +5,7 @@
 - Milestone: `M27`
 - Section key: `royal-guardian`
 - Group: `w7`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`
 
 Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.
