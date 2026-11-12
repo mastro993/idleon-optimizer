@@ -137,6 +137,8 @@ pub struct Imported {
     pub worship: crate::worship::Inputs,
     /// The Cooking Mastery state, when the save carries `CookMaster`.
     pub mastery: Option<crate::cooking_mastery::Mastery>,
+    /// The Jelly Operator board, when the save carries `Research[14]`/`[17]`.
+    pub jelly: Option<crate::jelly::Jelly>,
     /// Which shape the text had.
     pub format: Format,
     /// How many characters the save carries, from its `Lv0_<n>` rows.
@@ -302,6 +304,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);
+    let jelly = account::jelly(save, &characters, &simulation, &mut warnings);
     let coral = coral::inputs(save, root, &characters, &rows);
     let mut statues = statue::read(save, root, &mut warnings);
     if !statues.is_empty() {
@@ -378,6 +381,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         coral,
         worship,
         mastery,
+        jelly,
         format,
         characters: roster,
         named_characters,

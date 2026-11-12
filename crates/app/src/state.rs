@@ -10,6 +10,9 @@ use crate::sections::farming::RunInputs as FarmingRunInputs;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
+use crate::sections::jelly_operator::{
+    RunInputs as JellyRunInputs, State as JellyState, Tab as JellyTab,
+};
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
@@ -41,6 +44,7 @@ use idleon_core::coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_core::farming::{Allocation as FarmingOutcome, Farm, Mode, Objective};
 use idleon_core::fishing::{AccountInputs, FishingSave};
 use idleon_core::import as pipeline;
+use idleon_core::jelly::{Estimate as JellyEstimate, Jelly};
 use idleon_core::killroy::Plan as KillroyPlan;
 use idleon_core::ladle::Ladle;
 use idleon_core::model::{
@@ -201,6 +205,10 @@ pub struct AppState {
     pub clamworks_projection: Option<[u32; 9]>,
     /// The endgame section's audit of the last applied save.
     pub endgame: endgame::State,
+    /// The Jelly Operator board the last imported save carried.
+    pub jelly: Option<Jelly>,
+    /// The Jelly Operator section's board on screen and its palette pick.
+    pub jelly_state: JellyState,
     /// The jar section's active tab, kept across dashboard visits.
     pub jar_tab: JarTab,
     /// The tier the rupie value tab projects its income for.
@@ -260,6 +268,8 @@ pub struct AppState {
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for the coral god rank beam search.
     pub(crate) coral_run: Entity<TaskRunner<CoralPlan, CoralInputs>>,
+    /// The shared runner for the Jelly Operator operation estimate.
+    pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for the Clamworks upgrade plan.
@@ -300,6 +310,7 @@ pub struct AppState {
     _optimizer_subscription: Subscription,
     _killroy_run_subscription: Subscription,
     _coral_run_subscription: Subscription,
+    _jelly_run_subscription: Subscription,
     _cog_subscription: Subscription,
     _clamworks_run_subscription: Subscription,
     _worship_plan_subscription: Subscription,
@@ -539,6 +550,34 @@ impl AppState {
                 }
                 cx.notify();
             });
+        // The estimate runs one seeded trial at a time, so it reports each one
+        // and can be cancelled at a trial boundary.
+        let jelly_run = cx.new(|_| TaskRunner::<JellyEstimate, JellyRunInputs>::new());
+        let jelly_run_subscription =
+            cx.subscribe(&jelly_run, |state, runner, event: &TaskEvent, cx| {
+                match event {
+                    TaskEvent::Progress(progress) => {
+                        state.status =
+                            format!("Estimating the Jelly operation… {}", progress.message);
+                    }
+                    TaskEvent::Finished { cancelled: true } => {
+                        state.status = if runner.read(cx).result().is_some() {
+                            "Jelly estimate cancelled; the previous estimate is unchanged.".into()
+                        } else {
+                            "Jelly estimate cancelled; nothing was stored.".into()
+                        };
+                    }
+                    TaskEvent::Finished { cancelled: false } => {
+                        if let Some(estimate) = runner.read(cx).result() {
+                            state.status = format!(
+                                "Jelly estimate ready: {} of {} trials cleared.",
+                                estimate.success_count, estimate.trials
+                            );
+                        }
+                    }
+                }
+                cx.notify();
+            });
         // The coral beam search is bounded but budget-sized, so it reports each
         // step and can be cancelled like the other optimizers.
         let coral_run = cx.new(|_| TaskRunner::<CoralPlan, CoralInputs>::new());
@@ -718,6 +757,8 @@ impl AppState {
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar_tier: 0,
+            jelly: None,
+            jelly_state: JellyState::default(),
             jar_breakdown,
             jar: None,
             spelunking: SpelunkingState::default(),
@@ -746,6 +787,7 @@ impl AppState {
             optimizer,
             killroy_run,
             coral_run,
+            jelly_run,
             cog_run,
             clamworks_run,
             worship_plan,
@@ -771,6 +813,7 @@ impl AppState {
             _optimizer_subscription: optimizer_subscription,
             _killroy_run_subscription: killroy_run_subscription,
             _coral_run_subscription: coral_run_subscription,
+            _jelly_run_subscription: jelly_run_subscription,
             _cog_subscription: cog_subscription,
             _clamworks_run_subscription: clamworks_run_subscription,
             _worship_plan_subscription: worship_plan_subscription,
@@ -1116,6 +1159,10 @@ impl AppState {
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
+        self.jelly = imported.jelly;
+        if let Some(jelly) = self.jelly.clone() {
+            self.jelly_state.adopt(&jelly);
+        }
         self.fountain = imported.fountain;
         self.research.selected_cell = None;
         self.sailing_state.island = self
@@ -1812,6 +1859,117 @@ impl AppState {
     /// The cog optimizer's run: running, progress, result and staleness.
     pub fn cog_task(&self, cx: &App) -> TaskState<CogResult> {
         self.cog_run.read(cx).state(&self.cog.inputs())
+    }
+
+    /// What the shared Jelly estimate runner shows against the current inputs.
+    pub fn jelly_task(&self, cx: &App) -> TaskState<JellyEstimate> {
+        let inputs = self.jelly_state.inputs(self.jelly.as_ref());
+        self.jelly_run.read(cx).state(&inputs)
+    }
+
+    /// Switch the Jelly Operator tab.
+    pub fn set_jelly_tab(&mut self, tab: JellyTab, cx: &mut Context<Self>) {
+        if self.jelly_state.tab != tab {
+            self.jelly_state.tab = tab;
+            cx.notify();
+        }
+    }
+
+    /// Pick the palette cell type the next board click places.
+    pub fn jelly_select(&mut self, cell_type: usize, cx: &mut Context<Self>) {
+        self.jelly_state.select(cell_type);
+        let message = self.jelly_state.message.clone();
+        self.status = if message.is_empty() {
+            format!(
+                "Jelly palette: {}.",
+                idleon_core::jelly::data().cell_name(cell_type)
+            )
+        } else {
+            message
+        };
+        cx.notify();
+    }
+
+    /// Place the picked cell on the slot, or remove the cell that covers it.
+    pub fn jelly_click_slot(&mut self, anchor: usize, cx: &mut Context<Self>) {
+        let Some(jelly) = self.jelly.clone() else {
+            return;
+        };
+        let layout = self.jelly_state.layout.clone();
+        if idleon_core::jelly::board::occupancy(&layout).contains_key(&anchor) {
+            self.jelly_state.remove_at(&layout, anchor);
+        } else {
+            self.jelly_state.place(&jelly, anchor);
+        }
+        self.status = self.jelly_state.message.clone();
+        cx.notify();
+    }
+
+    /// Put the board back to the save's own layout.
+    pub fn jelly_reset_layout(&mut self, cx: &mut Context<Self>) {
+        let Some(jelly) = self.jelly.clone() else {
+            return;
+        };
+        self.jelly_state.reset(&jelly);
+        self.status = self.jelly_state.message.clone();
+        cx.notify();
+    }
+
+    /// How many seeded trials an estimate runs.
+    pub fn set_jelly_trials(&mut self, value: f64, cx: &mut Context<Self>) {
+        let trials = value.clamp(1.0, 1024.0).round() as u32;
+        if self.jelly_state.trials != trials {
+            self.jelly_state.trials = trials;
+            cx.notify();
+        }
+    }
+
+    /// The seed the trials are derived from.
+    pub fn set_jelly_seed(&mut self, value: f64, cx: &mut Context<Self>) {
+        let seed = if value.is_finite() {
+            value.clamp(0.0, 4_294_967_295.0) as u32
+        } else {
+            1
+        };
+        if self.jelly_state.seed != seed {
+            self.jelly_state.seed = seed;
+            cx.notify();
+        }
+    }
+
+    /// Run the operation estimate off the UI thread through the shared runner.
+    pub fn run_jelly_estimate(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.jelly_state.inputs(self.jelly.as_ref());
+        let Some(jelly) = inputs.jelly.clone() else {
+            self.status = "Jelly estimate: import a save with a board first.".into();
+            cx.notify();
+            return;
+        };
+        let trials = inputs.trials;
+        let layout = inputs.layout.clone();
+        let seed = inputs.seed;
+        let started = self.jelly_run.update(cx, |runner, cx| {
+            runner.start(cx, inputs, move |_inputs, report| {
+                JellyEstimate::run_with(&jelly, &layout, trials, seed, |done| {
+                    report(Progress {
+                        fraction: done as f32 / trials as f32,
+                        message: format!("Trial {done} of {trials}"),
+                    }) == Control::Continue
+                })
+            })
+        });
+        if started {
+            self.status = format!("Estimating the Jelly operation over {trials} trials…");
+            cx.notify();
+        }
+    }
+
+    /// Ask a running estimate to stop at its next trial boundary.
+    pub fn cancel_jelly_estimate(&mut self, cx: &mut Context<Self>) {
+        if self.jelly_run.update(cx, |runner, _| runner.cancel()) {
+            self.status = "Cancelling the Jelly estimate…".into();
+            cx.notify();
+        }
     }
 
     /// Change the objective; a stored result becomes stale until it reruns.

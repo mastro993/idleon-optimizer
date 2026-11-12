@@ -1,0 +1,3101 @@
+{
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/systems/w7/jelly-operator.js"
+  ],
+  "save": "fixtures/data.json"
+ },
+ "cases": [
+  {
+   "name": "save",
+   "overrides": {},
+   "state": {
+    "progress": {
+     "obstruction": 32,
+     "tries": 0,
+     "bloodcells": 286287533962734,
+     "bestDps": 264770690.882348,
+     "fever": 2,
+     "bestBloodcells": 20393839807861.3
+    },
+    "unitsOwned": 6,
+    "unlocked": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     18,
+     19,
+     20,
+     21,
+     22,
+     36,
+     37,
+     38,
+     39,
+     40,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     65,
+     66,
+     67,
+     72,
+     73,
+     74,
+     75,
+     76,
+     77,
+     78,
+     83,
+     84,
+     85,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95,
+     96,
+     101,
+     102,
+     103,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     121,
+     126,
+     127,
+     128,
+     129,
+     130,
+     131,
+     132,
+     133,
+     134,
+     135,
+     144,
+     145,
+     146,
+     147,
+     148,
+     149,
+     150,
+     151,
+     152,
+     153,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     169,
+     170,
+     171
+    ],
+    "slotPurchasesLeft": 1,
+    "cellLevels": [
+     42,
+     43,
+     25,
+     35,
+     18,
+     28,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     1103047.31491504,
+     863701.584388589,
+     613.083234221162,
+     78402.6883215116,
+     1131.23953653617,
+     9344.68131558354,
+     0,
+     0,
+     0
+    ],
+    "dailyTries": 6,
+    "currencyMultiplier": 7606.308334657604,
+    "cellDamageMultiplier": 67.1412789252,
+    "cellSpeedMultiplier": 1,
+    "cellExpMultiplier": 20.25
+   },
+   "estimate": {
+    "valid": true,
+    "trials": 8,
+    "seed": 7,
+    "successCount": 0,
+    "clearProbability": 0,
+    "clearProbabilityLow": 0,
+    "clearProbabilityHigh": 0.32440756488388023,
+    "meanTime": 0,
+    "medianTime": null,
+    "p90Time": null,
+    "meanDamage": 2663238899.4146814,
+    "meanDamageStandardError": 31857002.600293115,
+    "medianDamage": 2659061149.081092,
+    "meanBloodcells": 20257416237802.223,
+    "medianBloodcells": 20225638980619.79,
+    "p90Bloodcells": 20994081541922.05,
+    "maxBloodcells": 21147568293464.273,
+    "meanCellExp": 75934.96875,
+    "meanCellExpByType": [
+     42537.65625,
+     24231.65625,
+     0,
+     6978.65625,
+     0,
+     2187,
+     0,
+     0,
+     0
+    ],
+    "meanCriticalTime": 19.599999999997895,
+    "meanDeaths": 83,
+    "meanRevives": 0,
+    "meanBestDps": 264770690.88234803,
+    "meanBestDpsMultiplier": 2.1613697987055507,
+    "meanPeakDps": 76986946.72278194,
+    "meanNormalDamage": 1750980210.0475888,
+    "meanCriticalDamage": 912258689.3670931,
+    "meanShots": 3751.25,
+    "meanHits": 3749.875,
+    "meanBossAttacks": 83,
+    "meanImmunoidFocusTime": 0,
+    "meanLiveSlots": 0,
+    "meanAttemptDelta": -1,
+    "meanAmoebaStacksAtCriticalStart": 1686,
+    "meanAmoebaStacksAtCriticalEnd": 2100.625,
+    "minDamage": 2541680171.309502,
+    "maxDamage": 2780267031.3937793,
+    "contribution": [
+     {
+      "type": 0,
+      "shots": 2101.25,
+      "hits": 2100.625,
+      "damage": 1037983684.5648297,
+      "bloodcells": 7895223951144.076,
+      "exp": 42537.65625
+     },
+     {
+      "type": 1,
+      "shots": 1197.125,
+      "hits": 1196.625,
+      "damage": 713417101.0245183,
+      "bloodcells": 5426470441610.054,
+      "exp": 24231.65625
+     },
+     {
+      "type": 2,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 3,
+      "shots": 344.875,
+      "hits": 344.625,
+      "damage": 871911900.4861264,
+      "bloodcells": 6632030755754.773,
+      "exp": 6978.65625
+     },
+     {
+      "type": 4,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 5,
+      "shots": 108,
+      "hits": 108,
+      "damage": 39926213.33920555,
+      "bloodcells": 303691089293.31683,
+      "exp": 2187
+     },
+     {
+      "type": 6,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 7,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 8,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     }
+    ],
+    "representative": {
+     "success": false,
+     "endedBy": "all-slots-dead",
+     "time": 59.5999999999979,
+     "normalTime": 40,
+     "criticalTime": 19.599999999997898,
+     "damage": 2541680171.309502,
+     "shots": 3711,
+     "hits": 3708,
+     "bloodcells": 19332803071065.418,
+     "cellExp": 75087,
+     "expByType": [
+      41917.5,
+      24401.25,
+      0,
+      6581.25,
+      0,
+      2187,
+      0,
+      0,
+      0
+     ],
+     "feverSeconds": 60,
+     "bestDpsBefore": 264770690.882348,
+     "bestDpsAfter": 264770690.882348,
+     "peakDps": 75479913.06982581,
+     "deaths": 83,
+     "bossAttacks": 83,
+     "immunoidHits": 0,
+     "immunoidFocusTime": 0,
+     "liveSlots": 0,
+     "revivesUsed": 0,
+     "revivesRemaining": 0,
+     "roidUsed": true,
+     "roidStart": 0,
+     "amoebaStacks": 2070,
+     "amoebaStacksAtCriticalStart": 1687,
+     "damageAtCriticalStart": 1761754080.9695885,
+     "attemptDelta": -1,
+     "obstructionAfter": 32,
+     "gameplayRandomCalls": 10085,
+     "deathLog": [
+      {
+       "time": 40.23333333333233,
+       "slot": 150,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 40.46666666666565,
+       "slot": 84,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 40.69999999999897,
+       "slot": 163,
+       "focused": false,
+       "disabledAnchor": false,
+       "revived": false
+      },
+      {
+       "time": 40.93333333333229,
+       "slot": 60,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 41.16666666666561,
+       "slot": 152,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 41.39999999999893,
+       "slot": 169,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 41.63333333333225,
+       "slot": 37,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 41.86666666666557,
+       "slot": 127,
+       "focused": false,
+       "disabledAnchor": true,
+       "revived": false
+      }
+     ],
+     "contribution": [
+      {
+       "type": 0,
+       "shots": 2072,
+       "hits": 2070,
+       "damage": 1008408888.0876875,
+       "bloodcells": 7670268930204.175,
+       "exp": 41917.5
+      },
+      {
+       "type": 1,
+       "shots": 1206,
+       "hits": 1205,
+       "damage": 721615286.5820994,
+       "bloodcells": 5488828368745.769,
+       "exp": 24401.25
+      },
+      {
+       "type": 2,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 3,
+       "shots": 325,
+       "hits": 325,
+       "damage": 771586957.3721162,
+       "bloodcells": 5868928304772.627,
+       "exp": 6581.25
+      },
+      {
+       "type": 4,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 5,
+       "shots": 108,
+       "hits": 108,
+       "damage": 40069039.26760757,
+       "bloodcells": 304777467342.9264,
+       "exp": 2187
+      },
+      {
+       "type": 6,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 7,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 8,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      }
+     ]
+    }
+   },
+   "estimateOptions": {
+    "trials": 8,
+    "seed": 7
+   },
+   "metrics": {
+    "valid": true,
+    "counts": [
+     44,
+     12,
+     0,
+     8,
+     0,
+     2,
+     0,
+     0,
+     0
+    ],
+    "rawCounts": [
+     33,
+     9,
+     0,
+     6,
+     0,
+     2,
+     0,
+     0,
+     0
+    ],
+    "infectedSlots": 34,
+    "damagePassive": 5.4,
+    "speedPassive": 4.8,
+    "virusMultiplier": 4.4,
+    "dps": 4330390.283563608,
+    "attacksPerSecond": 66.52799804744046,
+    "amoebaAttacksPerSecond": 37.09422492401217,
+    "cells": [
+     {
+      "anchor": 0,
+      "type": 1,
+      "slots": [
+       0,
+       1
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 20,
+      "attacksPerSecond": 3,
+      "dps": 164536.8478382803
+     },
+     {
+      "anchor": 3,
+      "type": 0,
+      "slots": [
+       3
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 4,
+      "type": 0,
+      "slots": [
+       4
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 18,
+      "type": 0,
+      "slots": [
+       18
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 20,
+      "type": 3,
+      "slots": [
+       20,
+       21,
+       19,
+       38,
+       2
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 77,
+      "attacksPerSecond": 0.7792207792207793,
+      "dps": 180867.09549095877
+     },
+     {
+      "anchor": 22,
+      "type": 0,
+      "slots": [
+       22
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 36,
+      "type": 0,
+      "slots": [
+       36
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 37,
+      "type": 0,
+      "slots": [
+       37
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 39,
+      "type": 0,
+      "slots": [
+       39
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 54,
+      "type": 1,
+      "slots": [
+       54,
+       55
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     },
+     {
+      "anchor": 56,
+      "type": 5,
+      "slots": [
+       56
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 32543.646460160147,
+      "cooldownProgress": 62.5,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 65,
+      "attacksPerSecond": 0.9230769230769231,
+      "dps": 30040.28904014783
+     },
+     {
+      "anchor": 58,
+      "type": 3,
+      "slots": [
+       58,
+       59,
+       57,
+       76,
+       40
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 52,
+      "attacksPerSecond": 1.1538461538461537,
+      "dps": 267822.429861612
+     },
+     {
+      "anchor": 60,
+      "type": 0,
+      "slots": [
+       60
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 65,
+      "type": 0,
+      "slots": [
+       65
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 66,
+      "type": 1,
+      "slots": [
+       66,
+       67
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     },
+     {
+      "anchor": 72,
+      "type": 0,
+      "slots": [
+       72
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 73,
+      "type": 0,
+      "slots": [
+       73
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 75,
+      "type": 0,
+      "slots": [
+       75
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 77,
+      "type": 0,
+      "slots": [
+       77
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 78,
+      "type": 0,
+      "slots": [
+       78
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 83,
+      "type": 0,
+      "slots": [
+       83
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 84,
+      "type": 1,
+      "slots": [
+       84,
+       85
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     },
+     {
+      "anchor": 90,
+      "type": 0,
+      "slots": [
+       90
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 92,
+      "type": 3,
+      "slots": [
+       92,
+       93,
+       91,
+       110,
+       74
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 52,
+      "attacksPerSecond": 1.1538461538461537,
+      "dps": 267822.429861612
+     },
+     {
+      "anchor": 95,
+      "type": 0,
+      "slots": [
+       95
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 96,
+      "type": 0,
+      "slots": [
+       96
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 101,
+      "type": 0,
+      "slots": [
+       101
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 102,
+      "type": 1,
+      "slots": [
+       102,
+       103
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     },
+     {
+      "anchor": 108,
+      "type": 0,
+      "slots": [
+       108
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 109,
+      "type": 0,
+      "slots": [
+       109
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 112,
+      "type": 3,
+      "slots": [
+       112,
+       113,
+       111,
+       130,
+       94
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 52,
+      "attacksPerSecond": 1.1538461538461537,
+      "dps": 267822.429861612
+     },
+     {
+      "anchor": 114,
+      "type": 0,
+      "slots": [
+       114
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 121,
+      "type": 0,
+      "slots": [
+       121
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 126,
+      "type": 0,
+      "slots": [
+       126
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 127,
+      "type": 0,
+      "slots": [
+       127
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 129,
+      "type": 0,
+      "slots": [
+       129
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 131,
+      "type": 0,
+      "slots": [
+       131
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 133,
+      "type": 0,
+      "slots": [
+       133
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 134,
+      "type": 1,
+      "slots": [
+       134,
+       135
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     },
+     {
+      "anchor": 144,
+      "type": 0,
+      "slots": [
+       144
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 146,
+      "type": 3,
+      "slots": [
+       146,
+       147,
+       145,
+       164,
+       128
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 52,
+      "attacksPerSecond": 1.1538461538461537,
+      "dps": 267822.429861612
+     },
+     {
+      "anchor": 148,
+      "type": 5,
+      "slots": [
+       148
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 32543.646460160147,
+      "cooldownProgress": 62.5,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 65,
+      "attacksPerSecond": 0.9230769230769231,
+      "dps": 30040.28904014783
+     },
+     {
+      "anchor": 150,
+      "type": 3,
+      "slots": [
+       150,
+       151,
+       149,
+       168,
+       132
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 232112.7725467304,
+      "cooldownProgress": 50,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 77,
+      "attacksPerSecond": 0.7792207792207793,
+      "dps": 180867.09549095877
+     },
+     {
+      "anchor": 152,
+      "type": 0,
+      "slots": [
+       152
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 153,
+      "type": 0,
+      "slots": [
+       153
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 70,
+      "attacksPerSecond": 0.8571428571428571,
+      "dps": 38423.380904642865
+     },
+     {
+      "anchor": 162,
+      "type": 1,
+      "slots": [
+       162,
+       163
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 20,
+      "attacksPerSecond": 3,
+      "dps": 164536.8478382803
+     },
+     {
+      "anchor": 165,
+      "type": 1,
+      "slots": [
+       165,
+       166
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 20,
+      "attacksPerSecond": 3,
+      "dps": 164536.8478382803
+     },
+     {
+      "anchor": 167,
+      "type": 0,
+      "slots": [
+       167
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 169,
+      "type": 0,
+      "slots": [
+       169
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 44827.277722083345,
+      "cooldownProgress": 45.3125,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 47,
+      "attacksPerSecond": 1.2765957446808511,
+      "dps": 57226.31198563831
+     },
+     {
+      "anchor": 170,
+      "type": 1,
+      "slots": [
+       170,
+       171
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 54845.61594609343,
+      "cooldownProgress": 18.75,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 29,
+      "attacksPerSecond": 2.0689655172413794,
+      "dps": 113473.68816433124
+     }
+    ]
+   },
+   "insights": {
+    "valid": true,
+    "dailyAttempts": 6,
+    "expectedAttemptsToClear": null,
+    "probabilityWithinDailyAttempts": 0,
+    "expectedDaysToClear": null,
+    "expectedBloodcellsPerAttempt": 20257416237802.223,
+    "savedDailyPassiveBloodcells": 81575359231445.2,
+    "expectedBloodcellsPerDailyCycle": 203119856658258.56,
+    "expectedNetAttemptDelta": -1,
+    "normalDamage": 1750980210.0475888,
+    "criticalDamage": 912258689.3670931,
+    "normalDamageShare": 0.6574626896717428,
+    "criticalDamageShare": 0.3425373103282572,
+    "expRows": [
+     {
+      "type": 0,
+      "currentLevel": 42,
+      "currentExp": 1103047.31491504,
+      "requirement": 1220817.630525718,
+      "remainingExp": 117770.31561067794,
+      "meanExpPerAttempt": 42537.65625,
+      "attemptsToNextLevel": 2.768613176958426,
+      "daysToNextLevel": 0.461435529493071
+     },
+     {
+      "type": 1,
+      "currentLevel": 43,
+      "currentExp": 863701.584388589,
+      "requirement": 1587062.9196834334,
+      "remainingExp": 723361.3352948443,
+      "meanExpPerAttempt": 24231.65625,
+      "attemptsToNextLevel": 29.851914695052855,
+      "daysToNextLevel": 4.975319115842143
+     },
+     {
+      "type": 2,
+      "currentLevel": 25,
+      "currentExp": 613.083234221162,
+      "requirement": 14112.820029733646,
+      "remainingExp": 13499.736795512485,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 3,
+      "currentLevel": 35,
+      "currentExp": 78402.6883215116,
+      "requirement": 194557.20850354404,
+      "remainingExp": 116154.52018203244,
+      "meanExpPerAttempt": 6978.65625,
+      "attemptsToNextLevel": 16.644252993838528,
+      "daysToNextLevel": 2.7740421656397545
+     },
+     {
+      "type": 4,
+      "currentLevel": 18,
+      "currentExp": 1131.23953653617,
+      "requirement": 2249.108139039149,
+      "remainingExp": 1117.8686025029792,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 5,
+      "currentLevel": 28,
+      "currentExp": 9344.68131558354,
+      "requirement": 31005.86560532482,
+      "remainingExp": 21661.18428974128,
+      "meanExpPerAttempt": 2187,
+      "attemptsToNextLevel": 9.904519565496699,
+      "daysToNextLevel": 1.6507532609161164
+     }
+    ],
+    "obstructionOutlook": [
+     {
+      "obstruction": 32,
+      "hp": 7013203315.453554,
+      "time": 40,
+      "estimatedClearProbability": 0,
+      "damageRatio": 0.3555036955091766,
+      "expectedAttempts": null,
+      "clearWithinDailyAttempts": 0
+     },
+     {
+      "obstruction": 33,
+      "hp": 11571785470.498365,
+      "time": 40,
+      "estimatedClearProbability": 0.01955731765246027,
+      "damageRatio": 0.197774202829693,
+      "expectedAttempts": 51.13175629553688,
+      "clearWithinDailyAttempts": 0.11175400750558628
+     },
+     {
+      "obstruction": 34,
+      "hp": 19093446026.3223,
+      "time": 40,
+      "estimatedClearProbability": 0.007183587751133251,
+      "damageRatio": 0.11986315323011698,
+      "expectedAttempts": 139.20620651459913,
+      "clearWithinDailyAttempts": 0.0423348417098951
+     },
+     {
+      "obstruction": 35,
+      "hp": 46427221390.320526,
+      "time": 40,
+      "estimatedClearProbability": 0.001214967475384225,
+      "damageRatio": 0.04929437037602215,
+      "expectedAttempts": 823.0673003684785,
+      "clearWithinDailyAttempts": 0.007267698499529018
+     },
+     {
+      "obstruction": 36,
+      "hp": 76604915294.02887,
+      "time": 45,
+      "estimatedClearProbability": 0.0006387274561175775,
+      "damageRatio": 0.035741501258832915,
+      "expectedAttempts": 1565.6129862936707,
+      "clearWithinDailyAttempts": 0.003826250354429739
+     },
+     {
+      "obstruction": 37,
+      "hp": 126398110235.14764,
+      "time": 45,
+      "estimatedClearProbability": 0.00023461063585585945,
+      "damageRatio": 0.02166151591444419,
+      "expectedAttempts": 4262.38135518452,
+      "clearWithinDailyAttempts": 0.0014068384411022317
+     }
+    ]
+   }
+  },
+  {
+   "name": "small-board",
+   "overrides": {
+    "fever": 1,
+    "obstruction": 32,
+    "layout": {
+     "0": 6,
+     "4": 2,
+     "59": 1,
+     "65": 0,
+     "67": 5,
+     "72": 4,
+     "84": 3,
+     "94": 7
+    },
+    "upgrades": {
+     "0": 1,
+     "1": 1,
+     "2": 1,
+     "3": 1,
+     "4": 1,
+     "5": 1,
+     "6": 1,
+     "7": 1,
+     "10": 1,
+     "12": 1,
+     "13": 2,
+     "14": 1,
+     "15": 1,
+     "16": 2,
+     "17": 3,
+     "18": 5,
+     "23": 2,
+     "28": 1,
+     "29": 10,
+     "35": 2,
+     "36": 1,
+     "38": 2
+    },
+    "cellLevels": [
+     3,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     10,
+     5,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "state": {
+    "progress": {
+     "obstruction": 32,
+     "tries": 0,
+     "bloodcells": 286287533962734,
+     "bestDps": 264770690.882348,
+     "fever": 1,
+     "bestBloodcells": 20393839807861.3
+    },
+    "unitsOwned": 8,
+    "unlocked": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     18,
+     19,
+     20,
+     21,
+     22,
+     36,
+     37,
+     38,
+     39,
+     40,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     65,
+     66,
+     67,
+     72,
+     73,
+     74,
+     75,
+     76,
+     77,
+     78,
+     83,
+     84,
+     85,
+     90,
+     91,
+     92,
+     93,
+     94,
+     95,
+     96,
+     101,
+     102,
+     103,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     121,
+     126,
+     127,
+     128,
+     129,
+     130,
+     131,
+     132,
+     133,
+     134,
+     135,
+     144,
+     145,
+     146,
+     147,
+     148,
+     149,
+     150,
+     151,
+     152,
+     153,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     169,
+     170,
+     171
+    ],
+    "slotPurchasesLeft": 1,
+    "cellLevels": [
+     3,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     10,
+     5,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dailyTries": 6,
+    "currencyMultiplier": 599.3942641250445,
+    "cellDamageMultiplier": 96.90610032000001,
+    "cellSpeedMultiplier": 1,
+    "cellExpMultiplier": 2.65
+   },
+   "estimate": {
+    "valid": true,
+    "trials": 6,
+    "seed": 11,
+    "successCount": 0,
+    "clearProbability": 0,
+    "clearProbabilityLow": 2.7755575615628914e-17,
+    "clearProbabilityHigh": 0.3903342879021653,
+    "meanTime": 0,
+    "medianTime": null,
+    "p90Time": null,
+    "meanDamage": 6359024.403556075,
+    "meanDamageStandardError": 79334.49964643805,
+    "medianDamage": 6346898.560666131,
+    "meanBloodcells": 3811562752.92269,
+    "medianBloodcells": 3804294592.246778,
+    "p90Bloodcells": 3923788823.03683,
+    "maxBloodcells": 4019439954.872535,
+    "meanCellExp": 1531.6999999999953,
+    "meanCellExpByType": [
+     83.47500000000002,
+     128.08333333333346,
+     19.433333333333334,
+     48.583333333333314,
+     8.391666666666666,
+     58.741666666666646,
+     797.208333333329,
+     387.78333333333256,
+     0
+    ],
+    "meanCriticalTime": 13.89999999999822,
+    "meanDeaths": 47,
+    "meanRevives": 2,
+    "meanBestDps": 264770690.88234803,
+    "meanBestDpsMultiplier": 2.1613697987055507,
+    "meanPeakDps": 182634.56300997,
+    "meanNormalDamage": 5014361.31097706,
+    "meanCriticalDamage": 1344663.0925790134,
+    "meanShots": 580,
+    "meanHits": 578,
+    "meanBossAttacks": 47,
+    "meanImmunoidFocusTime": 3.649999999999992,
+    "meanLiveSlots": 0,
+    "meanAttemptDelta": -1,
+    "meanAmoebaStacksAtCriticalStart": 25.5,
+    "meanAmoebaStacksAtCriticalEnd": 31.5,
+    "minDamage": 6138900.033347408,
+    "maxDamage": 6705836.534388341,
+    "contribution": [
+     {
+      "type": 0,
+      "shots": 31.5,
+      "hits": 31.5,
+      "damage": 156345.48461451512,
+      "bloodcells": 93712586.69979076,
+      "exp": 83.47500000000002
+     },
+     {
+      "type": 1,
+      "shots": 48.333333333333336,
+      "hits": 48.333333333333336,
+      "damage": 265307.4282843292,
+      "bloodcells": 159023750.74339357,
+      "exp": 128.08333333333346
+     },
+     {
+      "type": 2,
+      "shots": 7.5,
+      "hits": 7.333333333333333,
+      "damage": 380076.03626411414,
+      "bloodcells": 227815396.06809244,
+      "exp": 19.433333333333334
+     },
+     {
+      "type": 3,
+      "shots": 18.5,
+      "hits": 18.333333333333332,
+      "damage": 442147.64956404496,
+      "bloodcells": 265020765.04505873,
+      "exp": 48.583333333333314
+     },
+     {
+      "type": 4,
+      "shots": 3.1666666666666665,
+      "hits": 3.1666666666666665,
+      "damage": 249785.1641848321,
+      "bloodcells": 149719794.67592084,
+      "exp": 8.391666666666666
+     },
+     {
+      "type": 5,
+      "shots": 22.166666666666668,
+      "hits": 22.166666666666668,
+      "damage": 89105.15924424007,
+      "bloodcells": 53409121.35494614,
+      "exp": 58.741666666666646
+     },
+     {
+      "type": 6,
+      "shots": 302.1666666666667,
+      "hits": 300.8333333333333,
+      "damage": 2424695.2885947474,
+      "bloodcells": 1453348448.2347116,
+      "exp": 797.208333333329
+     },
+     {
+      "type": 7,
+      "shots": 146.66666666666666,
+      "hits": 146.33333333333334,
+      "damage": 2351562.1928052497,
+      "bloodcells": 1409512890.1007793,
+      "exp": 387.78333333333256
+     },
+     {
+      "type": 8,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     }
+    ],
+    "representative": {
+     "success": false,
+     "endedBy": "all-slots-dead",
+     "time": 53.89999999999822,
+     "normalTime": 40,
+     "criticalTime": 13.899999999998222,
+     "damage": 6314466.91544616,
+     "shots": 581,
+     "hits": 580,
+     "bloodcells": 3784855250.1257887,
+     "cellExp": 1536.999999999995,
+     "expByType": [
+      84.80000000000003,
+      127.20000000000012,
+      18.55,
+      47.69999999999999,
+      10.6,
+      58.29999999999998,
+      824.1499999999955,
+      365.6999999999994,
+      0
+     ],
+     "feverSeconds": 54,
+     "bestDpsBefore": 264770690.882348,
+     "bestDpsAfter": 264770690.882348,
+     "peakDps": 170695.1178411188,
+     "deaths": 47,
+     "bossAttacks": 47,
+     "immunoidHits": 6,
+     "immunoidFocusTime": 3.649999999999992,
+     "liveSlots": 0,
+     "revivesUsed": 2,
+     "revivesRemaining": 0,
+     "roidUsed": true,
+     "roidStart": 0,
+     "amoebaStacks": 32,
+     "amoebaStacksAtCriticalStart": 25,
+     "damageAtCriticalStart": 5058762.455436212,
+     "attemptDelta": -1,
+     "obstructionAfter": 32,
+     "gameplayRandomCalls": 3063,
+     "deathLog": [
+      {
+       "time": 40.23333333333233,
+       "slot": 91,
+       "focused": true,
+       "disabledAnchor": false,
+       "revived": true
+      },
+      {
+       "time": 40.91666666666563,
+       "slot": 73,
+       "focused": true,
+       "disabledAnchor": false,
+       "revived": true
+      },
+      {
+       "time": 41.59999999999892,
+       "slot": 90,
+       "focused": true,
+       "disabledAnchor": false,
+       "revived": false
+      },
+      {
+       "time": 42.283333333332216,
+       "slot": 91,
+       "focused": true,
+       "disabledAnchor": false,
+       "revived": false
+      },
+      {
+       "time": 42.96666666666551,
+       "slot": 72,
+       "focused": true,
+       "disabledAnchor": true,
+       "revived": false
+      },
+      {
+       "time": 43.649999999998805,
+       "slot": 73,
+       "focused": true,
+       "disabledAnchor": false,
+       "revived": false
+      },
+      {
+       "time": 44.3333333333321,
+       "slot": 40,
+       "focused": false,
+       "disabledAnchor": false,
+       "revived": false
+      },
+      {
+       "time": 44.56666666666542,
+       "slot": 76,
+       "focused": false,
+       "disabledAnchor": false,
+       "revived": false
+      }
+     ],
+     "contribution": [
+      {
+       "type": 0,
+       "shots": 32,
+       "hits": 32,
+       "damage": 159136.98383492394,
+       "bloodcells": 95385795.32081333,
+       "exp": 84.80000000000003
+      },
+      {
+       "type": 1,
+       "shots": 48,
+       "hits": 48,
+       "damage": 262436.0152544793,
+       "bloodcells": 157302642.24336764,
+       "exp": 127.20000000000012
+      },
+      {
+       "type": 2,
+       "shots": 7,
+       "hits": 7,
+       "damage": 356559.2514628578,
+       "bloodcells": 213719570.1475564,
+       "exp": 18.55
+      },
+      {
+       "type": 3,
+       "shots": 18,
+       "hits": 18,
+       "damage": 433495.8729274754,
+       "bloodcells": 259834939.75460786,
+       "exp": 47.69999999999999
+      },
+      {
+       "type": 4,
+       "shots": 4,
+       "hits": 4,
+       "damage": 311882.5932698881,
+       "bloodcells": 186940637.48641512,
+       "exp": 10.6
+      },
+      {
+       "type": 5,
+       "shots": 22,
+       "hits": 22,
+       "damage": 88436.50715203206,
+       "bloodcells": 53008335.126181446,
+       "exp": 58.29999999999998
+      },
+      {
+       "type": 6,
+       "shots": 312,
+       "hits": 311,
+       "damage": 2510271.1276653344,
+       "bloodcells": 1504642115.3213093,
+       "exp": 824.1499999999955
+      },
+      {
+       "type": 7,
+       "shots": 138,
+       "hits": 138,
+       "damage": 2192248.563879169,
+       "bloodcells": 1314021214.725541,
+       "exp": 365.6999999999994
+      },
+      {
+       "type": 8,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      }
+     ]
+    }
+   },
+   "estimateOptions": {
+    "trials": 6,
+    "seed": 11
+   },
+   "metrics": {
+    "valid": true,
+    "counts": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     0
+    ],
+    "rawCounts": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     0
+    ],
+    "infectedSlots": 5,
+    "damagePassive": 4.800000000000001,
+    "speedPassive": 2.0999999999999996,
+    "virusMultiplier": 1.5,
+    "dps": 102656.63589103853,
+    "attacksPerSecond": 10.620500927643784,
+    "amoebaAttacksPerSecond": 0.5714285714285714,
+    "cells": [
+     {
+      "anchor": 0,
+      "type": 6,
+      "slots": [
+       0,
+       1,
+       2,
+       3,
+       18,
+       19,
+       20,
+       21,
+       36,
+       37,
+       38,
+       39,
+       54,
+       55,
+       56,
+       57
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 6977.239223040002,
+      "cooldownProgress": 7.142857142857142,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 11,
+      "attacksPerSecond": 5.454545454545454,
+      "dps": 38057.6684893091
+     },
+     {
+      "anchor": 4,
+      "type": 2,
+      "slots": [
+       4,
+       22,
+       40
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 44793.87581191681,
+      "cooldownProgress": 285.7142857142857,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 440,
+      "attacksPerSecond": 0.13636363636363635,
+      "dps": 6108.255792534111
+     },
+     {
+      "anchor": 59,
+      "type": 1,
+      "slots": [
+       59,
+       60
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 4772.431628559362,
+      "cooldownProgress": 42.857142857142854,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 66,
+      "attacksPerSecond": 0.9090909090909091,
+      "dps": 4338.574207781238
+     },
+     {
+      "anchor": 65,
+      "type": 0,
+      "slots": [
+       65
+      ],
+      "organelle": 1.5,
+      "proximity": 1.02,
+      "damage": 4305.654324537985,
+      "cooldownProgress": 103.57142857142857,
+      "progressPerFrame": 0.9945000000000002,
+      "framesPerAttack": 105,
+      "attacksPerSecond": 0.5714285714285714,
+      "dps": 2460.3738997359915
+     },
+     {
+      "anchor": 67,
+      "type": 5,
+      "slots": [
+       67
+      ],
+      "organelle": 1.5,
+      "proximity": 1,
+      "damage": 3488.619611520001,
+      "cooldownProgress": 142.85714285714286,
+      "progressPerFrame": 0.9750000000000001,
+      "framesPerAttack": 147,
+      "attacksPerSecond": 0.40816326530612246,
+      "dps": 1423.92637204898
+     },
+     {
+      "anchor": 72,
+      "type": 4,
+      "slots": [
+       72,
+       73,
+       90,
+       91
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 69772.39223040002,
+      "cooldownProgress": 535.7142857142857,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 825,
+      "attacksPerSecond": 0.07272727272727272,
+      "dps": 5074.3557985745465
+     },
+     {
+      "anchor": 84,
+      "type": 3,
+      "slots": [
+       84,
+       85,
+       83,
+       102,
+       66
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 20931.717669120007,
+      "cooldownProgress": 114.28571428571428,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 176,
+      "attacksPerSecond": 0.3409090909090909,
+      "dps": 7135.812841745456
+     },
+     {
+      "anchor": 94,
+      "type": 7,
+      "slots": [
+       58,
+       75,
+       76,
+       77,
+       92,
+       93,
+       94,
+       95,
+       96,
+       111,
+       112,
+       113,
+       130
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 13954.478446080004,
+      "cooldownProgress": 14.285714285714285,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 22,
+      "attacksPerSecond": 2.727272727272727,
+      "dps": 38057.6684893091
+     }
+    ]
+   },
+   "insights": {
+    "valid": true,
+    "dailyAttempts": 6,
+    "expectedAttemptsToClear": null,
+    "probabilityWithinDailyAttempts": 0,
+    "expectedDaysToClear": null,
+    "expectedBloodcellsPerAttempt": 3811562752.92269,
+    "savedDailyPassiveBloodcells": 8157535923144.52,
+    "expectedBloodcellsPerDailyCycle": 8180405299662.056,
+    "expectedNetAttemptDelta": -1,
+    "normalDamage": 5014361.31097706,
+    "criticalDamage": 1344663.0925790134,
+    "normalDamageShare": 0.7885425487867203,
+    "criticalDamageShare": 0.2114574512132797,
+    "expRows": [
+     {
+      "type": 0,
+      "currentLevel": 3,
+      "currentExp": 10,
+      "requirement": 43.94,
+      "remainingExp": 33.94,
+      "meanExpPerAttempt": 83.47500000000002,
+      "attemptsToNextLevel": 0.4065887990416291,
+      "daysToNextLevel": 0.06776479984027152
+     },
+     {
+      "type": 1,
+      "currentLevel": 2,
+      "currentExp": 5,
+      "requirement": 33.800000000000004,
+      "remainingExp": 28.800000000000004,
+      "meanExpPerAttempt": 128.08333333333346,
+      "attemptsToNextLevel": 0.22485361093038367,
+      "daysToNextLevel": 0.03747560182173061
+     },
+     {
+      "type": 2,
+      "currentLevel": 1,
+      "currentExp": 0,
+      "requirement": 26,
+      "remainingExp": 26,
+      "meanExpPerAttempt": 19.433333333333334,
+      "attemptsToNextLevel": 1.3379073756432247,
+      "daysToNextLevel": 0.22298456260720412
+     },
+     {
+      "type": 3,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 48.583333333333314,
+      "attemptsToNextLevel": 0.41166380789022317,
+      "daysToNextLevel": 0.06861063464837053
+     },
+     {
+      "type": 4,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 8.391666666666666,
+      "attemptsToNextLevel": 2.383316782522344,
+      "daysToNextLevel": 0.397219463753724
+     },
+     {
+      "type": 5,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 58.741666666666646,
+      "attemptsToNextLevel": 0.3404738260746206,
+      "daysToNextLevel": 0.056745637679103435
+     },
+     {
+      "type": 6,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 797.208333333329,
+      "attemptsToNextLevel": 0.025087545079182698,
+      "daysToNextLevel": 0.004181257513197117
+     },
+     {
+      "type": 7,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 387.78333333333256,
+      "attemptsToNextLevel": 0.051575192332488175,
+      "daysToNextLevel": 0.00859586538874803
+     }
+    ],
+    "obstructionOutlook": [
+     {
+      "obstruction": 32,
+      "hp": 7013203315.453554,
+      "time": 40,
+      "estimatedClearProbability": 0,
+      "damageRatio": 0.0008136332696875133,
+      "expectedAttempts": null,
+      "clearWithinDailyAttempts": 0
+     },
+     {
+      "obstruction": 33,
+      "hp": 11571785470.498365,
+      "time": 40,
+      "estimatedClearProbability": 1.1166583692636796e-7,
+      "damageRatio": 0.0004725798068609533,
+      "expectedAttempts": 8955290.422973288,
+      "clearWithinDailyAttempts": 6.699948343902307e-7
+     },
+     {
+      "obstruction": 34,
+      "hp": 19093446026.3223,
+      "time": 40,
+      "estimatedClearProbability": 4.101591806294509e-8,
+      "damageRatio": 0.0002864120041581536,
+      "expectedAttempts": 24380778.176544767,
+      "clearWithinDailyAttempts": 2.4609548343601517e-7
+     },
+     {
+      "obstruction": 35,
+      "hp": 46427221390.320526,
+      "time": 40,
+      "estimatedClearProbability": 6.937063782876626e-9,
+      "damageRatio": 0.00011778848655854804,
+      "expectedAttempts": 144153208.2303163,
+      "clearWithinDailyAttempts": 4.16223822075068e-8
+     },
+     {
+      "obstruction": 36,
+      "hp": 76604915294.02887,
+      "time": 45,
+      "estimatedClearProbability": 3.1992783273072086e-9,
+      "damageRatio": 0.00007999097858267779,
+      "expectedAttempts": 312570491.7463955,
+      "clearWithinDailyAttempts": 1.9195669609395338e-8
+     },
+     {
+      "obstruction": 37,
+      "hp": 126398110235.14764,
+      "time": 45,
+      "estimatedClearProbability": 1.1751251890935566e-9,
+      "damageRatio": 0.00004847938095919866,
+      "expectedAttempts": 850973163.7795621,
+      "clearWithinDailyAttempts": 7.050751316128867e-9
+     }
+    ]
+   }
+  },
+  {
+   "name": "clear",
+   "overrides": {
+    "fever": 2,
+    "obstruction": 0,
+    "layout": {
+     "77": 1,
+     "95": 1
+    },
+    "upgrades": {
+     "0": 1,
+     "1": 1,
+     "12": 1,
+     "16": 3,
+     "28": 1,
+     "36": 1
+    },
+    "cellLevels": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "state": {
+    "progress": {
+     "obstruction": 0,
+     "tries": 0,
+     "bloodcells": 286287533962734,
+     "bestDps": 264770690.882348,
+     "fever": 2,
+     "bestBloodcells": 20393839807861.3
+    },
+    "unitsOwned": 6,
+    "unlocked": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     18,
+     19,
+     20,
+     21,
+     22,
+     36,
+     37,
+     38,
+     39,
+     40,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     65,
+     66,
+     67,
+     72,
+     73,
+     74,
+     77,
+     78,
+     83,
+     84,
+     85,
+     90,
+     91,
+     92,
+     95,
+     96,
+     101,
+     102,
+     103,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     121,
+     126,
+     127,
+     128,
+     129,
+     130,
+     131,
+     132,
+     133,
+     134,
+     135,
+     144,
+     145,
+     146,
+     147,
+     148,
+     149,
+     150,
+     151,
+     152,
+     153,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     169,
+     170,
+     171
+    ],
+    "slotPurchasesLeft": 1,
+    "cellLevels": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "dailyTries": 6,
+    "currencyMultiplier": 2698.1558162279025,
+    "cellDamageMultiplier": 65.82478326,
+    "cellSpeedMultiplier": 1,
+    "cellExpMultiplier": 20.25
+   },
+   "estimate": {
+    "valid": true,
+    "trials": 5,
+    "seed": 3,
+    "successCount": 5,
+    "clearProbability": 1,
+    "clearProbabilityLow": 0.5655175352168251,
+    "clearProbabilityHigh": 1,
+    "meanTime": 1.3633333333333337,
+    "medianTime": 1.3666666666666667,
+    "p90Time": 1.4333333333333331,
+    "meanDamage": 394.94869956,
+    "meanDamageStandardError": 0,
+    "medianDamage": 394.94869956,
+    "meanBloodcells": 1065633.1308294605,
+    "medianBloodcells": 1065633.1308294605,
+    "p90Bloodcells": 1065633.1308294605,
+    "maxBloodcells": 1065633.1308294605,
+    "meanCellExp": 20.25,
+    "meanCellExpByType": [
+     0,
+     20.25,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "meanCriticalTime": 0,
+    "meanDeaths": 0,
+    "meanRevives": 0,
+    "meanBestDps": 264770690.882348,
+    "meanBestDpsMultiplier": 2.161369798705551,
+    "meanPeakDps": 0,
+    "meanNormalDamage": 394.94869956,
+    "meanCriticalDamage": 0,
+    "meanShots": 2,
+    "meanHits": 1,
+    "meanBossAttacks": 0,
+    "meanImmunoidFocusTime": 0,
+    "meanLiveSlots": 4,
+    "meanAttemptDelta": 1,
+    "meanAmoebaStacksAtCriticalStart": 0,
+    "meanAmoebaStacksAtCriticalEnd": 0,
+    "minDamage": 394.94869956,
+    "maxDamage": 394.94869956,
+    "contribution": [
+     {
+      "type": 0,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 1,
+      "shots": 2,
+      "hits": 1,
+      "damage": 394.94869956,
+      "bloodcells": 1065633.1308294605,
+      "exp": 20.25
+     },
+     {
+      "type": 2,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 3,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 4,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 5,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 6,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 7,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     },
+     {
+      "type": 8,
+      "shots": 0,
+      "hits": 0,
+      "damage": 0,
+      "bloodcells": 0,
+      "exp": 0
+     }
+    ],
+    "representative": {
+     "success": true,
+     "endedBy": "clear",
+     "time": 1.3333333333333335,
+     "normalTime": 1.3333333333333335,
+     "criticalTime": 0,
+     "damage": 394.94869956,
+     "shots": 2,
+     "hits": 1,
+     "bloodcells": 1065633.1308294605,
+     "cellExp": 20.25,
+     "expByType": [
+      0,
+      20.25,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "feverSeconds": 1,
+     "bestDpsBefore": 264770690.882348,
+     "bestDpsAfter": 264770690.882348,
+     "peakDps": 0,
+     "deaths": 0,
+     "bossAttacks": 0,
+     "immunoidHits": 0,
+     "immunoidFocusTime": 0,
+     "liveSlots": 4,
+     "revivesUsed": 0,
+     "revivesRemaining": 0,
+     "roidUsed": true,
+     "roidStart": 0,
+     "amoebaStacks": 0,
+     "amoebaStacksAtCriticalStart": 0,
+     "damageAtCriticalStart": 394.94869956,
+     "attemptDelta": 1,
+     "obstructionAfter": 1,
+     "gameplayRandomCalls": 186,
+     "deathLog": [],
+     "contribution": [
+      {
+       "type": 0,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 1,
+       "shots": 2,
+       "hits": 1,
+       "damage": 394.94869956,
+       "bloodcells": 1065633.1308294605,
+       "exp": 20.25
+      },
+      {
+       "type": 2,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 3,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 4,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 5,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 6,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 7,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      },
+      {
+       "type": 8,
+       "shots": 0,
+       "hits": 0,
+       "damage": 0,
+       "bloodcells": 0,
+       "exp": 0
+      }
+     ]
+    }
+   },
+   "estimateOptions": {
+    "trials": 5,
+    "seed": 3
+   },
+   "metrics": {
+    "valid": true,
+    "counts": [
+     0,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "rawCounts": [
+     0,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "infectedSlots": 0,
+    "damagePassive": 1,
+    "speedPassive": 1.3,
+    "virusMultiplier": 1,
+    "dps": 442.93312100186915,
+    "attacksPerSecond": 1.1214953271028036,
+    "amoebaAttacksPerSecond": 0,
+    "cells": [
+     {
+      "anchor": 77,
+      "type": 1,
+      "slots": [
+       77,
+       78
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 394.94869956,
+      "cooldownProgress": 69.23076923076923,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 107,
+      "attacksPerSecond": 0.5607476635514018,
+      "dps": 221.46656050093458
+     },
+     {
+      "anchor": 95,
+      "type": 1,
+      "slots": [
+       95,
+       96
+      ],
+      "organelle": 1,
+      "proximity": 1,
+      "damage": 394.94869956,
+      "cooldownProgress": 69.23076923076923,
+      "progressPerFrame": 0.65,
+      "framesPerAttack": 107,
+      "attacksPerSecond": 0.5607476635514018,
+      "dps": 221.46656050093458
+     }
+    ]
+   },
+   "insights": {
+    "valid": true,
+    "dailyAttempts": 6,
+    "expectedAttemptsToClear": 1,
+    "probabilityWithinDailyAttempts": 1,
+    "expectedDaysToClear": 0.16666666666666666,
+    "expectedBloodcellsPerAttempt": 1065633.1308294605,
+    "savedDailyPassiveBloodcells": 81575359231445.2,
+    "expectedBloodcellsPerDailyCycle": 81575365625243.98,
+    "expectedNetAttemptDelta": 1,
+    "normalDamage": 394.94869956,
+    "criticalDamage": 0,
+    "normalDamageShare": 1,
+    "criticalDamageShare": 0,
+    "expRows": [
+     {
+      "type": 0,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 1,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 20.25,
+      "attemptsToNextLevel": 0.9876543209876543,
+      "daysToNextLevel": 0.1646090534979424
+     },
+     {
+      "type": 2,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 3,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 4,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     },
+     {
+      "type": 5,
+      "currentLevel": 0,
+      "currentExp": 0,
+      "requirement": 20,
+      "remainingExp": 20,
+      "meanExpPerAttempt": 0,
+      "attemptsToNextLevel": null,
+      "daysToNextLevel": null
+     }
+    ],
+    "obstructionOutlook": [
+     {
+      "obstruction": 0,
+      "hp": 100,
+      "time": 30,
+      "estimatedClearProbability": 1,
+      "damageRatio": 147.4410498476208,
+      "expectedAttempts": 1,
+      "clearWithinDailyAttempts": 1
+     },
+     {
+      "obstruction": 1,
+      "hp": 200,
+      "time": 30,
+      "estimatedClearProbability": 0.999,
+      "damageRatio": 73.7205249238104,
+      "expectedAttempts": 1.001001001001001,
+      "clearWithinDailyAttempts": 1
+     },
+     {
+      "obstruction": 2,
+      "hp": 400,
+      "time": 30,
+      "estimatedClearProbability": 0.999,
+      "damageRatio": 36.8602624619052,
+      "expectedAttempts": 1.001001001001001,
+      "clearWithinDailyAttempts": 1
+     },
+     {
+      "obstruction": 3,
+      "hp": 1000,
+      "time": 30,
+      "estimatedClearProbability": 0.999,
+      "damageRatio": 14.744104984762082,
+      "expectedAttempts": 1.001001001001001,
+      "clearWithinDailyAttempts": 1
+     },
+     {
+      "obstruction": 4,
+      "hp": 2000,
+      "time": 30,
+      "estimatedClearProbability": 0.999,
+      "damageRatio": 7.372052492381041,
+      "expectedAttempts": 1.001001001001001,
+      "clearWithinDailyAttempts": 1
+     },
+     {
+      "obstruction": 5,
+      "hp": 4000,
+      "time": 30,
+      "estimatedClearProbability": 0.9659243909158892,
+      "damageRatio": 3.6860262461905204,
+      "expectedAttempts": 1.0352777188407059,
+      "clearWithinDailyAttempts": 0.9999999984344686
+     }
+    ]
+   }
+  },
+  {
+   "name": "locked-cell",
+   "overrides": {
+    "obstruction": 0,
+    "layout": {
+     "77": 7
+    },
+    "upgrades": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "state": {
+    "progress": {
+     "obstruction": 0,
+     "tries": 0,
+     "bloodcells": 286287533962734,
+     "bestDps": 264770690.882348,
+     "fever": 2,
+     "bestBloodcells": 20393839807861.3
+    },
+    "unitsOwned": 6,
+    "unlocked": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     18,
+     19,
+     20,
+     21,
+     22,
+     36,
+     37,
+     38,
+     39,
+     40,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     65,
+     66,
+     67,
+     72,
+     73,
+     74,
+     77,
+     78,
+     83,
+     84,
+     85,
+     90,
+     91,
+     92,
+     95,
+     96,
+     101,
+     102,
+     103,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     121,
+     126,
+     127,
+     128,
+     129,
+     130,
+     131,
+     132,
+     133,
+     134,
+     135,
+     144,
+     145,
+     146,
+     147,
+     148,
+     149,
+     150,
+     151,
+     152,
+     153,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     169,
+     170,
+     171
+    ],
+    "slotPurchasesLeft": 1,
+    "cellLevels": [
+     42,
+     43,
+     25,
+     35,
+     18,
+     28,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     1103047.31491504,
+     863701.584388589,
+     613.083234221162,
+     78402.6883215116,
+     1131.23953653617,
+     9344.68131558354,
+     0,
+     0,
+     0
+    ],
+    "dailyTries": 6,
+    "currencyMultiplier": 5851.00641127508,
+    "cellDamageMultiplier": 67.1412789252,
+    "cellSpeedMultiplier": 1,
+    "cellExpMultiplier": 20.25
+   },
+   "validation": {
+    "valid": false,
+    "reason": "Cell 7 is locked"
+   }
+  },
+  {
+   "name": "overlap",
+   "overrides": {
+    "obstruction": 0,
+    "layout": {
+     "77": 1,
+     "78": 0
+    },
+    "upgrades": {
+     "0": 1,
+     "1": 1
+    }
+   },
+   "state": {
+    "progress": {
+     "obstruction": 0,
+     "tries": 0,
+     "bloodcells": 286287533962734,
+     "bestDps": 264770690.882348,
+     "fever": 2,
+     "bestBloodcells": 20393839807861.3
+    },
+    "unitsOwned": 6,
+    "unlocked": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     18,
+     19,
+     20,
+     21,
+     22,
+     36,
+     37,
+     38,
+     39,
+     40,
+     54,
+     55,
+     56,
+     57,
+     58,
+     59,
+     60,
+     65,
+     66,
+     67,
+     72,
+     73,
+     74,
+     77,
+     78,
+     83,
+     84,
+     85,
+     90,
+     91,
+     92,
+     95,
+     96,
+     101,
+     102,
+     103,
+     108,
+     109,
+     110,
+     111,
+     112,
+     113,
+     114,
+     121,
+     126,
+     127,
+     128,
+     129,
+     130,
+     131,
+     132,
+     133,
+     134,
+     135,
+     144,
+     145,
+     146,
+     147,
+     148,
+     149,
+     150,
+     151,
+     152,
+     153,
+     162,
+     163,
+     164,
+     165,
+     166,
+     167,
+     168,
+     169,
+     170,
+     171
+    ],
+    "slotPurchasesLeft": 1,
+    "cellLevels": [
+     42,
+     43,
+     25,
+     35,
+     18,
+     28,
+     0,
+     0,
+     0
+    ],
+    "cellExp": [
+     1103047.31491504,
+     863701.584388589,
+     613.083234221162,
+     78402.6883215116,
+     1131.23953653617,
+     9344.68131558354,
+     0,
+     0,
+     0
+    ],
+    "dailyTries": 6,
+    "currencyMultiplier": 5851.00641127508,
+    "cellDamageMultiplier": 67.1412789252,
+    "cellSpeedMultiplier": 1,
+    "cellExpMultiplier": 20.25
+   },
+   "validation": {
+    "valid": false,
+    "reason": "Cells overlap at slot 78"
+   }
+  }
+ ]
+}

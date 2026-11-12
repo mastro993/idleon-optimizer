@@ -1,0 +1,345 @@
+// Writes the upstream Jelly Operator figures for the committed synthetic save,
+// so `crates/core/tests/jelly.rs` compares the Rust port against the JS.
+//
+// Usage: node script/jelly-oracle.mjs <path-to-idleon-research-optimizer>
+//
+// Every case runs `js/stats/systems/w7/jelly-operator.js` itself: the layout,
+// its metrics, the seeded Monte Carlo estimate and the progression insights. A
+// case may override the save's Fever, upgrade levels, cell levels and layout;
+// the overrides are written to the fixture and replayed by the Rust test.
+import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
+
+const source = process.argv[2];
+if (!source) {
+  console.error('usage: node script/jelly-oracle.mjs <upstream-repo>');
+  process.exit(1);
+}
+if (spawnSync('node', ['-e', '1']).status !== 0) throw new Error('node is required');
+writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
+
+const loader = await import(join(source, 'js/save/loader.js'));
+const state = await import(join(source, 'js/state.js'));
+const J = await import(join(source, 'js/stats/systems/w7/jelly-operator.js'));
+
+const save = JSON.parse(
+  readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'),
+);
+loader.loadSaveData({ data: save });
+const base = state.saveData;
+
+/// Apply one case's overrides to a copy of the save.
+function patched(overrides) {
+  const S = structuredClone(base);
+  if (overrides.fever != null) S.research[7][13] = overrides.fever;
+  if (overrides.obstruction != null) S.research[7][9] = overrides.obstruction;
+  if (overrides.upgrades) {
+    const upgrades = Array.isArray(S.research[17]) ? S.research[17].slice() : [];
+    for (const [id, level] of Object.entries(overrides.upgrades)) upgrades[Number(id)] = level;
+    S.research[17] = upgrades;
+  }
+  if (overrides.cellLevels) S.research[16] = overrides.cellLevels;
+  if (overrides.cellExp) S.research[15] = overrides.cellExp;
+  if (overrides.layout) {
+    S.research[14] = Array.from({ length: J.JELLY_SIZE }, () => -1);
+    for (const [anchor, type] of Object.entries(overrides.layout)) {
+      S.research[14][Number(anchor)] = type;
+    }
+  }
+  return S;
+}
+
+/// The state the Rust decoder has to reproduce before any maths runs.
+function stateOf(S) {
+  const progress = J.jellyProgress(S);
+  return {
+    progress,
+    unitsOwned: J.jellyUnitsOwned(S),
+    unlocked: Array.from(J.jellyUnlockedSlots(S)).sort((a, b) => a - b),
+    slotPurchasesLeft: J.jellySlotPurchasesLeft(S),
+    cellLevels: Array.from({ length: 9 }, (_, type) => J.jellyCellLevel(S, type)),
+    cellExp: Array.from({ length: 9 }, (_, type) => J.jellyCellExp(S, type)),
+    dailyTries: J.jellyDailyTries(S),
+    currencyMultiplier: J.jellyCurrencyMultiplier(S, progress.fever),
+    cellDamageMultiplier: J.jellyCellDamageMultiplier(S, {
+      fever: progress.fever,
+      totalCellLevel: J.jellyTotalCellLevel(S),
+    }),
+    cellSpeedMultiplier: J.jellyCellSpeedMultiplier(S, progress.fever),
+    cellExpMultiplier: J.jellyCellExpMultiplier(S, progress.fever),
+  };
+}
+
+function metricsOf(S, layout) {
+  const metrics = J.jellyLayoutMetrics(layout, S, { fever: J.jellyProgress(S).fever });
+  if (!metrics.valid) return { valid: false, reason: metrics.reason };
+  return {
+    valid: true,
+    counts: Array.from(metrics.counts),
+    rawCounts: Array.from(metrics.rawCounts),
+    infectedSlots: metrics.infectedSlots,
+    damagePassive: metrics.damagePassive,
+    speedPassive: metrics.speedPassive,
+    virusMultiplier: metrics.virusMultiplier,
+    dps: metrics.dps,
+    attacksPerSecond: metrics.attacksPerSecond,
+    amoebaAttacksPerSecond: metrics.amoebaAttacksPerSecond,
+    cells: metrics.cells.map((cell) => ({
+      anchor: cell.anchor,
+      type: cell.type,
+      slots: cell.slots,
+      organelle: cell.organelle,
+      proximity: cell.proximity,
+      damage: cell.damage,
+      cooldownProgress: cell.cooldownProgress,
+      progressPerFrame: cell.progressPerFrame,
+      framesPerAttack: cell.framesPerAttack,
+      attacksPerSecond: cell.attacksPerSecond,
+      dps: cell.dps,
+    })),
+  };
+}
+
+function estimateOf(S, layout, options) {
+  const estimate = J.simulateJellyTrials(layout, S, {
+    trials: options.trials,
+    seed: options.seed,
+    firingCalendar: false,
+  });
+  if (!estimate.valid) return { valid: false, reason: estimate.reason };
+  const representative = estimate.representative;
+  return {
+    valid: true,
+    trials: estimate.trials,
+    seed: estimate.seed,
+    successCount: estimate.successCount,
+    clearProbability: estimate.clearProbability,
+    clearProbabilityLow: estimate.clearProbabilityLow,
+    clearProbabilityHigh: estimate.clearProbabilityHigh,
+    meanTime: estimate.meanTime,
+    medianTime: estimate.medianTime,
+    p90Time: estimate.p90Time,
+    meanDamage: estimate.meanDamage,
+    meanDamageStandardError: estimate.meanDamageStandardError,
+    medianDamage: estimate.medianDamage,
+    meanBloodcells: estimate.meanBloodcells,
+    medianBloodcells: estimate.medianBloodcells,
+    p90Bloodcells: estimate.p90Bloodcells,
+    maxBloodcells: estimate.maxBloodcells,
+    meanCellExp: estimate.meanCellExp,
+    meanCellExpByType: estimate.meanCellExpByType,
+    meanCriticalTime: estimate.meanCriticalTime,
+    meanDeaths: estimate.meanDeaths,
+    meanRevives: estimate.meanRevives,
+    meanBestDps: estimate.meanBestDps,
+    meanBestDpsMultiplier: estimate.meanBestDpsMultiplier,
+    meanPeakDps: estimate.meanPeakDps,
+    meanNormalDamage: estimate.meanNormalDamage,
+    meanCriticalDamage: estimate.meanCriticalDamage,
+    meanShots: estimate.meanShots,
+    meanHits: estimate.meanHits,
+    meanBossAttacks: estimate.meanBossAttacks,
+    meanImmunoidFocusTime: estimate.meanImmunoidFocusTime,
+    meanLiveSlots: estimate.meanLiveSlots,
+    meanAttemptDelta: estimate.meanAttemptDelta,
+    meanAmoebaStacksAtCriticalStart: estimate.meanAmoebaStacksAtCriticalStart,
+    meanAmoebaStacksAtCriticalEnd: estimate.meanAmoebaStacksAtCriticalEnd,
+    minDamage: estimate.minDamage,
+    maxDamage: estimate.maxDamage,
+    contribution: estimate.meanContributionByType.map((row) => ({
+      type: row.type,
+      shots: row.shots,
+      hits: row.hits,
+      damage: row.damage,
+      bloodcells: row.bloodcells,
+      exp: row.exp,
+    })),
+    representative: {
+      success: representative.success,
+      endedBy: representative.endedBy,
+      time: representative.time,
+      normalTime: representative.normalTime,
+      criticalTime: representative.criticalTime,
+      damage: representative.damage,
+      shots: representative.shots,
+      hits: representative.hits,
+      bloodcells: representative.bloodcells,
+      cellExp: representative.cellExp,
+      expByType: representative.expByType,
+      feverSeconds: representative.feverSeconds,
+      bestDpsBefore: representative.bestDpsBefore,
+      bestDpsAfter: representative.bestDpsAfter,
+      peakDps: representative.peakDps,
+      deaths: representative.deaths,
+      bossAttacks: representative.bossAttacks,
+      immunoidHits: representative.immunoidHits,
+      immunoidFocusTime: representative.immunoidFocusTime,
+      liveSlots: representative.liveSlots,
+      revivesUsed: representative.revivesUsed,
+      revivesRemaining: representative.revivesRemaining,
+      roidUsed: representative.roidUsed,
+      roidStart: representative.roidStart,
+      amoebaStacks: representative.amoebaStacks,
+      amoebaStacksAtCriticalStart: representative.amoebaStacksAtCriticalStart,
+      damageAtCriticalStart: representative.damageAtCriticalStart,
+      attemptDelta: representative.attemptDelta,
+      obstructionAfter: representative.obstructionAfter,
+      gameplayRandomCalls: representative.gameplayRandomCalls,
+      deathLog: representative.deathLog.slice(0, 8).map((row) => ({
+        time: row.time,
+        slot: row.slot,
+        focused: row.focused,
+        disabledAnchor: row.disabledAnchor,
+        revived: row.revived,
+      })),
+      contribution: representative.contribution.map((row) => ({
+        type: row.type,
+        shots: row.shots,
+        hits: row.hits,
+        damage: row.damage,
+        bloodcells: row.bloodcells,
+        exp: row.exp,
+      })),
+    },
+  };
+}
+
+function insightsOf(S, layout, operation) {
+  const insights = J.jellyOperationInsights(operation, S, { layout });
+  return {
+    valid: insights.valid,
+    dailyAttempts: insights.dailyAttempts,
+    expectedAttemptsToClear: insights.expectedAttemptsToClear,
+    probabilityWithinDailyAttempts: insights.probabilityWithinDailyAttempts,
+    expectedDaysToClear: insights.expectedDaysToClear,
+    expectedBloodcellsPerAttempt: insights.expectedBloodcellsPerAttempt,
+    savedDailyPassiveBloodcells: insights.savedDailyPassiveBloodcells,
+    expectedBloodcellsPerDailyCycle: insights.expectedBloodcellsPerDailyCycle,
+    expectedNetAttemptDelta: insights.expectedNetAttemptDelta,
+    normalDamage: insights.normalDamage,
+    criticalDamage: insights.criticalDamage,
+    normalDamageShare: insights.normalDamageShare,
+    criticalDamageShare: insights.criticalDamageShare,
+    expRows: insights.expRows.map((row) => ({
+      type: row.type,
+      currentLevel: row.currentLevel,
+      currentExp: row.currentExp,
+      requirement: row.requirement,
+      remainingExp: row.remainingExp,
+      meanExpPerAttempt: row.meanExpPerAttempt,
+      attemptsToNextLevel: row.attemptsToNextLevel,
+      daysToNextLevel: row.daysToNextLevel,
+    })),
+    obstructionOutlook: insights.obstructionOutlook.map((row) => ({
+      obstruction: row.obstruction,
+      hp: row.hp,
+      time: row.time,
+      estimatedClearProbability: row.estimatedClearProbability,
+      damageRatio: row.damageRatio,
+      expectedAttempts: row.expectedAttempts,
+      clearWithinDailyAttempts: row.clearWithinDailyAttempts,
+    })),
+  };
+}
+
+const cases = [
+  {
+    name: 'save',
+    overrides: {},
+    estimate: { trials: 8, seed: 7 },
+  },
+  {
+    name: 'small-board',
+    overrides: {
+      fever: 1,
+      obstruction: 32,
+      layout: { 0: 6, 4: 2, 59: 1, 65: 0, 67: 5, 72: 4, 84: 3, 94: 7 },
+      upgrades: {
+        0: 1, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1,
+        10: 1, 12: 1, 13: 2, 14: 1, 15: 1, 16: 2, 17: 3, 18: 5,
+        23: 2, 28: 1, 29: 10, 35: 2, 36: 1, 38: 2,
+      },
+      cellLevels: [3, 2, 1, 0, 0, 0, 0, 0, 0],
+      cellExp: [10, 5, 0, 0, 0, 0, 0, 0, 0],
+    },
+    estimate: { trials: 6, seed: 11 },
+  },
+  {
+    name: 'clear',
+    overrides: {
+      fever: 2,
+      obstruction: 0,
+      layout: { 77: 1, 95: 1 },
+      upgrades: { 0: 1, 1: 1, 12: 1, 16: 3, 28: 1, 36: 1 },
+      cellLevels: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+      cellExp: [0, 0, 0, 0, 0, 0, 0, 0, 0],
+    },
+    estimate: { trials: 5, seed: 3 },
+  },
+  {
+    name: 'locked-cell',
+    overrides: {
+      obstruction: 0,
+      layout: { 77: 7 },
+      upgrades: { 0: 1, 1: 1 },
+    },
+  },
+  {
+    name: 'overlap',
+    overrides: {
+      obstruction: 0,
+      layout: { 77: 1, 78: 0 },
+      upgrades: { 0: 1, 1: 1 },
+    },
+  },
+];
+
+const payload = {
+  generatedFrom: {
+    repo: 'Corgan/idleon-research-optimizer',
+    files: ['js/stats/systems/w7/jelly-operator.js'],
+    save: 'fixtures/data.json',
+  },
+  cases: cases.map((entry) => {
+    const S = patched(entry.overrides);
+    const layout = J.jellyLayoutFromSave(S);
+    const output = {
+      name: entry.name,
+      overrides: entry.overrides,
+      state: stateOf(S),
+    };
+    if (entry.estimate) {
+      const operation = J.simulateJellyTrials(layout, S, {
+        trials: entry.estimate.trials,
+        seed: entry.estimate.seed,
+        firingCalendar: false,
+      });
+      const estimate = estimateOf(S, layout, entry.estimate);
+      output.estimate = estimate;
+      output.estimateOptions = entry.estimate;
+      output.metrics = metricsOf(S, layout);
+      output.insights = estimate.valid ? insightsOf(S, layout, operation) : null;
+    } else {
+      const validation = J.jellyValidateLayout(layout, S);
+      output.validation = { valid: validation.valid, reason: validation.reason };
+    }
+    return output;
+  }),
+};
+
+writeFileSync(
+  new URL('../fixtures/jelly.json', import.meta.url),
+  `${JSON.stringify(payload, null, 1)}\n`,
+);
+console.log(`jelly: ${payload.cases.length} cases`);
+for (const entry of payload.cases) {
+  if (entry.estimate) {
+    console.log(
+      `${entry.name}: ${entry.estimate.successCount}/${entry.estimate.trials} clears, ` +
+        `${entry.estimate.meanDamage.toFixed(0)} mean damage, ${entry.estimate.representative.endedBy}`,
+    );
+  } else {
+    console.log(`${entry.name}: ${entry.validation.valid ? 'valid' : entry.validation.reason}`);
+  }
+}

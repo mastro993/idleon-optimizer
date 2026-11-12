@@ -15,6 +15,7 @@ use crate::sections::combat_sim::Tab as CombatTab;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::jar::Tab as JarTab;
+use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
 use crate::sections::monument::State as MonumentState;
@@ -168,6 +169,20 @@ pub struct CogConfig {
     goal: CogGoal,
 }
 
+/// The Jelly Operator section's config: its tab, the board on screen (which
+/// starts as the save's own), the palette pick and the estimate knobs. The save
+/// supplies the board and the metrics; the edited layout is a sandbox.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct JellyConfig {
+    tab: JellyTab,
+    /// Anchor/type pairs; a type the save has not unlocked is dropped.
+    layout: Vec<(usize, usize)>,
+    palette: usize,
+    trials: u32,
+    seed: u32,
+}
+
 /// The Jar section's config: its tab and the tier the rupie value projects.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -302,6 +317,21 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert(
+        "jelly-operator",
+        value(&JellyConfig {
+            tab: state.jelly_state.tab,
+            layout: state
+                .jelly_state
+                .layout
+                .iter()
+                .map(|(anchor, cell_type)| (*anchor, *cell_type))
+                .collect(),
+            palette: state.jelly_state.selected,
+            trials: state.jelly_state.trials,
+            seed: state.jelly_state.seed,
+        }),
+    );
+    insert(
         "jar",
         value(&JarConfig {
             tab: state.jar_tab,
@@ -415,6 +445,7 @@ pub enum Config {
     Prisma(PrismaConfig),
     Clamworks(ClamworksConfig),
     Cog(CogConfig),
+    Jelly(JellyConfig),
     Jar(JarConfig),
     Ladle(LadleConfig),
     Spelunking(SpelunkingState),
@@ -641,6 +672,32 @@ pub fn assign(
         Config::Cog(config) => {
             state.cog.goal = config.goal;
         }
+        Config::Jelly(config) => {
+            state.jelly_state.tab = config.tab;
+            state.jelly_state.selected = config.palette.min(7);
+            state.jelly_state.trials = config.trials.clamp(1, 1024);
+            state.jelly_state.seed = config.seed;
+            let Some(jelly) = state.jelly.clone() else {
+                warnings.push("jelly-operator: no imported save; the board config is kept for the next import".into());
+                return;
+            };
+            let mut layout = idleon_core::jelly::board::Layout::new();
+            for (anchor, cell_type) in config.layout {
+                if cell_type < jelly.units_owned()
+                    && idleon_core::jelly::board::footprint(anchor, cell_type).is_some()
+                {
+                    layout.insert(anchor, cell_type);
+                }
+            }
+            if idleon_core::jelly::board::validate(&jelly, &layout).is_ok() {
+                state.jelly_state.layout = layout;
+            } else {
+                warnings.push(
+                    "jelly-operator: the saved board no longer fits this save; the save's layout is shown".into(),
+                );
+                state.jelly_state.layout = jelly.layout;
+            }
+        }
         Config::Jar(config) => {
             state.jar_tab = config.tab;
             state.jar_tier = config.tier.min(idleon_core::jar::INCOME_TIERS - 1);
@@ -733,6 +790,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "prisma" => decode!(Prisma, PrismaConfig),
         "clamworks" => decode!(Clamworks, ClamworksConfig),
         "cog" => decode!(Cog, CogConfig),
+        "jelly-operator" => decode!(Jelly, JellyConfig),
         "jar" => decode!(Jar, JarConfig),
         "ladle" => decode!(Ladle, LadleConfig),
         "spelunking" => decode!(Spelunking, SpelunkingState),
@@ -1313,6 +1371,38 @@ mod tests {
     }
 
     #[test]
+    fn a_jelly_config_decodes_and_names_its_tab() {
+        let text = serde_json::json!({
+            "format": idleon_core::project::FORMAT,
+            "version": idleon_core::project::VERSION,
+            "section": "jelly-operator",
+            "save": null,
+            "sections": {
+                "jelly-operator": {
+                    "tab": "layout",
+                    "layout": [[0, 6], [4, 2]],
+                    "palette": 3,
+                    "trials": 4,
+                    "seed": 9
+                }
+            }
+        })
+        .to_string();
+        let mut document = pipeline::read(&text).expect("the project reads");
+        let configs = prepare(&mut document).expect("the jelly config decodes");
+        match &configs[0] {
+            Config::Jelly(config) => {
+                assert_eq!(config.tab, crate::sections::jelly_operator::Tab::Layout);
+                assert_eq!(config.layout, vec![(0, 6), (4, 2)]);
+                assert_eq!(config.palette, 3);
+                assert_eq!(config.trials, 4);
+                assert_eq!(config.seed, 9);
+            }
+            _ => panic!("the jelly config decodes as the jelly variant"),
+        }
+    }
+
+    #[test]
     fn every_built_section_is_a_config_id_or_a_page_the_save_alone_fills() {
         // The sections whose visible state is the save alone carry no config;
         // a planned section has no state at all yet.
@@ -1337,6 +1427,7 @@ mod tests {
                 "prisma",
                 "clamworks",
                 "cog",
+                "jelly-operator",
                 "jar",
                 "ladle",
                 "spelunking",

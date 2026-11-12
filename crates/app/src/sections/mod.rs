@@ -21,6 +21,7 @@ pub mod farming;
 pub mod fishing;
 pub mod fountain;
 pub mod jar;
+pub mod jelly_operator;
 pub mod killroy;
 pub mod ladle;
 pub mod monument;
@@ -477,9 +478,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::W7,
         description: "Cell layouts, obstruction clears, Bloodcells, upgrades, and account bonuses",
         spec: "docs/sections/jelly-operator.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: true,
-        view: PLACEHOLDER,
+        view: jelly_operator::view,
         keys: no_keys,
     },
     Section {

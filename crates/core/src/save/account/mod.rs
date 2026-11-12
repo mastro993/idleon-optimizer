@@ -17,6 +17,7 @@ mod cooking;
 mod data;
 mod equipment;
 mod fields;
+mod jelly;
 mod lab;
 mod mastery;
 mod statue;
@@ -187,6 +188,40 @@ pub(crate) fn cooking_mastery(
         );
     }
     mastery
+}
+
+/// Decode the Jelly Operator slice the section reads.
+///
+/// The page also reads systems this decoder already owns (the research grid
+/// nodes, Spelunking palettes, arcade, event shop, Sushi and Menagerie), so it
+/// runs one on the same save instead of a second parser.
+pub(crate) fn jelly(
+    save: &Map<String, Value>,
+    characters: &[Character],
+    simulation: &Simulation,
+    warnings: &mut Vec<String>,
+) -> Option<crate::jelly::Jelly> {
+    let overlay = simulation.overlay();
+    let mut decoder = Decoder {
+        save,
+        root: save,
+        data: account_data(),
+        characters,
+        grid: &simulation.grid,
+        overlay: &overlay,
+        research_level: simulation.research_level,
+        save_research_level: simulation.research_level,
+        deriving_lab: false,
+        warnings,
+    };
+    let jelly = decoder.jelly_state();
+    if jelly.is_none() {
+        decoder.warn(
+            "Research[14]/[17]",
+            "not in the save; the Jelly Operator section has no board to read",
+        );
+    }
+    jelly
 }
 
 /// Decode the account terms into the simulator context and its tree.
