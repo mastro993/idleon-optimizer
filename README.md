@@ -10,9 +10,9 @@ afford a real search instead of a heuristic.
 The current build opens on the dashboard and implements the research section, the Killroy weekly
 forecast, the statue table, the farming field, the Clamworks overview, upgrades, AFK claim,
 optimizer and promotion tracker, the shadow-ban and endgame checks, the hidden BoneJoePickle
-calculator and the Bravery tab of the Monument calculator. The plan covers the full upstream suite:
-a dashboard that opens every calculator, with one milestone per section and one issue per feature
-([`docs/roadmap.md`](docs/roadmap.md)).
+calculator and the Bravery, Justice and Wisdom tabs of the Monument calculator. The plan covers the
+full upstream suite: a dashboard that opens every calculator, with one milestone per section and
+one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -119,6 +119,15 @@ a dashboard that opens every calculator, with one milestone per section and one 
   kill/boost odds for the entered enemy and rethrow state, the optional last-sword HP, the eight
   milestones with one-character ETAs, and the ten permanent reward levels with their current and
   next effects. Missing companion or Minehead rows are warned about instead of guessed.
+- **Monument Justice** — the fresh-story start and its milestones, the undoable worksheet (stats,
+  deals, promises and investments), the case search by visitor or request wording, and the response
+  advisor: all three responses with every random outcome, the chance the story survives each one,
+  the delayed effects the next case settles, and the survival-first heuristic's pick with the reason
+  it made it. The worksheet never changes the save.
+- **Monument Wisdom** — the saved attempts, attempts per board clear, insta-matches and reveal aids,
+  the eight milestones and ten permanent reward levels, and the reward charge saved waiting has built
+  with its 24-hour preview, including the Meritoc vote, sushi tier and gaming superbit behind it.
+  Missing Summoning access is warned about instead of guessed.
 - **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
   any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
   page shows the save status and the flag it read under the verdict, so it never guesses.
@@ -336,11 +345,11 @@ source references and the credit note stays with the images.
 The current build covers the dashboard, the research grid and its optimizers, the statue table, the
 sailing fleet assignment, the farming field, the Clamworks overview, upgrades, AFK claim, optimizer
 and promotion tracker, save import, project and section-config export/import, the shadow-ban and
-endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank
-planner's inputs and current-state summary. The rest of the statue milestone (batch set/apply and
-the statue-farming breakdown) and the remaining upstream sections (combat sim, cooking, royal
-guardian, …) are planned; their cards open planned-section placeholders until those milestones
-land.
+endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery, Justice and Wisdom tabs
+and the Coral God Rank planner's inputs and current-state summary. The rest of the statue milestone
+(batch set/apply and the statue-farming breakdown) and the remaining upstream sections (combat sim,
+cooking, royal guardian, …) are planned; their cards open planned-section placeholders until those
+milestones land.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.

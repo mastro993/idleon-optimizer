@@ -1,11 +1,13 @@
-//! The Monument (W5) calculator: the Bravery and Wisdom tabs, the shared
-//! training pool and the reward charge all three monuments pay out.
+//! The Monument (W5) calculator: the Bravery and Wisdom tabs, the Justice
+//! response advisor, the shared training pool and the reward charge all three
+//! monuments pay out.
 //!
 //! Ported from the upstream `js/stats/systems/w5/monument.js` and the helper
 //! systems those tabs read: hole upgrades, the fountain, jar measurements and
 //! collectibles, summoning victories, arcade, achievements, the compass,
 //! Minehead, Meritoc voting, sushi tiers and the gaming superbits. The static
-//! tables come from `script/extract-monument-data.mjs`.
+//! tables come from `script/extract-monument-data.mjs`; the Justice worksheet is
+//! [`justice`].
 //!
 //! The formulas follow the upstream order of operations exactly, including its
 //! rounding and flooring, because the calculator reports the game's displayed
@@ -13,6 +15,7 @@
 //! false instead of guessing.
 
 mod data;
+pub mod justice;
 mod save;
 
 pub use save::Save;
@@ -162,6 +165,31 @@ pub struct WisdomSnapshot {
     pub charge: Charge,
     /// The charge after another 24 hours, the upstream "tomorrow" preview.
     pub tomorrow: Charge,
+}
+
+/// The Justice tab's saved training and fresh-story start.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JusticeStats {
+    pub hours: f64,
+    pub milestones: u32,
+    pub opal_chance: f64,
+    pub coins: i64,
+    pub health: i64,
+    pub popularity: i64,
+    pub dismissals: i64,
+}
+
+/// Everything the Justice tab renders for a save.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JusticeSnapshot {
+    pub available: bool,
+    pub notes: Vec<String>,
+    pub training: Training,
+    pub stats: JusticeStats,
+    pub milestones: Vec<Milestone>,
+    pub bonuses: Vec<BonusRow>,
 }
 
 /// Why a Bravery input was rejected.
@@ -344,6 +372,12 @@ pub fn wisdom_milestones(save: &Save, rate: f64) -> Vec<Milestone> {
     milestone_rows(2, stats.hours, stats.milestones, rate)
 }
 
+/// The eight Justice milestones, with their one-character ETA at `rate`.
+pub fn justice_milestones(save: &Save, rate: f64) -> Vec<Milestone> {
+    let stats = justice_stats(save);
+    milestone_rows(1, stats.hours, stats.milestones, rate)
+}
+
 /// One monument's eight Paying Respect milestones.
 fn milestone_rows(monument: usize, hours: f64, unlocked: u32, rate: f64) -> Vec<Milestone> {
     data()
@@ -459,6 +493,44 @@ pub fn wisdom_snapshot(save: &Save, char_idx: usize) -> WisdomSnapshot {
         bonuses: bonuses_for(save, 2),
         charge: reward_charge(save, 2, char_idx, 0.0).unwrap_or_default(),
         tomorrow: reward_charge(save, 2, char_idx, 86_400.0).unwrap_or_default(),
+        training,
+    }
+}
+
+/// The Justice saved stats for a save.
+pub fn justice_stats(save: &Save) -> JusticeStats {
+    let hours = save.hole(14, 2);
+    let milestones = save.hole(14, 3).max(0.0) as u32;
+    let unlocked = |index: u32| f64::from(milestones > index);
+    JusticeStats {
+        hours,
+        milestones,
+        opal_chance: (0.5_f64.powf(save.hole(7, 9))
+            * (1.0 + monument_rog_bonus(save, 1, 5) / 100.0)
+            * (1.0 + study(save, 9) / 100.0))
+            .min(0.5),
+        coins: ((5.0 + hours.max(1.0).log2() * compute_bupg(save, 61, 1.0))
+            * (0.5 * unlocked(3) + 1.5 * unlocked(6) + 1.0))
+            .round() as i64,
+        health: (1.0 + unlocked(1) + unlocked(4) + 2.0 * unlocked(7)).round() as i64,
+        popularity: (3.0 + 7.0 * unlocked(5)).round() as i64,
+        dismissals: (unlocked(2) + unlocked(4) + 2.0 * unlocked(7)).round() as i64,
+    }
+}
+
+/// Everything the Justice tab needs, or an unavailable marker when the save
+/// lacks the Monument rows.
+pub fn justice_snapshot(save: &Save, char_idx: usize) -> JusticeSnapshot {
+    if !has_rows(save) {
+        return JusticeSnapshot::default();
+    }
+    let training = training(save, char_idx);
+    JusticeSnapshot {
+        available: true,
+        notes: notes(save, char_idx),
+        stats: justice_stats(save),
+        milestones: justice_milestones(save, training.rate),
+        bonuses: bonuses_for(save, 1),
         training,
     }
 }

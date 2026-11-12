@@ -2341,6 +2341,87 @@ const INTERACTIONS = {
       warning.includes('Companion ownership is missing'),
       warning,
     );
+
+    // The Justice tab: the worksheet's advisor, its undoable effects editor and
+    // its case search.
+    await lane.call('click_element', { id: 'justice' });
+    await waitForNode(lane, 'monument-pane-justice', 'monument: the justice tab opens');
+    await waitForNode(
+      lane,
+      'monument-justice-response-approve',
+      'monument: the advisor lists the responses',
+    );
+    await waitForNode(
+      lane,
+      'monument-justice-recommended',
+      'monument: the advisor suggests a response',
+    );
+    const justiceRequest = labelOf(await lane.tree(), 'monument-justice-request') ?? '';
+    if (!justiceRequest.includes('Little Timmy')) {
+      throw new Error(`monument: the justice request reads ${justiceRequest}`);
+    }
+    const heuristic = labelOf(await lane.tree(), 'monument-justice-heuristic') ?? '';
+    if (!heuristic.includes('Survival-first heuristic')) {
+      throw new Error(`monument: the advisor heuristic reads ${heuristic}`);
+    }
+
+    // The effects editor is undoable: a toggled deal reaches the delayed effects
+    // and Undo takes it back. The worksheet is taller than the window, so each
+    // control is scrolled into view first.
+    await scrollTo(lane, 'monument-justice-effect-PermaPop');
+    await lane.call('click_element', { id: 'monument-justice-effect-PermaPop' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'monument-justice-delayed') ?? '').includes('Permanent popularity floor'),
+      'monument: the effects editor records a deal',
+    );
+    await scrollTo(lane, 'monument-justice-undo');
+    await lane.call('click_element', { id: 'monument-justice-undo' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'monument-justice-delayed') ?? '') ===
+        'No active deals or investments recorded.',
+      'monument: undo removes the recorded deal',
+    );
+
+    // The search narrows the case list by visitor or request wording.
+    await scrollTo(lane, 'monument-justice-search');
+    await lane.call('click_element', { id: 'monument-justice-search' });
+    await lane.call('type_text', { text: 'Timmy' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const count = labelOf(nodes, 'monument-justice-match-count') ?? '';
+        return count.includes('matching') && !count.startsWith('90');
+      },
+      'monument: the case search filters the list',
+    );
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('keyboard', { keystroke: 'backspace' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'monument-justice-match-count') ?? '') === '90 cases',
+      'monument: clearing the search restores every case',
+    );
+
+    // Recording a response waits for the next case, and opening it reports what
+    // the delayed effects paid.
+    await scrollTo(lane, 'monument-justice-record-approve-0');
+    await lane.call('click_element', { id: 'monument-justice-record-approve-0' });
+    await waitForNode(
+      lane,
+      'monument-justice-next',
+      'monument: a recorded response waits for the next case',
+    );
+    await scrollTo(lane, 'monument-justice-next');
+    await lane.call('click_element', { id: 'monument-justice-next' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'monument-justice-notice') ?? '').includes('Next case opened'),
+      'monument: opening the next case settles the delayed effects',
+    );
   },
   cog: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -2765,6 +2846,18 @@ const fail = (label, error) => {
 const has = (nodes, id) => nodes.some((node) => node.id === id);
 const labelOf = (nodes, id) => nodes.find((node) => node.id === id)?.label ?? null;
 const valueOf = (nodes, id) => nodes.find((node) => node.id === id)?.value?.value ?? null;
+/// Scrolls a tall pane until the element sits inside the window, so a click
+/// lands on it instead of on a clipped area.
+const scrollTo = async (lane, id, { step = 400, attempts = 8 } = {}) => {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const node = (await lane.tree()).find((candidate) => candidate.id === id);
+    if (!node) throw new Error(`no element ${id} to scroll to`);
+    const y = node.bounds?.y ?? 0;
+    if (y >= 120 && y <= 780) return;
+    await lane.call('scroll', { x: 600, y: 520, delta_y: y > 780 ? step : -step });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+};
 
 const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
   const deadline = Date.now() + timeoutMs;

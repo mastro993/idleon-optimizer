@@ -45,6 +45,10 @@ pub struct Holes {
     pub measurement_type: Vec<f64>,
     pub measurement_base: Vec<String>,
     pub bolaia_per_level: Vec<f64>,
+    /// `HolesInfo[62]`: the Justice case rows, raw and pipe-separated.
+    pub justice_cases: Vec<String>,
+    /// `HolesInfo[63]`: the Justice visitor names.
+    pub justice_visitors: Vec<String>,
 }
 
 /// `CosmoBonus` bases for the monument and measurement bonuses.
@@ -92,6 +96,20 @@ impl Data {
             .get(index)
             .copied()
             .unwrap_or(0.0)
+    }
+
+    /// The raw `HolesInfo[62]` Justice case rows.
+    pub fn justice_cases(&self) -> &[String] {
+        &self.holes.justice_cases
+    }
+
+    /// `HolesInfo[63][visitor]`, the `_`-written visitor name.
+    pub fn justice_visitor(&self, visitor: usize) -> &str {
+        self.holes
+            .justice_visitors
+            .get(visitor)
+            .map(String::as_str)
+            .unwrap_or("")
     }
 
     /// `HolesInfo[52]` at `index`.
@@ -214,6 +232,8 @@ mod tests {
         let data = data();
         assert_eq!(data.holes.milestone_hours.len(), 8);
         assert_eq!(data.holes.milestone_text.len(), 24);
+        assert_eq!(data.justice_cases().len(), 90);
+        assert_eq!(data.justice_visitor(4), "The_Harbinger");
         assert_eq!(data.holes.bonus_text.len(), 30);
         assert_eq!(data.holes.bonus_per_level.len(), 30);
         assert_eq!(data.fountain_per_level.len(), 3);

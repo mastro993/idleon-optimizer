@@ -23,6 +23,9 @@ use crate::sections::jelly_operator::{
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
+use crate::sections::monument::justice::{
+    Action as JusticeAction, Effect as JusticeEffect, Field as JusticeField,
+};
 use crate::sections::monument::{State as MonumentState, Tab as MonumentTab};
 use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
@@ -318,6 +321,8 @@ pub struct AppState {
     pub worship_inputs: WorshipInputs,
     /// The dashboard search field.
     pub search: Entity<TextInput>,
+    /// The Justice case search field.
+    pub monument_search: Entity<TextInput>,
     pub status: String,
     /// Whether the save-derived supplements card is expanded.
     pub supplements_open: bool,
@@ -387,6 +392,7 @@ pub struct AppState {
     #[allow(dead_code)]
     bridge: BridgeHandle,
     _search_subscription: Subscription,
+    _monument_search_subscription: Subscription,
     _statue_search_subscription: Subscription,
     _prisma_search_subscription: Subscription,
     _combat_name_subscription: Subscription,
@@ -457,6 +463,19 @@ impl AppState {
                     cx.notify();
                 }
             });
+        let monument_search = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("Visitor or words from the request…")
+                .label("Find a Justice case")
+        });
+        let monument_search_subscription = cx.subscribe(
+            &monument_search,
+            |_state, _search, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            },
+        );
         let statue = StatueState::new(window, cx);
         let statue_search = statue.search.clone();
         let statue_search_subscription =
@@ -1130,6 +1149,7 @@ impl AppState {
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
             search,
+            monument_search,
             status: "Ready. Pick a calculator, or open the research grid.".into(),
             supplements_open: true,
             import,
@@ -1165,6 +1185,7 @@ impl AppState {
             focus,
             bridge,
             _search_subscription: search_subscription,
+            _monument_search_subscription: monument_search_subscription,
             _statue_search_subscription: statue_search_subscription,
             _prisma_search_subscription: prisma_search_subscription,
             _combat_name_subscription: combat_name_subscription,
@@ -1495,6 +1516,13 @@ impl AppState {
         let monument_characters = imported.save.character_count();
         if monument_characters == 0 || self.monument.character >= monument_characters {
             self.monument.character = 0;
+        }
+        // The Justice worksheet transcribes this account's story, so a new save
+        // starts it from the new fresh-story stats.
+        if let Some(save) = self.monument_save.as_ref() {
+            let initial = monument::justice::initial_state(save);
+            self.monument.worksheet.reset(initial);
+            self.monument.notice.clear();
         }
         self.endgame = endgame::State::audit(&imported);
         self.fishing_save = FishingSave::from_save(&imported.save);
@@ -2521,6 +2549,137 @@ impl AppState {
         self.monument_save
             .as_ref()
             .map(|save| monument::wisdom_snapshot(save, self.monument.character))
+    }
+
+    /// The Justice snapshot for the imported save, if any.
+    pub fn monument_justice(&self) -> Option<monument::JusticeSnapshot> {
+        self.monument_save
+            .as_ref()
+            .map(|save| monument::justice_snapshot(save, self.monument.character))
+    }
+
+    /// Write one Justice stat, clamped like its input, as one undoable step.
+    pub fn set_monument_justice_field(
+        &mut self,
+        field: JusticeField,
+        value: f64,
+        cx: &mut Context<Self>,
+    ) {
+        if !value.is_finite() {
+            return;
+        }
+        let mut next = self.monument.worksheet.state.clone();
+        field.set(&mut next, value);
+        self.monument.worksheet.edit(next);
+        self.monument.notice.clear();
+        cx.notify();
+    }
+
+    /// Add or remove one deal, promise or investment as one undoable step.
+    pub fn toggle_monument_justice_effect(
+        &mut self,
+        effect: JusticeEffect,
+        on: bool,
+        cx: &mut Context<Self>,
+    ) {
+        let mut next = self.monument.worksheet.state.clone();
+        if on {
+            next.effects.entry(effect).or_insert(0);
+        } else {
+            next.effects.remove(&effect);
+        }
+        self.monument.worksheet.edit(next);
+        self.monument.notice.clear();
+        cx.notify();
+    }
+
+    /// Change an active effect's value as one undoable step.
+    pub fn set_monument_justice_effect(
+        &mut self,
+        effect: JusticeEffect,
+        value: f64,
+        cx: &mut Context<Self>,
+    ) {
+        if !value.is_finite() {
+            return;
+        }
+        let mut next = self.monument.worksheet.state.clone();
+        if let Some(slot) = next.effects.get_mut(&effect) {
+            *slot = value.round().max(0.0) as i64;
+            self.monument.worksheet.edit(next);
+            self.monument.notice.clear();
+            cx.notify();
+        }
+    }
+
+    /// Choose the case the player actually received; not an undoable step.
+    pub fn select_monument_justice_case(&mut self, id: usize, cx: &mut Context<Self>) {
+        self.monument.worksheet.select(id);
+        self.monument.notice.clear();
+        cx.notify();
+    }
+
+    /// Record the response and outcome that happened, and wait for the next case.
+    pub fn record_monument_justice(
+        &mut self,
+        action: JusticeAction,
+        outcome: usize,
+        cx: &mut Context<Self>,
+    ) {
+        let worksheet = &self.monument.worksheet;
+        let Ok(report) = monument::justice::responses(&worksheet.state, worksheet.case_id) else {
+            return;
+        };
+        let Some(chosen) = report
+            .responses
+            .iter()
+            .find(|response| response.action == action)
+            .and_then(|response| response.outcomes.get(outcome))
+        else {
+            return;
+        };
+        let next = chosen.state.clone();
+        let ended = next.health <= 0;
+        self.monument.worksheet.record(next);
+        self.monument.notice = if ended {
+            "Story ended. Fresh story starts another worksheet."
+        } else {
+            "Response recorded. Select the next case, then open it to settle delayed effects."
+        }
+        .into();
+        cx.notify();
+    }
+
+    /// Open the selected case once, settling the delayed effects it triggers.
+    pub fn open_monument_justice(&mut self, cx: &mut Context<Self>) {
+        self.monument.notice = match self.monument.worksheet.open_next() {
+            Ok(notes) if notes.is_empty() => {
+                "Next case opened; no delayed payments this turn.".to_string()
+            }
+            Ok(notes) => notes.join(" "),
+            Err(error) => error.to_string(),
+        };
+        cx.notify();
+    }
+
+    /// Walk one worksheet step back.
+    pub fn undo_monument_justice(&mut self, cx: &mut Context<Self>) {
+        if self.monument.worksheet.undo() {
+            self.monument.notice = "Worksheet step undone.".into();
+            cx.notify();
+        }
+    }
+
+    /// Start the worksheet over from the loaded save's fresh-story stats.
+    pub fn reset_monument_justice(&mut self, cx: &mut Context<Self>) {
+        let Some(save) = self.monument_save.as_ref() else {
+            return;
+        };
+        let initial = monument::justice::initial_state(save);
+        self.monument.worksheet.reset(initial);
+        self.monument.notice =
+            "Fresh-story stats loaded. Select the first visitor you actually received.".into();
+        cx.notify();
     }
 
     /// The sword odds for the current inputs.
