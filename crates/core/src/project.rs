@@ -44,6 +44,7 @@
 use crate::data::game;
 use crate::model::{MagKind, SimContext, Simulation};
 use crate::save::{json, research};
+use crate::tiers::Tiers;
 use base64::Engine as _;
 use flate2::read::GzDecoder;
 use serde_json::{Map, Value, json};
@@ -300,6 +301,7 @@ fn research_value(simulation: &Simulation) -> Value {
         "magData": mags,
         "shapePositions": placements,
         "preset": simulation.preset,
+        "shapeTiers": simulation.shape_tiers,
     })
 }
 
@@ -336,6 +338,13 @@ fn simulation(value: &Value, warnings: &mut Vec<String>) -> Simulation {
             ));
         }
     }
+    match object.get("shapeTiers") {
+        Some(value) => match serde_json::from_value::<Tiers>(value.clone()) {
+            Ok(tiers) => simulation.shape_tiers = tiers.reconciled(),
+            Err(error) => warnings.push(format!("shapeTiers: {error}; the default tiers are used")),
+        },
+        None => warnings.push("shapeTiers: not in the project; the default tiers are used".into()),
+    }
     let known = [
         "researchLevel",
         "researchExp",
@@ -348,6 +357,7 @@ fn simulation(value: &Value, warnings: &mut Vec<String>) -> Simulation {
         "magData",
         "shapePositions",
         "preset",
+        "shapeTiers",
     ];
     let unknown: Vec<&str> = object
         .keys()
@@ -544,6 +554,7 @@ fn migrate(object: &Map<String, Value>, _version: u32) -> Project {
         "magData",
         "shapePositions",
         "preset",
+        "shapeTiers",
     ] {
         if let Some(value) = object.get(key) {
             state.insert(key.to_string(), value.clone());
@@ -597,6 +608,7 @@ fn migrate(object: &Map<String, Value>, _version: u32) -> Project {
         "cachedExtPctExSticker",
         "comp52TrueMulti",
         "preset",
+        "shapeTiers",
         "supplements",
     ];
     let skipped: Vec<&str> = object
@@ -662,6 +674,7 @@ mod tests {
         }];
         simulation.saved_overlay = Some(vec![0; game().cells()]);
         simulation.preset = "_none".into();
+        simulation.shape_tiers = Tiers::parse("J6,I5|").expect("the fixture tiers");
         simulation
     }
 
@@ -795,6 +808,10 @@ mod tests {
             Some(game().cells())
         );
         assert_eq!(state["preset"], "_none");
+        assert_eq!(
+            state["shapeTiers"]["above"].as_array().map(Vec::len),
+            Some(2)
+        );
         assert!(state["supplements"].is_object(), "{state}");
     }
 

@@ -308,6 +308,9 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     simulation.mags = research::mags(save, &rows, &mut warnings);
     simulation.placements = research::placements(save, &rows, &mut warnings);
     simulation.saved_overlay = research::shape_overlay(save, &rows);
+    if let Some(tiers) = research::tiers(save) {
+        simulation.shape_tiers = tiers;
+    }
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);

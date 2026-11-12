@@ -50,6 +50,7 @@ pub mod sneaking;
 pub mod spelunking;
 pub mod stats;
 pub mod statue;
+pub mod tiers;
 pub mod worship;
 
 pub use cglunko::Cglunko;
@@ -70,3 +71,4 @@ pub use model::{
 pub use opal::Opal;
 pub use royal_guardian::RoyalGuardian;
 pub use sailing::{AssignmentMode, Boat, Captain, Fleet, Goal, RouteContext, RouteMetrics};
+pub use tiers::{Tier, Tiers};

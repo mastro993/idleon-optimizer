@@ -558,6 +558,7 @@ fn imported_rate_matches_a_hand_built_simulation() {
         ],
         saved_overlay: Some(vec![-1; 240]),
         preset: "_none".into(),
+        shape_tiers: idleon_core::Tiers::default(),
     };
 
     let actual = sim::exp_rate(&imported.simulation, &imported.context);

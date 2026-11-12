@@ -5,6 +5,7 @@ use super::Character;
 use super::json;
 use crate::data::game;
 use crate::model::{GridState, Mag, MagKind, Observations, Placement};
+use crate::tiers::Tiers;
 use serde_json::{Map, Value};
 
 /// A magnifier's `(type, slot)` from the save.
@@ -348,6 +349,13 @@ fn position_entries(value: &Value) -> Option<Vec<Position>> {
             })
             .collect(),
     )
+}
+
+/// Shape priority tiers: the app's own research state carries them, the game's
+/// save does not, so a save without them gets the default lists.
+pub(crate) fn tiers(save: &Map<String, Value>) -> Option<Tiers> {
+    let tiers = serde_json::from_value::<Tiers>(save.get("shapeTiers")?.clone()).ok()?;
+    Some(tiers.reconciled())
 }
 
 /// A grid-shaped array of optional numbers.

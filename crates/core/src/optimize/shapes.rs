@@ -22,9 +22,11 @@ pub struct ShapesOutcome {
     pub steps: Vec<String>,
 }
 
-/// Per-cell priorities: the preset's targets first, EXP value as the tiebreak.
+/// Per-cell priorities: the above tier first, EXP value second, the below tier
+/// as the tiebreak, matching the upstream `optimizeShapePlacement` comparator.
 struct Weights {
     above: Vec<f64>,
+    below: Vec<f64>,
     value: Vec<f64>,
 }
 
@@ -32,35 +34,62 @@ impl Weights {
     fn build(sim: &Simulation, ctx: &SimContext) -> Self {
         let game = game();
         let mut above = vec![0.0; game.cells()];
-        let targets: Vec<usize> = sim
-            .preset()
-            .targets
-            .iter()
-            .copied()
-            .filter(|cell| sim.grid.level(*cell) > 0)
-            .collect();
-        let count = targets.len();
-        for (rank, cell) in targets.iter().enumerate() {
-            // A higher-ranked target outweighs every lower one together.
+        let mut below = vec![0.0; game.cells()];
+        let pinned = live_unique(sim, &sim.shape_tiers.above);
+        let count = pinned.len();
+        for (rank, cell) in pinned.iter().enumerate() {
+            // A higher rank outweighs every lower one together.
             above[*cell] = 2_f64.powi((count - 1 - rank) as i32);
+        }
+        let leftover: Vec<usize> = live_unique(sim, &sim.shape_tiers.below)
+            .into_iter()
+            .filter(|cell| !pinned.contains(cell))
+            .collect();
+        let count = leftover.len();
+        for (rank, cell) in leftover.iter().enumerate() {
+            below[*cell] = 2_f64.powi((count - 1 - rank) as i32);
         }
         Self {
             above,
-            value: sim::cell_values(sim, ctx),
+            below,
+            value: sim::bare_cell_values(sim, ctx),
         }
     }
 
-    fn anchors(&self) -> Vec<usize> {
+    /// Cells the above tier or a real EXP gain pulls shapes onto, first first.
+    fn primary_anchors(&self) -> Vec<usize> {
         let mut anchors: Vec<usize> = (0..self.above.len())
             .filter(|cell| self.above[*cell] > 0.0 || self.value[*cell] > 0.0)
             .collect();
         anchors.sort_by(|a, b| {
-            let left = self.above[*a] * 1e6 + self.value[*a];
-            let right = self.above[*b] * 1e6 + self.value[*b];
+            let left = self.above[*a] + self.value[*a];
+            let right = self.above[*b] + self.value[*b];
             right.total_cmp(&left)
         });
         anchors
     }
+
+    /// Below-tier cells for the shapes EXP leaves over, first first.
+    fn below_anchors(&self) -> Vec<usize> {
+        let mut anchors: Vec<usize> = (0..self.below.len())
+            .filter(|cell| self.below[*cell] > 0.0)
+            .collect();
+        anchors.sort_by(|a, b| self.below[*b].total_cmp(&self.below[*a]));
+        anchors
+    }
+}
+
+/// The unique live cells of one tier list, in its order.
+fn live_unique(sim: &Simulation, list: &[usize]) -> Vec<usize> {
+    let cells = game().cells();
+    let mut seen = vec![false; cells];
+    let mut unique = Vec::with_capacity(list.len());
+    for cell in list.iter().copied() {
+        if cell < cells && sim.grid.level(cell) > 0 && !std::mem::replace(&mut seen[cell], true) {
+            unique.push(cell);
+        }
+    }
+    unique
 }
 
 /// Greedy placement, then the local search the effort allows.
@@ -96,8 +125,9 @@ pub fn optimize(
         return outcome;
     }
     let weights = Weights::build(sim, ctx);
-    let anchors = weights.anchors();
-    if anchors.is_empty() {
+    let anchors = weights.primary_anchors();
+    let below = weights.below_anchors();
+    if anchors.is_empty() && below.is_empty() {
         outcome
             .steps
             .push("Every square a shape still helps is covered; kept the current layout.".into());
@@ -127,7 +157,7 @@ pub fn optimize(
     let mut greedy = Vec::new();
     for (index, shape_id) in order.iter().enumerate() {
         if report(Progress {
-            fraction: 0.1 + 0.5 * index as f32 / order.len() as f32,
+            fraction: 0.1 + 0.45 * index as f32 / order.len() as f32,
             message: format!("Placing {}.", game.shapes[*shape_id].name),
         }) == Control::Stop
         {
@@ -148,8 +178,45 @@ pub fn optimize(
         }
     }
 
+    // Upstream's second phase: a shape the EXP-valued nodes left over covers
+    // the below tier in rank order, so a preset's lower priorities still get
+    // shapes once every square worth EXP is taken.
+    let placed: Vec<usize> = greedy.iter().map(|placement| placement.shape).collect();
+    let leftovers: Vec<usize> = order
+        .iter()
+        .copied()
+        .filter(|shape| !placed.contains(shape))
+        .collect();
+    for (index, shape_id) in leftovers.iter().enumerate() {
+        if report(Progress {
+            fraction: 0.55 + 0.05 * index as f32 / leftovers.len().max(1) as f32,
+            message: format!(
+                "Filling below-tier nodes with {}.",
+                game.shapes[*shape_id].name
+            ),
+        }) == Control::Stop
+        {
+            return outcome;
+        }
+        if let Some(placement) = place_shape(
+            *shape_id,
+            &below,
+            &weights,
+            &covered,
+            rotations,
+            game.shapes[*shape_id].bonus_pct,
+        ) {
+            for cell in shape::cells_at(&placement) {
+                covered[cell] = true;
+            }
+            greedy.push(placement);
+        }
+    }
+
+    // Ties adopt the greedy layout: a tier preset can be worth exactly the
+    // current EXP and still move shapes the user asked onto another node.
     let greedy_rate = score(sim, ctx, &greedy);
-    if greedy_rate > outcome.rate {
+    if greedy_rate >= outcome.rate {
         outcome.rate = greedy_rate;
         outcome.placements = greedy;
     }
@@ -212,6 +279,24 @@ fn score(sim: &Simulation, ctx: &SimContext, placements: &[Placement]) -> f64 {
     sim::exp_rate(&trial, ctx).total
 }
 
+/// A scored candidate: above-tier weight, EXP, below-tier weight, cells, spot.
+type Candidate = (f64, f64, f64, usize, Placement);
+
+/// Whether `left` beats `right`, in the upstream comparator's order: above
+/// rank, then EXP, then below rank, then the number of uncovered cells.
+fn beats(left: &Candidate, right: &Candidate) -> bool {
+    if left.0 != right.0 {
+        return left.0 > right.0;
+    }
+    if left.1 != right.1 {
+        return left.1 > right.1;
+    }
+    if left.2 != right.2 {
+        return left.2 > right.2;
+    }
+    left.3 > right.3
+}
+
 fn place_shape(
     shape_id: usize,
     anchors: &[usize],
@@ -222,31 +307,24 @@ fn place_shape(
 ) -> Option<Placement> {
     // Rotations are independent, so they are swept in parallel and folded back
     // in rotation order: the same placement wins as in a sequential sweep.
-    let scored: Vec<Option<(f64, f64, usize, Placement)>> = (0..rotations)
+    let scored: Vec<Option<Candidate>> = (0..rotations)
         .into_par_iter()
         .map(|step| best_for_rotation(shape_id, anchors, weights, covered, step, bonus_pct))
         .collect();
-    let mut best: Option<(f64, f64, usize, Placement)> = None;
+    let mut best: Option<Candidate> = None;
     for candidate in scored.into_iter().flatten() {
-        let better = match &best {
-            None => true,
-            Some(current) => {
-                candidate.0 > current.0
-                    || (candidate.0 == current.0 && candidate.1 > current.1)
-                    || (candidate.0 == current.0
-                        && candidate.1 == current.1
-                        && candidate.2 > current.2)
-            }
-        };
-        if better {
+        if best
+            .as_ref()
+            .is_none_or(|current| beats(&candidate, current))
+        {
             best = Some(candidate);
         }
     }
-    best.map(|(_, _, _, placement)| placement)
+    best.map(|candidate| candidate.4)
 }
 
 /// The best anchor for one rotation of a shape: priorities first, then EXP, then
-/// the number of uncovered cells it reaches.
+/// below-tier weight, then the number of uncovered cells it reaches.
 fn best_for_rotation(
     shape_id: usize,
     anchors: &[usize],
@@ -254,11 +332,11 @@ fn best_for_rotation(
     covered: &[bool],
     step: usize,
     bonus_pct: f64,
-) -> Option<(f64, f64, usize, Placement)> {
+) -> Option<Candidate> {
     let game = game();
     let rot = step as f64 * shape::ROT_STEP;
     let scale = bonus_pct / 25.0;
-    let mut best: Option<(f64, f64, usize, Placement)> = None;
+    let mut best: Option<Candidate> = None;
     for pattern in shape::lut().patterns(shape_id, rot) {
         // One pattern has one coverage shape, so a base column and row seen
         // twice within it covers the same cells; across patterns it does not.
@@ -284,6 +362,7 @@ fn best_for_rotation(
                 }
                 let above: f64 = fresh.iter().map(|cell| weights.above[*cell]).sum();
                 let value: f64 = fresh.iter().map(|cell| weights.value[*cell] * scale).sum();
+                let below: f64 = fresh.iter().map(|cell| weights.below[*cell]).sum();
                 let placement = Placement {
                     shape: shape_id,
                     x: (base_col * shape::CELL as i32) as f64
@@ -292,18 +371,11 @@ fn best_for_rotation(
                         + (pattern.phases[0].1 * shape::PHASE_STEP) as f64,
                     rot,
                 };
-                let candidate = (above, value, fresh.len(), placement);
-                let better = match &best {
-                    None => true,
-                    Some(current) => {
-                        candidate.0 > current.0
-                            || (candidate.0 == current.0 && candidate.1 > current.1)
-                            || (candidate.0 == current.0
-                                && candidate.1 == current.1
-                                && candidate.2 > current.2)
-                    }
-                };
-                if better {
+                let candidate = (above, value, below, fresh.len(), placement);
+                if best
+                    .as_ref()
+                    .is_none_or(|current| beats(&candidate, current))
+                {
                     best = Some(candidate);
                 }
             }
@@ -506,5 +578,52 @@ impl Search<'_> {
 
     fn exhausted(&self) -> bool {
         self.evaluations >= self.limit
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::Placement;
+
+    fn candidate(above: f64, exp: f64, below: f64, cells: usize) -> Candidate {
+        (
+            above,
+            exp,
+            below,
+            cells,
+            Placement {
+                shape: 0,
+                x: 0.0,
+                y: 0.0,
+                rot: 0.0,
+            },
+        )
+    }
+
+    #[test]
+    fn tier_order_is_above_then_exp_then_below() {
+        // Every comparison upstream makes: a higher above rank wins whatever
+        // the EXP, EXP wins over the below rank, and cells only break a tie.
+        assert!(beats(
+            &candidate(2.0, 0.0, 0.0, 1),
+            &candidate(1.0, 1e12, 1e12, 240)
+        ));
+        assert!(beats(
+            &candidate(1.0, 2.0, 0.0, 1),
+            &candidate(1.0, 1.0, 1e12, 240)
+        ));
+        assert!(beats(
+            &candidate(1.0, 1.0, 2.0, 1),
+            &candidate(1.0, 1.0, 1.0, 240)
+        ));
+        assert!(beats(
+            &candidate(1.0, 1.0, 1.0, 2),
+            &candidate(1.0, 1.0, 1.0, 1)
+        ));
+        assert!(!beats(
+            &candidate(1.0, 1.0, 1.0, 1),
+            &candidate(1.0, 1.0, 1.0, 1)
+        ));
     }
 }

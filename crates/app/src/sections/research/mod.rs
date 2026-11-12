@@ -5,16 +5,20 @@ pub mod grid;
 mod inspector;
 mod optimizer;
 mod rates;
+mod shape_opt;
+mod shape_presets;
 
 pub use dashboard::Trees;
+pub use shape_presets::CustomPreset;
 
 use crate::state::AppState;
 use crate::ui::format;
 use crate::ui::layout::{self, Breakpoint};
+use ely_gpui_component::forms::TextInput;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
 
 /// The research page's tabs; the dashboard opens first, as upstream.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -29,10 +33,12 @@ pub enum Tab {
     Rates,
     /// Target, effort and the last result.
     Run,
+    /// Shape priority tiers, presets and the optimized placement.
+    Shapes,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Dashboard, Tab::Grid, Tab::Rates, Tab::Run];
+    pub const ALL: [Tab; 5] = [Tab::Dashboard, Tab::Grid, Tab::Rates, Tab::Run, Tab::Shapes];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -40,6 +46,7 @@ impl Tab {
             Tab::Grid => "grid",
             Tab::Rates => "rates",
             Tab::Run => "run",
+            Tab::Shapes => "shapes",
         }
     }
 
@@ -49,6 +56,7 @@ impl Tab {
             Tab::Grid => "Grid",
             Tab::Rates => "Rates",
             Tab::Run => "Optimize",
+            Tab::Shapes => "Shape Optimization",
         }
     }
 
@@ -66,7 +74,6 @@ pub struct ShapeDrag {
 }
 
 /// The research section's live state, kept in `AppState` while the window is open.
-#[derive(Default)]
 pub struct State {
     pub tab: Tab,
     /// The selected square in the grid.
@@ -77,6 +84,37 @@ pub struct State {
     pub selected_shape: Option<usize>,
     /// The observation the dashboard preview last opened.
     pub selected_observation: Option<usize>,
+    /// The named shape tier lists the project keeps.
+    pub shape_presets: Vec<CustomPreset>,
+    /// The preset the shape tiers were last applied from: a built-in `_id` or a
+    /// custom name. An edit clears it, so a built-in is never rewritten.
+    pub active_shape_preset: Option<String>,
+    /// The name typed into the shape preset bar.
+    pub preset_name: Entity<TextInput>,
+    /// Cached bare-grid cell values, with the simulation and context they came
+    /// from, so typing in the preset rail does not rescore 240 cells per frame.
+    pub shape_values: Option<(idleon_core::Simulation, idleon_core::SimContext, Vec<f64>)>,
+}
+
+impl State {
+    pub fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
+        let preset_name = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("Shape preset name")
+                .label("Shape preset name")
+        });
+        Self {
+            tab: Tab::default(),
+            selected_cell: None,
+            shape_drag: None,
+            selected_shape: None,
+            selected_observation: None,
+            shape_presets: Vec::new(),
+            active_shape_preset: None,
+            preset_name,
+            shape_values: None,
+        }
+    }
 }
 
 /// Register the grid's shortcuts: arrows, `+`/`-` and Escape.
@@ -182,6 +220,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(optimizer::optimizer_pane(state, window, cx))
+            .into_any_element(),
+        Tab::Shapes => div()
+            .id("pane-shapes")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(shape_opt::pane(state, window, cx))
             .into_any_element(),
     }
 }

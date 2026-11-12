@@ -53,25 +53,7 @@ for (const match of presetsSource.matchAll(
   presetRows.push({ id, name, data });
 }
 
-const coordToId = new Map();
-for (const node of nodes) {
-  const col = node.id % mod.GRID_COLS;
-  const row = Math.floor(node.id / mod.GRID_COLS);
-  coordToId.set(String.fromCharCode(65 + col) + (mod.GRID_ROWS - row), node.id);
-}
-
-const presets = presetRows.map(({ id, name, data }) => ({
-  id,
-  name,
-  data,
-  targets: data
-    .replaceAll('|', '')
-    .split(',')
-    .map((coord) => coord.trim())
-    .filter(Boolean)
-    .map((coord) => coordToId.get(coord))
-    .filter((value) => value !== undefined),
-}));
+const presets = presetRows.map(({ id, name, data }) => ({ id, name, data }));
 
 const payload = {
   grid: { cols: mod.GRID_COLS, rows: mod.GRID_ROWS },

@@ -1248,6 +1248,52 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'formula-collapse' });
     await lane.call('click_element', { id: 'grid' });
     await waitForNode(lane, 'cell-129', 'research: the grid tab reopens');
+
+    // Shape Optimization: a built-in preset applies, a tier edit detaches it
+    // without rewriting it, and the real optimizer fills the preview.
+    await lane.call('click_element', { id: 'shapes' });
+    await waitForNode(lane, 'shape-opt', 'research: the Shape Optimization tab opens');
+    await waitForNode(lane, 'shape-zone-above', 'research: the tier zones render');
+    await lane.call('click_element', { id: 'shape-preset-_minehead' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'shape-active') ?? '').includes('Minehead'),
+      'research: the Minehead preset applies',
+    );
+    await lane.call('drag_element', {
+      from_id: 'shape-tier-H10',
+      to_id: 'shape-zone-above',
+      steps: 12,
+    });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const active = labelOf(nodes, 'shape-active') ?? '';
+        const square = nodes.find((node) => node.id === 'shape-tier-H10');
+        return active.includes('no preset active') && (square?.label ?? '').includes('above tier');
+      },
+      'research: editing a tier detaches the built-in preset',
+    );
+    // The tier panel scrolls with the page, so save the preset while the rail
+    // is still in view, then scroll the placement card up.
+    await lane.call('click_element', { id: 'shape-preset-name' });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await lane.call('type_text', { text: 'Minehead pin' });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await lane.call('click_element', { id: 'shape-save-preset' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'shape-custom-preset-0') ?? '').includes('Minehead pin'),
+      'research: the custom shape preset is saved',
+    );
+    await lane.call('scroll', { x: 720, y: 700, delta_y: 900 });
+    await lane.call('click_element', { id: 'shape-optimize' });
+    await waitForNode(lane, 'shape-preview', 'research: the optimizer previews a placement', 120000);
+    await waitForNode(lane, 'shape-breakdown-order-0', 'research: the coverage breakdown lists the first shape');
+    const shapeSummary = labelOf(await lane.tree(), 'shape-summary') ?? '';
+    if (!shapeSummary.includes('shapes placed')) {
+      throw new Error(`research: the shape summary reads ${shapeSummary}`);
+    }
   },
   'coral-god-rank': async (lane) => {
     // Turning the assumption off makes the save-derived unlock state (or its

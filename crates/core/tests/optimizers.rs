@@ -601,3 +601,46 @@ fn a_stopped_report_cancels_the_run_without_a_result() {
     assert!(result.is_none(), "a stopped run returned a result");
     assert_eq!(reports, 1, "the run kept working after it was stopped");
 }
+
+/// A pinned above-tier node is covered before any EXP-valued square, even when
+/// it is worth less EXP than everything the ordinary layout would take.
+#[test]
+fn a_pinned_above_node_is_covered_by_the_greedy_pass() {
+    let (mut simulation, ctx) = seeded(1, 120, 0);
+    let owned = sim::shapes_owned(simulation.research_level, &ctx);
+    let values = sim::cell_values(&simulation, &ctx);
+    // A node a shape the level unlocks can actually cover, so the assertion
+    // measures the tier, not polygon geometry.
+    let node = simulation
+        .grid
+        .live_cells()
+        .filter(|cell| idleon_core::tiers::is_below_node(*cell))
+        .filter(|cell| (0..owned).any(|shape| covers(shape, *cell)))
+        .min_by(|left, right| values[*left].total_cmp(&values[*right]))
+        .expect("a coverable below-tier node");
+    simulation.shape_tiers.above = vec![node];
+    let outcome =
+        optimize::shapes::optimize(&simulation, &ctx, Effort::Quick, &mut |_| Control::Continue);
+    assert!(
+        outcome.overlay[node] >= 0,
+        "the pinned node {node} ({}) got no shape: {:?}",
+        values[node],
+        outcome.placements
+    );
+}
+
+/// Whether an upright shape can cover `cell` somewhere on the lattice.
+fn covers(shape: usize, cell: usize) -> bool {
+    let [x, y] = shape::cell_origin(cell);
+    (-90..=90).step_by(5).any(|dx| {
+        (-90..=90).step_by(5).any(|dy| {
+            let placement = idleon_core::model::Placement {
+                shape,
+                x: shape::snap(x + f64::from(dx) - 15.0),
+                y: shape::snap(y + f64::from(dy) - 30.0),
+                rot: 0.0,
+            };
+            shape::cells_at(&placement).contains(&cell)
+        })
+    })
+}
