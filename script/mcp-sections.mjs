@@ -508,8 +508,43 @@ const projectDocument = () =>
     sections: { killroy: { weeks: 5 } },
   });
 
-/// The synthetic account the sailing tabs read: boats, captains and balances.
-const sailingSave = () => readFileSync(join(process.cwd(), 'fixtures/data.json'), 'utf8');
+/// A small flat save the sailing tabs read: three boats, three captains, every
+/// chest-slot source and an artifact that feeds the chest rarity scale. It stays
+/// well under the bridge's type-text limit and makes the pile simulation's
+/// tier mix and capacity non-trivial.
+const sailingSave = () => {
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const research = Array.from({ length: 48 }, () => []);
+  research[0] = row(240);
+  const sailing = [new Array(20).fill(-1), row(31, { 0: 5000, 1: 250 }), [2, 2], row(41)];
+  sailing[3][0] = 1;
+  sailing[3][1] = 6;
+  sailing[3][9] = 2;
+  sailing[3][19] = 2;
+  const tasks = Array.from({ length: 6 }, () => []);
+  tasks[4] = [0, 0, 2];
+  return JSON.stringify({
+    Research: JSON.stringify(research),
+    Lv0_0: JSON.stringify(row(21, { 0: 100, 13: 10 })),
+    OptLacc: JSON.stringify(row(128)),
+    Boats: JSON.stringify([
+      [1, 0, 0, 100, 0, 100, 0],
+      [0, 0, 0, 80, 0, 80, 0],
+      [2, 0, 0, 60, 0, 60, 0],
+    ]),
+    Captains: JSON.stringify([
+      [3, 0, 1, 10, 250, 20, 10],
+      [6, 3, 4, 20, 1000, 30, 15],
+      [2, 1, 0, 5, 0, 10, 10],
+    ]),
+    GemItemsPurchased: JSON.stringify(row(140, { 129: 4 })),
+    TaskZZ2: JSON.stringify(tasks),
+    AchieveReg: JSON.stringify(row(400, { 287: -1 })),
+    SailChests: JSON.stringify([]),
+    Sailing: JSON.stringify(sailing),
+  });
+};
 
 /// A small flat save with a Divinity budget, a God Rank, offer tier 1, Coral Kid
 /// levels and the account rows the planner reads, so a run has actions to list.
@@ -1987,7 +2022,7 @@ const INTERACTIONS = {
     );
   },
   sailing: async (lane) => {
-    await waitForNode(lane, 'fleet-empty', 'sailing: the empty state offers the import');
+    await waitForNode(lane, 'fleet-import', 'sailing: the empty state offers the import');
     await lane.call('click_element', { id: 'header-import' });
     await waitForNode(lane, 'import-drop', 'sailing: the import dialog opens');
     await lane.call('click_element', { id: 'import-input' });
@@ -2045,6 +2080,19 @@ const INTERACTIONS = {
       lane,
       (nodes) => nodes.some((node) => node.id?.startsWith('artifact-name-')),
       'sailing: the selected island artifacts render',
+    );
+    await lane.call('click_element', { id: 'simulation' });
+    await waitForNode(lane, 'sailing-sim-panel', 'sailing: the pile simulation opens');
+    await lane.call('click_element', { id: 'sailing-sim-run' });
+    await waitForNode(
+      lane,
+      'sailing-sim-currency-table',
+      'sailing: the pile simulation finishes with its currency spread',
+    );
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('sailing-sim-slot-')),
+      'sailing: the pile position table renders',
     );
     await lane.call('click_element', { id: 'formula' });
     await waitForNode(lane, 'sailing-breakdown-loot', 'sailing: the formula breakdowns open');

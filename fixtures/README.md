@@ -72,3 +72,12 @@ reference total for the character's saved map, which needs the account stats eng
 with `node script/drop-rate-oracle.mjs <upstream-repo>`; `crates/core/tests/drop_rate.rs` compares
 the port number for number. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
+
+`sailing-simulation.json` is the upstream sailing pile simulator's own output for a purpose-built
+three-boat save: two cases (an optimized fleet over a day of arrivals and a current-save fleet with a
+tier-three filter), each with the configuration the calculator builds and the full result — event
+counts, pile summaries, slot statistics, tier composition and the three currency distributions.
+`script/sailing-simulation-oracle.mjs` replaces `Math.random` with the same seeded xorshift stream the
+Rust port uses, so the upstream output is reproducible; regenerate it with
+`node script/sailing-simulation-oracle.mjs <upstream-repo>`. `crates/core/tests/sailing_simulation.rs`
+compares the port field for field.

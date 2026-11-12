@@ -14,13 +14,35 @@
 //! lower-bound view of a held pile.
 
 use super::{
-    ArtifactUnlocks, Fleet, RouteContext, RouteMetrics, chest_artifact_multiplier,
+    ArtifactUnlocks, Fleet, RouteContext, RouteMetrics, artifact_bonus, chest_artifact_multiplier,
     chest_loot_multiplier, chest_loot_rolls, island_artifact_count, island_artifact_offset,
     overflow_upgrade_chance,
 };
 
 /// The highest artifact tier the game has.
 pub const MAX_ARTIFACT_TIER: u32 = 7;
+
+/// The pile's five starting chest slots.
+pub const BASE_CHEST_SLOTS: f64 = 5.0;
+
+/// The most chest slots a save can reach.
+pub const MAX_CHEST_SLOTS: usize = 34;
+
+/// The pile's chest slots, matching upstream `maxChestSlots`: five starting
+/// slots plus the gem purchase, Artifact 19 (capped at four), the task reward
+/// and achievements 287 and 290, capped at 34.
+pub fn chest_capacity(
+    gem_purchase: f64,
+    artifact_19_tier: u32,
+    task_slots: f64,
+    achievement_287: bool,
+    achievement_290: bool,
+) -> usize {
+    let artifact = artifact_bonus(19, artifact_19_tier).min(4.0);
+    let achievements = f64::from(u8::from(achievement_287)) + f64::from(u8::from(achievement_290));
+    let slots = BASE_CHEST_SLOTS + gem_purchase + artifact + task_slots + achievements;
+    slots.max(0.0).round().min(MAX_CHEST_SLOTS as f64) as usize
+}
 
 /// The highest artifact tier this save can reach: tier seven needs
 /// Verisimilitude (Menagerie unlock 0), otherwise tier six is the cap.
@@ -401,6 +423,21 @@ mod tests {
         assert_eq!(rows[0].chance, 0.25);
         assert_eq!(rows[3].chance, 0.0003);
         assert_eq!(rows[3].chance, overflow_upgrade_chance(3, 100.0));
+    }
+
+    #[test]
+    fn the_pile_capacity_follows_the_upstream_slots() {
+        assert_eq!(chest_capacity(0.0, 0, 0.0, false, false), 5);
+        // Gem 4 + Artifact 19's doubled base (2 × 2 = 4) + task 2 + one achievement.
+        assert_eq!(chest_capacity(4.0, 2, 2.0, true, false), 16);
+        // Artifact 19 caps at four slots even at tier seven.
+        assert_eq!(chest_capacity(0.0, 7, 0.0, false, false), 9);
+        assert_eq!(chest_capacity(100.0, 7, 100.0, true, true), MAX_CHEST_SLOTS);
+        assert_eq!(
+            chest_capacity(0.0, 1, 0.0, false, false),
+            7,
+            "tier one keeps the base two slots"
+        );
     }
 
     #[test]

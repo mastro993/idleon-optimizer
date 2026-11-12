@@ -1,0 +1,1226 @@
+{
+  "source": "purpose-built save in script/sailing-simulation-oracle.mjs",
+  "modules": [
+    "js/stats/systems/w5/sailing-sim.js",
+    "js/stats/systems/w5/sailing-chests.js"
+  ],
+  "save": {
+    "Research": "[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+    "Lv0_0": "[100,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]",
+    "OptLacc": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+    "Boats": "[[1,0,0,100,0,100,0],[0,0,0,80,0,80,0],[2,0,0,60,0,60,0]]",
+    "Captains": "[[3,0,1,10,250,20,10],[6,3,4,20,1000,30,15],[2,1,0,5,0,10,10]]",
+    "GemItemsPurchased": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0]",
+    "TaskZZ2": "[[],[],[],[],[0,0,2],[]]",
+    "AchieveReg": "[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]",
+    "SailChests": "[]",
+    "SL_0": "{\"325\":120}",
+    "Sailing": "[[-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],[5000,250,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[2,2],[1,6,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]"
+  },
+  "cases": [
+    {
+      "name": "optimized treasure fleet, a day of arrivals",
+      "mode": "optimized",
+      "goal": "treasure",
+      "island": 0,
+      "hours": 24,
+      "trials": 300,
+      "seed": 12345,
+      "config": {
+        "routes": [
+          {
+            "boatIdx": 0,
+            "captainIdx": 0,
+            "tripsPerHour": 0.5,
+            "lootValue": 50306.11111111112,
+            "artifactMultiplier": 1.25,
+            "islandIdx": 0,
+            "tierProbabilities": [
+              0.775,
+              0.18,
+              0.03825,
+              0.00649125,
+              0.00025873875000000004,
+              1.125e-8
+            ]
+          },
+          {
+            "boatIdx": 1,
+            "captainIdx": 1,
+            "tripsPerHour": 0.5,
+            "lootValue": 14061.944444444445,
+            "artifactMultiplier": 7.25,
+            "islandIdx": 0,
+            "tierProbabilities": [
+              0.475,
+              0.42000000000000004,
+              0.08925,
+              0.01514625,
+              0.0006037237500000001,
+              2.625e-8
+            ]
+          },
+          {
+            "boatIdx": 2,
+            "captainIdx": 2,
+            "tripsPerHour": 0.5,
+            "lootValue": 7917.916666666667,
+            "artifactMultiplier": 1.25,
+            "islandIdx": 0,
+            "tierProbabilities": [
+              0.775,
+              0.18,
+              0.03825,
+              0.00649125,
+              0.00025873875000000004,
+              1.125e-8
+            ]
+          }
+        ],
+        "hours": 24,
+        "trials": 300,
+        "seed": 12345,
+        "capacity": 16,
+        "minimumTier": 0,
+        "unendingLootSearch": 37.77777777777778,
+        "lootMultipliers": [
+          1,
+          1.85,
+          3.4225000000000003,
+          6.331625000000001,
+          11.713506250000002,
+          20
+        ],
+        "artifactMultipliers": [
+          1,
+          1.4,
+          1.9599999999999997,
+          2.7439999999999993,
+          3.8415999999999992,
+          30
+        ],
+        "upgradeChances": [
+          0.24444444444444444,
+          0.04888888888888889,
+          0.006844444444444445,
+          0.00029333333333333327,
+          0,
+          0
+        ],
+        "payoutsByTier": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          5
+        ],
+        "currencyShares": {
+          "gold": 0.5,
+          "primary": 0.475,
+          "rare": 0.025
+        }
+      },
+      "result": {
+        "config": {
+          "hours": 24,
+          "trials": 300,
+          "capacity": 16,
+          "targetCount": 15,
+          "minimumTier": 0
+        },
+        "events": {
+          "generated": 36,
+          "accepted": 15,
+          "upgrades": 3.5866666666666664,
+          "replacements": 2.23,
+          "filterDiscards": 0,
+          "overflowDiscards": 15.183333333333334,
+          "blocked": 0
+        },
+        "pile": {
+          "count": {
+            "mean": 15,
+            "p10": 15,
+            "median": 15,
+            "p90": 15
+          },
+          "value": {
+            "mean": 1394262.5083970774,
+            "p10": 903434.7006944447,
+            "median": 1307945.840902778,
+            "p90": 1963233.9996458346
+          },
+          "averageValuePerChest": 92950.8338931385
+        },
+        "activeCollectionValue": {
+          "mean": 1974058.2504977724,
+          "p10": 1388194.7486805562,
+          "median": 1868100.7843750007,
+          "p90": 2640104.6914236126
+        },
+        "retainedFraction": 0.7062924855664743,
+        "slots": [
+          {
+            "index": 0,
+            "occupancy": 1,
+            "averageTier": 1.4166666666666667,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.02666666666666667,
+              0.6233333333333333,
+              0.27,
+              0.06666666666666667,
+              0.013333333333333334,
+              0
+            ],
+            "averageValuePerPayout": 128150.68658930864,
+            "averageArtifactMultiplier": 2.396664000000002,
+            "averagePayouts": 2.4166666666666665,
+            "averageOpenedValue": 349440.43312258273,
+            "averageCurrencyValue": {
+              "gold": 164248.46638576358,
+              "primary": 177141.73130626412,
+              "rare": 8050.235430555555
+            }
+          },
+          {
+            "index": 1,
+            "occupancy": 1,
+            "averageTier": 1.7966666666666666,
+            "mostLikelyTier": 2,
+            "tierDistribution": [
+              0,
+              0.32,
+              0.5666666666666667,
+              0.11,
+              0.0033333333333333335,
+              0
+            ],
+            "averageValuePerPayout": 46624.31600257223,
+            "averageArtifactMultiplier": 10.91972000000001,
+            "averagePayouts": 2.796666666666667,
+            "averageOpenedValue": 137131.3798923759,
+            "averageCurrencyValue": {
+              "gold": 62928.71107435763,
+              "primary": 70535.79790071472,
+              "rare": 3666.8709173032425
+            }
+          },
+          {
+            "index": 2,
+            "occupancy": 1,
+            "averageTier": 1.2966666666666666,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0,
+              0.73,
+              0.24333333333333335,
+              0.02666666666666667,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 32264.41549415506,
+            "averageArtifactMultiplier": 4.54337333333334,
+            "averagePayouts": 2.296666666666667,
+            "averageOpenedValue": 77154.04544652785,
+            "averageCurrencyValue": {
+              "gold": 39952.08522037037,
+              "primary": 35561.81189068282,
+              "rare": 1640.1483354745371
+            }
+          },
+          {
+            "index": 3,
+            "occupancy": 1,
+            "averageTier": 0.7733333333333333,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.27666666666666667,
+              0.6766666666666666,
+              0.043333333333333335,
+              0.0033333333333333335,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 85415.43776458375,
+            "averageArtifactMultiplier": 1.6475999999999995,
+            "averagePayouts": 1.7733333333333334,
+            "averageOpenedValue": 166497.1298222228,
+            "averageCurrencyValue": {
+              "gold": 78905.11431689847,
+              "primary": 83102.61430625035,
+              "rare": 4489.401199074075
+            }
+          },
+          {
+            "index": 4,
+            "occupancy": 1,
+            "averageTier": 1.0533333333333332,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.11666666666666667,
+              0.7366666666666667,
+              0.12333333333333334,
+              0.023333333333333334,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 32613.463038541562,
+            "averageArtifactMultiplier": 9.313360000000033,
+            "averagePayouts": 2.0533333333333332,
+            "averageOpenedValue": 73536.80834398135,
+            "averageCurrencyValue": {
+              "gold": 37732.65194224529,
+              "primary": 34285.07689247676,
+              "rare": 1519.0795092592598
+            }
+          },
+          {
+            "index": 5,
+            "occupancy": 1,
+            "averageTier": 0.97,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.1,
+              0.84,
+              0.05,
+              0.01,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 20866.31172748836,
+            "averageArtifactMultiplier": 3.006199999999998,
+            "averagePayouts": 1.97,
+            "averageOpenedValue": 43438.63709398129,
+            "averageCurrencyValue": {
+              "gold": 23817.346552025356,
+              "primary": 18848.041073205997,
+              "rare": 773.24946875
+            }
+          },
+          {
+            "index": 6,
+            "occupancy": 1,
+            "averageTier": 0.4033333333333333,
+            "mostLikelyTier": 0,
+            "tierDistribution": [
+              0.6433333333333333,
+              0.32,
+              0.03,
+              0.0033333333333333335,
+              0.0033333333333333335,
+              0
+            ],
+            "averageValuePerPayout": 70335.93047651662,
+            "averageArtifactMultiplier": 1.4651066666666663,
+            "averagePayouts": 1.4033333333333333,
+            "averageOpenedValue": 121489.51510410942,
+            "averageCurrencyValue": {
+              "gold": 66521.40986300954,
+              "primary": 51395.679643183066,
+              "rare": 3572.425597916668
+            }
+          },
+          {
+            "index": 7,
+            "occupancy": 1,
+            "averageTier": 0.8466666666666667,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.29,
+              0.5966666666666667,
+              0.09,
+              0.023333333333333334,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 28130.3121427082,
+            "averageArtifactMultiplier": 9.537760000000032,
+            "averagePayouts": 1.8466666666666667,
+            "averageOpenedValue": 60669.05558703677,
+            "averageCurrencyValue": {
+              "gold": 31901.27104421286,
+              "primary": 27151.12966319434,
+              "rare": 1616.65487962963
+            }
+          },
+          {
+            "index": 8,
+            "occupancy": 1,
+            "averageTier": 0.7133333333333334,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.35,
+              0.5966666666666667,
+              0.043333333333333335,
+              0.01,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 14914.51954230324,
+            "averageArtifactMultiplier": 2.1261333333333328,
+            "averagePayouts": 1.7133333333333334,
+            "averageOpenedValue": 29234.726857870424,
+            "averageCurrencyValue": {
+              "gold": 14561.8008498264,
+              "primary": 14157.455496469925,
+              "rare": 515.4705115740742
+            }
+          },
+          {
+            "index": 9,
+            "occupancy": 1,
+            "averageTier": 0.2966666666666667,
+            "mostLikelyTier": 0,
+            "tierDistribution": [
+              0.7566666666666667,
+              0.2,
+              0.03333333333333333,
+              0.01,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 65602.5016687504,
+            "averageArtifactMultiplier": 1.4118,
+            "averagePayouts": 1.2966666666666666,
+            "averageOpenedValue": 105249.52338796348,
+            "averageCurrencyValue": {
+              "gold": 51608.87170185206,
+              "primary": 49829.69127800943,
+              "rare": 3810.9604081018524
+            }
+          },
+          {
+            "index": 10,
+            "occupancy": 1,
+            "averageTier": 0.66,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.44666666666666666,
+              0.47,
+              0.06,
+              0.023333333333333334,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 23472.965214467466,
+            "averageArtifactMultiplier": 9.32562666666669,
+            "averagePayouts": 1.66,
+            "averageOpenedValue": 47707.51362175899,
+            "averageCurrencyValue": {
+              "gold": 25088.19632222211,
+              "primary": 21587.914688541583,
+              "rare": 1031.4026109953707
+            }
+          },
+          {
+            "index": 11,
+            "occupancy": 1,
+            "averageTier": 0.5366666666666666,
+            "mostLikelyTier": 0,
+            "tierDistribution": [
+              0.5166666666666667,
+              0.43666666666666665,
+              0.04,
+              0.006666666666666667,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 12170.68247650463,
+            "averageArtifactMultiplier": 1.726866666666666,
+            "averagePayouts": 1.5366666666666666,
+            "averageOpenedValue": 22002.84785509265,
+            "averageCurrencyValue": {
+              "gold": 10249.188391840285,
+              "primary": 11355.124324363429,
+              "rare": 398.53513888888887
+            }
+          },
+          {
+            "index": 12,
+            "occupancy": 1,
+            "averageTier": 0.23666666666666666,
+            "mostLikelyTier": 0,
+            "tierDistribution": [
+              0.8033333333333333,
+              0.16,
+              0.03333333333333333,
+              0.0033333333333333335,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 62104.005093287415,
+            "averageArtifactMultiplier": 1.3772666666666664,
+            "averagePayouts": 1.2366666666666666,
+            "averageOpenedValue": 91657.98597500054,
+            "averageCurrencyValue": {
+              "gold": 48453.986826157605,
+              "primary": 40621.61877847232,
+              "rare": 2582.380370370371
+            }
+          },
+          {
+            "index": 13,
+            "occupancy": 1,
+            "averageTier": 0.6966666666666667,
+            "mostLikelyTier": 1,
+            "tierDistribution": [
+              0.43333333333333335,
+              0.46,
+              0.08333333333333333,
+              0.023333333333333334,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 24148.29009641191,
+            "averageArtifactMultiplier": 9.459026666666686,
+            "averagePayouts": 1.6966666666666668,
+            "averageOpenedValue": 50368.61942499971,
+            "averageCurrencyValue": {
+              "gold": 23046.173482291586,
+              "primary": 25355.338111805464,
+              "rare": 1967.107830902778
+            }
+          },
+          {
+            "index": 14,
+            "occupancy": 1,
+            "averageTier": 0.41333333333333333,
+            "mostLikelyTier": 0,
+            "tierDistribution": [
+              0.63,
+              0.33,
+              0.03666666666666667,
+              0.0033333333333333335,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 11172.359970891186,
+            "averageArtifactMultiplier": 1.6062666666666663,
+            "averagePayouts": 1.4133333333333333,
+            "averageOpenedValue": 18684.286861574117,
+            "averageCurrencyValue": {
+              "gold": 9442.601998495365,
+              "primary": 8982.095025115745,
+              "rare": 259.589837962963
+            }
+          },
+          {
+            "index": 15,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          }
+        ],
+        "tiers": [
+          {
+            "tier": 0,
+            "averageCount": 5.39,
+            "averageValuePerPayout": 29097.580825259753,
+            "averageOpenedValue": 29097.580825259753,
+            "openedValueContribution": 156835.96064815007
+          },
+          {
+            "tier": 1,
+            "averageCount": 7.496666666666667,
+            "averageValuePerPayout": 43005.990359912576,
+            "averageOpenedValue": 86011.98071982515,
+            "openedValueContribution": 644803.1487962891
+          },
+          {
+            "tier": 2,
+            "averageCount": 1.7466666666666666,
+            "averageValuePerPayout": 73291.64006043303,
+            "averageOpenedValue": 219874.92018129778,
+            "openedValueContribution": 384048.1939166668
+          },
+          {
+            "tier": 3,
+            "averageCount": 0.3466666666666667,
+            "averageValuePerPayout": 130060.91258814101,
+            "averageOpenedValue": 520243.65035256406,
+            "openedValueContribution": 180351.13212222222
+          },
+          {
+            "tier": 4,
+            "averageCount": 0.02,
+            "averageValuePerPayout": 282240.72913744213,
+            "averageOpenedValue": 1411203.6456872113,
+            "openedValueContribution": 28224.072913744225
+          },
+          {
+            "tier": 5,
+            "averageCount": 0,
+            "averageValuePerPayout": 0,
+            "averageOpenedValue": 0,
+            "openedValueContribution": 0
+          }
+        ],
+        "currencies": {
+          "gold": {
+            "value": {
+              "mean": 688457.875971569,
+              "p10": 355790.9934027779,
+              "median": 617961.6100694446,
+              "p90": 1059411.9538975703
+            },
+            "payouts": {
+              "mean": 13.436666666666667,
+              "p10": 9,
+              "median": 13,
+              "p90": 17.100000000000023
+            }
+          },
+          "primary": {
+            "value": {
+              "mean": 669911.1203787498,
+              "p10": 373504.7647569445,
+              "median": 609904.9027430556,
+              "p90": 1018874.7576666673
+            },
+            "payouts": {
+              "mean": 13.023333333333333,
+              "p10": 10,
+              "median": 13,
+              "p90": 16
+            }
+          },
+          "rare": {
+            "value": {
+              "mean": 35893.512046759264,
+              "p10": 0,
+              "median": 0,
+              "p90": 107186.87013888893
+            },
+            "payouts": {
+              "mean": 0.65,
+              "p10": 0,
+              "median": 0,
+              "p90": 2
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "current-save artifact fleet, a tier-three filter",
+      "mode": "saved",
+      "goal": "artifact",
+      "island": 3,
+      "hours": 12,
+      "trials": 250,
+      "seed": 777,
+      "config": {
+        "routes": [
+          {
+            "boatIdx": 0,
+            "captainIdx": 1,
+            "tripsPerHour": 0.5,
+            "lootValue": 25153.05555555556,
+            "artifactMultiplier": 7.25,
+            "islandIdx": 3,
+            "tierProbabilities": [
+              0.475,
+              0.42000000000000004,
+              0.08925,
+              0.01514625,
+              0.0006037237500000001,
+              2.625e-8
+            ]
+          },
+          {
+            "boatIdx": 1,
+            "captainIdx": 0,
+            "tripsPerHour": 0.5,
+            "lootValue": 28123.88888888889,
+            "artifactMultiplier": 1.25,
+            "islandIdx": 3,
+            "tierProbabilities": [
+              0.775,
+              0.18,
+              0.03825,
+              0.00649125,
+              0.00025873875000000004,
+              1.125e-8
+            ]
+          },
+          {
+            "boatIdx": 2,
+            "captainIdx": 2,
+            "tripsPerHour": 0.5,
+            "lootValue": 7917.916666666667,
+            "artifactMultiplier": 1.25,
+            "islandIdx": 3,
+            "tierProbabilities": [
+              0.775,
+              0.18,
+              0.03825,
+              0.00649125,
+              0.00025873875000000004,
+              1.125e-8
+            ]
+          }
+        ],
+        "hours": 12,
+        "trials": 250,
+        "seed": 777,
+        "capacity": 16,
+        "minimumTier": 3,
+        "unendingLootSearch": 37.77777777777778,
+        "lootMultipliers": [
+          1,
+          1.85,
+          3.4225000000000003,
+          6.331625000000001,
+          11.713506250000002,
+          20
+        ],
+        "artifactMultipliers": [
+          1,
+          1.4,
+          1.9599999999999997,
+          2.7439999999999993,
+          3.8415999999999992,
+          30
+        ],
+        "upgradeChances": [
+          0.24444444444444444,
+          0.04888888888888889,
+          0.006844444444444445,
+          0.00029333333333333327,
+          0,
+          0
+        ],
+        "payoutsByTier": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          5
+        ],
+        "currencyShares": {
+          "gold": 0.5,
+          "primary": 0.475,
+          "rare": 0.025
+        }
+      },
+      "result": {
+        "config": {
+          "hours": 12,
+          "trials": 250,
+          "capacity": 16,
+          "targetCount": 15,
+          "minimumTier": 3
+        },
+        "events": {
+          "generated": 18,
+          "accepted": 0.156,
+          "upgrades": 0,
+          "replacements": 0,
+          "filterDiscards": 17.844,
+          "overflowDiscards": 0,
+          "blocked": 0
+        },
+        "pile": {
+          "count": {
+            "mean": 0.156,
+            "p10": 0,
+            "median": 0,
+            "p90": 1
+          },
+          "value": {
+            "mean": 85230.74545276047,
+            "p10": 0,
+            "median": 0,
+            "p90": 637038.861527778
+          },
+          "averageValuePerChest": 85230.74545276047
+        },
+        "activeCollectionValue": {
+          "mean": 944648.4375180369,
+          "p10": 637910.7666666667,
+          "median": 888100.0555555555,
+          "p90": 1375615.0390972225
+        },
+        "retainedFraction": 0.09022483081292673,
+        "slots": [
+          {
+            "index": 0,
+            "occupancy": 0.14,
+            "averageTier": 3.057142857142857,
+            "mostLikelyTier": 3,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0.9428571428571428,
+              0.05714285714285714,
+              0
+            ],
+            "averageValuePerPayout": 137465.4669099951,
+            "averageArtifactMultiplier": 11.693360000000002,
+            "averagePayouts": 4.057142857142857,
+            "averageOpenedValue": 560929.7830633683,
+            "averageCurrencyValue": {
+              "gold": 40315.9563116042,
+              "primary": 38013.68020080905,
+              "rare": 200.53311645833335
+            }
+          },
+          {
+            "index": 1,
+            "occupancy": 0.016,
+            "averageTier": 3,
+            "mostLikelyTier": 3,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 104696.49724826391,
+            "averageArtifactMultiplier": 11.661999999999997,
+            "averagePayouts": 4,
+            "averageOpenedValue": 418785.98899305565,
+            "averageCurrencyValue": {
+              "gold": 3385.7274240972233,
+              "primary": 3114.3152833333347,
+              "rare": 200.53311645833335
+            }
+          },
+          {
+            "index": 2,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 3,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 4,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 5,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 6,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 7,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 8,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 9,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 10,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 11,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 12,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 13,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 14,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          },
+          {
+            "index": 15,
+            "occupancy": 0,
+            "averageTier": 0,
+            "mostLikelyTier": -1,
+            "tierDistribution": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "averageValuePerPayout": 0,
+            "averageArtifactMultiplier": 0,
+            "averagePayouts": 0,
+            "averageOpenedValue": 0,
+            "averageCurrencyValue": {
+              "gold": 0,
+              "primary": 0,
+              "rare": 0
+            }
+          }
+        ],
+        "tiers": [
+          {
+            "tier": 0,
+            "averageCount": 0,
+            "averageValuePerPayout": 0,
+            "averageOpenedValue": 0,
+            "openedValueContribution": 0
+          },
+          {
+            "tier": 1,
+            "averageCount": 0,
+            "averageValuePerPayout": 0,
+            "averageOpenedValue": 0,
+            "openedValueContribution": 0
+          },
+          {
+            "tier": 2,
+            "averageCount": 0,
+            "averageValuePerPayout": 0,
+            "averageOpenedValue": 0,
+            "openedValueContribution": 0
+          },
+          {
+            "tier": 3,
+            "averageCount": 0.148,
+            "averageValuePerPayout": 130883.79164930561,
+            "averageOpenedValue": 523535.16659722244,
+            "openedValueContribution": 77483.20465638893
+          },
+          {
+            "tier": 4,
+            "averageCount": 0.008,
+            "averageValuePerPayout": 193688.51990928824,
+            "averageOpenedValue": 968442.5995464413,
+            "openedValueContribution": 7747.540796371531
+          },
+          {
+            "tier": 5,
+            "averageCount": 0,
+            "averageValuePerPayout": 0,
+            "averageOpenedValue": 0,
+            "openedValueContribution": 0
+          }
+        ],
+        "currencies": {
+          "gold": {
+            "value": {
+              "mean": 43701.6837357014,
+              "p10": 0,
+              "median": 0,
+              "p90": 159259.7153819445
+            },
+            "payouts": {
+              "mean": 0.32,
+              "p10": 0,
+              "median": 0,
+              "p90": 2
+            }
+          },
+          "primary": {
+            "value": {
+              "mean": 41127.995484142375,
+              "p10": 0,
+              "median": 0,
+              "p90": 159259.7153819445
+            },
+            "payouts": {
+              "mean": 0.304,
+              "p10": 0,
+              "median": 0,
+              "p90": 1
+            }
+          },
+          "rare": {
+            "value": {
+              "mean": 401.0662329166667,
+              "p10": 0,
+              "median": 0,
+              "p90": 0
+            },
+            "payouts": {
+              "mean": 0.008,
+              "p10": 0,
+              "median": 0,
+              "p90": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

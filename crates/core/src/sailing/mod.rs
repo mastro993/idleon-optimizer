@@ -17,6 +17,7 @@ pub mod data;
 mod metrics;
 mod outcome;
 mod replacement;
+mod sim;
 mod tree;
 mod upgrade;
 
@@ -26,9 +27,9 @@ pub use captain::{
     exp_requirement, level_time, roll_bounds, roll_quality,
 };
 pub use data::{
-    artifact, artifact_base, artifact_base_odds, artifact_count, artifact_tier_bonus,
-    captain_bonus_name, island, island_artifact_count, island_artifact_offset, island_captain_exp,
-    island_cloud_required, island_count, island_distance, sailing,
+    artifact, artifact_base, artifact_base_odds, artifact_bonus, artifact_count,
+    artifact_tier_bonus, captain_bonus_name, island, island_artifact_count, island_artifact_offset,
+    island_captain_exp, island_cloud_required, island_count, island_distance, sailing,
 };
 pub use metrics::{
     ArtifactMultiplier, ArtifactOdds, ArtifactOutcome, ChestDistribution, ChestTier, LootValue,
@@ -39,13 +40,19 @@ pub use metrics::{
     island_artifact_odds, minimum_travel_details, route_metrics, route_timing,
 };
 pub use outcome::{
-    ChestPayoutBreakdown, CurrencyPayout, CurrencyPayouts, FleetChestOutcomes, FleetChestTier,
-    MAX_ARTIFACT_TIER, NearFullTier, aggregate_fleet_tiers, fleet_chest_payout_breakdown,
-    incomplete_artifacts, max_artifact_tier, near_full_pile,
+    BASE_CHEST_SLOTS, ChestPayoutBreakdown, CurrencyPayout, CurrencyPayouts, FleetChestOutcomes,
+    FleetChestTier, MAX_ARTIFACT_TIER, MAX_CHEST_SLOTS, NearFullTier, aggregate_fleet_tiers,
+    chest_capacity, fleet_chest_payout_breakdown, incomplete_artifacts, max_artifact_tier,
+    near_full_pile,
 };
 pub use replacement::{
     ReplacementOutcome, ReplacementThreshold, compare_strength, overflow_upgrade_chance, ranked,
     replacement_outcome, replacement_threshold, strongest,
+};
+pub use sim::{
+    DEFAULT_HOURS, DEFAULT_SEED, DEFAULT_TRIALS, MAX_HOURS, MAX_TRIALS, MIN_HOURS, MIN_TRIALS,
+    SimConfig, SimCurrencies, SimCurrency, SimEvents, SimOptions, SimPile, SimResult, SimRoute,
+    SimSetup, SimSlot, SimSummary, SimTier, simulate,
 };
 pub use tree::{artifact_tree, chest_tree, loot_tree, speed_tree};
 pub use upgrade::{
@@ -276,7 +283,7 @@ pub struct ArtifactUnlocks {
 }
 
 /// Everything a route reads besides the fleet itself.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RouteContext {
     /// The character whose Sailing level and bonuses apply.
     pub active_character: usize,
@@ -297,6 +304,29 @@ pub struct RouteContext {
     /// loot, and zero turns near-full replacement off as upstream does
     /// without the talent.
     pub unending_loot_search: f64,
+    /// The pile's chest slots, `maxChestSlots` from the save.
+    pub chest_capacity: usize,
+}
+
+impl Default for RouteContext {
+    fn default() -> Self {
+        Self {
+            active_character: 0,
+            minimum_tier: 0,
+            travel: MinimumTravel::default(),
+            loot: LootBonuses::default(),
+            speed: SpeedBonuses::default(),
+            artifact: ArtifactBonuses::default(),
+            server_vars: ServerVars::default(),
+            unlocks: ArtifactUnlocks::default(),
+            davey_unlocked: false,
+            chest_rolls: 0,
+            captain_exp: CaptainExpBonuses::default(),
+            unending_loot_search: 0.0,
+            // A save with none of the capacity sources has the base five.
+            chest_capacity: 5,
+        }
+    }
 }
 
 /// What the optimizer maximises.

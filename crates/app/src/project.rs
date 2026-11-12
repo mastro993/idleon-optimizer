@@ -112,7 +112,7 @@ impl Default for PrismaConfig {
 
 /// The sailing section's config: its tab, pairings mode, island, goal and the
 /// chest tier floor that lives on the route context.
-#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SailingConfig {
     tab: SailingTab,
@@ -122,6 +122,26 @@ pub struct SailingConfig {
     minimum_tier: u32,
     sort_by_eta: bool,
     breakdown_boat: usize,
+    sim_island: usize,
+    sim_hours: f64,
+    sim_trials: usize,
+}
+
+impl Default for SailingConfig {
+    fn default() -> Self {
+        Self {
+            tab: SailingTab::default(),
+            mode: AssignmentMode::default(),
+            island: 0,
+            goal: Goal::default(),
+            minimum_tier: 0,
+            sort_by_eta: false,
+            breakdown_boat: 0,
+            sim_island: 0,
+            sim_hours: idleon_core::sailing::DEFAULT_HOURS,
+            sim_trials: idleon_core::sailing::DEFAULT_TRIALS,
+        }
+    }
 }
 
 /// The Worship TD section's config: its trial, palette and playback.
@@ -324,6 +344,9 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             minimum_tier: state.sailing.minimum_tier,
             sort_by_eta: state.sailing_state.sort_by_eta,
             breakdown_boat: state.sailing_state.breakdown_boat,
+            sim_island: state.sailing_state.sim_island,
+            sim_hours: state.sailing_state.sim_hours,
+            sim_trials: state.sailing_state.sim_trials,
         }),
     );
     insert("farming", value(&state.farming));
@@ -678,6 +701,21 @@ pub fn assign(
                 breakdown_boat: config
                     .breakdown_boat
                     .min(state.fleet.boats.len().saturating_sub(1)),
+                sim_island: config
+                    .sim_island
+                    .min(state.fleet.available_islands().saturating_sub(1)),
+                sim_hours: if config.sim_hours.is_finite() {
+                    config.sim_hours.clamp(
+                        idleon_core::sailing::MIN_HOURS,
+                        idleon_core::sailing::MAX_HOURS,
+                    )
+                } else {
+                    idleon_core::sailing::DEFAULT_HOURS
+                },
+                sim_trials: config.sim_trials.clamp(
+                    idleon_core::sailing::MIN_TRIALS,
+                    idleon_core::sailing::MAX_TRIALS,
+                ),
             };
             state.sailing.minimum_tier = config.minimum_tier.min(5);
         }
@@ -1206,6 +1244,9 @@ mod tests {
             goal: Goal::Chests,
             sort_by_eta: true,
             breakdown_boat: 2,
+            sim_island: 4,
+            sim_hours: 12.0,
+            sim_trials: 800,
         });
         assert_eq!(sailing.tab, crate::sections::sailing::Tab::Ships);
         assert_eq!(sailing.mode, AssignmentMode::Saved);
@@ -1213,6 +1254,9 @@ mod tests {
         assert_eq!(sailing.goal, Goal::Chests);
         assert!(sailing.sort_by_eta);
         assert_eq!(sailing.breakdown_boat, 2);
+        assert_eq!(sailing.sim_island, 4);
+        assert_eq!(sailing.sim_hours, 12.0);
+        assert_eq!(sailing.sim_trials, 800);
         let farming = round_trip(&FarmingState {
             tab: crate::sections::farming::Tab::Plots,
             selected_plot: 5,
