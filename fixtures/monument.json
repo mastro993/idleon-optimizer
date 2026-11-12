@@ -198,6 +198,129 @@
       }
     ]
   },
+  "summary": {
+    "available": true,
+    "notes": [
+      "Companion ownership is missing; reward levels and companion-dependent sources are partial."
+    ],
+    "rewardLevelMulti": 1,
+    "monuments": [
+      {
+        "name": "Bravery",
+        "levels": 123981,
+        "charge": {
+          "seconds": 33849698.1065386,
+          "maxLinear": 1562400.0000000002,
+          "base": 26.948848261015186,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 40.42327239152278,
+          "canStart": true
+        },
+        "tomorrow": {
+          "seconds": 33936098.1065386,
+          "maxLinear": 1562400.0000000002,
+          "base": 26.953848957034936,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 40.4307734355524,
+          "canStart": true
+        }
+      },
+      {
+        "name": "Justice",
+        "levels": 106776,
+        "charge": {
+          "seconds": 53713494.4032296,
+          "maxLinear": 2771999.9999999995,
+          "base": 44.66317849356487,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 66.9947677403473,
+          "canStart": true
+        },
+        "tomorrow": {
+          "seconds": 53799894.4032296,
+          "maxLinear": 2771999.9999999995,
+          "base": 44.66681595522505,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 67.00022393283757,
+          "canStart": true
+        }
+      },
+      {
+        "name": "Wisdom",
+        "levels": 96858,
+        "charge": {
+          "seconds": 54682655.2352299,
+          "maxLinear": 1562400.0000000002,
+          "base": 27.95361953309766,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 41.93042929964649,
+          "canStart": true
+        },
+        "tomorrow": {
+          "seconds": 54769055.2352299,
+          "maxLinear": 1562400.0000000002,
+          "base": 27.957152134397763,
+          "meritoc": 0,
+          "legend": 50,
+          "multi": 41.935728201596646,
+          "canStart": true
+        }
+      }
+    ],
+    "training": {
+      "sources": [
+        {
+          "name": "Bravery: All Monument AFK Gain",
+          "value": 105.9
+        },
+        {
+          "name": "Justice: All Monument AFK Gain",
+          "value": 98.10000000000001
+        },
+        {
+          "name": "Wisdom: All Monument AFK Gain",
+          "value": 98
+        },
+        {
+          "name": "Summoning victories",
+          "value": 438.633
+        },
+        {
+          "name": "Jar collectible: Monument AFK gain",
+          "value": 360
+        },
+        {
+          "name": "Rock Smart",
+          "value": 20
+        },
+        {
+          "name": "Monument AFK measurement",
+          "value": 167.2147111111111
+        },
+        {
+          "name": "Arcade: Monument AFK gain",
+          "value": 50
+        },
+        {
+          "name": "Hug from Timmy",
+          "value": 10
+        },
+        {
+          "name": "Compass: Monument AFK gain",
+          "value": 200
+        }
+      ],
+      "pct": 1547.847711111111,
+      "multi": 1.25,
+      "rate": 20.59809638888889,
+      "perDay": 494
+    }
+  },
   "wisdom": {
     "available": true,
     "notes": [

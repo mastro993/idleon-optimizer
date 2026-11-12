@@ -82,6 +82,18 @@ fn the_wisdom_tab_matches_the_upstream_calculator() {
 }
 
 #[test]
+fn the_permanent_summary_matches_the_upstream_calculator() {
+    let save = fixture();
+    let summary = monument::summary(&save, 0);
+    assert!(summary.available, "the fixture carries the Monument rows");
+    assert_close(
+        &serde_json::to_value(&summary).expect("the summary serialises"),
+        &oracle()["summary"],
+        "summary",
+    );
+}
+
+#[test]
 fn every_reward_charge_matches_the_upstream_calculator() {
     let save = fixture();
     let oracle = oracle();

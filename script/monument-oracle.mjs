@@ -95,6 +95,23 @@ const odds = RUN_STATES.map(({ label, wave, runtime, remainingHp = null }) => {
   };
 });
 
+/**
+ * The permanent reward totals, next-run charges and training pool (MN-04), in
+ * the shape the Rust `Summary` serialises to.
+ */
+const permanent = {
+  available: true,
+  notes: snapshot.notes,
+  rewardLevelMulti: snapshot.rewardLevelMulti,
+  monuments: snapshot.monuments.map((monument) => ({
+    name: monument.name,
+    levels: monument.bonuses.reduce((sum, row) => sum + row.level, 0),
+    charge: monument.charge,
+    tomorrow: monument.tomorrow,
+  })),
+  training: saved.training,
+};
+
 /** The saved Wisdom snapshot, in the shape the Rust `WisdomSnapshot` serialises to. */
 const wisdom = {
   available: true,
@@ -390,6 +407,7 @@ writeFileSync(
       calculator: 'js/stats/systems/w5/monument.js',
       character: 0,
       snapshot: saved,
+      summary: permanent,
       wisdom,
       charges,
       chargeErrors,
@@ -402,5 +420,5 @@ writeFileSync(
   )}\n`
 );
 console.log(
-  `wrote the Bravery, Justice and Wisdom snapshots, ${charges.length} reward charges, ${odds.length} run states and ${errors.length} rejected inputs to fixtures/monument.json`
+  `wrote the permanent summary, the Bravery, Justice and Wisdom snapshots, ${charges.length} reward charges, ${odds.length} run states and ${errors.length} rejected inputs to fixtures/monument.json`
 );

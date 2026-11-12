@@ -33,6 +33,9 @@ pub struct Runtime {
     pub boosts: u32,
 }
 
+/// The upstream monument names, indexed by `t` (Bravery 0, Justice 1, Wisdom 2).
+const NAMES: [&str; 3] = ["Bravery", "Justice", "Wisdom"];
+
 /// One additive training source.
 #[derive(Clone, Debug, PartialEq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -193,6 +196,29 @@ pub struct JusticeSnapshot {
     pub bonuses: Vec<BonusRow>,
 }
 
+/// One monument's permanent reward levels and saved reward charge.
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MonumentSummary {
+    pub name: String,
+    /// The sum of the monument's ten saved permanent reward levels.
+    pub levels: f64,
+    pub charge: Charge,
+    pub tomorrow: Charge,
+}
+
+/// The permanent rewards, next-run charge and training every tab shares.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Summary {
+    pub available: bool,
+    pub notes: Vec<String>,
+    /// `rewardLevelMulti`: the companion factor applied after each reward roll.
+    pub reward_level_multi: f64,
+    pub monuments: Vec<MonumentSummary>,
+    pub training: Training,
+}
+
 /// Why a Bravery input was rejected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -225,8 +251,7 @@ impl std::error::Error for Error {}
 
 /// Paying Respect training for one character.
 pub fn training(save: &Save, char_idx: usize) -> Training {
-    let names = ["Bravery", "Justice", "Wisdom"];
-    let mut sources: Vec<Source> = names
+    let mut sources: Vec<Source> = NAMES
         .iter()
         .enumerate()
         .map(|(monument, name)| Source {
@@ -534,6 +559,39 @@ pub fn justice_snapshot(save: &Save, char_idx: usize) -> JusticeSnapshot {
         bonuses: bonuses_for(save, 1),
         training,
     }
+}
+
+/// The permanent reward totals, next-run charges and training pool every
+/// monument tab shares, or an unavailable marker without the Monument rows.
+pub fn summary(save: &Save, char_idx: usize) -> Summary {
+    if !has_rows(save) {
+        return Summary::default();
+    }
+    Summary {
+        available: true,
+        notes: notes(save, char_idx),
+        reward_level_multi: reward_level_multi(save),
+        monuments: NAMES
+            .iter()
+            .enumerate()
+            .map(|(monument, name)| MonumentSummary {
+                name: (*name).into(),
+                levels: bonuses_for(save, monument)
+                    .iter()
+                    .map(|row| row.level)
+                    .sum(),
+                charge: reward_charge(save, monument, char_idx, 0.0).unwrap_or_default(),
+                tomorrow: reward_charge(save, monument, char_idx, 86_400.0).unwrap_or_default(),
+            })
+            .collect(),
+        training: training(save, char_idx),
+    }
+}
+
+/// `rewardLevelMulti`: companion 135's multiplier on the permanent reward
+/// levels, never below the unowned one.
+fn reward_level_multi(save: &Save) -> f64 {
+    (1.0 + companion_bonus_for_save(save, 135) / 100.0).max(1.0)
 }
 
 /// The saved Monument rows every tab reads.

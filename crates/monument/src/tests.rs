@@ -117,6 +117,72 @@ fn a_save_without_the_monument_rows_is_unavailable() {
     assert!(!wisdom.available);
     assert!(wisdom.milestones.is_empty());
     assert!(wisdom.bonuses.is_empty());
+    let summary = summary(&save, 0);
+    assert!(!summary.available);
+    assert!(summary.monuments.is_empty());
+}
+
+#[test]
+fn the_training_sources_sum_to_the_summary() {
+    let save = fixture();
+    let training = training(&save, 0);
+    assert_eq!(training.sources.len(), 10);
+    assert!(
+        training
+            .sources
+            .iter()
+            .all(|source| !source.name.is_empty())
+    );
+    let sum: f64 = training.sources.iter().map(|source| source.value).sum();
+    close(sum, training.pct);
+    close(training.rate, (1.0 + training.pct / 100.0) * training.multi);
+    assert_eq!(training.per_day, (24.0 * training.rate).floor());
+    let summary = summary(&save, 0);
+    close(summary.training.pct, training.pct);
+}
+
+#[test]
+fn the_summary_sums_each_monuments_permanent_levels_and_charges() {
+    let save = fixture();
+    let summary = summary(&save, 0);
+    assert!(summary.available);
+    assert_eq!(summary.monuments.len(), 3);
+    let names: Vec<&str> = summary
+        .monuments
+        .iter()
+        .map(|monument| monument.name.as_str())
+        .collect();
+    assert_eq!(names, NAMES);
+    for (monument, row) in summary.monuments.iter().enumerate() {
+        let levels: f64 = bonuses_for(&save, monument)
+            .iter()
+            .map(|bonus| bonus.level)
+            .sum();
+        assert_eq!(row.levels, levels);
+        assert_eq!(
+            row.charge,
+            reward_charge(&save, monument, 0, 0.0).expect("the charge is valid")
+        );
+        assert_eq!(
+            row.tomorrow,
+            reward_charge(&save, monument, 0, 86_400.0).expect("the charge is valid")
+        );
+    }
+}
+
+#[test]
+fn the_reward_level_multiplier_reads_companion_135() {
+    let mut save = wisdom_save();
+    close(reward_level_multi(&save), 1.0);
+    save.companion_available = true;
+    save.companions.insert(135);
+    close(reward_level_multi(&save), 2.0);
+    save.enhanced_companions.insert(135);
+    close(reward_level_multi(&save), 3.0);
+    // A companion roster without 135 never lowers the multiplier below one.
+    save.companions.clear();
+    save.enhanced_companions.clear();
+    close(reward_level_multi(&save), 1.0);
 }
 
 /// The three rows every monument tab reads, with Wisdom's saved hours and

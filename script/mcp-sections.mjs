@@ -198,7 +198,8 @@ const farmingSave = () => {
 
 /// A small flat save carrying the three Monument rows Bravery reads: 600 saved
 /// training hours and two unlocked milestones, so the run-state odds have a
-/// damage range for a boost stack to move.
+/// damage range for a boost stack to move. One Monument AFK arcade level makes
+/// the additive training pool non-zero, so the source list has a total to prove.
 const monumentSave = () => {
   const zeros = (length) => Array(length).fill(0);
   const holes = Array.from({ length: 33 }, () => []);
@@ -212,7 +213,13 @@ const monumentSave = () => {
   holes[22] = zeros(20);
   holes[24] = zeros(40);
   holes[26] = zeros(30);
-  return JSON.stringify({ Research: '[]', Holes: JSON.stringify(holes) });
+  const arcade = zeros(60);
+  arcade[42] = 1;
+  return JSON.stringify({
+    Research: '[]',
+    Holes: JSON.stringify(holes),
+    ArcadeUpg: JSON.stringify(arcade),
+  });
 };
 
 /// A small flat `save.json` with three characters, one of them away from Cooking,
@@ -3158,6 +3165,47 @@ const INTERACTIONS = {
       lane,
       (nodes) => (labelOf(nodes, 'monument-justice-notice') ?? '').includes('Next case opened'),
       'monument: opening the next case settles the delayed effects',
+    );
+
+    // MN-04: the bonus sources tab carries the permanent and charge summaries,
+    // and its named training rows sum to the additive gain card.
+    await lane.call('click_element', { id: 'sources' });
+    await waitForNode(
+      lane,
+      'monument-permanent-bravery',
+      'monument: the permanent reward summary renders',
+    );
+    const levels = labelOf(await lane.tree(), 'monument-permanent-bravery') ?? '';
+    check(
+      'monument: the permanent summary totals the saved levels',
+      levels.includes('0.0 levels') && levels.includes('ten saved permanent reward levels'),
+      levels,
+    );
+    const rewardMulti = labelOf(await lane.tree(), 'monument-reward-multi') ?? '';
+    check(
+      'monument: the reward-level multiplier is named',
+      rewardMulti.includes('1.0x') && rewardMulti.includes('Companion bonus'),
+      rewardMulti,
+    );
+    const nextCharge = labelOf(await lane.tree(), 'monument-charge-bravery') ?? '';
+    check(
+      'monument: the next-run charge reads the saved wait',
+      nextCharge.includes('needs at least 1x') && nextCharge.includes('After another 24h: 1.2x'),
+      nextCharge,
+    );
+    const gain = labelOf(await lane.tree(), 'monument-training-additive') ?? '';
+    if (!gain.includes('+0.5%')) {
+      throw new Error(`monument: the additive training gain reads ${gain}`);
+    }
+    await scrollTo(lane, 'monument-sources-total');
+    const total = labelOf(await lane.tree(), 'monument-sources-total') ?? '';
+    if (total !== '+0.5%') {
+      throw new Error(`monument: the additive pool total reads ${total}`);
+    }
+    await waitForNode(
+      lane,
+      'monument-charge-justice',
+      'monument: the charge summary covers every monument',
     );
   },
   cog: async (lane) => {

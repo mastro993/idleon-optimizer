@@ -72,6 +72,14 @@ impl AppState {
             .map(|save| monument::snapshot(save, self.monument.character))
     }
 
+    /// The permanent rewards, next-run charge and training summary, if a save
+    /// with the Monument rows is loaded.
+    pub(crate) fn monument_summary(&self) -> Option<monument::Summary> {
+        self.monument_save
+            .as_ref()
+            .map(|save| monument::summary(save, self.monument.character))
+    }
+
     /// The Wisdom snapshot for the imported save, if any.
     pub(crate) fn monument_wisdom(&self) -> Option<monument::WisdomSnapshot> {
         self.monument_save
