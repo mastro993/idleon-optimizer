@@ -376,6 +376,12 @@ mod tests {
     fn the_plan_rejects_an_unknown_cauldron_or_character() {
         assert_eq!(plan(&tiny(), 0, 4), Err(PlanError::UnknownCauldron(4)));
         assert_eq!(plan(&tiny(), 7, 0), Err(PlanError::UnknownCharacter(7)));
+        // A save with no characters reports character 0, which is where the
+        // app's fall-back to the first character has to stop retrying.
+        assert_eq!(
+            plan(&Save::new(serde_json::json!({})), 0, 0),
+            Err(PlanError::UnknownCharacter(0))
+        );
     }
 
     #[test]

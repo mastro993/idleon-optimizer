@@ -2,7 +2,7 @@
 //! and the permanent reward levels.
 
 use super::{
-    MilestoneFirst, bonuses_card, empty_card, metric_card, milestones_card, notes_card,
+    MilestoneFirst, bonuses_card, empty_card, error_line, metric_card, milestones_card, notes_card,
     unavailable_card,
 };
 use crate::state::AppState;
@@ -10,10 +10,10 @@ use crate::ui::format;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::forms::NumberInput;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
+use ely_gpui_component::theme::ControlSize;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
 use idleon_core::monument::{Odds, Snapshot};
 
 /// The Bravery pane.
@@ -118,7 +118,7 @@ fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>)
             column = column.child(odds_cards(&odds, cx));
         }
         Some(Err(error)) => {
-            column = column.child(error_line(error.to_string(), cx));
+            column = column.child(error_line("monument-bravery-error", error.to_string(), cx));
         }
         None => {}
     }
@@ -282,16 +282,6 @@ fn number_field(
                 .label(label)
                 .on_change(on_change),
         )
-        .into_any_element()
-}
-
-fn error_line(message: String, cx: &mut Context<AppState>) -> AnyElement {
-    let danger = cx.theme().colors.danger;
-    div()
-        .id("monument-bravery-error")
-        .role(Role::Alert)
-        .text_color(danger)
-        .child(message)
         .into_any_element()
 }
 

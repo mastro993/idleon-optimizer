@@ -185,3 +185,129 @@ fn rejected_inputs_keep_the_upstream_messages() {
         );
     }
 }
+
+/// One worksheet state from an oracle entry.
+fn justice_state(entry: &Value, label: &str) -> monument::justice::State {
+    serde_json::from_value(entry["state"].clone())
+        .unwrap_or_else(|error| panic!("{label}: the oracle state decodes: {error}"))
+}
+
+fn justice_case_id(entry: &Value, label: &str) -> usize {
+    entry["caseId"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{label}: a case id")) as usize
+}
+
+#[test]
+fn the_justice_snapshot_matches_the_upstream_calculator() {
+    let save = fixture();
+    assert_close(
+        &serde_json::to_value(monument::justice_snapshot(&save, 0))
+            .expect("the snapshot serialises"),
+        &oracle()["justice"]["snapshot"],
+        "justice.snapshot",
+    );
+}
+
+#[test]
+fn the_justice_worksheet_matches_the_upstream_advisor() {
+    let save = fixture();
+    let oracle = oracle();
+    let initial = monument::justice::initial_state(&save);
+    assert_close(
+        &serde_json::to_value(&initial).expect("the state serialises"),
+        &oracle["justice"]["initial"],
+        "justice.initial",
+    );
+
+    let reports = oracle["justice"]["reports"]
+        .as_array()
+        .expect("oracle reports");
+    assert!(reports.len() >= 90, "the oracle covers every case");
+    for entry in reports {
+        let label = entry["label"].as_str().expect("a case label");
+        let state = justice_state(entry, label);
+        let id = justice_case_id(entry, label);
+        let report = monument::justice::responses(&state, id)
+            .unwrap_or_else(|error| panic!("{label}: the upstream case is valid: {error}"));
+        assert_close(
+            &serde_json::to_value(&report).expect("the report serialises"),
+            &entry["report"],
+            label,
+        );
+    }
+}
+
+#[test]
+fn opening_a_justice_case_matches_the_upstream_timers() {
+    let oracle = oracle();
+    let cases = oracle["justice"]["opened"]
+        .as_array()
+        .expect("oracle cases");
+    assert!(cases.len() >= 15, "the oracle covers every settlement");
+    for entry in cases {
+        let label = entry["label"].as_str().expect("a case label");
+        let state = justice_state(entry, label);
+        let opened = monument::justice::open_case(&state, justice_case_id(entry, label))
+            .unwrap_or_else(|error| panic!("{label}: the upstream case opens: {error}"));
+        assert_close(
+            &serde_json::to_value(&opened).expect("the opened case serialises"),
+            &entry["opened"],
+            label,
+        );
+    }
+}
+
+#[test]
+fn the_delayed_justice_effects_match_upstream() {
+    let oracle = oracle();
+    let states = oracle["justice"]["delayed"]
+        .as_array()
+        .expect("oracle states");
+    let reports = oracle["justice"]["reports"]
+        .as_array()
+        .expect("oracle reports");
+    // The first delayed entry is the fresh story, the second the worked sheet.
+    for (index, expected) in states.iter().enumerate() {
+        let entry = if index == 0 {
+            &reports[0]
+        } else {
+            reports
+                .iter()
+                .find(|entry| entry["label"] == "worked worksheet, a gift")
+                .expect("the worked worksheet")
+        };
+        let label = entry["label"].as_str().expect("a case label");
+        let state = justice_state(entry, label);
+        assert_close(
+            &serde_json::to_value(monument::justice::delayed_effects(&state))
+                .expect("the effects serialise"),
+            expected,
+            label,
+        );
+    }
+}
+
+#[test]
+fn rejected_justice_inputs_keep_the_upstream_messages() {
+    let oracle = oracle();
+    let cases = oracle["justice"]["errors"]
+        .as_array()
+        .expect("oracle rejections");
+    assert!(cases.len() >= 4, "the oracle covers each rejected input");
+    for entry in cases {
+        let label = entry["label"].as_str().expect("a case label");
+        let state = justice_state(entry, label);
+        let id = justice_case_id(entry, label);
+        let error = match entry["kind"].as_str().expect("a kind") {
+            "open" => monument::justice::open_case(&state, id).err(),
+            _ => monument::justice::responses(&state, id).err(),
+        }
+        .unwrap_or_else(|| panic!("{label}: the port must reject the input"));
+        assert_eq!(
+            error.to_string(),
+            entry["message"].as_str().expect("a message"),
+            "{label}"
+        );
+    }
+}

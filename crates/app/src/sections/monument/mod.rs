@@ -1,7 +1,8 @@
-//! The Monument (W5) section: the Bravery and Wisdom tabs, the Justice
-//! placeholder, and the training sources every monument shares.
+//! The Monument (W5) section: the Bravery, Justice and Wisdom tabs and the
+//! training sources every monument shares.
 
 pub mod bravery;
+pub mod justice;
 pub mod wisdom;
 
 use crate::state::AppState;
@@ -74,6 +75,11 @@ pub struct State {
     pub rerolls: Option<u32>,
     /// HP before the last sword, when the player knows it.
     pub remaining_hp: Option<f64>,
+    /// The Justice worksheet: its stats, its observed case and its undo trail.
+    pub worksheet: idleon_core::monument::justice::Worksheet,
+    /// What the last Justice step reported, under the advisor.
+    #[serde(skip)]
+    pub notice: String,
 }
 
 impl Default for State {
@@ -85,6 +91,8 @@ impl Default for State {
             boosts: 0,
             rerolls: None,
             remaining_hp: None,
+            worksheet: idleon_core::monument::justice::Worksheet::default(),
+            notice: String::new(),
         }
     }
 }
@@ -188,32 +196,16 @@ fn pane(
 ) -> AnyElement {
     match state.monument.tab {
         Tab::Bravery => bravery::pane(state, snapshot, cx),
-        Tab::Justice => planned_pane(
-            "monument-pane-justice",
-            "Justice",
-            "Justice cases, effects, search and the response advisor arrive with MN-02.",
-        ),
+        Tab::Justice => {
+            let justice = state.monument_justice();
+            justice::pane(state, justice.as_ref(), cx)
+        }
         Tab::Wisdom => {
             let wisdom = state.monument_wisdom();
             wisdom::pane(state, wisdom.as_ref(), cx)
         }
         Tab::Sources => sources_pane(snapshot),
     }
-}
-
-fn planned_pane(id: &'static str, title: &'static str, detail: &'static str) -> AnyElement {
-    div()
-        .id(id)
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .child(
-            Card::new()
-                .header(CardHeader::new(title).description(detail))
-                .child(Caption::new("This tab is on the roadmap.")),
-        )
-        .into_any_element()
 }
 
 /// The additive training pool, which Bravery milestones and the other
@@ -325,6 +317,21 @@ pub(crate) fn unavailable_card(
     card.into_any_element()
 }
 
+/// One rejected input, under the card that read it.
+pub(crate) fn error_line(
+    id: &'static str,
+    message: String,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let danger = cx.theme().colors.danger;
+    div()
+        .id(id)
+        .role(Role::Alert)
+        .text_color(danger)
+        .child(message)
+        .into_any_element()
+}
+
 /// The partial-save warnings a loaded tab shows.
 pub(crate) fn notes_card(
     id: &'static str,
@@ -353,10 +360,11 @@ pub(crate) fn notes_card(
 }
 
 /// What the first milestone row's placeholder is replaced with: Bravery prints
-/// its damage range, Wisdom its starting attempts.
+/// its damage range, Justice its starting coins, Wisdom its starting attempts.
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum MilestoneFirst {
     Damage { min: f64, max: f64 },
+    Coins(f64),
     Attempts(f64),
 }
 
@@ -399,6 +407,7 @@ fn milestone_text(index: usize, row: &Milestone, first: MilestoneFirst) -> Strin
         MilestoneFirst::Damage { min, max } => text
             .replace('{', &format::value(min))
             .replace('}', &format::value(max)),
+        MilestoneFirst::Coins(coins) => text.replacen('$', &format::value(coins), 1),
         MilestoneFirst::Attempts(attempts) => text.replacen('#', &format::value(attempts), 1),
     }
 }
@@ -485,7 +494,7 @@ pub(crate) fn metric_card(
                 div()
                     .id(id)
                     .role(Role::Label)
-                    .aria_label(format!("{title}: {value}"))
+                    .aria_label(format!("{title}: {value}. {sub}"))
                     .flex()
                     .flex_col()
                     .gap_1()

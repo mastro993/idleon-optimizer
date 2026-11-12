@@ -49,6 +49,11 @@ const payload = {
     measurementBase: holes[55] || [],
     // Bolaia study rate per level, used by the study bonus.
     bolaiaPerLevel: (holes[70] || []).map(number),
+    // `HolesInfo[62]`: the Justice case rows, pipe-separated
+    // `visitor|text|approve|reject|scaling|gate`; `[63]` names each visitor.
+    // `justiceCases()` upstream splits them, so the port does the same.
+    justiceCases: rows(62, 200).map(String),
+    justiceVisitors: rows(63, 40).map(String),
   },
   // CosmoBonus(0, 0) and CosmoBonus(1, 3): base × Holes level, floored.
   cosmo: {

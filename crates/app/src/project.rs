@@ -813,6 +813,8 @@ pub fn assign(
                 boosts: config.boosts,
                 rerolls: config.rerolls,
                 remaining_hp: config.remaining_hp.filter(|hp| hp.is_finite() && *hp > 0.0),
+                worksheet: config.worksheet.restored(),
+                notice: String::new(),
             };
         }
         Config::Pickle(config) => {
@@ -1314,6 +1316,17 @@ mod tests {
         assert_eq!(farming.presets.len(), 1);
         assert_eq!(farming.presets[0].name, "Beans run");
         assert_eq!(farming.presets[0].target_crop, 230);
+        // The Justice worksheet travels with the document, but its undo trail is
+        // a session convenience and starts empty.
+        let mut justice = idleon_core::monument::justice::Worksheet::default();
+        justice.select(3);
+        let mut justice_state = justice.state.clone();
+        justice_state.health = 7;
+        justice_state
+            .effects
+            .insert(idleon_core::monument::justice::Effect::CryptoInvest, 4);
+        justice.edit(justice_state);
+        assert!(justice.can_undo());
         let monument = round_trip(&MonumentState {
             tab: crate::sections::monument::Tab::Sources,
             character: 4,
@@ -1321,6 +1334,8 @@ mod tests {
             boosts: 3,
             rerolls: Some(7),
             remaining_hp: Some(1234.5),
+            worksheet: justice,
+            notice: String::new(),
         });
         assert_eq!(monument.tab, crate::sections::monument::Tab::Sources);
         assert_eq!(monument.character, 4);
@@ -1328,6 +1343,20 @@ mod tests {
         assert_eq!(monument.boosts, 3);
         assert_eq!(monument.rerolls, Some(7));
         assert_eq!(monument.remaining_hp, Some(1234.5));
+        assert_eq!(monument.worksheet.case_id, 3);
+        assert_eq!(monument.worksheet.state.health, 7);
+        assert_eq!(
+            monument
+                .worksheet
+                .state
+                .effects
+                .get(&idleon_core::monument::justice::Effect::CryptoInvest),
+            Some(&4)
+        );
+        assert!(
+            !monument.worksheet.can_undo(),
+            "a project keeps the worksheet, not its trail"
+        );
         let pickle = round_trip(&PickleState {
             dps: 5.5e7,
             max_ttk: 120.0,

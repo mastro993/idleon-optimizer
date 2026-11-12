@@ -503,18 +503,28 @@ table and the consumer audit. Missing: the damage, stats and skills outcome fami
 evaluator covers beyond the modelled one, and the bubble icons.
 Details: [`docs/sections/prisma.md`](sections/prisma.md).
 
-The Monument section's Bravery (MN-01) and Wisdom (MN-03) tabs are built: Paying Respect training and
-sources, saved Bravery stats and sword odds for the entered run state, saved Wisdom attempts and
-reveals, both milestones and permanent reward sets, and the reward charge a monument's saved wait
-pays (plus its 24-hour preview), including the Meritoc vote, sushi tier and gaming superbit behind
-it. The character selector supplies the Summoning access the charge reads. The Justice tab and the
-full permanent/charge summaries stay on the roadmap as MN-02 and MN-04. `fixtures/monument.json`
-is the upstream calculator's own output for the committed save, including seven Bravery run states
-(boost stacks, spent rethrows, an entered last-sword HP), the Wisdom snapshot, all three reward
-charges and the rejected inputs, so `crates/core/tests/monument.rs` compares the port field for
-field; regenerate it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs`
-extracts the tables the tabs read. Details:
-[`docs/sections/monument.md`](sections/monument.md).
+The Monument section's Bravery (MN-01), Justice (MN-02) and Wisdom (MN-03) tabs are built: Paying
+Respect training and sources, saved Bravery stats and sword odds for the entered run state, saved
+Justice and Wisdom starts, Justice and Wisdom milestones and all three permanent reward sets, and
+the reward charge a monument's saved wait pays (plus its 24-hour preview), including the Meritoc
+vote, sushi tier and gaming superbit behind it. The character selector supplies the Summoning
+access the charge reads.
+
+The Justice tab is a local worksheet, not a live-game connection: it reads the 90 upstream cases,
+fills each one's coin and popularity range, lists all three responses with every random outcome
+and the share of outcomes that keep the story alive, names the delayed deals the next case settles,
+and suggests a response with the survival-first heuristic's reasoning. Every worksheet step (a stat
+edit, an effects toggle, a recorded response, an opened case) is undoable, the case search filters
+by visitor or request wording, and the worksheet travels in a project document while its undo trail
+stays a session convenience. The full permanent/charge summary stays on the roadmap as MN-04.
+
+`fixtures/monument.json` is the upstream calculator's own output for the committed save, including
+seven Bravery run states (boost stacks, spent rethrows, an entered last-sword HP), the Wisdom
+snapshot, all three reward charges, the Justice snapshot, its fresh-story start, a report for every
+one of the 90 cases, the worked states with the deals and promises active, each timer settlement and
+the rejected inputs, so `crates/core/tests/monument.rs` compares the port field for field;
+regenerate it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs` extracts the
+tables the tabs read. Details: [`docs/sections/monument.md`](sections/monument.md).
 
 The Cog Board Optimizer implements CG-01 to CG-04: the saved 12×8 board and shelf decode from
 `CogO` and `CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate)
