@@ -2,99 +2,171 @@
  "upgrades": [
   {
    "name": "Opal Find",
-   "perLv": 1
+   "desc": "Get +1 opal to invest into Villagers!",
+   "perLv": 1,
+   "costBase": 7.5,
+   "category": "opal"
   },
   {
    "name": "Slop Drop",
-   "perLv": 15
+   "desc": "Boost Drop Rate here in The Cove by {%",
+   "perLv": 15,
+   "costBase": 1.35,
+   "category": "dr-add"
   },
   {
    "name": "Reslime",
-   "perLv": 2
+   "desc": "Increase Crystal Glunko respawn rate by +{%",
+   "perLv": 2,
+   "costBase": 2.5,
+   "category": "respawn"
   },
   {
    "name": "Droplier",
-   "perLv": 8
+   "desc": "Mulitply Drop Rate here in this Cove by }x",
+   "perLv": 8,
+   "costBase": 1.55,
+   "category": "dr-mult"
   },
   {
    "name": "Killionaire",
-   "perLv": 3
+   "desc": "+{% DR here in The Cove per POW 10 Glunko kills",
+   "perLv": 3,
+   "costBase": 1.6,
+   "category": "dr-kills"
   },
   {
    "name": "Insta-Ribbon",
-   "perLv": 1
+   "desc": "Get a Rank 15 Ribbon for Cooking, instantly!",
+   "perLv": 1,
+   "costBase": 5,
+   "category": "ribbon"
   },
   {
    "name": "Big Hit Multkill",
-   "perLv": 1
+   "desc": "Boost your Multikill Per Dmg Tier here to {%",
+   "perLv": 1,
+   "costBase": 2,
+   "category": "mk-tier"
   },
   {
    "name": "Active Drops",
-   "perLv": 3
+   "desc": "Decrease the cost of all upgrades here by $%",
+   "perLv": 3,
+   "costBase": 1.5,
+   "category": "cost-reduce"
   },
   {
    "name": "Sleepy Drops",
-   "perLv": 1
+   "desc": "Boost AFK Gains rate here by +{%",
+   "perLv": 1,
+   "costBase": 1.75,
+   "category": "afk"
   },
   {
    "name": "One Big Blue",
-   "perLv": 10
+   "desc": "}x Drop Value for your specified blue shape",
+   "perLv": 10,
+   "costBase": 1.45,
+   "category": "stone-value"
   },
   {
    "name": "Blue Collector",
-   "perLv": 1
+   "desc": "+{% DR here, per digit of Blue Shapes owned",
+   "perLv": 1,
+   "costBase": 1.85,
+   "category": "dr-bdig"
   },
   {
    "name": "Researchy",
-   "perLv": 1
+   "desc": "}x Research EXP gain for outside this cove",
+   "perLv": 1,
+   "costBase": 1.25,
+   "category": "research"
   },
   {
    "name": "Droplier+",
-   "perLv": 25
+   "desc": "Mulitply Drop Rate here in this Cove by }x",
+   "perLv": 25,
+   "costBase": 1.7,
+   "category": "dr-mult2"
   },
   {
    "name": "Sleepy Drops+",
-   "perLv": 3
+   "desc": "Boost AFK Gains rate here by +{%",
+   "perLv": 3,
+   "costBase": 2,
+   "category": "afk2"
   },
   {
    "name": "Cavernicus",
-   "perLv": 10
+   "desc": "Earn }x more resources from all caverns",
+   "perLv": 10,
+   "costBase": 3,
+   "category": "cavern-multi"
   },
   {
    "name": "Multikill",
-   "perLv": 100
+   "desc": "Boost base Multikill here by +{%",
+   "perLv": 100,
+   "costBase": 1.75,
+   "category": "mk-base"
   },
   {
    "name": "One Big Purp",
-   "perLv": 10
+   "desc": "}x Drop Value for your specified purp shape",
+   "perLv": 10,
+   "costBase": 1.45,
+   "category": "stone-value2"
   },
   {
    "name": "Slop Drop+",
-   "perLv": 25
+   "desc": "Boost Drop Rate here by +{%",
+   "perLv": 25,
+   "costBase": 1.35,
+   "category": "dr-add2"
   },
   {
    "name": "Rich Get Rich",
-   "perLv": 2
+   "desc": "Boost DR here by +{% per POW 10 normal DR",
+   "perLv": 2,
+   "costBase": 3,
+   "category": "dr-pow10dr"
   },
   {
    "name": "DeEmGe",
-   "perLv": 1
+   "desc": "Boost Total Damage for all chars by }x",
+   "perLv": 1,
+   "costBase": 1.5,
+   "category": "total-dmg"
   },
   {
    "name": "Grandioso",
-   "perLv": 5
+   "desc": "Boost Grand Discovery Chance in Spelunking by }x",
+   "perLv": 5,
+   "costBase": 1.12,
+   "category": "grand-disc"
   },
   {
    "name": "Slop Drop++",
-   "perLv": 150
+   "desc": "Boost Drop Rate here in Cavern 18 by {%",
+   "perLv": 150,
+   "costBase": 1.4,
+   "category": "dr-flat"
   },
   {
    "name": "Purp Collector",
-   "perLv": 2
+   "desc": "+{% DR here, per digit of Purp Shapes owned",
+   "perLv": 2,
+   "costBase": 1.95,
+   "category": "dr-pdig"
   },
   {
    "name": "IDK Broh",
-   "perLv": 1
+   "desc": "World 7 Skill 3 my man, not yet.",
+   "perLv": 1,
+   "costBase": 5,
+   "category": "locked"
   }
  ],
  "generatedFrom": {

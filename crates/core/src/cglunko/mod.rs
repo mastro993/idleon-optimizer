@@ -1,23 +1,31 @@
-//! Cglunko (The Cove, W5): the overview metrics and the drop-rate breakdown.
+//! Cglunko (The Cove, W5): the overview metrics, the upgrade priority and the
+//! upgrade plan.
 //!
-//! Ports the Overview tab of `cglunko-calc.html` and
+//! Ports the Overview, Upgrades and Optimizer tabs of `cglunko-calc.html` and
 //! `js/stats/systems/w5/cglunko.js`. Save fields: `OptionsListAccount` (or
 //! `OptLacc`), where 630..=653 are the 24 upgrade levels over two pages,
 //! 654..=659 the blue shape counts, 660..=665 the purple ones, 668 the Glunko
 //! kills and 200 the account's highest drop rate the formula reads.
 //!
-//! The upgrade list, the optimizer and the stone focus are the later CL-02 and
-//! CL-03 features; this module carries what the overview and its formula tree
-//! need. `Option`-less decoding matches the upstream page: a missing `OptLacc`
-//! row reads as zero and is reported once by [`Cglunko::from_save`].
+//! [`Page`] and [`Cglunko::priority`] carry the priority table; [`Cglunko::plan`]
+//! spends one page's saved stones with [`Cglunko::next_cost`], never overdrawing
+//! a stone and never ending below the state it started from. The stone focus and
+//! the recommended target are the later CL-03 feature. `Option`-less decoding
+//! matches the upstream page: a missing `OptLacc` row reads as zero and is
+//! reported once by [`Cglunko::from_save`].
 
 mod data;
+mod upgrade;
 
 use crate::formula::{FormulaNode, ValueFormat};
 use crate::save::{game_log, json};
 use serde_json::{Map, Value};
 
+pub use data::cost_base as upgrade_cost_base;
+pub use data::description as upgrade_description;
 pub use data::name as upgrade_name;
+pub use data::per_lv as upgrade_per_lv;
+pub use upgrade::{Page, Plan, Rank, Step, stone};
 
 /// The upgrades across both pages.
 pub const UPGRADE_COUNT: usize = 24;

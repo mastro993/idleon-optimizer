@@ -1,0 +1,1212 @@
+{
+ "source": "js/stats/systems/w5/cglunko.js",
+ "ext": {
+  "bolaia17discount": false
+ },
+ "dr": 58.933613199999996,
+ "upgrades": [
+  {
+   "index": 0,
+   "name": "Opal Find",
+   "desc": "Get +1 opal to invest into Villagers!",
+   "perLv": 1,
+   "costBase": 7.5,
+   "category": "opal",
+   "level": 5,
+   "bonus": 5,
+   "nextCost": 154769,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 3400.1
+  },
+  {
+   "index": 1,
+   "name": "Slop Drop",
+   "desc": "Boost Drop Rate here in The Cove by {%",
+   "perLv": 15,
+   "costBase": 1.35,
+   "category": "dr-add",
+   "level": 26,
+   "bonus": 390,
+   "nextCost": 14482,
+   "drGain": 0.030612244897959107,
+   "drEfficiency": 0.000002113813347462996,
+   "balance": 3400.1
+  },
+  {
+   "index": 2,
+   "name": "Reslime",
+   "desc": "Increase Crystal Glunko respawn rate by +{%",
+   "perLv": 2,
+   "costBase": 2.5,
+   "category": "respawn",
+   "level": 10,
+   "bonus": 20,
+   "nextCost": 20742,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 959.1
+  },
+  {
+   "index": 3,
+   "name": "Droplier",
+   "desc": "Mulitply Drop Rate here in this Cove by }x",
+   "perLv": 8,
+   "costBase": 1.55,
+   "category": "dr-mult",
+   "level": 17,
+   "bonus": 136,
+   "nextCost": 11673,
+   "drGain": 0.03389830508474567,
+   "drEfficiency": 0.0000029039925541630834,
+   "balance": 959.1
+  },
+  {
+   "index": 4,
+   "name": "Killionaire",
+   "desc": "+{% DR here in The Cove per POW 10 Glunko kills",
+   "perLv": 3,
+   "costBase": 1.6,
+   "category": "dr-kills",
+   "level": 13,
+   "bonus": 39,
+   "nextCost": 639,
+   "drGain": 0.05986696230598665,
+   "drEfficiency": 0.00009368851691077723,
+   "balance": 50.1
+  },
+  {
+   "index": 5,
+   "name": "Insta-Ribbon",
+   "desc": "Get a Rank 15 Ribbon for Cooking, instantly!",
+   "perLv": 1,
+   "costBase": 5,
+   "category": "ribbon",
+   "level": 3,
+   "bonus": 3,
+   "nextCost": 2735,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 50.1
+  },
+  {
+   "index": 6,
+   "name": "Big Hit Multkill",
+   "desc": "Boost your Multikill Per Dmg Tier here to {%",
+   "perLv": 1,
+   "costBase": 2,
+   "category": "mk-tier",
+   "level": 6,
+   "bonus": 6,
+   "nextCost": 117,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 11
+  },
+  {
+   "index": 7,
+   "name": "Active Drops",
+   "desc": "Decrease the cost of all upgrades here by $%",
+   "perLv": 3,
+   "costBase": 1.5,
+   "category": "cost-reduce",
+   "level": 5,
+   "bonus": 15,
+   "nextCost": 76,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 11
+  },
+  {
+   "index": 8,
+   "name": "Sleepy Drops",
+   "desc": "Boost AFK Gains rate here by +{%",
+   "perLv": 1,
+   "costBase": 1.75,
+   "category": "afk",
+   "level": 4,
+   "bonus": 4,
+   "nextCost": 19,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 5.1
+  },
+  {
+   "index": 9,
+   "name": "One Big Blue",
+   "desc": "}x Drop Value for your specified blue shape",
+   "perLv": 10,
+   "costBase": 1.45,
+   "category": "stone-value",
+   "level": 2,
+   "bonus": 20,
+   "nextCost": 26,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 5.1
+  },
+  {
+   "index": 10,
+   "name": "Blue Collector",
+   "desc": "+{% DR here, per digit of Blue Shapes owned",
+   "perLv": 1,
+   "costBase": 1.85,
+   "category": "dr-bdig",
+   "level": 1,
+   "bonus": 1,
+   "nextCost": 5,
+   "drGain": 0.1150442477876108,
+   "drEfficiency": 0.02300884955752216,
+   "balance": 1.1
+  },
+  {
+   "index": 11,
+   "name": "Researchy",
+   "desc": "}x Research EXP gain for outside this cove",
+   "perLv": 1,
+   "costBase": 1.25,
+   "category": "research",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 10,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 1.1
+  },
+  {
+   "index": 12,
+   "name": "Droplier+",
+   "desc": "Mulitply Drop Rate here in this Cove by }x",
+   "perLv": 25,
+   "costBase": 1.7,
+   "category": "dr-mult2",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 2,
+   "drGain": 0.25,
+   "drEfficiency": 0.125,
+   "balance": 0
+  },
+  {
+   "index": 13,
+   "name": "Sleepy Drops+",
+   "desc": "Boost AFK Gains rate here by +{%",
+   "perLv": 3,
+   "costBase": 2,
+   "category": "afk2",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 13,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 14,
+   "name": "Cavernicus",
+   "desc": "Earn }x more resources from all caverns",
+   "perLv": 10,
+   "costBase": 3,
+   "category": "cavern-multi",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 3,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 15,
+   "name": "Multikill",
+   "desc": "Boost base Multikill here by +{%",
+   "perLv": 100,
+   "costBase": 1.75,
+   "category": "mk-base",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 12,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 16,
+   "name": "One Big Purp",
+   "desc": "}x Drop Value for your specified purp shape",
+   "perLv": 10,
+   "costBase": 1.45,
+   "category": "stone-value2",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 2,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 17,
+   "name": "Slop Drop+",
+   "desc": "Boost Drop Rate here by +{%",
+   "perLv": 25,
+   "costBase": 1.35,
+   "category": "dr-add2",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 10,
+   "drGain": 0.05102040816326525,
+   "drEfficiency": 0.005102040816326525,
+   "balance": 0
+  },
+  {
+   "index": 18,
+   "name": "Rich Get Rich",
+   "desc": "Boost DR here by +{% per POW 10 normal DR",
+   "perLv": 2,
+   "costBase": 3,
+   "category": "dr-pow10dr",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 3,
+   "drGain": 0.08000000000000007,
+   "drEfficiency": 0.02666666666666669,
+   "balance": 0
+  },
+  {
+   "index": 19,
+   "name": "DeEmGe",
+   "desc": "Boost Total Damage for all chars by }x",
+   "perLv": 1,
+   "costBase": 1.5,
+   "category": "total-dmg",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 11,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 20,
+   "name": "Grandioso",
+   "desc": "Boost Grand Discovery Chance in Spelunking by }x",
+   "perLv": 5,
+   "costBase": 1.12,
+   "category": "grand-disc",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 2,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 21,
+   "name": "Slop Drop++",
+   "desc": "Boost Drop Rate here in Cavern 18 by {%",
+   "perLv": 150,
+   "costBase": 1.4,
+   "category": "dr-flat",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 10,
+   "drGain": 0.30612244897959173,
+   "drEfficiency": 0.030612244897959173,
+   "balance": 0
+  },
+  {
+   "index": 22,
+   "name": "Purp Collector",
+   "desc": "+{% DR here, per digit of Purp Shapes owned",
+   "perLv": 2,
+   "costBase": 1.95,
+   "category": "dr-pdig",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 3,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  },
+  {
+   "index": 23,
+   "name": "IDK Broh",
+   "desc": "World 7 Skill 3 my man, not yet.",
+   "perLv": 1,
+   "costBase": 5,
+   "category": "locked",
+   "level": 0,
+   "bonus": 0,
+   "nextCost": 26,
+   "drGain": 0,
+   "drEfficiency": 0,
+   "balance": 0
+  }
+ ],
+ "priority": {
+  "blue": [
+   10,
+   4,
+   3,
+   1,
+   0,
+   2,
+   5,
+   6,
+   7,
+   8,
+   9,
+   11
+  ],
+  "purple": [
+   12,
+   21,
+   18,
+   17,
+   13,
+   14,
+   15,
+   16,
+   19,
+   20,
+   22
+  ]
+ },
+ "scenario": {
+  "blueBalances": [
+   50000,
+   40000,
+   30000,
+   20000,
+   10000,
+   5000
+  ],
+  "purpleBalances": [
+   50000,
+   40000,
+   30000,
+   20000,
+   10000,
+   5000
+  ]
+ },
+ "plans": {
+  "blue": {
+   "start": 66.75665920000002,
+   "dr": 355.59014400000007,
+   "spent": 93922,
+   "steps": [
+    {
+     "index": 10,
+     "from": 1,
+     "cost": 5,
+     "drGain": 0.21875,
+     "balanceBefore": 5000,
+     "balanceAfter": 4995
+    },
+    {
+     "index": 10,
+     "from": 2,
+     "cost": 8,
+     "drGain": 0.17948717948717907,
+     "balanceBefore": 4995,
+     "balanceAfter": 4987
+    },
+    {
+     "index": 10,
+     "from": 3,
+     "cost": 14,
+     "drGain": 0.1521739130434785,
+     "balanceBefore": 4987,
+     "balanceAfter": 4973
+    },
+    {
+     "index": 10,
+     "from": 4,
+     "cost": 23,
+     "drGain": 0.13207547169811318,
+     "balanceBefore": 4973,
+     "balanceAfter": 4950
+    },
+    {
+     "index": 10,
+     "from": 5,
+     "cost": 40,
+     "drGain": 0.1166666666666667,
+     "balanceBefore": 4950,
+     "balanceAfter": 4910
+    },
+    {
+     "index": 10,
+     "from": 6,
+     "cost": 71,
+     "drGain": 0.10447761194029859,
+     "balanceBefore": 4910,
+     "balanceAfter": 4839
+    },
+    {
+     "index": 10,
+     "from": 7,
+     "cost": 126,
+     "drGain": 0.09459459459459452,
+     "balanceBefore": 4839,
+     "balanceAfter": 4713
+    },
+    {
+     "index": 10,
+     "from": 8,
+     "cost": 229,
+     "drGain": 0.08641975308641969,
+     "balanceBefore": 4713,
+     "balanceAfter": 4484
+    },
+    {
+     "index": 10,
+     "from": 9,
+     "cost": 417,
+     "drGain": 0.07954545454545459,
+     "balanceBefore": 4484,
+     "balanceAfter": 4067
+    },
+    {
+     "index": 10,
+     "from": 10,
+     "cost": 765,
+     "drGain": 0.0736842105263158,
+     "balanceBefore": 4067,
+     "balanceAfter": 3302
+    },
+    {
+     "index": 4,
+     "from": 13,
+     "cost": 639,
+     "drGain": 0.05986696230598665,
+     "balanceBefore": 30000,
+     "balanceAfter": 29361
+    },
+    {
+     "index": 4,
+     "from": 14,
+     "cost": 1016,
+     "drGain": 0.05648535564853563,
+     "balanceBefore": 29361,
+     "balanceAfter": 28345
+    },
+    {
+     "index": 10,
+     "from": 11,
+     "cost": 1408,
+     "drGain": 0.06862745098039191,
+     "balanceBefore": 3302,
+     "balanceAfter": 1894
+    },
+    {
+     "index": 4,
+     "from": 15,
+     "cost": 1618,
+     "drGain": 0.053465346534653735,
+     "balanceBefore": 28345,
+     "balanceAfter": 26727
+    },
+    {
+     "index": 4,
+     "from": 16,
+     "cost": 2581,
+     "drGain": 0.05075187969924788,
+     "balanceBefore": 26727,
+     "balanceAfter": 24146
+    },
+    {
+     "index": 4,
+     "from": 17,
+     "cost": 4122,
+     "drGain": 0.0483005366726299,
+     "balanceBefore": 24146,
+     "balanceAfter": 20024
+    },
+    {
+     "index": 4,
+     "from": 18,
+     "cost": 6587,
+     "drGain": 0.04607508532423177,
+     "balanceBefore": 20024,
+     "balanceAfter": 13437
+    },
+    {
+     "index": 4,
+     "from": 19,
+     "cost": 10530,
+     "drGain": 0.04404567699836881,
+     "balanceBefore": 13437,
+     "balanceAfter": 2907
+    },
+    {
+     "index": 3,
+     "from": 17,
+     "cost": 11673,
+     "drGain": 0.03389830508474567,
+     "balanceBefore": 40000,
+     "balanceAfter": 28327
+    },
+    {
+     "index": 1,
+     "from": 26,
+     "cost": 14482,
+     "drGain": 0.030612244897959107,
+     "balanceBefore": 50000,
+     "balanceAfter": 35518
+    },
+    {
+     "index": 3,
+     "from": 18,
+     "cost": 18054,
+     "drGain": 0.032786885245901676,
+     "balanceBefore": 28327,
+     "balanceAfter": 10273
+    },
+    {
+     "index": 1,
+     "from": 27,
+     "cost": 19514,
+     "drGain": 0.02970297029702995,
+     "balanceBefore": 35518,
+     "balanceAfter": 16004
+    }
+   ]
+  },
+  "purple": {
+   "start": 58.933613199999996,
+   "dr": 29244.993469364643,
+   "spent": 66346,
+   "steps": [
+    {
+     "index": 22,
+     "from": 0,
+     "cost": 3,
+     "drGain": 0.5600000000000003,
+     "balanceBefore": 5000,
+     "balanceAfter": 4997
+    },
+    {
+     "index": 12,
+     "from": 0,
+     "cost": 2,
+     "drGain": 0.25,
+     "balanceBefore": 50000,
+     "balanceAfter": 49998
+    },
+    {
+     "index": 22,
+     "from": 1,
+     "cost": 5,
+     "drGain": 0.3589743589743588,
+     "balanceBefore": 4997,
+     "balanceAfter": 4992
+    },
+    {
+     "index": 12,
+     "from": 1,
+     "cost": 4,
+     "drGain": 0.20000000000000018,
+     "balanceBefore": 49998,
+     "balanceAfter": 49994
+    },
+    {
+     "index": 21,
+     "from": 0,
+     "cost": 10,
+     "drGain": 0.30612244897959173,
+     "balanceBefore": 10000,
+     "balanceAfter": 9990
+    },
+    {
+     "index": 22,
+     "from": 2,
+     "cost": 9,
+     "drGain": 0.26415094339622636,
+     "balanceBefore": 4992,
+     "balanceAfter": 4983
+    },
+    {
+     "index": 18,
+     "from": 0,
+     "cost": 3,
+     "drGain": 0.08000000000000007,
+     "balanceBefore": 20000,
+     "balanceAfter": 19997
+    },
+    {
+     "index": 12,
+     "from": 2,
+     "cost": 7,
+     "drGain": 0.16666666666666652,
+     "balanceBefore": 49994,
+     "balanceAfter": 49987
+    },
+    {
+     "index": 21,
+     "from": 1,
+     "cost": 17,
+     "drGain": 0.23437499999999956,
+     "balanceBefore": 9990,
+     "balanceAfter": 9973
+    },
+    {
+     "index": 22,
+     "from": 3,
+     "cost": 16,
+     "drGain": 0.20895522388059762,
+     "balanceBefore": 4983,
+     "balanceAfter": 4967
+    },
+    {
+     "index": 12,
+     "from": 3,
+     "cost": 11,
+     "drGain": 0.14285714285714257,
+     "balanceBefore": 49987,
+     "balanceAfter": 49976
+    },
+    {
+     "index": 21,
+     "from": 2,
+     "cost": 25,
+     "drGain": 0.1898734177215191,
+     "balanceBefore": 9973,
+     "balanceAfter": 9948
+    },
+    {
+     "index": 18,
+     "from": 1,
+     "cost": 10,
+     "drGain": 0.07407407407407396,
+     "balanceBefore": 19997,
+     "balanceAfter": 19987
+    },
+    {
+     "index": 12,
+     "from": 4,
+     "cost": 17,
+     "drGain": 0.125,
+     "balanceBefore": 49976,
+     "balanceAfter": 49959
+    },
+    {
+     "index": 22,
+     "from": 4,
+     "cost": 29,
+     "drGain": 0.17283950617283939,
+     "balanceBefore": 4967,
+     "balanceAfter": 4938
+    },
+    {
+     "index": 21,
+     "from": 3,
+     "cost": 34,
+     "drGain": 0.15957446808510656,
+     "balanceBefore": 9948,
+     "balanceAfter": 9914
+    },
+    {
+     "index": 12,
+     "from": 5,
+     "cost": 26,
+     "drGain": 0.11111111111111094,
+     "balanceBefore": 49959,
+     "balanceAfter": 49933
+    },
+    {
+     "index": 21,
+     "from": 4,
+     "cost": 45,
+     "drGain": 0.13761467889908263,
+     "balanceBefore": 9914,
+     "balanceAfter": 9869
+    },
+    {
+     "index": 22,
+     "from": 5,
+     "cost": 53,
+     "drGain": 0.14736842105263137,
+     "balanceBefore": 4938,
+     "balanceAfter": 4885
+    },
+    {
+     "index": 18,
+     "from": 2,
+     "cost": 26,
+     "drGain": 0.06896551724137945,
+     "balanceBefore": 19987,
+     "balanceAfter": 19961
+    },
+    {
+     "index": 12,
+     "from": 6,
+     "cost": 42,
+     "drGain": 0.10000000000000009,
+     "balanceBefore": 49933,
+     "balanceAfter": 49891
+    },
+    {
+     "index": 21,
+     "from": 5,
+     "cost": 59,
+     "drGain": 0.12096774193548399,
+     "balanceBefore": 9869,
+     "balanceAfter": 9810
+    },
+    {
+     "index": 17,
+     "from": 0,
+     "cost": 10,
+     "drGain": 0.017985611510791033,
+     "balanceBefore": 30000,
+     "balanceAfter": 29990
+    },
+    {
+     "index": 21,
+     "from": 6,
+     "cost": 76,
+     "drGain": 0.10600706713780905,
+     "balanceBefore": 9810,
+     "balanceAfter": 9734
+    },
+    {
+     "index": 12,
+     "from": 7,
+     "cost": 68,
+     "drGain": 0.09090909090909105,
+     "balanceBefore": 49891,
+     "balanceAfter": 49823
+    },
+    {
+     "index": 22,
+     "from": 6,
+     "cost": 99,
+     "drGain": 0.1284403669724774,
+     "balanceBefore": 4885,
+     "balanceAfter": 4786
+    },
+    {
+     "index": 21,
+     "from": 7,
+     "cost": 99,
+     "drGain": 0.09584664536741183,
+     "balanceBefore": 9734,
+     "balanceAfter": 9635
+    },
+    {
+     "index": 18,
+     "from": 3,
+     "cost": 74,
+     "drGain": 0.06451612903225823,
+     "balanceBefore": 19961,
+     "balanceAfter": 19887
+    },
+    {
+     "index": 17,
+     "from": 1,
+     "cost": 17,
+     "drGain": 0.014577259475218485,
+     "balanceBefore": 29990,
+     "balanceAfter": 29973
+    },
+    {
+     "index": 12,
+     "from": 8,
+     "cost": 111,
+     "drGain": 0.08333333333333326,
+     "balanceBefore": 49823,
+     "balanceAfter": 49712
+    },
+    {
+     "index": 21,
+     "from": 8,
+     "cost": 129,
+     "drGain": 0.0862068965517242,
+     "balanceBefore": 9635,
+     "balanceAfter": 9506
+    },
+    {
+     "index": 22,
+     "from": 7,
+     "cost": 189,
+     "drGain": 0.11382113821138207,
+     "balanceBefore": 4786,
+     "balanceAfter": 4597
+    },
+    {
+     "index": 17,
+     "from": 2,
+     "cost": 24,
+     "drGain": 0.013227513227513255,
+     "balanceBefore": 29973,
+     "balanceAfter": 29949
+    },
+    {
+     "index": 21,
+     "from": 9,
+     "cost": 169,
+     "drGain": 0.07832898172323777,
+     "balanceBefore": 9506,
+     "balanceAfter": 9337
+    },
+    {
+     "index": 12,
+     "from": 9,
+     "cost": 184,
+     "drGain": 0.07692307692307687,
+     "balanceBefore": 49712,
+     "balanceAfter": 49528
+    },
+    {
+     "index": 17,
+     "from": 3,
+     "cost": 32,
+     "drGain": 0.012106537530266248,
+     "balanceBefore": 29949,
+     "balanceAfter": 29917
+    },
+    {
+     "index": 21,
+     "from": 10,
+     "cost": 224,
+     "drGain": 0.07177033492822948,
+     "balanceBefore": 9337,
+     "balanceAfter": 9113
+    },
+    {
+     "index": 22,
+     "from": 8,
+     "cost": 362,
+     "drGain": 0.10218978102189791,
+     "balanceBefore": 4597,
+     "balanceAfter": 4235
+    },
+    {
+     "index": 18,
+     "from": 4,
+     "cost": 216,
+     "drGain": 0.06060606060606055,
+     "balanceBefore": 19887,
+     "balanceAfter": 19671
+    },
+    {
+     "index": 17,
+     "from": 4,
+     "cost": 41,
+     "drGain": 0.011160714285714413,
+     "balanceBefore": 29917,
+     "balanceAfter": 29876
+    },
+    {
+     "index": 12,
+     "from": 10,
+     "cost": 308,
+     "drGain": 0.07142857142857117,
+     "balanceBefore": 49528,
+     "balanceAfter": 49220
+    },
+    {
+     "index": 21,
+     "from": 11,
+     "cost": 299,
+     "drGain": 0.06622516556291402,
+     "balanceBefore": 9113,
+     "balanceAfter": 8814
+    },
+    {
+     "index": 17,
+     "from": 5,
+     "cost": 52,
+     "drGain": 0.010351966873705987,
+     "balanceBefore": 29876,
+     "balanceAfter": 29824
+    },
+    {
+     "index": 17,
+     "from": 6,
+     "cost": 66,
+     "drGain": 0.010245901639344357,
+     "balanceBefore": 29824,
+     "balanceAfter": 29758
+    },
+    {
+     "index": 21,
+     "from": 12,
+     "cost": 402,
+     "drGain": 0.06085192697768749,
+     "balanceBefore": 8814,
+     "balanceAfter": 8412
+    },
+    {
+     "index": 22,
+     "from": 9,
+     "cost": 700,
+     "drGain": 0.09271523178807928,
+     "balanceBefore": 4235,
+     "balanceAfter": 3535
+    },
+    {
+     "index": 12,
+     "from": 11,
+     "cost": 517,
+     "drGain": 0.06666666666666687,
+     "balanceBefore": 49220,
+     "balanceAfter": 48703
+    },
+    {
+     "index": 17,
+     "from": 7,
+     "cost": 83,
+     "drGain": 0.009560229445506607,
+     "balanceBefore": 29758,
+     "balanceAfter": 29675
+    },
+    {
+     "index": 21,
+     "from": 13,
+     "cost": 544,
+     "drGain": 0.05681818181818188,
+     "balanceBefore": 8412,
+     "balanceAfter": 7868
+    },
+    {
+     "index": 18,
+     "from": 5,
+     "cost": 639,
+     "drGain": 0.057142857142857384,
+     "balanceBefore": 19671,
+     "balanceAfter": 19032
+    },
+    {
+     "index": 17,
+     "from": 8,
+     "cost": 104,
+     "drGain": 0.008960573476702427,
+     "balanceBefore": 29675,
+     "balanceAfter": 29571
+    },
+    {
+     "index": 21,
+     "from": 14,
+     "cost": 742,
+     "drGain": 0.053285968028418784,
+     "balanceBefore": 7868,
+     "balanceAfter": 7126
+    },
+    {
+     "index": 12,
+     "from": 12,
+     "cost": 873,
+     "drGain": 0.0625,
+     "balanceBefore": 48703,
+     "balanceAfter": 47830
+    },
+    {
+     "index": 17,
+     "from": 9,
+     "cost": 131,
+     "drGain": 0.008431703204047736,
+     "balanceBefore": 29571,
+     "balanceAfter": 29440
+    },
+    {
+     "index": 22,
+     "from": 10,
+     "cost": 1358,
+     "drGain": 0.08484848484848495,
+     "balanceBefore": 3535,
+     "balanceAfter": 2177
+    },
+    {
+     "index": 17,
+     "from": 10,
+     "cost": 166,
+     "drGain": 0.00836120401337781,
+     "balanceBefore": 29440,
+     "balanceAfter": 29274
+    },
+    {
+     "index": 21,
+     "from": 15,
+     "cost": 1017,
+     "drGain": 0.0497512437810943,
+     "balanceBefore": 7126,
+     "balanceAfter": 6109
+    },
+    {
+     "index": 12,
+     "from": 13,
+     "cost": 1476,
+     "drGain": 0.0588235294117645,
+     "balanceBefore": 47830,
+     "balanceAfter": 46354
+    },
+    {
+     "index": 17,
+     "from": 11,
+     "cost": 211,
+     "drGain": 0.007898894154818592,
+     "balanceBefore": 29274,
+     "balanceAfter": 29063
+    },
+    {
+     "index": 21,
+     "from": 16,
+     "cost": 1400,
+     "drGain": 0.04702194357366807,
+     "balanceBefore": 6109,
+     "balanceAfter": 4709
+    },
+    {
+     "index": 18,
+     "from": 6,
+     "cost": 1908,
+     "drGain": 0.054054054054053946,
+     "balanceBefore": 19032,
+     "balanceAfter": 17124
+    },
+    {
+     "index": 17,
+     "from": 12,
+     "cost": 272,
+     "drGain": 0.007485029940119459,
+     "balanceBefore": 29063,
+     "balanceAfter": 28791
+    },
+    {
+     "index": 21,
+     "from": 17,
+     "cost": 1934,
+     "drGain": 0.04457652303120363,
+     "balanceBefore": 4709,
+     "balanceAfter": 2775
+    },
+    {
+     "index": 12,
+     "from": 14,
+     "cost": 2502,
+     "drGain": 0.0555555555555558,
+     "balanceBefore": 46354,
+     "balanceAfter": 43852
+    },
+    {
+     "index": 17,
+     "from": 13,
+     "cost": 351,
+     "drGain": 0.007112375533428139,
+     "balanceBefore": 28791,
+     "balanceAfter": 28440
+    },
+    {
+     "index": 17,
+     "from": 14,
+     "cost": 457,
+     "drGain": 0.007062146892655274,
+     "balanceBefore": 28440,
+     "balanceAfter": 27983
+    },
+    {
+     "index": 12,
+     "from": 15,
+     "cost": 4245,
+     "drGain": 0.052631578947368585,
+     "balanceBefore": 43852,
+     "balanceAfter": 39607
+    },
+    {
+     "index": 17,
+     "from": 15,
+     "cost": 599,
+     "drGain": 0.00701262272089731,
+     "balanceBefore": 27983,
+     "balanceAfter": 27384
+    },
+    {
+     "index": 18,
+     "from": 7,
+     "cost": 5712,
+     "drGain": 0.05128205128205132,
+     "balanceBefore": 17124,
+     "balanceAfter": 11412
+    },
+    {
+     "index": 17,
+     "from": 16,
+     "cost": 788,
+     "drGain": 0.0069637883008357715,
+     "balanceBefore": 27384,
+     "balanceAfter": 26596
+    },
+    {
+     "index": 12,
+     "from": 16,
+     "cost": 7208,
+     "drGain": 0.04999999999999982,
+     "balanceBefore": 39607,
+     "balanceAfter": 32399
+    },
+    {
+     "index": 17,
+     "from": 17,
+     "cost": 1043,
+     "drGain": 0.006915629322268302,
+     "balanceBefore": 26596,
+     "balanceAfter": 25553
+    },
+    {
+     "index": 17,
+     "from": 18,
+     "cost": 1385,
+     "drGain": 0.006868131868132066,
+     "balanceBefore": 25553,
+     "balanceAfter": 24168
+    },
+    {
+     "index": 12,
+     "from": 17,
+     "cost": 12244,
+     "drGain": 0.04761904761904767,
+     "balanceBefore": 32399,
+     "balanceAfter": 20155
+    },
+    {
+     "index": 17,
+     "from": 19,
+     "cost": 1845,
+     "drGain": 0.006821282401091144,
+     "balanceBefore": 24168,
+     "balanceAfter": 22323
+    },
+    {
+     "index": 17,
+     "from": 20,
+     "cost": 2464,
+     "drGain": 0.006775067750677488,
+     "balanceBefore": 22323,
+     "balanceAfter": 19859
+    },
+    {
+     "index": 17,
+     "from": 21,
+     "cost": 3299,
+     "drGain": 0.006729475100942128,
+     "balanceBefore": 19859,
+     "balanceAfter": 16560
+    },
+    {
+     "index": 17,
+     "from": 22,
+     "cost": 4425,
+     "drGain": 0.006684491978609763,
+     "balanceBefore": 16560,
+     "balanceAfter": 12135
+    }
+   ]
+  }
+ },
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "fixture": "fixtures/data.json"
+ }
+}
