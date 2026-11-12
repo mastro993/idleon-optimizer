@@ -113,12 +113,14 @@ dashboard card through the search field, opens each hidden tool through its own 
 asserts the section root and shared header ids, drives one interaction and writes
 `target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
 fails loudly; add one to `INTERACTIONS` in the script. After the sections, one extra window proves
-the project round trip: Export opens over the window state and names its size and sections, then a
-project document, an `ROv2:` state string and a research section config each preview, apply and
-leave a visible mark. It also asserts the change log (the status line and `import-changes` in the
-dialog) and five refused imports — malformed JSON, an unknown format marker, an unsupported
-version, an unreadable embedded save and a malformed section config — each with its own message and
-with the applied state left untouched.
+the project round trip: Export opens over the window state, names its size and sections and carries
+the `ROv2:` state string, then a project document, the exported state string (which brings back a
+supplement set by hand, and survives a reset because the imported document established it) and a
+research section config each preview, apply and leave a visible mark. It also asserts the change log
+(the status line and `import-changes` in the dialog) and six refused imports — malformed JSON, an
+unknown format marker, an unsupported version, an unreadable embedded save, a malformed section
+config and a malformed `ROv2:` state string — each with its own message and with the applied state
+left untouched.
 
 ```console
 node script/mcp-sections.mjs                      # all 30 sections

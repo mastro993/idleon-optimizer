@@ -143,7 +143,13 @@ struct RunInputs {
 /// Everything the window renders and mutates.
 pub struct AppState {
     pub simulation: Simulation,
+    /// The live context the simulation reads: the save-derived values plus the
+    /// user's supplements on top.
     pub context: SimContext,
+    /// The context the last applied save or document established.
+    /// [`AppState::reset_supplements`] returns here, so a reset never throws
+    /// away a multiplier the save decoded.
+    context_base: SimContext,
     pub effort: Effort,
     pub target: Target,
     /// Upstream artwork resolved through `assets/upstream/manifest.json`.
@@ -641,6 +647,7 @@ impl AppState {
         let mut state = Self {
             simulation,
             context: SimContext::default(),
+            context_base: SimContext::default(),
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
             assets: Manifest::load_default(),
@@ -1023,7 +1030,8 @@ impl AppState {
         self.fishing_save = FishingSave::from_save(&imported.save);
         self.fishing.adopt(&self.fishing_save);
         self.simulation = imported.simulation;
-        self.context = imported.context;
+        self.context = imported.context.clone();
+        self.context_base = imported.context;
         let combat_character = if self.combat.character < imported.save.character_count() {
             self.combat.character
         } else {
@@ -1072,8 +1080,9 @@ impl AppState {
     pub fn open_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.export = Export::open(self);
         self.status = format!(
-            "Exporting the project: {} bytes, ready to copy.",
-            self.export.bytes()
+            "Exporting the project ({} bytes) and its state string ({} bytes).",
+            self.export.bytes(),
+            self.export.state_bytes()
         );
         window.focus(&self.focus, cx);
         cx.notify();
@@ -1092,6 +1101,17 @@ impl AppState {
         self.status = format!(
             "Copied the project JSON to the clipboard ({} bytes).",
             self.export.bytes()
+        );
+        cx.notify();
+    }
+
+    /// Put the `ROv2:` state string on the clipboard, for the upstream tool or
+    /// the import dialog's paste box.
+    pub fn copy_export_state(&mut self, cx: &mut Context<Self>) {
+        crate::ui::export::copy_state(self, cx);
+        self.status = format!(
+            "Copied the ROv2 state string to the clipboard ({} bytes).",
+            self.export.state_bytes()
         );
         cx.notify();
     }
@@ -2132,11 +2152,18 @@ impl AppState {
         self.context_changed(cx);
     }
 
-    /// Put every supplement back to its default; the stored result turns stale.
+    /// Put every supplement back to what the last save or document set; the
+    /// stored result turns stale.
     pub fn reset_supplements(&mut self, cx: &mut Context<Self>) {
-        self.context = SimContext::default();
-        self.status = "Supplements reset to their defaults.".into();
+        self.context = self.context_base.clone();
+        self.status = "Supplements reset to their save-derived values.".into();
         self.context_changed(cx);
+    }
+
+    /// Adopt a document's context as both the live and the save-derived one.
+    pub(crate) fn replace_context(&mut self, context: SimContext) {
+        self.context = context.clone();
+        self.context_base = context;
     }
 
     fn context_changed(&mut self, cx: &mut Context<Self>) {

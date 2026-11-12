@@ -1664,9 +1664,10 @@ async function importError(lane, text, expected, label) {
   );
 }
 
-/// The project round trip: export opens over the window state, then the project
-/// document, an ROv2 state string and a section config each apply and leave a
-/// visible mark.
+/// The project round trip: export opens over the window state with both the
+/// project document and the state string, then the project document, the
+/// exported state string and a section config each apply and leave a visible
+/// mark.
 async function visitProjectRoundTrip() {
   let lane = null;
   try {
@@ -1723,6 +1724,61 @@ async function visitProjectRoundTrip() {
     await searchFor(lane, 'Research Grid', 'card-research', 'config: search lists the research card');
     await lane.call('click_element', { id: 'card-research' });
     await waitForNode(lane, 'section-research', 'config: the research section opens');
+
+    // The state string half of the export: a hand-set supplement travels in the
+    // ROv2 string and comes back with it, and a reset restores what the last
+    // applied document set rather than the build's defaults.
+    await lane.call('click_element', { id: 'rates' });
+    await waitForNode(lane, 'supp-shapes', 'state: the supplements card opens');
+    await lane.call('click_element', { id: 'supp-shapes-stepper-more' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 1'),
+      'state: the extra-shape supplement reads 1',
+    );
+    await lane.call('click_element', { id: 'supp-shapes-stepper-more' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
+      'state: the extra-shape supplement reads 2',
+    );
+    await lane.call('click_element', { id: 'header-export' });
+    await waitForNode(
+      lane,
+      'export-state-text',
+      'state: the export dialog carries the ROv2 string',
+    );
+    const encoded = labelOf(await lane.tree(), 'export-state-text') ?? '';
+    check(
+      'state: the export string is an ROv2 payload',
+      encoded.startsWith('ROv2:'),
+      encoded.slice(0, 32),
+    );
+    await lane.call('click_element', { id: 'export-copy-state' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('ROv2 state string'),
+      'state: copy state closes the dialog and names the string',
+    );
+    await lane.call('click_element', { id: 'supp-reset' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 0'),
+      'state: reset drops the hand-set supplement',
+    );
+    await importText(lane, encoded, 'upstream state', 'state round trip');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
+      'state: the exported state brings its supplements back',
+    );
+    await lane.call('click_element', { id: 'supp-reset' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
+      'state: reset keeps what the imported state established',
+    );
+
     await importText(lane, sectionConfig('research', { tab: 'run' }), 'section config', 'config');
     await waitForNode(lane, 'run-optimize', 'config: the tab came from the section config');
 
@@ -1756,6 +1812,12 @@ async function visitProjectRoundTrip() {
       sectionConfig('killroy', { weeks: 'twelve' }),
       'killroy',
       'malformed config',
+    );
+    await importError(
+      lane,
+      'ROv2:not-base64!',
+      'not base64',
+      'bad state string',
     );
     // The failed imports never replaced the log or the state they could not read.
     await lane.call('click_element', { id: 'header-import' });

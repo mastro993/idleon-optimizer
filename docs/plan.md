@@ -183,7 +183,8 @@ reads 1`, `no save fields found: expected Research, Lv0_*, gridLevels`.
 ### 5.4 Export
 
 - Export project JSON with a schema version and per-section blocks.
-- Copy the current save-derived state as an ROv2-compatible string for research.
+- Copy the current research state and supplements as the upstream `ROv2:` gzip+base64 string; it
+  imports back here exactly and still opens in the upstream optimizer.
 - Exports contain no telemetry, paths or machine identifiers.
 
 ### 5.5 Privacy
@@ -271,11 +272,12 @@ bump moves all three together and the smoke harness is the check.
 Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: the
 dashboard (summary, grid and observation previews, EXP/AFK/insight breakdowns and the grid-point
 split), grid, shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements,
-save import, projection chart, keyboard, canvas dragging and the shared searchable EXP formula tree.
+save import, the ROv2 state string export, projection chart, keyboard, canvas dragging and the
+shared searchable EXP formula tree.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observation Unlocks, Shape
 Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy comparison,
-complete save-derived multipliers, state export/import and undo.
+complete save-derived multipliers and undo.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01: the character/toolkit/location toolbar, an
