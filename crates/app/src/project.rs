@@ -38,7 +38,7 @@ use idleon_core::coral;
 use idleon_core::game;
 use idleon_core::import as pipeline;
 use idleon_core::ladle::Panel as LadlePanel;
-use idleon_core::model::{Effort, SimContext, Simulation};
+use idleon_core::model::{Effort, SimContext, SimOptions, Simulation};
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::project;
 use idleon_core::sailing::{AssignmentMode, Goal};
@@ -58,6 +58,8 @@ pub struct ResearchConfig {
     target_kind: String,
     target_value: f64,
     effort: Effort,
+    /// The three upstream run toggles.
+    options: SimOptions,
     supplements_open: bool,
 }
 
@@ -70,6 +72,7 @@ impl Default for ResearchConfig {
             target_kind: "hours".into(),
             target_value: 24.0,
             effort: Effort::Balanced,
+            options: SimOptions::default(),
             supplements_open: true,
         }
     }
@@ -280,6 +283,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
                 idleon_core::model::Target::Level(level) => f64::from(level),
             },
             effort: state.effort,
+            options: state.options,
             supplements_open: state.supplements_open,
         }),
     );
@@ -556,6 +560,7 @@ pub fn assign(
         Config::Research(config) => {
             state.research.tab = config.tab;
             state.effort = config.effort;
+            state.options = config.options;
             state.supplements_open = config.supplements_open;
             state.research.selected_cell = within(
                 config.selected_cell,
@@ -583,6 +588,7 @@ pub fn assign(
                     "research: targetKind {other:?} is not \"hours\" or \"level\"; the target is kept"
                 )),
             }
+            state.normalize_target();
         }
         Config::Killroy(config) => {
             state.killroy = config.normalized();
@@ -1126,6 +1132,11 @@ mod tests {
             target_kind: "level".into(),
             target_value: 140.0,
             effort: Effort::Thorough,
+            options: SimOptions {
+                assume_observations: true,
+                extended_insight: false,
+                include_tournament: true,
+            },
             supplements_open: false,
         });
         assert_eq!(research.tab, ResearchTab::Run);
@@ -1134,6 +1145,9 @@ mod tests {
         assert_eq!(research.target_kind, "level");
         assert_eq!(research.target_value, 140.0);
         assert_eq!(research.effort, Effort::Thorough);
+        assert!(research.options.assume_observations);
+        assert!(!research.options.extended_insight);
+        assert!(research.options.include_tournament);
         assert!(!research.supplements_open);
         let clamworks = round_trip(&ClamworksConfig {
             tab: ClamworksTab::Claim,

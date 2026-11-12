@@ -20,6 +20,14 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
+    /// `TimeAway.GlobalTime`, the save's clock in Unix seconds. Upstream reads
+    /// it from the parsed `TimeAway` object (`js/save/data.js`).
+    pub(super) fn save_global_time(&self) -> f64 {
+        fields::field(self.save, "TimeAway")
+            .and_then(|away| away.get("GlobalTime").and_then(super::super::json::number))
+            .unwrap_or(0.0)
+    }
+
     /// `OptLacc` as a string, as the game sometimes writes lists there.
     pub(super) fn ola_text(&self, index: usize) -> String {
         fields::field(self.save, "OptLacc")

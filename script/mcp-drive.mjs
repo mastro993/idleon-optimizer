@@ -267,6 +267,18 @@ try {
     'restoring the input clears the stale mark',
   );
 
+  // A run toggle is part of the inputs too.
+  await call('click_element', { id: 'option-assume-observations' });
+  await waitFor(
+    (current) => has(current, 'result-stale'),
+    'changing a run option marks the result stale',
+  );
+  await call('click_element', { id: 'option-assume-observations' });
+  await waitFor(
+    (current) => !has(current, 'result-stale'),
+    'restoring the option clears the stale mark',
+  );
+
   await call('click_element', { id: 'apply-result' });
   await waitFor(
     (current) => !has(current, 'apply-result'),

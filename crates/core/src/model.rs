@@ -218,6 +218,13 @@ pub struct SimContext {
     pub jelly_grid_points: f64,
     /// Spelunking upgrade 7, which unlocks shape count with the level.
     pub spellunky_upg7: f64,
+    /// `TimeAway.GlobalTime`, the save's clock in Unix seconds; zero when the
+    /// save does not carry it.
+    pub save_global_time: f64,
+    /// `OptLacc[511]`, the last registered tournament day plus one.
+    pub tournament_last_day: f64,
+    /// `OptLacc[496]`, the client-cached tournament day.
+    pub tournament_cached_day: f64,
     /// A user supplement on the account multiplier; `1.0` is none.
     pub extra_multiplier: f64,
     /// A user supplement on the owned shape count.
@@ -273,6 +280,9 @@ impl Default for SimContext {
             task_grid_points: 0.0,
             jelly_grid_points: 0.0,
             spellunky_upg7: 0.0,
+            save_global_time: 0.0,
+            tournament_last_day: 0.0,
+            tournament_cached_day: 0.0,
             extra_multiplier: 1.0,
             extra_shapes: 0,
             extra_magnifiers: 0,
@@ -371,6 +381,60 @@ pub enum Target {
     Hours(f64),
 }
 
+impl Target {
+    /// Why this target cannot run, as upstream validates the run button: a
+    /// level target must be above the current research level and an hour
+    /// target must be positive.
+    pub fn validate(self, research_level: u32) -> Result<(), String> {
+        match self {
+            Target::Level(level) if level <= research_level => Err(format!(
+                "Enter a target level above the current research level ({research_level})."
+            )),
+            Target::Level(_) => Ok(()),
+            Target::Hours(hours) if !hours.is_finite() || hours < 1.0 => {
+                Err("Enter at least one hour to simulate.".into())
+            }
+            Target::Hours(_) => Ok(()),
+        }
+    }
+
+    /// The target with the upstream bounds applied, so a stale level after an
+    /// import keeps running instead of turning the Optimize button off.
+    pub fn normalized(self, research_level: u32) -> Self {
+        match self {
+            Target::Level(level) => Target::Level(level.max(research_level.saturating_add(1))),
+            Target::Hours(hours) if hours.is_finite() => Target::Hours(hours.max(1.0)),
+            Target::Hours(_) => Target::Hours(1.0),
+        }
+    }
+}
+
+/// The upstream run toggles that change what a projection simulates.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct SimOptions {
+    /// Unlock every observation whose research requirement is met as the run
+    /// levels up, the upstream *assume observations unlocked* scenario.
+    pub assume_observations: bool,
+    /// Value an insight level by the EXP rate it permanently buys, the
+    /// upstream extended break-even lookahead, instead of only its speed.
+    pub extended_insight: bool,
+    /// Register in the daily tournament and add 12h of research time at each
+    /// 24h boundary.
+    pub include_tournament: bool,
+}
+
+impl Default for SimOptions {
+    fn default() -> Self {
+        Self {
+            assume_observations: false,
+            // Upstream ships the extended lookahead checked.
+            extended_insight: true,
+            include_tournament: false,
+        }
+    }
+}
+
 /// How hard the optimizers search.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -388,6 +452,7 @@ pub enum Effort {
 pub struct OptimizeRequest {
     pub target: Target,
     pub effort: Effort,
+    pub options: SimOptions,
     pub respec_grid: bool,
     /// Grid point budget for the respec; `None` uses what the level earns.
     pub grid_points: Option<u32>,
@@ -442,6 +507,18 @@ pub fn coord(cell: usize) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_target_is_valid_only_above_the_current_level_and_at_least_one_hour() {
+        assert!(Target::Level(60).validate(60).is_err());
+        assert!(Target::Level(61).validate(60).is_ok());
+        assert!(Target::Hours(0.0).validate(60).is_err());
+        assert!(Target::Hours(0.5).validate(60).is_err());
+        assert!(Target::Hours(f64::NAN).validate(60).is_err());
+        assert!(Target::Hours(1.0).validate(60).is_ok());
+        assert_eq!(Target::Level(2).normalized(60), Target::Level(61));
+        assert_eq!(Target::Hours(0.25).normalized(60), Target::Hours(1.0));
+    }
 
     #[test]
     fn coordinates_match_the_grid_labels() {

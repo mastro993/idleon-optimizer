@@ -361,6 +361,9 @@ impl Decoder<'_> {
         context.mastery_additive_pct = mastery.additive;
         context.mastery_exp_multi = mastery.exp_multi;
         context.spellunky_upg7 = self.spelunk(0, 7);
+        context.save_global_time = self.save_global_time();
+        context.tournament_last_day = self.ola(511);
+        context.tournament_cached_day = self.ola(496);
         context.bundle_ban_m = self.bundle("ban_m");
         context.bundle_ban_k = self.bundle("ban_k");
         context.sailing_art37 = self.sailing_art37();
