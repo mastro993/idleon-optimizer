@@ -8,10 +8,16 @@
 //! The section has no tab strip yet on purpose: the page's second tab is the
 //! yellow point allocator (CK-03), and the strip arrives with the pane behind it
 //! so it never offers a tab with nothing behind it. CK-02's daily distribution
-//! lands inside this tab, above the breakdown.
+//! sits in this tab between the comparison and the breakdown.
 //!
-//! Every figure comes from the import and the section holds no inputs of its own,
-//! so it keeps no state beyond the shared tree.
+//! Every figure comes from the import; the only inputs are the distribution's
+//! goal and budget, which live in [`State`], so the
+//! section keeps no state beyond them and the shared tree.
+
+mod distribution;
+mod state;
+
+pub use state::State;
 
 use crate::state::AppState;
 use crate::ui::format;
@@ -47,6 +53,7 @@ pub fn view(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppStat
         .child(summary(&mastery, cx))
         .child(recommendation(&mastery, cx))
         .child(comparison(&mastery, cx))
+        .child(distribution::card(state, &mastery, cx))
         .child(formula_card(tree));
     div()
         .id("cooking-mastery-section")

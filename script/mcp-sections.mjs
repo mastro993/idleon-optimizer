@@ -1401,6 +1401,48 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'cooking-mastery-recommendation') ?? '').includes('SWEET'),
       'cooking-mastery: the recommendation names the best upgrade'
     );
+    // CK-02: the daily distribution spends every point the rank grants, and
+    // SOUR is still locked at rank 18, so it takes none.
+    await waitForNode(lane, 'cooking-mastery-distribution', 'cooking-mastery: the distribution plans the budget');
+    const spent = labelOf(await lane.tree(), 'cooking-mastery-distribution') ?? '';
+    if (!spent.includes('with 19 of 19 points')) {
+      throw new Error(`cooking-mastery: the plan reads ${spent}`);
+    }
+    check(
+      'cooking-mastery: the locked upgrade takes no points',
+      (labelOf(await lane.tree(), 'cooking-mastery-distribution-row-4') ?? '').includes('→ 0'),
+      labelOf(await lane.tree(), 'cooking-mastery-distribution-row-4') ?? ''
+    );
+    // Switching the goal to the next unlock plans for rank 25, where SOUR
+    // joins: the plan holds the same points and now spends on it.
+    await lane.call('focus_element', { id: 'cooking-mastery-goal' });
+    // The first key opens the list, the second walks to the next goal, and
+    // Enter picks it.
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-distribution') ?? '').includes('held until rank 25'),
+      'cooking-mastery: the goal switch holds the points for the next unlock'
+    );
+    const planned = labelOf(await lane.tree(), 'cooking-mastery-distribution-row-4') ?? '';
+    if (!/SOUR — Total Ribbons: 0 → [1-9]/.test(planned)) {
+      throw new Error(`cooking-mastery: the next unlock plans SOUR as ${planned}`);
+    }
+    // The budget stepper spends less: the plan says how much and the rows drop.
+    await lane.call('click_element', { id: 'cooking-mastery-budget-less' });
+    await lane.call('click_element', { id: 'cooking-mastery-budget-less' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'cooking-mastery-distribution') ?? '').includes('with 17 of'),
+      'cooking-mastery: the budget stepper re-plans'
+    );
+    await waitForNode(
+      lane,
+      'cooking-mastery-distribution-copy',
+      'cooking-mastery: the plan offers a copy action'
+    );
   },
   shadow: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

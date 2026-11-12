@@ -1744,7 +1744,7 @@
         {
           "id": "CK-02",
           "title": "Optimal daily distribution",
-          "description": "Allocate the daily reset budget across upgrades for the selected goal.",
+          "description": "Allocate the daily reset budget across upgrades for the selected goal: the EXP rate at the current mastery rank, or the rate the same points buy at the rank that unlocks the next upgrade.",
           "acceptance": [
             "Allocation respects the budget.",
             "Goal switch changes the plan.",

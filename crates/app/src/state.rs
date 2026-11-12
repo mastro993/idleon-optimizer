@@ -6,6 +6,7 @@ use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
 };
 use crate::sections::combat_sim::{State as CombatState, Tab as CombatTab};
+use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::endgame;
@@ -249,6 +250,8 @@ pub struct AppState {
     pub ladle_state: LadleSectionState,
     /// The Cooking Mastery state the last imported save carried.
     pub mastery: Option<Mastery>,
+    /// The Mastery EXP tab's distribution goal and budget, kept across visits.
+    pub mastery_plan: MasteryPlanState,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub fountain: Option<Fountain>,
     /// The Fountain section's tab, water, desired currency and curve pick.
@@ -912,6 +915,7 @@ impl AppState {
             ladle: None,
             ladle_state,
             mastery: None,
+            mastery_plan: MasteryPlanState::default(),
             fountain: None,
             fountain_state: FountainState::default(),
             opal: None,
@@ -1329,6 +1333,8 @@ impl AppState {
             .adopt(&imported.ladle.clone().unwrap_or_default());
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
+        // The distribution's default budget is the new save's point total.
+        self.mastery_plan.adopt();
         self.jelly = imported.jelly;
         if let Some(jelly) = self.jelly.clone() {
             self.jelly_state.adopt(&jelly);
