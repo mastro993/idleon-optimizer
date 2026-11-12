@@ -17,7 +17,10 @@ Port the active combat simulator: loadout editor, mechanics overrides, component
 - Every edit recomputes the gear totals the header shows: weapon power, defence, the class main stat and the summed talent points, so the summary always matches the editor. It is the simulator's input preview; DPS/TTK output arrives with the encounter run.
 - Missing or invalid equipment is flagged: an item key outside the catalog, an item in the wrong slot family, a level or class requirement the character misses, and a saved talent level above its saved maximum.
 - Named loadouts are presets of item keys and talent levels. They live in the project JSON under `sections.combat-sim` and survive an export/import round trip; applying one replaces the working loadout like equipping each slot by hand.
-- Neutral this build: mechanics overrides (CS-02), the encounter run and its result tabs (CS-03 to CS-06) and replays (CS-07).
+- CS-02 ships the mechanics overrides: the upstream `COMBAT_TOGGLES` catalog (68 mechanics in 11 groups, `combat-sim-toggles.js`) is extracted into `crates/core/data/combat-overrides.json` by `script/combat-overrides-oracle.mjs`, and `crates/core/src/combat/overrides.rs` keeps one rule per mechanic id, normalizes it the way `normalizeToggleState` does and resolves it against a run's saved inputs (`off` writes the neutral value, `set` the typed value, `scale` saved × value, the flags with their own keys, the per-monster object, and `raw:<input>` ids for any other input).
+- The Mechanics tab lists the catalog with a search field, a group filter and an only-changed filter; each row picks Saved, Off, On, Set or Scale × and a value, the active rules show as removable chips above the tabs, and Reset all puts every input back to the save. The overrides live in `sections.combat-sim` under `toggles`, so a project export carries them.
+- Every override case is compared with the upstream module's own output through `fixtures/combat-overrides.json`; the catalog and that fixture are written from one upstream checkout, so they cannot drift apart.
+- Neutral this build: the encounter run and its result tabs (CS-03 to CS-06), the saved values Scale multiplies, the advanced input list and the component-term trace (CS-03) and replays (CS-07).
 
 ## Upstream sources
 
@@ -145,3 +148,5 @@ Acceptance:
 - The item catalog covers every equipped item in that save and every slot has picker options.
 - Presets round-trip through the project JSON and refuse another character's loadout.
 - The section harness imports a save, edits an item and a talent, flags an unknown item and saves a preset.
+- The override catalog and every resolve case match the upstream module through `fixtures/combat-overrides.json`.
+- The section harness sets a mechanic off, sees its chip and resets every override.

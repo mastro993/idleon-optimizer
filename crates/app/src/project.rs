@@ -217,15 +217,16 @@ pub struct OpalConfig {
     selected: Option<usize>,
 }
 
-/// The combat simulator's config: the selected character, its tab and the named
-/// loadouts. The working loadout itself comes from the save; presets are what
-/// the project keeps.
+/// The combat simulator's config: the selected character, its tab, the named
+/// loadouts and the mechanics overrides. The working loadout itself comes from
+/// the save; presets and overrides are what the project keeps.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CombatConfig {
     character: usize,
     tab: CombatTab,
     presets: Vec<CombatPreset>,
+    toggles: idleon_core::combat::State,
 }
 
 /// The statue section's config: selected character, sort, deposit estimate, the
@@ -315,6 +316,7 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             character: state.combat.character,
             tab: state.combat.tab,
             presets: state.combat.presets.items.clone(),
+            toggles: state.combat.overrides.clone(),
         }),
     );
     insert("monument", value(&state.monument));
@@ -614,6 +616,7 @@ pub fn assign(
         }
         Config::Combat(config) => {
             state.combat.tab = config.tab;
+            state.combat.overrides = config.toggles;
             state.combat.presets.items = config
                 .presets
                 .into_iter()
@@ -1253,6 +1256,15 @@ mod tests {
         assert_eq!(statue.targets, vec![Some(120), None]);
         assert_eq!(statue.rates, vec!["1.2M".to_string(), String::new()]);
         assert_eq!(statue.breakdown_statue, 7);
+        let mut toggles = idleon_core::combat::State::new();
+        toggles.set(
+            "dropRate",
+            idleon_core::combat::Rule::with_value(idleon_core::combat::Mode::Scale, 2.0),
+        );
+        toggles.set(
+            "compass3",
+            idleon_core::combat::Rule::new(idleon_core::combat::Mode::On),
+        );
         let combat = round_trip(&CombatConfig {
             character: 2,
             tab: CombatTab::Talents,
@@ -1262,6 +1274,7 @@ mod tests {
                 items: vec!["Blank".into(); idleon_core::combat::SLOT_COUNT],
                 talents: [("0".to_string(), 5u32)].into_iter().collect(),
             }],
+            toggles,
         });
         assert_eq!(combat.character, 2);
         assert_eq!(combat.tab, CombatTab::Talents);
@@ -1270,6 +1283,20 @@ mod tests {
         assert_eq!(
             combat.presets[0].items.len(),
             idleon_core::combat::SLOT_COUNT
+        );
+        assert_eq!(combat.toggles.len(), 2);
+        assert_eq!(
+            combat.toggles.rule("dropRate"),
+            Some(idleon_core::combat::Rule::with_value(
+                idleon_core::combat::Mode::Scale,
+                2.0
+            ))
+        );
+        assert_eq!(
+            combat.toggles.rule("compass3"),
+            Some(idleon_core::combat::Rule::new(
+                idleon_core::combat::Mode::On
+            ))
         );
         let coral = round_trip(&coral::Inputs {
             goal: CoralGoal::DivinityPoints,

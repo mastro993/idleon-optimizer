@@ -1034,6 +1034,32 @@ const INTERACTIONS = {
         (labelOf(nodes, 'combat-issues') ?? '').includes('NotAnItem'),
       'combat-sim: saved gear loads and the unknown item is flagged',
     );
+    // A mechanic override shows as a removable chip, and Reset clears it. The
+    // mechanics tab runs before the slot edits: it needs no slot selection.
+    await lane.call('click_element', { id: 'mechanics' });
+    await waitForNode(lane, 'combat-override-dropRate', 'combat-sim: the mechanics tab opens');
+    // The first Down opens the list on Saved; the second highlights Off.
+    await lane.call('focus_element', { id: 'combat-override-dropRate-mode' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'combat-overrides-count') ?? '') === '1 active overrides' &&
+        (labelOf(nodes, 'combat-override-chips') ?? '').includes('Drop rate off'),
+      'combat-sim: the override is active and chipped',
+    );
+    await lane.call('click_element', { id: 'combat-overrides-reset' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'combat-overrides-count') ?? '') === '0 active overrides' &&
+        !has(nodes, 'combat-override-chips'),
+      'combat-sim: reset puts every mechanic back to the save',
+    );
+    await lane.call('click_element', { id: 'gear' });
+    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
     // Pick the weapon slot, then the first weapon the picker offers.
     await lane.call('click_element', { id: 'combat-slot-0-1' });
     await waitForNode(lane, 'combat-item-select', 'combat-sim: the slot detail opens');

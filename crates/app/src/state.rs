@@ -326,6 +326,7 @@ pub struct AppState {
     _prisma_search_subscription: Subscription,
     _combat_name_subscription: Subscription,
     _combat_talent_subscription: Subscription,
+    _combat_overrides_subscription: Subscription,
     _import_subscription: Subscription,
     _optimizer_subscription: Subscription,
     _killroy_run_subscription: Subscription,
@@ -416,6 +417,15 @@ impl AppState {
                     cx.notify();
                 }
             });
+        let combat_overrides = combat.override_search.clone();
+        let combat_overrides_subscription = cx.subscribe(
+            &combat_overrides,
+            |_state, _input, event: &InputEvent, cx| {
+                if *event == InputEvent::Changed {
+                    cx.notify();
+                }
+            },
+        );
         // Every edit of the paste box re-checks the text, so the preview and the
         // Apply button always describe what is on screen.
         let import_input = import.input.clone();
@@ -838,6 +848,7 @@ impl AppState {
             _prisma_search_subscription: prisma_search_subscription,
             _combat_name_subscription: combat_name_subscription,
             _combat_talent_subscription: combat_talent_subscription,
+            _combat_overrides_subscription: combat_overrides_subscription,
             _import_subscription: import_subscription,
             _optimizer_subscription: optimizer_subscription,
             _killroy_run_subscription: killroy_run_subscription,
@@ -2360,6 +2371,74 @@ impl AppState {
     pub fn reset_combat_loadout(&mut self, cx: &mut Context<Self>) {
         self.combat.loadout.reset();
         self.status = "Loadout reset to the save.".into();
+        cx.notify();
+    }
+
+    /// Pick a mechanic's mode; `None` is Saved, which clears its override.
+    pub fn set_combat_override_mode(
+        &mut self,
+        id: &str,
+        mode: Option<idleon_core::combat::Mode>,
+        cx: &mut Context<Self>,
+    ) {
+        match mode {
+            Some(mode) => {
+                let current = self.combat.overrides.rule(id);
+                let rule = idleon_core::combat::Rule::seeded(mode, current.as_ref(), None);
+                self.combat.overrides.set(id, rule);
+                let name =
+                    idleon_core::combat::toggle(id).map_or(id, |toggle| toggle.label.as_str());
+                self.status = format!("{name}: {} override.", mode.label());
+            }
+            None => {
+                self.combat.overrides.remove(id);
+                self.status = format!("Override cleared for {id}.");
+            }
+        }
+        cx.notify();
+    }
+
+    /// Set the value a Set or Scale rule uses.
+    pub fn set_combat_override_value(&mut self, id: &str, value: f64, cx: &mut Context<Self>) {
+        let Some(rule) = self.combat.overrides.rule(id) else {
+            return;
+        };
+        if !matches!(
+            rule.mode,
+            idleon_core::combat::Mode::Set | idleon_core::combat::Mode::Scale
+        ) {
+            return;
+        }
+        self.combat
+            .overrides
+            .set(id, idleon_core::combat::Rule::with_value(rule.mode, value));
+        cx.notify();
+    }
+
+    /// Forget one mechanic's override, putting its input back to the save.
+    pub fn remove_combat_override(&mut self, id: &str, cx: &mut Context<Self>) {
+        if self.combat.overrides.rule(id).is_some() {
+            self.combat.overrides.remove(id);
+            cx.notify();
+        }
+    }
+
+    /// Put every mechanic back to its saved value.
+    pub fn reset_combat_overrides(&mut self, cx: &mut Context<Self>) {
+        self.combat.overrides.reset();
+        self.status = "Overrides reset: every mechanic uses the save.".into();
+        cx.notify();
+    }
+
+    /// Filter the mechanics pane by group; empty means every group.
+    pub fn set_combat_override_group(&mut self, group: &str, cx: &mut Context<Self>) {
+        self.combat.override_group = group.to_string();
+        cx.notify();
+    }
+
+    /// Whether the mechanics pane lists only overridden mechanics.
+    pub fn set_combat_overrides_only_active(&mut self, only: bool, cx: &mut Context<Self>) {
+        self.combat.override_only_active = only;
         cx.notify();
     }
 

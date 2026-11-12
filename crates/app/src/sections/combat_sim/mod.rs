@@ -7,10 +7,13 @@
 //! [`idleon_core::combat`]; every edit recomputes the gear totals the header
 //! shows, so the summary never lags behind the editor.
 //!
-//! Mechanics overrides (CS-02), the encounter run (CS-03) and the result tabs
-//! land on top of this editor; it owns the loadout they read.
+//! The mechanics overrides (CS-02) sit beside it: the curated mechanics the
+//! simulator can disable, set or scale, with the active rules shown as chips and
+//! a reset back to the save. The encounter run (CS-03) and the result tabs land
+//! on top of both; the editor owns the loadout and overrides they read.
 
 pub mod equipment;
+pub mod overrides;
 pub mod presets;
 pub mod talents;
 
@@ -39,15 +42,17 @@ pub enum Tab {
     #[default]
     Gear,
     Talents,
+    Mechanics,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 2] = [Tab::Gear, Tab::Talents];
+    pub const ALL: [Tab; 3] = [Tab::Gear, Tab::Talents, Tab::Mechanics];
 
     pub fn id(self) -> &'static str {
         match self {
             Tab::Gear => "gear",
             Tab::Talents => "talents",
+            Tab::Mechanics => "mechanics",
         }
     }
 
@@ -55,6 +60,7 @@ impl Tab {
         match self {
             Tab::Gear => "Equipment",
             Tab::Talents => "Talents",
+            Tab::Mechanics => "Mechanics",
         }
     }
 
@@ -78,6 +84,14 @@ pub struct State {
     pub name: Entity<TextInput>,
     /// The talent table's filter.
     pub talent_search: Entity<TextInput>,
+    /// The mechanic overrides the working loadout carries.
+    pub overrides: idleon_core::combat::State,
+    /// The mechanics pane's search field.
+    pub override_search: Entity<TextInput>,
+    /// The mechanics pane's group filter; empty means every group.
+    pub override_group: String,
+    /// Whether the mechanics pane lists only the overridden rows.
+    pub override_only_active: bool,
 }
 
 impl State {
@@ -92,6 +106,11 @@ impl State {
                 .placeholder("Find a talent")
                 .label("Find a talent")
         });
+        let override_search = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("crystal, drop rate, orb…")
+                .label("Find a mechanic")
+        });
         Self {
             loadout: Loadout::empty(),
             character: 0,
@@ -100,6 +119,10 @@ impl State {
             presets: presets::Presets::default(),
             name,
             talent_search,
+            overrides: idleon_core::combat::State::new(),
+            override_search,
+            override_group: String::new(),
+            override_only_active: false,
         }
     }
 
@@ -123,6 +146,11 @@ impl State {
     pub fn talent_query(&self, cx: &App) -> String {
         self.talent_search.read(cx).text().to_string()
     }
+
+    /// The mechanics pane's query.
+    pub fn override_query(&self, cx: &App) -> String {
+        self.override_search.read(cx).text().to_string()
+    }
 }
 
 /// The loadout editor page.
@@ -145,6 +173,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .selected(SharedString::from(tab.id()))
         .tab(WindowTab::new(Tab::Gear.id(), Tab::Gear.label()))
         .tab(WindowTab::new(Tab::Talents.id(), Tab::Talents.label()))
+        .tab(WindowTab::new(Tab::Mechanics.id(), Tab::Mechanics.label()))
         .on_select(move |id, _window, cx| {
             if let Some(tab) = Tab::from_id(id.as_ref()) {
                 select_tab.update(cx, |state, cx| state.set_combat_tab(tab, cx));
@@ -244,9 +273,11 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             )
         })
         .child(presets::bar(state, cx))
+        .when_some(overrides::chips(state, cx), |page, chips| page.child(chips))
         .child(match tab {
             Tab::Gear => equipment::pane(state, breakpoint, cx),
             Tab::Talents => talents::pane(state, window, cx),
+            Tab::Mechanics => overrides::pane(state, window, cx),
         })
         .into_any_element()
 }
