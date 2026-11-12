@@ -8,7 +8,8 @@
 //! input.
 
 use idleon_core::cog::{
-    BOARD_SIZE, CogResult, Goal, OptimizeOptions, apply_swaps, compute_totals, optimize,
+    BOARD_SIZE, CogResult, Goal, OptimizeOptions, SwapWalkthrough, apply_swaps, compute_totals,
+    optimize,
 };
 use idleon_core::model::Control;
 use idleon_core::save::import;
@@ -141,4 +142,40 @@ fn the_swap_list_rebuilds_the_result_and_undoes_to_the_save() {
     let mut reset = result.board.clone();
     reset.clone_from(&save.board);
     assert_eq!(reset, save.board);
+}
+
+#[test]
+fn the_walkthrough_steps_forwards_and_back_to_its_start() {
+    let save = cog_save();
+    let options = OptimizeOptions {
+        iterations: 400,
+        ..OptimizeOptions::default()
+    };
+    let mut report = |_progress| Control::Continue;
+    let result =
+        optimize(&save.board, &save.shelf, Goal::Build, &options, &mut report).expect("a full run");
+    let mut walkthrough =
+        SwapWalkthrough::new(&save.board, &result.board, &save.shelf_slots, &result.swaps);
+
+    // Forward, one step at a time: every step lands on the board the matching
+    // apply_swaps prefix produces, and the last one is the optimized board.
+    let mut boards = vec![walkthrough.board().clone()];
+    while walkthrough.next_step() {
+        boards.push(walkthrough.board().clone());
+    }
+    assert_eq!(boards.len(), result.swaps.len() + 1);
+    assert_eq!(boards.last(), Some(&result.board));
+
+    // Back, one step at a time: every Previous restores exactly the prior board,
+    // all the way to the save board the run started from.
+    for expected in boards.iter().rev().skip(1) {
+        assert!(walkthrough.previous());
+        assert_eq!(walkthrough.board(), expected);
+    }
+    assert_eq!(walkthrough.board(), &save.board);
+    assert!(!walkthrough.previous());
+
+    // Done from the start still commits the optimized board.
+    assert_eq!(walkthrough.finish(), result.board);
+    assert!(walkthrough.is_complete());
 }

@@ -483,15 +483,16 @@ rejected inputs, so `crates/core/tests/monument.rs` compares the port field for 
 it with `script/monument-oracle.mjs`, and `script/extract-monument-data.mjs` extracts the tables
 the tab reads. Details: [`docs/sections/monument.md`](sections/monument.md).
 
-The Cog Board Optimizer implements CG-01: the saved 12×8 board and shelf decode from `CogO` and
-`CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate) run through
-the shared task runner with progress and cancel, the optimized placement renders cell by cell, and
-Reset restores the save board. The optimizer is the upstream greedy-construction, simulated-
-annealing and greedy-finish port, with a seeded random source; invariant tests prove it never
-returns a board worse than its input and that its swap list rebuilds the result. Weighted
-objectives, the perfect board, insights, the shelf view, roll ranges and the step-by-step swap
-walkthrough stay on the roadmap as CG-02 to CG-04. Details:
-[`docs/sections/cog.md`](sections/cog.md).
+The Cog Board Optimizer implements CG-01 and CG-04: the saved 12×8 board and shelf decode from
+`CogO` and `CogM`, the three single-objective runs (build speed, construction EXP and Flaggy rate)
+run through the shared task runner with progress and cancel, the optimized placement renders cell by
+cell, and Reset restores the save board. The optimizer is the upstream greedy-construction,
+simulated-annealing and greedy-finish port, with a seeded random source; invariant tests prove it
+never returns a board worse than its input and that its swap list rebuilds the result. A finished run
+opens the swap walkthrough at the board it started from: Next applies the swap list in order,
+Previous rebuilds the prior board and Done keeps the optimized placement. Weighted objectives, the
+perfect board, insights, the shelf view and roll ranges stay on the roadmap as CG-02 and CG-03.
+Details: [`docs/sections/cog.md`](sections/cog.md).
 The Farming section's assignment and Land Rank allocation are built (FM-02): the objective selector
 re-plans which crop each of the 36 plots should grow, the table names the current and target crop,
 family and change per plot and the field tiles carry the target, and the allocator spends the

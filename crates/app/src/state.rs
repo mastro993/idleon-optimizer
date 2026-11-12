@@ -513,8 +513,9 @@ impl AppState {
                 }
                 cx.notify();
             });
-        // The cog board optimizer reports through the same runner; the section
-        // reads its stored board as the placement on screen.
+        // The cog board optimizer reports through the same runner; a finished
+        // run opens its walkthrough, which reads the stored board one step at a
+        // time until Done keeps it.
         let cog_run = cx.new(|_| TaskRunner::<CogResult, CogRunInputs>::new());
         let cog_subscription = cx.subscribe(&cog_run, |state, runner, event: &TaskEvent, cx| {
             match event {
@@ -532,12 +533,18 @@ impl AppState {
                     };
                 }
                 TaskEvent::Finished { cancelled: false } => {
-                    if let Some(result) = runner.read(cx).result() {
-                        state.status = format!(
-                            "Cog board optimized: {:+.2}% with {} swaps.",
-                            result.improvement_pct,
-                            result.swaps.len()
-                        );
+                    let result = runner.read(cx).result().cloned();
+                    if let Some(result) = result {
+                        state.cog.begin_walkthrough(&result);
+                        state.status = if result.swaps.is_empty() {
+                            "Cog board optimized: no swaps needed.".into()
+                        } else {
+                            format!(
+                                "Cog board optimized: {:+.2}% with {} swaps. Walk through them, then press Done to keep the board.",
+                                result.improvement_pct,
+                                result.swaps.len()
+                            )
+                        };
                     }
                 }
             }
@@ -2229,6 +2236,7 @@ impl AppState {
 
     /// Optimize the board off the UI thread through the shared task runner.
     pub fn optimize_cog(&mut self, cx: &mut Context<Self>) {
+        self.cog.dismiss_walkthrough();
         let inputs = self.cog.inputs();
         if inputs.board.iter().all(Option::is_none) {
             self.status = "Cog board: no cogs to place.".into();
@@ -2250,6 +2258,64 @@ impl AppState {
             self.status = "Optimizing the cog board…".into();
             cx.notify();
         }
+    }
+
+    /// Apply the next swap in the open walkthrough.
+    pub fn next_cog_swap(&mut self, cx: &mut Context<Self>) {
+        if !self.cog.next_swap() {
+            return;
+        }
+        let (applied, total, complete) =
+            self.cog
+                .walkthrough
+                .as_ref()
+                .map_or((0, 0, false), |walkthrough| {
+                    (
+                        walkthrough.applied(),
+                        walkthrough.total(),
+                        walkthrough.is_complete(),
+                    )
+                });
+        self.status = if complete {
+            format!("Cog walkthrough: all steps shown ({total}); press Done to keep the board.")
+        } else {
+            format!("Cog walkthrough: step {} of {total}.", applied + 1)
+        };
+        cx.notify();
+    }
+
+    /// Restore the board before the last applied swap.
+    pub fn previous_cog_swap(&mut self, cx: &mut Context<Self>) {
+        if !self.cog.previous_swap() {
+            return;
+        }
+        let (applied, total) = self.cog.walkthrough.as_ref().map_or((0, 0), |walkthrough| {
+            (walkthrough.applied(), walkthrough.total())
+        });
+        self.status = if applied == 0 {
+            format!("Cog walkthrough: back at the run's start board; step 1 of {total}.")
+        } else {
+            format!("Cog walkthrough: step {} of {total}.", applied + 1)
+        };
+        cx.notify();
+    }
+
+    /// Keep the optimized board the walkthrough ends on.
+    pub fn finish_cog_swaps(&mut self, cx: &mut Context<Self>) {
+        // Done changes the board itself, so the stored result's inputs must move
+        // with it; otherwise the run would read as stale straight after Done. A
+        // genuinely stale result (a goal edit, say) stays stale.
+        let stale = self.cog_task(cx).stale;
+        if !self.cog.finish_walkthrough() {
+            return;
+        }
+        if !stale {
+            let inputs = self.cog.inputs();
+            self.cog_run
+                .update(cx, |runner, _| runner.commit_inputs(inputs));
+        }
+        self.status = "Cog walkthrough: final board kept; Reset restores the save board.".into();
+        cx.notify();
     }
 
     /// Ask a running cog optimization to stop at its next report.
