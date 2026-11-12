@@ -1,12 +1,12 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research, statue, jar, sailing, farming, fishing, ladle, Clamworks,
+Status: **foundation in progress, research, statue, jar, sailing, farming, ladle, Clamworks,
 the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
 estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor and
 mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator overview
-and layout editor and the drop-rate inputs and dungeon total partial, shadow-ban, endgame and
-BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2 sections
+and layout editor and the drop-rate inputs and dungeon total partial, shadow-ban, endgame, Fishing
+and BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2 sections
 planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
@@ -297,19 +297,23 @@ Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, 
 complete save-derived multipliers and undo.
 Details: [`docs/sections/research.md`](sections/research.md).
 
-The Fishing section implements FI-01 and FI-02: the character/toolkit/location toolbar, an
+The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an
 every-location table that switches the selected pool, the selected pool's fish split,
-real-versus-panel EXP, the shared formula tree, and the ranking of all 225 lure/line
+real-versus-panel EXP, the shared formula tree, the ranking of all 225 lure/line
 combinations for the selected pool and depth by either Fishing EXP or fish quantity, with
 the selected and saved rows marked, a `Use` action, the tie explanation and the
-best-combination KPI. The pure formulas and the ranking are pinned against oracle fixtures
+best-combination KPI, and the Trench depth projection: the saved depth's fish requirement
+with its jar and Bolaia reductions, the efficiency requirements each projected depth
+raises, the selected and fish-maximizing lure + line hours per depth with cumulative
+totals, and the other characters' fish per hour, which sum into the team ETA. The pure
+formulas, the ranking and every projected depth are pinned against oracle fixtures
 evaluated from the upstream JS; the save supplies the character, rod, saved toolkit, spot
-and AFK target, while the account skill values (efficiency, EXP multiplier, AFK rate,
-Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card
-until the stats dashboard decodes them, and the ranking holds efficiency and the EXP
-multiplier fixed across combinations because the upstream recomputes them per toolkit
-through the skill systems. Missing: the Trench depth projection with other characters
-(FI-03). Details: [`docs/sections/fishing.md`](sections/fishing.md).
+and AFK target plus the cavern rows the Trench reads (`Holes`, `Spelunk`), while the
+account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources,
+prowess and equipment depths) are entered in the account card until the stats dashboard
+decodes them, and the ranking and the depth search hold efficiency and the EXP multiplier
+fixed across combinations because the upstream recomputes them per toolkit through the
+skill systems. Details: [`docs/sections/fishing.md`](sections/fishing.md).
 
 The Clamworks section implements CW-01, CW-02 and CW-03: the overview with the pearl-value
 breakdown, every pearl upgrade, the upstream priority ranking, the AFK claim with its drop

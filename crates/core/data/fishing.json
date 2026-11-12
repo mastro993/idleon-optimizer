@@ -854,6 +854,28 @@
    "speed": 8
   }
  ],
+ "trench": {
+  "caverns": [
+   "Motherlode",
+   "Hive",
+   "Evertree",
+   "Trench"
+  ],
+  "studies": [
+   1,
+   7,
+   11,
+   16
+  ],
+  "bolaiaPerLevel": [
+   2,
+   5,
+   5,
+   3
+  ],
+  "legendPerPoint": 20,
+  "collectible5PerLevel": 10
+ },
  "generatedFrom": {
   "repo": "Corgan/idleon-research-optimizer"
  }
