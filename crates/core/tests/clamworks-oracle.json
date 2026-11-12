@@ -1,0 +1,687 @@
+{
+ "savedBy": "script/clamworks-oracle.mjs",
+ "source": "js/stats/systems/w7/clamworks.js + clamworks-calc.html (promotion tab)",
+ "pearlBalance": 2960058875.17209,
+ "promotionLevel": 6,
+ "upgrades": [
+  123,
+  12,
+  30,
+  43,
+  79,
+  33,
+  9,
+  0,
+  0
+ ],
+ "promotion": {
+  "level": 6,
+  "balance": 2960058875.17209,
+  "chance": 0.0625,
+  "cost": 100000000000,
+  "expectedAttempts": 16,
+  "expectedCost": 1600000000000,
+  "clamHpAfter": 2.187e+26,
+  "rewards": [
+   {
+    "level": 1,
+    "description": "+1 Grade for 2 Gallery Slots",
+    "unlocked": true
+   },
+   {
+    "level": 2,
+    "description": "+1 Legend Talent PTS",
+    "unlocked": true
+   },
+   {
+    "level": 3,
+    "description": "+10 LV/day for Kattlekruk bubbles",
+    "unlocked": true
+   },
+   {
+    "level": 4,
+    "description": "+5% Meritocracy Multi bonus",
+    "unlocked": true
+   },
+   {
+    "level": 5,
+    "description": "+1 Legend Talent PTS",
+    "unlocked": true
+   },
+   {
+    "level": 6,
+    "description": "+20% extra Daily Coral",
+    "unlocked": true
+   },
+   {
+    "level": 7,
+    "description": "+15 LV/day from Brain Coral",
+    "unlocked": false
+   },
+   {
+    "level": 8,
+    "description": "+3% Gallery Bonus Multi",
+    "unlocked": false
+   },
+   {
+    "level": 9,
+    "description": "+25% Lumi Gains Rate",
+    "unlocked": false
+   },
+   {
+    "level": 10,
+    "description": "1.25x Research EXP gain",
+    "unlocked": false
+   },
+   {
+    "level": 11,
+    "description": "10x Cooking Speed",
+    "unlocked": false
+   },
+   {
+    "level": 12,
+    "description": "2x Spelunking POW",
+    "unlocked": false
+   }
+  ]
+ },
+ "plans": [
+  {
+   "budget": 2960058875.17209,
+   "multikillTotal": 1234.5,
+   "capped": false,
+   "spent": 2949666918.1827655,
+   "steps": [
+    {
+     "index": 2,
+     "fromLevel": 30,
+     "cost": 32493.5975419,
+     "gain": 0.013930378
+    },
+    {
+     "index": 2,
+     "fromLevel": 31,
+     "cost": 48740.288504857,
+     "gain": 0.013318408
+    },
+    {
+     "index": 2,
+     "fromLevel": 32,
+     "cost": 73110.319828565,
+     "gain": 0.012747077
+    },
+    {
+     "index": 2,
+     "fromLevel": 33,
+     "cost": 109665.361624487,
+     "gain": 0.012212774
+    },
+    {
+     "index": 2,
+     "fromLevel": 34,
+     "cost": 164497.919060932,
+     "gain": 0.011712287
+    },
+    {
+     "index": 2,
+     "fromLevel": 35,
+     "cost": 246746.749891419,
+     "gain": 0.011242754
+    },
+    {
+     "index": 2,
+     "fromLevel": 36,
+     "cost": 370119.990747242,
+     "gain": 0.010801615
+    },
+    {
+     "index": 2,
+     "fromLevel": 37,
+     "cost": 555179.846576307,
+     "gain": 0.010386574
+    },
+    {
+     "index": 2,
+     "fromLevel": 38,
+     "cost": 832769.624801403,
+     "gain": 0.009995568
+    },
+    {
+     "index": 2,
+     "fromLevel": 39,
+     "cost": 1249154.286557597,
+     "gain": 0.009626737
+    },
+    {
+     "index": 0,
+     "fromLevel": 123,
+     "cost": 1163189.220359348,
+     "gain": 0.008034075
+    },
+    {
+     "index": 0,
+     "fromLevel": 124,
+     "cost": 1395821.615472642,
+     "gain": 0.007970044
+    },
+    {
+     "index": 3,
+     "fromLevel": 43,
+     "cost": 1489958.53899091,
+     "gain": 0.008034268
+    },
+    {
+     "index": 2,
+     "fromLevel": 40,
+     "cost": 1873731.273548343,
+     "gain": 0.009279233
+    },
+    {
+     "index": 0,
+     "fromLevel": 125,
+     "cost": 1674980.374197046,
+     "gain": 0.007907528
+    },
+    {
+     "index": 0,
+     "fromLevel": 126,
+     "cost": 2009970.767802923,
+     "gain": 0.00784549
+    },
+    {
+     "index": 3,
+     "fromLevel": 44,
+     "cost": 2085941.929864153,
+     "gain": 0.007970959
+    },
+    {
+     "index": 0,
+     "fromLevel": 127,
+     "cost": 2411959.121808679,
+     "gain": 0.007784639
+    },
+    {
+     "index": 2,
+     "fromLevel": 41,
+     "cost": 2810596.74832964,
+     "gain": 0.008950847
+    },
+    {
+     "index": 3,
+     "fromLevel": 45,
+     "cost": 2920318.676257988,
+     "gain": 0.007908393
+    },
+    {
+     "index": 0,
+     "fromLevel": 128,
+     "cost": 2894345.026830398,
+     "gain": 0.007724963
+    },
+    {
+     "index": 7,
+     "fromLevel": 0,
+     "cost": 41801726.63081194,
+     "gain": 0.099654695
+    },
+    {
+     "index": 0,
+     "fromLevel": 129,
+     "cost": 3473207.991601395,
+     "gain": 0.007668153
+    },
+    {
+     "index": 6,
+     "fromLevel": 9,
+     "cost": 24013965.205910545,
+     "gain": 0.052631579
+    },
+    {
+     "index": 2,
+     "fromLevel": 42,
+     "cost": 4215894.954736276,
+     "gain": 0.008642391
+    },
+    {
+     "index": 3,
+     "fromLevel": 46,
+     "cost": 4088446.120372537,
+     "gain": 0.007849413
+    },
+    {
+     "index": 0,
+     "fromLevel": 130,
+     "cost": 4167843.426595692,
+     "gain": 0.007610187
+    },
+    {
+     "index": 7,
+     "fromLevel": 1,
+     "cost": 52252158.34192275,
+     "gain": 0.090632517
+    },
+    {
+     "index": 6,
+     "fromLevel": 10,
+     "cost": 32418852.833533093,
+     "gain": 0.05
+    },
+    {
+     "index": 0,
+     "fromLevel": 131,
+     "cost": 5001405.824376181,
+     "gain": 0.007554625
+    },
+    {
+     "index": 3,
+     "fromLevel": 47,
+     "cost": 5723824.541288059,
+     "gain": 0.007790599
+    },
+    {
+     "index": 2,
+     "fromLevel": 43,
+     "cost": 6323842.258521182,
+     "gain": 0.008349611
+    },
+    {
+     "index": 7,
+     "fromLevel": 2,
+     "cost": 65315197.97356267,
+     "gain": 0.083106298
+    },
+    {
+     "index": 0,
+     "fromLevel": 132,
+     "cost": 6001680.576012422,
+     "gain": 0.007499884
+    },
+    {
+     "index": 6,
+     "fromLevel": 11,
+     "cost": 43765451.0930931,
+     "gain": 0.047619048
+    },
+    {
+     "index": 0,
+     "fromLevel": 133,
+     "cost": 7202010.150782003,
+     "gain": 0.007444055
+    },
+    {
+     "index": 3,
+     "fromLevel": 48,
+     "cost": 8013354.329717011,
+     "gain": 0.00773246
+    },
+    {
+     "index": 7,
+     "fromLevel": 3,
+     "cost": 81643997.50173491,
+     "gain": 0.076733908
+    },
+    {
+     "index": 0,
+     "fromLevel": 134,
+     "cost": 8642405.511812164,
+     "gain": 0.007390489
+    },
+    {
+     "index": 2,
+     "fromLevel": 44,
+     "cost": 9485763.208314495,
+     "gain": 0.008072756
+    },
+    {
+     "index": 6,
+     "fromLevel": 12,
+     "cost": 59083358.70422738,
+     "gain": 0.045454545
+    },
+    {
+     "index": 0,
+     "fromLevel": 135,
+     "cost": 10370879.814849751,
+     "gain": 0.007336404
+    },
+    {
+     "index": 7,
+     "fromLevel": 4,
+     "cost": 102054996.89764643,
+     "gain": 0.071269097
+    },
+    {
+     "index": 3,
+     "fromLevel": 49,
+     "cost": 11218696.03265692,
+     "gain": 0.007676013
+    },
+    {
+     "index": 0,
+     "fromLevel": 136,
+     "cost": 12445048.846785165,
+     "gain": 0.007284173
+    },
+    {
+     "index": 2,
+     "fromLevel": 45,
+     "cost": 14228644.627062118,
+     "gain": 0.007807755
+    },
+    {
+     "index": 6,
+     "fromLevel": 13,
+     "cost": 79762533.9385241,
+     "gain": 0.043478261
+    },
+    {
+     "index": 7,
+     "fromLevel": 5,
+     "cost": 127568746.12590109,
+     "gain": 0.066530842
+    },
+    {
+     "index": 3,
+     "fromLevel": 50,
+     "cost": 15706174.4159044,
+     "gain": 0.007618746
+    },
+    {
+     "index": 0,
+     "fromLevel": 137,
+     "cost": 14934051.551881092,
+     "gain": 0.007232639
+    },
+    {
+     "index": 0,
+     "fromLevel": 138,
+     "cost": 17920854.663246967,
+     "gain": 0.007180703
+    },
+    {
+     "index": 7,
+     "fromLevel": 6,
+     "cost": 159460932.6426138,
+     "gain": 0.0623832
+    },
+    {
+     "index": 6,
+     "fromLevel": 14,
+     "cost": 107679420.46269499,
+     "gain": 0.041666667
+    },
+    {
+     "index": 2,
+     "fromLevel": 46,
+     "cost": 21342966.74918358,
+     "gain": 0.007556495
+    },
+    {
+     "index": 3,
+     "fromLevel": 51,
+     "cost": 21988644.15157481,
+     "gain": 0.007562276
+    },
+    {
+     "index": 0,
+     "fromLevel": 139,
+     "cost": 21505018.26060838,
+     "gain": 0.00713048
+    },
+    {
+     "index": 7,
+     "fromLevel": 7,
+     "cost": 199326165.7681717,
+     "gain": 0.058722323
+    },
+    {
+     "index": 6,
+     "fromLevel": 15,
+     "cost": 145367217.22686043,
+     "gain": 0.04
+    },
+    {
+     "index": 0,
+     "fromLevel": 140,
+     "cost": 25806014.439630296,
+     "gain": 0.007080673
+    },
+    {
+     "index": 3,
+     "fromLevel": 52,
+     "cost": 30784101.780629717,
+     "gain": 0.007506413
+    },
+    {
+     "index": 2,
+     "fromLevel": 47,
+     "cost": 32014449.926308848,
+     "gain": 0.007316458
+    },
+    {
+     "index": 0,
+     "fromLevel": 141,
+     "cost": 30967209.71510496,
+     "gain": 0.007031056
+    },
+    {
+     "index": 7,
+     "fromLevel": 8,
+     "cost": 249157707.1532356,
+     "gain": 0.055467839
+    },
+    {
+     "index": 6,
+     "fromLevel": 16,
+     "cost": 196245742.81373554,
+     "gain": 0.038461538
+    },
+    {
+     "index": 0,
+     "fromLevel": 142,
+     "cost": 37160643.90477741,
+     "gain": 0.006982546
+    },
+    {
+     "index": 3,
+     "fromLevel": 53,
+     "cost": 43097742.460415386,
+     "gain": 0.007451353
+    },
+    {
+     "index": 7,
+     "fromLevel": 9,
+     "cost": 311447133.8612665,
+     "gain": 0.052553971
+    },
+    {
+     "index": 0,
+     "fromLevel": 143,
+     "cost": 44592764.78993596,
+     "gain": 0.006934716
+    },
+    {
+     "index": 2,
+     "fromLevel": 48,
+     "cost": 48021674.68588348,
+     "gain": 0.007088289
+    },
+    {
+     "index": 6,
+     "fromLevel": 17,
+     "cost": 264931752.31003252,
+     "gain": 0.037037037
+    },
+    {
+     "index": 0,
+     "fromLevel": 144,
+     "cost": 53511309.70812101,
+     "gain": 0.006887024
+    }
+   ],
+   "endUpgrades": [
+    145,
+    12,
+    49,
+    54,
+    79,
+    33,
+    18,
+    10,
+    0
+   ],
+   "pearlsPerKillBefore": 1.575640845,
+   "pearlsPerKillAfter": 7.168737374,
+   "pearlValueBefore": 379.64708,
+   "pearlValueAfter": 973.31192
+  },
+  {
+   "budget": 1000000,
+   "multikillTotal": 1234.5,
+   "capped": false,
+   "spent": 675254.236452159,
+   "steps": [
+    {
+     "index": 2,
+     "fromLevel": 30,
+     "cost": 32493.5975419,
+     "gain": 0.013930378
+    },
+    {
+     "index": 2,
+     "fromLevel": 31,
+     "cost": 48740.288504857,
+     "gain": 0.013318408
+    },
+    {
+     "index": 2,
+     "fromLevel": 32,
+     "cost": 73110.319828565,
+     "gain": 0.012747077
+    },
+    {
+     "index": 2,
+     "fromLevel": 33,
+     "cost": 109665.361624487,
+     "gain": 0.012212774
+    },
+    {
+     "index": 2,
+     "fromLevel": 34,
+     "cost": 164497.919060932,
+     "gain": 0.011712287
+    },
+    {
+     "index": 2,
+     "fromLevel": 35,
+     "cost": 246746.749891419,
+     "gain": 0.011242754
+    }
+   ],
+   "endUpgrades": [
+    123,
+    12,
+    36,
+    43,
+    79,
+    33,
+    9,
+    0,
+    0
+   ],
+   "pearlsPerKillBefore": 1.575640845,
+   "pearlsPerKillAfter": 1.697839201,
+   "pearlValueBefore": 379.64708,
+   "pearlValueAfter": 379.64708
+  },
+  {
+   "budget": 5000000,
+   "multikillTotal": 0,
+   "capped": false,
+   "spent": 4845667.205494057,
+   "steps": [
+    {
+     "index": 2,
+     "fromLevel": 30,
+     "cost": 32493.5975419,
+     "gain": 0.013899125
+    },
+    {
+     "index": 2,
+     "fromLevel": 31,
+     "cost": 48740.288504857,
+     "gain": 0.013288937
+    },
+    {
+     "index": 2,
+     "fromLevel": 32,
+     "cost": 73110.319828565,
+     "gain": 0.01271924
+    },
+    {
+     "index": 2,
+     "fromLevel": 33,
+     "cost": 109665.361624487,
+     "gain": 0.012186439
+    },
+    {
+     "index": 2,
+     "fromLevel": 34,
+     "cost": 164497.919060932,
+     "gain": 0.011687335
+    },
+    {
+     "index": 2,
+     "fromLevel": 35,
+     "cost": 246746.749891419,
+     "gain": 0.01121908
+    },
+    {
+     "index": 2,
+     "fromLevel": 36,
+     "cost": 370119.990747242,
+     "gain": 0.010779122
+    },
+    {
+     "index": 2,
+     "fromLevel": 37,
+     "cost": 555179.846576307,
+     "gain": 0.010365176
+    },
+    {
+     "index": 2,
+     "fromLevel": 38,
+     "cost": 832769.624801403,
+     "gain": 0.009975187
+    },
+    {
+     "index": 2,
+     "fromLevel": 39,
+     "cost": 1249154.286557597,
+     "gain": 0.009607302
+    },
+    {
+     "index": 0,
+     "fromLevel": 123,
+     "cost": 1163189.220359348,
+     "gain": 0.00801801
+    }
+   ],
+   "endUpgrades": [
+    124,
+    12,
+    40,
+    43,
+    79,
+    33,
+    9,
+    0,
+    0
+   ],
+   "pearlsPerKillBefore": 1.031583287,
+   "pearlsPerKillAfter": 1.166647355,
+   "pearlValueBefore": 248,
+   "pearlValueAfter": 250
+  }
+ ]
+}

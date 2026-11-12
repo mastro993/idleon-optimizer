@@ -8,10 +8,11 @@ runs them in a local Rust core, so a shape, magnifier and grid-point pass costs 
 afford a real search instead of a heuristic.
 
 The current build opens on the dashboard and implements the research section, the Killroy weekly
-forecast, the statue table, the farming field, the Clamworks overview and upgrades, the shadow-ban
-and endgame checks, the hidden BoneJoePickle calculator and the Bravery tab of the Monument
-calculator. The plan covers the full upstream suite: a dashboard that opens every calculator, with
-one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+forecast, the statue table, the farming field, the Clamworks overview, upgrades, optimizer and
+promotion tracker, the shadow-ban and endgame checks, the hidden BoneJoePickle calculator and the
+Bravery tab of the Monument calculator. The plan covers the full upstream suite: a dashboard that
+opens every calculator, with one milestone per section and one issue per feature
+([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -130,9 +131,13 @@ one milestone per section and one issue per feature ([`docs/roadmap.md`](docs/ro
   as it goes.
 - **The Clamworks overview** — pearl balance, pearl value and its searchable four-factor formula
   tree, the 10x chance, drop rates, pearls per kill, promotion level and cost reduction, read from
-  the save. The Upgrades tab lists every pearl upgrade with its bonus and next cost, ranked by
-  marginal pearls-per-kill gain per unit cost. Multi-Scalping takes a multikill total as input until
-  the combat simulator lands.
+  the save. The Upgrades tab lists every pearl upgrade with its bonus and next cost; the Optimizer
+  tab ranks them by marginal pearls-per-kill gain per unit cost and spends a pearl budget on the
+  best affordable level, pricing every purchase at the levels it reaches and running through the
+  shared task runner. Applying the plan previews its levels across the section until the saved
+  levels are shown again. The Promotion tab tracks the saved worker-class level, the next attempt's
+  cost and odds, and all twelve worker-class rewards with their unlock state. Multi-Scalping takes a
+  multikill total as input until the combat simulator lands.
 - **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
   max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
   with effective HP and kill time.
@@ -324,12 +329,13 @@ source references and the credit note stays with the images.
 ## Scope
 
 The current build covers the dashboard, the research grid and its optimizers, the statue table, the
-sailing fleet assignment, the farming field, the Clamworks overview and upgrades, save import,
-project and section-config export/import, the shadow-ban and endgame checks, the hidden
-BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank planner's inputs and
-current-state summary. The rest of the statue milestone (batch set/apply and the statue-farming
-breakdown) and the remaining upstream sections (combat sim, cooking, royal guardian, …) are planned;
-their cards open planned-section placeholders until those milestones land.
+sailing fleet assignment, the farming field, the Clamworks overview, upgrades, optimizer and
+promotion tracker, save import, project and section-config export/import, the shadow-ban and endgame
+checks, the hidden BoneJoePickle calculator, the Monument Bravery tab and the Coral God Rank
+planner's inputs and current-state summary. The rest of the statue milestone (batch set/apply and
+the statue-farming breakdown) and the remaining upstream sections (combat sim, cooking, royal
+guardian, …) are planned; their cards open planned-section placeholders until those milestones
+land.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.
@@ -337,8 +343,9 @@ Account-wide loot, speed and artifact multipliers that need the full account tre
 until SL-02 and SL-03 fill them, which makes the displayed absolute rates a lower bound.
 
 The research formulas are ports of `js/stats/systems/w7/research-math.js`. The Clamworks formulas
-are ports of `js/stats/systems/w7/clamworks.js`. The Coral God Rank data and formulas follow
-`js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit are the remaining
-features of that milestone. Save-specific multipliers collapse into
+are ports of `js/stats/systems/w7/clamworks.js`, and `script/clamworks-oracle.mjs` pins the
+promotion tracker, the rewards and the upgrade plans against that module. The Coral God Rank data
+and formulas follow `js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit
+are the remaining features of that milestone. Save-specific multipliers collapse into
 `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
 lists rather than the save-dependent `build` functions.

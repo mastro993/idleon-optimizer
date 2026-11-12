@@ -1,4 +1,5 @@
-//! Clamworks (W7): pearl value, upgrade costs and upgrade priority.
+//! Clamworks (W7): pearl value, upgrade costs, upgrade priority, the budgeted
+//! upgrade plan and the promotion tracker.
 //!
 //! Ports `js/stats/systems/w7/clamworks.js` from the upstream calculators. Save
 //! fields: `OptionsListAccount` (or `OptLacc`) index 454 is the pearl balance,
@@ -10,6 +11,12 @@
 //! upstream derives from its combat simulator. Until that lands here the total
 //! is an input; the formulas are the same for any value, and 0 leaves the bonus
 //! at zero.
+
+pub mod plan;
+pub mod promotion;
+
+pub use plan::{Input as PlanInput, Plan, Step as PlanStep};
+pub use promotion::Promotion;
 
 use crate::data::clamworks;
 use crate::formula::{FormulaNode, ValueFormat};
@@ -151,7 +158,12 @@ impl Clamworks {
 
     /// Clam HP at the saved promotion level: `1e16 × 30^lv`.
     pub fn clam_hp(&self) -> f64 {
-        1e16 * 30f64.powf(f64::from(self.promotion_level))
+        self.clam_hp_at(self.promotion_level)
+    }
+
+    /// Clam HP at a promotion level: `1e16 × 30^lv`.
+    pub fn clam_hp_at(&self, level: u32) -> f64 {
+        1e16 * 30f64.powf(f64::from(level))
     }
 
     /// The pearl value factors, in upstream display order.
