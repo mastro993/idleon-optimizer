@@ -1,12 +1,13 @@
 //! What the window does when the research section is edited or run.
 
-use crate::sections::research::{ShapeDrag, Tab};
+use crate::sections::research::{ShapeDrag, ShapeRotate, Tab};
 use crate::state::{AppState, RunInputs, ShapeRunInputs};
 use gpui::{App, Context, Window};
 use idleon_common::Control;
+use idleon_research::edit::Snapshot;
 use idleon_research::model::{
-    Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, SimOptions,
-    Target,
+    Effort, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, SimOptions,
+    Simulation, Target,
 };
 use idleon_research::{game, optimize, shape, sim};
 use idleon_ui::runner::TaskState;
@@ -60,6 +61,51 @@ impl AppState {
             .and_then(|cell| game().node_at(cell))
     }
 
+    /// Record the editable state an edit replaced, so it can be undone.
+    fn record(&mut self, before: Snapshot) {
+        if Snapshot::of(&self.simulation) != before {
+            self.research.history.record(before);
+        }
+    }
+
+    /// Run one manual edit, keeping the state it replaced for undo.
+    fn edit(&mut self, change: impl FnOnce(&mut Simulation), cx: &mut Context<Self>) {
+        let before = Snapshot::of(&self.simulation);
+        change(&mut self.simulation);
+        self.record(before);
+        cx.notify();
+    }
+
+    /// Whether an edit can be taken back.
+    pub(crate) fn can_undo(&self) -> bool {
+        self.research.history.can_undo()
+    }
+
+    /// Whether an undone edit can be redone.
+    pub(crate) fn can_redo(&self) -> bool {
+        self.research.history.can_redo()
+    }
+
+    /// Put the layout back the way it was before the last edit.
+    pub(crate) fn undo(&mut self, cx: &mut Context<Self>) {
+        let current = Snapshot::of(&self.simulation);
+        let Some(previous) = self.research.history.undo(current) else {
+            return self.set_status("Nothing left to undo.", cx);
+        };
+        previous.apply(&mut self.simulation);
+        self.set_status("Undid the last edit.", cx);
+    }
+
+    /// Re-apply the edit the last undo took back.
+    pub(crate) fn redo(&mut self, cx: &mut Context<Self>) {
+        let current = Snapshot::of(&self.simulation);
+        let Some(next) = self.research.history.redo(current) else {
+            return self.set_status("Nothing left to redo.", cx);
+        };
+        next.apply(&mut self.simulation);
+        self.set_status("Redid the last edit.", cx);
+    }
+
     /// The topmost shape covering a square, if any.
     pub(crate) fn shape_at(&self, cell: usize) -> Option<usize> {
         self.simulation
@@ -74,6 +120,22 @@ impl AppState {
     /// The shape being dragged, if a drag is in flight.
     pub(crate) fn dragging_shape(&self) -> Option<usize> {
         self.research.shape_drag.as_ref().map(|drag| drag.shape)
+    }
+
+    /// The shape the rotation handle is turning, if a drag is in flight.
+    pub(crate) fn rotating_shape(&self) -> Option<usize> {
+        self.research
+            .shape_rotate
+            .as_ref()
+            .map(|rotate| rotate.shape)
+    }
+
+    /// Turn the picked shape by one step, the keyboard copy of the handle.
+    pub(crate) fn turn_selected(&mut self, delta: f64, cx: &mut Context<Self>) {
+        let Some(index) = self.research.selected_shape else {
+            return self.set_status("Pick a shape on the canvas to turn it.", cx);
+        };
+        self.rotate_shape(index, delta, cx);
     }
 
     /// Start dragging a shape from a pointer position in window pixels.
@@ -93,6 +155,7 @@ impl AppState {
             shape,
             start_pointer: pointer,
             start_position: (placement.x, placement.y),
+            before: Snapshot::of(&self.simulation),
         });
         window.focus(&self.focus, cx);
         cx.notify();
@@ -117,23 +180,83 @@ impl AppState {
 
     /// Finish a drag, keeping the shape where it was dropped.
     pub(crate) fn end_shape_drag(&mut self, cx: &mut Context<Self>) {
-        if self.research.shape_drag.take().is_some() {
-            if let Some(shape) = self.research.selected_shape {
-                let name = game()
-                    .shapes
-                    .get(
-                        self.simulation
-                            .placements
-                            .get(shape)
-                            .map(|p| p.shape)
-                            .unwrap_or(0),
-                    )
-                    .map(|def| def.name.clone())
-                    .unwrap_or_default();
-                self.status = format!("Placed {name} by hand.");
-            }
+        if let Some(drag) = self.research.shape_drag.take() {
+            self.record(drag.before);
+            let name = game()
+                .shapes
+                .get(
+                    self.simulation
+                        .placements
+                        .get(drag.shape)
+                        .map(|p| p.shape)
+                        .unwrap_or(0),
+                )
+                .map(|def| def.name.clone())
+                .unwrap_or_default();
+            self.status = format!("Placed {name} by hand.");
             cx.notify();
         }
+    }
+
+    /// Grab the selected shape's rotation handle at `pointer`, around a centre.
+    pub(crate) fn begin_shape_rotate(
+        &mut self,
+        shape: usize,
+        pointer: (f32, f32),
+        handle_offset: (f32, f32),
+        cx: &mut Context<Self>,
+    ) {
+        let Some(placement) = self.simulation.placements.get(shape) else {
+            return;
+        };
+        // The handle sits at a known offset from the rotation centre, and the
+        // pointer grabbed it, so the centre follows from the grab position.
+        let centre = (pointer.0 - handle_offset.0, pointer.1 - handle_offset.1);
+        self.research.selected_shape = Some(shape);
+        self.research.shape_rotate = Some(ShapeRotate {
+            shape,
+            centre,
+            start_angle: pointer_angle(centre, pointer),
+            start_rot: placement.rot,
+            before: Snapshot::of(&self.simulation),
+        });
+        cx.notify();
+    }
+
+    /// Turn the grabbed shape to follow the pointer.
+    pub(crate) fn rotate_shape_to(&mut self, pointer: (f32, f32), cx: &mut Context<Self>) {
+        let Some(rotate) = self.research.shape_rotate.clone() else {
+            return;
+        };
+        let turn = pointer_angle(rotate.centre, pointer) - rotate.start_angle;
+        self.simulation.saved_overlay = None;
+        if let Some(placement) = self.simulation.placements.get_mut(rotate.shape) {
+            shape::set_rotation(placement, rotate.start_rot + f64::from(turn.to_degrees()));
+        }
+        cx.notify();
+    }
+
+    /// Release the rotation handle; a grab that turned nothing is a click, and
+    /// clicks turn the shape one step to the right.
+    pub(crate) fn end_shape_rotate(&mut self, cx: &mut Context<Self>) {
+        let Some(rotate) = self.research.shape_rotate.take() else {
+            return;
+        };
+        if Snapshot::of(&self.simulation) == rotate.before {
+            self.simulation.saved_overlay = None;
+            if let Some(placement) = self.simulation.placements.get_mut(rotate.shape) {
+                shape::set_rotation(placement, placement.rot + shape::ROT_STEP);
+            }
+        }
+        self.record(rotate.before);
+        let turned = self
+            .simulation
+            .placements
+            .get(rotate.shape)
+            .map(|placement| placement.rot)
+            .unwrap_or(0.0);
+        self.status = format!("Turned the shape to {turned:.0}°.");
+        cx.notify();
     }
 
     /// Highlight a shape without moving it.
@@ -170,8 +293,7 @@ impl AppState {
 
     pub(crate) fn set_level(&mut self, cell: usize, level: u32, cx: &mut Context<Self>) {
         let cap = game().node_at(cell).map(|node| node.max_lv).unwrap_or(0);
-        self.simulation.grid.set(cell, level.min(cap));
-        cx.notify();
+        self.edit(|sim| sim.grid.set(cell, level.min(cap)), cx);
     }
 
     pub(crate) fn bump_level(&mut self, cell: usize, delta: i64, cx: &mut Context<Self>) {
@@ -201,6 +323,11 @@ impl AppState {
     /// Open the Rates editor on an observation the dashboard preview picked.
     pub(crate) fn open_observation(&mut self, obs: usize, cx: &mut Context<Self>) {
         self.research.tab = Tab::Rates;
+        self.select_observation(obs, cx);
+    }
+
+    /// Pick an observation for the magnifier assignment.
+    pub(crate) fn select_observation(&mut self, obs: usize, cx: &mut Context<Self>) {
         self.research.selected_observation = Some(obs);
         cx.notify();
     }
@@ -384,13 +511,19 @@ impl AppState {
             .or_else(|| self.simulation.grid.live_cells().next())
             .unwrap_or(0);
         let [x, y] = shape::cell_origin(cell);
-        self.simulation.saved_overlay = None;
-        self.simulation.placements.push(Placement {
-            shape: shape.id,
-            x: shape::snap(x - shape.dims[0] / 2.0),
-            y: shape::snap(y - shape.dims[1] / 2.0),
-            rot: 0.0,
-        });
+        self.edit(
+            |sim| {
+                sim.saved_overlay = None;
+                sim.placements.push(Placement {
+                    shape: shape.id,
+                    x: shape::snap(x - shape.dims[0] / 2.0),
+                    y: shape::snap(y - shape.dims[1] / 2.0),
+                    rot: 0.0,
+                });
+            },
+            cx,
+        );
+        self.research.selected_shape = Some(self.simulation.placements.len() - 1);
         self.set_status(
             format!(
                 "Added {} on {}.",
@@ -403,78 +536,101 @@ impl AppState {
 
     /// Turn a shape a step, keeping it on the lattice.
     pub(crate) fn rotate_shape(&mut self, index: usize, delta: f64, cx: &mut Context<Self>) {
-        self.simulation.saved_overlay = None;
-        if let Some(placement) = self.simulation.placements.get_mut(index) {
-            placement.rot = (placement.rot + delta).rem_euclid(360.0);
-        }
-        cx.notify();
+        self.edit(
+            |sim| {
+                sim.saved_overlay = None;
+                if let Some(placement) = sim.placements.get_mut(index) {
+                    let turned = placement.rot + delta;
+                    shape::set_rotation(placement, turned);
+                }
+            },
+            cx,
+        );
     }
 
     /// Move a shape by whole steps of the placement lattice.
     pub(crate) fn nudge_shape(&mut self, index: usize, dx: f64, dy: f64, cx: &mut Context<Self>) {
-        self.simulation.saved_overlay = None;
-        if let Some(placement) = self.simulation.placements.get_mut(index) {
-            placement.x = shape::snap(placement.x + dx);
-            placement.y = shape::snap(placement.y + dy);
-        }
-        cx.notify();
+        self.edit(
+            |sim| {
+                sim.saved_overlay = None;
+                if let Some(placement) = sim.placements.get_mut(index) {
+                    placement.x = shape::snap(placement.x + dx);
+                    placement.y = shape::snap(placement.y + dy);
+                }
+            },
+            cx,
+        );
     }
 
     pub(crate) fn remove_shape(&mut self, index: usize, cx: &mut Context<Self>) {
-        self.simulation.saved_overlay = None;
-        if index < self.simulation.placements.len() {
-            self.simulation.placements.remove(index);
-        }
-        cx.notify();
+        self.edit(
+            |sim| {
+                sim.saved_overlay = None;
+                if index < sim.placements.len() {
+                    sim.placements.remove(index);
+                }
+            },
+            cx,
+        );
     }
 
-    /// Add a magnifier of `kind` to the best free observation.
-    pub(crate) fn add_mag(&mut self, kind: &str, cx: &mut Context<Self>) {
-        let kind = match kind {
-            "monocle" => MagKind::Monocle,
-            "kaleidoscope" => MagKind::Kaleidoscope,
-            _ => MagKind::Regular,
-        };
-        let cap = sim::mag_cap(self.simulation.research_level) as usize;
-        let to_find = sim::observations_to_find(
-            self.simulation.research_level,
-            &self.simulation.observations.found,
-        );
-        let slot = (0..to_find).find(|obs| {
-            self.simulation
-                .mags
-                .iter()
-                .filter(|mag| mag.slot == Some(*obs))
-                .count()
-                < cap
-        });
-        match slot {
-            Some(slot) => {
-                self.simulation.mags.push(Mag::new(kind, Some(slot)));
-                self.status = format!("Added a {} on #{}.", kind_label(kind), slot + 1);
-            }
-            None => self.status = "No observation has room for another magnifier.".into(),
+    /// Put a free magnifier of `kind` on `obs`, if the pool and the slot allow it.
+    pub(crate) fn assign_mag(&mut self, kind: MagKind, obs: usize, cx: &mut Context<Self>) {
+        let before = Snapshot::of(&self.simulation);
+        if !sim::place_mag(&mut self.simulation, &self.context, kind, obs) {
+            return self.set_status(
+                format!(
+                    "No free {} for {}.",
+                    kind_label(kind),
+                    observation_name(obs)
+                ),
+                cx,
+            );
         }
-        cx.notify();
+        self.record(before);
+        self.set_status(
+            format!("Put a {} on {}.", kind_label(kind), observation_name(obs)),
+            cx,
+        );
+    }
+
+    /// Take the newest magnifier off `obs` and back into the pool.
+    pub(crate) fn lift_mag(&mut self, obs: usize, cx: &mut Context<Self>) {
+        let before = Snapshot::of(&self.simulation);
+        if !sim::lift_mag(&mut self.simulation, obs) {
+            return self.set_status(format!("{} holds no magnifier.", observation_name(obs)), cx);
+        }
+        self.record(before);
+        self.set_status(
+            format!("Took a magnifier off {}.", observation_name(obs)),
+            cx,
+        );
     }
 
     pub(crate) fn clear_mags(&mut self, cx: &mut Context<Self>) {
-        self.simulation.mags.clear();
-        self.set_status("Cleared the magnifier pool.", cx);
+        self.edit(|sim| sim.mags.clear(), cx);
     }
 
     pub(crate) fn toggle_found(&mut self, obs: usize, cx: &mut Context<Self>) {
-        if let Some(found) = self.simulation.observations.found.get_mut(obs) {
-            *found = !*found;
-        }
-        cx.notify();
+        self.edit(
+            |sim| {
+                if let Some(found) = sim.observations.found.get_mut(obs) {
+                    *found = !*found;
+                }
+            },
+            cx,
+        );
     }
 
     pub(crate) fn bump_insight(&mut self, obs: usize, delta: i64, cx: &mut Context<Self>) {
-        if let Some(level) = self.simulation.observations.insight_level.get_mut(obs) {
-            *level = (*level as i64 + delta).clamp(0, 400) as u32;
-        }
-        cx.notify();
+        self.edit(
+            |sim| {
+                if let Some(level) = sim.observations.insight_level.get_mut(obs) {
+                    *level = (*level as i64 + delta).clamp(0, 400) as u32;
+                }
+            },
+            cx,
+        );
     }
 
     pub(crate) fn set_supplements_open(&mut self, open: bool, cx: &mut Context<Self>) {
@@ -539,15 +695,20 @@ impl AppState {
     }
 
     pub(crate) fn reset_layout(&mut self, cx: &mut Context<Self>) {
-        self.simulation.placements.clear();
-        self.simulation.mags.clear();
+        self.edit(
+            |sim| {
+                sim.placements.clear();
+                sim.mags.clear();
+            },
+            cx,
+        );
         self.set_status("Cleared shapes and magnifiers.", cx);
     }
 
     pub(crate) fn apply_result(&mut self, cx: &mut Context<Self>) {
         if let Some(result) = self.optimizer.update(cx, |runner, _| runner.take_result()) {
             let gain = result.gain_pct();
-            self.simulation = result.after;
+            self.edit(move |sim| *sim = result.after, cx);
             self.status = format!("Applied the optimized layout ({gain:+.1}%).");
         }
         cx.notify();
@@ -648,8 +809,13 @@ impl AppState {
                 cx,
             );
         }
-        self.simulation.placements = result.placements;
-        self.simulation.saved_overlay = None;
+        self.edit(
+            |sim| {
+                sim.placements = result.placements;
+                sim.saved_overlay = None;
+            },
+            cx,
+        );
         self.set_status(
             format!(
                 "Applied {} shapes at {} EXP/hr.",
@@ -667,6 +833,20 @@ fn kind_label(kind: MagKind) -> &'static str {
         MagKind::Monocle => "monocle",
         MagKind::Kaleidoscope => "kaleidoscope",
     }
+}
+
+/// An observation's display name, for the status line.
+fn observation_name(obs: usize) -> String {
+    game()
+        .observations
+        .get(obs)
+        .map(|observation| observation.name.replace('_', " "))
+        .unwrap_or_else(|| format!("observation {}", obs + 1))
+}
+
+/// The pointer's angle around `centre`, in radians.
+fn pointer_angle(centre: (f32, f32), pointer: (f32, f32)) -> f32 {
+    (pointer.1 - centre.1).atan2(pointer.0 - centre.0)
 }
 
 /// One arrow press from `current`, clamped to the grid's edges.
@@ -693,5 +873,35 @@ mod tests {
         assert_eq!(step_cell(Some(19), 1, 0), 19);
         assert_eq!(step_cell(Some(0), -1, -1), 0);
         assert_eq!(step_cell(None, 1, 0), 0);
+    }
+
+    /// The canvas handle turns by the angle the pointer swings around the shape;
+    /// the `[` and `]` keys step a fixed 5°. A quarter turn is 18 steps either way.
+    #[test]
+    fn a_pointer_swing_and_keyboard_steps_agree_on_the_rotation() {
+        let centre = (200.0, 200.0);
+        let grabbed = pointer_angle(centre, (200.0, 120.0));
+        let swung = pointer_angle(centre, (280.0, 200.0));
+        let mut dragged = idleon_research::model::Placement {
+            shape: 0,
+            x: 0.0,
+            y: 0.0,
+            rot: 0.0,
+        };
+        let swing = f64::from((swung - grabbed).to_degrees());
+        let start = dragged.rot;
+        shape::set_rotation(&mut dragged, start + swing);
+
+        let mut stepped = dragged;
+        stepped.rot = 0.0;
+        for _ in 0..(90.0 / shape::ROT_STEP) as usize {
+            let next = stepped.rot + shape::ROT_STEP;
+            shape::set_rotation(&mut stepped, next);
+        }
+        assert_eq!(dragged.rot, 90.0);
+        assert_eq!(
+            dragged, stepped,
+            "a dragged quarter turn equals 18 key steps"
+        );
     }
 }

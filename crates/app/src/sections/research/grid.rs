@@ -1,6 +1,8 @@
 //! The 20×12 research grid: cells, level badges and the shape polygons over them.
 
 use crate::state::AppState;
+use ely_gpui_component::buttons::IconButton;
+use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
@@ -20,13 +22,18 @@ gpui::actions!(
         LevelUp,
         LevelDown,
         Deselect,
+        RotateLeft,
+        RotateRight,
+        Undo,
+        Redo,
     ]
 );
 
 /// Key context of the grid canvas: bindings here never fire while an input has focus.
 pub(crate) const GRID_CONTEXT: &str = "ResearchGrid";
 
-/// Arrow keys move the selected square, `+`/`-` level it, Escape deselects.
+/// Arrow keys move the selected square, `+`/`-` level it, `[`/`]` turn the
+/// picked shape, `secondary-z` undoes and Escape deselects.
 pub(crate) fn bind_keys(cx: &mut App) {
     let context = Some(GRID_CONTEXT);
     cx.bind_keys([
@@ -37,6 +44,10 @@ pub(crate) fn bind_keys(cx: &mut App) {
         KeyBinding::new("=", LevelUp, context),
         KeyBinding::new("shift-=", LevelUp, context),
         KeyBinding::new("-", LevelDown, context),
+        KeyBinding::new("[", RotateLeft, context),
+        KeyBinding::new("]", RotateRight, context),
+        KeyBinding::new("secondary-z", Undo, context),
+        KeyBinding::new("secondary-shift-z", Redo, context),
         KeyBinding::new("escape", Deselect, context),
     ]);
 }
@@ -46,6 +57,9 @@ pub(crate) const CELL_PX: f32 = 46.0;
 const CELL: f32 = CELL_PX;
 /// The geometry data is authored at 30 px per cell.
 const DATA_CELL: f32 = 30.0;
+/// Radius of the rotation handle, and how far it sits outside the shape.
+const HANDLE: f32 = 7.0;
+const HANDLE_GAP: f32 = 16.0;
 
 /// The canvas plus its legend.
 pub(crate) fn grid_pane(
@@ -66,14 +80,20 @@ pub(crate) fn grid_pane(
         .relative()
         .on_mouse_move(
             cx.listener(|state, event: &gpui::MouseMoveEvent, _window, cx| {
-                if state.dragging_shape().is_some() {
-                    state.drag_shape_to((event.position.x.into(), event.position.y.into()), cx);
+                let pointer = (event.position.x.into(), event.position.y.into());
+                if state.rotating_shape().is_some() {
+                    state.rotate_shape_to(pointer, cx);
+                } else if state.dragging_shape().is_some() {
+                    state.drag_shape_to(pointer, cx);
                 }
             }),
         )
         .on_mouse_up(
             gpui::MouseButton::Left,
-            cx.listener(|state, _event, _window, cx| state.end_shape_drag(cx)),
+            cx.listener(|state, _event, _window, cx| {
+                state.end_shape_drag(cx);
+                state.end_shape_rotate(cx);
+            }),
         )
         .flex()
         .flex_col()
@@ -115,6 +135,9 @@ pub(crate) fn grid_pane(
             .size_full()
             .child(overlay),
     );
+    if let Some(handle) = rotate_handle(state, cx) {
+        board = board.child(handle);
+    }
 
     div()
         .id("grid-card")
@@ -138,6 +161,14 @@ pub(crate) fn grid_pane(
         .on_action(cx.listener(|state, _: &LevelDown, _window, cx| {
             state.bump_selected(-1, cx);
         }))
+        .on_action(cx.listener(|state, _: &RotateLeft, _window, cx| {
+            state.turn_selected(-idleon_research::shape::ROT_STEP, cx);
+        }))
+        .on_action(cx.listener(|state, _: &RotateRight, _window, cx| {
+            state.turn_selected(idleon_research::shape::ROT_STEP, cx);
+        }))
+        .on_action(cx.listener(|state, _: &Undo, _window, cx| state.undo(cx)))
+        .on_action(cx.listener(|state, _: &Redo, _window, cx| state.redo(cx)))
         .on_action(cx.listener(|state, _: &Deselect, _window, cx| {
             state.deselect(cx);
         }))
@@ -160,6 +191,7 @@ pub(crate) fn grid_pane(
                 .border_b_1()
                 .border_color(colors.1)
                 .child(div().child("Research grid"))
+                .child(grid_tools(state, cx))
                 .child(
                     Caption::new(format!(
                         "{} squares · {} shaped cells",
@@ -271,6 +303,86 @@ fn grid_cell(
             }),
         )
         .child(label)
+}
+
+/// The undo and redo buttons, in the grid card's header.
+fn grid_tools(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let entity = cx.entity();
+    let undo = entity.clone();
+    let redo = entity.clone();
+    div()
+        .id("grid-tools")
+        .flex()
+        .items_center()
+        .gap_1()
+        .child(
+            IconButton::new("grid-undo", IconName::Undo2)
+                .tooltip("Undo the last edit")
+                .disabled(!state.can_undo())
+                .on_click(move |_event, _window, cx| {
+                    undo.update(cx, |state, cx| state.undo(cx));
+                }),
+        )
+        .child(
+            IconButton::new("grid-redo", IconName::Redo2)
+                .tooltip("Redo the last undo")
+                .disabled(!state.can_redo())
+                .on_click(move |_event, _window, cx| {
+                    redo.update(cx, |state, cx| state.redo(cx));
+                }),
+        )
+}
+
+/// The rotation handle on the picked shape: drag it to turn, click it to step 5°.
+fn rotate_handle(state: &AppState, cx: &mut Context<AppState>) -> Option<impl IntoElement> {
+    let index = state.research.selected_shape?;
+    let placement = state.simulation.placements.get(index)?;
+    let def = game().shapes.get(placement.shape)?;
+    let scale = (CELL / DATA_CELL) as f64;
+    let polygon = idleon_research::shape::polygon_at(def, placement.x, placement.y, placement.rot);
+    let mut min = (f64::INFINITY, f64::INFINITY);
+    let mut max = (f64::NEG_INFINITY, f64::NEG_INFINITY);
+    for [x, y] in &polygon {
+        min = (min.0.min(*x), min.1.min(*y));
+        max = (max.0.max(*x), max.1.max(*y));
+    }
+    // Board pixels, where one logical pixel is one drawn pixel.
+    let (min_x, min_y) = ((min.0 * scale) as f32, (min.1 * scale) as f32);
+    let max_x = (max.0 * scale) as f32;
+    let centre = (
+        ((placement.x + def.dims[0] / 2.0) * scale) as f32,
+        ((placement.y + def.dims[1] / 2.0) * scale) as f32,
+    );
+    // A shape on the top edge would put its handle outside the board, where the
+    // clipped canvas cannot be grabbed, so the handle stays on the board.
+    let handle = ((min_x + max_x) / 2.0, (min_y - HANDLE_GAP).max(HANDLE));
+    let offset = (handle.0 - centre.0, handle.1 - centre.1);
+    let color = super::colors::shape_color(placement.shape);
+    Some(
+        div()
+            .id("shape-rotate-handle")
+            .role(gpui::Role::Button)
+            .aria_label(format!("Rotate {} ({}°)", def.name, placement.rot))
+            .absolute()
+            .left(px(handle.0 - HANDLE))
+            .top(px(handle.1 - HANDLE))
+            .size(px(HANDLE * 2.0))
+            .rounded_full()
+            .bg(color)
+            .border_2()
+            .border_color(gpui::white())
+            .tooltip(ely_gpui_component::primitives::Tooltip::text(
+                "Drag to rotate · click turns 5°",
+            ))
+            .on_mouse_down(
+                gpui::MouseButton::Left,
+                cx.listener(move |state, event: &gpui::MouseDownEvent, window, cx| {
+                    let pointer = (event.position.x.into(), event.position.y.into());
+                    state.begin_shape_rotate(index, pointer, offset, cx);
+                    window.focus(&state.focus, cx);
+                }),
+            ),
+    )
 }
 
 fn shape_overlay(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {

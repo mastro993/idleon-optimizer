@@ -130,6 +130,10 @@ node script/mcp-sections.mjs --baseline target/mcp-sections-baseline
 node script/mcp-sections.mjs --baseline target/mcp-sections-baseline --update-baseline
 ```
 
+A page whose cards own their own scroll areas needs a wheel point on the page's margin, not on a
+card: `bringIntoView(lane, id, await wheelPoint(lane, '<page-scroll-id>'))` scrolls the page, while
+the fixed default point can land on an inner table that swallows the wheel.
+
 Screenshots are element captures of the section body, so small window-position differences between
 runs do not matter. Captures park the pointer first, which keeps hover styling out of the baseline.
 `--baseline` compares with a per-channel tolerance and a 0.2% mismatch budget (anti-aliasing jitter

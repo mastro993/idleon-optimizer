@@ -10,7 +10,7 @@ use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_research::game;
-use idleon_research::model::coord;
+use idleon_research::model::{MagKind, coord};
 use idleon_research::{shape, sim};
 
 pub(crate) fn inspector_pane(
@@ -330,53 +330,140 @@ fn shapes_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoEle
     card.child(list)
 }
 
+/// The magnifier assignment: the pool by kind, and the selected observation.
 fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+    let colors = &cx.theme().colors;
     let owned = state.magnifiers_owned();
-    let placed = state.simulation.mags.len();
+    let placed = state
+        .simulation
+        .mags
+        .iter()
+        .filter(|mag| mag.slot.is_some())
+        .count();
     let cap = sim::mag_cap(state.simulation.research_level);
+    let pool = sim::mag_pool(&state.simulation, &state.context);
+    let selected = state
+        .research
+        .selected_observation
+        .filter(|obs| *obs < game().observations.len());
     let entity = cx.entity();
-    let add_regular = entity.clone();
-    let add_monocle = entity.clone();
-    let add_kaleido = entity.clone();
     let clear = entity.clone();
 
-    Card::new()
-        .header(CardHeader::new("Magnifiers").description(format!(
-            "{placed} placed · {owned} owned · {cap} per observation"
-        )))
-        .child(
+    let card = Card::new().header(
+        CardHeader::new("Magnifiers")
+            .description(format!(
+                "{placed} placed · {owned} owned · {cap} per observation"
+            ))
+            .action(
+                Button::new("mag-clear", "Clear")
+                    .size(ely_gpui_component::theme::ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        clear.update(cx, |state, cx| state.clear_mags(cx));
+                    }),
+            ),
+    );
+
+    let mut pool_row = div()
+        .id("mag-pool")
+        .flex()
+        .flex_wrap()
+        .items_center()
+        .gap_2()
+        .px_3()
+        .pb_2();
+    for kind in [MagKind::Regular, MagKind::Monocle, MagKind::Kaleidoscope] {
+        pool_row = pool_row.child(
             div()
+                .id(format!("mag-free-{}", kind_label(kind)))
+                .role(gpui::Role::Label)
+                .aria_label(format!(
+                    "{}: {} free of {}",
+                    kind_label(kind),
+                    pool.free(kind, &state.simulation.mags),
+                    pool.of(kind)
+                ))
                 .flex()
                 .items_center()
-                .gap_2()
-                .p_3()
-                .child(
-                    Button::new("mag-add-regular", "Glass")
-                        .size(ely_gpui_component::theme::ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            add_regular.update(cx, |state, cx| state.add_mag("regular", cx));
-                        }),
-                )
-                .child(
-                    Button::new("mag-add-monocle", "Monocle")
-                        .size(ely_gpui_component::theme::ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            add_monocle.update(cx, |state, cx| state.add_mag("monocle", cx));
-                        }),
-                )
-                .child(
-                    Button::new("mag-add-kaleido", "Kaleido")
-                        .size(ely_gpui_component::theme::ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            add_kaleido.update(cx, |state, cx| state.add_mag("kaleidoscope", cx));
-                        }),
-                )
-                .child(
-                    Button::new("mag-clear", "Clear")
-                        .size(ely_gpui_component::theme::ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            clear.update(cx, |state, cx| state.clear_mags(cx));
-                        }),
-                ),
-        )
+                .gap_1()
+                .child(div().size(px(8.0)).rounded_full().bg(mag_color(kind)))
+                .child(Caption::new(format!(
+                    "{} {free}/{of}",
+                    kind_label(kind),
+                    free = pool.free(kind, &state.simulation.mags),
+                    of = pool.of(kind)
+                ))),
+        );
+    }
+
+    let Some(obs) = selected else {
+        return card.child(pool_row).child(
+            div().px_3().pb_3().child(
+                Caption::new("Pick an observation on the Rates tab to assign magnifiers.")
+                    .text_color(colors.fg_muted),
+            ),
+        );
+    };
+
+    let name = game().observations[obs].name.replace('_', " ");
+    let on_slot = state
+        .simulation
+        .mags
+        .iter()
+        .filter(|mag| mag.slot == Some(obs))
+        .count();
+    let lift = entity.clone();
+    let mut assign_row = div()
+        .id("mag-assign")
+        .flex()
+        .flex_wrap()
+        .items_center()
+        .gap_2()
+        .px_3()
+        .pb_3();
+    for kind in [MagKind::Regular, MagKind::Monocle, MagKind::Kaleidoscope] {
+        let assign = entity.clone();
+        let free = pool.free(kind, &state.simulation.mags);
+        assign_row = assign_row.child(
+            Button::new(format!("mag-add-{}", kind_label(kind)), kind_label(kind))
+                .size(ely_gpui_component::theme::ControlSize::Sm)
+                .disabled(free == 0 || on_slot >= cap as usize)
+                .on_click(move |_event, _window, cx| {
+                    assign.update(cx, |state, cx| state.assign_mag(kind, obs, cx));
+                }),
+        );
+    }
+    assign_row = assign_row.child(
+        Button::new("mag-lift", "Remove")
+            .size(ely_gpui_component::theme::ControlSize::Sm)
+            .disabled(on_slot == 0)
+            .on_click(move |_event, _window, cx| {
+                lift.update(cx, |state, cx| state.lift_mag(obs, cx));
+            }),
+    );
+
+    card.child(pool_row)
+        .child(div().px_3().pb_1().child(Caption::new(format!(
+            "#{} {name} · {on_slot}/{cap} magnifiers",
+            obs + 1
+        ))))
+        .child(assign_row)
+}
+
+/// The pool colour of a magnifier kind, as upstream's observation editor draws it.
+fn mag_color(kind: MagKind) -> gpui::Hsla {
+    use gpui::rgb;
+    match kind {
+        MagKind::Regular => rgb(0x81c784),
+        MagKind::Monocle => rgb(0xce93d8),
+        MagKind::Kaleidoscope => rgb(0x4dd0e1),
+    }
+    .into()
+}
+
+fn kind_label(kind: MagKind) -> &'static str {
+    match kind {
+        MagKind::Regular => "Glass",
+        MagKind::Monocle => "Monocle",
+        MagKind::Kaleidoscope => "Kaleido",
+    }
 }

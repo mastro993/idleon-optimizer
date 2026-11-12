@@ -620,6 +620,91 @@ pub fn can_rotate(research_level: u32) -> bool {
     research_level >= 90
 }
 
+/// How many magnifiers of each kind the account owns.
+///
+/// Upstream `growMagPoolTyped` splits the owned pool by where the extra kinds
+/// come from: kaleidoscopes from grid square 72 and event shop 33, monocles from
+/// grid square 91, and every remaining magnifier a plain glass.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MagPool {
+    pub regular: u32,
+    pub monocle: u32,
+    pub kaleidoscope: u32,
+}
+
+impl MagPool {
+    /// The count for one kind.
+    pub fn of(&self, kind: MagKind) -> u32 {
+        match kind {
+            MagKind::Regular => self.regular,
+            MagKind::Monocle => self.monocle,
+            MagKind::Kaleidoscope => self.kaleidoscope,
+        }
+    }
+
+    /// Magnifiers of `kind` already sitting on an observation.
+    pub fn placed(&self, kind: MagKind, mags: &[Mag]) -> u32 {
+        mags.iter()
+            .filter(|mag| mag.kind == kind && mag.slot.is_some())
+            .count() as u32
+    }
+
+    /// Magnifiers of `kind` still in the pool.
+    pub fn free(&self, kind: MagKind, mags: &[Mag]) -> u32 {
+        self.of(kind).saturating_sub(self.placed(kind, mags))
+    }
+}
+
+/// The owned magnifiers, split by kind.
+pub fn mag_pool(sim: &Simulation, ctx: &SimContext) -> MagPool {
+    let owned = magnifiers_owned(sim, ctx);
+    let kaleidoscope = (sim.grid.level(72) as f64 + ctx.event_shop(33)).round() as u32;
+    let monocle = sim.grid.level(91);
+    MagPool {
+        regular: owned.saturating_sub(kaleidoscope + monocle),
+        monocle,
+        kaleidoscope,
+    }
+}
+
+/// Put a free magnifier of `kind` on observation `obs`.
+///
+/// Fails when the observation already holds [`mag_cap`] magnifiers or the pool
+/// has no free one of that kind. An unplaced pool entry is reused before a new
+/// one is added, as upstream's drop handler does.
+pub fn place_mag(sim: &mut Simulation, ctx: &SimContext, kind: MagKind, obs: usize) -> bool {
+    if obs >= game().observations.len() {
+        return false;
+    }
+    let cap = mag_cap(sim.research_level) as usize;
+    if sim.mags.iter().filter(|mag| mag.slot == Some(obs)).count() >= cap {
+        return false;
+    }
+    if mag_pool(sim, ctx).free(kind, &sim.mags) == 0 {
+        return false;
+    }
+    match sim
+        .mags
+        .iter_mut()
+        .find(|mag| mag.kind == kind && mag.slot.is_none())
+    {
+        Some(mag) => mag.slot = Some(obs),
+        None => sim.mags.push(Mag::new(kind, Some(obs))),
+    }
+    true
+}
+
+/// Take the newest magnifier off observation `obs`, back into the pool.
+pub fn lift_mag(sim: &mut Simulation, obs: usize) -> bool {
+    match sim.mags.iter_mut().rev().find(|mag| mag.slot == Some(obs)) {
+        Some(mag) => {
+            mag.slot = None;
+            true
+        }
+        None => false,
+    }
+}
+
 /// Advance a level while the accumulated EXP covers the next requirement.
 ///
 /// The `1e-9` slack and the clamp are upstream `advanceResearchLevel`'s: a jump
@@ -761,6 +846,67 @@ mod tests {
         assert_eq!(mag_cap(40), 2);
         assert_eq!(mag_cap(70), 3);
         assert_eq!(mag_cap(120), 4);
+    }
+
+    #[test]
+    fn the_pool_splits_owned_magnifiers_by_kind() {
+        let (mut sim, ctx) = filled();
+        sim.research_level = 100;
+        sim.grid = GridState::seeded(1);
+        let pool = mag_pool(&sim, &ctx);
+        assert_eq!(pool.kaleidoscope, 1, "one kaleidoscope from grid square 72");
+        assert_eq!(pool.monocle, 1, "one monocle from grid square 91");
+        assert_eq!(
+            pool.regular + pool.monocle + pool.kaleidoscope,
+            magnifiers_owned(&sim, &ctx),
+            "the split adds up to the owned count"
+        );
+        assert!(pool.regular >= 2, "the level grants plain glasses");
+    }
+
+    #[test]
+    fn placing_a_magnifier_respects_the_slot_cap_and_its_kind() {
+        let (mut sim, ctx) = filled();
+        sim.research_level = 100;
+        sim.grid = GridState::seeded(1);
+        sim.mags.clear();
+        assert!(place_mag(&mut sim, &ctx, MagKind::Kaleidoscope, 3));
+        assert!(!place_mag(&mut sim, &ctx, MagKind::Kaleidoscope, 4));
+        assert_eq!(sim.mags.len(), 1, "no second kaleidoscope is invented");
+        // The slot cap holds whatever the pool still has free.
+        let cap = mag_cap(sim.research_level);
+        for _ in 1..cap {
+            assert!(place_mag(&mut sim, &ctx, MagKind::Regular, 3));
+        }
+        assert!(!place_mag(&mut sim, &ctx, MagKind::Regular, 3));
+        assert_eq!(
+            sim.mags.iter().filter(|mag| mag.slot == Some(3)).count(),
+            cap as usize
+        );
+        // An unplaced entry from a save is what a new placement reuses first.
+        lift_mag(&mut sim, 3);
+        assert!(place_mag(&mut sim, &ctx, MagKind::Regular, 5));
+        assert_eq!(sim.mags.iter().filter(|mag| mag.slot.is_none()).count(), 0);
+    }
+
+    #[test]
+    fn lifting_returns_the_newest_magnifier_of_that_observation() {
+        let (mut sim, _ctx) = filled();
+        sim.mags = vec![
+            Mag::new(MagKind::Regular, Some(3)),
+            Mag::new(MagKind::Monocle, Some(3)),
+            Mag::new(MagKind::Regular, Some(4)),
+        ];
+        assert!(lift_mag(&mut sim, 3));
+        assert_eq!(sim.mags[1].slot, None, "the last one on the slot leaves");
+        assert!(lift_mag(&mut sim, 3));
+        assert_eq!(sim.mags[0].slot, None);
+        assert!(!lift_mag(&mut sim, 3), "the slot is empty");
+        assert_eq!(
+            sim.mags[2].slot,
+            Some(4),
+            "another slot keeps its magnifier"
+        );
     }
 
     #[test]

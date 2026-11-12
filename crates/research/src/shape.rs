@@ -15,7 +15,7 @@ pub const CELL: f64 = 30.0;
 /// First cell's centre, in grid pixels.
 pub(crate) const ORIGIN: [f64; 2] = [15.0, 24.0];
 /// Rotation steps the game allows, in degrees.
-pub(crate) const ROT_STEP: f64 = 5.0;
+pub const ROT_STEP: f64 = 5.0;
 /// Pixel lattice the optimizer snaps placements to, keeping coverage exact.
 pub(crate) const PHASE_STEP: i32 = 5;
 /// Distinct pixel phases per axis.
@@ -194,6 +194,17 @@ pub fn snap(value: f64) -> f64 {
     (value / PHASE_STEP as f64).round() * PHASE_STEP as f64
 }
 
+/// Turn a placement to `degrees`, on the game's rotation lattice.
+///
+/// A drag lands wherever the pointer stops, so the angle is snapped to the 5°
+/// step the coverage table indexes; a keyboard step is already on it and passes
+/// through unchanged.
+pub fn set_rotation(placement: &mut Placement, degrees: f64) {
+    let wrapped = degrees.rem_euclid(360.0);
+    let snapped = (wrapped / ROT_STEP).round() * ROT_STEP;
+    placement.rot = snapped.rem_euclid(360.0);
+}
+
 /// Cells a placement covers, within the grid and on an existing node.
 pub fn cells_at(placement: &Placement) -> Vec<usize> {
     let game = game();
@@ -312,6 +323,29 @@ mod tests {
                 assert_eq!(fast, exact, "shape {} at {:?}", shape.id, placement);
             }
         }
+    }
+
+    #[test]
+    fn a_pointer_angle_and_a_keyboard_step_land_on_the_same_rotation() {
+        let start = covering(3, 129);
+        let mut stepped = start;
+        for _ in 0..3 {
+            let next = stepped.rot + ROT_STEP;
+            set_rotation(&mut stepped, next);
+        }
+        let mut dragged = start;
+        set_rotation(&mut dragged, 15.6);
+        assert_eq!(stepped.rot, 15.0);
+        assert_eq!(dragged, stepped, "a 15.6° drag is a 15° placement");
+        set_rotation(&mut dragged, -5.0);
+        assert_eq!(dragged.rot, 355.0, "a left turn wraps below zero");
+        assert_eq!(
+            cells_at(&dragged),
+            cells_at(&Placement {
+                rot: 355.0,
+                ..start
+            })
+        );
     }
 
     #[test]

@@ -21,6 +21,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
+use idleon_research::edit::{History, Snapshot};
 use idleon_ui::format;
 
 /// The research page's tabs; the dashboard opens first, as upstream.
@@ -74,6 +75,20 @@ pub(crate) struct ShapeDrag {
     pub(crate) shape: usize,
     pub(crate) start_pointer: (f32, f32),
     pub(crate) start_position: (f64, f64),
+    /// The editable state the drag started from, recorded when it ends.
+    pub(crate) before: Snapshot,
+}
+
+/// A rotation drag on the shape's canvas handle.
+#[derive(Clone, Debug)]
+pub(crate) struct ShapeRotate {
+    pub(crate) shape: usize,
+    /// The shape's rotation centre, in window pixels.
+    pub(crate) centre: (f32, f32),
+    /// The pointer's angle around the centre when the handle was grabbed.
+    pub(crate) start_angle: f32,
+    pub(crate) start_rot: f64,
+    pub(crate) before: Snapshot,
 }
 
 /// The research section's live state, kept in `AppState` while the window is open.
@@ -83,6 +98,10 @@ pub(crate) struct State {
     pub(crate) selected_cell: Option<usize>,
     /// The shape the pointer is dragging, and where the drag started.
     pub(crate) shape_drag: Option<ShapeDrag>,
+    /// The rotation drag the canvas handle is driving, if one is in flight.
+    pub(crate) shape_rotate: Option<ShapeRotate>,
+    /// The manual edits that can be undone and redone, newest last.
+    pub(crate) history: History,
     /// The shape whose row or polygon was last picked.
     pub(crate) selected_shape: Option<usize>,
     /// The observation the dashboard preview last opened.
@@ -111,6 +130,8 @@ impl State {
             tab: Tab::default(),
             selected_cell: None,
             shape_drag: None,
+            shape_rotate: None,
+            history: History::new(),
             selected_shape: None,
             selected_observation: None,
             shape_presets: Vec::new(),

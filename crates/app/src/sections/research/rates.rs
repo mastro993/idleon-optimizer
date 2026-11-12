@@ -311,14 +311,22 @@ fn observations_card(
             .count();
         let bump = entity.clone();
         let toggle = entity.clone();
+        let pick = entity.clone();
         table = table.row([
             div()
                 .id(("obs-row", obs))
                 .child(format!("{}", obs + 1))
                 .into_any_element(),
             div()
+                .id(("obs-name", obs))
                 .min_w_0()
                 .when(selected == Some(obs), |name| name.text_color(accent))
+                .on_click(move |_event, window, cx| {
+                    pick.update(cx, |state, cx| {
+                        state.select_observation(obs, cx);
+                        window.focus(&state.focus, cx);
+                    });
+                })
                 .child(observation.name.replace('_', " "))
                 .into_any_element(),
             div()
@@ -368,11 +376,16 @@ fn observations_card(
             div()
                 .id("observations-selected")
                 .role(gpui::Role::Label)
-                .aria_label(
-                    selected
-                        .map(|obs| format!("Selected observation: {}", game().observations[obs].name.replace('_', " ")))
-                        .unwrap_or_else(|| "No observation selected".into()),
-                )
+                .aria_label(selected.map_or_else(
+                    || "No observation selected".into(),
+                    |obs| {
+                        format!(
+                            "Selected: {} (#{})",
+                            game().observations[obs].name.replace('_', " "),
+                            obs + 1
+                        )
+                    },
+                ))
                 .px_3()
                 .pb_2()
                 .text_size(px(11.0))
