@@ -7314,5 +7314,513 @@
         }
       ]
     }
-  ]
+  ],
+  "trench": {
+    "requirements": [
+      {
+        "layers": null,
+        "effReqs": [
+          178523361.33120006,
+          178523461.33120006,
+          178523561.33120006
+        ],
+        "expected": {
+          "layers": 9,
+          "base": 53119845.58284805,
+          "jar": 180,
+          "legend": 100,
+          "bolaia": [
+            {
+              "cavern": "Motherlode",
+              "study": 1,
+              "perLayer": 54,
+              "layers": 22,
+              "value": 1188
+            },
+            {
+              "cavern": "Hive",
+              "study": 7,
+              "perLayer": 115,
+              "layers": 15,
+              "value": 1725
+            },
+            {
+              "cavern": "Evertree",
+              "study": 11,
+              "perLayer": 105,
+              "layers": 21,
+              "value": 2205
+            },
+            {
+              "cavern": "Trench",
+              "study": 16,
+              "perLayer": 96,
+              "layers": 9,
+              "value": 864
+            }
+          ],
+          "reductionPct": 6162,
+          "value": 848288.8148011506,
+          "progress": 339451,
+          "remaining": 508837.8148011506
+        }
+      },
+      {
+        "layers": 9,
+        "effReqs": [
+          178523361.33120006,
+          178523461.33120006,
+          178523561.33120006
+        ],
+        "expected": {
+          "layers": 9,
+          "base": 53119845.58284805,
+          "jar": 180,
+          "legend": 100,
+          "bolaia": [
+            {
+              "cavern": "Motherlode",
+              "study": 1,
+              "perLayer": 54,
+              "layers": 22,
+              "value": 1188
+            },
+            {
+              "cavern": "Hive",
+              "study": 7,
+              "perLayer": 115,
+              "layers": 15,
+              "value": 1725
+            },
+            {
+              "cavern": "Evertree",
+              "study": 11,
+              "perLayer": 105,
+              "layers": 21,
+              "value": 2205
+            },
+            {
+              "cavern": "Trench",
+              "study": 16,
+              "perLayer": 96,
+              "layers": 9,
+              "value": 864
+            }
+          ],
+          "reductionPct": 6162,
+          "value": 848288.8148011506,
+          "progress": 0,
+          "remaining": 848288.8148011506
+        }
+      },
+      {
+        "layers": 11,
+        "effReqs": [
+          578415690.7130883,
+          578415790.7130883,
+          578415890.7130883
+        ],
+        "expected": {
+          "layers": 11,
+          "base": 257100052.62098458,
+          "jar": 180,
+          "legend": 100,
+          "bolaia": [
+            {
+              "cavern": "Motherlode",
+              "study": 1,
+              "perLayer": 54,
+              "layers": 22,
+              "value": 1188
+            },
+            {
+              "cavern": "Hive",
+              "study": 7,
+              "perLayer": 115,
+              "layers": 15,
+              "value": 1725
+            },
+            {
+              "cavern": "Evertree",
+              "study": 11,
+              "perLayer": 105,
+              "layers": 21,
+              "value": 2205
+            },
+            {
+              "cavern": "Trench",
+              "study": 16,
+              "perLayer": 96,
+              "layers": 11,
+              "value": 1056
+            }
+          ],
+          "reductionPct": 6354,
+          "value": 3983576.8921751566,
+          "progress": 0,
+          "remaining": 3983576.8921751566
+        }
+      },
+      {
+        "layers": 24,
+        "effReqs": [
+          1204432960547.156,
+          1204432960647.156,
+          1204432960747.156
+        ],
+        "expected": {
+          "layers": 24,
+          "base": 7271048076348.435,
+          "jar": 180,
+          "legend": 100,
+          "bolaia": [
+            {
+              "cavern": "Motherlode",
+              "study": 1,
+              "perLayer": 54,
+              "layers": 22,
+              "value": 1188
+            },
+            {
+              "cavern": "Hive",
+              "study": 7,
+              "perLayer": 115,
+              "layers": 15,
+              "value": 1725
+            },
+            {
+              "cavern": "Evertree",
+              "study": 11,
+              "perLayer": 105,
+              "layers": 21,
+              "value": 2205
+            },
+            {
+              "cavern": "Trench",
+              "study": 16,
+              "perLayer": 96,
+              "layers": 24,
+              "value": 2304
+            }
+          ],
+          "reductionPct": 7602,
+          "value": 94404675101.90126,
+          "progress": 0,
+          "remaining": 94404675101.90126
+        }
+      }
+    ],
+    "plans": [
+      {
+        "character": {
+          "level": 250,
+          "rodSpeed": 8
+        },
+        "account": {
+          "efficiency": 5000,
+          "expMulti": 2.5,
+          "afkRate": 0.42,
+          "multiFish": 28,
+          "speedBonus": 12,
+          "attackFactor": 1.4,
+          "prowess": 0.12,
+          "equipmentDepth": [
+            0,
+            0,
+            0
+          ]
+        },
+        "depths": 3,
+        "selection": {
+          "lure": 0,
+          "line": 4
+        },
+        "rows": [
+          {
+            "depth": 10,
+            "layers": 9,
+            "effReqs": [
+              178523361.33120006,
+              178523461.33120006,
+              178523561.33120006
+            ],
+            "requirement": {
+              "base": 53119845.58284805,
+              "reductionPct": 6162,
+              "value": 848288.8148011506,
+              "progress": 339451,
+              "remaining": 508837.8148011506
+            },
+            "selected": {
+              "fishTotal": 371,
+              "exp": 362774,
+              "oreValue": 1,
+              "hours": 1371.5304981163088,
+              "cumulativeHours": 1371.5304981163088
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 413,
+              "exp": 403724,
+              "oreValue": 1,
+              "hours": 1232.052820341769,
+              "cumulativeHours": 1232.052820341769
+            }
+          },
+          {
+            "depth": 11,
+            "layers": 10,
+            "effReqs": [
+              321342050.39616007,
+              321342150.39616007,
+              321342250.39616007
+            ],
+            "requirement": {
+              "base": 116863660.28226571,
+              "reductionPct": 6258,
+              "value": 1838056.9405829776,
+              "progress": 0,
+              "remaining": 1838056.9405829776
+            },
+            "selected": {
+              "fishTotal": 371,
+              "exp": 362774,
+              "oreValue": 1,
+              "hours": 4954.3313762344405,
+              "cumulativeHours": 6325.8618743507495
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 413,
+              "exp": 403724,
+              "oreValue": 1,
+              "hours": 4450.501066786871,
+              "cumulativeHours": 5682.55388712864
+            }
+          },
+          {
+            "depth": 12,
+            "layers": 11,
+            "effReqs": [
+              578415690.7130883,
+              578415790.7130883,
+              578415890.7130883
+            ],
+            "requirement": {
+              "base": 257100052.62098458,
+              "reductionPct": 6354,
+              "value": 3983576.8921751566,
+              "progress": 0,
+              "remaining": 3983576.8921751566
+            },
+            "selected": {
+              "fishTotal": 371,
+              "exp": 362774,
+              "oreValue": 1,
+              "hours": 10737.404022035462,
+              "cumulativeHours": 17063.265896386212
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 413,
+              "exp": 403724,
+              "oreValue": 1,
+              "hours": 9645.464629964059,
+              "cumulativeHours": 15328.0185170927
+            }
+          }
+        ]
+      },
+      {
+        "character": {
+          "level": 100,
+          "rodSpeed": 3
+        },
+        "account": {
+          "efficiency": 2000000,
+          "expMulti": 6.25,
+          "afkRate": 0.9,
+          "multiFish": 120,
+          "speedBonus": 45,
+          "attackFactor": 2.4,
+          "prowess": 0.31,
+          "equipmentDepth": [
+            5,
+            4,
+            3
+          ]
+        },
+        "depths": 5,
+        "selection": {
+          "lure": 8,
+          "line": 4
+        },
+        "rows": [
+          {
+            "depth": 10,
+            "layers": 9,
+            "effReqs": [
+              178523361.33120006,
+              178523461.33120006,
+              178523561.33120006
+            ],
+            "requirement": {
+              "base": 53119845.58284805,
+              "reductionPct": 6162,
+              "value": 848288.8148011506,
+              "progress": 339451,
+              "remaining": 508837.8148011506
+            },
+            "selected": {
+              "fishTotal": 920,
+              "exp": 1307812,
+              "oreValue": 1,
+              "hours": 553.0845813055985,
+              "cumulativeHours": 553.0845813055985
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 1005,
+              "exp": 1428750,
+              "oreValue": 1,
+              "hours": 506.30628338422946,
+              "cumulativeHours": 506.30628338422946
+            }
+          },
+          {
+            "depth": 11,
+            "layers": 10,
+            "effReqs": [
+              321342050.39616007,
+              321342150.39616007,
+              321342250.39616007
+            ],
+            "requirement": {
+              "base": 116863660.28226571,
+              "reductionPct": 6258,
+              "value": 1838056.9405829776,
+              "progress": 0,
+              "remaining": 1838056.9405829776
+            },
+            "selected": {
+              "fishTotal": 920,
+              "exp": 1307812,
+              "oreValue": 1,
+              "hours": 1997.8879788945408,
+              "cumulativeHours": 2550.972560200139
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 1005,
+              "exp": 1428750,
+              "oreValue": 1,
+              "hours": 1828.91237868953,
+              "cumulativeHours": 2335.2186620737593
+            }
+          },
+          {
+            "depth": 12,
+            "layers": 11,
+            "effReqs": [
+              578415690.7130883,
+              578415790.7130883,
+              578415890.7130883
+            ],
+            "requirement": {
+              "base": 257100052.62098458,
+              "reductionPct": 6354,
+              "value": 3983576.8921751566,
+              "progress": 0,
+              "remaining": 3983576.8921751566
+            },
+            "selected": {
+              "fishTotal": 920,
+              "exp": 1307812,
+              "oreValue": 1,
+              "hours": 4329.974882799083,
+              "cumulativeHours": 6880.947442999222
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 1005,
+              "exp": 1428750,
+              "oreValue": 1,
+              "hours": 3963.7581016668223,
+              "cumulativeHours": 6298.976763740582
+            }
+          },
+          {
+            "depth": 13,
+            "layers": 12,
+            "effReqs": [
+              1041148243.2835587,
+              1041148343.2835587,
+              1041148443.2835587
+            ],
+            "requirement": {
+              "base": 565620115.7661661,
+              "reductionPct": 6450,
+              "value": 8635421.614750627,
+              "progress": 0,
+              "remaining": 8635421.614750627
+            },
+            "selected": {
+              "fishTotal": 920,
+              "exp": 1307812,
+              "oreValue": 1,
+              "hours": 9386.327842120247,
+              "cumulativeHours": 16267.27528511947
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 1005,
+              "exp": 1428750,
+              "oreValue": 1,
+              "hours": 8592.459318159828,
+              "cumulativeHours": 14891.43608190041
+            }
+          },
+          {
+            "depth": 14,
+            "layers": 13,
+            "effReqs": [
+              1874066837.9104059,
+              1874066937.9104059,
+              1874067037.9104059
+            ],
+            "requirement": {
+              "base": 1244364254.6855655,
+              "reductionPct": 6546,
+              "value": 18723506.691025663,
+              "progress": 0,
+              "remaining": 18723506.691025663
+            },
+            "selected": {
+              "fishTotal": 920,
+              "exp": 1307812,
+              "oreValue": 1,
+              "hours": 20351.63770763659,
+              "cumulativeHours": 36618.91299275606
+            },
+            "best": {
+              "lure": 13,
+              "line": 12,
+              "fishTotal": 1005,
+              "exp": 1428750,
+              "oreValue": 1,
+              "hours": 18630.354916443444,
+              "cumulativeHours": 33521.79099834386
+            }
+          }
+        ]
+      }
+    ]
+  }
 }

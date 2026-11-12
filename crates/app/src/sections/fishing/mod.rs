@@ -1,19 +1,21 @@
 //! The Fishing Calculator section: AFK catches, the fish split and the real
-//! versus panel EXP of every pool.
+//! versus panel EXP of every pool, the all-combination lure/line ranking and the
+//! Trench depth projection.
 //!
 //! FI-01 ports the upstream `fishing-calc.html` toolbar, the character context
 //! and the per-pool outcome from `js/stats/systems/w2/fishing.js`; FI-02 adds the
-//! lure/line ranking over all 225 combinations. The Trench depth projection
-//! (FI-03) is a later feature in the same milestone: the toolbar and the
-//! location rows already switch pools, and the account values the upstream
-//! derives from the skill systems are entered in the account card until those
-//! systems are decoded.
+//! lure/line ranking over all 225 combinations; FI-03 adds the Trench depth
+//! projection, the fastest lure + line per projected depth and the other
+//! characters fishing alongside. The account values the upstream derives from
+//! the skill systems are entered in the account card until those systems are
+//! decoded.
 
 pub mod detail;
 pub mod inputs;
 pub mod pools;
 pub mod ranking;
 pub mod toolbar;
+pub mod trench;
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
@@ -25,7 +27,7 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_core::fishing::{self, AccountInputs, Evaluation, FishingSave, Objective};
+use idleon_core::fishing::{self, AccountInputs, Evaluation, FishingSave, HelperMode, Objective};
 
 /// The section's live state: the character, toolkit, location, hours and the
 /// account values the upstream derives.
@@ -42,6 +44,13 @@ pub struct State {
     /// What the lure/line ranking sorts by.
     pub objective: Objective,
     pub account: AccountInputs,
+    /// How many Trench depths the depth projection covers.
+    pub trench_depths: usize,
+    /// How the other Trench characters choose their lure and line.
+    pub trench_helper_mode: HelperMode,
+    /// One tick per character: the helpers assumed to fish the Trench. `None`
+    /// until a save seeds it from the characters' saved targets.
+    pub trench_helpers: Option<Vec<bool>>,
 }
 
 impl Default for State {
@@ -54,15 +63,38 @@ impl Default for State {
             hours: 1.0,
             objective: Objective::default(),
             account: AccountInputs::default(),
+            trench_depths: 5,
+            trench_helper_mode: HelperMode::Saved,
+            trench_helpers: None,
         }
     }
 }
 
 impl State {
-    /// Take a character's saved toolkit, spot and level after an import.
+    /// Take a character's saved toolkit, spot and level after an import, and
+    /// tick the characters already left on the Trench.
     pub fn adopt(&mut self, save: &FishingSave) {
         self.character = save.default_character();
         self.character_defaults(save);
+        self.trench_helpers = Some(
+            save.characters
+                .iter()
+                .map(|character| character.afk_target == fishing::TRENCH_POOL)
+                .collect(),
+        );
+    }
+
+    /// Tick or untick one helper, keeping the list aligned with the roster.
+    pub fn set_helper(&mut self, index: usize, on: bool, characters: usize) {
+        let helpers = self
+            .trench_helpers
+            .get_or_insert_with(|| vec![false; characters]);
+        if helpers.len() < characters {
+            helpers.resize(characters, false);
+        }
+        if let Some(slot) = helpers.get_mut(index) {
+            *slot = on;
+        }
     }
 
     /// Reset the toolkit and location to the selected character's saved ones.
@@ -129,6 +161,10 @@ impl State {
         account.speed_bonus = account.speed_bonus.max(0.0);
         account.prowess = account.prowess.max(0.0);
         account.attack_factor = account.attack_factor.clamp(1.0, 3.0);
+        self.trench_depths = self.trench_depths.clamp(1, 25);
+        if let Some(helpers) = self.trench_helpers.as_mut() {
+            helpers.resize(save.characters.len(), false);
+        }
     }
 }
 
@@ -227,6 +263,11 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         layout::table_height(f32::from(window.viewport_size().height)),
         cx,
     );
+    let trench = trench::card(
+        state,
+        layout::table_height(f32::from(window.viewport_size().height)),
+        cx,
+    );
     let formula = toolbar::formula_card(&state.fishing_breakdown);
 
     let panes = if breakpoint.is_compact() {
@@ -268,6 +309,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
                         .child(kpis)
                         .child(panes)
                         .child(ranking)
+                        .child(trench)
                         .child(account)
                         .child(formula),
                 ),
@@ -383,5 +425,48 @@ mod tests {
         assert_eq!(state.line, 14);
         assert_eq!(state.location, fishing::data().default_location().id);
         assert_eq!(state.account.attack_factor, 3.0);
+    }
+
+    #[test]
+    fn adopting_a_save_ticks_the_characters_left_on_the_trench() {
+        let save = idleon_core::save::Save::new(serde_json::json!({
+            "charNames": ["Ana", "Bo", "Cy"],
+            "Lv0_0": [0, 0, 0, 0, 100],
+            "Lv0_1": [0, 0, 0, 0, 80],
+            "Lv0_2": [0, 0, 0, 0, 60],
+            "AFKtarget_0": "FishBig",
+            "AFKtarget_1": "MotherlodeFISH",
+            "AFKtarget_2": "FishSmall",
+        }));
+        let fishing = FishingSave::from_save(&save);
+        let mut state = State::default();
+        state.adopt(&fishing);
+        assert_eq!(state.trench_helpers, Some(vec![false, true, false]));
+        assert_eq!(state.trench_depths, 5);
+    }
+
+    #[test]
+    fn a_helper_tick_and_the_projection_length_stay_in_range() {
+        let mut state = State {
+            trench_depths: 99,
+            ..State::default()
+        };
+        state.trench_helpers = Some(vec![false; 2]);
+        state.set_helper(1, true, 2);
+        let save = FishingSave::default();
+        state.clamp(&save);
+        assert_eq!(
+            state.trench_helpers,
+            Some(Vec::new()),
+            "an empty roster resizes"
+        );
+        assert_eq!(state.trench_depths, 25);
+        state.trench_depths = 0;
+        state.clamp(&save);
+        assert_eq!(state.trench_depths, 1);
+        // Ticking past the roster does not grow it, and the default is Saved.
+        state.set_helper(3, true, 2);
+        assert!(!state.trench_helpers.as_ref().unwrap().contains(&true));
+        assert_eq!(state.trench_helper_mode, HelperMode::Saved);
     }
 }

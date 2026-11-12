@@ -83,6 +83,101 @@ struct Fixture {
     catches: Vec<CatchCase>,
     outcomes: Vec<OutcomeCase>,
     rankings: Vec<RankCase>,
+    trench: TrenchFixture,
+}
+
+#[derive(Deserialize)]
+struct TrenchFixture {
+    requirements: Vec<TrenchRequirementCase>,
+    plans: Vec<TrenchPlanCase>,
+}
+
+#[derive(Deserialize)]
+struct TrenchRequirementCase {
+    /// `null` keeps the saved depth and its progress.
+    layers: Option<f64>,
+    #[serde(rename = "effReqs")]
+    eff_reqs: [f64; 3],
+    expected: FixtureRequirement,
+}
+
+#[derive(Deserialize)]
+struct FixtureRequirement {
+    layers: f64,
+    base: f64,
+    jar: f64,
+    legend: f64,
+    bolaia: Vec<FixtureBolaia>,
+    #[serde(rename = "reductionPct")]
+    reduction_pct: f64,
+    value: f64,
+    progress: f64,
+    remaining: f64,
+}
+
+#[derive(Deserialize)]
+struct FixtureBolaia {
+    cavern: String,
+    study: usize,
+    #[serde(rename = "perLayer")]
+    per_layer: f64,
+    layers: f64,
+    value: f64,
+}
+
+#[derive(Deserialize)]
+struct TrenchPlanCase {
+    character: RankCharacter,
+    account: AccountInputs,
+    depths: usize,
+    selection: TrenchSelectionCase,
+    rows: Vec<FixtureTrenchRow>,
+}
+
+#[derive(Deserialize)]
+struct TrenchSelectionCase {
+    lure: usize,
+    line: usize,
+}
+
+#[derive(Deserialize)]
+struct FixtureTrenchRow {
+    depth: f64,
+    layers: f64,
+    #[serde(rename = "effReqs")]
+    eff_reqs: [f64; 3],
+    requirement: FixtureRowRequirement,
+    selected: FixtureClaim,
+    best: FixtureClaim,
+}
+
+#[derive(Deserialize)]
+struct FixtureRowRequirement {
+    base: f64,
+    #[serde(rename = "reductionPct")]
+    reduction_pct: f64,
+    value: f64,
+    progress: f64,
+    remaining: f64,
+}
+
+/// One claim on a projected depth. The selected claim carries no indices in the
+/// oracle, so `lure` and `line` are optional there.
+#[derive(Deserialize)]
+struct FixtureClaim {
+    #[serde(default)]
+    lure: Option<usize>,
+    #[serde(default)]
+    line: Option<usize>,
+    #[serde(rename = "fishTotal")]
+    fish_total: f64,
+    exp: f64,
+    #[serde(rename = "oreValue")]
+    ore_value: f64,
+    /// `null` when no fish clear the depth.
+    hours: Option<f64>,
+    #[serde(rename = "cumulativeHours")]
+    cumulative_hours: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -276,6 +371,7 @@ fn the_pool_outcomes_match_the_upstream_oracle() {
                 afk_rate: case.inputs.afk_rate,
                 multi_fish: case.inputs.multi_fish,
                 exp_multi: case.inputs.exp_multi,
+                eff_reqs: None,
             },
             case.hours,
         );
@@ -395,6 +491,7 @@ fn the_toolkit_rankings_match_the_upstream_oracle() {
                 rod_speed: case.character.rod_speed,
                 ..Character::default()
             }],
+            ..FishingSave::default()
         };
         let rows = rank(
             &save,
@@ -447,6 +544,7 @@ fn a_ranking_covers_every_pair_once_and_sorts_by_the_objective() {
             rod_speed: 8.0,
             ..Character::default()
         }],
+        ..FishingSave::default()
     };
     let account = AccountInputs {
         efficiency: 5_000.0,
@@ -503,6 +601,7 @@ fn floored_counts_tie_and_the_helper_counts_them() {
             rod_speed: 0.0,
             ..Character::default()
         }],
+        ..FishingSave::default()
     };
     let rows = rank(
         &save,
@@ -541,8 +640,7 @@ fn a_save_without_a_toolkit_key_is_flagged_and_defaults_to_fly_and_twine() {
 
 #[test]
 fn the_synthetic_account_fixture_decodes_its_first_character() {
-    let imported = import(&read("fixtures/data.json")).expect("the fixture imports");
-    let fishing = FishingSave::from_save(&imported.save);
+    let fishing = fixture_save();
     let character = fishing.character(0).expect("the fixture has characters");
     assert_eq!(character.level, 100);
     assert_eq!(character.rod_key, "FishingRod13");
@@ -550,6 +648,14 @@ fn the_synthetic_account_fixture_decodes_its_first_character() {
     assert!(character.toolkit_available);
     // The fixture's characters are all on map 200, which has no fishing spot.
     assert!(character.saved_location().is_none());
+    // The cavern rows give the Trench its depth and its reductions.
+    assert!(fishing.trench.is_some());
+}
+
+/// The committed synthetic account, read through the fishing slice.
+fn fixture_save() -> FishingSave {
+    let imported = import(&read("fixtures/data.json")).expect("the fixture imports");
+    FishingSave::from_save(&imported.save)
 }
 
 #[test]
@@ -651,8 +757,438 @@ fn a_zero_hour_claim_uses_one_hour_like_the_upstream() {
             afk_rate: 0.42,
             multi_fish: 0.0,
             exp_multi: 1.0,
+            eff_reqs: None,
         },
         0.0,
     );
     assert_eq!(outcome.hours, 1.0);
+}
+
+#[test]
+fn the_trench_requirement_matches_the_upstream_oracle() {
+    let fixture = fixture();
+    let save = fixture_save();
+    let trench = save.trench.as_ref().expect("the fixture carries Holes");
+    assert_eq!(trench.layers(), 9.0);
+    for case in &fixture.trench.requirements {
+        let actual = trench.requirement(case.layers);
+        let expected = &case.expected;
+        assert_eq!(actual.layers, expected.layers, "layers");
+        assert_eq!(trench.eff_reqs(actual.layers), case.eff_reqs, "eff reqs");
+        let depth = expected.layers;
+        for (name, actual, expected) in [
+            ("base", actual.base, expected.base),
+            ("jar", actual.jar, expected.jar),
+            ("legend", actual.legend, expected.legend),
+            ("reduction", actual.reduction_pct, expected.reduction_pct),
+            ("value", actual.value, expected.value),
+            ("progress", actual.progress, expected.progress),
+            ("remaining", actual.remaining, expected.remaining),
+        ] {
+            assert!(
+                close(actual, expected),
+                "depth {depth} {name}: {actual} != {expected}"
+            );
+        }
+        assert_eq!(actual.bolaia.len(), expected.bolaia.len());
+        for (actual, expected) in actual.bolaia.iter().zip(&expected.bolaia) {
+            assert_eq!(actual.cavern, expected.cavern);
+            assert_eq!(actual.study, expected.study);
+            assert!(close(actual.per_layer, expected.per_layer));
+            assert!(close(actual.layers, expected.layers));
+            assert!(close(actual.value, expected.value));
+        }
+    }
+}
+
+#[test]
+fn the_trench_projection_matches_the_upstream_oracle() {
+    let fixture = fixture();
+    let trench = fixture_save().trench.expect("the fixture carries Holes");
+    assert!(!fixture.trench.plans.is_empty(), "the oracle carries plans");
+    for case in &fixture.trench.plans {
+        let save = FishingSave {
+            characters: vec![Character {
+                level: case.character.level,
+                rod_speed: case.character.rod_speed,
+                ..Character::default()
+            }],
+            trench: Some(trench.clone()),
+        };
+        let plan = trench_plan(
+            &save,
+            &case.account,
+            &TrenchRequest {
+                character: 0,
+                lure: case.selection.lure,
+                line: case.selection.line,
+                depths: case.depths,
+                mode: HelperMode::Saved,
+                helpers: &[],
+            },
+        )
+        .expect("the fixture has a Trench");
+        assert_eq!(plan.rows.len(), case.rows.len());
+        for (row, expected) in plan.rows.iter().zip(&case.rows) {
+            assert_eq!(row.depth, expected.depth);
+            assert!(close(row.layers, expected.layers));
+            assert_eq!(row.eff_reqs, expected.eff_reqs, "depth {}", row.depth);
+            assert!(
+                close(row.requirement.base, expected.requirement.base),
+                "depth {} base",
+                row.depth
+            );
+            assert!(
+                close(
+                    row.requirement.reduction_pct,
+                    expected.requirement.reduction_pct
+                ),
+                "depth {} reduction",
+                row.depth
+            );
+            assert!(
+                close(row.requirement.value, expected.requirement.value),
+                "depth {} value",
+                row.depth
+            );
+            assert!(
+                close(row.requirement.progress, expected.requirement.progress),
+                "depth {} progress",
+                row.depth
+            );
+            assert!(
+                close(row.requirement.remaining, expected.requirement.remaining),
+                "depth {} remaining",
+                row.depth
+            );
+            for (name, claim, expected) in [
+                ("selected", &row.selected, &expected.selected),
+                ("best", &row.best, &expected.best),
+            ] {
+                assert!(
+                    close(claim.outcome.fish_total, expected.fish_total),
+                    "depth {} {name} fish: {} != {}",
+                    row.depth,
+                    claim.outcome.fish_total,
+                    expected.fish_total
+                );
+                assert!(
+                    close(claim.outcome.exp, expected.exp),
+                    "depth {} {name} EXP",
+                    row.depth
+                );
+                assert!(
+                    close(claim.outcome.ore_value, expected.ore_value),
+                    "depth {} {name} ore value",
+                    row.depth
+                );
+                assert!(
+                    hours_match(claim.hours, expected.hours),
+                    "depth {} {name} hours: {} != {:?}",
+                    row.depth,
+                    claim.hours,
+                    expected.hours
+                );
+                assert!(
+                    hours_match(claim.cumulative_hours, expected.cumulative_hours),
+                    "depth {} {name} cumulative hours: {} != {:?}",
+                    row.depth,
+                    claim.cumulative_hours,
+                    expected.cumulative_hours
+                );
+                if let Some(lure) = expected.lure {
+                    assert_eq!(claim.lure, lure, "depth {} lure", row.depth);
+                }
+                if let Some(line) = expected.line {
+                    assert_eq!(claim.line, line, "depth {} line", row.depth);
+                }
+            }
+        }
+    }
+}
+
+/// An endless projection reads as `null` in the JSON fixture.
+fn hours_match(actual: f64, expected: Option<f64>) -> bool {
+    expected.map_or(actual.is_infinite(), |expected| close(actual, expected))
+}
+
+#[test]
+fn the_trench_location_uses_the_saved_depth_requirements() {
+    let save = fixture_save();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        ..AccountInputs::default()
+    };
+    let trench = save.trench.as_ref().expect("the fixture carries Holes");
+    let with_depth = evaluate(&save, &account, 0, 0, 4, "x:MotherlodeFISH", 1.0);
+    assert_eq!(
+        with_depth.outcome.eff_reqs,
+        trench.eff_reqs(trench.layers()),
+        "the Trench swaps the pool's own requirements"
+    );
+    let without_depth = evaluate(
+        &FishingSave {
+            trench: None,
+            ..save.clone()
+        },
+        &account,
+        0,
+        0,
+        4,
+        "x:MotherlodeFISH",
+        1.0,
+    );
+    assert_ne!(
+        with_depth.outcome.eff_reqs, without_depth.outcome.eff_reqs,
+        "a save without Holes keeps FishPools' requirements"
+    );
+    // The requirement is what the per-fish rows and the ore value read.
+    assert_eq!(
+        with_depth.outcome.fish[1].eff_req,
+        with_depth.outcome.eff_reqs[0]
+    );
+}
+
+/// A two-character roster on the Trench: the selected character plus one helper.
+fn trench_roster() -> FishingSave {
+    let trench = fixture_save().trench.expect("the fixture carries Holes");
+    FishingSave {
+        characters: vec![
+            Character {
+                index: 0,
+                name: "Ana".into(),
+                level: 250,
+                rod_speed: 8.0,
+                saved_lure: 0,
+                saved_line: 4,
+                toolkit_available: true,
+                afk_target: "MotherlodeFISH".into(),
+                ..Character::default()
+            },
+            Character {
+                index: 1,
+                name: "Bo".into(),
+                level: 120,
+                rod_speed: 3.0,
+                saved_lure: 2,
+                saved_line: 2,
+                toolkit_available: true,
+                afk_target: "MotherlodeFISH".into(),
+                ..Character::default()
+            },
+        ],
+        trench: Some(trench),
+    }
+}
+
+#[test]
+fn the_trench_character_contributions_sum_into_the_team() {
+    let save = trench_roster();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        afk_rate: 0.9,
+        exp_multi: 4.0,
+        multi_fish: 50.0,
+        speed_bonus: 40.0,
+        attack_factor: 1.5,
+        prowess: 0.2,
+        ..AccountInputs::default()
+    };
+    let plan = trench_plan(
+        &save,
+        &account,
+        &TrenchRequest {
+            character: 0,
+            lure: 0,
+            line: 4,
+            depths: 4,
+            mode: HelperMode::Saved,
+            helpers: &[false, true],
+        },
+    )
+    .expect("the roster has a Trench");
+    assert_eq!(plan.rows.len(), 4);
+    assert_eq!(
+        plan.helpers.len(),
+        1,
+        "the selected character is not a helper"
+    );
+    let helper = &plan.helpers[0];
+    assert_eq!(helper.character, 1);
+    assert!(helper.enabled);
+    assert!(helper.at_trench);
+    assert_eq!(helper.rates.len(), plan.rows.len());
+    // The current-depth team rate is the selected claim plus every ticked helper.
+    let expected_rate = plan.rows[0].selected.outcome.fish_total + helper.rates[0];
+    assert!(close(plan.team.rate, expected_rate));
+    assert!(close(plan.team.helpers_rate, helper.rates[0]));
+    assert!(
+        close(
+            plan.team.hours,
+            plan.rows[0].requirement.remaining / expected_rate
+        ),
+        "the team ETA divides the requirement by the team rate"
+    );
+    // Every projected depth sums the same way, and the total accumulates.
+    let mut cumulative = 0.0;
+    for (depth, (row, team)) in plan.rows.iter().zip(&plan.team.rows).enumerate() {
+        let expected = row.selected.outcome.fish_total + helper.rates[depth];
+        assert!(close(team.rate, expected), "depth {depth} team rate");
+        assert!(
+            close(team.hours, row.requirement.remaining / expected),
+            "depth {depth} team hours"
+        );
+        cumulative += team.hours;
+        assert!(close(team.cumulative_hours, cumulative));
+    }
+    assert!(plan.team.rate > plan.rows[0].selected.outcome.fish_total);
+}
+
+#[test]
+fn an_unticked_helper_leaves_the_team_alone() {
+    let save = trench_roster();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        ..AccountInputs::default()
+    };
+    let request = |helpers: &'static [bool]| TrenchRequest {
+        character: 0,
+        lure: 0,
+        line: 4,
+        depths: 2,
+        mode: HelperMode::Saved,
+        helpers,
+    };
+    let alone = trench_plan(&save, &account, &request(&[false, false])).expect("a Trench");
+    let together = trench_plan(&save, &account, &request(&[false, true])).expect("a Trench");
+    assert_eq!(alone.helpers.len(), 1, "an unticked helper is still listed");
+    assert!(!alone.helpers[0].enabled);
+    assert_eq!(alone.team.helpers_rate, 0.0);
+    assert!(close(
+        alone.team.rate,
+        alone.rows[0].selected.outcome.fish_total
+    ));
+    assert!(together.team.rate > alone.team.rate);
+}
+
+#[test]
+fn the_fastest_helper_toolkit_follows_the_mode() {
+    let save = trench_roster();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        multi_fish: 50.0,
+        afk_rate: 0.9,
+        ..AccountInputs::default()
+    };
+    let plan = |mode| {
+        trench_plan(
+            &save,
+            &account,
+            &TrenchRequest {
+                character: 0,
+                lure: 0,
+                line: 4,
+                depths: 3,
+                mode,
+                helpers: &[false, true],
+            },
+        )
+        .expect("a Trench")
+    };
+    let saved = plan(HelperMode::Saved);
+    let best = plan(HelperMode::Best);
+    assert_eq!((saved.helpers[0].lure, saved.helpers[0].line), (2, 2));
+    for (saved, best) in saved.helpers[0].rates.iter().zip(&best.helpers[0].rates) {
+        assert!(
+            best >= saved,
+            "the fastest toolkit never catches less: {best} < {saved}"
+        );
+    }
+    // The selected character's plan does not depend on the helper mode.
+    assert_eq!(
+        saved.rows[0].best.outcome.fish_total,
+        best.rows[0].best.outcome.fish_total
+    );
+}
+
+#[test]
+fn an_empty_roster_and_a_save_without_holes_have_a_state() {
+    let save = trench_roster();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        ..AccountInputs::default()
+    };
+    let alone = FishingSave {
+        characters: save.characters[..1].to_vec(),
+        trench: save.trench.clone(),
+    };
+    let plan = trench_plan(
+        &alone,
+        &account,
+        &TrenchRequest {
+            character: 0,
+            lure: 0,
+            line: 4,
+            depths: 2,
+            mode: HelperMode::Saved,
+            helpers: &[],
+        },
+    )
+    .expect("a Trench");
+    assert!(plan.helpers.is_empty(), "no other character to fish with");
+    assert_eq!(plan.team.helpers_rate, 0.0);
+    assert!(close(
+        plan.team.rate,
+        plan.rows[0].selected.outcome.fish_total
+    ));
+
+    assert!(
+        trench_plan(
+            &FishingSave {
+                characters: save.characters,
+                trench: None,
+            },
+            &account,
+            &TrenchRequest {
+                character: 0,
+                lure: 0,
+                line: 4,
+                depths: 2,
+                mode: HelperMode::Saved,
+                helpers: &[],
+            },
+        )
+        .is_none(),
+        "a save without Holes has no Trench to project"
+    );
+}
+
+#[test]
+fn the_projection_length_is_clamped_to_the_upstream_range() {
+    let save = trench_roster();
+    let account = AccountInputs {
+        efficiency: 20_000_000.0,
+        ..AccountInputs::default()
+    };
+    for (depths, expected) in [(0, 1), (3, 3), (25, 25), (200, 25)] {
+        let plan = trench_plan(
+            &save,
+            &account,
+            &TrenchRequest {
+                character: 0,
+                lure: 0,
+                line: 4,
+                depths,
+                mode: HelperMode::Saved,
+                helpers: &[],
+            },
+        )
+        .expect("a Trench");
+        assert_eq!(plan.rows.len(), expected, "{depths} projects {expected}");
+        assert_eq!(plan.rows[0].depth, plan.trench.layers() + 1.0);
+        assert_eq!(
+            plan.rows.last().map(|row| row.layers),
+            Some(plan.trench.layers() + expected as f64 - 1.0)
+        );
+    }
 }

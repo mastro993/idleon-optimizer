@@ -13,11 +13,16 @@
 //! upstream outcome, and leaving a value at its neutral default gives a lower
 //! bound. Only the character slice — level, rod, saved toolkit, saved spot and
 //! AFK target — comes from the save.
+//!
+//! FI-03 adds the Trench depth projection in [`trench`]: the saved cavern depth
+//! raises the Trench fish efficiency requirements, and the same save rows give
+//! the fish requirement and its reductions.
 
 pub mod data;
 pub mod math;
 pub mod rank;
 pub mod save;
+pub mod trench;
 
 pub use data::{FishingData, Location, Pool, Rod, ToolkitOption, ToolkitStats, data};
 pub use math::{
@@ -26,6 +31,10 @@ pub use math::{
 };
 pub use rank::{Objective, rank, ties};
 pub use save::{Character, FishingSave};
+pub use trench::{
+    BolaiaLayer, BolaiaStudy, HelperMode, Trench, TrenchHelper, TrenchPlan, TrenchRequest,
+    TrenchRequirement, TrenchRow, TrenchSelection, TrenchTeam, TrenchTeamRow, trench_plan,
+};
 
 use crate::formula::{FormulaNode, ValueFormat};
 
@@ -105,6 +114,9 @@ pub struct FishRow {
 #[derive(Clone, Debug)]
 pub struct PoolOutcome {
     pub pool: &'static Pool,
+    /// The efficiency requirements the claim used: the pool's own, or the
+    /// Trench override from the saved cavern depth.
+    pub eff_reqs: [f64; 3],
     pub hours: f64,
     pub shares: [f64; 4],
     pub share_total: f64,
@@ -132,6 +144,9 @@ pub struct PoolInputs {
     pub afk_rate: f64,
     pub multi_fish: f64,
     pub exp_multi: f64,
+    /// The upstream `effReqOverrides[poolKey]`: the Trench's requirements rise
+    /// with the saved cavern depth, replacing the pool's own three.
+    pub eff_reqs: Option<[f64; 3]>,
 }
 
 /// One pool's AFK claim: the upstream `fishingPoolOutcome`.
@@ -141,8 +156,9 @@ pub fn pool_outcome(pool: &'static Pool, inputs: &PoolInputs, hours: f64) -> Poo
     } else {
         1.0
     };
-    let shares = catch_shares(inputs.efficiency, &inputs.depths, pool.eff_reqs);
-    let ore = ore_value(inputs.efficiency, pool.eff_reqs[2], inputs.prowess);
+    let eff_reqs = inputs.eff_reqs.unwrap_or(pool.eff_reqs);
+    let shares = catch_shares(inputs.efficiency, &inputs.depths, eff_reqs);
+    let ore = ore_value(inputs.efficiency, eff_reqs[2], inputs.prowess);
     let catches = hours * inputs.catches_per_hour * inputs.afk_rate;
     let fish_per_catch = (1.0 + inputs.multi_fish / 100.0) * ore;
     let mut exp = 0.0;
@@ -184,12 +200,8 @@ pub fn pool_outcome(pool: &'static Pool, inputs: &PoolInputs, hours: f64) -> Poo
             exp_per_catch: fish_type.exp_per_catch,
             share,
             active: share > 0.0,
-            unlocked: tier == 0 || inputs.efficiency >= pool.eff_reqs[tier - 1],
-            eff_req: if tier == 0 {
-                0.0
-            } else {
-                pool.eff_reqs[tier - 1]
-            },
+            unlocked: tier == 0 || inputs.efficiency >= eff_reqs[tier - 1],
+            eff_req: if tier == 0 { 0.0 } else { eff_reqs[tier - 1] },
             count,
             exp: type_exp,
             credited: false,
@@ -217,6 +229,7 @@ pub fn pool_outcome(pool: &'static Pool, inputs: &PoolInputs, hours: f64) -> Poo
         inputs.catches_per_hour * inputs.afk_rate * pool.panel_exp_per_catch * inputs.exp_multi;
     PoolOutcome {
         pool,
+        eff_reqs,
         hours,
         shares,
         share_total,
@@ -257,10 +270,63 @@ pub struct Evaluation {
     pub outcome: PoolOutcome,
 }
 
+/// The toolkit, depths and claim one lure and line resolve to at one spot.
+#[derive(Clone, Debug)]
+pub(super) struct Resolved {
+    pub toolkit: ToolkitStats,
+    pub depths: Depths,
+    pub speed: f64,
+    pub catches_per_hour: f64,
+    pub outcome: PoolOutcome,
+}
+
+/// Resolve one selection at one spot: the upstream `outcomeFor` inside
+/// `trenchPlan`, shared with [`evaluate`] so the plan and the card agree.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn resolve(
+    account: &AccountInputs,
+    character: &Character,
+    lure: &ToolkitOption,
+    line: &ToolkitOption,
+    spot_bonus: [f64; 4],
+    pool: &'static Pool,
+    eff_reqs: Option<[f64; 3]>,
+    hours: f64,
+) -> Resolved {
+    let toolkit = lure.stats.plus(line.stats);
+    let depth = depths(&toolkit, account.equipment_depth, spot_bonus);
+    let (speed, catches) = account.speed(character, &toolkit);
+    let outcome = pool_outcome(
+        pool,
+        &PoolInputs {
+            efficiency: account.efficiency,
+            depths: depth,
+            prowess: account.prowess,
+            catches_per_hour: catches,
+            afk_rate: account.afk_rate,
+            multi_fish: account.multi_fish,
+            exp_multi: account.exp_multi,
+            eff_reqs,
+        },
+        hours,
+    );
+    Resolved {
+        toolkit,
+        depths: depth,
+        speed,
+        catches_per_hour: catches,
+        outcome,
+    }
+}
+
+/// The pool key whose efficiency requirements the saved cavern depth raises.
+pub const TRENCH_POOL: &str = "MotherlodeFISH";
+
 /// Resolve one character, lure/line and location into the upstream outcome.
 ///
 /// `lure` and `line` index the upstream toolkit lists; an out-of-range index
-/// falls back to the first option, as the upstream does.
+/// falls back to the first option, as the upstream does. A save with `Holes`
+/// raises the Trench's efficiency requirements from its saved depth.
 pub fn evaluate(
     save: &FishingSave,
     account: &AccountInputs,
@@ -281,43 +347,46 @@ pub fn evaluate(
     let data = data();
     let lure_option = data.toolkit(0, lure).cloned().expect("fishing lures");
     let line_option = data.toolkit(1, line).cloned().expect("fishing lines");
-    let toolkit = lure_option.stats.plus(line_option.stats);
     let spot = data
         .location(location)
         .or_else(|| character.saved_location())
         .unwrap_or_else(|| data.default_location());
-    let depth = depths(&toolkit, account.equipment_depth, spot.bonus);
-    let (catch_time, catches) = account.speed(&character, &toolkit);
     let pool = data
         .pool(&spot.pool_key)
         .expect("every fishing location names a bundled pool");
-    let inputs = PoolInputs {
-        efficiency: account.efficiency,
-        depths: depth,
-        prowess: account.prowess,
-        catches_per_hour: catches,
-        afk_rate: account.afk_rate,
-        multi_fish: account.multi_fish,
-        exp_multi: account.exp_multi,
-    };
+    let eff_reqs = save
+        .trench
+        .as_ref()
+        .filter(|_| spot.pool_key == TRENCH_POOL)
+        .map(|trench| trench.eff_reqs(trench.layers()));
+    let resolved = resolve(
+        account,
+        &character,
+        &lure_option,
+        &line_option,
+        spot.bonus,
+        pool,
+        eff_reqs,
+        hours,
+    );
     Evaluation {
         character,
         account: *account,
         location: spot,
         lure: lure_option,
         line: line_option,
-        toolkit,
-        depths: depth,
+        toolkit: resolved.toolkit,
+        depths: resolved.depths,
         spot_bonus: spot.bonus,
-        speed_bonus: account.speed_bonus + toolkit.speed,
-        speed: catch_time,
-        catches_per_hour: catches,
+        speed_bonus: account.speed_bonus + resolved.toolkit.speed,
+        speed: resolved.speed,
+        catches_per_hour: resolved.catches_per_hour,
         attack_factor_used: if account.attack_factor.is_finite() {
             account.attack_factor.clamp(1.0, 3.0)
         } else {
             1.0
         },
-        outcome: pool_outcome(pool, &inputs, hours),
+        outcome: resolved.outcome,
     }
 }
 
@@ -373,7 +442,7 @@ pub fn breakdown(evaluation: &Evaluation) -> FormulaNode {
                 .with_input(format!(
                     "({} / {})^(0.25 + {})",
                     ValueFormat::Raw.format(evaluation.account.efficiency),
-                    ValueFormat::Raw.format(outcome.pool.eff_reqs[2]),
+                    ValueFormat::Raw.format(outcome.eff_reqs[2]),
                     ValueFormat::Raw.format(evaluation.account.prowess)
                 ))
                 .with_source("SkillStats(\"FishingOreValue\")")

@@ -1,13 +1,15 @@
 //! The fishing slice of a decoded save: characters, their rod and their saved
-//! fishing spot and toolkit.
+//! fishing spot and toolkit, plus the Trench depth row FI-03 projects from.
 //!
 //! The field names follow the upstream loader's `js/save/loader.js`:
 //! `Lv0_<n>[4]` is the Fishing level, `EquipOrder_<n>[1][2]` the equipped rod,
 //! `PVFishingToolkit_<n>` the saved `[lure, line]` (the key's presence is what
 //! the upstream calls "available"), `PVFishingSpotIndex_<n>` the saved spot and
-//! `CurrentMap_<n>` / `AFKtarget_<n>` where the character was left.
+//! `CurrentMap_<n>` / `AFKtarget_<n>` where the character was left. `Holes` and
+//! `Spelunk` supply the Trench's saved depth and its requirement reductions.
 
 use super::data::{Location, data};
+use super::trench::Trench;
 use crate::save::{Save, at, number};
 
 /// One character's fishing context, as the save carries it.
@@ -88,10 +90,13 @@ impl Character {
     }
 }
 
-/// Every character's fishing context, plus the import warnings it produced.
+/// Every character's fishing context, plus the Trench depth the save carries.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct FishingSave {
     pub characters: Vec<Character>,
+    /// `Holes` and `Spelunk`, which the Trench depth projection reads; `None`
+    /// when the save has no cavern rows, as the upstream `base.trench`.
+    pub trench: Option<Trench>,
 }
 
 impl FishingSave {
@@ -100,6 +105,7 @@ impl FishingSave {
         let count = save.character_count();
         Self {
             characters: (0..count).map(|index| read(save, index)).collect(),
+            trench: Trench::from_save(save),
         }
     }
 

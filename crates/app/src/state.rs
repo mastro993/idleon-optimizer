@@ -1570,6 +1570,29 @@ impl AppState {
         cx.notify();
     }
 
+    /// Set how many Trench depths the projection covers.
+    pub fn set_fishing_trench_depths(&mut self, depths: usize, cx: &mut Context<Self>) {
+        self.fishing.trench_depths = depths.clamp(1, 25);
+        cx.notify();
+    }
+
+    /// Switch how the other Trench characters choose their lure and line.
+    pub fn set_fishing_helper_mode(
+        &mut self,
+        mode: idleon_core::fishing::HelperMode,
+        cx: &mut Context<Self>,
+    ) {
+        self.fishing.trench_helper_mode = mode;
+        cx.notify();
+    }
+
+    /// Tick or untick another character on the Trench helper table.
+    pub fn set_fishing_helper(&mut self, index: usize, on: bool, cx: &mut Context<Self>) {
+        let characters = self.fishing_save.characters.len();
+        self.fishing.set_helper(index, on, characters);
+        cx.notify();
+    }
+
     /// Edit one account value the fishing evaluator reads.
     pub fn set_fishing_account(
         &mut self,

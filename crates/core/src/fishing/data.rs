@@ -108,6 +108,23 @@ pub struct Rod {
     pub speed: f64,
 }
 
+/// The Trench depth requirement's data, from the upstream `holesBolaiaPerLv`,
+/// `legendTalentPerPt(29)` and the jar's collectible 5.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TrenchData {
+    /// `SKILLING_CAVERNS`, in the order a Bolaia study scales.
+    pub caverns: Vec<String>,
+    /// The Bolaia studies whose per-layer value scales with each cavern.
+    pub studies: Vec<usize>,
+    /// `holesBolaiaPerLv(study)`, one per entry of [`Self::studies`].
+    pub bolaia_per_level: Vec<f64>,
+    /// `legendTalentPerPt(29)`, the multiplier the jar collectible shares.
+    pub legend_per_point: f64,
+    /// `COLLECTIBLE_DATA[5][1]`, the skilling cavern requirement reduction.
+    pub collectible5_per_level: f64,
+}
+
 /// Everything the calculator reads from the upstream game data.
 #[derive(Debug, Deserialize)]
 pub struct FishingData {
@@ -116,6 +133,7 @@ pub struct FishingData {
     pub lines: Vec<ToolkitOption>,
     pub locations: Vec<Location>,
     pub rods: Vec<Rod>,
+    pub trench: TrenchData,
 }
 
 impl FishingData {
@@ -197,5 +215,15 @@ mod tests {
         assert_eq!(data.rod("FishingRod1").unwrap().speed, 3.0);
         assert_eq!(data.rod("FishingRod13").unwrap().speed, 8.0);
         assert!(data.rod("Blank").is_none());
+    }
+
+    #[test]
+    fn the_trench_data_is_the_upstream_four_caverns() {
+        let trench = &data().trench;
+        assert_eq!(trench.caverns, ["Motherlode", "Hive", "Evertree", "Trench"]);
+        assert_eq!(trench.studies, [1, 7, 11, 16]);
+        assert_eq!(trench.bolaia_per_level, [2.0, 5.0, 5.0, 3.0]);
+        assert_eq!(trench.legend_per_point, 20.0);
+        assert_eq!(trench.collectible5_per_level, 10.0);
     }
 }

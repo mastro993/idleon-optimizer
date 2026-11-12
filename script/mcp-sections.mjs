@@ -364,12 +364,17 @@ const combatSave = () => {
 /// A small flat `save.json` carrying one fishing character on the Deepwater
 /// Docks spot, with a saved toolkit unless `toolkit: false`, so the fishing
 /// section can open on a real pool and flag a missing toolkit key.
-const fishingSave = ({ toolkit = true } = {}) => {
+///
+/// `trench: true` adds two characters saved at the Trench and the cavern rows
+/// the depth projection reads (the Trench's cleared layers and progress, the
+/// jar collectible, the Bolaia studies and Legend 29).
+const fishingSave = ({ toolkit = true, trench = false, roster = 1 } = {}) => {
   const levels = Array(30).fill(0);
   levels[4] = 100;
   const tools = [];
   tools[1] = { 2: 'FishingRod13' };
   const save = {
+    charNames: ['Ana', 'Bo', 'Cy'].slice(0, roster),
     Research: '[]',
     Lv0_0: JSON.stringify(levels),
     EquipOrder_0: JSON.stringify(tools),
@@ -378,6 +383,27 @@ const fishingSave = ({ toolkit = true } = {}) => {
     AFKtarget_0: 'FishMed',
   };
   if (toolkit) save.PVFishingToolkit_0 = JSON.stringify([8, 4]);
+  for (let ci = 1; ci < roster; ci += 1) {
+    save[`Lv0_${ci}`] = JSON.stringify(levels);
+    save[`EquipOrder_${ci}`] = JSON.stringify(tools);
+    save[`PVFishingToolkit_${ci}`] = JSON.stringify([2, 2]);
+    save[`AFKtarget_${ci}`] = 'MotherlodeFISH';
+  }
+  if (trench) {
+    const holes = Array.from({ length: 27 }, () => []);
+    // Holes[11]: per-cavern progress and cleared layers ([progress, layers]),
+    // then the Trench's own progress and layers.
+    holes[11] = [0, 3, 0, 2, 0, 1, 900, 2];
+    // Holes[24][5]: the jar's Amethyst Heartstone level.
+    holes[24] = [0, 0, 0, 0, 0, 4];
+    // Holes[26]: the four Bolaia layer studies.
+    holes[26] = [0, 5, 0, 0, 0, 0, 0, 4, 0, 0, 0, 3, 0, 0, 0, 0, 2];
+    save.Holes = JSON.stringify(holes);
+    const spelunk = Array.from({ length: 19 }, () => []);
+    spelunk[18] = Array.from({ length: 50 }, () => 0);
+    spelunk[18][29] = 2;
+    save.Spelunk = JSON.stringify(spelunk);
+  }
   return JSON.stringify(save);
 };
 
@@ -1064,6 +1090,72 @@ const INTERACTIONS = {
       'fishing-toolkit-missing',
       'fishing'
     );
+    // FI-03: the cavern rows give the Trench its saved depth, and the second
+    // character, saved at the Trench, starts ticked and adds to the team ETA.
+    await importSave(
+      fishingSave({ trench: true, roster: 2 }),
+      'fishing-trench',
+      'fishing'
+    );
+    const trench = await lane.tree();
+    const depth = labelOf(trench, 'fishing-trench-depth') ?? '';
+    if (!/^Trench depth 3/.test(depth)) {
+      throw new Error(`fishing: the Trench depth reads ${depth}`);
+    }
+    const helperRow = labelOf(trench, 'fishing-trench-helper-name-1') ?? '';
+    if (!/^Bo: [\d.,KMBQ]+ fish\/hr/.test(helperRow)) {
+      throw new Error(`fishing: the helper row reads ${helperRow}`);
+    }
+    const team = labelOf(trench, 'fishing-trench-team') ?? '';
+    if (!team.startsWith('ETA with 1 helper(s)')) {
+      throw new Error(`fishing: the team ETA reads ${team}`);
+    }
+    const scrollTo = async (id) => {
+      const node = (await lane.tree()).find((entry) => entry.id === id);
+      const y = node?.bounds?.y ?? 0;
+      if (y > 600) {
+        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await waitForNode(lane, id, `fishing: ${id} scrolls into view`);
+      }
+    };
+    // An unticked helper drops out of the team, and ticking it back adds it.
+    await scrollTo('fishing-trench-helper-1');
+    await lane.call('click_element', { id: 'fishing-trench-helper-1' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'fishing-trench-team'),
+      'fishing: unticking the helper drops the team ETA'
+    );
+    await lane.call('click_element', { id: 'fishing-trench-helper-1' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'fishing-trench-team') ?? '').startsWith('ETA with 1 helper'),
+      'fishing: ticking the helper adds the team ETA back'
+    );
+    // The depth selector reprojects: 5 is the default, 10 is the next choice.
+    await scrollTo('fishing-trench-depths');
+    await lane.call('focus_element', { id: 'fishing-trench-depths' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'fishing-trench-projection-note') ?? '') ===
+        '10 depths projected from the saved depth',
+      'fishing: the projection reprojects ten depths'
+    );
+    // A roster with no other character shows the empty helper state.
+    await importSave(
+      fishingSave({ trench: true }),
+      'fishing-trench-helpers-empty',
+      'fishing'
+    );
+    const alone = await lane.tree();
+    if (has(alone, 'fishing-trench-team')) {
+      throw new Error('fishing: a one-character roster shows a team ETA');
+    }
+    // A save without Holes has no Trench to project and says so.
+    await importSave(fishingSave(), 'fishing-trench-missing', 'fishing');
   },
   endgame: async (lane) => {
     await waitForNode(lane, 'endgame-verdict', 'endgame: the verdict is there before a save');
