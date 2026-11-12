@@ -23,6 +23,7 @@ pub mod coin_multi;
 pub mod combat;
 pub mod cooking_mastery;
 pub mod coral;
+pub mod damage;
 pub mod dashboard;
 pub mod data;
 pub mod drop_rate;

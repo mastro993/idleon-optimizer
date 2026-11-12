@@ -5,7 +5,7 @@
 - Milestone: `M4`
 - Section key: `damage`
 - Group: `tools`
-- Status: `planned`
+- Status: `partial`
 - Depends on: `foundation`, `stats-all`
 
 Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.

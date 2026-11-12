@@ -203,6 +203,65 @@ pub fn fmt_val(value: f64) -> String {
     }
 }
 
+/// The upstream `fmtDmgRange`: the game's character-sheet notation.
+///
+/// The tiers are the upstream `DMG_TIERS` table: a raw integer range below ten
+/// million, then thousands/millions/billions/trillions in the game's own
+/// stepping, quadrillions behind the gem prefix, and an exponent fallback.
+pub fn damage_range(min: f64, max: f64) -> String {
+    const TIERS: [(f64, f64, f64, &str, &str); 13] = [
+        (1e7, 1.0, 1.0, "", ""),
+        (1e9, 1e3, 1e3, "", "M"),
+        (1e11, 1e5, 10.0, "", "M"),
+        (1e13, 1e6, 1.0, "", "M"),
+        (1e15, 1e9, 1e3, "", "T"),
+        (1e17, 1e11, 10.0, "", "T"),
+        (1e19, 1e12, 1.0, "", "T"),
+        (1e21, 1e15, 1e3, "💎", ""),
+        (1e23, 1e17, 10.0, "💎", ""),
+        (1e25, 1e18, 1.0, "💎", ""),
+        (1e27, 1e21, 1e3, "💎", "M"),
+        (1e28, 1e23, 10.0, "💎", "M"),
+        (f64::INFINITY, 1e24, 1.0, "💎", "M"),
+    ];
+    for (threshold, divisor, post, prefix, suffix) in TIERS {
+        if max < threshold || threshold.is_infinite() {
+            let low = (min / divisor).ceil() / post;
+            let high = (max / divisor).ceil() / post;
+            return format!("{prefix}{low}{suffix}~{high}{suffix}");
+        }
+    }
+    format!("{min}~{max}")
+}
+
+/// The upstream `fmtExact`: the whole number with thousands separators.
+///
+/// JavaScript's `toLocaleString` prints 17 significant digits and pads the
+/// rest with zeros once a double is past a quadrillion, so this keeps the same
+/// digits instead of showing the binary tail Rust's `{:.0}` prints.
+pub fn exact(value: f64) -> String {
+    if !value.is_finite() {
+        return "—".into();
+    }
+    let rounded = value.round();
+    let abs = rounded.abs();
+    if abs == 0.0 {
+        return "0".into();
+    }
+    if abs < 1e21 {
+        return group(&format!("{rounded:.0}"));
+    }
+    let exponent = abs.log10().floor();
+    let scale = 10_f64.powf(exponent - 16.0);
+    let leading = (abs / scale).round() as u128;
+    let mut digits = leading.to_string();
+    digits.push_str(&"0".repeat((exponent as usize).saturating_sub(16)));
+    if rounded < 0.0 {
+        digits.insert(0, '-');
+    }
+    group(&digits)
+}
+
 /// Thousands separators around the whole part of a number.
 fn group(whole: &str) -> String {
     let (sign, digits) = match whole.strip_prefix('-') {
@@ -522,6 +581,18 @@ mod tests {
         assert_eq!(scale(2_960_058_875.172_09), (2.960_058_875_172_09, "B"));
         assert_eq!(rate(1_500.0), "1.5K");
         assert_eq!(rate(2_960_058_875.172_09), "2.96B");
+    }
+
+    #[test]
+    fn damage_ranges_use_the_game_character_sheet_tiers() {
+        // The upstream fixture's min and max, formatted by `fmtDmgRange`.
+        let min = 1.235_462_757_427_009e31;
+        let max = 1.544_328_446_783_761e31;
+        assert_eq!(damage_range(min, max), "💎12354628M~15443285M");
+        assert_eq!(damage_range(500.0, 900.0), "500~900");
+        assert_eq!(damage_range(2e7, 2.5e7), "20M~25M");
+        assert_eq!(exact(max), "15,443,284,467,837,610,000,000,000,000,000");
+        assert_eq!(exact(1_234.5), "1,235");
     }
 
     #[test]

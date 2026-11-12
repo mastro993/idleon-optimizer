@@ -746,7 +746,7 @@
       "key": "damage",
       "title": "Damage Breakdown",
       "group": "tools",
-      "status": "planned",
+      "status": "partial",
       "summary": "Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.",
       "upstream": [
         "damage-calc.html",

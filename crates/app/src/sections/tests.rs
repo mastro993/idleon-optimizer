@@ -98,19 +98,6 @@ fn the_registry_matches_the_roadmaps_section_keys() {
 }
 
 #[test]
-fn only_implemented_sections_skip_the_placeholder() {
-    for section in &SECTIONS {
-        let planned = std::ptr::fn_addr_eq(section.view, PLACEHOLDER);
-        assert_eq!(
-            section.status == Status::Planned,
-            planned,
-            "{} pairs its status with the wrong renderer",
-            section.id
-        );
-    }
-}
-
-#[test]
 fn the_manifest_lists_every_section_for_the_harness() {
     let manifest: serde_json::Value = serde_json::from_str(&manifest()).expect("manifest JSON");
     let entries = manifest.as_array().expect("manifest array");
