@@ -1,0 +1,226 @@
+{
+ "source": "js/stats/systems/common/combat-sim-*.js through script/combat-encounter-oracle.mjs",
+ "overrides": {
+  "respawnRescale": 1,
+  "monsterHpRescale": 1,
+  "respawnBonusPct": {},
+  "crystalSpawnRaw": 0,
+  "crystalSpawnCap": 0,
+  "guaranteedCrystalMobs": 0,
+  "giantMob": 0,
+  "prayer18": 0,
+  "chipCrys": 0
+ },
+ "cases": [
+  {
+   "map": 1,
+   "scene": "SceneEvents_0",
+   "player": "standIn",
+   "killEveryMs": 700,
+   "seconds": 120,
+   "expected": {
+    "simulatedMs": 120000,
+    "steps": 12000,
+    "frames": 7200,
+    "kills": 131,
+    "damage": 3810,
+    "killsByType": {
+     "mushG": 112,
+     "OakTree": 19
+    },
+    "respawn": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     11,
+     12,
+     2
+    ]
+   }
+  },
+  {
+   "map": 2,
+   "scene": "SceneEvents_13",
+   "player": "standIn",
+   "killEveryMs": 100,
+   "seconds": 120,
+   "expected": {
+    "simulatedMs": 120000,
+    "steps": 12000,
+    "frames": 7200,
+    "kills": 272,
+    "damage": 32912,
+    "killsByType": {
+     "frogG": 272
+    },
+    "respawn": [
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     8,
+     9,
+     9,
+     9,
+     9,
+     9,
+     9,
+     9,
+     9,
+     9,
+     10,
+     10,
+     10,
+     10,
+     10,
+     10,
+     10,
+     10,
+     10,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11
+    ]
+   }
+  },
+  {
+   "map": 6,
+   "scene": "SceneEvents_4",
+   "player": "standIn",
+   "killEveryMs": 500,
+   "seconds": 300,
+   "expected": {
+    "simulatedMs": 300000,
+    "steps": 30000,
+    "frames": 18000,
+    "kills": 33,
+    "damage": 198,
+    "killsByType": {
+     "Copper": 33
+    },
+    "respawn": [
+     60,
+     61,
+     62,
+     63,
+     63,
+     64,
+     64,
+     65,
+     65,
+     66,
+     66
+    ]
+   }
+  },
+  {
+   "map": 60,
+   "scene": "SceneEvents_40",
+   "player": "standIn",
+   "killEveryMs": 250,
+   "seconds": 120,
+   "expected": {
+    "simulatedMs": 120000,
+    "steps": 12000,
+    "frames": 7200,
+    "kills": 85,
+    "damage": 3230085,
+    "killsByType": {
+     "potato": 85
+    },
+    "respawn": [
+     5,
+     5,
+     5,
+     6,
+     6,
+     6,
+     7,
+     7,
+     7,
+     8,
+     8,
+     8,
+     9,
+     9,
+     9,
+     10,
+     10
+    ]
+   }
+  },
+  {
+   "map": 119,
+   "scene": "SceneEvents_76",
+   "player": "standIn",
+   "killEveryMs": 400,
+   "seconds": 180,
+   "expected": {
+    "simulatedMs": 180000,
+    "steps": 18000,
+    "frames": 10800,
+    "kills": 91,
+    "damage": 546,
+    "killsByType": {
+     "Tree7": 45,
+     "Plat": 1,
+     "FishSmall": 45
+    },
+    "respawn": [
+     0,
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "map": 1,
+   "scene": "SceneEvents_0",
+   "player": "idle",
+   "killEveryMs": 0,
+   "seconds": 60,
+   "expected": {
+    "simulatedMs": 60000,
+    "steps": 6000,
+    "frames": 3600,
+    "kills": 0,
+    "damage": 0,
+    "killsByType": {},
+    "respawn": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   }
+  }
+ ]
+}

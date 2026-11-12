@@ -3434,6 +3434,7 @@ dependencies = [
 name = "idleon-combat"
 version = "0.1.0"
 dependencies = [
+ "idleon-common",
  "idleon-import",
  "idleon-save",
  "serde",

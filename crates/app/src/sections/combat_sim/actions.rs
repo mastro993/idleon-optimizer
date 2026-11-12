@@ -2,7 +2,9 @@
 
 use crate::sections::combat_sim::Tab as CombatTab;
 use crate::state::AppState;
-use gpui::Context;
+use gpui::{App, Context};
+use idleon_combat::encounter::{self, Options, Outcome, Player};
+use idleon_ui::runner::TaskState;
 
 impl AppState {
     /// Pick the loadout editor's tab.
@@ -159,5 +161,90 @@ impl AppState {
         if let Some(preset) = self.combat.presets.delete(index) {
             self.set_status(format!("Deleted the loadout “{}”.", preset.name), cx);
         }
+    }
+
+    /// Pick the map the next encounter run reads.
+    pub(crate) fn set_combat_encounter_map(&mut self, index: usize, cx: &mut Context<Self>) {
+        if encounter::map(index).is_some() {
+            self.combat.sim_map = index;
+        }
+        cx.notify();
+    }
+
+    /// Choose the idle player instead of the fixed kill interval.
+    pub(crate) fn set_combat_encounter_idle(&mut self, idle: bool, cx: &mut Context<Self>) {
+        self.combat.sim_stand_in = !idle;
+        cx.notify();
+    }
+
+    /// Set the stand-in's kill interval, snapped to the 10 ms step.
+    pub(crate) fn set_combat_encounter_kill_every(
+        &mut self,
+        milliseconds: f64,
+        cx: &mut Context<Self>,
+    ) {
+        if milliseconds.is_finite() {
+            let snapped = (milliseconds.max(10.0) / 10.0).round() * 10.0;
+            self.combat.sim_kill_every_ms = snapped as u64;
+        }
+        cx.notify();
+    }
+
+    /// Set the simulated duration, clamped to the upstream presets' range.
+    pub(crate) fn set_combat_encounter_duration(&mut self, seconds: u64, cx: &mut Context<Self>) {
+        self.combat.sim_duration_s = seconds.clamp(10, 86_400);
+        cx.notify();
+    }
+
+    /// The options a run started now would read.
+    pub(crate) fn combat_encounter_options(&self) -> Options {
+        Options {
+            map: self.combat.sim_map,
+            player: if self.combat.sim_stand_in {
+                Player::StandIn {
+                    kill_every_ms: self.combat.sim_kill_every_ms,
+                }
+            } else {
+                Player::Idle
+            },
+            duration_ms: self.combat.sim_duration_s * 1000,
+        }
+    }
+
+    /// Run the encounter off the UI thread through the shared task runner.
+    pub(crate) fn run_combat_encounter(&mut self, cx: &mut Context<Self>) {
+        let options = self.combat_encounter_options();
+        if let Err(error) = encounter::validate(&options) {
+            self.set_status(error, cx);
+            return;
+        }
+        let line = format!(
+            "Running map {} with {}…",
+            options.map,
+            options.player.label()
+        );
+        self.start_run(
+            self.combat_encounter.clone(),
+            line,
+            options,
+            move |options, report| encounter::run(options, report).ok().flatten(),
+            cx,
+        );
+    }
+
+    /// Ask a running encounter to stop; the previous result stays.
+    pub(crate) fn cancel_combat_encounter(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.combat_encounter.clone(),
+            "Cancelling the encounter…",
+            cx,
+        );
+    }
+
+    /// The stored encounter run and whether its options changed since the run.
+    pub(crate) fn combat_encounter(&self, cx: &App) -> TaskState<Outcome> {
+        self.combat_encounter
+            .read(cx)
+            .state(&self.combat_encounter_options())
     }
 }

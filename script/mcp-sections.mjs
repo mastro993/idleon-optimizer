@@ -1645,6 +1645,31 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'gear' });
     await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
+    // CS-03: the Encounter tab runs a map and reports the run's kills, and the
+    // mechanics it does not model are listed beside the options.
+    await lane.call('click_element', { id: 'encounter' });
+    await waitForNode(lane, 'combat-encounter-run', 'combat-sim: the encounter tab opens');
+    await waitForNode(
+      lane,
+      'combat-encounter-unsupported',
+      'combat-sim: the mechanics this build leaves out are listed',
+    );
+    await lane.call('click_element', { id: 'combat-encounter-run' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const kills = /Kills ([\d.]+)/.exec(labelOf(nodes, 'combat-encounter-kills') ?? '');
+        return (
+          kills !== null &&
+          Number(kills[1]) > 0 &&
+          has(nodes, 'combat-encounter-by-type') &&
+          !(labelOf(nodes, 'combat-encounter-damage') ?? '').endsWith(' 0.0')
+        );
+      },
+      'combat-sim: the encounter run reports its kills and damage',
+    );
+    await lane.call('click_element', { id: 'gear' });
+    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
     // Pick the weapon slot, then the first weapon the picker offers.
     await lane.call('click_element', { id: 'combat-slot-0-1' });
     await waitForNode(lane, 'combat-item-select', 'combat-sim: the slot detail opens');

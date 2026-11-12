@@ -7,8 +7,10 @@
 //! saved value. The active rules are also chips above the editor, so what a run
 //! would change is visible from any tab.
 //!
-//! The saved values the Scale mode multiplies arrive with the encounter run's
-//! inputs (CS-03); until then the pane still takes every rule and persists it.
+//! The saved values the Scale mode multiplies, and the stat context that applies
+//! a rule to a run, arrive with the component-term trace; the encounter run this
+//! build ships reads the spawn roster only, so the pane still takes every rule
+//! and persists it for that context.
 
 use crate::state::AppState;
 use crate::ui::layout;
@@ -142,12 +144,12 @@ pub(crate) fn pane(
                                 }),
                         ),
                 )
-                .child(Caption::new(if state.save_loaded {
-                    "Saved values and the value Scale multiplies arrive with the encounter run, \
-                     which reads these rules against the selected character and map."
-                } else {
-                    "Import a save so the encounter run can resolve these rules against its inputs."
-                }))
+                .child(Caption::new(
+                    "The rules belong to the working loadout and travel in the project export. \
+                     The run this build ships reads the map's spawn roster only, so an override \
+                     changes nothing yet: the saved values Scale multiplies arrive with the \
+                     component-term trace.",
+                ))
                 .child(body),
         )
         .into_any_element()
