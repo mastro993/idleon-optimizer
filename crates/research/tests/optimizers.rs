@@ -476,25 +476,19 @@ fn the_extended_insight_option_changes_the_projection() {
     };
     assert_eq!(monocle_slot(&plain), Some(0));
     assert_eq!(monocle_slot(&extended), Some(42));
+    // The two plans tie on immediate EXP/hour: only the insight they grow along
+    // the way separates them, so the run is ranked by time to the level.
+    assert!(
+        (extended.after_rate - plain.after_rate).abs() <= extended.after_rate * 1e-9,
+        "the plans no longer tie on rate: {} vs {}",
+        extended.after_rate,
+        plain.after_rate
+    );
     assert!(
         extended.projection.hours < plain.projection.hours,
         "extended {}h is not faster than {}h",
         extended.projection.hours,
         plain.projection.hours
-    );
-    let rate = |result: &OptimizeResult| {
-        result
-            .projection
-            .samples
-            .last()
-            .map(|sample| sample.rate)
-            .unwrap_or(0.0)
-    };
-    assert!(
-        rate(&extended) > rate(&plain),
-        "extended {} does not beat {}",
-        rate(&extended),
-        rate(&plain)
     );
 }
 

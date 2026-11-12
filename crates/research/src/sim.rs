@@ -4,9 +4,7 @@
 //! calculators, minus the save-specific multipliers this app leaves to the user.
 
 use crate::data::game;
-use crate::model::{
-    GridState, Mag, MagKind, Observations, SimContext, SimOptions, Simulation, Target,
-};
+use crate::model::{GridState, Mag, MagKind, Observations, SimContext, Simulation};
 
 /// Research EXP per hour, split into its factors for the dashboard.
 #[derive(Clone, Copy, Debug, Default)]
@@ -46,7 +44,7 @@ impl ExpTerms {
 }
 
 /// What the level curves say about a run.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Projection {
     /// Hours until the target is met.
     pub hours: f64,
@@ -61,7 +59,7 @@ pub struct Projection {
 }
 
 /// One point on the projection's rate curve.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Sample {
     pub hours: f64,
     pub level: u32,
@@ -623,15 +621,19 @@ pub fn can_rotate(research_level: u32) -> bool {
 }
 
 /// Advance a level while the accumulated EXP covers the next requirement.
+///
+/// The `1e-9` slack and the clamp are upstream `advanceResearchLevel`'s: a jump
+/// that lands exactly on the requirement can undershoot by a rounding error, and
+/// without the slack the run would spend its next jumps crawling the residual.
 pub(crate) fn advance_level(level: &mut u32, exp: &mut f64, server_var_res_xp: f64) {
     while research_level_affordable(*level, *exp, server_var_res_xp) {
-        *exp -= research_exp_req(*level, server_var_res_xp);
+        *exp = (*exp - research_exp_req(*level, server_var_res_xp)).max(0.0);
         *level += 1;
     }
 }
 
 fn research_level_affordable(level: u32, exp: f64, server_var_res_xp: f64) -> bool {
-    exp >= research_exp_req(level, server_var_res_xp)
+    exp >= research_exp_req(level, server_var_res_xp) - 1e-9
 }
 
 /// Upstream's daily tournament window: 12h of research time per registration.
@@ -668,7 +670,7 @@ pub(crate) fn first_tournament_hours(ctx: &SimContext) -> f64 {
 }
 
 /// Mark every observation whose research requirement is met as found.
-fn unlock_observations(state: &mut Simulation) {
+pub(crate) fn unlock_observations(state: &mut Simulation) {
     let level = state.research_level as f64;
     for (obs, found) in state.observations.found.iter_mut().enumerate() {
         if !*found && level >= game().observations[obs].roll_req {
@@ -681,7 +683,7 @@ fn unlock_observations(state: &mut Simulation) {
 ///
 /// One level per observation, as upstream `advanceInsightLevels` reads its
 /// single `if`; the tournament bonus is one collection event, not a loop.
-fn advance_insight_hours(state: &mut Simulation, ctx: &SimContext, hours: f64) -> u32 {
+pub(crate) fn advance_insight_hours(state: &mut Simulation, ctx: &SimContext, hours: f64) -> u32 {
     let overlay = state.overlay();
     let kal_map = kaleidoscope_map(&state.mags, game().observations.len());
     let kal_base = kalei_base(&state.grid, &overlay, ctx);
@@ -701,154 +703,6 @@ fn advance_insight_hours(state: &mut Simulation, ctx: &SimContext, hours: f64) -
         }
     }
     gained
-}
-
-/// Project research EXP, research levels and insight forward.
-pub fn project(
-    sim: &Simulation,
-    ctx: &SimContext,
-    target: Target,
-    options: SimOptions,
-) -> Projection {
-    let mut state = sim.clone();
-    let mut hours = 0.0;
-    let mut total_exp = 0.0;
-    let mut samples = vec![Sample {
-        hours: 0.0,
-        level: state.research_level,
-        rate: exp_rate(&state, ctx).total,
-    }];
-    let mut insight_gained = 0;
-
-    let max_hours = match target {
-        Target::Level(_) => f64::INFINITY,
-        Target::Hours(hours) => hours,
-    };
-    let target_level = match target {
-        Target::Level(level) => Some(level),
-        Target::Hours(_) => None,
-    };
-    let mut next_tournament = if options.include_tournament {
-        first_tournament_hours(ctx)
-    } else {
-        f64::INFINITY
-    };
-
-    for _ in 0..20_000 {
-        if hours >= max_hours {
-            break;
-        }
-        if let Some(level) = target_level
-            && state.research_level >= level
-        {
-            break;
-        }
-        let rate = exp_rate(&state, ctx).total;
-        if rate <= 0.0 {
-            break;
-        }
-
-        // Time to the next research level, or to the target's horizon.
-        let exp_req = research_exp_req(state.research_level, ctx.server_var_res_xp);
-        let to_level = ((exp_req - state.research_exp) / rate).max(0.0);
-
-        // Time to the next insight level among monocle targets.
-        let overlay = state.overlay();
-        let kal_map = kaleidoscope_map(&state.mags, game().observations.len());
-        let kal_base = kalei_base(&state.grid, &overlay, ctx);
-        let mut to_insight = f64::INFINITY;
-        let mut insight_obs = 0;
-        for obs in 0..game().observations.len() {
-            let rate = insight_rate(obs, &state, &overlay, ctx, &kal_map, kal_base);
-            if rate <= 0.0 {
-                continue;
-            }
-            let req = insight_exp_req(obs, state.observations.insight_level[obs]);
-            let exp = state.observations.insight_exp[obs];
-            let hours_left = ((req - exp) / rate).max(0.0);
-            if hours_left < to_insight {
-                to_insight = hours_left;
-                insight_obs = obs;
-            }
-        }
-
-        let to_tournament = (next_tournament - hours).max(0.0);
-        let step = to_level
-            .min(to_insight)
-            .min(max_hours - hours)
-            .min(to_tournament);
-        let step = if step.is_finite() {
-            step.max(1e-9)
-        } else {
-            0.0
-        };
-        if step <= 0.0 && to_level > 0.0 && to_insight.is_infinite() {
-            break;
-        }
-
-        hours += step;
-        let gained = rate * step;
-        state.research_exp += gained;
-        total_exp += gained;
-        let level_before = state.research_level;
-        advance_level(
-            &mut state.research_level,
-            &mut state.research_exp,
-            ctx.server_var_res_xp,
-        );
-        if options.assume_observations && state.research_level > level_before {
-            unlock_observations(&mut state);
-        }
-
-        if to_insight.is_finite() && step >= to_insight - 1e-9 {
-            let req = insight_exp_req(insight_obs, state.observations.insight_level[insight_obs]);
-            let insight_rate_value =
-                insight_rate(insight_obs, &state, &overlay, ctx, &kal_map, kal_base);
-            state.observations.insight_exp[insight_obs] += insight_rate_value * step;
-            state.observations.insight_exp[insight_obs] -= req;
-            state.observations.insight_level[insight_obs] += 1;
-            insight_gained += 1;
-        }
-
-        if options.include_tournament && hours >= next_tournament - 1e-9 {
-            // The registration injects raw research time at the current rate,
-            // bypassing AFK, and one insight collection for the monocle board.
-            let bonus = rate * TOURNAMENT_BONUS_HOURS;
-            state.research_exp += bonus;
-            total_exp += bonus;
-            insight_gained += advance_insight_hours(&mut state, ctx, TOURNAMENT_BONUS_HOURS);
-            let level_before = state.research_level;
-            advance_level(
-                &mut state.research_level,
-                &mut state.research_exp,
-                ctx.server_var_res_xp,
-            );
-            if options.assume_observations && state.research_level > level_before {
-                unlock_observations(&mut state);
-            }
-            next_tournament += TOURNAMENT_INTERVAL_HOURS;
-        }
-
-        samples.push(Sample {
-            hours,
-            level: state.research_level,
-            rate: exp_rate(&state, ctx).total,
-        });
-
-        if let Some(level) = target_level
-            && state.research_level >= level
-        {
-            break;
-        }
-    }
-
-    Projection {
-        hours,
-        final_level: state.research_level,
-        total_exp,
-        insight_gained,
-        samples,
-    }
 }
 
 #[cfg(test)]
@@ -946,43 +800,6 @@ mod tests {
     }
 
     #[test]
-    fn projection_reaches_a_level_and_stops() {
-        let (mut sim, ctx) = filled();
-        sim.mags = vec![Mag::new(MagKind::Regular, Some(3))];
-        let projection = project(&sim, &ctx, Target::Level(62), SimOptions::default());
-        assert_eq!(projection.final_level, 62);
-        assert!(projection.hours > 0.0);
-        assert!(projection.samples.len() >= 2);
-    }
-
-    #[test]
-    fn projection_to_a_far_level_terminates_with_an_honest_hour_count() {
-        let (mut sim, ctx) = filled();
-        sim.research_level = 150;
-        sim.mags = vec![Mag::new(MagKind::Regular, Some(3))];
-        let projection = project(&sim, &ctx, Target::Level(151), SimOptions::default());
-        assert_eq!(projection.final_level, 151);
-        assert!(projection.hours > 1e6, "hours {}", projection.hours);
-        assert!(
-            projection.samples.len() < 64,
-            "samples {}",
-            projection.samples.len()
-        );
-    }
-
-    #[test]
-    fn projection_honours_an_hour_budget() {
-        let (mut sim, ctx) = filled();
-        sim.mags = vec![
-            Mag::new(MagKind::Regular, Some(3)),
-            Mag::new(MagKind::Monocle, Some(3)),
-        ];
-        let projection = project(&sim, &ctx, Target::Hours(5.0), SimOptions::default());
-        assert!((projection.hours - 5.0).abs() < 1e-6);
-        assert!(projection.insight_gained > 0);
-    }
-
-    #[test]
     fn grid_points_count_what_the_level_grants() {
         let (sim, ctx) = filled();
         let points = grid_points(&sim, &ctx);
@@ -1056,78 +873,6 @@ mod tests {
         let (sim, mut ctx) = filled();
         ctx.companion_28 = 1_000.0;
         assert_eq!(afk_rate(&sim, &ctx).rate, 1.0);
-    }
-
-    #[test]
-    fn assuming_observations_unlocked_raises_the_projected_rate() {
-        let (mut sim, ctx) = filled();
-        sim.observations.found.fill(false);
-        sim.observations.insight_level.fill(0);
-        sim.grid = GridState::empty();
-        // See 'Em All: +5% EXP per observation found.
-        sim.grid.set(112, 1);
-        sim.mags = vec![Mag::new(MagKind::Regular, Some(0))];
-
-        let plain = project(
-            &sim,
-            &ctx,
-            Target::Level(65),
-            SimOptions {
-                assume_observations: false,
-                ..SimOptions::default()
-            },
-        );
-        let assumed = project(
-            &sim,
-            &ctx,
-            Target::Level(65),
-            SimOptions {
-                assume_observations: true,
-                ..SimOptions::default()
-            },
-        );
-        assert_eq!(assumed.final_level, 65);
-        assert_eq!(plain.final_level, 65);
-        let plain_rate = plain.samples.last().expect("a sample").rate;
-        let assumed_rate = assumed.samples.last().expect("a sample").rate;
-        assert!(
-            assumed_rate > plain_rate * 1.1,
-            "{assumed_rate} is not above {plain_rate}"
-        );
-        assert!(
-            assumed.hours < plain.hours,
-            "{}h is not faster than {}h",
-            assumed.hours,
-            plain.hours
-        );
-    }
-
-    #[test]
-    fn the_tournament_option_adds_twelve_hours_a_day() {
-        let (mut sim, ctx) = filled();
-        sim.mags = vec![Mag::new(MagKind::Regular, Some(3))];
-        let plain = project(&sim, &ctx, Target::Hours(50.0), SimOptions::default());
-        let tournament = project(
-            &sim,
-            &ctx,
-            Target::Hours(50.0),
-            SimOptions {
-                include_tournament: true,
-                ..SimOptions::default()
-            },
-        );
-        // Two registrations in 50 hours: 24 hours of free research time.
-        assert!(
-            tournament.total_exp > plain.total_exp * 1.3,
-            "{} is not well above {}",
-            tournament.total_exp,
-            plain.total_exp
-        );
-        assert!(
-            (tournament.hours - 50.0).abs() < 1e-9,
-            "{}",
-            tournament.hours
-        );
     }
 
     #[test]

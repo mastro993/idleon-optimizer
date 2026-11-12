@@ -84,7 +84,7 @@ modelled yet. The term is reported as not modelled, never guessed.
 ## Run options
 
 `idleon_research::model::SimOptions` carries the three upstream Optimizer toggles;
-`sim::project` and the magnifier optimizer read them.
+`engine::simulate` and the magnifier optimizer read them.
 
 - **Assume observations unlocked** (`assumeObsUnlocked`) marks every observation
   whose `roll` requirement the new research level meets as found on each level-up,
@@ -108,6 +108,35 @@ hours below one; the Optimizer pane disables its button and names the problem
 instead of running. The target and the three toggles live in the research
 section config, so they survive tab switches, dashboard visits and the session
 file.
+
+## Target-aware run
+
+`idleon_research::engine::simulate` is the port of upstream `unifiedSim`
+(`js/sim-engine.js`). The rate is constant between events, so it jumps to the next research
+level-up, insight level-up, tournament registration or the target's horizon, and handles the
+level-up's side effects:
+
+- every research level-up spends the grid points the new level earned with the marginal climb,
+  re-places the shapes and re-fits the magnifiers;
+- every insight level-up re-fits the magnifiers when the grid reads insight for EXP (nodes 93 and
+  94, upstream `insightAffectsExp`). The shapes are re-placed on research level-ups only, because
+  that is when the owned count, the level-90 rotation unlock and the grid spend change what a shape
+  is worth; re-placing them again for an insight-only event would repeat a search that cannot move
+  them;
+- with *assume observations unlocked* every observation whose `roll` the new level meets is marked
+  found, and the tournament toggle injects its 12h of raw research time at the boundary.
+
+`Refit::Fixed` is the plain projection. `optimize::run` builds the optimized layout as before, then
+runs the saved layout and the built one through the same loop: a level target keeps the layout that
+reaches the level first, an hour target the one that earns the most EXP in the window, and a tie
+keeps the optimized layout. `optimize::grid::spend_for_target` ranks the marginal climb against the
+full grid search the same way, so a point is spent for the target it buys instead of its immediate
+bonus.
+
+The run has no random source, the candidates are visited in a fixed order and ties go to the first
+candidate, so the same save and options reproduce it exactly. `advanceResearchLevel` lands on the
+level curve with the upstream `1e-9` slack: an exact jump can undershoot the requirement by a
+rounding error, and without it the run would spend its jumps crawling the residual.
 
 ## Verifying against upstream
 

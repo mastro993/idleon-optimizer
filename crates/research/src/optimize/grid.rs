@@ -6,7 +6,8 @@
 //! feeds a multiplier already covered, is worth less than its bonus suggests.
 
 use crate::data::game;
-use crate::model::{Effort, GridState, Mag, MagKind, SimContext, Simulation};
+use crate::engine::{self, Refit};
+use crate::model::{Effort, GridState, Mag, MagKind, SimContext, SimOptions, Simulation, Target};
 use crate::sim;
 use idleon_common::Control;
 use idleon_common::Progress;
@@ -141,6 +142,80 @@ pub fn respec(
         grid: best,
         steps,
     }
+}
+
+/// Spend the free points on the layout that reaches the target best.
+///
+/// The marginal climb and the full search spend the same points differently, and
+/// the immediate EXP/hour rank they are built on is not what a level target
+/// rewards. Each whole layout is projected to the target and the winner kept, as
+/// upstream `beamSpendAtLevel` scores its combos with a forward simulation: a
+/// level target keeps the fastest, an hour target the one that earns the most.
+pub fn spend_for_target(
+    sim: &Simulation,
+    ctx: &SimContext,
+    effort: Effort,
+    budget: Option<u32>,
+    target: Target,
+    options: SimOptions,
+    report: &mut dyn FnMut(Progress) -> Control,
+) -> Option<GridOutcome> {
+    let mut stopped = false;
+    let single = effort == Effort::Quick;
+    let climb = {
+        let mut forward = |progress: Progress| {
+            let control = report(Progress {
+                fraction: if single {
+                    progress.fraction
+                } else {
+                    progress.fraction * 0.5
+                },
+                message: progress.message,
+            });
+            stopped |= control == Control::Stop;
+            control
+        };
+        respec(sim, ctx, Effort::Quick, budget, &mut forward)
+    };
+    if stopped {
+        return None;
+    }
+    if single {
+        return Some(climb);
+    }
+    let searched = {
+        let mut forward = |progress: Progress| {
+            let control = report(Progress {
+                fraction: 0.5 + progress.fraction * 0.5,
+                message: progress.message,
+            });
+            stopped |= control == Control::Stop;
+            control
+        };
+        respec(sim, ctx, effort, budget, &mut forward)
+    };
+    if stopped {
+        return None;
+    }
+    if climb.grid == searched.grid {
+        return Some(searched);
+    }
+
+    let project = |outcome: &GridOutcome| {
+        let mut trial = sim.clone();
+        trial.grid = outcome.grid.clone();
+        engine::simulate(&trial, ctx, target, options, Refit::Fixed, &mut |_| {
+            Control::Continue
+        })
+        .expect("a forward projection is never cancelled")
+        .projection
+    };
+    let (climbed, beamed) = (project(&climb), project(&searched));
+    Some(if engine::better(&beamed, &climbed, target) {
+        searched
+    } else {
+        climb
+    })
 }
 
 /// A square is unlocked when leveled, seeded, or beside a leveled one.
