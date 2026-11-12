@@ -461,6 +461,10 @@ const dropRateSave = () => {
 /// formula tree to render.
 const statsSave = () => {
   const kla = Array.from({ length: 60 }, () => [0]);
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
+  // The capacity inputs sit at zero: the rows scale by them, so the saved value
+  // stays the bag row's own 35,000 until the harness edits one.
   return JSON.stringify({
     charNames: ['Ana', 'Bo'],
     Research: '[]',
@@ -472,6 +476,12 @@ const statsSave = () => {
     CurrentMap_1: 50,
     KLA_0: JSON.stringify(kla),
     KLA_1: JSON.stringify(kla),
+    UpgVault: JSON.stringify(row(12)),
+    GemItemsPurchased: JSON.stringify(row(59)),
+    Guild: JSON.stringify([row(3)]),
+    SL_0: JSON.stringify(row(100)),
+    SM_0: JSON.stringify(row(100, { 78: 200 })),
+    StampLv: JSON.stringify([row(2), row(23), row(2)]),
     MaxCarryCap_0: JSON.stringify({
       Mining: 35000,
       Chopping: 35000,
@@ -2259,6 +2269,7 @@ const INTERACTIONS = {
       if (!summary.includes(label)) {
         throw new Error(`stats-all: ${label} is missing from the summary: ${summary}`);
       }
+      await bringIntoView(lane, `stats-${key}-tab`);
       await lane.call('click_element', { id: `stats-${key}-tab` });
       await waitFor(
         lane,
@@ -2386,6 +2397,85 @@ const INTERACTIONS = {
           'Mining Carry Capacity',
         ),
       'stats-all: the explorer card agrees with the breakdown and shows its tree',
+    );
+
+    // The game-input sandbox starts on the saved values, with nothing to list
+    // as changed and nothing to reset.
+    await bringIntoView(lane, 'stats-input-status');
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-input-status') ?? '') === 'Game-input sandbox: no edits.' &&
+        (labelOf(nodes, 'stats-affected-count') ?? '') === 'Affected formulas (0)',
+      'stats-all: the input ledger opens with no edits',
+    );
+
+    // The gem-shop capacity input doubles as the ledger's first edit: one
+    // purchase takes the factor to x1.25, so every capacity row moves.
+    await bringIntoView(lane, 'stats-input-gem-items-58');
+    await lane.call('click_element', { id: 'stats-input-gem-items-58-up' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-input-status') ?? '') ===
+          'Hypothetical: 1 edited game input.' &&
+        (labelOf(nodes, 'stats-affected-count') ?? '') === 'Affected formulas (8)',
+      'stats-all: a game input edit resolves a hypothetical save',
+    );
+    const changed = labelOf(await lane.tree(), 'stats-input-row-gem-items-58') ?? '';
+    if (!changed.includes('Gem shop capacity · Purchases: 0 → 1')) {
+      throw new Error(`stats-all: the changed input reads ${changed}`);
+    }
+    const affected = labelOf(await lane.tree(), 'stats-affected-carry-capacity-mining') ?? '';
+    if (!affected.includes('35,000 → 43,750')) {
+      throw new Error(`stats-all: the affected formula reads ${affected}`);
+    }
+    const marked = labelOf(await lane.tree(), 'stats-row-carry-capacity-mining') ?? '';
+    if (!marked.includes('Saved: 35,000')) {
+      throw new Error(`stats-all: the descriptor row keeps the saved value as ${marked}`);
+    }
+    await bringIntoView(lane, 'stats-descriptor-saved');
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'stats-descriptor-saved') ?? '').includes('Saved: 35,000'),
+      'stats-all: the descriptor keeps the saved value beside the hypothetical one',
+    );
+
+    // An affected formula links back to its descriptor, tab included.
+    await bringIntoView(lane, 'stats-affected-carry-capacity-mining');
+    await lane.call('click_element', { id: 'stats-affected-carry-capacity-mining' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-category-panel') ?? '').startsWith('Capacity breakdowns:') &&
+        (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('Mining Carry Capacity'),
+      'stats-all: an affected formula selects its descriptor',
+    );
+
+    // Resetting one input restores its saved value, and resetting all of them
+    // leaves the saved save exactly as it was.
+    await bringIntoView(lane, 'stats-input-reset-gem-items-58');
+    await lane.call('click_element', { id: 'stats-input-reset-gem-items-58' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-input-status') ?? '') === 'Game-input sandbox: no edits.' &&
+        (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('35,000'),
+      'stats-all: resetting an input restores the saved value',
+    );
+    await lane.call('click_element', { id: 'stats-input-gem-items-58-up' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'stats-affected-count') ?? '') === 'Affected formulas (8)',
+      'stats-all: the second edit moves the rows again',
+    );
+    await lane.call('click_element', { id: 'stats-inputs-reset' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'stats-affected-count') ?? '') === 'Affected formulas (0)' &&
+        (labelOf(nodes, 'stats-descriptor-summary') ?? '').includes('35,000'),
+      'stats-all: reset all edits restores every saved value',
     );
 
     // A project document restores the whole context.
