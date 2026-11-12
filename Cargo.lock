@@ -3480,6 +3480,7 @@ dependencies = [
 name = "idleon-drop-rate"
 version = "0.1.0"
 dependencies = [
+ "idleon-common",
  "idleon-save",
  "idleon-stats",
  "serde",

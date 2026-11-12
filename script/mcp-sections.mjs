@@ -2451,22 +2451,58 @@ const INTERACTIONS = {
     if (!note.includes('live dungeon inputs apply')) {
       throw new Error(`drop-rate: the context note reads ${note}`);
     }
-    const waiting = labelOf(await lane.tree(), 'drop-rate-total-value') ?? '';
-    if (waiting !== 'Unavailable') {
+    const waiting = labelOf(await lane.tree(), 'drop-rate-total') ?? '';
+    if (!waiting.endsWith('Unavailable')) {
       throw new Error(`drop-rate: the total without live values reads ${waiting}`);
     }
+    // The tree renders upstream's unavailable branch until both values arrive.
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'drop-rate-formula-node-root-0') ?? '') ===
+        'Dungeon Runtime Inputs Required: 0',
+      'drop-rate: the tree asks for the two live run values',
+    );
     await lane.call('click_element', { id: 'drop-rate-luk' });
     await lane.call('type_text', { text: '1200' });
     await lane.call('click_element', { id: 'drop-rate-drop' });
     await lane.call('type_text', { text: '35' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'drop-rate-total-value') ?? '') === '13.35x',
+      (nodes) => (labelOf(nodes, 'drop-rate-total') ?? '').endsWith('13.35x'),
       'drop-rate: the total is the upstream dungeon formula',
     );
-    // A normal map hides the runtime panel and names the missing engine.
+    // The formula tree expands that same number, term by term.
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'drop-rate-formula-node-root') ?? '') === 'Dungeon Drop Rate: ×13.35',
+      'drop-rate: the formula tree roots on the total card number',
+    );
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'drop-rate-formula-node-root-1') ?? '') === 'Percent to fraction: 12.35',
+      'drop-rate: the tree expands the percent-to-fraction step',
+    );
+    // Searching by a term's source narrows the tree to the entries that name it.
+    await bringIntoView(lane, 'drop-rate-formula-search');
+    await lane.call('click_element', { id: 'drop-rate-formula-search' });
+    await lane.call('type_text', { text: 'live dungeon' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'drop-rate-formula-match-count') ?? '') === '2 matching formula nodes',
+      'drop-rate: searching the tree finds both live run inputs by source',
+    );
+    await lane.call('click_element', { id: 'drop-rate-formula-collapse' });
+    // A normal map hides the runtime panel, names the missing engine and has no
+    // tree to expand.
+    await bringIntoView(lane, 'drop-rate-map');
     await lane.call('focus_element', { id: 'drop-rate-map' });
-    for (let step = 0; step < 2; step++) await lane.call('keyboard', { keystroke: 'down' });
+    // Maps 40 and 41 sit right after the saved map 39; the third step lands on a
+    // normal map, so the runtime panel goes and the tree has nothing to expand.
+    for (let step = 0; step < 3; step++) await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
@@ -2480,6 +2516,14 @@ const INTERACTIONS = {
         return label.includes('shared stat pipeline');
       },
       'drop-rate: a normal map names the engine this build lacks',
+    );
+    await waitFor(
+      lane,
+      (nodes) => {
+        const gap = labelOf(nodes, 'drop-rate-formula-gap') ?? '';
+        return gap.includes('shared stat pipeline') && !has(nodes, 'drop-rate-formula-node-root');
+      },
+      'drop-rate: a normal map has no tree to expand',
     );
   },
   'coin-multi': async (lane) => {

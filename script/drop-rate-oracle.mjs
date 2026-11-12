@@ -35,21 +35,34 @@ const cases = [
   { map: 119, luk: 1, dropRate: 99 },
 ];
 
-function resolve(map, luk, dropRate) {
+function resolve(map, luk, dropRate, formulaDetails = false) {
   const ctx = createStatContext({
     charIdx: 0,
     mapIdx: map,
     saveData,
     mapBon: mapBonData,
-    layer1: { dungeonLuk: luk, dungeonDropRarity: dropRate },
+    // `formulaDetails` is what makes the descriptor hand back its arithmetic
+    // tree instead of the descriptive children the page renders.
+    layer1: { dungeonLuk: luk, dungeonDropRarity: dropRate, formulaDetails },
   });
   return ctx.resolve('drop-rate');
 }
 
+/// The node fields the port keeps: the name, the value and upstream's source.
+const shape = (node) => ({
+  name: node.name,
+  val: node.val,
+  ...(node.source ? { source: node.source } : {}),
+  ...(node.note ? { note: node.note } : {}),
+  ...(node.children?.length ? { children: node.children.map(shape) } : {}),
+});
+
 const solved = cases.map(({ map, luk, dropRate }) => {
   const tree = resolve(map, luk, dropRate);
   if (tree.unavailable) throw new Error(`map ${map} came back unavailable`);
-  return { map, luk, dropRate, total: tree.val };
+  const detail = resolve(map, luk, dropRate, true);
+  if (!detail.children?.length) throw new Error(`map ${map} has no formula tree`);
+  return { map, luk, dropRate, total: tree.val, tree: shape(detail) };
 });
 
 const missing = resolve(39, NaN, NaN);
@@ -70,7 +83,11 @@ writeFileSync(
       descriptor: 'js/stats/defs/drop-rate.js',
       formula: 'js/stats/systems/w2/dungeon.js computeDungeonDropRate',
       cases: solved,
-      missingInputs: { map: 39, reason: missing.reason },
+      missingInputs: {
+        map: 39,
+        reason: missing.reason,
+        tree: shape(resolve(39, NaN, NaN, true)),
+      },
       nonDungeon: {
         note: 'Needs the account stats engine (SA-02); recorded as the reference total.',
         character,

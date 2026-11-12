@@ -6,7 +6,7 @@ current state, the Royal Guardian overview, outpost map, resource nodes and curr
 Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout, inventory and
 formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog
 board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout editor and operation
-simulator, the drop-rate inputs and dungeon total partial, the Coin Multiplier inputs
+simulator, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs
 and partial total, the Damage Breakdown context and
 summary shell partial, sailing, shadow-ban, endgame, Fishing,
 Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context and breakdowns
@@ -422,15 +422,19 @@ its place instead of disappearing. Each formula links to the definition it ports
 `Corgan/idleon-research-optimizer`. Missing: the input ledger (SA-04).
 Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
 
-The Drop Rate Calculator has its inputs and total (DR-01): the character and map selectors built the
-way `populateMapSel` builds them, the runtime panel that only a dungeon map shows, and the total
-card. A dungeon map's total ignores every saved term upstream, so it is
-`1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100` over the two live run values, and
-`script/drop-rate-oracle.mjs` pins it against the upstream calculator in `fixtures/drop-rate.json`;
-with either field blank the card shows the upstream reason. Every other map's total is the
-descriptor's whole pool chain, which is the shared stat pipeline the All Stats breakdowns (SA-02)
-still name as a gap, so the card names that gap instead of guessing a number. Missing: the formula
-tree (DR-02). Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
+The Drop Rate Calculator has its inputs, total and formula tree (DR-01, DR-02): the character and
+map selectors built the way `populateMapSel` builds them, the runtime panel that only a dungeon map
+shows, the total card and the breakdown tree under it. A dungeon map's total ignores every saved
+term upstream, so it is `1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100` over the two live
+run values, and `script/drop-rate-oracle.mjs` pins it - and the descriptor's `formulaDetails`
+expansion behind it - against the upstream calculator in `fixtures/drop-rate.json`: the same node
+names, values and operand order, so the tree's children add back up to the card's number, with a
+source on every term and the shared tree's search over labels, inputs and sources. With either
+field blank the card shows the upstream reason and the tree asks for the two run values. Every
+other map's total is the descriptor's whole pool chain, which is the shared stat pipeline the All
+Stats breakdowns (SA-02) still name as a gap, so the card and the tree both name that gap instead of
+guessing a number; the section stays partial until that engine lands.
+Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 
 The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
 selectors, their save defaults and the all-maps list from `damage-calc.html`, the summary cards and

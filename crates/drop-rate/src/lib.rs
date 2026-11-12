@@ -1,5 +1,5 @@
 //! The Drop Rate Calculator's maths: the context map list, the live dungeon
-//! inputs and the total.
+//! inputs, the total and the formula tree behind it.
 //!
 //! Ported from `drop-rate-calc.html`, the `drop-rate` descriptor in
 //! `js/stats/defs/drop-rate.js` and the dungeon system in
@@ -11,19 +11,25 @@
 //! ```
 //!
 //! Those two values are not stored in save JSON, so a dungeon map without them
-//! reports the upstream reason instead of a number. Every other map's total is
-//! the descriptor's whole pool chain (talents, equipment, stamps, cards,
+//! reports the upstream reason instead of a number. [`tree`] expands that
+//! expression into the breakdown the formula tree renders. Every other map's
+//! total is the descriptor's whole pool chain (talents, equipment, stamps, cards,
 //! shrines, prayers, companions, …), which is the account stats engine the All
 //! Stats breakdowns build; until that engine lands this module reports that
-//! total as [`Total::Unsupported`] rather than guessing it.
+//! total as [`Total::Unsupported`] rather than guessing it, and has no tree for
+//! it.
 //!
 //! The map list is `populateMapSel` from `drop-rate-calc.html`: Town first, then
 //! every named map, each marked when it is a dungeon and when it is the
 //! character's current map. Unlike the All Stats Dashboard it is not filtered by
 //! what the character has unlocked.
 
+mod tree;
+
 use idleon_stats::{self as stats, Snapshot};
 use serde::{Deserialize, Serialize};
+
+pub use tree::tree;
 
 /// The maps upstream treats as dungeons (`DUNGEON_MAPS` in `dungeon.js`).
 pub const DUNGEON_MAPS: [usize; 6] = [39, 40, 70, 71, 118, 119];
@@ -132,8 +138,12 @@ pub fn total(map: usize, runtime: Runtime) -> Total {
     let (Some(luk), Some(drop_rate)) = (runtime.luk, runtime.drop_rate) else {
         return Total::NeedsRuntime;
     };
-    // `computeDungeonDropRate(totalLuk, dungeonDropRarity)`.
-    Total::Value(1.0 + (luk + drop_rate) / 100.0)
+    Total::Value(dungeon_total(luk, drop_rate))
+}
+
+/// `computeDungeonDropRate(totalLuk, dungeonDropRarity)` from `dungeon.js`.
+fn dungeon_total(luk: f64, drop_rate: f64) -> f64 {
+    1.0 + (luk + drop_rate) / 100.0
 }
 
 /// One field's text as the number it holds.
