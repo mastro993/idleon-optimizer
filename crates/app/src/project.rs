@@ -183,9 +183,9 @@ pub struct CombatConfig {
     presets: Vec<CombatPreset>,
 }
 
-/// The statue section's config: selected character, sort, deposit estimate and
-/// the plan inputs. The search text is a filter, not state, and the statue rows
-/// come from the save.
+/// The statue section's config: selected character, sort, deposit estimate, the
+/// plan inputs and the statue the farming breakdown describes. The search text
+/// is a filter, not state, and the statue rows come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct StatueConfig {
@@ -194,6 +194,7 @@ pub struct StatueConfig {
     estimate: idleon_core::statue::Estimate,
     targets: Vec<Option<u32>>,
     rates: Vec<String>,
+    breakdown_statue: usize,
 }
 
 /// The whole window state as a project document.
@@ -257,8 +258,9 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             character: state.statue.character,
             sort: state.statue.sort,
             estimate: state.statue.estimate,
-            targets: state.statue.targets.clone(),
-            rates: state.statue.rates.clone(),
+            targets: state.statue.plan.targets().to_vec(),
+            rates: state.statue.plan.rates().to_vec(),
+            breakdown_statue: state.statue.breakdown_statue(),
         }),
     );
     insert(
@@ -560,6 +562,9 @@ pub fn assign(
                 ));
             }
             state.statue.set_plan(config.targets, config.rates, cx);
+            if config.breakdown_statue < idleon_core::statue::count() {
+                state.statue.breakdown_statue = config.breakdown_statue;
+            }
         }
         Config::Monument(config) => {
             state.monument = MonumentState {
@@ -1038,12 +1043,14 @@ mod tests {
             estimate: idleon_core::statue::Estimate::Average,
             targets: vec![Some(120), None],
             rates: vec!["1.2M".into(), String::new()],
+            breakdown_statue: 7,
         });
         assert_eq!(statue.character, 4);
         assert_eq!(statue.sort, StatueSort::Remaining);
         assert_eq!(statue.estimate, idleon_core::statue::Estimate::Average);
         assert_eq!(statue.targets, vec![Some(120), None]);
         assert_eq!(statue.rates, vec!["1.2M".to_string(), String::new()]);
+        assert_eq!(statue.breakdown_statue, 7);
         let combat = round_trip(&CombatConfig {
             character: 2,
             tab: CombatTab::Talents,

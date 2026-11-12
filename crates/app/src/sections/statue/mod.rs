@@ -2,12 +2,15 @@
 //! their next level needs, and the statues and time a target level costs.
 //!
 //! Ported from `statue-calc.html` and `js/stats/systems/common/statue-leveling.js`.
-//! ST-01 covers the table, search and sort; ST-02 adds the STARTUE EXP bubble,
-//! the deposit estimate and the time estimate from a raw statues/hour rate.
-//! Batch set/apply and the statue-farming breakdown arrive with ST-03.
+//! ST-01 covers the table, search and sort; ST-02 the STARTUE EXP bubble, the
+//! deposit estimate and the time estimate from a raw statues/hour rate; ST-03
+//! the batch set/next-level actions with their undo step and the farming
+//! breakdown behind one statue's row.
 
 use crate::state::AppState;
+use crate::ui::formula::FormulaTree;
 use crate::ui::{format, layout};
+use ely_gpui_component::buttons::Button;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::{Banner, EmptyState};
 use ely_gpui_component::forms::{Choice, Input, InputEvent, SearchInput, Select, TextInput};
@@ -23,8 +26,8 @@ use gpui::{
     Styled, Subscription, Window, div, px,
 };
 use idleon_core::statue::{
-    self, Estimate, Leveling, NextLevel, Progress, RateError, StatueInfo, StatueSave, TargetCost,
-    Unavailable,
+    self, Estimate, Leveling, NextLevel, Plan, Progress, RateError, StatueInfo, StatueSave,
+    TargetCost, Unavailable,
 };
 use std::cmp::Ordering;
 
@@ -73,34 +76,33 @@ fn estimate_id(estimate: Estimate) -> &'static str {
     }
 }
 
-fn estimate_label(estimate: Estimate) -> &'static str {
-    match estimate {
-        Estimate::Guaranteed => "Guaranteed EXP",
-        Estimate::Average => "Average with vial doubles",
-    }
-}
-
 fn estimate_from_id(id: &str) -> Option<Estimate> {
     Estimate::ALL
         .into_iter()
         .find(|estimate| estimate_id(*estimate) == id)
 }
 
-/// The section's own state: the imported statue rows, the account multipliers
-/// and the table controls.
+/// The section's own state: the imported statue rows, the account multipliers,
+/// the table controls and the plan the batch actions rewrite.
 pub struct State {
     pub save: StatueSave,
     pub character: usize,
     pub sort: Sort,
     pub estimate: Estimate,
-    /// Target levels for the selected character; `None` follows the saved level
-    /// plus one, as the upstream table does.
-    pub targets: Vec<Option<u32>>,
-    /// The raw statues/hour entries, mirroring [`Self::rate_inputs`].
-    pub rates: Vec<String>,
+    /// The entered targets and raw rates, with the batch undo step.
+    pub plan: Plan,
+    /// The statue the farming breakdown describes.
+    pub breakdown_statue: usize,
+    pub breakdown: Entity<FormulaTree>,
     pub search: Entity<TextInput>,
-    /// One raw statues/hour field per statue.
+    /// One raw statues/hour field per statue, mirroring [`Plan::rates`].
     pub rate_inputs: Vec<Entity<TextInput>>,
+    /// The Set all targets entry, read when its button is pressed.
+    pub batch_input: Entity<TextInput>,
+    /// Why the last batch entry was rejected, or `None` when it applied.
+    pub batch_error: Option<String>,
+    /// What the last batch action did, shown under its buttons.
+    pub batch_status: Option<String>,
     _rate_subscriptions: Vec<Subscription>,
 }
 
@@ -111,6 +113,12 @@ impl State {
                 .placeholder("Name or effect")
                 .label("Find a statue")
         });
+        let batch_input = cx.new(|cx| {
+            TextInput::new(window, cx)
+                .placeholder("Level")
+                .label("Set all targets")
+        });
+        let breakdown = cx.new(|cx| FormulaTree::new("statue-breakdown", window, cx));
         let rate_inputs: Vec<Entity<TextInput>> = (0..statue::count())
             .map(|_| {
                 cx.new(|cx| {
@@ -126,7 +134,8 @@ impl State {
             .map(|(index, input)| {
                 cx.subscribe(input, move |state, input, event: &InputEvent, cx| {
                     if *event == InputEvent::Changed {
-                        state.statue.rates[index] = input.read(cx).text().trim().to_string();
+                        let text = input.read(cx).text().trim().to_string();
+                        state.statue.plan.set_rate(index, text);
                         cx.notify();
                     }
                 })
@@ -137,10 +146,14 @@ impl State {
             character: 0,
             sort: Sort::Game,
             estimate: Estimate::Guaranteed,
-            targets: vec![None; statue::count()],
-            rates: vec![String::new(); statue::count()],
+            plan: Plan::new(),
+            breakdown_statue: 0,
+            breakdown,
             search,
             rate_inputs,
+            batch_input,
+            batch_error: None,
+            batch_status: None,
             _rate_subscriptions: rate_subscriptions,
         }
     }
@@ -151,6 +164,10 @@ impl State {
         self.save = save;
         if !self.save.has_character(self.character) {
             self.character = self.save.first_character().unwrap_or(0);
+        }
+        if !self.save.has_character(self.breakdown_statue) && self.save.first_character().is_some()
+        {
+            self.breakdown_statue = self.save.first_character().unwrap_or(0);
         }
         self.clear_inputs(cx);
     }
@@ -163,8 +180,12 @@ impl State {
     }
 
     fn clear_inputs(&mut self, cx: &mut Context<AppState>) {
-        self.targets = vec![None; statue::count()];
-        self.set_rates(vec![String::new(); statue::count()], cx);
+        self.plan.clear();
+        self.batch_error = None;
+        self.batch_status = None;
+        self.batch_input
+            .update(cx, |input, cx| input.set_text(String::new(), cx));
+        self.sync_rates(cx);
     }
 
     /// Replace the plan inputs from a project config, keeping one entry per
@@ -175,18 +196,15 @@ impl State {
         rates: Vec<String>,
         cx: &mut Context<AppState>,
     ) {
-        let mut targets = targets;
-        targets.resize(statue::count(), None);
-        self.targets = targets;
-        self.set_rates(rates, cx);
+        self.plan.reset(targets, rates);
+        self.batch_error = None;
+        self.batch_status = None;
+        self.sync_rates(cx);
     }
 
-    fn set_rates(&mut self, rates: Vec<String>, cx: &mut Context<AppState>) {
-        let mut rates = rates;
-        rates.resize(statue::count(), String::new());
-        self.rates = rates;
+    fn sync_rates(&mut self, cx: &mut Context<AppState>) {
         for (index, input) in self.rate_inputs.iter().enumerate() {
-            let text = self.rates[index].clone();
+            let text = self.plan.rate(index).to_string();
             input.update(cx, |input, cx| input.set_text(text, cx));
         }
     }
@@ -194,7 +212,7 @@ impl State {
     /// The target level for a statue: the entered target, else the saved level
     /// plus one.
     pub fn target(&self, statue: usize) -> Option<u32> {
-        self.targets.get(statue).copied().flatten().or_else(|| {
+        self.plan.target(statue).or_else(|| {
             self.save
                 .progress(self.character, statue)
                 .map(|progress| progress.level + 1)
@@ -202,14 +220,22 @@ impl State {
     }
 
     pub fn set_target(&mut self, statue: usize, target: u32) {
-        if let Some(slot) = self.targets.get_mut(statue) {
-            *slot = Some(target);
-        }
+        self.plan.set_target(statue, target);
     }
 
     /// One statue's raw statues/hour entry, trimmed.
     pub fn rate_text(&self, statue: usize) -> String {
-        self.rates.get(statue).cloned().unwrap_or_default()
+        self.plan.rate(statue).to_string()
+    }
+
+    /// The parsed rate the row and the breakdown farm at.
+    pub fn rate(&self, statue: usize) -> Result<f64, RateError> {
+        statue::parse_rate(self.plan.rate(statue))
+    }
+
+    /// The statue the breakdown describes, kept inside the game's table.
+    pub fn breakdown_statue(&self) -> usize {
+        self.breakdown_statue.min(statue::count().saturating_sub(1))
     }
 
     pub fn query(&self, cx: &App) -> String {
@@ -253,15 +279,13 @@ impl Row {
         }
         match self.next {
             Ok(_) => ("Available".into(), Tone::Success),
-            Err(Unavailable::NoRow(row)) if row == self.index => {
-                ("Missing row".into(), Tone::Warning)
-            }
-            Err(Unavailable::NoRow(gate)) => match statue::info(gate) {
-                Some(info) => (format!("Needs {}", info.name), Tone::Warning),
-                None => ("Missing gate".into(), Tone::Warning),
-            },
-            Err(Unavailable::NoStatue(_)) => ("Unavailable".into(), Tone::Warning),
-            Err(Unavailable::OutOfRange) => ("Out of range".into(), Tone::Danger),
+            Err(error) => (
+                error.label(self.index),
+                match error {
+                    Unavailable::OutOfRange | Unavailable::TargetOutOfRange => Tone::Danger,
+                    _ => Tone::Warning,
+                },
+            ),
         }
     }
 }
@@ -279,7 +303,7 @@ fn rows(state: &State) -> Vec<Row> {
                 })
                 .unwrap_or(Err(Unavailable::NoRow(index)));
             let rate_text = state.rate_text(index);
-            let rate = statue::parse_rate(&rate_text);
+            let rate = state.rate(index);
             let statues = cost.as_ref().ok().map(|cost| state.estimate.statues(cost));
             let hours = statues
                 .map(|statues| statue::hours(statues, rate.unwrap_or(0.0)))
@@ -332,14 +356,26 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     sort_rows(&mut rows, state.statue.sort);
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
     let flair_missing = state.save_loaded && !state.statue.save.leveling().flair_available;
+    let breakdown_statue = state.statue.breakdown_statue();
+    let breakdown_tree = statue::breakdown_tree(
+        &state.statue.save,
+        state.statue.character,
+        breakdown_statue,
+        state.statue.target(breakdown_statue),
+        state.statue.estimate,
+        state.statue.rate(breakdown_statue).unwrap_or(0.0),
+    );
+    state
+        .statue
+        .breakdown
+        .update(cx, |tree, cx| tree.set_root(breakdown_tree, cx));
 
-    div()
-        .id("statue-section")
+    let page = div()
+        .id("statue-pane")
         .flex()
         .flex_col()
-        .size_full()
-        .min_h_0()
         .gap_3()
+        .p_3()
         .when(!state.save_loaded, |page| {
             page.child(div().id("statue-no-save").child(Caption::new(
                 "Import a decoded save to read its per-character statue levels.",
@@ -379,6 +415,21 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
             (rows.len(), total),
             table_height,
         ))
+        .child(farming_card(state, breakdown_statue, cx));
+
+    div()
+        .id("statue-section")
+        .flex()
+        .flex_col()
+        .size_full()
+        .min_h_0()
+        .child(
+            ScrollArea::new("statue-scroll")
+                .vertical()
+                .flex_1()
+                .min_h_0()
+                .child(page),
+        )
         .into_any_element()
 }
 
@@ -422,9 +473,8 @@ fn toolbar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
             field("Deposit estimate", muted).child(
                 Select::new(
                     "statue-estimate",
-                    Estimate::ALL.map(|estimate| {
-                        Choice::new(estimate_id(estimate), estimate_label(estimate))
-                    }),
+                    Estimate::ALL
+                        .map(|estimate| Choice::new(estimate_id(estimate), estimate.label())),
                 )
                 .label("Deposit estimate")
                 .selected(estimate_id(state.statue.estimate))
@@ -686,6 +736,8 @@ fn statues_card(
                 .gap_2()
                 .min_h_0()
                 .p_3()
+                .child(batch_row(state, cx))
+                .child(batch_messages(state, cx))
                 .child(body)
                 .child(
                     div()
@@ -719,6 +771,147 @@ fn statues_card(
                              Deposits multiply the shared Onyx/Zenith bonus and each statue's saved Flair. \
                              Statues 10-19, 20-29 and 30-31 round with the saved level of statue 1, 2 and 3.",
                         ),
+                ),
+        )
+        .into_any_element()
+}
+
+/// The upstream batch controls: Set all targets, Next level for all, and the
+/// undo step the batch actions leave.
+fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let disabled = !state.save_loaded || state.statue.save.is_empty();
+    let input = state.statue.batch_input.clone();
+    let focus = input.read(cx).focus().clone();
+    let entity = cx.entity();
+    let apply = entity.clone();
+    let next = entity.clone();
+    let undo = entity.clone();
+    let undo_label = state.statue.plan.undo_label();
+
+    div()
+        .id("statue-batch")
+        .flex()
+        .flex_wrap()
+        .items_end()
+        .gap_2()
+        .child(
+            div()
+                .id("statue-set-all")
+                .role(Role::Label)
+                .aria_label("Set all targets")
+                .w(px(120.0))
+                .on_click(move |_event, window, cx| window.focus(&focus, cx))
+                .child(Input::new(&input).size(ControlSize::Sm)),
+        )
+        .child(
+            Button::new("statue-apply-all", "Set targets")
+                .size(ControlSize::Sm)
+                .disabled(disabled)
+                .on_click(move |_event, _window, cx| {
+                    apply.update(cx, |state, cx| state.set_statue_targets_all(cx));
+                }),
+        )
+        .child(
+            Button::new("statue-next-level", "Next level for all")
+                .size(ControlSize::Sm)
+                .disabled(disabled)
+                .on_click(move |_event, _window, cx| {
+                    next.update(cx, |state, cx| state.set_statue_next_level(cx));
+                }),
+        )
+        .when_some(undo_label, |row, label| {
+            row.child(
+                Button::new("statue-undo-batch", format!("Undo {label}"))
+                    .size(ControlSize::Sm)
+                    .on_click(move |_event, _window, cx| {
+                        undo.update(cx, |state, cx| state.undo_statue_batch(cx));
+                    }),
+            )
+        })
+        .child(Caption::new(
+            "Set targets costs the level for every statue first; a level this save cannot plan changes nothing. \
+             Rates are raw statues/hour, so K, M, B, T and scientific notation work.",
+        )
+        .text_color(muted))
+        .into_any_element()
+}
+
+/// What the last batch action did, and why one was rejected.
+fn batch_messages(state: &AppState, cx: &Context<AppState>) -> AnyElement {
+    let muted = cx.theme().colors.fg_muted;
+    let danger = cx.theme().colors.danger;
+    div()
+        .id("statue-batch-messages")
+        .flex()
+        .flex_col()
+        .gap_1()
+        .when_some(state.statue.batch_status.clone(), |column, status| {
+            column.child(
+                div()
+                    .id("statue-batch-status")
+                    .role(Role::Label)
+                    .aria_label(status.clone())
+                    .text_size(px(11.0))
+                    .text_color(muted)
+                    .child(status),
+            )
+        })
+        .when_some(state.statue.batch_error.clone(), |column, error| {
+            column.child(
+                div()
+                    .id("statue-batch-error")
+                    .role(Role::Label)
+                    .aria_label(error.clone())
+                    .text_size(px(11.0))
+                    .text_color(danger)
+                    .child(error),
+            )
+        })
+        .into_any_element()
+}
+
+/// The farming breakdown behind one statue's row: the deposit terms upstream's
+/// detail block names, plus the statues, rate and time the table shows.
+fn farming_card(state: &AppState, selected: usize, cx: &mut Context<AppState>) -> AnyElement {
+    let entity = cx.entity();
+    let choices: Vec<Choice> = (0..statue::count())
+        .filter_map(|index| {
+            let info = statue::info(index)?;
+            Some(Choice::new(index.to_string(), info.name.clone()))
+        })
+        .collect();
+    Card::new()
+        .header(
+            CardHeader::new("Farming breakdown")
+                .description("Where one statue's deposit EXP and farm time come from")
+                .action(
+                    Select::new("statue-breakdown-statue", choices)
+                        .label("Break down statue")
+                        .size(ControlSize::Sm)
+                        .selected(selected.to_string())
+                        .on_change(move |value, _window, cx| {
+                            if let Ok(index) = value.parse::<usize>() {
+                                entity
+                                    .update(cx, |state, cx| state.set_statue_breakdown(index, cx));
+                            }
+                        }),
+                ),
+        )
+        .child(
+            div()
+                .id("statue-farming")
+                .flex()
+                .flex_col()
+                .gap_2()
+                .min_h_0()
+                .p_3()
+                .child(
+                    div()
+                        .id("statue-breakdown")
+                        .h(px(300.0))
+                        .min_h_0()
+                        .child(state.statue.breakdown.clone()),
                 ),
         )
         .into_any_element()

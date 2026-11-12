@@ -1057,7 +1057,8 @@
       "summary": "Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.",
       "build": [
         "ST-01 statue table: the 32-row table with saved levels, next-level bars, availability, search and sort.",
-        "ST-02 STARTUE bubble and time estimates: the decoded STARTUE EXP bubble, Skinny 0 Cal vial, Onyx/Zenith tier and Royal Guardian Flair drive the deposit estimate, the per-row target, statues needed and the time from a raw statues/hour rate, with the rate source shown."
+        "ST-02 STARTUE bubble and time estimates: the decoded STARTUE EXP bubble, Skinny 0 Cal vial, Onyx/Zenith tier and Royal Guardian Flair drive the deposit estimate, the per-row target, statues needed and the time from a raw statues/hour rate, with the rate source shown.",
+        "ST-03 batch actions and the farming breakdown: the upstream Set targets entry (costed for every statue before it writes the plan, with the upstream rejection message), Next level for all and a one-step undo of the batch action; the shared formula tree behind one statue's row — the STARTUE bubble and its retention, the Onyx/Zenith tier, the saved Royal Guardian Flair and the Skinny 0 Cal vial, then the statues needed, raw rate and time. The upstream \"Measure statue farming\" panel needs the combat simulator (CS-03), so rates stay manual entries."
       ],
       "upstream": [
         "statue-calc.html",

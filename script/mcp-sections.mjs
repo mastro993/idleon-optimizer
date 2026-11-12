@@ -941,6 +941,64 @@ const INTERACTIONS = {
       },
       'statue: the farming rate produces a time estimate',
     );
+
+    // Set all targets rejects a value that is not a whole level, applies one
+    // level to every row, and undo puts the replaced targets back.
+    await lane.call('click_element', { id: 'statue-set-all' });
+    await lane.call('type_text', { text: '12.5' });
+    await lane.call('click_element', { id: 'statue-apply-all' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'statue-batch-error') ?? '').includes(
+          'Enter a nonnegative whole target level.',
+        ),
+      'statue: a fractional set-all level is rejected',
+    );
+    await lane.call('click_element', { id: 'statue-set-all' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: '520' });
+    await lane.call('click_element', { id: 'statue-apply-all' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'statue-batch-status') ?? '').includes('All 32 targets set to Lv 520') &&
+        !has(nodes, 'statue-batch-error'),
+      'statue: set all targets applies one level to every statue',
+    );
+    await waitForNode(lane, 'statue-undo-batch', 'statue: the batch action offers an undo');
+    await lane.call('click_element', { id: 'statue-undo-batch' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'statue-batch-status') ?? '') === 'Undid set all targets.' &&
+        !has(nodes, 'statue-undo-batch'),
+      'statue: undo restores the targets the batch replaced',
+    );
+    await lane.call('click_element', { id: 'statue-next-level' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'statue-batch-status') ?? '').includes(
+          'Targets follow each saved level plus one',
+        ),
+      'statue: next level for all clears the entered targets',
+    );
+
+    // The farming breakdown renders through the shared formula tree and
+    // follows its statue selector.
+    await waitForNode(lane, 'statue-breakdown-tree', 'statue: the farming breakdown renders');
+    const breakdownRoot = labelOf(await lane.tree(), 'formula-node-root');
+    await lane.call('focus_element', { id: 'statue-breakdown-statue' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'formula-node-root') ?? '') !== breakdownRoot &&
+        (labelOf(nodes, 'formula-node-root') ?? '').includes('statues needed'),
+      'statue: the farming breakdown follows the selected statue',
+    );
   },
   'stats-all': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

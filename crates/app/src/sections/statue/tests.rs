@@ -83,10 +83,7 @@ fn the_deposit_estimate_round_trips_through_its_selector_id() {
         assert_eq!(estimate_from_id(estimate_id(estimate)), Some(estimate));
     }
     assert_eq!(estimate_from_id("nope"), None);
-    assert_eq!(
-        estimate_label(Estimate::Average),
-        "Average with vial doubles"
-    );
+    assert_eq!(Estimate::Average.label(), "Average with vial doubles");
 }
 
 #[test]
@@ -95,4 +92,45 @@ fn sort_ids_round_trip() {
         assert_eq!(Sort::from_id(sort.id()), Some(sort));
     }
     assert_eq!(Sort::from_id("nope"), None);
+}
+
+#[test]
+fn availability_reads_the_core_label_and_tone() {
+    let available = row(&sample(10, 0.0), 0);
+    assert_eq!(
+        available.availability(false),
+        ("Available".to_string(), Tone::Success)
+    );
+
+    let mut rows = vec![
+        Some(Progress {
+            level: 10,
+            exp: 0.0
+        });
+        statue::count()
+    ];
+    rows[5] = None;
+    rows[1] = None;
+    let save = StatueSave::new(vec![rows], vec!["main".into()]);
+    assert_eq!(row(&save, 5).availability(false).0, "Missing row");
+    assert_eq!(
+        row(&save, 10).availability(false).0,
+        format!("Needs {}", statue::info(1).expect("SPEED").name)
+    );
+    assert_eq!(
+        row(&save, 5).availability(true),
+        ("No save".to_string(), Tone::Neutral)
+    );
+
+    let mut unavailable = row(&save, 5);
+    unavailable.next = Err(Unavailable::OutOfRange);
+    assert_eq!(
+        unavailable.availability(false),
+        ("Out of range".to_string(), Tone::Danger)
+    );
+    unavailable.next = Err(Unavailable::TargetOutOfRange);
+    assert_eq!(
+        unavailable.availability(false),
+        ("Out of range".to_string(), Tone::Danger)
+    );
 }
