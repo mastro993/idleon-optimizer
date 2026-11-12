@@ -81,6 +81,34 @@ in the tree but left out of the sum, because its `gambitPTSmulti` chain (Hole
 measurements, cosmo, bolaia, monument, jar, arcane and legend terms) is not
 modelled yet. The term is reported as not modelled, never guessed.
 
+## Run options
+
+`idleon_core::model::SimOptions` carries the three upstream Optimizer toggles;
+`sim::project` and the magnifier optimizer read them.
+
+- **Assume observations unlocked** (`assumeObsUnlocked`) marks every observation
+  whose `roll` requirement the new research level meets as found on each level-up,
+  as `simForwardProjection` does. The rate sees them through the found-observation
+  terms and through the multiplier that counts found observations.
+- **Extended insight lookahead** (`extendInsightLA`) makes the monocle optimizer
+  score a target by `permanent rate gain × insight/hour` (the upstream
+  `chooseMonoTargets` candidate score) instead of the next level-up speed alone.
+  The permanent gain is the EXP rate one more insight level buys, so it is zero
+  for an observation with no magnifying glass unless the grid's total-insight
+  bonus (node 94) applies. Upstream ships this toggle checked.
+- **Tournament +12h** (`includeTournament`) adds the daily Research Registrant's
+  12 hours of raw research time at each 24h boundary, plus one insight
+  collection for the monocle board. The first boundary comes from
+  `TimeAway.GlobalTime`, half an hour before the 20:00 UTC reset, and is skipped
+  a day when `OptLacc[511]` shows the cached tournament day (`OptLacc[496]`)
+  already registered. Without a save clock the fallback is 24 hours.
+
+`Target::validate` rejects a level at or below the current research level and
+hours below one; the Optimizer pane disables its button and names the problem
+instead of running. The target and the three toggles live in the research
+section config, so they survive tab switches, dashboard visits and the session
+file.
+
 ## Verifying against upstream
 
 Run the upstream loader on a save and print the context and tree:

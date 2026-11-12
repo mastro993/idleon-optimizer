@@ -2,7 +2,7 @@
 
 use idleon_core::model::{
     Control, Effort, GridState, Mag, MagKind, Observations, OptimizeRequest, SimContext,
-    Simulation, Target,
+    SimOptions, Simulation, Target,
 };
 use idleon_core::{game, optimize, shape, sim};
 use std::time::Instant;
@@ -50,6 +50,7 @@ fn run(
     let request = OptimizeRequest {
         target: Target::Level(simulation.research_level + 5),
         effort,
+        options: SimOptions::default(),
         respec_grid: effort == Effort::Thorough,
         grid_points: None,
     };
@@ -277,8 +278,10 @@ fn kaleidoscope_pool(level: u32) -> (Simulation, SimContext) {
 fn magnifier_repair_never_lowers_the_rate_and_stays_legal() {
     for level in [60u32, 120, 150] {
         let (simulation, ctx) = kaleidoscope_pool(level);
-        let quick = optimize::mags::optimize(&simulation, &ctx, Effort::Quick);
-        let thorough = optimize::mags::optimize(&simulation, &ctx, Effort::Thorough);
+        let quick =
+            optimize::mags::optimize(&simulation, &ctx, Effort::Quick, SimOptions::default());
+        let thorough =
+            optimize::mags::optimize(&simulation, &ctx, Effort::Thorough, SimOptions::default());
         assert!(
             thorough.rate >= quick.rate - 1e-9,
             "level {level}: repair lowered {} to {}",
@@ -306,7 +309,8 @@ fn magnifier_repair_never_lowers_the_rate_and_stays_legal() {
                 .count();
             assert!(held <= cap, "slot {slot} holds {held} of {cap}");
         }
-        let again = optimize::mags::optimize(&simulation, &ctx, Effort::Thorough);
+        let again =
+            optimize::mags::optimize(&simulation, &ctx, Effort::Thorough, SimOptions::default());
         assert_eq!(
             thorough.mags, again.mags,
             "level {level} is not deterministic"
@@ -370,7 +374,8 @@ fn magnifier_assignment_matches_brute_force_on_a_small_board() {
         .filter(|obs| sim::observation_usable(*obs, level, &simulation.observations))
         .collect();
     let cap = sim::mag_cap(level) as usize;
-    let outcome = optimize::mags::optimize(&simulation, &ctx, Effort::Thorough);
+    let outcome =
+        optimize::mags::optimize(&simulation, &ctx, Effort::Thorough, SimOptions::default());
 
     // Every placement of the pool the optimizer chose, over the slots this level
     // unlocks: the search must not miss one that pays more.
@@ -455,6 +460,84 @@ fn beam_spending_unlocks_only_squares_it_may() {
     );
 }
 
+/// Two observations matter here: the fastest insight level-up is on the
+/// glassless slot 0, while slot 42 holds the only glass. Game Design 101 makes
+/// an insight level on a glassed observation raise the EXP rate, so the
+/// extended lookahead should target slot 42 and the plain one slot 0.
+fn insight_lookahead_state() -> (Simulation, SimContext) {
+    let ctx = SimContext::default();
+    let mut simulation = Simulation {
+        research_level: 120,
+        grid: GridState::seeded(2),
+        observations: Observations::all_at(0),
+        ..Simulation::default()
+    };
+    simulation.grid.set(72, 1);
+    simulation.grid.set(91, 0);
+    simulation.grid.set(93, 1);
+    simulation.grid.set(94, 0);
+    simulation.mags = vec![
+        Mag::new(MagKind::Kaleidoscope, Some(41)),
+        Mag::new(MagKind::Kaleidoscope, Some(40)),
+        Mag::new(MagKind::Regular, Some(42)),
+        Mag::new(MagKind::Regular, Some(3)),
+        Mag::new(MagKind::Monocle, Some(1)),
+    ];
+    (simulation, ctx)
+}
+
+#[test]
+fn the_extended_insight_option_changes_the_projection() {
+    let (simulation, ctx) = insight_lookahead_state();
+    let project = |extended_insight: bool| {
+        let request = OptimizeRequest {
+            target: Target::Level(125),
+            effort: Effort::Balanced,
+            options: SimOptions {
+                extended_insight,
+                ..SimOptions::default()
+            },
+            respec_grid: false,
+            grid_points: None,
+        };
+        optimize::run(&simulation, &ctx, &request, &mut |_| Control::Continue)
+            .expect("the run was not cancelled")
+    };
+    let plain = project(false);
+    let extended = project(true);
+
+    let monocle_slot = |result: &idleon_core::model::OptimizeResult| {
+        result
+            .after
+            .mags
+            .iter()
+            .find(|mag| mag.kind == MagKind::Monocle)
+            .and_then(|mag| mag.slot)
+    };
+    assert_eq!(monocle_slot(&plain), Some(0));
+    assert_eq!(monocle_slot(&extended), Some(42));
+    assert!(
+        extended.projection.hours < plain.projection.hours,
+        "extended {}h is not faster than {}h",
+        extended.projection.hours,
+        plain.projection.hours
+    );
+    let rate = |result: &idleon_core::model::OptimizeResult| {
+        result
+            .projection
+            .samples
+            .last()
+            .map(|sample| sample.rate)
+            .unwrap_or(0.0)
+    };
+    assert!(
+        rate(&extended) > rate(&plain),
+        "extended {} does not beat {}",
+        rate(&extended),
+        rate(&plain)
+    );
+}
+
 #[test]
 fn progress_and_steps_report_what_the_run_did() {
     let (simulation, ctx) = seeded(1, 150, 6);
@@ -464,6 +547,7 @@ fn progress_and_steps_report_what_the_run_did() {
         let request = OptimizeRequest {
             target: Target::Level(155),
             effort,
+            options: SimOptions::default(),
             respec_grid: effort == Effort::Thorough,
             grid_points: None,
         };
@@ -505,6 +589,7 @@ fn a_stopped_report_cancels_the_run_without_a_result() {
     let request = OptimizeRequest {
         target: Target::Level(155),
         effort: Effort::Thorough,
+        options: SimOptions::default(),
         respec_grid: true,
         grid_points: None,
     };

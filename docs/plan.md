@@ -287,8 +287,9 @@ bump moves all three together and the smoke harness is the check.
 Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: the
 dashboard (summary, grid and observation previews, EXP/AFK/insight breakdowns and the grid-point
 split), grid, shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements,
-save import, the ROv2 state string export, projection chart, keyboard, canvas dragging and the
-shared searchable EXP formula tree.
+save import, the ROv2 state string export, projection chart, keyboard, canvas dragging, the
+shared searchable EXP formula tree, target validation and the three run toggles (assume
+observations unlocked, extended insight lookahead and the daily tournament +12h).
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observation Unlocks, Shape
 Optimization, Decision Tree, Minehead, Sushi Station), target-aware simulation, strategy comparison,

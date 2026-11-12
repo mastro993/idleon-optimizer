@@ -50,7 +50,7 @@ use idleon_core::killroy::Plan as KillroyPlan;
 use idleon_core::ladle::Ladle;
 use idleon_core::model::{
     Control, Effort, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, Progress,
-    SimContext, Simulation, Target,
+    SimContext, SimOptions, Simulation, Target,
 };
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::prisma::Outcome as PrismaOutcome;
@@ -148,6 +148,7 @@ struct RunInputs {
     context: SimContext,
     target: Target,
     effort: Effort,
+    options: SimOptions,
 }
 
 /// Everything the window renders and mutates.
@@ -162,6 +163,8 @@ pub struct AppState {
     context_base: SimContext,
     pub effort: Effort,
     pub target: Target,
+    /// The three upstream run toggles the next projection reads.
+    pub options: SimOptions,
     /// Upstream artwork resolved through `assets/upstream/manifest.json`.
     pub assets: Manifest,
     /// Where the window is: the dashboard or one section.
@@ -762,6 +765,7 @@ impl AppState {
             context_base: SimContext::default(),
             effort: Effort::Balanced,
             target: Target::Hours(24.0),
+            options: SimOptions::default(),
             assets: Manifest::load_default(),
             route: Route::Dashboard,
             last_section: None,
@@ -998,6 +1002,7 @@ impl AppState {
             context: self.context.clone(),
             target: self.target,
             effort: self.effort,
+            options: self.options,
         }
     }
 
@@ -1163,6 +1168,7 @@ impl AppState {
         self.simulation = imported.simulation;
         self.context = imported.context.clone();
         self.context_base = imported.context;
+        self.normalize_target();
         let combat_character = if self.combat.character < imported.save.character_count() {
             self.combat.character
         } else {
@@ -2477,6 +2483,23 @@ impl AppState {
         cx.notify();
     }
 
+    /// Replace the run toggles; a changed option marks the last result stale.
+    pub fn set_options(&mut self, options: SimOptions, cx: &mut Context<Self>) {
+        self.options = options;
+        cx.notify();
+    }
+
+    /// Why the target on screen cannot run, for the Optimize button and its note.
+    pub fn target_problem(&self) -> Option<String> {
+        self.target.validate(self.simulation.research_level).err()
+    }
+
+    /// Bring a level target above the current level after a save or a config
+    /// changed the research level.
+    pub fn normalize_target(&mut self) {
+        self.target = self.target.normalized(self.simulation.research_level);
+    }
+
     pub fn set_preset(&mut self, preset: String, cx: &mut Context<Self>) {
         if game().presets.iter().any(|entry| entry.id == preset) {
             self.simulation.preset = preset;
@@ -2485,13 +2508,16 @@ impl AppState {
     }
 
     pub fn set_target_level(&mut self, level: f64, cx: &mut Context<Self>) {
-        self.target = Target::Level(level.max(1.0).round() as u32);
+        let floor = f64::from(self.simulation.research_level.saturating_add(1));
+        self.target = Target::Level(level.max(floor).round() as u32);
         cx.notify();
     }
 
     pub fn set_target_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
-        self.target = Target::Hours(hours.max(0.5));
-        cx.notify();
+        if hours.is_finite() {
+            self.target = Target::Hours(hours.max(1.0));
+            cx.notify();
+        }
     }
 
     pub fn set_target_kind(&mut self, kind: &str, cx: &mut Context<Self>) {
@@ -2502,9 +2528,10 @@ impl AppState {
             }),
             _ => Target::Level(match self.target {
                 Target::Level(level) => level,
-                Target::Hours(_) => 100,
+                Target::Hours(_) => self.simulation.research_level.saturating_add(1),
             }),
         };
+        self.normalize_target();
         cx.notify();
     }
 
@@ -2723,6 +2750,7 @@ impl AppState {
         let request = OptimizeRequest {
             target: inputs.target,
             effort: inputs.effort,
+            options: inputs.options,
             respec_grid: matches!(inputs.effort, Effort::Thorough),
             grid_points: None,
         };

@@ -10,7 +10,7 @@
 //! while that helps.
 
 use crate::data::game;
-use crate::model::{Effort, Mag, MagKind, SimContext, Simulation};
+use crate::model::{Effort, Mag, MagKind, SimContext, SimOptions, Simulation};
 use crate::sim;
 
 /// A magnifier pool plus what the optimizer did to it.
@@ -22,7 +22,12 @@ pub struct MagsOutcome {
 }
 
 /// Assign the owned magnifiers to observations.
-pub fn optimize(sim: &Simulation, ctx: &SimContext, effort: Effort) -> MagsOutcome {
+pub fn optimize(
+    sim: &Simulation,
+    ctx: &SimContext,
+    effort: Effort,
+    options: SimOptions,
+) -> MagsOutcome {
     let game = game();
     let owned = sim::magnifiers_owned(sim, ctx) as usize;
     let cap = sim::mag_cap(sim.research_level) as usize;
@@ -55,7 +60,7 @@ pub fn optimize(sim: &Simulation, ctx: &SimContext, effort: Effort) -> MagsOutco
     ];
     let mut best: Option<(f64, Vec<Mag>)> = None;
     for plan in &orders {
-        let mags = assign(sim, ctx, plan, monocles, &room);
+        let mags = assign(sim, ctx, plan, monocles, &room, options);
         let rate = assignment_rate(sim, ctx, &mags);
         if best.as_ref().is_none_or(|(current, _)| rate > *current) {
             best = Some((rate, mags));
@@ -127,6 +132,7 @@ fn assign(
     plan: &[(MagKind, usize)],
     monocles: usize,
     room: &Room,
+    options: SimOptions,
 ) -> Vec<Mag> {
     let slots = game().observations.len();
     let overlay = sim.overlay();
@@ -136,8 +142,16 @@ fn assign(
         slots: room.slots.clone(),
     };
     let mut placed: Vec<Mag> = Vec::new();
+    // The extended lookahead values a monocle by the EXP rate its insight
+    // level buys. Monocles never change the rate, so one pass after the
+    // glasses and kaleidoscopes are down is enough for the whole assignment.
+    let mut gains: Option<Vec<f64>> = None;
 
     for (kind, count) in plan.iter().chain([(MagKind::Monocle, monocles)].iter()) {
+        if *kind == MagKind::Monocle && monocles > 0 && options.extended_insight && gains.is_none()
+        {
+            gains = Some(insight_gains(sim, ctx, &placed));
+        }
         for _ in 0..*count {
             let kal_map = sim::kaleidoscope_map(&placed, slots);
             let mut best: Option<(f64, usize)> = None;
@@ -157,7 +171,14 @@ fn assign(
                             prospect_weight(sim, obs, &room, &kal_map, kal_base, insight)
                         }
                     }
-                    MagKind::Monocle => insight_roi(sim, ctx, &overlay, obs, &kal_map, kal_base),
+                    MagKind::Monocle => {
+                        let roi = insight_roi(sim, ctx, &overlay, obs, &kal_map, kal_base);
+                        let gain = gains
+                            .as_ref()
+                            .and_then(|values| values.get(obs).copied())
+                            .unwrap_or(0.0);
+                        if gain > 0.0 { roi * gain } else { roi }
+                    }
                 };
                 if best.is_none_or(|(current, _)| value > current) {
                     best = Some((value, obs));
@@ -171,6 +192,25 @@ fn assign(
         }
     }
     placed
+}
+
+/// EXP/hour each observation's next insight level would permanently add, at
+/// the magnifiers placed so far. The extended lookahead ranks a monocle by
+/// `gain × insight/hour`, the upstream `chooseMonoTargets` score, instead of
+/// the next level-up alone.
+fn insight_gains(sim: &Simulation, ctx: &SimContext, mags: &[Mag]) -> Vec<f64> {
+    let mut trial = sim.clone();
+    trial.mags = mags.to_vec();
+    let base = sim::exp_rate(&trial, ctx).total;
+    (0..game().observations.len())
+        .map(|obs| {
+            let level = trial.observations.insight_level[obs];
+            trial.observations.insight_level[obs] = level + 1;
+            let rate = sim::exp_rate(&trial, ctx).total;
+            trial.observations.insight_level[obs] = level;
+            (rate - base).max(0.0)
+        })
+        .collect()
 }
 
 /// EXP/hour of one assignment against the state it was built for.

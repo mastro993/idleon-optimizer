@@ -39,7 +39,7 @@ pub fn run(
     {
         return None;
     }
-    let mags_outcome = mags::optimize(&after, ctx, request.effort);
+    let mags_outcome = mags::optimize(&after, ctx, request.effort, request.options);
     after.mags = mags_outcome.mags;
     steps.extend(mags_outcome.steps);
 
@@ -103,7 +103,7 @@ pub fn run(
         {
             return None;
         }
-        let remags = mags::optimize(&after, ctx, request.effort);
+        let remags = mags::optimize(&after, ctx, request.effort, request.options);
         after.mags = remags.mags;
         steps.extend(remags.steps);
     }
@@ -122,9 +122,14 @@ pub fn run(
             steps.push(format!(
                 "Research level {level} is already reached; projecting 24 hours from here."
             ));
-            sim::project(&after, ctx, crate::model::Target::Hours(24.0))
+            sim::project(
+                &after,
+                ctx,
+                crate::model::Target::Hours(24.0),
+                request.options,
+            )
         }
-        target => sim::project(&after, ctx, target),
+        target => sim::project(&after, ctx, target, request.options),
     };
     let gain = if before_rate > 0.0 {
         (after_rate / before_rate - 1.0) * 100.0

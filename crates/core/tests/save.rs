@@ -129,7 +129,8 @@ fn full_save() -> Value {
             "Exp0_0": stringified(&exp_row(123456.0)),
             "Lv0_1": stringified(&character_row(70.0, 0.0)),
             "Exp0_1": stringified(&exp_row(1.0)),
-            "OptLacc": stringified(&sparse(700, &[(469, 50.0), (641, 3.0)])),
+            "OptLacc": stringified(&sparse(700, &[(469, 50.0), (496, 4.0), (511, 5.0), (641, 3.0)])),
+            "TimeAway": stringified(&json!({ "GlobalTime": 1_794_067_271.0 })),
             "Dream": stringified(&sparse(20, &[(14, 2.0)])),
             "Holes": stringified(&Value::Array(holes)),
             "Sailing": stringified(&Value::Array(sailing)),
@@ -217,6 +218,9 @@ fn full_save_decodes_the_account_terms_it_carries() {
     assert!((simulation.placements[1].rot - 45.0).abs() < 1e-9);
 
     assert!((context.server_var_res_xp - 1.2).abs() < 1e-9);
+    assert!((context.save_global_time - 1_794_067_271.0).abs() < 1e-9);
+    assert_eq!(context.tournament_last_day, 5.0);
+    assert_eq!(context.tournament_cached_day, 4.0);
     // Companion 55 (+15) and the two weekly-boss clouds (+2) at one percent each.
     assert!((context.all_bonus_multi - 1.17).abs() < 1e-9);
     // Killroy 1.2, nonstop studies 1.06, Cglunko 1.03, fountain 1.12,
