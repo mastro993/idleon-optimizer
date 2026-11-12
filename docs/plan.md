@@ -9,8 +9,8 @@ board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout ed
 simulator, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs
 and partial total, the Damage Breakdown context and
 summary shell partial, sailing, shadow-ban, endgame, Fishing,
-Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context and breakdowns
-built, 2 sections planned.** The live breakdown is
+Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context, breakdowns,
+explorer and input ledger built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -419,7 +419,20 @@ formula's terms read, a category filter and a computed/not-modelled filter, and 
 whose value, explanation and terms are the selected row's. The ledger line counts every category
 (`10 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
 its place instead of disappearing. Each formula links to the definition it ports in
-`Corgan/idleon-research-optimizer`. Missing: the input ledger (SA-04).
+`Corgan/idleon-research-optimizer`.
+
+The input change ledger is the sandbox behind those values (SA-04). The vault, gem-shop, talent, guild
+and stamp levels the ported capacity rows read are editable, each edit is spliced into a clone of the
+save (`crates/stats/src/edits.rs`, ported from `createFormulaInputSandbox` in
+`js/stats/formula-inputs.js`), and the page resolves both the imported save and the hypothetical one,
+so the breakdowns, the explorer and the ledger always describe the same state. An edited input is
+marked with the saved value it replaced and resets one input or every input; the affected-formula
+list reports every descriptor the edit moved with its saved and hypothetical value, the delta and the
+percentage (`formulaDifference` in `js/stats/formula-comparison.js`), and a row links back to the
+descriptor it names. Missing: upstream's per-node editor inside the formula inspector, which needs its
+`LEVEL_TABLES` catalogue and the `applyCombatSetupDetailed` save writer, so equipment, obol, companion
+and bubble/prisma cells are not editable yet; an edit to a cell the current character no longer lists
+is dropped, so the ledger and the applied save always agree.
 Details: [`docs/sections/stats-all.md`](sections/stats-all.md).
 
 The Drop Rate Calculator has its inputs, total and formula tree (DR-01, DR-02): the character and

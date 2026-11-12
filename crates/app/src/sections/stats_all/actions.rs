@@ -118,6 +118,65 @@ impl AppState {
         }
     }
 
+    /// Record a hypothetical edit of one game input and re-resolve the page.
+    ///
+    /// Upstream applies the edit to a copy of the save, recalculates and keeps
+    /// the message when the value is outside the input's own checks; the same
+    /// refusal keeps the previous value and shows the error in the ledger.
+    pub(crate) fn set_stats_input(&mut self, id: String, value: f64, cx: &mut Context<Self>) {
+        let outcome = match self.stats_all.sandbox.as_mut() {
+            Some(sandbox) => sandbox.set(&id, value),
+            None => return,
+        };
+        match outcome {
+            Ok(()) => self.stats_all.input_error.clear(),
+            Err(error) => {
+                self.stats_all.input_error = error;
+                cx.notify();
+                return;
+            }
+        }
+        self.rebuild_stats_breakdowns();
+        self.stats_sandbox_changed(cx);
+    }
+
+    /// Put one game input back to the value the imported save carries.
+    pub(crate) fn reset_stats_input(&mut self, id: String, cx: &mut Context<Self>) {
+        if let Some(sandbox) = self.stats_all.sandbox.as_mut() {
+            sandbox.reset(&id);
+        }
+        self.stats_all.input_error.clear();
+        self.rebuild_stats_breakdowns();
+        self.stats_sandbox_changed(cx);
+    }
+
+    /// Drop every pending edit, which is upstream's `Reset all edits`.
+    pub(crate) fn reset_stats_inputs(&mut self, cx: &mut Context<Self>) {
+        if let Some(sandbox) = self.stats_all.sandbox.as_mut() {
+            sandbox.reset_all();
+        }
+        self.stats_all.input_error.clear();
+        self.rebuild_stats_breakdowns();
+        self.stats_sandbox_changed(cx);
+    }
+
+    /// Show one descriptor from the affected-formula list: the tab follows it,
+    /// then the row is selected, like upstream's link into the breakdowns.
+    pub(crate) fn select_stats_descriptor(&mut self, id: String, cx: &mut Context<Self>) {
+        let category = match self
+            .stats_all
+            .sheet
+            .as_ref()
+            .and_then(|sheet| sheet.get(&id))
+        {
+            Some(row) => row.category,
+            None => return,
+        };
+        self.stats_all.category = category;
+        self.stats_all.selected = Some(id);
+        cx.notify();
+    }
+
     /// Re-resolve the breakdowns from the save and the context.
     pub(crate) fn rebuild_stats_breakdowns(&mut self) {
         let Some(save) = self.save.as_ref() else {
@@ -125,6 +184,27 @@ impl AppState {
         };
         self.stats_all
             .rebuild(save, &self.simulation, &self.context);
+    }
+
+    /// The status line a sandbox edit leaves: what is hypothetical and how far
+    /// it reaches.
+    fn stats_sandbox_changed(&mut self, cx: &mut Context<Self>) {
+        let (edited, affected) = match self.stats_all.sandbox.as_ref() {
+            Some(sandbox) => (sandbox.count(), self.stats_all.affected.len()),
+            None => (0, 0),
+        };
+        self.set_status(
+            match edited {
+                0 => "Stats sandbox: no edits.".to_string(),
+                1 => format!("Stats sandbox: 1 edited game input · {affected} affected formulas"),
+                count => {
+                    format!(
+                        "Stats sandbox: {count} edited game inputs · {affected} affected formulas"
+                    )
+                }
+            },
+            cx,
+        );
     }
 
     /// A context change refreshes every value the page derives from it.
