@@ -9,20 +9,28 @@
 //! [`forecast`] explains which encounters a save can enter in each upcoming
 //! week. [`plan`] turns a selection of encounters into the baseline and `+1`
 //! upgrade rows the comparison runs, [`trial`] runs one row for one seed and
-//! [`summarize`] averages the records and ranks the options.
+//! [`summarize`] averages the records and ranks the options. [`saved_buffs`]
+//! reports the save's `BuffsActive` rows a run starts from, and [`results_json`]
+//! writes the run's results as the section's export document.
 //!
 //! The player's damage comes from the combat simulator upstream; that section is
 //! not built here yet (M2), so a trial takes the character's kills per second as
 //! an input. Everything else in a trial — the arrival schedule, the respawn
-//! bonus, the 100 ms spawn tick, the run duration and the per-kill drop rolls —
-//! is the upstream formula.
+//! bonus, the 100 ms spawn tick, the run duration, the per-kill drop rolls and
+//! the bag those drops share — is the upstream formula.
 
+mod buffs;
+mod export;
 mod forecast;
+mod inventory;
 mod planner;
 mod summary;
 mod trial;
 
+pub use buffs::{CharacterBuffs, SavedBuff, character_buffs, saved_buffs};
+pub use export::{document as results_document, to_json as results_json};
 pub use forecast::{Encounter, FamilyCount, Forecast, ForecastCharacter, ForecastWeek, forecast};
+pub use inventory::Bag;
 pub use planner::{
     Comparisons, Job, KillroyError, Plan, PlanInput, Row, Selection, Upgrade, UpgradeChoice, Week,
     plan, upgrade_choices,

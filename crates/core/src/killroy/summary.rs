@@ -195,6 +195,8 @@ mod tests {
                 seeds,
                 comparisons: Comparisons::All,
                 kills_per_second: 3.0,
+                keep_buffs: false,
+                unlimited_inventory: false,
             },
         )
         .expect("the plan builds")

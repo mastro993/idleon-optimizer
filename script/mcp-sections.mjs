@@ -91,7 +91,9 @@ const shadowSave = () => {
 /// slot filling an Opal jar, so the jar calculator has something to read. Rows
 /// stay as short as the cells the jar reads.
 /// A small flat save with a wrapped Killroy rotation, two eligible characters
-/// and every upgrade unlocked, so the comparison has rows to run.
+/// and every upgrade unlocked, so the comparison has rows to run. The saved
+/// buffs carry one timed buff and one permanent form toggle, and character 2's
+/// bag has no blank slot or skull stack so the skull limit has something to say.
 const killroySave = () => {
   const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   const portals = () => sparse(251, { 100: [0], 150: [0], 200: [0], 250: [0] });
@@ -110,6 +112,13 @@ const killroySave = () => {
     KLA_1: portals(),
     Summon: sparse(4, { 3: sparse(3, { 2: 5 }) }),
     KRbest: { ratB: 2240, thermostat: 2356 },
+    BuffsActive_0: [
+      { 0: 460, 1: 1891, 2: 3360, length: 3 },
+      { 0: 420, 1: 5, 2: 5, length: 3 },
+    ],
+    BuffsActive_1: [{ 0: 94, 1: 6683, 2: 8220, length: 3 }],
+    InventoryOrder_0: ['Quest25', 'Blank', 'Blank'],
+    InventoryOrder_1: ['Pearl4'],
     serverVars: { KillroySwap: 7 },
   });
 };
@@ -781,14 +790,50 @@ const INTERACTIONS = {
     await waitForNode(lane, 'import-format', 'killroy: the save previews');
     await lane.call('click_element', { id: 'import-apply' });
     await waitForNode(lane, 'killroy-forecast', 'killroy: the forecast opens after Apply');
+    // The saved buffs are the save's own rows: a timed buff starts dropped and a
+    // form toggle starts kept until the option changes.
+    await waitForNode(lane, 'killroy-buffs', 'killroy: the saved buffs render');
+    const dropped = labelOf(await lane.tree(), 'killroy-buff-0-460') ?? '';
+    if (!dropped.includes('1,891') || !dropped.includes('3,360') || !dropped.includes('dropped')) {
+      throw new Error(`killroy: the timed buff reads ${dropped}`);
+    }
+    const form = labelOf(await lane.tree(), 'killroy-buff-0-420') ?? '';
+    if (!form.includes('kept') || !has(await lane.tree(), 'killroy-form-0-420')) {
+      throw new Error(`killroy: the form toggle reads ${form}`);
+    }
+    await lane.call('click_element', { id: 'killroy-keep-buffs' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'killroy-buff-0-460') ?? '').includes('kept'),
+      'killroy: keeping saved buffs keeps the timed row',
+    );
+    await lane.call('click_element', { id: 'killroy-unlimited' });
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'killroy-upgrades', 'killroy: the upgrade list opens');
+    // Cancel: twenty trials over every configuration leave the run in flight.
+    for (let press = 0; press < 17; press += 1) {
+      await lane.call('click_element', { id: 'killroy-trials-up' });
+    }
     await lane.call('click_element', { id: 'killroy-run' });
-    await waitForNode(lane, 'killroy-comparison', 'killroy: the comparison runs');
+    await waitForNode(lane, 'killroy-run-progress', 'killroy: the run reports progress');
+    await lane.call('click_element', { id: 'killroy-run-cancel' });
+    await waitForNode(lane, 'killroy-cancelled', 'killroy: cancel stops the run');
+    await lane.call('click_element', { id: 'killroy-run' });
+    await waitForNode(lane, 'killroy-comparison', 'killroy: the comparison runs', 120000);
     await waitFor(
       lane,
       (nodes) => nodes.some((node) => node.id?.startsWith('killroy-best-')),
       'killroy: the best option is marked',
+    );
+    const details = labelOf(await lane.tree(), 'killroy-result-details') ?? '';
+    if (!details.includes('Saved buffs kept') || !details.includes('Unlimited inventory')) {
+      throw new Error(`killroy: the run details read ${details}`);
+    }
+    await lane.call('click_element', { id: 'killroy-export' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('Killroy results JSON'),
+      'killroy: the results export copies JSON',
     );
     await lane.call('click_element', { id: 'baseline' });
     await waitForNode(lane, 'killroy-forecast', 'killroy: the baseline tab reopens');

@@ -5,9 +5,9 @@ the Cglunko overview, the Prisma calculator, Cooking Mastery, Fountain, the Opal
 state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and depth
 estimates, the Sneaking loadout and inventory workspaces, the combat simulator's loadout editor and
 mechanics overrides, the cog board optimizer, the Clamworks optimizer, the Jelly Operator overview
-and layout editor and the drop-rate inputs and dungeon total partial, shadow-ban, endgame, Fishing
-and BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2 sections
-planned.** The live breakdown is
+and layout editor, the drop-rate inputs and dungeon total partial, shadow-ban, endgame, Fishing,
+Killroy and BoneJoePickle done, Monument Bravery, the All Stats context and breakdowns built, 2
+sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 

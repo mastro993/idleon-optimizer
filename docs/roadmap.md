@@ -24,7 +24,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M9 | Statue Calculator | General | 3 | partial | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | done | foundation | [fishing](sections/fishing.md) |
 | M11 | Prisma Calculator | World 2 | 2 | partial | foundation | [prisma](sections/prisma.md) |
-| M12 | Killroy Calculator | World 2 | 3 | partial | foundation | [killroy](sections/killroy.md) |
+| M12 | Killroy Calculator | World 2 | 3 | done | foundation | [killroy](sections/killroy.md) |
 | M13 | Cog Board Optimizer | World 3 | 4 | partial | foundation | [cog](sections/cog.md) |
 | M14 | Worship Tower Defense | World 3 | 4 | partial | foundation | [worship-td](sections/worship-td.md) |
 | M15 | Ladle Optimizer | World 4 | 4 | partial | foundation | [ladle](sections/ladle.md) |
