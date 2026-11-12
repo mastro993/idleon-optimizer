@@ -1,10 +1,11 @@
-//! The Monument (W5) Bravery calculator.
+//! The Monument (W5) calculator: the Bravery and Wisdom tabs, the shared
+//! training pool and the reward charge all three monuments pay out.
 //!
 //! Ported from the upstream `js/stats/systems/w5/monument.js` and the helper
-//! systems its Bravery tab reads: hole upgrades, the fountain, jar
-//! measurements and collectibles, summoning victories, arcade, achievements,
-//! the compass and Minehead. The static tables come from
-//! `script/extract-monument-data.mjs`.
+//! systems those tabs read: hole upgrades, the fountain, jar measurements and
+//! collectibles, summoning victories, arcade, achievements, the compass,
+//! Minehead, Meritoc voting, sushi tiers and the gaming superbits. The static
+//! tables come from `script/extract-monument-data.mjs`.
 //!
 //! The formulas follow the upstream order of operations exactly, including its
 //! rounding and flooring, because the calculator reports the game's displayed
@@ -114,6 +115,55 @@ pub struct Snapshot {
     pub bonuses: Vec<BonusRow>,
 }
 
+/// The Wisdom tab's saved stats.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WisdomStats {
+    pub hours: f64,
+    pub milestones: u32,
+    pub opal_chance: f64,
+    pub attempts: f64,
+    pub attempts_per_board: f64,
+    pub instamatches: f64,
+    pub reveal_row: bool,
+    pub reveal_square: bool,
+    pub seconds_per_match: f64,
+}
+
+/// `monumentRewardCharge`: the reward multiplier a wait has built up.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Charge {
+    /// Real seconds waited: the saved `Holes[11][11 + monument]` row plus the extra wait.
+    pub seconds: f64,
+    /// The linear window in seconds; waiting beyond it only adds a diminished tail.
+    pub max_linear: f64,
+    /// The wait's own multiplier, before the Meritoc and Legend factors.
+    pub base: f64,
+    /// `computeMeritocBonusz(7)`. Zero unless vote 7 is active and its map is cleared.
+    pub meritoc: f64,
+    /// `legendPTSbonus(27)`.
+    pub legend: f64,
+    pub multi: f64,
+    pub can_start: bool,
+}
+
+/// Everything the Wisdom tab renders for a save.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WisdomSnapshot {
+    pub available: bool,
+    pub notes: Vec<String>,
+    pub training: Training,
+    pub stats: WisdomStats,
+    pub milestones: Vec<Milestone>,
+    pub bonuses: Vec<BonusRow>,
+    /// The charge saved waiting has built so far.
+    pub charge: Charge,
+    /// The charge after another 24 hours, the upstream "tomorrow" preview.
+    pub tomorrow: Charge,
+}
+
 /// Why a Bravery input was rejected.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -123,6 +173,8 @@ pub enum Error {
     RerollsExceedMaximum,
     /// Remaining HP must be greater than zero.
     RemainingHp,
+    /// The monument must be 0-2 and the extra wait a finite, nonnegative time.
+    InvalidCharge,
 }
 
 impl std::fmt::Display for Error {
@@ -133,6 +185,9 @@ impl std::fmt::Display for Error {
                 write!(formatter, "Remaining rethrows exceed the saved maximum.")
             }
             Error::RemainingHp => write!(formatter, "Remaining HP must be greater than zero."),
+            Error::InvalidCharge => {
+                write!(formatter, "Invalid monument or additional waiting time.")
+            }
         }
     }
 }
@@ -280,16 +335,27 @@ pub fn bravery_odds(
 /// The eight Bravery milestones, with their one-character ETA at `rate`.
 pub fn milestones(save: &Save, rate: f64) -> Vec<Milestone> {
     let stats = bravery_stats(save, Runtime::default()).unwrap_or_default();
+    milestone_rows(0, stats.hours, stats.milestones, rate)
+}
+
+/// The eight Wisdom milestones, with their one-character ETA at `rate`.
+pub fn wisdom_milestones(save: &Save, rate: f64) -> Vec<Milestone> {
+    let stats = wisdom_stats(save);
+    milestone_rows(2, stats.hours, stats.milestones, rate)
+}
+
+/// One monument's eight Paying Respect milestones.
+fn milestone_rows(monument: usize, hours: f64, unlocked: u32, rate: f64) -> Vec<Milestone> {
     data()
         .holes
         .milestone_hours
         .iter()
         .enumerate()
-        .map(|(index, hours)| {
-            let hours = *hours;
-            let unlocked = stats.milestones > index as u32;
-            let ready = stats.hours >= hours;
-            let hours_needed = (hours - stats.hours).max(0.0);
+        .map(|(index, hours_required)| {
+            let hours_required = *hours_required;
+            let is_unlocked = unlocked > index as u32;
+            let ready = hours >= hours_required;
+            let hours_needed = (hours_required - hours).max(0.0);
             let real_hours = if ready {
                 0.0
             } else {
@@ -299,11 +365,11 @@ pub fn milestones(save: &Save, rate: f64) -> Vec<Milestone> {
                 text: data()
                     .holes
                     .milestone_text
-                    .get(index)
+                    .get(8 * monument + index)
                     .cloned()
                     .unwrap_or_default(),
-                hours,
-                unlocked,
+                hours: hours_required,
+                unlocked: is_unlocked,
                 ready,
                 hours_needed,
                 real_hours,
@@ -314,16 +380,21 @@ pub fn milestones(save: &Save, rate: f64) -> Vec<Milestone> {
 
 /// The ten Bravery permanent reward levels and their effects.
 pub fn bonuses(save: &Save) -> Vec<BonusRow> {
+    bonuses_for(save, 0)
+}
+
+/// The ten permanent reward levels of `monument` and their effects.
+pub fn bonuses_for(save: &Save, monument: usize) -> Vec<BonusRow> {
     (0..10)
         .map(|index| {
-            let slot = index;
+            let slot = 10 * monument + index;
             BonusRow {
                 level: save.hole(15, slot),
                 text: data().bonus_text(slot).to_string(),
-                value: monument_rog_bonus(save, 0, index),
+                value: monument_rog_bonus(save, monument, index),
                 next: monument_rog_bonus_with_level(
                     save,
-                    0,
+                    monument,
                     index,
                     Some(save.hole(15, slot) + 1.0),
                 ),
@@ -335,12 +406,72 @@ pub fn bonuses(save: &Save) -> Vec<BonusRow> {
 /// Everything the Bravery tab needs, or an unavailable marker when the save
 /// lacks the Monument rows.
 pub fn snapshot(save: &Save, char_idx: usize) -> Snapshot {
-    let has_rows = [11, 14, 15]
-        .iter()
-        .all(|row| save.holes.get(*row).is_some_and(Value::is_array));
-    if !has_rows {
+    if !has_rows(save) {
         return Snapshot::default();
     }
+    let training = training(save, char_idx);
+    let stats = bravery_stats(save, Runtime::default()).unwrap_or_default();
+    Snapshot {
+        available: true,
+        notes: notes(save, char_idx),
+        milestones: milestones(save, training.rate),
+        bonuses: bonuses(save),
+        training,
+        stats,
+    }
+}
+
+/// The Wisdom saved stats for a save.
+pub fn wisdom_stats(save: &Save) -> WisdomStats {
+    let hours = save.hole(14, 4);
+    let milestones = save.hole(14, 5).max(0.0) as u32;
+    let unlocked = |index: u32| milestones > index;
+    WisdomStats {
+        hours,
+        milestones,
+        opal_chance: (0.5_f64.powf(save.hole(7, 12))
+            * (1.0 + monument_rog_bonus(save, 2, 5) / 100.0))
+            .min(0.5),
+        attempts: (5.0
+            + study(save, 12)
+            + (4.0 * f64::from(unlocked(4)) + (2.0 * get_log(hours)).floor()))
+        .round(),
+        attempts_per_board: (2.0 * f64::from(unlocked(1)) + f64::from(unlocked(6))).round(),
+        instamatches: (4.0 * f64::from(unlocked(3)) + 5.0 * f64::from(unlocked(7))).round(),
+        reveal_row: unlocked(2),
+        reveal_square: unlocked(5),
+        seconds_per_match: 12.6,
+    }
+}
+
+/// Everything the Wisdom tab needs, or an unavailable marker when the save
+/// lacks the Monument rows.
+pub fn wisdom_snapshot(save: &Save, char_idx: usize) -> WisdomSnapshot {
+    if !has_rows(save) {
+        return WisdomSnapshot::default();
+    }
+    let training = training(save, char_idx);
+    WisdomSnapshot {
+        available: true,
+        notes: notes(save, char_idx),
+        stats: wisdom_stats(save),
+        milestones: wisdom_milestones(save, training.rate),
+        bonuses: bonuses_for(save, 2),
+        charge: reward_charge(save, 2, char_idx, 0.0).unwrap_or_default(),
+        tomorrow: reward_charge(save, 2, char_idx, 86_400.0).unwrap_or_default(),
+        training,
+    }
+}
+
+/// The saved Monument rows every tab reads.
+fn has_rows(save: &Save) -> bool {
+    [11, 14, 15]
+        .iter()
+        .all(|row| save.holes.get(*row).is_some_and(Value::is_array))
+}
+
+/// The partial-save warnings the upstream snapshot prints for every tab.
+fn notes(save: &Save, char_idx: usize) -> Vec<String> {
     let mut notes = Vec::new();
     if !save.companion_available {
         notes.push(
@@ -354,16 +485,54 @@ pub fn snapshot(save: &Save, char_idx: usize) -> Snapshot {
                 .into(),
         );
     }
-    let training = training(save, char_idx);
-    let stats = bravery_stats(save, Runtime::default()).unwrap_or_default();
-    Snapshot {
-        available: true,
-        notes,
-        milestones: milestones(save, training.rate),
-        bonuses: bonuses(save),
-        training,
-        stats,
+    if save.option(453) == 7.0 && save.kla_map(char_idx, 250).is_none() {
+        notes.push(
+            "Selected character Summoning access is missing; the active Monument Meritoc bonus is unknown."
+                .into(),
+        );
     }
+    notes
+}
+
+/// `monumentRewardCharge`: the reward multiplier a monument's saved wait pays.
+///
+/// `monument` is the upstream `t` (Bravery 0, Justice 1, Wisdom 2) and
+/// `extra_seconds` the additional wait the caller previews. Waiting past the
+/// linear window keeps paying out a diminished cube-root tail.
+pub fn reward_charge(
+    save: &Save,
+    monument: usize,
+    char_idx: usize,
+    extra_seconds: f64,
+) -> Result<Charge, Error> {
+    if monument > 2 || !extra_seconds.is_finite() || extra_seconds < 0.0 {
+        return Err(Error::InvalidCharge);
+    }
+    let legend = legend_pts_bonus(save, 27);
+    let meritoc = meritoc(save, 7, char_idx);
+    let b70 = compute_bupg(save, 70, 2.0);
+    let b96 = compute_bupg(save, 96, 2.0);
+    let gaming = 10.0 * superbit(save, 31);
+    let linear = b70 + b96 + gaming;
+    let max_linear = 86_400.0
+        * if monument == 1 {
+            2.0 + linear + (14.0 * f64::from(save.hole(26, 9) >= 1.0) + legend / 24.0)
+        } else {
+            2.0 + (linear + legend / 24.0)
+        };
+    let seconds = save.hole(11, 11 + monument) + extra_seconds;
+    let base = seconds.min(max_linear) / 72_000.0
+        + ((1.0 + (seconds - max_linear).max(0.0) / 72_000.0).powf(0.3) - 1.0);
+    let multi = base * (1.0 + meritoc / 100.0) * (1.0 + legend / 100.0);
+    Ok(Charge {
+        seconds,
+        max_linear,
+        base,
+        meritoc,
+        legend,
+        multi,
+        can_start: multi >= 1.0,
+    })
 }
 
 /// `MonumentROGbonuses(t, i)`: a permanent reward level's effect.
@@ -595,6 +764,71 @@ fn collectible_bonus(save: &Save, index: usize, legend_pts: f64) -> f64 {
 /// `legendPTSbonus`: a Legend talent's points times its per-point effect.
 fn legend_pts_bonus(save: &Save, index: usize) -> f64 {
     (save.spelunk(18, index) * data().legend_per_point(index)).round()
+}
+
+/// `computeMeritocBonusz`: the bonus of the active Meritoc vote. A vote only
+/// pays once its map is cleared, and a missing clear row leaves it unknown.
+fn meritoc(save: &Save, option: usize, char_idx: usize) -> f64 {
+    if save.options.is_empty() {
+        return 0.0;
+    }
+    if save.option(453) != option as f64 {
+        return 0.0;
+    }
+    let Some(kills_left) = save.kla_map(char_idx, 250) else {
+        return 0.0;
+    };
+    if kills_left > 0.0 {
+        return 0.0;
+    }
+    let base = data().meritoc_base(option);
+    if base <= 0.0 {
+        return 0.0;
+    }
+    let can_vote = save.option(472) == 1.0;
+    let clam_work3 = if save.option(464) > 3.0 { 1.0 } else { 0.0 };
+    let add = 5.0 * clam_work3
+        + companion_bonus_for_save(save, 39)
+        + legend_pts_bonus(save, 24)
+        + arcade_bonus(save, 59)
+        + 20.0 * event_shop(save, 23)
+        + rog_bonus_qty(save, 51)
+        + jelly_reward(save, 33);
+    let multi = if can_vote { 1.0 } else { 0.25 } + add / 100.0;
+    base * (1.0 + companion_bonus_for_save(save, 161) / 100.0) * multi
+}
+
+/// `eventShopOwned`: whether an event shop item's letter is in `OptLacc[311]`.
+fn event_shop(save: &Save, index: usize) -> f64 {
+    let Some(letter) = data().encoding_letter(index) else {
+        return 0.0;
+    };
+    if save.option_text(311).contains(letter) {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// `superBitType`: whether a gaming superbit's letter is in `Gaming[12]`.
+fn superbit(save: &Save, index: usize) -> f64 {
+    let Some(letter) = data().encoding_letter(index) else {
+        return 0.0;
+    };
+    if save.gaming_text(12).contains(letter) {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+/// `rogBonusQTY`: a sushi tier's bonus, paid once that many tiers are found.
+fn rog_bonus_qty(save: &Save, index: usize) -> f64 {
+    if save.unique_sushi() > index {
+        data().rog_bonus_qty(index)
+    } else {
+        0.0
+    }
 }
 
 /// `mineheadBonusQTY`: a Minehead floor reward's bonus.

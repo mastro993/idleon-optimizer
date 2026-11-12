@@ -21,6 +21,12 @@ pub struct Data {
     pub compass: HashMap<String, Vec<Value>>,
     pub minehead_bonus_qty: Vec<f64>,
     pub companions: HashMap<String, [f64; 2]>,
+    /// `MERITOC_BASE`, the vote bonuses the reward charge reads.
+    pub meritoc_base: Vec<f64>,
+    /// `ROG_BONUS_QTY`, the sushi-tier bonuses the Meritoc vote counts.
+    pub rog_bonus_qty: Vec<f64>,
+    /// `N2L`: item `t` is owned when a saved list carries `encoding[t]`.
+    pub encoding: String,
     pub artifact32: f64,
     pub emperor: Emperor,
     pub arcane48_per_level: f64,
@@ -134,6 +140,21 @@ impl Data {
         self.companions.get(&index.to_string()).copied()
     }
 
+    /// `MERITOC_BASE[index]`.
+    pub fn meritoc_base(&self, index: usize) -> f64 {
+        self.meritoc_base.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `ROG_BONUS_QTY[index]`.
+    pub fn rog_bonus_qty(&self, index: usize) -> f64 {
+        self.rog_bonus_qty.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// The encoding letter that marks item `index` as owned.
+    pub fn encoding_letter(&self, index: usize) -> Option<char> {
+        self.encoding.chars().nth(index)
+    }
+
     /// `EmperorBon[1][index]`.
     pub fn emperor_value(&self, index: usize) -> f64 {
         self.emperor.val.get(index).copied().unwrap_or(0.0)
@@ -197,6 +218,12 @@ mod tests {
         assert_eq!(data.holes.bonus_per_level.len(), 30);
         assert_eq!(data.fountain_per_level.len(), 3);
         assert_eq!(data.companion(27), Some([1.0, 1.5]));
+        assert_eq!(data.companion(39), Some([50.0, 75.0]));
+        assert_eq!(data.companion(161), Some([100.0, 150.0]));
+        assert_eq!(data.meritoc_base(7), 200.0);
+        assert_eq!(data.rog_bonus_qty(51), 10.0);
+        assert_eq!(data.encoding_letter(23), Some('w'));
+        assert_eq!(data.encoding_letter(31), Some('E'));
         assert_eq!(data.emperor_value(8), 1.0);
         assert_eq!(data.legend_per_point(29), 20.0);
         assert_eq!(data.godshard_set().map(|set| set.bonus), Some(15.0));

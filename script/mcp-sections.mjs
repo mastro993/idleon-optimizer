@@ -179,6 +179,8 @@ const monumentSave = () => {
   const holes = Array.from({ length: 33 }, () => []);
   holes[7] = zeros(4);
   holes[11] = zeros(70);
+  // A day of saved reward charge so the Wisdom tab has a multiplier to show.
+  holes[11][13] = 86400;
   holes[13] = zeros(100);
   holes[14] = [600, 2];
   holes[15] = zeros(30);
@@ -2200,6 +2202,24 @@ const INTERACTIONS = {
       lane,
       (nodes) => (labelOf(nodes, 'monument-odds-damage') ?? '').includes('3.0 - 27.5'),
       'monument: a boost stack updates the odds',
+    );
+    // The Wisdom tab reads its own rows: attempts, the saved charge and the
+    // partial-save warning this flat save triggers.
+    await lane.call('click_element', { id: 'wisdom' });
+    await waitForNode(lane, 'monument-pane-wisdom', 'monument: the wisdom tab opens');
+    const attempts = labelOf(await lane.tree(), 'monument-wisdom-attempts') ?? '';
+    if (!attempts.includes('5.0')) {
+      throw new Error(`monument: the wisdom attempts read ${attempts}`);
+    }
+    const charge = labelOf(await lane.tree(), 'monument-wisdom-charge-now') ?? '';
+    if (!charge.includes('1.2x') || !charge.includes('story ready')) {
+      throw new Error(`monument: the wisdom charge reads ${charge}`);
+    }
+    const warning = labelOf(await lane.tree(), 'monument-wisdom-notes') ?? '';
+    check(
+      'monument: the wisdom tab warns about the missing companion roster',
+      warning.includes('Companion ownership is missing'),
+      warning,
     );
   },
   cog: async (lane) => {

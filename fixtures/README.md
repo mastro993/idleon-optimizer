@@ -25,12 +25,14 @@ instead of editing this one; regenerating it means updating the fixture test on 
 after changing the wrap or the horizon; `crates/core/tests/killroy.rs` compares the port field for
 field. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
 
-`monument.json` is the upstream Monument Bravery calculator's own output for `data.json`: the
-saved snapshot (training sources, stats, milestones and permanent reward rows), seven run states
-covering boost stacks, spent rethrows and an entered last-sword HP, and the inputs it rejects with
-their messages. Regenerate it with `node script/monument-oracle.mjs <upstream-repo>`;
-`crates/core/tests/monument.rs` compares the port field for field. Treat it as frozen for the same
-reason: it is the oracle's output, not this app's.
+`monument.json` is the upstream Monument calculator's own output for `data.json`: the saved
+Bravery and Wisdom snapshots (training sources, stats, milestones and permanent reward rows), the
+reward charge for all three monuments at the saved wait, after 24 hours and after an extra hour,
+seven Bravery run states covering boost stacks, spent rethrows and an entered last-sword HP, and
+the inputs it rejects with their messages. Regenerate it with
+`node script/monument-oracle.mjs <upstream-repo>`; `crates/core/tests/monument.rs` compares the
+port field for field. Treat it as frozen for the same reason: it is the oracle's output, not this
+app's.
 
 `coral-plan.json` is the upstream Coral God Rank planner's own output for `data.json`: the
 section's defaults, four beam-search cases (the fixture plan at the default and a one-state beam,

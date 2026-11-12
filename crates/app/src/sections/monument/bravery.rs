@@ -1,32 +1,35 @@
 //! The Bravery tab: saved stats, the run-state inputs, sword odds, milestones
 //! and the permanent reward levels.
 
-use super::{clean_text, metric_card};
+use super::{
+    MilestoneFirst, bonuses_card, empty_card, metric_card, milestones_card, notes_card,
+    unavailable_card,
+};
 use crate::state::AppState;
 use crate::ui::format;
 use ely_gpui_component::buttons::Button;
-use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::NumberInput;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_core::monument::{BonusRow, Milestone, Odds, Snapshot};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use idleon_core::monument::{Odds, Snapshot};
 
 /// The Bravery pane.
 pub fn pane(
     state: &mut AppState,
     snapshot: Option<&Snapshot>,
-    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let body = match snapshot {
         Some(snapshot) if snapshot.available => loaded(state, snapshot, cx),
-        Some(snapshot) => unavailable(snapshot, cx),
-        None => empty(window, cx),
+        Some(snapshot) => unavailable_card("Bravery", &snapshot.notes, cx),
+        None => empty_card(
+            "Bravery",
+            "Import a decoded save to read the Bravery training, milestones and permanent rewards.",
+            cx,
+        ),
     };
     div()
         .id("monument-pane-bravery")
@@ -49,48 +52,6 @@ pub fn pane(
                 ),
         )
         .into_any_element()
-}
-
-fn empty(_window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    Card::new()
-        .header(CardHeader::new("Bravery"))
-        .child(
-            EmptyState::new("monument-empty", IconName::Upload, "Load a save")
-                .body("Import a decoded save to read the Bravery training, milestones and permanent rewards.")
-                .action(
-                    Button::new("monument-import", "Import save")
-                        .icon(IconName::Upload)
-                        .on_click(move |_event, window, cx| {
-                            entity.update(cx, |state, cx| state.open_import(window, cx));
-                        }),
-                ),
-        )
-        .into_any_element()
-}
-
-fn unavailable(snapshot: &Snapshot, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let mut card = Card::new()
-        .header(CardHeader::new("Bravery").description("The save has no Monument rows."))
-        .child(Caption::new(
-            "This save is missing Monument charge, training or reward data.",
-        ));
-    if !snapshot.notes.is_empty() {
-        card = card.child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .children(snapshot.notes.iter().map(|note| {
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note.clone())
-                })),
-        );
-    }
-    card.into_any_element()
 }
 
 fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>) -> AnyElement {
@@ -149,7 +110,7 @@ fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>)
 
     let mut column = div().flex().flex_col().gap_3().child(cards);
     if !snapshot.notes.is_empty() {
-        column = column.child(notes_card(snapshot, cx));
+        column = column.child(notes_card("monument-bravery-notes", &snapshot.notes, cx));
     }
     column = column.child(controls_card(state, snapshot, cx));
     match state.monument_odds() {
@@ -172,29 +133,15 @@ fn loaded(state: &mut AppState, snapshot: &Snapshot, cx: &mut Context<AppState>)
                 ),
             ),
     );
-    column = column.child(milestones_card(snapshot));
-    column = column.child(bonuses_card(snapshot));
+    column = column.child(milestones_card(
+        &snapshot.milestones,
+        MilestoneFirst::Damage {
+            min: snapshot.stats.min_dmg,
+            max: snapshot.stats.max_dmg,
+        },
+    ));
+    column = column.child(bonuses_card(&snapshot.bonuses));
     column.into_any_element()
-}
-
-fn notes_card(snapshot: &Snapshot, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    Card::new()
-        .header(CardHeader::new("Partial save").description("Some sources cannot be read"))
-        .child(
-            div()
-                .id("monument-bravery-notes")
-                .flex()
-                .flex_col()
-                .gap_1()
-                .children(snapshot.notes.iter().map(|note| {
-                    div()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(note.clone())
-                })),
-        )
-        .into_any_element()
 }
 
 fn controls_card(
@@ -418,150 +365,4 @@ fn odds_cards(odds: &Odds, cx: &mut Context<AppState>) -> AnyElement {
             "Boost odds exclude early kills. They assume the right-most sword lands strictly later, not simultaneous animation completions. Existing stacks multiply maximum damage by 1 + 0.1 × stacks.",
         ))
         .into_any_element()
-}
-
-fn milestones_card(snapshot: &Snapshot) -> AnyElement {
-    let mut table = Table::new([
-        "Milestone",
-        "Training hours required",
-        "Saved status",
-        "One-character ETA",
-    ]);
-    for (index, row) in snapshot.milestones.iter().enumerate() {
-        table = table.row(milestone_row(snapshot, index, row));
-    }
-    Card::new()
-        .header(CardHeader::new("Paying Respect milestones"))
-        .child(table)
-        .into_any_element()
-}
-
-fn milestone_row(snapshot: &Snapshot, index: usize, row: &Milestone) -> [AnyElement; 4] {
-    let mut text = clean_text(&row.text);
-    if index == 0 {
-        text = text
-            .replace('{', &format::value(snapshot.stats.min_dmg))
-            .replace('}', &format::value(snapshot.stats.max_dmg));
-    }
-    [
-        div().min_w_0().child(text).into_any_element(),
-        div().child(format::value(row.hours)).into_any_element(),
-        div().child(milestone_status(row)).into_any_element(),
-        div().child(milestone_eta(row)).into_any_element(),
-    ]
-}
-
-fn milestone_status(row: &Milestone) -> &'static str {
-    if row.unlocked {
-        "Unlocked"
-    } else if row.ready {
-        "Ready: unlock in game"
-    } else {
-        "Not reached"
-    }
-}
-
-fn milestone_eta(row: &Milestone) -> String {
-    if row.unlocked || row.ready {
-        "-".to_string()
-    } else {
-        format!("{} real hours", format::value(row.real_hours))
-    }
-}
-
-fn bonuses_card(snapshot: &Snapshot) -> AnyElement {
-    let mut table = Table::new([
-        "Reward",
-        "Saved level",
-        "Current effect",
-        "Effect at +1 level",
-    ]);
-    for row in &snapshot.bonuses {
-        table = table.row(bonus_row(row));
-    }
-    Card::new()
-        .header(CardHeader::new("Permanent reward levels & total effects"))
-        .child(table)
-        .into_any_element()
-}
-
-fn bonus_row(row: &BonusRow) -> [AnyElement; 4] {
-    let text = clean_text(&row.text);
-    [
-        div().min_w_0().child(bonus_label(&text)).into_any_element(),
-        div().child(format::value(row.level)).into_any_element(),
-        div()
-            .child(effect_text(&text, row.value))
-            .into_any_element(),
-        div().child(effect_text(&text, row.next)).into_any_element(),
-    ]
-}
-
-fn bonus_label(text: &str) -> String {
-    let mut label: String = text
-        .chars()
-        .filter(|character| !matches!(character, '+' | '{' | '}' | '%'))
-        .collect();
-    label = label.trim().to_string();
-    if let Some(rest) = label.strip_prefix("x ") {
-        label = rest.trim().to_string();
-    }
-    label
-}
-
-fn effect_text(text: &str, value: f64) -> String {
-    text.replace('{', &format::value(value))
-        .replace('}', &format::value(1.0 + value / 100.0))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn milestone(unlocked: bool, ready: bool, real_hours: f64) -> Milestone {
-        Milestone {
-            text: String::new(),
-            hours: 0.0,
-            unlocked,
-            ready,
-            hours_needed: 0.0,
-            real_hours,
-        }
-    }
-
-    #[test]
-    fn reward_labels_and_effects_follow_the_upstream_cleanup() {
-        assert_eq!(bonus_label("+{% Mining Efficiency"), "Mining Efficiency");
-        assert_eq!(bonus_label("x Bucket Fill Rate"), "Bucket Fill Rate");
-        assert_eq!(
-            bonus_label("Chance for Bravery Opals"),
-            "Chance for Bravery Opals"
-        );
-        assert_eq!(
-            effect_text("+{% Mining Efficiency", 63_443.52),
-            "+63.4K% Mining Efficiency"
-        );
-        assert_eq!(
-            effect_text("}x Bucket Fill Rate", 108_812.16),
-            "1.1Kx Bucket Fill Rate"
-        );
-    }
-
-    #[test]
-    fn milestone_status_and_eta_read_the_saved_row() {
-        assert_eq!(milestone_status(&milestone(true, true, 0.0)), "Unlocked");
-        assert_eq!(
-            milestone_status(&milestone(false, true, 0.0)),
-            "Ready: unlock in game"
-        );
-        assert_eq!(
-            milestone_status(&milestone(false, false, 12.0)),
-            "Not reached"
-        );
-        assert_eq!(milestone_eta(&milestone(true, true, 0.0)), "-");
-        assert_eq!(
-            milestone_eta(&milestone(false, false, 12.0)),
-            "12.0 real hours"
-        );
-    }
 }

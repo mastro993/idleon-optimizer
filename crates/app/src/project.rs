@@ -788,8 +788,17 @@ pub fn assign(
             }
         }
         Config::Monument(config) => {
+            let characters = state
+                .save
+                .as_ref()
+                .map_or(0, idleon_core::save::Save::character_count);
             state.monument = MonumentState {
                 tab: config.tab,
+                character: if characters == 0 {
+                    0
+                } else {
+                    config.character.min(characters - 1)
+                },
                 wave: config.wave.clamp(1, 1001),
                 boosts: config.boosts,
                 rerolls: config.rerolls,
@@ -1282,12 +1291,14 @@ mod tests {
         assert_eq!(farming.mode, idleon_core::farming::Mode::Reset);
         let monument = round_trip(&MonumentState {
             tab: crate::sections::monument::Tab::Sources,
+            character: 4,
             wave: 42,
             boosts: 3,
             rerolls: Some(7),
             remaining_hp: Some(1234.5),
         });
         assert_eq!(monument.tab, crate::sections::monument::Tab::Sources);
+        assert_eq!(monument.character, 4);
         assert_eq!(monument.wave, 42);
         assert_eq!(monument.boosts, 3);
         assert_eq!(monument.rerolls, Some(7));

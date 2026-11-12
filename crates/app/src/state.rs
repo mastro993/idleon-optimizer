@@ -1363,6 +1363,10 @@ impl AppState {
             &imported.save,
             imported.companion.as_ref(),
         ));
+        let monument_characters = imported.save.character_count();
+        if monument_characters == 0 || self.monument.character >= monument_characters {
+            self.monument.character = 0;
+        }
         self.endgame = endgame::State::audit(&imported);
         self.fishing_save = FishingSave::from_save(&imported.save);
         self.fishing.adopt(&self.fishing_save);
@@ -2111,6 +2115,20 @@ impl AppState {
         cx.notify();
     }
 
+    /// Switch the character whose Monument charge and warnings are read.
+    pub fn set_monument_character(&mut self, character: usize, cx: &mut Context<Self>) {
+        let count = self
+            .save
+            .as_ref()
+            .map_or(0, idleon_core::save::Save::character_count);
+        self.monument.character = if count == 0 {
+            0
+        } else {
+            character.min(count - 1)
+        };
+        cx.notify();
+    }
+
     /// Switch the monument tab.
     pub fn set_monument_tab(&mut self, tab: MonumentTab, cx: &mut Context<Self>) {
         self.monument.tab = tab;
@@ -2157,7 +2175,14 @@ impl AppState {
     pub fn monument_snapshot(&self) -> Option<monument::Snapshot> {
         self.monument_save
             .as_ref()
-            .map(|save| monument::snapshot(save, 0))
+            .map(|save| monument::snapshot(save, self.monument.character))
+    }
+
+    /// The Wisdom snapshot for the imported save, if any.
+    pub fn monument_wisdom(&self) -> Option<monument::WisdomSnapshot> {
+        self.monument_save
+            .as_ref()
+            .map(|save| monument::wisdom_snapshot(save, self.monument.character))
     }
 
     /// The sword odds for the current inputs.

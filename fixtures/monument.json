@@ -198,6 +198,323 @@
       }
     ]
   },
+  "wisdom": {
+    "available": true,
+    "notes": [
+      "Companion ownership is missing; reward levels and companion-dependent sources are partial."
+    ],
+    "training": {
+      "sources": [
+        {
+          "name": "Bravery: All Monument AFK Gain",
+          "value": 105.9
+        },
+        {
+          "name": "Justice: All Monument AFK Gain",
+          "value": 98.10000000000001
+        },
+        {
+          "name": "Wisdom: All Monument AFK Gain",
+          "value": 98
+        },
+        {
+          "name": "Summoning victories",
+          "value": 438.633
+        },
+        {
+          "name": "Jar collectible: Monument AFK gain",
+          "value": 360
+        },
+        {
+          "name": "Rock Smart",
+          "value": 20
+        },
+        {
+          "name": "Monument AFK measurement",
+          "value": 167.2147111111111
+        },
+        {
+          "name": "Arcade: Monument AFK gain",
+          "value": 50
+        },
+        {
+          "name": "Hug from Timmy",
+          "value": 10
+        },
+        {
+          "name": "Compass: Monument AFK gain",
+          "value": 200
+        }
+      ],
+      "pct": 1547.847711111111,
+      "multi": 1.25,
+      "rate": 20.59809638888889,
+      "perDay": 494
+    },
+    "stats": {
+      "hours": 25919,
+      "milestones": 8,
+      "opalChance": 0.0625,
+      "attempts": 47,
+      "attemptsPerBoard": 3,
+      "instamatches": 9,
+      "revealRow": true,
+      "revealSquare": true,
+      "secondsPerMatch": 12.6
+    },
+    "milestones": [
+      {
+        "hours": 1,
+        "text": "Start_with_#_Attempts",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 80,
+        "text": "Get_+2_Attempts_per_Board_Clear",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 300,
+        "text": "1st_attempt_each_Board_reveals_row",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 750,
+        "text": "Start_with_4_Insta_Matches_per_story",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 2000,
+        "text": "+4_additional_Starting_Attempts",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 5000,
+        "text": "4th_attempt_each_Board_reveals_square",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 10000,
+        "text": "Get_+1_Attempts_per_Board_Clear",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      },
+      {
+        "hours": 24000,
+        "text": "+5_additional_Insta_Matches",
+        "unlocked": true,
+        "ready": true,
+        "hoursNeeded": 0,
+        "realHours": 0
+      }
+    ],
+    "bonuses": [
+      {
+        "level": 12035,
+        "text": "+{%_Choppin|Efficiency",
+        "value": 48140,
+        "next": 48144
+      },
+      {
+        "level": 11956,
+        "text": "}x_Jar|Rupie_Value",
+        "value": 71736,
+        "next": 71742
+      },
+      {
+        "level": 12167,
+        "text": "}x_Jade|Coin_Gain",
+        "value": 48668,
+        "next": 48672
+      },
+      {
+        "level": 12275,
+        "text": "+{%_EXP|Gain_for|Villagers",
+        "value": 24550,
+        "next": 24552
+      },
+      {
+        "level": 12301,
+        "text": "}x|Farming_Crop|Evo_Chance",
+        "value": 98408,
+        "next": 98416
+      },
+      {
+        "level": 0,
+        "text": "+{%_Chance|for_Wisdom|Opals",
+        "value": 0,
+        "next": 4
+      },
+      {
+        "level": 12080,
+        "text": "+{%_Player|Drop_Rate",
+        "value": 196,
+        "next": 196
+      },
+      {
+        "level": 12088,
+        "text": "+{%_Gambit|Points",
+        "value": 68.60000000000001,
+        "next": 68.60000000000001
+      },
+      {
+        "level": 11956,
+        "text": "+{%|All_Monument|AFK_Gain",
+        "value": 98,
+        "next": 98
+      },
+      {
+        "level": 0,
+        "text": "}x_Wisdom|Bonuses_Multi",
+        "value": 0,
+        "next": 1
+      }
+    ],
+    "charge": {
+      "seconds": 54682655.2352299,
+      "maxLinear": 1562400.0000000002,
+      "base": 27.95361953309766,
+      "meritoc": 0,
+      "legend": 50,
+      "multi": 41.93042929964649,
+      "canStart": true
+    },
+    "tomorrow": {
+      "seconds": 54769055.2352299,
+      "maxLinear": 1562400.0000000002,
+      "base": 27.957152134397763,
+      "meritoc": 0,
+      "legend": 50,
+      "multi": 41.935728201596646,
+      "canStart": true
+    }
+  },
+  "charges": [
+    {
+      "monument": 0,
+      "charge": {
+        "seconds": 33849698.1065386,
+        "maxLinear": 1562400.0000000002,
+        "base": 26.948848261015186,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 40.42327239152278,
+        "canStart": true
+      },
+      "tomorrow": {
+        "seconds": 33936098.1065386,
+        "maxLinear": 1562400.0000000002,
+        "base": 26.953848957034936,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 40.4307734355524,
+        "canStart": true
+      },
+      "extraWait": {
+        "seconds": 33853298.1065386,
+        "maxLinear": 1562400.0000000002,
+        "base": 26.94905680983273,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 40.423585214749096,
+        "canStart": true
+      }
+    },
+    {
+      "monument": 1,
+      "charge": {
+        "seconds": 53713494.4032296,
+        "maxLinear": 2771999.9999999995,
+        "base": 44.66317849356487,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 66.9947677403473,
+        "canStart": true
+      },
+      "tomorrow": {
+        "seconds": 53799894.4032296,
+        "maxLinear": 2771999.9999999995,
+        "base": 44.66681595522505,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 67.00022393283757,
+        "canStart": true
+      },
+      "extraWait": {
+        "seconds": 53717094.4032296,
+        "maxLinear": 2771999.9999999995,
+        "base": 44.66333014053184,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 66.99499521079775,
+        "canStart": true
+      }
+    },
+    {
+      "monument": 2,
+      "charge": {
+        "seconds": 54682655.2352299,
+        "maxLinear": 1562400.0000000002,
+        "base": 27.95361953309766,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 41.93042929964649,
+        "canStart": true
+      },
+      "tomorrow": {
+        "seconds": 54769055.2352299,
+        "maxLinear": 1562400.0000000002,
+        "base": 27.957152134397763,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 41.935728201596646,
+        "canStart": true
+      },
+      "extraWait": {
+        "seconds": 54686255.2352299,
+        "maxLinear": 1562400.0000000002,
+        "base": 27.95376680497965,
+        "meritoc": 0,
+        "legend": 50,
+        "multi": 41.930650207469476,
+        "canStart": true
+      }
+    }
+  ],
+  "chargeErrors": [
+    {
+      "label": "unknown monument",
+      "monument": 3,
+      "extraSeconds": 0,
+      "message": "Invalid monument or additional waiting time."
+    },
+    {
+      "label": "negative extra wait",
+      "monument": 0,
+      "extraSeconds": -1,
+      "message": "Invalid monument or additional waiting time."
+    }
+  ],
   "odds": [
     {
       "label": "fresh story",

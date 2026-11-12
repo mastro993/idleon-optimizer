@@ -1,4 +1,4 @@
-// Regenerates fixtures/monument.json from the upstream Bravery calculator, so
+// Regenerates fixtures/monument.json from the upstream Monument calculator, so
 // the Rust port is tested against the source of truth rather than hand-picked
 // numbers.
 // Usage: node script/monument-oracle.mjs <path-to-idleon-research-optimizer>
@@ -19,9 +19,8 @@ writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 
 const { loadSaveData } = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
-const { monumentSnapshot, monumentMilestones, braverySwordOdds } = await import(
-  join(source, 'js/stats/systems/w5/monument.js')
-);
+const { monumentSnapshot, monumentMilestones, braverySwordOdds, monumentRewardCharge } =
+  await import(join(source, 'js/stats/systems/w5/monument.js'));
 
 const save = JSON.parse(readFileSync(join(root, 'fixtures/data.json'), 'utf8'));
 loadSaveData({ data: save, serverVars: {} });
@@ -94,6 +93,40 @@ const odds = RUN_STATES.map(({ label, wave, runtime, remainingHp = null }) => {
   };
 });
 
+/** The saved Wisdom snapshot, in the shape the Rust `WisdomSnapshot` serialises to. */
+const wisdom = {
+  available: true,
+  notes: snapshot.notes,
+  training: saved.training,
+  stats: snapshot.monuments[2].stats,
+  milestones: monumentMilestones(saveData, 2, snapshot.training.rate),
+  bonuses: snapshot.monuments[2].bonuses,
+  charge: snapshot.monuments[2].charge,
+  tomorrow: snapshot.monuments[2].tomorrow,
+};
+
+/// The reward charge for every monument, plus a preview of a longer wait, so the
+/// shared formula is pinned on all three branches.
+const charges = snapshot.monuments.map((monument, index) => ({
+  monument: index,
+  charge: monument.charge,
+  tomorrow: monument.tomorrow,
+  extraWait: monumentRewardCharge(saveData, index, 0, 3600),
+}));
+
+/** Rejected reward-charge inputs and the upstream message each one prints. */
+const chargeErrors = [
+  { label: 'unknown monument', monument: 3, extraSeconds: 0 },
+  { label: 'negative extra wait', monument: 0, extraSeconds: -1 },
+].map((entry) => {
+  try {
+    monumentRewardCharge(saveData, entry.monument, 0, entry.extraSeconds);
+  } catch (error) {
+    return { ...entry, message: error.message };
+  }
+  throw new Error(`${entry.label}: the upstream calculator accepted the input`);
+});
+
 /** Rejected inputs and the upstream message each one prints. */
 const errors = [
   { label: 'too many enemies', wave: 1001, runtime: {}, remainingHp: null },
@@ -122,6 +155,9 @@ writeFileSync(
       calculator: 'js/stats/systems/w5/monument.js',
       character: 0,
       snapshot: saved,
+      wisdom,
+      charges,
+      chargeErrors,
       odds,
       errors,
     },
@@ -130,5 +166,5 @@ writeFileSync(
   )}\n`
 );
 console.log(
-  `wrote the Bravery snapshot, ${odds.length} run states and ${errors.length} rejected inputs to fixtures/monument.json`
+  `wrote the Bravery and Wisdom snapshots, ${charges.length} reward charges, ${odds.length} run states and ${errors.length} rejected inputs to fixtures/monument.json`
 );

@@ -38,6 +38,12 @@ pub struct Save {
     pub arcane: Vec<Value>,
     /// `Compass`: row 0 lists compass levels.
     pub compass: Vec<Value>,
+    /// `Gaming`: row 12 is the superbit list the reward charge reads.
+    pub gaming: Vec<Value>,
+    /// `Sushi`: row 5 lists the discovered tiers behind the Meritoc RoG bonus.
+    pub sushi: Vec<Value>,
+    /// `KLA_<character>`: the cleared-map rows the Meritoc vote checks.
+    pub kla: Vec<Value>,
     /// `EquipOrder_<n>` per character, for the permanent set fallback.
     pub equipment: Vec<Value>,
     /// `AchieveReg`: `-1` marks a completed achievement.
@@ -85,6 +91,9 @@ impl Save {
             gem_items: array(save, "GemItemsPurchased"),
             arcane: array(save, "Arcane"),
             compass: array(save, "Compass"),
+            gaming: array(save, "Gaming"),
+            sushi: array(save, "Sushi"),
+            kla: rows(save, "KLA_"),
             equipment: rows(save, "EquipOrder_"),
             achievements: array(save, "AchieveReg").iter().map(number).collect(),
             bundles: imported_save::parsed(save, "BundlesReceived"),
@@ -196,6 +205,44 @@ impl Save {
             .and_then(|row| at(row, column))
             .map(number)
             .unwrap_or(0.0)
+    }
+
+    /// `gamingData[row]` as text, for the encoded superbit list.
+    pub fn gaming_text(&self, row: usize) -> String {
+        self.gaming
+            .get(row)
+            .map(|cell| match cell {
+                Value::String(text) => text.clone(),
+                other => other.to_string(),
+            })
+            .unwrap_or_default()
+    }
+
+    /// `computeUniqueSushi`: the discovered tiers, counted until the first miss.
+    pub fn unique_sushi(&self) -> usize {
+        let tiers = self.sushi.get(5).and_then(Value::as_array);
+        let Some(tiers) = tiers else {
+            return 0;
+        };
+        let mut count = 0;
+        for tier in tiers {
+            if number(tier) < 0.0 {
+                break;
+            }
+            count += 1;
+        }
+        count
+    }
+
+    /// `klaData[character][map]`: a number, or a one-element row's first cell.
+    /// A missing or null cell is `None`, as the upstream `map250 == null` check
+    /// treats both as unknown; an empty row reads as zero kills left.
+    pub fn kla_map(&self, character: usize, map: usize) -> Option<f64> {
+        match self.kla.get(character).and_then(|row| at(row, map))? {
+            Value::Null => None,
+            Value::Array(cells) => Some(cells.first().map(number).unwrap_or(0.0)),
+            cell => Some(number(cell)),
+        }
     }
 
     /// `research[row][column]`.
@@ -344,6 +391,9 @@ mod tests {
         assert_eq!(save.gem_item(11), 5.0);
         assert_eq!(save.arcane(48), 50.0);
         assert_eq!(save.compass(0, 55), 200.0);
+        assert!(save.gaming_text(12).contains('E'));
+        assert!(save.unique_sushi() > 0);
+        assert!(save.kla_map(0, 250).is_some());
         assert!(save.bundle("ban_i"));
         assert!(!save.companion_available);
         assert!(save.state_r7_available);
