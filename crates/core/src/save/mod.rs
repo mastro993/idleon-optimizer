@@ -379,6 +379,10 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
             "Lv0_<n>: no character rows in the save; the ladle optimizer has no roster".into(),
         );
     }
+    if ladle.as_ref().is_some_and(|ladle| ladle.kitchen.is_none()) {
+        warnings
+            .push("Meals/Cooking: not in the save; the kitchen reset has no layout to plan".into());
+    }
     if fountain.is_none() {
         warnings.push(
             "Holes: not in the save; the fountain and opal calculators have no cavern state to read"

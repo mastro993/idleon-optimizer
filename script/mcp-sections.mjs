@@ -177,7 +177,9 @@ const monumentSave = () => {
 };
 
 /// A small flat `save.json` with three characters, one of them away from Cooking,
-/// a Prayer 2 charge and a Post Office 19c roll, so the ladle rates have inputs.
+/// a Prayer 2 charge and a Post Office 19c roll, so the ladle rates have inputs,
+/// plus two kitchens, four meal levels and a Blue Jellyfish grant so the reset
+/// plan has a layout to draw.
 const ladleSave = () => {
   const row = (index, value) => {
     const cells = Array(30).fill(0);
@@ -209,6 +211,13 @@ const ladleSave = () => {
     ChestQuantity: [120],
     InventoryOrder_0: ['ExpBalloon1'],
     ItemQTY_0: [7],
+    Cooking: [
+      [1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [2, 1, 0, 0, 0, 0, 10, 0, 0, 0, 0],
+    ],
+    Meals: [[3, 2, 1, 1], [], [140, 0, 0, 0], []],
+    Menagerie: [[0, 0, 0, 0, 0, 9], [], [0, 0, 0, 0, 0, 1], []],
+    BundlesReceived: { bun_s: 1 },
   });
 };
 
@@ -1668,12 +1677,18 @@ const INTERACTIONS = {
       'ladle: the two Cooking characters are counted',
     );
 
-    await lane.call('focus_element', { id: 'ladle-breakdown-character' });
+    // The section's toolbar ids nest under the toolbar, so the breakdown selector
+    // is found by its suffix rather than a bare id. A combobox opens on Enter.
+    const breakdownSelect = (await lane.tree()).find((node) =>
+      (node.id ?? '').endsWith('.ladle-breakdown-character'),
+    );
+    await lane.call('focus_element', { id: breakdownSelect.id });
+    await lane.call('keyboard', { keystroke: 'enter' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
-      (nodes) => labelOf(nodes, 'ladle-breakdown-character') === 'Breakdowns for Bo',
+      (nodes) => nodes.some((node) => (node.label ?? '').startsWith('Breakdowns for Bo')),
       'ladle: the breakdown follows the character selector',
     );
 
@@ -1681,6 +1696,30 @@ const INTERACTIONS = {
     await waitForNode(lane, 'ladle-exp-pane', 'ladle: the Cooking EXP tab opens');
     await lane.call('click_element', { id: 'ladle-split' });
     await waitForNode(lane, 'ladle-exp-table', 'ladle: the split keeps the table rendered');
+
+    await lane.call('click_element', { id: 'kitchens' });
+    await waitForNode(lane, 'kitchens-pane', 'ladle: the Kitchens & Jellyfish tab opens');
+    await waitForNode(lane, 'kitchens-layout', 'ladle: the reset draws its kitchen layout');
+    await lane.call('click_element', { id: 'kitchens-days-less' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'kitchens-day-30'),
+      'ladle: the forecast follows the horizon',
+    );
+    await bringIntoView(lane, 'kitchens-show-layout');
+    await lane.call('click_element', { id: 'kitchens-show-layout' });
+    await waitForNode(lane, 'kitchens-pins', 'ladle: the kitchen pins open');
+    await bringIntoView(lane, 'kitchens-day-header-1');
+    await lane.call('click_element', { id: 'kitchens-day-header-1' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'kitchens-day-body-1'),
+      'ladle: collapsing a reset hides its instructions',
+    );
+    await lane.call('click_element', { id: 'kitchens-day-header-1' });
+    await waitForNode(lane, 'kitchens-day-body-1', 'ladle: expanding a reset shows its instructions');
+    await waitForNode(lane, 'kitchens-day-copy-1', 'ladle: the reset instructions are copyable');
+
     await lane.call('click_element', { id: 'ladles' });
     await waitForNode(lane, 'ladle-breakdowns', 'ladle: the Ladles tab reopens');
   },
@@ -2525,6 +2564,18 @@ const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
 
 const waitForNode = (lane, id, label, timeoutMs) =>
   waitFor(lane, (nodes) => has(nodes, id), label, timeoutMs);
+
+/// Scroll the pane until an element's bounds sit inside the viewport: a click
+/// goes through coordinates, so an element scrolled past the edge cannot be hit.
+const bringIntoView = async (lane, id) => {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const node = (await lane.tree()).find((candidate) => (candidate.id ?? '').endsWith(id));
+    const y = node?.bounds?.y ?? 0;
+    if (y > 160 && y < 700) return;
+    await lane.call('scroll', { x: 600, y: 500, delta_y: y < 160 ? -300 : 300 });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+};
 
 /// Type into the dashboard search and wait for the card it should list. A
 /// window busy with the previous section's frame can drop the first keystrokes,
