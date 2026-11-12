@@ -1003,6 +1003,36 @@ const INTERACTIONS = {
     await waitForNode(lane, 'fountain-missing', 'fountain: the missing bonuses are warned');
     await waitForNode(lane, 'fountain-levels', 'fountain: the level planner renders');
     await waitForNode(lane, 'fountain-stacks', 'fountain: the ground stack renders');
+    // The Currency tab: values, the water multipliers, the desired simulator
+    // and the unlock tracker. Picking a row switches the simulation.
+    await lane.call('click_element', { id: 'fountain-tab-currency' });
+    await waitForNode(lane, 'fountain-currency-values', 'fountain: the currency tab opens');
+    await waitForNode(
+      lane,
+      'fountain-water-multipliers',
+      'fountain: the per-water multipliers render'
+    );
+    await waitForNode(lane, 'fountain-desired', 'fountain: the desired simulator renders');
+    await waitForNode(lane, 'fountain-unlocks', 'fountain: the unlock tracker renders');
+    await lane.call('click_element', { id: 'fountain-desired-1' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'fountain-summary-line') ?? '').includes('simulating Silver'),
+      'fountain: the desired currency switches'
+    );
+    // The Upgrades tab: the water strip, the rows and the cost curve.
+    await lane.call('click_element', { id: 'fountain-tab-upgrades' });
+    await waitForNode(lane, 'fountain-upgrade-table', 'fountain: the upgrades tab opens');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => node.id?.startsWith('fountain-cost-curve')),
+      'fountain: the cost curve renders'
+    );
+    await lane.call('click_element', { id: 'fountain-water-2' });
+    await waitForNode(lane, 'fountain-upgrade-2-11', 'fountain: the green water rows render');
+    await lane.call('click_element', { id: 'fountain-upgrade-2-11' });
+    await lane.call('click_element', { id: 'fountain-tab-overview' });
+    await waitForNode(lane, 'fountain-overview', 'fountain: the overview reopens');
   },
   farming: async (lane) => {
     // The Overview tab leads: the priority signals, the Crop Scientist table

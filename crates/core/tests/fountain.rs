@@ -395,3 +395,281 @@ fn the_generated_labels_cover_every_currency() {
         "Water Bender"
     );
 }
+
+#[test]
+fn the_currency_table_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = &oracle["currency"];
+    close(fountain.currency_all_multi(), at(expected, "allMulti"));
+    close(fountain.effective_royal_multi(), at(expected, "royalMulti"));
+    close(fountain.desire_multi(), at(expected, "desireMulti"));
+    close(fountain.max_stack(), at(expected, "stackSize"));
+    let rows = expected["rows"].as_array().expect("currency rows");
+    let currency = fountain.currency_rows(fountain.desired_currency());
+    assert_eq!(currency.len(), rows.len());
+    for (row, expected) in currency.iter().zip(rows) {
+        assert_eq!(
+            row.currency,
+            expected["type"].as_u64().expect("type") as usize
+        );
+        close(row.base, at(expected, "base"));
+        close(row.lucky, at(expected, "lucky"));
+        close(row.total, at(expected, "total"));
+        close(row.full_stack, at(expected, "fullStack"));
+        close(row.royal_stack, at(expected, "royalStack"));
+        assert_eq!(
+            row.unlocked,
+            expected["unlocked"].as_bool().expect("unlocked")
+        );
+        assert_eq!(row.ignored, expected["ignored"].as_bool().expect("ignored"));
+        assert_eq!(row.active, expected["active"].as_bool().expect("active"));
+        close(row.create, at(expected, "create"));
+    }
+}
+
+#[test]
+fn the_per_water_multipliers_match_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = oracle["currency"]["perWater"]
+        .as_array()
+        .expect("per-water rows");
+    let rows = fountain.water_multipliers();
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            row.water,
+            expected["water"].as_u64().expect("water") as usize
+        );
+        close(row.shared, at(expected, "shared"));
+        close(row.own, at(expected, "own"));
+    }
+}
+
+#[test]
+fn the_desired_simulator_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = oracle["currency"]["desired"]
+        .as_array()
+        .expect("desired rows");
+    let rows = fountain.desired_rows(fountain.desired_currency());
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            row.currency,
+            expected["type"].as_u64().expect("type") as usize
+        );
+        close(row.average, at(expected, "average"));
+        close(row.weighted, at(expected, "weighted"));
+        close(row.ground, at(expected, "ground"));
+        assert_eq!(row.current, expected["current"].as_bool().expect("current"));
+        assert_eq!(row.best, expected["best"].as_bool().expect("best"));
+    }
+}
+
+#[test]
+fn the_unlock_tracker_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = oracle["currency"]["unlocks"]
+        .as_array()
+        .expect("unlock rows");
+    let rows = fountain.next_unlocks();
+    assert_eq!(rows.len(), expected.len());
+    for (row, expected) in rows.iter().zip(expected) {
+        assert_eq!(
+            row.currency,
+            expected["type"].as_u64().expect("type") as usize
+        );
+        assert_eq!(row.upgrade, expected["upgrade"].as_str().expect("upgrade"));
+        assert_eq!(
+            row.water,
+            expected["water"].as_u64().expect("water") as usize
+        );
+        close(row.level, at(expected, "level"));
+        assert_eq!(
+            row.prerequisite_unlocked,
+            expected["prerequisiteUnlocked"]
+                .as_bool()
+                .expect("prerequisiteUnlocked")
+        );
+    }
+}
+
+#[test]
+fn the_upgrade_table_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = oracle["upgrades"]["waters"]
+        .as_array()
+        .expect("a row list per water");
+    let rates = fountain.earn_rates();
+    let expected_rates = oracle["upgrades"]["earnRates"]
+        .as_array()
+        .expect("earn rates");
+    assert_eq!(rates.len(), expected_rates.len());
+    for (rate, expected) in rates.iter().zip(expected_rates) {
+        close(*rate, expected.as_f64().expect("rate"));
+    }
+    for (water, expected) in expected.iter().enumerate() {
+        let rows = fountain.upgrade_rows(water);
+        let expected = expected.as_array().expect("upgrade rows");
+        assert_eq!(rows.len(), expected.len());
+        for (row, expected) in rows.iter().zip(expected) {
+            close(row.level, at(expected, "level"));
+            close(row.marble, at(expected, "marble"));
+            close(row.marble_bonus, at(expected, "marbleBonus"));
+            close(row.bonus, at(expected, "bonus"));
+            assert_eq!(
+                row.accessible,
+                expected["unlocked"].as_bool().expect("unlocked")
+            );
+            close(row.next_cost, at(expected, "nextCost"));
+            assert_eq!(
+                row.currency,
+                expected["currency"].as_u64().expect("currency") as usize
+            );
+            match &expected["seconds"] {
+                Value::Null => assert!(
+                    row.seconds_to_afford.is_infinite(),
+                    "{} has no earn rate yet",
+                    row.name
+                ),
+                value => close(row.seconds_to_afford, value.as_f64().expect("seconds")),
+            }
+            close(row.marble_cost, at(expected, "marbleCost"));
+            assert_eq!(
+                row.marbable,
+                expected["marbable"].as_bool().expect("marbable")
+            );
+            assert_eq!(
+                row.description,
+                expected["description"].as_str().expect("description"),
+                "{} {} description",
+                water,
+                row.upgrade
+            );
+            match (&row.cap, &expected["cap"]) {
+                (None, Value::Null) => {}
+                (Some(cap), cap_value) => {
+                    assert_eq!(cap.label, cap_value["label"].as_str().expect("label"));
+                    assert_eq!(cap.detail, cap_value["detail"].as_str().expect("detail"));
+                    assert_eq!(cap.capped, cap.label == "Capped");
+                }
+                (None, cap_value) => panic!("expected no cap, got {cap_value}"),
+            }
+        }
+    }
+}
+
+#[test]
+fn the_cost_curves_match_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = oracle["upgrades"]["waters"]
+        .as_array()
+        .expect("a row list per water");
+    for (water, expected) in expected.iter().enumerate() {
+        let expected = expected.as_array().expect("upgrade rows");
+        for (upgrade, expected) in expected.iter().enumerate() {
+            let costs: Vec<f64> = expected["costs"]
+                .as_array()
+                .expect("costs")
+                .iter()
+                .map(|cost| cost.as_f64().expect("cost"))
+                .collect();
+            let curve = fountain.cost_curve(water, upgrade, costs.len() - 1);
+            assert_eq!(curve.len(), costs.len());
+            for (cost, expected) in curve.iter().zip(&costs) {
+                close(*cost, *expected);
+            }
+        }
+    }
+}
+
+#[test]
+fn switching_the_desired_currency_changes_what_a_coin_is_worth() {
+    let mut rows = holes();
+    // Greatest Desire at ten levels: a 50% bonus, so 1.5x on its own.
+    rows[31] = json!([[], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10]]);
+    let fountain = import_save(&save(rows));
+    close(fountain.desire_multi(), 1.5);
+    // Bronze loses the desire bonus when another currency is desired.
+    close(fountain.currency_total_value_with(0, 0), 1.5);
+    close(fountain.currency_total_value_with(0, 1), 1.0);
+    // Green currencies keep it inside the square root either way.
+    let green = fountain.currency_total_value_with(6, 0);
+    close(fountain.currency_total_value_with(6, 1), green);
+    close(green, 1.5_f64.sqrt());
+}
+
+#[test]
+fn the_caps_are_labelled_when_an_effect_maxes() {
+    let mut rows = holes();
+    rows[31] = json!([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 47, 1], [1], [1],]);
+    let fountain = import_save(&save(rows));
+    assert_eq!(fountain.spaces(), 16);
+    assert_eq!(fountain.max_stack(), 50.0);
+    assert_eq!(fountain.waters_owned(), 3);
+    let spaces = fountain.upgrade_row(0, 10).expect("Extra Space").cap;
+    assert_eq!(spaces.expect("a cap").label, "Capped");
+    let stack = fountain.upgrade_row(0, 11).expect("Taller Stacks").cap;
+    assert_eq!(stack.expect("a cap").label, "Capped");
+    let bender = fountain.upgrade_row(0, 12).expect("Water Bender").cap;
+    let bender = bender.expect("a soft cap");
+    assert_eq!(bender.label, "Soft cap");
+    assert!(!bender.capped);
+    let water = fountain.upgrade_row(0, 0).expect("Yellow Water").cap;
+    assert_eq!(water.expect("a cap").label, "Max water");
+
+    // A save early in each track reads as near the cap, with the current value.
+    let mut rows = holes();
+    rows[31] = json!([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 10]]);
+    let fountain = import_save(&save(rows));
+    let spaces = fountain.upgrade_row(0, 10).expect("Extra Space").cap;
+    let spaces = spaces.expect("a cap");
+    assert_eq!(spaces.label, "Near cap");
+    assert_eq!(spaces.detail, "5/16 spaces");
+    let stack = fountain.upgrade_row(0, 11).expect("Taller Stacks").cap;
+    assert_eq!(stack.expect("a cap").detail, "13/50 stack");
+    assert!(
+        fountain
+            .upgrade_row(0, 12)
+            .expect("Water Bender")
+            .cap
+            .is_none()
+    );
+}
+
+#[test]
+fn every_upgrade_row_carries_its_cost_and_marble_rules() {
+    let fountain = fountain();
+    let rates = fountain.earn_rates();
+    assert_eq!(rates.len(), fountain::CURRENCIES);
+    assert!(Fountain::can_marble(0, 0));
+    assert!(!Fountain::can_marble(0, 8));
+    assert!(!Fountain::can_marble(0, 10));
+    assert!(!Fountain::can_marble(0, 11));
+    assert!(!Fountain::can_marble(1, 8));
+    assert!(!Fountain::can_marble(1, 10));
+    assert!(Fountain::can_marble(2, 8));
+    close(Fountain::marble_cost(0, 0, 0.0), 500.0);
+    close(Fountain::marble_cost(0, 13, 0.0), 1_500.0);
+    close(Fountain::marble_cost(2, 0, 0.0), 250_000.0);
+    close(Fountain::marble_cost(0, 0, 2.0), 500.0 * 7.0 * 7.0);
+    close(Fountain::upgrade_cost(0, 10, 0.0), 5.0);
+    close(Fountain::upgrade_cost(0, 10, 2.0), 5.0 * 400.0);
+    for water in 0..fountain::WATERS {
+        let rows = fountain.upgrade_rows(water);
+        assert_eq!(rows.len(), 20);
+        for row in rows {
+            assert!(!row.name.is_empty());
+            assert!(row.next_cost > 0.0);
+            if row.seconds_to_afford.is_infinite() {
+                assert_eq!(rates[row.currency], 0.0);
+            }
+        }
+    }
+}

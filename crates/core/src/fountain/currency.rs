@@ -7,7 +7,8 @@
 
 use super::data::data;
 use super::{
-    CURRENCIES, CoinStack, Fountain, Income, IncomeRow, cosmo, get_log, row, saved, schematic,
+    CURRENCIES, CoinStack, CurrencyRow, DesiredRow, Fountain, Income, IncomeRow, UnlockRow, WATERS,
+    WaterMultiplier, cosmo, get_log, row, saved, schematic,
 };
 
 impl Fountain {
@@ -150,10 +151,9 @@ impl Fountain {
 
     /// `currencyBaseValue`: one currency's own base value.
     pub fn currency_base_value(&self, currency: usize) -> f64 {
-        let row = row::CURRENCY;
-        let mythril_log = 1.0 + get_log(self.cell(row, 3)) * self.bon_tot(0, 19) / 100.0;
-        let sharp_log = 1.0 + get_log(self.cell(row, 16)) * self.bon_tot(1, 19) / 100.0;
-        let rupie_log = 1.0 + get_log(self.cell(row, 20)) * self.bon_tot(2, 19) / 100.0;
+        let mythril_log = self.mythril_log();
+        let sharp_log = self.sharp_log();
+        let rupie_log = self.rupie_log();
         match currency {
             0 => 1.0 + self.bon_tot(0, 2) * (1.0 + self.bon_tot(0, 2) / 100.0) * mythril_log,
             1 => 1.0 + self.bon_tot(0, 3) * (1.0 + self.bon_tot(0, 5) / 100.0) * mythril_log,
@@ -166,6 +166,29 @@ impl Fountain {
             8 => 1.0 + self.bon_tot(2, 4) * (1.0 + self.bon_tot(2, 6) / 100.0) * rupie_log,
             _ => 1.0,
         }
+    }
+
+    /// The Mythril Transience log: Bronze, Silver and Gold scale with the POW 10
+    /// Mythril the save carries.
+    fn mythril_log(&self) -> f64 {
+        self.pow_log(3, 0)
+    }
+
+    /// The Sharp Surrogate log: Dollar, Credit and Treasury scale with POW 10
+    /// Sharp Notes.
+    fn sharp_log(&self) -> f64 {
+        self.pow_log(16, 1)
+    }
+
+    /// The Rupie Monie log: Moolah, Shilling and Greane scale with POW 10 Red
+    /// Rupie.
+    fn rupie_log(&self) -> f64 {
+        self.pow_log(20, 2)
+    }
+
+    /// `1 + log10(POW 10 <resource>) × bonTOT / 100`.
+    fn pow_log(&self, cell: usize, water: usize) -> f64 {
+        1.0 + get_log(self.cell(row::CURRENCY, cell)) * self.bon_tot(water, 19) / 100.0
     }
 
     /// `luckyCoinChance`: the chance a collected coin is lucky.
@@ -222,8 +245,14 @@ impl Fountain {
         (format!("{:.2}", 1.0 / chance), percent)
     }
 
-    /// `currencyTotalValue`: one coin's value at the current desired currency.
+    /// `currencyTotalValue`: one coin's value at the save's desired currency.
     pub fn currency_total_value(&self, currency: usize) -> f64 {
+        self.currency_total_value_with(currency, self.desired_currency())
+    }
+
+    /// `currencyTotalValue` with the desired currency chosen by the caller, so
+    /// the section can simulate switching it.
+    pub fn currency_total_value_with(&self, currency: usize, desired: usize) -> f64 {
         let base = self.currency_base_value(currency);
         let all = self.currency_all_multi();
         let desire = self.desire_multi();
@@ -233,11 +262,7 @@ impl Fountain {
             // Green currencies: desire always applies, inside the square root.
             (desire * base * all).sqrt() * lucky * duck
         } else {
-            let desire = if currency == self.desired_currency() {
-                desire
-            } else {
-                1.0
-            };
+            let desire = if currency == desired { desire } else { 1.0 };
             desire * base * all * lucky * duck
         }
     }
@@ -344,8 +369,17 @@ impl Fountain {
     /// `activeEarnRatesPerHr`: every currency's active rate, optionally focused.
     ///
     /// A focus assumes Turn and Push hides every other currency; `None` reads
-    /// the save's own active set.
+    /// the save's own active set. The desired currency is the save's.
     pub fn active_earn_rates(&self, focus: Option<usize>) -> [f64; CURRENCIES] {
+        self.active_earn_rates_with(self.desired_currency(), focus)
+    }
+
+    /// `activeEarnRatesPerHr` with the desired currency chosen by the caller.
+    pub fn active_earn_rates_with(
+        &self,
+        desired: usize,
+        focus: Option<usize>,
+    ) -> [f64; CURRENCIES] {
         let active = match focus {
             Some(currency) if self.ignore_unlocked() && self.currency_unlocked(currency) => {
                 vec![currency]
@@ -359,8 +393,12 @@ impl Fountain {
         let size = 1.0 + stack * self.size_matter_bonus() / 100.0;
         let mut rates = [0.0; CURRENCIES];
         for currency in active {
-            rates[currency] =
-                stacks * stack * self.currency_total_value(currency) * royal * size * share;
+            rates[currency] = stacks
+                * stack
+                * self.currency_total_value_with(currency, desired)
+                * royal
+                * size
+                * share;
         }
         rates
     }
@@ -433,6 +471,141 @@ impl Fountain {
     /// `afkAllStacksFillTime`: every space, while away.
     pub fn afk_all_stacks_fill_time(&self) -> f64 {
         self.afk_stack_fill_time() * self.spaces() as f64
+    }
+
+    // ----- currency tab -----
+
+    /// `earnRatesPerHr`: every unlocked currency's optimal /hr, as if it were
+    /// both the desired currency and the only one generating when Turn and Push
+    /// is bought.
+    pub fn earn_rates(&self) -> [f64; CURRENCIES] {
+        let focus = self.ignore_unlocked();
+        let mut rates = [0.0; CURRENCIES];
+        for (currency, rate) in rates.iter_mut().enumerate() {
+            if !self.currency_unlocked(currency) {
+                continue;
+            }
+            *rate = self.active_earn_rates_with(currency, focus.then_some(currency))[currency];
+        }
+        rates
+    }
+
+    /// The share a full stack adds on top of its coins.
+    fn stack_value_multi(&self) -> f64 {
+        1.0 + self.max_stack() * self.size_matter_bonus() / 100.0
+    }
+
+    /// The Currency Values table, every type in game order.
+    ///
+    /// `desired` is the simulated desired currency; pass
+    /// [`Fountain::desired_currency`] for the save's own choice.
+    pub fn currency_rows(&self, desired: usize) -> Vec<CurrencyRow> {
+        let active = self.active_currencies();
+        let stack = self.max_stack() * self.stack_value_multi();
+        let royal = self.effective_royal_multi();
+        (0..CURRENCIES)
+            .map(|currency| {
+                let total = self.currency_total_value_with(currency, desired);
+                let full_stack = total * stack;
+                let unlocked = self.currency_unlocked(currency);
+                let is_active = active.contains(&currency);
+                CurrencyRow {
+                    currency,
+                    base: self.currency_base_value(currency),
+                    lucky: self.lucky_coin_value(currency),
+                    total,
+                    full_stack,
+                    royal_stack: full_stack * royal,
+                    unlocked,
+                    ignored: self.currency_ignored(currency),
+                    active: is_active,
+                    create: if unlocked && is_active {
+                        1.0 / active.len() as f64
+                    } else {
+                        0.0
+                    },
+                }
+            })
+            .collect()
+    }
+
+    /// The per-water POW-10 log multipliers, one row per water.
+    pub fn water_multipliers(&self) -> Vec<WaterMultiplier> {
+        let shared = self.currency_all_multi();
+        let own = [self.mythril_log(), self.sharp_log(), self.rupie_log()];
+        (0..WATERS)
+            .map(|water| WaterMultiplier {
+                water,
+                shared,
+                own: own[water],
+            })
+            .collect()
+    }
+
+    /// The Optimal Desired Currency simulator: what a full ground redeems for
+    /// at each unlocked desired currency.
+    pub fn desired_rows(&self, desired: usize) -> Vec<DesiredRow> {
+        let active = self.active_currencies();
+        let royal_chance = self.royal_chance();
+        let royal = self.effective_royal_multi();
+        let ground = self.spaces() as f64 * self.max_stack() * self.stack_value_multi();
+        let mut rows: Vec<DesiredRow> = (0..CURRENCIES)
+            .filter(|currency| self.currency_unlocked(*currency))
+            .map(|currency| {
+                let average = active
+                    .iter()
+                    .map(|active| self.currency_total_value_with(*active, currency))
+                    .sum::<f64>()
+                    / active.len() as f64;
+                let weighted = average * (1.0 - royal_chance) + average * royal * royal_chance;
+                DesiredRow {
+                    currency,
+                    average,
+                    weighted,
+                    ground: weighted * ground,
+                    current: currency == desired,
+                    best: false,
+                }
+            })
+            .collect();
+        let mut best: Option<usize> = None;
+        let mut best_ground = 0.0;
+        for (index, row) in rows.iter().enumerate() {
+            if row.ground > best_ground {
+                best_ground = row.ground;
+                best = Some(index);
+            }
+        }
+        if let Some(best) = best {
+            rows[best].best = true;
+        }
+        rows
+    }
+
+    /// The Next Unlock Tracker: every currency the save has not unlocked, with
+    /// the upgrade that grants it.
+    pub fn next_unlocks(&self) -> Vec<UnlockRow> {
+        const UNLOCKS: [(usize, usize, usize); 8] = [
+            (1, 0, 3),
+            (2, 0, 4),
+            (3, 1, 2),
+            (4, 1, 3),
+            (5, 1, 4),
+            (6, 2, 2),
+            (7, 2, 3),
+            (8, 2, 4),
+        ];
+        UNLOCKS
+            .iter()
+            .filter(|(currency, _, _)| !self.currency_unlocked(*currency))
+            .map(|(currency, water, upgrade)| UnlockRow {
+                currency: *currency,
+                upgrade: data().upgrades[*water][*upgrade].name.as_str(),
+                water: *water,
+                level: self.upgrade_level(*water, *upgrade),
+                prerequisite_unlocked: self.upgrade_accessible(*water, *upgrade),
+            })
+            .collect()
     }
 }
 

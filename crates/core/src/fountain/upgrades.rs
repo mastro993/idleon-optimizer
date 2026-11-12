@@ -4,10 +4,10 @@
 //! upgrade grants once its marble levels are counted, and every summary figure
 //! the overview shows is built from it.
 
-use super::data::data;
+use super::data::{self, data};
 use super::{
-    CURRENCIES, CrossBonus, Fountain, LevelStep, WATERS, cosmo, json, level_currency, row, saved,
-    schematic,
+    CURRENCIES, CapHint, CrossBonus, Fountain, LevelStep, UpgradeRow, WATERS, cosmo, json,
+    level_currency, row, saved, schematic, short_number,
 };
 use crate::formula::{FormulaNode, ValueFormat};
 use serde_json::Value;
@@ -83,6 +83,16 @@ impl Fountain {
         }
     }
 
+    /// `waterAccessible`: the water itself is unlocked.
+    pub fn water_accessible(&self, water: usize) -> bool {
+        water <= self.highest_water()
+    }
+
+    /// `upgradeAccessible`: the water and the upgrade's prerequisite are met.
+    pub fn upgrade_accessible(&self, water: usize, upgrade: usize) -> bool {
+        self.water_accessible(water) && self.upgrade_unlocked(water, upgrade)
+    }
+
     /// `ignoreUnlocked`: whether Turn and Push can hide a currency.
     pub fn ignore_unlocked(&self) -> bool {
         self.upgrade_level(1, 12) >= 1.0
@@ -92,7 +102,7 @@ impl Fountain {
     ///
     /// `Holes[11][83]` holds the ignored types as letters (`_abcdefgh`); the
     /// game writes it as a string, and a zero cell means nothing is hidden.
-    fn currency_ignored(&self, currency: usize) -> bool {
+    pub fn currency_ignored(&self, currency: usize) -> bool {
         const LETTERS: [char; 9] = ['_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
         let raw = self
             .holes
@@ -272,6 +282,224 @@ impl Fountain {
 
     // ----- planner -----
 
+    /// `upgCost`: the currency the next upgrade level costs.
+    ///
+    /// A base cost of one is the game's per-level row, whose cost grows with the
+    /// level as well as the scale.
+    pub fn upgrade_cost(water: usize, upgrade: usize, level: f64) -> f64 {
+        let Some(row) = data()
+            .upgrades
+            .get(water)
+            .and_then(|water| water.get(upgrade))
+        else {
+            return 0.0;
+        };
+        if row.base_cost == 1.0 {
+            (level + 1.0) * row.cost_scale.powf(level)
+        } else {
+            row.base_cost * row.cost_scale.powf(level)
+        }
+    }
+
+    /// `marbleCost`: the marble the next marble level costs.
+    pub fn marble_cost(water: usize, upgrade: usize, marble_level: f64) -> f64 {
+        if water >= 2 {
+            return 250_000.0 * (2.0 * (5.0 + marble_level)).powf(marble_level);
+        }
+        if upgrade == 13 {
+            return 1_500.0 * (10.0 + 5.0 * marble_level).powf(marble_level);
+        }
+        500.0 * (5.0 + marble_level).powf(marble_level)
+    }
+
+    /// `canMarble`: the upgrades `HolesInfo[76]` leaves without a marble track.
+    pub fn can_marble(water: usize, upgrade: usize) -> bool {
+        !matches!(
+            (water, upgrade),
+            (0, 8) | (0, 10) | (0, 11) | (1, 8) | (1, 10)
+        )
+    }
+
+    /// The upgrade table for one water, in game order.
+    pub fn upgrade_rows(&self, water: usize) -> Vec<UpgradeRow> {
+        let rates = self.earn_rates();
+        (0..data::UPGRADES_PER_WATER)
+            .filter_map(|upgrade| self.upgrade_row_with(water, upgrade, &rates))
+            .collect()
+    }
+
+    /// One upgrade row, for a section that only shows the selected upgrade.
+    pub fn upgrade_row(&self, water: usize, upgrade: usize) -> Option<UpgradeRow> {
+        self.upgrade_row_with(water, upgrade, &self.earn_rates())
+    }
+
+    fn upgrade_row_with(
+        &self,
+        water: usize,
+        upgrade: usize,
+        rates: &[f64; CURRENCIES],
+    ) -> Option<UpgradeRow> {
+        let row = data()
+            .upgrades
+            .get(water)
+            .and_then(|water| water.get(upgrade))?;
+        let level = self.upgrade_level(water, upgrade);
+        let marble = self.marble_level(water, upgrade);
+        let next_cost = Self::upgrade_cost(water, upgrade, level);
+        let currency = row.currency;
+        let remaining = (next_cost - self.level_currency_balance(currency)).max(0.0);
+        let rate = rates.get(currency).copied().unwrap_or(0.0);
+        let seconds_to_afford = if remaining <= 0.0 {
+            0.0
+        } else if rate > 0.0 {
+            remaining / rate * 3600.0
+        } else {
+            f64::INFINITY
+        };
+        let bonus = self.bon_tot(water, upgrade);
+        Some(UpgradeRow {
+            water,
+            upgrade,
+            name: row.name.as_str(),
+            level,
+            marble,
+            marble_bonus: Self::marble_bonus(marble),
+            bonus,
+            accessible: self.upgrade_accessible(water, upgrade),
+            next_cost,
+            currency,
+            seconds_to_afford,
+            marble_cost: Self::marble_cost(water, upgrade, marble),
+            marbable: Self::can_marble(water, upgrade),
+            description: self.upgrade_description(water, upgrade),
+            cap: self.upgrade_cap(water, upgrade, bonus),
+        })
+    }
+
+    /// `_formatUpgradeDescription`: the saved numbers filled into the row text.
+    pub fn upgrade_description(&self, water: usize, upgrade: usize) -> String {
+        let Some(row) = data()
+            .upgrades
+            .get(water)
+            .and_then(|water| water.get(upgrade))
+        else {
+            return String::new();
+        };
+        let bonus = self.bon_tot(water, upgrade);
+        let mut description = row
+            .description
+            .replace("}x", &format!("{}x", short_number(1.0 + bonus / 100.0)))
+            .replace("+{%", &format!("+{}%", short_number(bonus)))
+            .replace("+{", &format!("+{}", short_number(bonus)));
+        let token = match (water, upgrade) {
+            (0, 8) => format!("{:.1}", self.currency_keep() * 100.0),
+            (0, 10) => short_number(self.spaces() as f64),
+            (0, 11) => short_number(self.max_stack()),
+            (0, 12) => format!("{:.2}", self.active_speed_display()),
+            (1, 8) => {
+                let mut chance = self.royal_chance();
+                if chance <= 0.0 {
+                    let mut preview = self.clone();
+                    preview.upg_lvs[1][8] = 1.0;
+                    chance = preview.royal_chance();
+                    description.push_str(" Level 1 chance shown.");
+                } else {
+                    description.push_str(" Current chance shown.");
+                }
+                short_number(1.0 / chance)
+            }
+            (1, 9) => format!("{:.2}", self.royal_multi()),
+            (1, 10) => short_number(self.marble_per_fill()),
+            (2, 8) => {
+                let mut chance = self.lucky_coin_base_chance();
+                if chance <= 0.0 {
+                    let mut preview = self.clone();
+                    preview.upg_lvs[2][8] = 1.0;
+                    chance = preview.lucky_coin_base_chance();
+                    description.push_str(
+                        " Level 1 base chance shown; each lucky coin of that currency makes the \
+                         next one 4x rarer.",
+                    );
+                } else {
+                    description.push_str(
+                        " Current base chance shown; each lucky coin of that currency makes the \
+                         next one 4x rarer.",
+                    );
+                }
+                short_number(1.0 / chance)
+            }
+            (2, 9) => short_number(self.lucky_coin_value_per()),
+            (2, 12) => {
+                let mut chance = self.duck_chance();
+                if chance <= 0.0 {
+                    let mut preview = self.clone();
+                    preview.upg_lvs[2][12] = 1.0;
+                    chance = preview.duck_chance();
+                    description.push_str(
+                        " Level 1 chance shown; each owned duck makes the next one 5x rarer.",
+                    );
+                } else {
+                    description.push_str(
+                        " Current chance shown; each owned duck makes the next one 5x rarer.",
+                    );
+                }
+                short_number(1.0 / chance)
+            }
+            _ => plain(bonus),
+        };
+        description.replace('$', &token)
+    }
+
+    /// `_upgBreakpoint`: the cap an upgrade's effect is near, if any.
+    pub fn upgrade_cap(&self, water: usize, upgrade: usize, bonus: f64) -> Option<CapHint> {
+        let (label, capped, detail) = match (water, upgrade) {
+            (0, 10) => {
+                let spaces = self.spaces();
+                if spaces >= 16 {
+                    ("Capped", true, "Spaces maxed at 16".to_string())
+                } else {
+                    ("Near cap", false, format!("{spaces}/16 spaces"))
+                }
+            }
+            (0, 11) => {
+                let stack = self.max_stack();
+                if stack >= 50.0 {
+                    ("Capped", true, "Stack size maxed at 50".to_string())
+                } else {
+                    ("Near cap", false, format!("{}/50 stack", plain(stack)))
+                }
+            }
+            (0, 12) if bonus >= 1.0 => {
+                let per_level = data().upgrades[0][12].per_level / 100.0;
+                (
+                    "Soft cap",
+                    false,
+                    format!("4x term maxed. Extra levels give +{per_level}/lv only"),
+                )
+            }
+            (0, 0) if self.waters_owned() >= WATERS => (
+                "Max water",
+                false,
+                format!("{}/{WATERS} waters", self.waters_owned()),
+            ),
+            _ => return None,
+        };
+        Some(CapHint {
+            label,
+            capped,
+            detail,
+        })
+    }
+
+    /// The cost of each of the next `steps + 1` levels of one upgrade, starting
+    /// at the saved level, as the cost curve plots it.
+    pub fn cost_curve(&self, water: usize, upgrade: usize, steps: usize) -> Vec<f64> {
+        let level = self.upgrade_level(water, upgrade);
+        (0..=steps)
+            .map(|step| Self::upgrade_cost(water, upgrade, level + step as f64))
+            .collect()
+    }
+
     /// `opalCost`: the opals the next fountain level costs.
     pub fn opal_cost(level: f64) -> f64 {
         100.0 * (1.0 + level).powf(1.5) * 4.8_f64.powf(level)
@@ -375,5 +603,14 @@ impl Fountain {
             .with_source("fountain.js · currencyAllMulti")
             .with_note("What every coin is worth before its own currency and stack bonuses.")
             .with_children(std::iter::once(fountain).chain(external))
+    }
+}
+
+/// A number as JS `String` prints it: whole numbers lose the fraction.
+fn plain(value: f64) -> String {
+    if value.fract() == 0.0 {
+        format!("{value:.0}")
+    } else {
+        format!("{value}")
     }
 }

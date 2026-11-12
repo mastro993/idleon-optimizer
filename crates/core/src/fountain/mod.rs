@@ -1,16 +1,17 @@
-//! The Fountain Cavern (W5): the overview, income rates, lucky coins and ducks,
-//! coin stacks and the cross-system bonuses.
+//! The Fountain Cavern (W5): the overview, currency values, the upgrade list,
+//! the income rates, lucky coins and ducks, coin stacks and the cross-system
+//! bonuses.
 //!
-//! Ported from the upstream `js/stats/systems/w5/fountain.js` and the overview
-//! and Income Rates halves of `fountain-calc.html`. The upstream reads a decoded
-//! save through `holesData`; here the same rows come from the `Holes` field of
-//! an imported save, so every accessor below is a direct transcription of one
-//! upstream reader.
+//! Ported from the upstream `js/stats/systems/w5/fountain.js` and the overview,
+//! income, currency and upgrade halves of `fountain-calc.html`. The upstream
+//! reads a decoded save through `holesData`; here the same rows come from the
+//! `Holes` field of an imported save, so every accessor below is a direct
+//! transcription of one upstream reader.
 //!
-//! The currency tab, upgrade list, planner and marble planner are FN-02 to
-//! FN-04 and are not here yet. The external bonuses the overview reports read
-//! the same account systems upstream does, and a source the save does not carry
-//! is named by [`Fountain::missing_bonuses`] instead of silently reading zero.
+//! The planner, marble planner and simulation are FN-03 and FN-04 and are not
+//! here yet. The external bonuses the overview reports read the same account
+//! systems upstream does, and a source the save does not carry is named by
+//! [`Fountain::missing_bonuses`] instead of silently reading zero.
 
 mod currency;
 mod data;
@@ -153,6 +154,107 @@ pub struct LevelStep {
     pub affordable: bool,
 }
 
+/// One currency on the Currency Values table.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CurrencyRow {
+    pub currency: usize,
+    /// `currencyBaseValue`: the currency's own upgrade multiplier.
+    pub base: f64,
+    /// `luckyCoinValue`: the multiplier its lucky coins grant.
+    pub lucky: f64,
+    /// `currencyTotalValue`: what one coin is worth at the simulated desired.
+    pub total: f64,
+    /// `total` times a full stack, with the Size Does Matter bonus.
+    pub full_stack: f64,
+    /// `full_stack` times the royal multiplier.
+    pub royal_stack: f64,
+    pub unlocked: bool,
+    pub ignored: bool,
+    /// Whether the currency is in the active generation pool.
+    pub active: bool,
+    /// The share of fills that create this type; zero when locked or ignored.
+    pub create: f64,
+}
+
+/// One row of the per-water multiplier table.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct WaterMultiplier {
+    pub water: usize,
+    /// `currencyAllMulti`, which every row shares.
+    pub shared: f64,
+    /// The water's own POW-10 log multiplier (Mythril, Sharp or Rupie).
+    pub own: f64,
+}
+
+/// One row of the Optimal Desired Currency simulator.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct DesiredRow {
+    pub currency: usize,
+    /// The average value of one coin over the active pool.
+    pub average: f64,
+    /// `average`, weighted by the royal chance.
+    pub weighted: f64,
+    /// The redeem value of a full ground of coins.
+    pub ground: f64,
+    /// Whether this is the simulated desired currency.
+    pub current: bool,
+    /// Whether this row maximises `ground`.
+    pub best: bool,
+}
+
+/// One locked currency on the Next Unlock Tracker.
+#[derive(Clone, Debug, PartialEq)]
+pub struct UnlockRow {
+    pub currency: usize,
+    /// The upgrade that unlocks it.
+    pub upgrade: &'static str,
+    pub water: usize,
+    pub level: f64,
+    /// Whether the upgrade's own prerequisite is met.
+    pub prerequisite_unlocked: bool,
+}
+
+/// How close an upgrade is to a capped effect.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CapHint {
+    /// `Capped`, `Near cap`, `Soft cap` or `Max water`.
+    pub label: &'static str,
+    /// Whether the effect cannot grow any further.
+    pub capped: bool,
+    pub detail: String,
+}
+
+/// One row of the upgrade table.
+#[derive(Clone, Debug, PartialEq)]
+pub struct UpgradeRow {
+    pub water: usize,
+    pub upgrade: usize,
+    pub name: &'static str,
+    pub level: f64,
+    pub marble: f64,
+    /// `marbleBon`: the marble multiplier at `marble`.
+    pub marble_bonus: f64,
+    /// `bonTOT`: the percentage the upgrade grants now.
+    pub bonus: f64,
+    /// `upgradeAccessible`: the water and the prerequisite are both met.
+    pub accessible: bool,
+    /// `upgCost`: what the next level costs.
+    pub next_cost: f64,
+    /// The currency that pays for it.
+    pub currency: usize,
+    /// Seconds until the saved balance and the estimated rate can afford it;
+    /// infinite when the currency earns nothing yet.
+    pub seconds_to_afford: f64,
+    /// `marbleCost`: the marble one marble level costs.
+    pub marble_cost: f64,
+    /// `canMarble`: whether the upgrade can be marbled at all.
+    pub marbable: bool,
+    /// The description with its saved numbers filled in.
+    pub description: String,
+    /// The cap the effect is near, when it has one.
+    pub cap: Option<CapHint>,
+}
+
 /// The Fountain state one save carries.
 #[derive(Clone, Debug, Default)]
 pub struct Fountain {
@@ -261,6 +363,51 @@ const LN_10_TRUNCATED: f64 = 2.30259;
 /// `getLOG`: the game's `ln(max(x, 1))` over its truncated `ln(10)`.
 fn get_log(value: f64) -> f64 {
     value.max(1.0).ln() / LN_10_TRUNCATED
+}
+
+/// The page's `fmtNum`: whole numbers under 1000 stay whole, the rest scale.
+///
+/// The upgrade descriptions print their saved numbers through this, so the
+/// port can be compared with the page's own strings.
+pub fn short_number(value: f64) -> String {
+    if value == 0.0 {
+        return "0".into();
+    }
+    if value == value.floor() && value.abs() < 1e3 {
+        return format!("{value:.0}");
+    }
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        // `toExponential(2)` prints a signed exponent.
+        let exponent = magnitude.log10().floor() as i32;
+        let mantissa = value / 10_f64.powi(exponent);
+        return format!(
+            "{mantissa:.2}e{}{exponent}",
+            if exponent < 0 { "-" } else { "+" }
+        );
+    }
+    let (divisor, suffix) = if magnitude >= 1e21 {
+        (1e21, "QQQ")
+    } else if magnitude >= 1e18 {
+        (1e18, "QQ")
+    } else if magnitude >= 1e15 {
+        (1e15, "Q")
+    } else if magnitude >= 1e12 {
+        (1e12, "T")
+    } else if magnitude >= 1e9 {
+        (1e9, "B")
+    } else if magnitude >= 1e6 {
+        (1e6, "M")
+    } else if magnitude >= 1e3 {
+        (1e3, "K")
+    } else {
+        return format!("{value:.1}");
+    };
+    if magnitude >= 1e6 {
+        format!("{:.2}{suffix}", value / divisor)
+    } else {
+        format!("{:.1}{suffix}", value / divisor)
+    }
 }
 
 #[cfg(test)]

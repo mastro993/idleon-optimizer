@@ -15,6 +15,7 @@ use crate::sections::clamworks::state::StandIn;
 use crate::sections::combat_sim::Tab as CombatTab;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
+use crate::sections::fountain::Tab as FountainTab;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
@@ -220,6 +221,18 @@ pub struct JarConfig {
     tier: u32,
 }
 
+/// The Fountain section's config: its tab, the water the upgrade table lists,
+/// the desired currency the currency tab simulates and the cost curve's pick.
+/// Every number comes from the save.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FountainConfig {
+    tab: FountainTab,
+    water: usize,
+    desired: Option<usize>,
+    upgrade: Option<usize>,
+}
+
 /// The opal section's config: the villager the breakdown is switched to, or the
 /// total. The villagers themselves come from the save.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
@@ -385,6 +398,15 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
         }),
     );
     insert(
+        "fountain",
+        value(&FountainConfig {
+            tab: state.fountain_state.tab,
+            water: state.fountain_state.water,
+            desired: state.fountain_state.desired,
+            upgrade: state.fountain_state.upgrade,
+        }),
+    );
+    insert(
         "royal-guardian",
         value(&RoyalConfig {
             world: state.royal_state.world,
@@ -508,6 +530,7 @@ pub enum Config {
     Cog(CogConfig),
     Jelly(JellyConfig),
     Jar(JarConfig),
+    Fountain(FountainConfig),
     Royal(RoyalConfig),
     Opal(OpalConfig),
     /// The login context and the selected slot; the loadout itself comes from
@@ -819,6 +842,13 @@ pub fn assign(
                 state.spelunking.clamp(&inputs);
             }
         }
+        Config::Fountain(config) => {
+            state.fountain_state.tab = config.tab;
+            state.fountain_state.water = config.water;
+            state.fountain_state.desired = config.desired;
+            state.fountain_state.upgrade = config.upgrade;
+            state.fountain_state.adopt(state.fountain.as_ref());
+        }
         Config::Royal(config) => {
             state.royal_state = crate::sections::royal_guardian::State {
                 world: config.world.min(idleon_core::royal_guardian::WORLDS - 1),
@@ -948,6 +978,7 @@ fn decode(id: &str, config: &Value, warnings: &mut Vec<String>) -> Decoded {
         "cog" => decode!(Cog, CogConfig),
         "jelly-operator" => decode!(Jelly, JellyConfig),
         "jar" => decode!(Jar, JarConfig),
+        "fountain" => decode!(Fountain, FountainConfig),
         "royal-guardian" => decode!(Royal, RoyalConfig),
         "opal" => decode!(Opal, OpalConfig),
         "sneaking" => decode!(Sneaking, SneakingState),
@@ -1281,6 +1312,16 @@ mod tests {
         });
         assert_eq!(rupies.tab, JarTab::RupieValue);
         assert_eq!(rupies.tier, 2);
+        let fountain = round_trip(&FountainConfig {
+            tab: FountainTab::Upgrades,
+            water: 2,
+            desired: Some(5),
+            upgrade: Some(11),
+        });
+        assert_eq!(fountain.tab, FountainTab::Upgrades);
+        assert_eq!(fountain.water, 2);
+        assert_eq!(fountain.desired, Some(5));
+        assert_eq!(fountain.upgrade, Some(11));
         let prism = round_trip(&PrismaConfig {
             character: 2,
             cauldron: "kazam".into(),

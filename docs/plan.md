@@ -399,12 +399,15 @@ descriptor's whole pool chain, which is the shared stat pipeline the All Stats b
 still name as a gap, so the card names that gap instead of guessing a number. Missing: the formula
 tree (DR-02). Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 
-The Fountain section has its overview (FN-01): the fountain summary, the fill and income rates per
-currency, lucky coins and rubber ducks, the ground coin stacks, the eighteen cross-system bonuses and
-the level planner. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus
-source the save does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
+The Fountain section has its overview (FN-01) and its currency and upgrade tabs (FN-02): the
+fountain summary, the fill and income rates per currency, lucky coins and rubber ducks, the ground
+coin stacks, the eighteen cross-system bonuses and the level planner, then the currency value table
+with a simulated desired currency, the per-water POW 10 multipliers, the desired-currency simulator,
+the next unlock tracker and every water's upgrade list with its cap state and a log-scale cost
+curve. `idleon_core::fountain::Fountain` reads the cavern rows and names every bonus source the save
+does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
 `fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
-the currency tab, upgrade list, planner, marble planner and simulator (FN-02 to FN-04).
+the upgrade planner, marble planner and simulator (FN-03 and FN-04).
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
 
 The Royal Guardian section implements RG-01: the overview with the counters (built outposts, worlds
