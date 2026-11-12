@@ -1200,6 +1200,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized"
    },
@@ -1386,6 +1399,19 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized"
    },
@@ -1581,6 +1607,223 @@
     2000,
     2250
    ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "optimized"
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     0,
+     250,
+     645.44,
+     191.90308884911548,
+     236.0567559907426,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 2,
+      "from": 11,
+      "to": 11,
+      "produced": 145.44,
+      "stock": 645.44,
+      "progress": 0.482079874130485
+     },
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 0,
+      "stock": 191.90308884911548,
+      "progress": 0.14333263652335285
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 0,
+      "stock": 236.0567559907426,
+      "progress": 0.1763110610059305
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 1,
+      "meal": 2,
+      "pinned": false,
+      "speed": 30.299999999999997,
+      "produced": 48.48
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 1,
+      "meal": 2,
+      "pinned": false,
+      "speed": 10.1,
+      "produced": 16.16
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": -1,
+      "meal": 2,
+      "pinned": false,
+      "speed": 50.5,
+      "produced": 80.8
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    30.299999999999997,
+    10.1,
+    50.5
+   ],
+   "speedTotal": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
    "hours": 12,
    "maxLevel": 30,
    "discountDays": 0,
@@ -1591,6 +1834,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "saved"
    },
@@ -1777,6 +2033,236 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "saved"
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     0,
+     357.73333333333335,
+     500,
+     191.90308884911548,
+     236.0567559907426,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 1,
+      "from": 12,
+      "to": 12,
+      "produced": 107.73333333333333,
+      "stock": 357.73333333333335,
+      "progress": 0.09314322358996312
+     },
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 0,
+      "stock": 191.90308884911548,
+      "progress": 0.14333263652335285
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 0,
+      "stock": 236.0567559907426,
+      "progress": 0.1763110610059305
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 1,
+      "meal": 1,
+      "pinned": false,
+      "speed": 30.299999999999997,
+      "produced": 80.8
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 1,
+      "meal": 1,
+      "pinned": false,
+      "speed": 10.1,
+      "produced": 26.933333333333334
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": -1,
+      "meal": -1,
+      "pinned": false,
+      "speed": 50.5,
+      "produced": 0
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    30.299999999999997,
+    10.1,
+    50.5
+   ],
+   "speedTotal": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "saved"
    },
@@ -1981,6 +2467,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized",
     "excluded": [
@@ -2182,6 +2681,235 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "optimized",
+    "excluded": [
+     2,
+     6
+    ],
+    "pins": {
+     "0": 3
+    }
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     0,
+     250,
+     500,
+     282.80308884911534,
+     236.0567559907426,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 90.9,
+      "stock": 282.80308884911534,
+      "progress": 0.21122595047733927
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 0,
+      "stock": 236.0567559907426,
+      "progress": 0.1763110610059305
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 1,
+      "meal": 3,
+      "pinned": true,
+      "speed": 30.299999999999997,
+      "produced": 30.3
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 1,
+      "meal": 3,
+      "pinned": false,
+      "speed": 10.1,
+      "produced": 10.1
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": -1,
+      "meal": 3,
+      "pinned": false,
+      "speed": 50.5,
+      "produced": 50.5
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    30.299999999999997,
+    10.1,
+    50.5
+   ],
+   "speedTotal": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized",
     "excluded": [
@@ -2385,6 +3113,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized"
    },
@@ -2564,6 +3305,19 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized"
    },
@@ -2752,6 +3506,216 @@
     2000,
     2250
    ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "optimized"
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     0,
+     250,
+     1324.1599999999999,
+     212.10308884911552,
+     236.0567559907426,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 2,
+      "from": 11,
+      "to": 11,
+      "produced": 824.1599999999999,
+      "stock": 1324.1599999999999,
+      "progress": 0.989016618320251
+     },
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 20.2,
+      "stock": 212.10308884911552,
+      "progress": 0.15842003962423876
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 0,
+      "stock": 236.0567559907426,
+      "progress": 0.1763110610059305
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 0,
+      "meal": 2,
+      "pinned": false,
+      "speed": 333.29999999999995,
+      "produced": 533.28
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 2,
+      "meal": 2,
+      "pinned": false,
+      "speed": 181.79999999999998,
+      "produced": 290.87999999999994
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": 4,
+      "meal": 3,
+      "pinned": false,
+      "speed": 20.2,
+      "produced": 20.2
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    333.29999999999995,
+    181.79999999999998,
+    20.2
+   ],
+   "speedTotal": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
    "hours": 12,
    "maxLevel": 30,
    "discountDays": 0,
@@ -2762,6 +3726,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "saved"
    },
@@ -2957,6 +3934,19 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "saved"
    },
@@ -3153,6 +4143,224 @@
     2000,
     2250
    ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "saved"
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     1333.1999999999998,
+     250,
+     790.8799999999999,
+     191.90308884911548,
+     249.5234226574093,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 0,
+      "from": 14,
+      "to": 14,
+      "produced": 1333.1999999999998,
+      "stock": 1333.1999999999998,
+      "progress": 0.037922085683565226
+     },
+     {
+      "meal": 2,
+      "from": 11,
+      "to": 11,
+      "produced": 290.87999999999994,
+      "stock": 790.8799999999999,
+      "progress": 0.5907091764568633
+     },
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 0,
+      "stock": 191.90308884911548,
+      "progress": 0.14333263652335285
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 13.466666666666667,
+      "stock": 249.5234226574093,
+      "progress": 0.18636932973985446
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 0,
+      "meal": 0,
+      "pinned": false,
+      "speed": 333.29999999999995,
+      "produced": 1333.1999999999998
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 2,
+      "meal": 2,
+      "pinned": false,
+      "speed": 181.79999999999998,
+      "produced": 290.87999999999994
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": 4,
+      "meal": 4,
+      "pinned": false,
+      "speed": 20.2,
+      "produced": 13.466666666666667
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    333.29999999999995,
+    181.79999999999998,
+    20.2
+   ],
+   "speedTotal": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
    "hours": 12,
    "maxLevel": 30,
    "discountDays": 0,
@@ -3163,6 +4371,19 @@
     "ola193": 0,
     "dream11": 0
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized",
     "excluded": [
@@ -3357,6 +4578,228 @@
     "ola193": 0,
     "dream11": 6
    },
+   "objective": "ranks",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
+   "kitchenLayout": {
+    "mode": "optimized",
+    "excluded": [
+     2,
+     6
+    ],
+    "pins": {
+     "0": 3
+    }
+   },
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "expected": {
+    "ranks": 46,
+    "purchaseOrder": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     11,
+     12
+    ],
+    "stocks": [
+     0,
+     250,
+     500,
+     727.2030888491154,
+     236.0567559907426,
+     474.21050599074255,
+     716.7777587407425,
+     965.6951937407425,
+     1215.1543937407425,
+     125.98912548169346
+    ],
+    "meals": [
+     {
+      "meal": 3,
+      "from": 9,
+      "to": 11,
+      "produced": 535.3,
+      "stock": 727.2030888491154,
+      "progress": 0.5431488186968291
+     },
+     {
+      "meal": 4,
+      "from": 7,
+      "to": 11,
+      "produced": 0,
+      "stock": 236.0567559907426,
+      "progress": 0.1763110610059305
+     },
+     {
+      "meal": 5,
+      "from": 6,
+      "to": 11,
+      "produced": 0,
+      "stock": 474.21050599074255,
+      "progress": 0.3541883692355149
+     },
+     {
+      "meal": 6,
+      "from": 4,
+      "to": 11,
+      "produced": 0,
+      "stock": 716.7777587407425,
+      "progress": 0.5353621277163922
+     },
+     {
+      "meal": 7,
+      "from": 3,
+      "to": 11,
+      "produced": 0,
+      "stock": 965.6951937407425,
+      "progress": 0.7212788445819153
+     },
+     {
+      "meal": 8,
+      "from": 2,
+      "to": 11,
+      "produced": 0,
+      "stock": 1215.1543937407425,
+      "progress": 0.9076002063455052
+     },
+     {
+      "meal": 9,
+      "from": 1,
+      "to": 12,
+      "produced": 0,
+      "stock": 125.98912548169346,
+      "progress": 0.03280385748596336
+     }
+    ],
+    "kitchens": [
+     {
+      "kitchen": 0,
+      "savedMeal": 0,
+      "meal": 3,
+      "pinned": true,
+      "speed": 333.29999999999995,
+      "produced": 333.29999999999995
+     },
+     {
+      "kitchen": 1,
+      "savedMeal": 2,
+      "meal": 3,
+      "pinned": false,
+      "speed": 181.79999999999998,
+      "produced": 181.79999999999998
+     },
+     {
+      "kitchen": 2,
+      "savedMeal": 4,
+      "meal": 3,
+      "pinned": false,
+      "speed": 20.2,
+      "produced": 20.2
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "rates": [
+    333.29999999999995,
+    181.79999999999998,
+    20.2
+   ],
+   "speedTotal": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "hours": 40,
+   "maxLevel": 30,
+   "discountDays": 4,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 6
+   },
+   "objective": "targets",
+   "targets": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    20,
+    12,
+    0
+   ],
    "kitchenLayout": {
     "mode": "optimized",
     "excluded": [
@@ -3680,6 +5123,78 @@
      "nmlb": 9,
      "jelly": 0
     },
+    "perMeal": [
+     {
+      "meal": 0,
+      "startLevel": 14,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 1,
+      "startLevel": 12,
+      "ladleLevels": 1,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 2,
+      "startLevel": 11,
+      "ladleLevels": 1,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 3,
+      "startLevel": 9,
+      "ladleLevels": 3,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 4,
+      "startLevel": 7,
+      "ladleLevels": 5,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 5,
+      "startLevel": 6,
+      "ladleLevels": 6,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 6,
+      "startLevel": 4,
+      "ladleLevels": 8,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 7,
+      "startLevel": 3,
+      "ladleLevels": 9,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 8,
+      "startLevel": 2,
+      "ladleLevels": 10,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 9,
+      "startLevel": 1,
+      "ladleLevels": 11,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     }
+    ],
     "ladlesUsed": 34.75,
     "nextNmlb": 6,
     "timeline": [
@@ -4912,6 +6427,78 @@
      "nmlb": 6,
      "jelly": 0
     },
+    "perMeal": [
+     {
+      "meal": 0,
+      "startLevel": 14,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 1,
+      "startLevel": 12,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 2,
+      "startLevel": 11,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 3,
+      "startLevel": 9,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 4,
+      "startLevel": 7,
+      "ladleLevels": 1,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 5,
+      "startLevel": 6,
+      "ladleLevels": 2,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 6,
+      "startLevel": 4,
+      "ladleLevels": 3,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 7,
+      "startLevel": 3,
+      "ladleLevels": 4,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 8,
+      "startLevel": 2,
+      "ladleLevels": 5,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 9,
+      "startLevel": 1,
+      "ladleLevels": 7,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     }
+    ],
     "ladlesUsed": 180,
     "nextNmlb": 6,
     "timeline": [
@@ -5707,6 +7294,78 @@
      "nmlb": 3,
      "jelly": 0
     },
+    "perMeal": [
+     {
+      "meal": 0,
+      "startLevel": 14,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 1,
+      "startLevel": 12,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 2,
+      "startLevel": 11,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 3,
+      "startLevel": 9,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 4,
+      "startLevel": 7,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 5,
+      "startLevel": 6,
+      "ladleLevels": 1,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 6,
+      "startLevel": 4,
+      "ladleLevels": 3,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 7,
+      "startLevel": 3,
+      "ladleLevels": 4,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 8,
+      "startLevel": 2,
+      "ladleLevels": 5,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 9,
+      "startLevel": 1,
+      "ladleLevels": 6,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     }
+    ],
     "ladlesUsed": 3,
     "nextNmlb": 8,
     "timeline": [
@@ -6111,6 +7770,1430 @@
       ]
      }
     ]
+   }
+  },
+  {
+   "name": "spend only toward the meal targets",
+   "baseSpeed": 10.1,
+   "rates": [
+    111.1,
+    60.599999999999994,
+    20.2
+   ],
+   "speedTotal": 191.89999999999998,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "jelly": {
+    "available": true,
+    "unlocked": true,
+    "dailyHours": 9
+   },
+   "nmlb": 3,
+   "inputs": {
+    "comp162": 4,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 3
+   },
+   "settings": {
+    "days": 3,
+    "hoursToReset": 24,
+    "ladlesPerDay": 18,
+    "startLadles": 0,
+    "ladleMulti": 1,
+    "passive": true,
+    "ladleableOnly": true,
+    "maxLevel": 30,
+    "objective": "targets",
+    "targets": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     20,
+     12,
+     0
+    ],
+    "policy": {
+     "kind": "none",
+     "incomeFraction": 1,
+     "ownedFraction": 0
+    },
+    "kitchenLayout": {
+     "mode": "optimized"
+    }
+   },
+   "donationSchedule": {
+    "owned": 0,
+    "daily": [
+     0,
+     0,
+     0
+    ]
+   },
+   "expected": {
+    "days": 3,
+    "speed": 191.89999999999998,
+    "dailyIncome": 18,
+    "ladleMultiplier": 1,
+    "maxLevel": 30,
+    "jelly": {
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "totalHours": 27,
+     "ownedDonation": 0
+    },
+    "startLevels": [
+     14,
+     12,
+     11,
+     9,
+     7,
+     6,
+     4,
+     3,
+     2,
+     1
+    ],
+    "levels": [
+     14,
+     12,
+     11,
+     11,
+     10,
+     13,
+     13,
+     13,
+     11,
+     11
+    ],
+    "stocks": [
+     0,
+     250,
+     500,
+     2.371189864762073,
+     469.24989691292257,
+     520.122605246256,
+     751.540737121256,
+     998.8343246212561,
+     37.88598435185622,
+     287.1359843518562
+    ],
+    "gained": [
+     0,
+     0,
+     0,
+     2,
+     3,
+     7,
+     9,
+     10,
+     9,
+     10
+    ],
+    "bySource": {
+     "ladle": 41,
+     "nmlb": 9,
+     "jelly": 0
+    },
+    "perMeal": [
+     {
+      "meal": 0,
+      "startLevel": 14,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 1,
+      "startLevel": 12,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 2,
+      "startLevel": 11,
+      "ladleLevels": 0,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 3,
+      "startLevel": 9,
+      "ladleLevels": 2,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 4,
+      "startLevel": 7,
+      "ladleLevels": 3,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 5,
+      "startLevel": 6,
+      "ladleLevels": 4,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 6,
+      "startLevel": 4,
+      "ladleLevels": 6,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 7,
+      "startLevel": 3,
+      "ladleLevels": 7,
+      "jellyLevels": 0,
+      "nmlbLevels": 3
+     },
+     {
+      "meal": 8,
+      "startLevel": 2,
+      "ladleLevels": 9,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     },
+     {
+      "meal": 9,
+      "startLevel": 1,
+      "ladleLevels": 10,
+      "jellyLevels": 0,
+      "nmlbLevels": 0
+     }
+    ],
+    "ladlesUsed": 54,
+    "nextNmlb": 4,
+    "timeline": [
+     {
+      "day": 1,
+      "windowHours": 24,
+      "ladleIncome": 18,
+      "expectedIncome": 18,
+      "jellyDonation": 0,
+      "jellyHours": 9,
+      "levelsBought": 40,
+      "ladlesUsed": 18,
+      "passiveHoursUsed": 24,
+      "nmlbMeal": 7,
+      "nmlbFrom": 10,
+      "nmlbTo": 13,
+      "nmlbSaved": 12911.57110959875,
+      "totalLevels": 112,
+      "meals": [
+       {
+        "meal": 7,
+        "from": 3,
+        "to": 10,
+        "levels": 7,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 8,
+        "from": 2,
+        "to": 11,
+        "levels": 9,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 3,
+        "from": 9,
+        "to": 10,
+        "levels": 1,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 4,
+        "from": 7,
+        "to": 10,
+        "levels": 3,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 5,
+        "from": 6,
+        "to": 10,
+        "levels": 4,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 6,
+        "from": 4,
+        "to": 10,
+        "levels": 6,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       },
+       {
+        "meal": 9,
+        "from": 1,
+        "to": 11,
+        "levels": 10,
+        "ladles": 0,
+        "hours": 0,
+        "reasons": [
+         "cheapest"
+        ]
+       }
+      ],
+      "steps": [
+       {
+        "meal": 7,
+        "from": 3,
+        "to": 4,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 4,
+        "to": 5,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 5,
+        "to": 6,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 6,
+        "to": 7,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 7,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 2,
+        "to": 3,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 3,
+        "to": 4,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 4,
+        "to": 5,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 5,
+        "to": 6,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 6,
+        "to": 7,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 8,
+        "from": 10,
+        "to": 11,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 3,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 4,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 4,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 4,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 5,
+        "from": 6,
+        "to": 7,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 5,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 5,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 5,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 4,
+        "to": 5,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 5,
+        "to": 6,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 6,
+        "to": 7,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 6,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 1,
+        "to": 2,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 2,
+        "to": 3,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 3,
+        "to": 4,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 4,
+        "to": 5,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 5,
+        "to": 6,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 6,
+        "to": 7,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 7,
+        "to": 8,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 8,
+        "to": 9,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 9,
+        "to": 10,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       },
+       {
+        "meal": 9,
+        "from": 10,
+        "to": 11,
+        "ladles": 0,
+        "hours": 0,
+        "cumulativeLadles": 0,
+        "mapRefresh": false
+       }
+      ],
+      "savings": [
+       {
+        "meal": 3,
+        "toLevel": 11,
+        "hours": 42,
+        "ladles": 18,
+        "progress": 0.4119207631913029,
+        "target": true,
+        "mapRefresh": false
+       }
+      ],
+      "phases": [
+       {
+        "kind": "claim",
+        "ladles": 18,
+        "expectedLadles": 18,
+        "passiveHours": 24,
+        "ladlesUsed": 18,
+        "passiveHoursUsed": 24,
+        "levelsBought": 40,
+        "saving": {
+         "meal": 3,
+         "toLevel": 11,
+         "hours": 42,
+         "ladles": 18,
+         "progress": 0.4119207631913029,
+         "target": true,
+         "mapRefresh": false
+        },
+        "meals": [
+         {
+          "meal": 7,
+          "from": 3,
+          "to": 10,
+          "levels": 7,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 8,
+          "from": 2,
+          "to": 11,
+          "levels": 9,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 3,
+          "from": 9,
+          "to": 10,
+          "levels": 1,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 4,
+          "from": 7,
+          "to": 10,
+          "levels": 3,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 5,
+          "from": 6,
+          "to": 10,
+          "levels": 4,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 6,
+          "from": 4,
+          "to": 10,
+          "levels": 6,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         },
+         {
+          "meal": 9,
+          "from": 1,
+          "to": 11,
+          "levels": 10,
+          "ladles": 0,
+          "hours": 0,
+          "cumulativeLadles": 0,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         }
+        ],
+        "layout": null
+       },
+       {
+        "kind": "jelly",
+        "ladles": 0,
+        "jellyHours": 9,
+        "ladlesUsed": 0,
+        "passiveHoursUsed": 0,
+        "levelsBought": 0,
+        "saving": null,
+        "meals": [],
+        "layout": {
+         "ranks": 0,
+         "purchaseOrder": [],
+         "meals": [
+          {
+           "meal": 3,
+           "from": 10,
+           "to": 10,
+           "produced": 43.1775,
+           "stock": 541.435347637178,
+           "progress": 0.44761655571526465
+          }
+         ],
+         "kitchens": [
+          {
+           "kitchen": 0,
+           "savedMeal": 0,
+           "meal": 3,
+           "pinned": false,
+           "speed": 111.1,
+           "produced": 24.9975
+          },
+          {
+           "kitchen": 1,
+           "savedMeal": 2,
+           "meal": 3,
+           "pinned": false,
+           "speed": 60.599999999999994,
+           "produced": 13.635
+          },
+          {
+           "kitchen": 2,
+           "savedMeal": 4,
+           "meal": 3,
+           "pinned": false,
+           "speed": 20.2,
+           "produced": 4.545
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "day": 2,
+      "windowHours": 24,
+      "ladleIncome": 18,
+      "expectedIncome": 18,
+      "jellyDonation": 0,
+      "jellyHours": 9,
+      "levelsBought": 0,
+      "ladlesUsed": 18,
+      "passiveHoursUsed": 24,
+      "nmlbMeal": 6,
+      "nmlbFrom": 10,
+      "nmlbTo": 13,
+      "nmlbSaved": 9222.550792570537,
+      "totalLevels": 115,
+      "meals": [],
+      "steps": [],
+      "savings": [
+       {
+        "meal": 3,
+        "toLevel": 11,
+        "hours": 42,
+        "ladles": 18,
+        "progress": 0.767746151033858,
+        "target": true,
+        "mapRefresh": false
+       }
+      ],
+      "phases": [
+       {
+        "kind": "claim",
+        "ladles": 18,
+        "expectedLadles": 18,
+        "passiveHours": 24,
+        "ladlesUsed": 18,
+        "passiveHoursUsed": 24,
+        "levelsBought": 0,
+        "saving": {
+         "meal": 3,
+         "toLevel": 11,
+         "hours": 42,
+         "ladles": 18,
+         "progress": 0.767746151033858,
+         "target": true,
+         "mapRefresh": false
+        },
+        "meals": [],
+        "layout": null
+       },
+       {
+        "kind": "jelly",
+        "ladles": 0,
+        "jellyHours": 9,
+        "ladlesUsed": 0,
+        "passiveHoursUsed": 0,
+        "levelsBought": 0,
+        "saving": null,
+        "meals": [],
+        "layout": {
+         "ranks": 0,
+         "purchaseOrder": [],
+         "meals": [
+          {
+           "meal": 4,
+           "from": 10,
+           "to": 10,
+           "produced": 28.785,
+           "stock": 328.5232302462559,
+           "progress": 0.2715974075889545
+          }
+         ],
+         "kitchens": [
+          {
+           "kitchen": 0,
+           "savedMeal": 0,
+           "meal": 4,
+           "pinned": false,
+           "speed": 111.1,
+           "produced": 16.665
+          },
+          {
+           "kitchen": 1,
+           "savedMeal": 2,
+           "meal": 4,
+           "pinned": false,
+           "speed": 60.599999999999994,
+           "produced": 9.09
+          },
+          {
+           "kitchen": 2,
+           "savedMeal": 4,
+           "meal": 4,
+           "pinned": false,
+           "speed": 20.2,
+           "produced": 3.03
+          }
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "day": 3,
+      "windowHours": 24,
+      "ladleIncome": 18,
+      "expectedIncome": 18,
+      "jellyDonation": 0,
+      "jellyHours": 9,
+      "levelsBought": 1,
+      "ladlesUsed": 18,
+      "passiveHoursUsed": 24,
+      "nmlbMeal": 5,
+      "nmlbFrom": 10,
+      "nmlbTo": 13,
+      "nmlbSaved": 6640.236570650787,
+      "totalLevels": 119,
+      "meals": [
+       {
+        "meal": 3,
+        "from": 10,
+        "to": 11,
+        "levels": 1,
+        "ladles": 7,
+        "hours": 6.999999999999999,
+        "reasons": [
+         "cheapest"
+        ]
+       }
+      ],
+      "steps": [
+       {
+        "meal": 3,
+        "from": 10,
+        "to": 11,
+        "ladles": 7,
+        "hours": 6.999999999999999,
+        "cumulativeLadles": 43,
+        "mapRefresh": false
+       }
+      ],
+      "savings": [
+       {
+        "meal": 4,
+        "toLevel": 11,
+        "hours": 35,
+        "ladles": 11,
+        "progress": 0.3641420548733,
+        "target": true,
+        "mapRefresh": false
+       }
+      ],
+      "phases": [
+       {
+        "kind": "claim",
+        "ladles": 18,
+        "expectedLadles": 18,
+        "passiveHours": 24,
+        "ladlesUsed": 18,
+        "passiveHoursUsed": 24,
+        "levelsBought": 1,
+        "saving": {
+         "meal": 4,
+         "toLevel": 11,
+         "hours": 35,
+         "ladles": 11,
+         "progress": 0.3641420548733,
+         "target": true,
+         "mapRefresh": false
+        },
+        "meals": [
+         {
+          "meal": 3,
+          "from": 10,
+          "to": 11,
+          "levels": 1,
+          "ladles": 7,
+          "hours": 6.999999999999999,
+          "cumulativeLadles": 43,
+          "speedBefore": 191.89999999999998,
+          "reasons": [
+           "cheapest"
+          ],
+          "mapRefresh": false
+         }
+        ],
+        "layout": null
+       },
+       {
+        "kind": "jelly",
+        "ladles": 0,
+        "jellyHours": 9,
+        "ladlesUsed": 0,
+        "passiveHoursUsed": 0,
+        "levelsBought": 0,
+        "saving": null,
+        "meals": [],
+        "layout": {
+         "ranks": 0,
+         "purchaseOrder": [],
+         "meals": [
+          {
+           "meal": 4,
+           "from": 10,
+           "to": 10,
+           "produced": 28.785,
+           "stock": 469.24989691292257,
+           "progress": 0.38793924988927453
+          }
+         ],
+         "kitchens": [
+          {
+           "kitchen": 0,
+           "savedMeal": 0,
+           "meal": 4,
+           "pinned": false,
+           "speed": 111.1,
+           "produced": 16.665
+          },
+          {
+           "kitchen": 1,
+           "savedMeal": 2,
+           "meal": 4,
+           "pinned": false,
+           "speed": 60.599999999999994,
+           "produced": 9.09
+          },
+          {
+           "kitchen": 2,
+           "savedMeal": 4,
+           "meal": 4,
+           "pinned": false,
+           "speed": 20.2,
+           "produced": 3.03
+          }
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "forecastScenarios": [
+  {
+   "name": "share half the income, three resets",
+   "baseSpeed": 10.1,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "jelly": {
+    "available": true,
+    "unlocked": true,
+    "dailyHours": 9
+   },
+   "nmlb": 3,
+   "inputs": {
+    "comp162": 25,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "settings": {
+    "days": 3,
+    "hoursToReset": 7.5,
+    "ladlesPerDay": 12,
+    "startLadles": 40,
+    "ladleMulti": 1.5,
+    "passive": true,
+    "ladleableOnly": true,
+    "maxLevel": 30,
+    "policy": {
+     "kind": "share",
+     "incomeFraction": 0.5,
+     "ownedFraction": 0.5
+    },
+    "kitchenLayout": {
+     "mode": "optimized"
+    }
+   },
+   "expected": {
+    "current": {
+     "ranks": 63,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      13,
+      12,
+      12,
+      12,
+      12,
+      12,
+      15,
+      15,
+      15
+     ]
+    },
+    "layout": {
+     "ranks": 63,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      13,
+      12,
+      12,
+      12,
+      12,
+      12,
+      15,
+      15,
+      15
+     ]
+    },
+    "recommended": {
+     "ranks": 63,
+     "donated": 33,
+     "dailyHoursEnd": 42,
+     "levels": [
+      14,
+      13,
+      12,
+      12,
+      12,
+      12,
+      12,
+      15,
+      15,
+      15
+     ]
+    }
+   }
+  },
+  {
+   "name": "hold every ladle while targeting meals",
+   "baseSpeed": 10.1,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "jelly": {
+    "available": true,
+    "unlocked": true,
+    "dailyHours": 9
+   },
+   "nmlb": 3,
+   "inputs": {
+    "comp162": 0,
+    "ach233": 1,
+    "cloud33": 0.5,
+    "ola193": 0,
+    "dream11": 3
+   },
+   "settings": {
+    "days": 2,
+    "hoursToReset": 24,
+    "ladlesPerDay": 30,
+    "startLadles": 120,
+    "ladleMulti": 1,
+    "passive": true,
+    "ladleableOnly": true,
+    "maxLevel": 40,
+    "objective": "targets",
+    "targets": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     20,
+     12,
+     0
+    ],
+    "policy": {
+     "kind": "none",
+     "incomeFraction": 1,
+     "ownedFraction": 0
+    },
+    "kitchenLayout": {
+     "mode": "optimized",
+     "excluded": [
+      5
+     ]
+    }
+   },
+   "expected": {
+    "current": {
+     "ranks": 28,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      11,
+      9,
+      8,
+      8,
+      7,
+      10,
+      10,
+      8
+     ]
+    },
+    "layout": {
+     "ranks": 28,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      11,
+      9,
+      8,
+      8,
+      7,
+      10,
+      10,
+      8
+     ]
+    },
+    "recommended": {
+     "ranks": 28,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      11,
+      9,
+      8,
+      8,
+      7,
+      10,
+      10,
+      8
+     ]
+    }
    }
   }
  ],

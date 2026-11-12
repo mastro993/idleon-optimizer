@@ -13,7 +13,7 @@
 //! kitchen speed is constant across a batch and the ordering is the objective,
 //! then the stock progress.
 
-use super::{CostInputs, Kitchen, Pins, Problem, meal_level_cost, meal_requirement};
+use super::{CostInputs, Kitchen, Objective, Pins, Problem, meal_level_cost, meal_requirement};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -124,6 +124,10 @@ pub struct Input<'a> {
     pub cost: CostInputs,
     /// The Dream days a purchase can spend.
     pub discount_days: f64,
+    /// Whether a layout is ranked by meal levels or by progress toward the targets.
+    pub objective: Objective,
+    /// `targets`: the level each meal aims for under [`Objective::Targets`].
+    pub targets: &'a [f64],
     pub choice: &'a LayoutChoice,
 }
 
@@ -175,6 +179,8 @@ pub fn optimize(input: &Input) -> Result<Layout, Problem> {
         cost: input.cost,
         discount_days: input.discount_days,
         dream_11: input.cost.dream_11,
+        objective: input.objective,
+        targets: input.targets,
         cache: HashMap::new(),
     };
     let saved: Vec<i32> = kitchens
@@ -366,6 +372,8 @@ struct Output {
     stock: f64,
     produced: f64,
     ranks: f64,
+    /// `target`: the levels bought toward the meal's target, never past it.
+    target: f64,
     progress: f64,
 }
 
@@ -376,14 +384,17 @@ struct Placement {
     masks: Vec<u32>,
     out: Vec<Output>,
     ranks: f64,
+    target: f64,
+    /// The objective's own total: `ranks`, or `target` under [`Objective::Targets`].
+    primary: f64,
     progress: f64,
     discounted_meal: i32,
 }
 
-/// The upstream `compare`: more ranks first, then more stock progress.
+/// The upstream `compare`: the objective first, then more stock progress.
 fn compare(a: &Placement, b: &Placement) -> Ordering {
-    b.ranks
-        .total_cmp(&a.ranks)
+    b.primary
+        .total_cmp(&a.primary)
         .then_with(|| b.progress.total_cmp(&a.progress))
 }
 
@@ -398,6 +409,8 @@ struct Search<'a> {
     cost: CostInputs,
     discount_days: f64,
     dream_11: f64,
+    objective: Objective,
+    targets: &'a [f64],
     cache: HashMap<(usize, u32, bool), Output>,
 }
 
@@ -440,11 +453,13 @@ impl Search<'_> {
             stock -= cost;
             level += 1.0;
         }
+        let target = self.targets.get(meal).copied().unwrap_or(0.0);
         let output = Output {
             level,
             stock,
             produced,
             ranks: level - start,
+            target: (level.min(target) - start).max(0.0),
             progress: match level < self.max_level {
                 true => (stock / meal_level_cost(level, self.cost, 0.0)).min(1.0),
                 false => 0.0,
@@ -469,14 +484,25 @@ impl Search<'_> {
             })
             .collect();
         let ranks = out.iter().map(|output| output.ranks).sum();
+        let target = out.iter().map(|output| output.target).sum();
         let progress = out.iter().map(|output| output.progress).sum();
         Placement {
             assignments: assignments.to_vec(),
             masks,
             out,
+            primary: self.primary(ranks, target),
             ranks,
+            target,
             progress,
             discounted_meal,
+        }
+    }
+
+    /// `primary`: the `_planObjective` term the chosen objective ranks by.
+    fn primary(&self, ranks: f64, target: f64) -> f64 {
+        match self.objective {
+            Objective::Ranks => ranks,
+            Objective::Targets => target,
         }
     }
 
@@ -491,12 +517,16 @@ impl Search<'_> {
         let old = state.out[meal];
         let mut out = state.out.clone();
         out[meal] = value;
+        let ranks = state.ranks + value.ranks - old.ranks;
+        let target = state.target + value.target - old.target;
         Placement {
             assignments: state.assignments.clone(),
             masks: state.masks.clone(),
-            ranks: state.ranks + value.ranks - old.ranks,
+            ranks,
+            target,
             progress: state.progress + value.progress - old.progress,
             out,
+            primary: self.primary(ranks, target),
             discounted_meal,
         }
     }
@@ -515,6 +545,8 @@ impl Search<'_> {
             masks: masks.clone(),
             out: state.out.clone(),
             ranks: state.ranks,
+            target: state.target,
+            primary: state.primary,
             progress: state.progress,
             discounted_meal: -1,
         };
