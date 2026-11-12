@@ -842,50 +842,9 @@ fn boss3b_card_level(save: &Save) -> f64 {
 
 /// `computePrayerReal(idx, costIdx, char)`: equipped, else the no-prayer passive.
 fn prayer(save: &Save, character: usize, index: usize, curse_column: bool) -> f64 {
-    let Some(bonuses) = data::capacity().prayers.get(index).copied() else {
-        return 0.0;
-    };
-    let base = if curse_column { bonuses[1] } else { bonuses[0] };
-    let level = row_number(save, "PrayOwned", index).unwrap_or(0.0);
-    if level <= 0.0 {
-        return 0.0;
-    }
-    let scale = (1.0 + (level - 1.0) / 10.0).max(1.0);
-    let equipped = save
-        .get(&format!("Prayers_{character}"))
-        .map(|row| {
-            row_values(&row)
-                .iter()
-                .filter_map(number)
-                .collect::<Vec<f64>>()
-        })
-        .unwrap_or_default();
-    if equipped
-        .iter()
-        .any(|value| value.round() as i64 == index as i64)
-    {
-        return (base * scale).round();
-    }
-    let no_prayers = !equipped.is_empty() && !equipped.iter().any(|value| *value >= 0.0);
-    let gaming = row_text(save, "Gaming", 12);
-    let superbit = |bit: usize| -> f64 {
-        if number_letter(bit).is_some_and(|letter| gaming.contains(letter)) {
-            1.0
-        } else {
-            0.0
-        }
-    };
-    let passive_enabled = no_prayers && (superbit(9) == 1.0 || superbit(39) == 1.0);
-    let passive = if passive_enabled && index != 5 && !curse_column {
-        0.2 * (superbit(9) + superbit(39) + superbit(53))
-    } else {
-        0.0
-    };
-    if passive > 0.0 {
-        (passive * base * scale).round()
-    } else {
-        0.0
-    }
+    save.as_object().map_or(0.0, |fields| {
+        idleon_account::prayer(fields, character, index, curse_column)
+    })
 }
 
 /// `getBribeBonus(idx)`: the bribe's flat percentage when it is active.

@@ -16,12 +16,15 @@ mod bonuses;
 mod cooking;
 mod data;
 mod equipment;
+mod friend;
 mod jelly;
 mod lab;
 mod mastery;
 mod opal;
+mod prayer;
 mod sneaking;
 mod statue;
+mod sushi;
 mod systems;
 mod tome;
 mod tome_high;
@@ -34,6 +37,8 @@ use idleon_save::Character;
 use idleon_save::Save;
 use idleon_save::fields;
 use serde_json::{Map, Value};
+
+pub use prayer::prayer;
 
 /// One line of the save-derived multiplier tree.
 #[derive(Clone, Debug, PartialEq)]

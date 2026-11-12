@@ -349,6 +349,24 @@ impl Decoder<'_> {
         self.nested("Sailing", &[3, 36]).round().clamp(0.0, 6.0)
     }
 
+    /// `computeArtifactBonus(1)`: Maneki Kat, coins per highest class level.
+    ///
+    /// The artifact pays its base per class level of the best character, and
+    /// its tier multiplies that again from the second tier on.
+    pub fn maneki_kat(&self) -> f64 {
+        let tier = self.nested("Sailing", &[3, 1]);
+        if tier <= 0.0 {
+            return 0.0;
+        }
+        let highest = self
+            .characters
+            .iter()
+            .map(|character| character.class_level())
+            .fold(0.0, f64::max);
+        let value = self.data.artifacts.get(1).copied().unwrap_or(0.0) * highest;
+        if tier >= 2.0 { value * tier } else { value }
+    }
+
     /// `researchGridPointsTaskLevel`: `TaskZZ2[6][3]`.
     pub(crate) fn task_grid_points(&self) -> f64 {
         self.nested("TaskZZ2", &[6, 3]).max(0.0)

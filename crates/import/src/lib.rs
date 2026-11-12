@@ -292,7 +292,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     let cog = CogSave::from_save(save, construction_level, &mut warnings);
     let worship = worship::inputs(save, &mut warnings);
     let shadow = Shadow::read(save);
-    let coin = idleon_coin_multi::coin(save, &characters, &simulation);
+    let coin = idleon_coin_multi::coin(save, root, &characters, &simulation);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
     let spelunking = idleon_spelunking::Save::from_parts(&document);

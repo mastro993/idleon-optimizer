@@ -28,8 +28,11 @@ fn oracle() -> Value {
 }
 
 /// The group indices `crates/coin-multi/src/save.rs` resolves from the save: the
-/// companions, event shop, equipment, RoG, grid, set, bundle and vault groups.
-const MODELLED: [usize; 14] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 18];
+/// companions, event shop, equipment, RoG, grid, set, meal, pet, bundle, vault,
+/// pristine and prayer groups.
+const MODELLED: [usize; 18] = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19, 20,
+];
 
 fn close(left: f64, right: f64) -> bool {
     (left - right).abs() <= 1e-9 * left.abs().max(right.abs()).max(1.0)
@@ -167,8 +170,11 @@ fn the_modelled_sources_produce_the_upstream_total_when_the_rest_are_neutral() {
         "got {}, upstream {total}",
         evaluation.total
     );
-    assert!(!evaluation.complete, "nine groups are still not modelled");
-    assert_eq!(evaluation.excluded.len(), 9);
+    assert!(
+        !evaluation.complete,
+        "five groups still need the shared stat pipeline"
+    );
+    assert_eq!(evaluation.excluded.len(), 5);
 }
 
 #[test]
@@ -176,4 +182,36 @@ fn a_save_without_its_character_rows_has_no_coin_cards() {
     let imported = import(r#"{ "Research": "[]" }"#).expect("a research-only save imports");
     assert!(imported.coin.characters.is_empty());
     assert!(coin_multi::evaluate(&imported.coin, &Inputs::default()).is_err());
+}
+
+#[test]
+fn the_wrapper_supplies_the_names_and_the_winning_vote() {
+    // An `it.json` save: `data` holds the save, the names and the vote sit beside it.
+    let wrapped = serde_json::json!({
+        "data": {
+            "Lv0_0": "[1]",
+            "Research": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+        },
+        "charNames": ["Ana"],
+        "serverVars": { "voteCategories": [34] },
+    });
+    let imported = import(&wrapped.to_string()).expect("the wrapped save imports");
+    let character = imported.coin.character(0).expect("one character");
+    assert_eq!(character.name, "Ana");
+    // Vote 34 pays its 52 % base into the meal/pet group; the rest stays neutral.
+    let with_vote = character.groups[16].value.expect("the group is modelled");
+    assert!(close(with_vote, 1.52), "got {with_vote}");
+
+    let unwrapped = serde_json::json!({
+        "data": {
+            "Lv0_0": "[1]",
+            "Research": "[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]",
+        },
+        "charNames": ["Ana"],
+    });
+    let imported = import(&unwrapped.to_string()).expect("the save imports");
+    let without_vote = imported.coin.character(0).expect("one character").groups[16]
+        .value
+        .expect("the group is modelled");
+    assert!(close(without_vote, 1.0), "got {without_vote}");
 }

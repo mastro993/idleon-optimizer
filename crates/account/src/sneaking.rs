@@ -70,11 +70,7 @@ impl Decoder<'_> {
         let mut jade = JadeAccount::default();
         jade.gem_shop = 2_f64.powf(self.row_at("GemItemsPurchased", 10)).max(1.0);
         jade.monument = self.sneaking_monument(2, 2);
-        jade.pristine = if self.nested("Ninja", &[107, 13]) == 1.0 {
-            idleon_opal::data::pristine(13)
-        } else {
-            0.0
-        };
+        jade.pristine = self.pristine_charm(13);
         jade.vial = self.vial("6Jade");
         jade.meal = self.meal("zJade");
         jade.card_level = self.card_level("w6b4");
@@ -217,9 +213,10 @@ impl Decoder<'_> {
         talent * exotic * per_level * level
     }
 
-    /// `votingBonusz(idx, votingMulti)`.
-    fn voting(&self, index: usize) -> f64 {
-        if self.ola(453).round() as usize != index {
+    /// `votingBonusz(idx, votingMulti)`: the vote's bonus while it is the
+    /// server-wide winner.
+    pub fn voting(&self, index: usize) -> f64 {
+        if self.active_vote() != Some(index) {
             return 0.0;
         }
         let base = data::data()
@@ -229,6 +226,20 @@ impl Decoder<'_> {
             .copied()
             .unwrap_or(0.0);
         base * self.voting_multi()
+    }
+
+    /// `saveData.activeVoteIdx`: the winning vote from
+    /// `serverVars.voteCategories[0]`, which a save alone does not carry.
+    fn active_vote(&self) -> Option<usize> {
+        let vote = self
+            .root
+            .get("serverVars")?
+            .get("voteCategories")?
+            .as_array()?
+            .first()
+            .and_then(idleon_save::json::number)?;
+        let whole = vote >= 0.0 && vote.floor() == vote && vote <= usize::MAX as f64;
+        whole.then_some(vote as usize)
     }
 
     /// The `voting-multi` descriptor.
@@ -396,7 +407,7 @@ impl Decoder<'_> {
     }
 
     /// `computeMealBonus(effect)`.
-    fn meal(&mut self, effect: &str) -> f64 {
+    pub fn meal(&mut self, effect: &str) -> f64 {
         let Some(meals) = fields::field(self.save, "Meals") else {
             return 0.0;
         };
@@ -735,6 +746,16 @@ impl Decoder<'_> {
         idleon_opal::data::pristine(index)
     }
 
+    /// `pristine.resolve(idx)`: the charm's bonus while `Ninja[107][idx]` holds
+    /// it equipped.
+    pub fn pristine_charm(&self, index: usize) -> f64 {
+        if self.nested("Ninja", &[107, index]) == 1.0 {
+            self.pristine(index)
+        } else {
+            0.0
+        }
+    }
+
     /// `Ninja[103]` and the Omni-Jade row, which the ninja-bonus terms read.
     fn ninja_knowledge(&self) -> Vec<f64> {
         fields::row(self.save, "Ninja", &[103])
@@ -746,5 +767,37 @@ impl Decoder<'_> {
         fields::row(self.save, "Menagerie", &[7])
             .map(|row| row.into_iter().map(|cell| cell.unwrap_or(0.0)).collect())
             .unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use idleon_research::model::Simulation;
+    use serde_json::{Map, json};
+
+    fn voting(server_vars: Option<serde_json::Value>, index: usize) -> f64 {
+        let save = Map::new();
+        let root = json!({ "serverVars": server_vars })
+            .as_object()
+            .expect("an object")
+            .clone();
+        let simulation = Simulation::default();
+        let mut warnings = Vec::new();
+        let view = Decoder::new(&save, &root, &[], &simulation, &mut warnings);
+        view.voting(index)
+    }
+
+    #[test]
+    fn the_server_wide_winner_pays_its_vote_bonus() {
+        // Vote 34's base is 52, and the multiplier chain is neutral on an empty save.
+        assert_eq!(voting(Some(json!({ "voteCategories": [34] })), 34), 52.0);
+        assert_eq!(voting(Some(json!({ "voteCategories": [34] })), 33), 0.0);
+    }
+
+    #[test]
+    fn a_save_without_the_vote_data_pays_nothing() {
+        assert_eq!(voting(None, 34), 0.0);
+        assert_eq!(voting(Some(json!({ "voteCategories": [] })), 34), 0.0);
     }
 }
