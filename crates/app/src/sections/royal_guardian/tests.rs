@@ -6,6 +6,7 @@
 
 use super::overview::{plan_text, selected_outpost};
 use idleon_core::RoyalGuardian;
+use idleon_core::royal_guardian;
 use idleon_core::royal_guardian::RangeTarget;
 use serde_json::{Map, Value, json};
 
@@ -18,8 +19,9 @@ fn save() -> Map<String, Value> {
     g[6] = json!([4.0, 0.0]);
     g[7] = json!([2.0, 0.0]);
     let mut maps = vec![json!([]); 4];
-    // Map 1 built with three guards and one militia on map 2.
-    maps[1] = json!([0, 0, 0, 0, 0, 0, 0, 0, -1, -1, 0, 444_111_111, 0]);
+    // Map 1 built with three guards, resource 7 in its first link slot and one
+    // militia on map 2.
+    maps[1] = json!([0, 0, 0, 0, 0, 0, 0, 0, 7, -1, 0, 444_111_111, 0]);
     maps[2] = json!([100.0]);
     let mut save = Map::new();
     save.insert("RoyalG".into(), Value::String(json!(g).to_string()));
@@ -80,4 +82,46 @@ fn the_plan_reads_as_the_upstream_panel_words_it() {
         "beyond maximum Advanced Logistics range"
     );
     assert_eq!(plan_text(None), "—");
+}
+
+// ----- RG-02: the map, the node inspector and the currency picker -----
+
+use super::currencies::selected_currency;
+use super::resources::selected_resource;
+
+#[test]
+fn the_node_inspector_falls_back_to_a_drained_node_in_the_world() {
+    let royal = royal();
+    // The save's only built outpost links the first W1 node it reaches.
+    let streams = royal.resource_streams().0;
+    assert!(!streams.is_empty(), "the fixture links a node");
+    let linked = streams[0].resource;
+    assert_eq!(RoyalGuardian::resource_world(linked), 0, "a W1 node");
+    assert_eq!(selected_resource(&royal, 0, None), linked);
+    // A saved node in another world falls back to this world's stream.
+    let other = royal_guardian::resource_count() - 1;
+    assert_eq!(selected_resource(&royal, 0, Some(other)), linked);
+    // A saved node in the world wins over the stream.
+    let first = royal.world_resources(0)[0].resource;
+    assert_eq!(selected_resource(&royal, 0, Some(first)), first);
+    // A world with nothing draining still lists its first node.
+    let world = royal_guardian::resource_count() / 20 - 1;
+    let first = royal.world_resources(world)[0].resource;
+    assert_eq!(selected_resource(&royal, world, None), first);
+}
+
+#[test]
+fn the_currency_picker_keeps_a_paid_slot_and_falls_back_to_the_first() {
+    let royal = royal();
+    let slots = royal_guardian::currency_slots();
+    assert!(!slots.is_empty());
+    assert_eq!(selected_currency(&slots, None), slots[0]);
+    assert_eq!(selected_currency(&slots, Some(slots[1])), slots[1]);
+    // A slot no node pays is not selectable.
+    assert_eq!(selected_currency(&slots, Some(4_000)), slots[0]);
+    assert_eq!(
+        royal.currency_income(slots[0]).slot,
+        slots[0],
+        "the income reads the slot it is asked for"
+    );
 }

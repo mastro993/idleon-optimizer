@@ -98,7 +98,7 @@ fn the_clearing_rate_multiplies_the_talent_and_the_cross_system_factors() {
     let talent = &oracle["talent"];
     near(
         "talent level",
-        royal.talent_level(),
+        royal.xtra_clear_level(),
         number(talent, "purchasedLevel"),
     );
     near(
@@ -344,4 +344,590 @@ fn the_range_targets_match_the_save() {
         }
     }
     assert!(planned > 0, "the fixture plans at least one range target");
+}
+
+// ----- RG-02: the collection rate, the map, the nodes and the currencies -----
+
+use idleon_core::royal_guardian::{CollectionInputs, Endpoint, ResourceStream};
+
+/// The collection inputs as upstream reads them, so a rate can be compared once
+/// the port's two unread sources are handed in.
+fn filled(royal: &RoyalGuardian) -> CollectionInputs {
+    let oracle = oracle();
+    let inputs = &oracle["collection"]["inputs"];
+    let default = royal.collection_inputs();
+    CollectionInputs {
+        char_level: number(inputs, "charLevel"),
+        talent_225: number(inputs, "talent225"),
+        talent_226: number(inputs, "talent226"),
+        talent_230: number(inputs, "talent230Multi"),
+        sushi_60: number(inputs, "sushi60"),
+        companion_141: number(inputs, "companion141"),
+        arcade_70: number(inputs, "arcade70"),
+        alchemy_w14: number(inputs, "alchemyW14"),
+        zenith_10: number(inputs, "zenith10"),
+        missing: default.missing,
+    }
+}
+
+#[test]
+fn the_collection_inputs_the_port_reads_match_the_save() {
+    let royal = royal();
+    let oracle = oracle();
+    let inputs = &oracle["collection"]["inputs"];
+    let read = royal.collection_inputs();
+    near(
+        "character level",
+        read.char_level,
+        number(inputs, "charLevel"),
+    );
+    near("talent 225", read.talent_225, number(inputs, "talent225"));
+    near("talent 226", read.talent_226, number(inputs, "talent226"));
+    near("sushi 60", read.sushi_60, number(inputs, "sushi60"));
+    near("arcade 70", read.arcade_70, number(inputs, "arcade70"));
+    near("zenith 10", read.zenith_10, number(inputs, "zenith10"));
+    // The three collection talents, at the purchased level the port reads. The
+    // all-talent bonus levels upstream adds on top are a known gap, so the
+    // oracle prints the purchased-only figures beside the effective ones.
+    let talents = &oracle["collection"]["talents"];
+    near("talent 225", read.talent_225, number(talents, "225"));
+    near("talent 226", read.talent_226, number(talents, "226"));
+    near("talent 230", read.talent_230, number(talents, "230"));
+    // The two sources this port does not read, named rather than guessed.
+    assert_eq!(read.alchemy_w14, 0.0);
+    assert_eq!(read.companion_141, 0.0);
+    let missing = royal.collection_missing();
+    assert!(
+        missing.iter().any(|source| source.contains("W14")),
+        "{missing:?}"
+    );
+    assert!(
+        missing.iter().any(|source| source.contains("Companion")),
+        "{missing:?}"
+    );
+}
+
+#[test]
+fn the_global_collection_rate_matches_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let collection = &oracle["collection"];
+    let filled = royal.global_collection_rate_with(&filled(&royal));
+    near("global rate", filled.value, number(collection, "global"));
+    let factors = &collection["factors"];
+    for (name, expected) in factors.as_object().expect("the factor map") {
+        let found = filled
+            .factors
+            .iter()
+            .find(|factor| factor.name == name)
+            .map(|factor| factor.value)
+            .unwrap_or(f64::NAN);
+        near(
+            &format!("factor {name}"),
+            found,
+            expected.as_f64().expect("a number"),
+        );
+    }
+    // What the section shows: the purchased-only talents with the alchemy bubble
+    // and the companion roster at one. The oracle folds the same three gaps into
+    // its figure, so a drift in any of them shows up here.
+    near(
+        "global rate with the port's gaps",
+        royal.global_collection_rate().value,
+        number(collection, "globalReadOnly"),
+    );
+    near(
+        "support collection",
+        royal.support_collection(),
+        number(collection, "supportCollection"),
+    );
+    near(
+        "savage collection",
+        royal.savage_collection(),
+        number(collection, "savageCollection"),
+    );
+    let stats = royal.total_stats();
+    let expected = collection["totalStats"].as_array().expect("five figures");
+    near(
+        "total grades",
+        stats.grades,
+        expected[0].as_f64().expect("a number"),
+    );
+    near(
+        "total levels",
+        stats.levels,
+        expected[1].as_f64().expect("a number"),
+    );
+    near(
+        "purified outposts",
+        stats.purified,
+        expected[2].as_f64().expect("a number"),
+    );
+    near(
+        "currency logs",
+        stats.log_currencies,
+        expected[3].as_f64().expect("a number"),
+    );
+    near(
+        "built outposts",
+        stats.outposts,
+        expected[4].as_f64().expect("a number"),
+    );
+}
+
+#[test]
+fn every_outpost_on_the_map_matches_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let filled = filled(&royal);
+    let rows = oracle["outposts"].as_array().expect("the outpost list");
+    assert!(!rows.is_empty());
+    let mut built = 0;
+    for row in rows {
+        let map = number(row, "map") as usize;
+        let outpost = royal.outpost(map);
+        assert!(outpost.eligible, "map {map} carries an outpost");
+        assert_eq!(
+            outpost.built,
+            row["built"].as_bool().expect("a built flag"),
+            "map {map} built"
+        );
+        assert_eq!(
+            outpost.world,
+            number(row, "world") as usize,
+            "map {map} world"
+        );
+        let (x, y) = RoyalGuardian::outpost_position(map).expect("a map anchor");
+        near(&format!("map {map} x"), x, number(row, "x"));
+        near(&format!("map {map} y"), y, number(row, "y"));
+        assert_eq!(
+            royal.outpost_type(map),
+            number(row, "type"),
+            "map {map} type"
+        );
+        assert_eq!(
+            royal.outpost_supports(map),
+            row["supports"].as_bool().expect("a supports flag"),
+            "map {map} supports"
+        );
+        let connections = row["connections"].as_array().expect("two connections");
+        assert_eq!(connections.len(), 2);
+        let saved = royal.outpost_connections(map);
+        for (connection, expected) in saved.iter().zip(connections) {
+            assert_eq!(
+                connection.endpoint.kind(),
+                expected["kind"].as_str().expect("a kind"),
+                "map {map} slot {} endpoint kind",
+                connection.slot
+            );
+            match connection.endpoint {
+                Endpoint::Empty => assert!(expected["endpoint"].is_null()),
+                Endpoint::Resource(index) | Endpoint::Map(index) => near(
+                    &format!("map {map} slot {} endpoint", connection.slot),
+                    index as f64,
+                    number(expected, "endpoint"),
+                ),
+            }
+            near(
+                &format!("map {map} slot {} raw", connection.slot),
+                connection.raw.unwrap_or(-1.0),
+                expected["raw"].as_f64().unwrap_or(-1.0),
+            );
+        }
+        if !outpost.built {
+            assert!(row["range"].is_null(), "map {map} reports no range");
+            continue;
+        }
+        built += 1;
+        near(
+            &format!("map {map} range"),
+            royal.range(map),
+            number(row, "range"),
+        );
+        assert_eq!(
+            royal.purified(map),
+            row["purified"].as_bool().expect("a purified flag"),
+            "map {map} purified"
+        );
+        assert_eq!(
+            royal.glorified(map),
+            row["glorified"].as_bool().expect("a glorified flag"),
+            "map {map} glorified"
+        );
+        assert_eq!(
+            royal.support_count(map),
+            number(row, "supportCount") as usize,
+            "map {map} support links"
+        );
+        let links = row["supportLinks"].as_array().expect("the support links");
+        let saved: Vec<(usize, usize)> = royal
+            .support_links(map)
+            .into_iter()
+            .map(|link| (link.map, link.slot))
+            .collect();
+        let expected: Vec<(usize, usize)> = links
+            .iter()
+            .map(|link| (number(link, "map") as usize, number(link, "slot") as usize))
+            .collect();
+        assert_eq!(saved, expected, "map {map} support link sources");
+        let units = row["units"].as_array().expect("four totals");
+        for (index, total) in royal.units_by_type(map).into_iter().enumerate() {
+            near(
+                &format!("map {map} unit type {index}"),
+                total,
+                units[index].as_f64().expect("a number"),
+            );
+        }
+        near(
+            &format!("map {map} collection rate"),
+            royal.outpost_collection_rate_with(map, &filled).value,
+            number(row, "collectionRate"),
+        );
+        let resources = row["resourceRate"]
+            .as_array()
+            .expect("the reachable resources");
+        let saved = royal.reachable_resources(map);
+        assert_eq!(saved.len(), resources.len(), "map {map} world nodes");
+        for (node, expected) in saved.iter().zip(resources) {
+            assert_eq!(node.resource, number(expected, "resource") as usize);
+            near(
+                &format!("map {map} resource {} distance", node.resource),
+                node.distance,
+                number(expected, "distance"),
+            );
+            assert_eq!(
+                node.reachable,
+                expected["reachable"].as_bool().expect("a reachable flag"),
+                "map {map} resource {} reachable",
+                node.resource
+            );
+        }
+        let targets = row["supportTargets"]
+            .as_array()
+            .expect("the reachable support targets");
+        let saved: Vec<usize> = royal
+            .support_targets(map)
+            .into_iter()
+            .filter(|target| target.reachable)
+            .map(|target| target.map)
+            .collect();
+        let expected: Vec<usize> = targets
+            .iter()
+            .map(|target| target.as_f64().expect("a map index") as usize)
+            .collect();
+        assert_eq!(saved, expected, "map {map} support targets");
+    }
+    assert!(built > 0, "the fixture carries built outposts");
+}
+
+#[test]
+fn the_resource_nodes_and_their_streams_match_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let filled = filled(&royal);
+    let rows = oracle["resources"].as_array().expect("the node list");
+    assert_eq!(rows.len(), 80, "every resource row");
+    let mut streams_seen = 0;
+    for row in rows {
+        let resource = number(row, "resource") as usize;
+        let node = royal.resource_node(resource);
+        near(
+            &format!("node {resource} grade"),
+            node.grade,
+            number(row, "grade"),
+        );
+        near(
+            &format!("node {resource} base capacity"),
+            node.base_capacity,
+            number(row, "baseCapacity"),
+        );
+        near(
+            &format!("node {resource} capacity"),
+            node.capacity,
+            number(row, "capacity"),
+        );
+        near(
+            &format!("node {resource} saved progress"),
+            node.raw_progress,
+            number(row, "rawProgress"),
+        );
+        near(
+            &format!("node {resource} collected"),
+            node.collected,
+            number(row, "collected"),
+        );
+        near(
+            &format!("node {resource} remaining"),
+            node.remaining,
+            number(row, "remaining"),
+        );
+        assert_eq!(
+            node.drained,
+            row["drained"].as_bool().expect("a drained flag"),
+            "node {resource} drained"
+        );
+        assert_eq!(
+            node.currency_slot,
+            number(row, "currencySlot") as i64,
+            "node {resource} currency slot"
+        );
+        let detail = royal
+            .resource_allocation_with(&filled, 24.0)
+            .details
+            .into_iter()
+            .find(|detail| detail.resource == resource)
+            .expect("every node reports");
+        near(
+            &format!("node {resource} drain rate"),
+            detail.drain_rate,
+            number(row, "drainRate"),
+        );
+        near(
+            &format!("node {resource} currency rate"),
+            detail.currency_rate,
+            number(row, "currencyRate"),
+        );
+        let streams = row["streams"].as_array().expect("the stream list");
+        assert_eq!(
+            detail.streams.len(),
+            streams.len(),
+            "node {resource} stream count"
+        );
+        for (stream, expected) in detail.streams.iter().zip(streams) {
+            assert_stream(resource, stream, expected);
+        }
+        streams_seen += streams.len();
+    }
+    assert!(streams_seen > 0, "the fixture drains at least one node");
+}
+
+#[track_caller]
+fn assert_stream(resource: usize, stream: &ResourceStream, expected: &Value) {
+    assert_eq!(
+        stream.map,
+        number(expected, "map") as usize,
+        "node {resource} stream map"
+    );
+    assert_eq!(
+        stream.slot,
+        number(expected, "slot") as usize,
+        "node {resource} stream slot"
+    );
+    near(
+        &format!("node {resource} map {} stream rate", stream.map),
+        stream.rate,
+        number(expected, "rate"),
+    );
+    near(
+        &format!("node {resource} map {} stream drain", stream.map),
+        stream.drain_rate,
+        number(expected, "drainRate"),
+    );
+    near(
+        &format!("node {resource} map {} stream currency", stream.map),
+        stream.currency_rate,
+        number(expected, "currencyRate"),
+    );
+    assert_eq!(
+        stream.savage,
+        expected["savage"].as_bool().expect("a savage flag"),
+        "node {resource} stream savage"
+    );
+}
+
+#[test]
+fn the_drain_projection_and_its_reset_maths_match_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let filled = filled(&royal);
+    let allocation = royal.allocation_to_reset_with(&filled);
+    let reset = &oracle["reset"];
+    assert_eq!(
+        allocation.reset.available,
+        reset["available"].as_bool().expect("a reset flag"),
+        "the save carries the reset countdown"
+    );
+    near(
+        "hours to reset",
+        allocation.reset.hours_remaining.unwrap_or(f64::NAN),
+        number(reset, "hoursRemaining"),
+    );
+    assert_eq!(
+        allocation.reset_projection_available,
+        reset["projectionAvailable"]
+            .as_bool()
+            .expect("a projection flag")
+    );
+    near(
+        "collectable before reset",
+        allocation.collectable_before_reset.unwrap_or(f64::NAN),
+        number(reset, "collectableBeforeReset"),
+    );
+    near(
+        "projected remaining at reset",
+        allocation.projected_remaining_at_reset.unwrap_or(f64::NAN),
+        number(reset, "projectedRemainingAtReset"),
+    );
+    assert_eq!(
+        allocation.nodes_emptying_by_reset,
+        Some(number(reset, "nodesEmptyingByReset") as usize),
+        "nodes emptying by reset"
+    );
+    assert_eq!(
+        allocation.projected_refills_at_reset,
+        Some(number(reset, "projectedRefillsAtReset") as usize),
+        "projected refills"
+    );
+    near(
+        "projected grade gains",
+        allocation
+            .projected_grade_gains_at_reset
+            .unwrap_or(f64::NAN),
+        number(reset, "projectedGradeGainsAtReset"),
+    );
+    let rows = oracle["resources"].as_array().expect("the node list");
+    for row in rows {
+        let resource = number(row, "resource") as usize;
+        let detail = allocation
+            .details
+            .iter()
+            .find(|detail| detail.resource == resource)
+            .expect("every node reports");
+        let drain_hours = row["drainHours"].as_f64();
+        match (
+            detail.drain_hours.is_finite().then_some(detail.drain_hours),
+            drain_hours,
+        ) {
+            (Some(got), Some(expected)) => {
+                near(&format!("node {resource} drain hours"), got, expected)
+            }
+            (None, None) => {}
+            (got, expected) => panic!(
+                "node {resource} drain hours do not travel: got {got:?}, upstream {expected:?}"
+            ),
+        }
+        assert_eq!(
+            detail.refill_boundary,
+            row["refillBoundary"].as_str().expect("a boundary"),
+            "node {resource} refill boundary"
+        );
+        assert_eq!(
+            detail.refills_at_reset,
+            row["refillsAtReset"].as_bool().expect("a refill flag"),
+            "node {resource} refills"
+        );
+        assert_eq!(
+            detail.refill_requires_collection,
+            row["refillRequiresCollection"]
+                .as_bool()
+                .expect("a collection flag"),
+            "node {resource} refill collection"
+        );
+        let expected_grade = row["projectedGradeAtReset"].as_f64();
+        assert_eq!(
+            detail.projected_grade_at_reset, expected_grade,
+            "node {resource} projected grade"
+        );
+        let expected_remaining = row["projectedRemainingAtReset"].as_f64();
+        match (detail.projected_remaining_at_reset, expected_remaining) {
+            (Some(got), Some(expected)) => near(
+                &format!("node {resource} projected remaining"),
+                got,
+                expected,
+            ),
+            (None, None) => {}
+            (got, expected) => panic!(
+                "node {resource} projected remaining does not travel: got {got:?}, upstream {expected:?}"
+            ),
+        }
+    }
+}
+
+#[test]
+fn the_currency_balances_and_rates_match_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let filled = filled(&royal);
+    let rows = oracle["currencies"].as_array().expect("the currency list");
+    assert!(!rows.is_empty());
+    for row in rows {
+        let slot = number(row, "slot") as i64;
+        let income = royal.currency_income_with(slot, &filled);
+        near(
+            &format!("currency {slot} balance"),
+            income.balance,
+            number(row, "balance"),
+        );
+        near(
+            &format!("currency {slot} nominal rate"),
+            income.nominal_per_hour,
+            number(row, "nominalPerHour"),
+        );
+        near(
+            &format!("currency {slot} collectable"),
+            income.collectable_within_window,
+            number(row, "collectableWithinWindow"),
+        );
+        assert_eq!(
+            income.active_streams,
+            number(row, "activeStreams") as usize,
+            "currency {slot} active streams"
+        );
+        assert_eq!(
+            income.active_nodes,
+            number(row, "activeNodes") as usize,
+            "currency {slot} active nodes"
+        );
+        near(
+            &format!("currency {slot} remaining"),
+            income.remaining_now.unwrap_or(f64::NAN),
+            number(row, "remainingNow"),
+        );
+        near(
+            &format!("currency {slot} projected at reset"),
+            income.projected_available_at_reset.unwrap_or(f64::NAN),
+            number(row, "projectedAvailableAtReset"),
+        );
+        near(
+            &format!("currency {slot} collectable before reset"),
+            income.collectable_before_reset.unwrap_or(f64::NAN),
+            number(row, "collectableBeforeReset"),
+        );
+        let nodes = row["nodes"].as_array().expect("the node list");
+        assert_eq!(income.nodes.len(), nodes.len(), "currency {slot} nodes");
+        for (node, expected) in income.nodes.iter().zip(nodes) {
+            assert_eq!(node.resource, number(expected, "resource") as usize);
+            near(
+                &format!("currency {slot} node {} rate", node.resource),
+                node.currency_rate,
+                number(expected, "currencyRate"),
+            );
+            near(
+                &format!("currency {slot} node {} collectable", node.resource),
+                node.collectable_within_window,
+                number(expected, "collectableWithinWindow"),
+            );
+        }
+    }
+}
+
+#[test]
+fn the_banked_hours_match_upstream() {
+    let royal = royal();
+    let oracle = oracle();
+    let filled = filled(&royal);
+    let expected = &oracle["banked"];
+    let banked = royal.banked_with(&filled);
+    assert_eq!(
+        banked.banks_time,
+        expected["banksTime"].as_bool().expect("a banking flag"),
+        "Armory 30 makes the account bank time"
+    );
+    near("banked hours", banked.hours, number(expected, "hours"));
+    near("banked gain", banked.gain, number(expected, "bankedGain"));
+    near(
+        "banked currency",
+        banked.currency_gain,
+        number(expected, "currencyGain"),
+    );
 }

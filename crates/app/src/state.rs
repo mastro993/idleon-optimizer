@@ -32,6 +32,7 @@ use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::{ShapeDrag, State as ResearchState, Tab};
 use crate::sections::royal_guardian::State as RoyalState;
+use crate::sections::royal_guardian::Tab as RoyalTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sailing::Trees as SailingTrees;
@@ -2511,16 +2512,35 @@ impl AppState {
         cx.notify();
     }
 
+    /// The pane the Royal Guardian strip shows.
+    pub fn set_royal_tab(&mut self, tab: RoyalTab, cx: &mut Context<Self>) {
+        self.royal_state.tab = tab;
+        cx.notify();
+    }
+
     /// The world the Royal Guardian tables list.
     pub fn set_royal_world(&mut self, world: usize, cx: &mut Context<Self>) {
         self.royal_state.world = world.min(idleon_core::royal_guardian::WORLDS - 1);
         self.royal_state.outpost = None;
+        self.royal_state.resource = None;
         cx.notify();
     }
 
     /// The outpost whose next range target the panel explains.
     pub fn set_royal_outpost(&mut self, map: usize, cx: &mut Context<Self>) {
         self.royal_state.outpost = Some(map);
+        cx.notify();
+    }
+
+    /// The resource node the resources pane explains.
+    pub fn set_royal_resource(&mut self, resource: usize, cx: &mut Context<Self>) {
+        self.royal_state.resource = Some(resource);
+        cx.notify();
+    }
+
+    /// The currency slot the currencies pane explains.
+    pub fn set_royal_currency(&mut self, slot: i64, cx: &mut Context<Self>) {
+        self.royal_state.currency = Some(slot);
         cx.notify();
     }
 

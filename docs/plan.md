@@ -2,13 +2,13 @@
 
 Status: **foundation in progress, research, statue, jar, farming, ladle, Clamworks, the Cglunko
 overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's
-current state, the Royal Guardian overview, the Coral God Rank planner, the Spelunking controls and
-depth estimates, the Sneaking loadout, inventory and formula breakdown workspaces, the combat
-simulator's loadout editor and mechanics overrides, the cog board optimizer, the Clamworks optimizer,
-the Jelly Operator overview, layout editor and operation simulator, the drop-rate inputs and dungeon
-total partial, sailing, shadow-ban, endgame, Fishing, Killroy and BoneJoePickle done, Monument
-Bravery and Wisdom, the All Stats context and breakdowns built, 2 sections planned.** The live
-breakdown is
+current state, the Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God
+Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout, inventory and
+formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog
+board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout editor and operation
+simulator, the drop-rate inputs and dungeon total partial, sailing, shadow-ban, endgame, Fishing,
+Killroy and BoneJoePickle done, Monument Bravery and Wisdom, the All Stats context and breakdowns
+built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -260,8 +260,8 @@ script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan 
 script/clamworks-afk-oracle.mjs     regenerate the AFK claim and comparison oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir, chapter and sprite tables
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles, runs and rejections
-script/extract-royal-data.mjs       extract the Royal Guardian armory, resource and map tables
-script/royal-oracle.mjs             regenerate the Royal Guardian overview oracle fixture
+script/extract-royal-data.mjs       extract the Royal Guardian armory, resource, map and talent tables
+script/royal-oracle.mjs             regenerate the Royal Guardian oracle fixture
 script/extract-farming-data.mjs     extract the farming tables, emporium encoding and gates
 script/farming-signals-oracle.mjs   regenerate the farming signals and curves fixture
 script/extract-sneaking-data.mjs    extract the ninja equipment, knowledge and floor tables
@@ -426,16 +426,21 @@ marks only the next jar type affordable and never spends past the rupie balance 
 Missing: the enchant simulator and history (JR-04).
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
-The Royal Guardian section implements RG-01: the overview with the counters (built outposts, worlds
-unlocked, Armory levels, stationed units, militia clearing), the world progress cards, the raw
-clearing values every unbuilt outpost reports (progress, requirement, remaining, militia, rate, ETA)
-and the range target behind an outpost's Advanced Logistics plan. `idleon_core::royal_guardian`
-reads `RoyalG` and `RoyalMaps`, `script/extract-royal-data.mjs` extracts the Armory, resource and map
-tables, and `script/royal-oracle.mjs` regenerates `fixtures/royal-guardian.json` from the upstream
-JS. The clearing rate reads talent 231's purchased level and the shared Jelly Operator completion
-bonus; the all-talent bonus levels that raise the talent are not decoded yet, so the rate card says
-so. Missing: the outpost map, resource nodes and currencies (RG-02), the upgrades, breakdown tree and
-forecast (RG-03) and the optimizer, unit EXP and shelf steps (RG-04).
+The Royal Guardian section implements RG-01 and RG-02: the overview with the counters (built
+outposts, worlds unlocked, Armory levels, stationed units, militia clearing), the world progress
+cards, the raw clearing values every unbuilt outpost reports (progress, requirement, remaining,
+militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; then the
+outpost map with its saved Normal, Support and Savage links, the resource nodes with their grade,
+capacity, collected progress and drain projection, the currencies with their balances and source
+nodes, and the banked hours and daily reset countdown. `idleon_core::royal_guardian` reads `RoyalG`,
+`RoyalMaps`, `Spelunk`, `Sushi`, `ArcadeUpg`, `Lv0_<n>` and `TimeAway`;
+`script/extract-royal-data.mjs` extracts the Armory, resource (capacity and currency slot), map and
+talent tables plus the three cross-system constants the collection rate reads, and
+`script/royal-oracle.mjs` regenerates `fixtures/royal-guardian.json` from the upstream JS. Every
+rate reads its talents' purchased level; the all-talent bonus levels that raise them are not decoded
+yet, and the collection multiplier also leaves the W14 alchemy bubble and the `it.json` companion
+roster out, so the rate card names those sources instead of guessing. Missing: the upgrades, the
+breakdown tree and the forecast (RG-03) and the optimizer, unit EXP and shelf steps (RG-04).
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run

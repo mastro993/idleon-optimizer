@@ -48,7 +48,7 @@ impl RoyalGuardian {
 
     /// An outpost's saved type: 0 Normal, 1 Support, 2 Savage.
     pub fn outpost_type(&self, map: usize) -> f64 {
-        self.map_cell(map, 10)
+        self.map_cell(map, cell::KIND)
     }
 
     /// Whether the outpost is glorified.

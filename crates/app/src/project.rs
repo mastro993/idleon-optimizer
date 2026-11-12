@@ -26,6 +26,7 @@ use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::CustomPreset;
 use crate::sections::research::Tab as ResearchTab;
+use crate::sections::royal_guardian::Tab as RoyalTab;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Tab as SailingTab;
 use crate::sections::sneaking::State as SneakingState;
@@ -234,13 +235,16 @@ pub struct JellyConfig {
     seed: u32,
 }
 
-/// The Royal Guardian section's config: the world the tables list and the
-/// outpost the range panel explains.
+/// The Royal Guardian section's config: the pane, the world the tables list and
+/// the outpost, node and currency the panels explain.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct RoyalConfig {
+    tab: RoyalTab,
     world: usize,
     outpost: Option<usize>,
+    resource: Option<usize>,
+    currency: Option<i64>,
 }
 
 /// The Jar section's config: its tab and the tier the rupie value projects.
@@ -449,8 +453,11 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
     insert(
         "royal-guardian",
         value(&RoyalConfig {
+            tab: state.royal_state.tab,
             world: state.royal_state.world,
             outpost: state.royal_state.outpost,
+            resource: state.royal_state.resource,
+            currency: state.royal_state.currency,
         }),
     );
     insert(
@@ -933,8 +940,11 @@ pub fn assign(
         }
         Config::Royal(config) => {
             state.royal_state = crate::sections::royal_guardian::State {
+                tab: config.tab,
                 world: config.world.min(idleon_core::royal_guardian::WORLDS - 1),
                 outpost: config.outpost,
+                resource: config.resource,
+                currency: config.currency,
             };
         }
         Config::Opal(config) => {

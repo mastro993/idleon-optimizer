@@ -5,7 +5,6 @@
 //! `computeBigFishBonus` and `jellyCompletionBonus`.
 
 use super::*;
-use crate::save::formula;
 
 impl RoyalGuardian {
     /// Whether the save carries the Jelly Operator rows the reward table reads:
@@ -40,17 +39,13 @@ impl RoyalGuardian {
     }
 
     /// The highest purchased Xtra Clear Killz level across the characters.
-    pub fn talent_level(&self) -> f64 {
-        self.talent_level
+    pub fn xtra_clear_level(&self) -> f64 {
+        self.talent_level(XTRA_CLEAR_KILLZ)
     }
 
     /// The talent's effect: upstream's `decayMulti` curve on the purchased level.
     pub fn talent_multi(&self) -> f64 {
-        if !self.character {
-            return 0.0;
-        }
-        let curve = &data::data().talent_231;
-        formula::eval(&curve.formula, curve.x1, curve.x2, self.talent_level).max(1.0)
+        self.talent_value(XTRA_CLEAR_KILLZ).max(1.0)
     }
 
     /// The militia kill multiplier: upstream `XtraClearKillz`.
