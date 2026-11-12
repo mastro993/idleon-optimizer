@@ -80,7 +80,10 @@ impl State {
                 self.plan_error = None;
             }
             Err(error) => {
-                if matches!(error, prisma::PlanError::UnknownCharacter(_)) {
+                // Retry once at the first character; a save with no characters
+                // reports character 0 again, so a second reset would recurse
+                // until the stack runs out.
+                if matches!(error, prisma::PlanError::UnknownCharacter(_)) && self.character != 0 {
                     self.character = 0;
                     return self.adopt(Some(save));
                 }
