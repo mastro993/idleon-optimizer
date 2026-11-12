@@ -1,4 +1,5 @@
-// Extracts the Cooking tables the ladle kitchen plan reads.
+// Extracts the Cooking tables the cooking crates read: the ladle kitchen plan
+// and the Cooking Mastery yellow point allocator.
 // Usage: node script/extract-cooking-data.mjs <upstream-repo>
 //
 // Sources, all in `Corgan/idleon-research-optimizer`:
@@ -48,4 +49,36 @@ writeFileSync(
   new URL('../crates/ladle/data/cooking.json', import.meta.url),
   `${JSON.stringify(payload, null, 1)}\n`,
 );
-console.log(`cooking: ${meals.length} meals, ${payload.numberToLetter.length} encoding letters`);
+
+// `meal-impact.js` groups meals by `MealINFO[idx][5]` and prints the effect
+// with the game's markup stripped, so the allocator's table keeps both.
+const impact = MealINFO.map((row, index) => {
+  const bonus = Number(row[2]);
+  if (!Number.isFinite(bonus) || bonus <= 0) {
+    throw new Error(`meal ${index} has no per-level bonus`);
+  }
+  return {
+    name: String(row[0]).replace(/_/g, ' '),
+    bonus,
+    category: String(row[5]),
+    effect: String(row[3]).replace(/_/g, ' ').replace(/[{}]/g, ''),
+  };
+});
+writeFileSync(
+  new URL('../crates/cooking-mastery/data/meals.json', import.meta.url),
+  `${JSON.stringify(
+    {
+      meals: impact,
+      generatedFrom: {
+        repo: 'Corgan/idleon-research-optimizer',
+        files: ['js/stats/data/game/customlists.js'],
+      },
+    },
+    null,
+    1,
+  )}\n`,
+);
+console.log(
+  `cooking: ${meals.length} meals, ${payload.numberToLetter.length} encoding letters, ` +
+    `${impact.length} allocator rows`,
+);

@@ -560,7 +560,9 @@ impl Decoder<'_> {
         let emp_term = (level / 4.0).floor() * (emperor / 4.0);
         let cloud_73 = (level / 10.0).floor() * self.cloud_bonus(73);
         let jelly_term = (level / 20.0).floor() * self.jelly(60);
-        let base = 5.0 * level + (level / 2.0).floor() * (4.0 + 6.5 * (level / 5.0).floor());
+        // Upstream floors the whole base sum, not only its halves.
+        let base =
+            (5.0 * level + (level / 2.0).floor() * (4.0 + 6.5 * (level / 5.0).floor())).floor();
         1.0 + (base + emp_term + cloud_73 + jelly_term) / 100.0
     }
 }

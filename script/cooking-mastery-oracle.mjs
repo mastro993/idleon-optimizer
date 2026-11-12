@@ -216,8 +216,7 @@ function optimizeDistribution(totalPoints) {
   return { levels, rate: optRate };
 }
 
-const totalPts = masteryLv + 1 + companionPoints;
-const budgets = [totalPts, Math.floor(totalPts / 2), 0, totalPts + 5, -3];
+const totalPts = masteryLv + 1 + companionPoints;const budgets = [totalPts, Math.floor(totalPts / 2), 0, totalPts + 5, -3];
 const distribution = {
   totalPts,
   variants: budgets.map((request) => {
@@ -238,6 +237,102 @@ const distribution = {
   }),
 };
 
+// ===== the yellow point allocator, from meal-impact.js itself =====
+// The page's second tab calls these functions directly, so the fixture is the
+// upstream optimizer's own output rather than a re-derivation of it.
+const {
+  GOALS,
+  bonusMultiCook,
+  farmingMealCookingScale,
+  kitchenCookingAggregate,
+  optimizeForGoal,
+  summoningCropEvolutionScale,
+  yellowPointBudget,
+} = await load('js/stats/systems/common/meal-impact.js');
+const { cookingMealMulti } = await load('js/stats/systems/common/cooking.js');
+const { ribbonBonusAt } = await load('js/game-helpers.js');
+const { jellyRewardBonus } = await load('js/stats/data/w7/jelly-operator.js');
+
+function yellowFixture() {
+  const budget = yellowPointBudget(saveData);
+  // The page only offers a goal with two leveled meals to compare; the two
+  // characters in the fixture give the stat goals a different scaling step.
+  const offered = GOALS.filter((goal) => {
+    const preview = optimizeForGoal(goal.id, 0, saveData, { activeCharIdx: 0 });
+    return preview && preview.meals.length > 1;
+  });
+  const plan = (goal, request, charIdx) => {
+    // `renderMealAlloc` clamps the input before it plans: `Math.min(budget,
+    // Math.max(0, override))`. A non-finite entry never reaches upstream, so the
+    // fixture keeps the three requests a save or a document can hold.
+    const spend = Math.min(budget, Math.max(0, request));
+    const result = optimizeForGoal(goal.id, spend, saveData, { activeCharIdx: charIdx });
+    return {
+      goal: goal.id,
+      charIdx,
+      request,
+      spend,
+      goalValue: result.goalValue,
+      curGoalValue: result.curGoalValue,
+      meals: result.meals.map((meal) => ({
+        idx: meal.idx,
+        name: meal.name,
+        cat: meal.cat,
+        mealLv: meal.mealLv,
+        base: meal.base,
+        baseWeight: meal.baseWeight,
+        curLv: meal.curLv,
+        optLv: meal.optLv,
+      })),
+    };
+  };
+  const charCount = Math.max(
+    (saveData.charNames && saveData.charNames.length) || 0,
+    (saveData.lv0AllData && saveData.lv0AllData.length) || 0,
+  );
+  const characters = Array.from({ length: charCount }, (_, index) => ({
+    name: (saveData.charNames && saveData.charNames[index]) || `Character ${index + 1}`,
+    farmSteps: farmingMealCookingScale(saveData, index).steps,
+    summonSteps: summoningCropEvolutionScale(saveData, index).steps,
+    farmingLv: farmingMealCookingScale(saveData, index).farmingLv,
+    summoningLv: summoningCropEvolutionScale(saveData, index).summoningLv,
+  }));
+  const mealKitchens = kitchenCookingAggregate(saveData, 'meal');
+  const recipeKitchens = kitchenCookingAggregate(saveData, 'recipe');
+  return {
+    budget,
+    cookMulti: cookingMealMulti(saveData).val,
+    mealMulti: bonusMultiCook(20),
+    // Each meal's own ribbon factor, the other half of its base weight.
+    ribbons: Array.from({ length: 74 }, (_, meal) =>
+      ribbonBonusAt(28 + meal, saveData.ribbonData || [],
+        String((saveData.olaData && saveData.olaData[379]) || ''), saveData.weeklyBossData,
+        undefined, jellyRewardBonus(saveData, 60))),
+    characters,
+    kitchens: {
+      count: mealKitchens.kitchenCount,
+      averageLevels: mealKitchens.averageUpgradeLevels,
+      minSteps: mealKitchens.minSteps,
+      maxSteps: mealKitchens.maxSteps,
+      mealSteps: mealKitchens.weightedSteps,
+      recipeSteps: recipeKitchens.weightedSteps,
+    },
+    goals: offered.map((goal) => ({
+      id: goal.id,
+      name: goal.name,
+      categories: goal.categories,
+      unit: goal.unit,
+      note: goal.note,
+      // The full budget, then a smaller one so the greedy's split shows, then
+      // the requests the page clamps: a negative one and one above the budget.
+      plans: [budget, 7, -3, budget + 6].map((spend) => plan(goal, spend, 0)),
+      characterPlans: ['mcook', 'cropevo'].includes(goal.id)
+        ? characters.map((_, index) => plan(goal, budget, index))
+        : [],
+    })),
+  };
+}
+
 const payload = {
   source: 'fixtures/data.json through the upstream js/save/loader.js',
   page: 'cooking-mastery-calc.html',
@@ -257,6 +352,7 @@ const payload = {
   external,
   upgrades,
   distribution,
+  yellow: yellowFixture(),
 };
 
 writeFileSync(

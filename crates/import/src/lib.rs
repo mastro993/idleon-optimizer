@@ -141,6 +141,8 @@ pub struct Imported {
     pub worship: idleon_worship::Inputs,
     /// The Cooking Mastery state, when the save carries `CookMaster`.
     pub mastery: Option<idleon_cooking_mastery::Mastery>,
+    /// The yellow point allocator's meal state, from the same section.
+    pub yellow: Option<idleon_cooking_mastery::Yellow>,
     /// The Jelly Operator board, when the save carries `Research[14]`/`[17]`.
     pub jelly: Option<idleon_jelly::Jelly>,
     /// Which shape the text had.
@@ -260,6 +262,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
 
     let (context, tree) = account::account(save, root, &characters, &simulation, &mut warnings);
     let mastery = account::cooking_mastery(save, root, &characters, &simulation, &mut warnings);
+    let yellow = account::yellow(save, root, &characters, &simulation, &mut warnings);
     let jelly = account::jelly(save, &characters, &simulation, &mut warnings);
     let coral = coral::inputs(save, root, &characters, &rows);
     let mut statues = statue::read(save, root, &mut warnings);
@@ -361,6 +364,7 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         coral,
         worship,
         mastery,
+        yellow,
         jelly,
         format,
         characters: roster,

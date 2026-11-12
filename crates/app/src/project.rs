@@ -1632,13 +1632,23 @@ mod tests {
         let mastery = round_trip(&CookingMasteryState {
             goal: idleon_cooking_mastery::Goal::NextUnlock,
             budget: Some(12.0),
+            tab: crate::sections::cooking_mastery::Tab::Yellow,
+            yellow_goal: Some("totdmg".into()),
+            yellow_budget: Some(9.0),
+            character: 2,
         });
         assert_eq!(mastery.goal, idleon_cooking_mastery::Goal::NextUnlock);
         assert_eq!(mastery.budget, Some(12.0));
+        assert_eq!(mastery.tab, crate::sections::cooking_mastery::Tab::Yellow);
+        assert_eq!(mastery.yellow_goal.as_deref(), Some("totdmg"));
+        assert_eq!(mastery.yellow_budget, Some(9.0));
+        assert_eq!(mastery.character, 2);
         // A document that never touched the budget leaves it at every point.
         let untouched = round_trip(&CookingMasteryState::default());
         assert_eq!(untouched.goal, idleon_cooking_mastery::Goal::Now);
         assert_eq!(untouched.budget, None);
+        assert_eq!(untouched.tab, crate::sections::cooking_mastery::Tab::Exp);
+        assert_eq!(untouched.yellow_budget, None);
         let coral = round_trip(&coral::Inputs {
             goal: CoralGoal::DivinityPoints,
             budget: 250.0,

@@ -279,7 +279,10 @@ pub(crate) struct AppState {
     pub(crate) ladle_state: LadleSectionState,
     /// The Cooking Mastery state the last imported save carried.
     pub(crate) mastery: Option<Mastery>,
-    /// The Mastery EXP tab's distribution goal and budget, kept across visits.
+    /// The yellow point allocator's meal state, from the same save section.
+    pub(crate) yellow: Option<idleon_cooking_mastery::Yellow>,
+    /// The section's tab, distribution goal, budgets and character, kept across
+    /// visits.
     pub(crate) mastery_plan: MasteryPlanState,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub(crate) fountain: Option<Fountain>,
@@ -916,6 +919,7 @@ impl AppState {
             ladle: None,
             ladle_state,
             mastery: None,
+            yellow: None,
             mastery_plan: MasteryPlanState::default(),
             fountain: None,
             fountain_state: FountainState::default(),

@@ -546,6 +546,7 @@ mod tests {
             coral: Default::default(),
             worship: Default::default(),
             mastery: None,
+            yellow: None,
             jelly: None,
             format,
             characters,
