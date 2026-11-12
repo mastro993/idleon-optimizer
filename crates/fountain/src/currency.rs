@@ -270,6 +270,21 @@ impl Fountain {
         self.marble_per_fill() * 3600.0 * self.active_speed() / Self::marble_bar_fill_time()
     }
 
+    /// `optimalStackValueForCurrency`: one full stack of a currency, with the
+    /// royal multiplier and the Size Does Matter bonus.
+    pub fn optimal_stack_value_for_currency(&self, currency: usize, desired: usize) -> f64 {
+        let stack = self.max_stack();
+        stack
+            * self.currency_total_value_with(currency, desired)
+            * self.effective_royal_multi()
+            * (1.0 + stack * self.size_matter_bonus() / 100.0)
+    }
+
+    /// `optimalStackValue`: one full stack of the desired currency.
+    pub fn optimal_stack_value(&self, desired: usize) -> f64 {
+        self.optimal_stack_value_for_currency(desired, desired)
+    }
+
     /// `optimalStacksPerHr`: the full royal stacks a collector can bank each hour.
     pub fn optimal_stacks_per_hr(&self) -> f64 {
         let chance = self.royal_chance();

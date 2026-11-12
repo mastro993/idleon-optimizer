@@ -651,7 +651,8 @@ const sectionConfig = (id, config) =>
 const sneakingSave = () => readFileSync(join(process.cwd(), 'fixtures/data.json'), 'utf8');
 
 const fountainSave = () => {
-  const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  const row = (length, filled = {}) =>
+    Array.from({ length }, (_, index) => filled[index] ?? 0);
   const holes = Array.from({ length: 35 }, () => []);
   holes[7] = row(30, { 15: 10 });
   holes[9] = row(36, { 30: 1e6, 31: 1e6, 32: 1e9 });
@@ -1283,6 +1284,7 @@ const INTERACTIONS = {
     );
     await waitForNode(lane, 'fountain-desired', 'fountain: the desired simulator renders');
     await waitForNode(lane, 'fountain-unlocks', 'fountain: the unlock tracker renders');
+    await scrollTo(lane, 'fountain-desired-1');
     await lane.call('click_element', { id: 'fountain-desired-1' });
     await waitFor(
       lane,
@@ -1297,9 +1299,39 @@ const INTERACTIONS = {
       (nodes) => nodes.some((node) => node.id?.startsWith('fountain-cost-curve')),
       'fountain: the cost curve renders'
     );
+    await scrollTo(lane, 'fountain-water-2');
     await lane.call('click_element', { id: 'fountain-water-2' });
     await waitForNode(lane, 'fountain-upgrade-2-11', 'fountain: the green water rows render');
+    await scrollTo(lane, 'fountain-upgrade-2-11');
     await lane.call('click_element', { id: 'fountain-upgrade-2-11' });
+    // The Planner tab ranks the next level of every upgrade; switching the
+    // goal re-ranks the table, and the optimizer spends the saved balances.
+    await lane.call('click_element', { id: 'fountain-tab-planner' });
+    await waitForNode(lane, 'fountain-planner-table', 'fountain: the planner ranks the upgrades');
+    const topByCurrency = labelOf(await lane.tree(), 'fountain-planner-top') ?? '';
+    await lane.call('focus_element', { id: 'fountain-planner-goal' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const top = labelOf(nodes, 'fountain-planner-top') ?? '';
+        return top.startsWith('Top pick:') && top !== topByCurrency;
+      },
+      'fountain: the goal switch changes the ranking'
+    );
+    await waitForNode(lane, 'fountain-optimizer', 'fountain: the optimizer renders');
+    await scrollTo(lane, 'run-fountain-plan');
+    // The click starts the run; the window can stop drawing while the plan
+    // render lands, so a frame-wait timeout here is not a lost click.
+    try {
+      await lane.call('click_element', { id: 'run-fountain-plan' });
+    } catch (error) {
+      if (!/frame wait timed out/i.test(error.message)) throw error;
+    }
+    await waitForNode(lane, 'fountain-plan-steps', 'fountain: the plan lists its purchases', 30000);
+    await waitForNode(lane, 'fountain-plan-step-list', 'fountain: the plan lists every step');
     await lane.call('click_element', { id: 'fountain-tab-overview' });
     await waitForNode(lane, 'fountain-overview', 'fountain: the overview reopens');
   },
