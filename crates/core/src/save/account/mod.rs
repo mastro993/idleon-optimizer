@@ -13,6 +13,7 @@
 //! `simTotalExpWith` expects.
 
 mod bonuses;
+mod coin;
 mod cooking;
 mod data;
 mod equipment;
@@ -32,6 +33,7 @@ use super::Character;
 use super::value::Save;
 use crate::data::game;
 use crate::model::{GridState, SimContext, Simulation};
+pub(crate) use coin::coin;
 use data::{AccountData, account_data};
 use serde_json::{Map, Value};
 

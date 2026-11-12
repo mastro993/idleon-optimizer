@@ -1,7 +1,7 @@
 // Extracts the static tables the stats-all calculation context and its
-// category breakdowns read: maps, classes, and the carry-capacity systems
-// (guild, bribe, prayer, shrine, talent, stamp, star sign, vault, pristine
-// charm, companion).
+// category breakdowns read: maps, classes, the carry-capacity systems (guild,
+// bribe, prayer, shrine, talent, stamp, star sign, vault, pristine charm,
+// companion), the monster combat rows and the equipment sets.
 // Usage: node script/extract-stats-data.mjs <path-to-idleon-research-optimizer>
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -59,6 +59,37 @@ for (let idx = 0; idx < mapCount; idx += 1) {
       .filter((row) => Array.isArray(row))
       .map((row) => [Number(row[0]) || 0, String(row[1] ?? '')]),
   });
+}
+
+// Every monster the AFK targets point at: the coin multiplier reads a target's
+// `MonsterHPTotal` for the HP card and the overkill tier, and its `Defence` for
+// the overkill gate. `MONSTERS` also carries animation frames, which are not
+// read here.
+const monsterRows = {};
+for (const [key, monster] of Object.entries(monsters.MONSTERS)) {
+  if (!monster || typeof monster !== 'object') continue;
+  monsterRows[key] = {
+    name: String(monster.Name ?? ''),
+    hp: Number(monster.MonsterHPTotal) || 0,
+    defence: Number(monster.Defence) || 0,
+  };
+}
+
+// `EquipmentSets[name]` carries the pieces a set needs and `set[3][2]` its
+// bonus percentage, the same lookups `equipSetBonus` and `checkSetEquipped`
+// make; the coin multiplier's GOLD_SET group reads both.
+const equipmentSets = {};
+for (const [name, set] of Object.entries(custom.EquipmentSets)) {
+  if (!Array.isArray(set)) continue;
+  const caps = Array.isArray(set[3]) ? set[3] : [];
+  equipmentSets[name] = {
+    armor: (set[0] || []).map(String),
+    tools: (set[1] || []).map(String),
+    special: (set[2] || []).map(String),
+    toolsCap: Number(caps[0]) || 0,
+    specialCap: Number(caps[1]) || 0,
+    bonus: Number(caps[2]) || 0,
+  };
 }
 
 // Carry capacity reads these systems through upstream's own resolvers. Each
@@ -156,11 +187,14 @@ const payload = {
     // the table is read from its source instead of imported.
     carryStarSigns: carryStarSigns(),
   },
+  monsters: monsterRows,
+  equipmentSets,
 };
 writeFileSync(
   new URL('../crates/core/data/stats.json', import.meta.url),
   `${JSON.stringify(payload)}\n`,
 );
 console.log(
-  `wrote ${maps.length} maps, ${payload.classes.length} class names and ${stamps.length} stamps`,
+  `wrote ${maps.length} maps, ${payload.classes.length} class names and ${stamps.length} stamps, ` +
+    `${Object.keys(monsterRows).length} monsters and ${Object.keys(equipmentSets).length} equipment sets`,
 );

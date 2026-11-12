@@ -552,6 +552,7 @@ mod tests {
             named_characters: characters,
             warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
             shadow: Default::default(),
+            coin: Default::default(),
         }))
     }
 

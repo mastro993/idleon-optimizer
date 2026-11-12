@@ -19,7 +19,10 @@ pub use breakdowns::{
     Scope, Sheet,
 };
 pub use context::{ConstructionMode, Context, MapVisibility, Skill};
-pub use data::{class_name, map_count};
+pub use data::{
+    EquipmentSet, Monster, afk_target, class_name, equipment_set, kill_requirement, map_count,
+    map_name, monster, monster_count, set_bonus, target_name,
+};
 pub use maps::{
     Category, ClassVisibility, MapClass, MapOption, arcane_multi, build_options, classify,
     display_name,

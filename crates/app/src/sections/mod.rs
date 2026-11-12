@@ -13,6 +13,7 @@
 pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
+pub mod coin_multi;
 pub mod combat_sim;
 pub mod cooking_mastery;
 pub mod coral_god_rank;
@@ -530,9 +531,9 @@ pub const SECTIONS: [Section; 30] = [
         group: Group::Tools,
         description: "Map, target, HP, damage and overkill inputs with the coin formula breakdown",
         spec: "docs/sections/coin-multi.md",
-        status: Status::Planned,
+        status: Status::Ready,
         dashboard: false,
-        view: PLACEHOLDER,
+        view: coin_multi::view,
         keys: no_keys,
     },
     Section {

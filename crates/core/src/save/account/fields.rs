@@ -64,10 +64,14 @@ pub(crate) fn object_row(value: &Value, index: usize) -> Option<Vec<Option<f64>>
     }
     let fields = row.as_object()?;
     let mut cells: Vec<Option<f64>> = Vec::new();
-    let mut keys: Vec<&String> = fields.keys().collect();
-    keys.sort_by_key(|key| key.parse::<usize>().unwrap_or(usize::MAX));
-    for key in keys {
-        let index = key.parse::<usize>().unwrap_or(cells.len());
+    // A sparse row serialises as `{ length, 0: .., 1: .. }`; `length` is the
+    // array's own length, not one of its values, so it stays out of the row.
+    let mut keys: Vec<(usize, &String)> = fields
+        .keys()
+        .filter_map(|key| key.parse::<usize>().ok().map(|index| (index, key)))
+        .collect();
+    keys.sort_by_key(|(index, _)| *index);
+    for (index, key) in keys {
         if cells.len() <= index {
             cells.resize(index + 1, None);
         }

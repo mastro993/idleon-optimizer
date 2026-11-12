@@ -19,6 +19,7 @@ pub mod breakdown;
 pub mod cglunko;
 pub mod clamworks;
 pub mod cog;
+pub mod coin_multi;
 pub mod combat;
 pub mod cooking_mastery;
 pub mod coral;

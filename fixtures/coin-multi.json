@@ -1,0 +1,1356 @@
+{
+  "full": {
+    "source": "fixtures/data.json",
+    "characters": [
+      {
+        "label": "fixtures/data.json",
+        "character": 0,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 1.544328446783761e+31,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 3.197443852943962e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 98118.55507307505
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.3087198747102375
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.25290701065978
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 297.74168173485515
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 1,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 7.585578379892645e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 3.3388484898453136e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 105119.68792721917
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.3087198747102375
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.25290701065978
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 290.2020682211264
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 2,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 5.844959404227181e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 1.3911875383690461e+23,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 79070.95506988776
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 5.515
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.2462106371242445
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 296.67235726129616
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 3,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 4.606256044034339e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 3.1219116019598353e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 96661.33327552059
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.208686683102291
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 302.5096372840718
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 4,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 5.583888037206896e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 2.5488124370837473e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 81186.65816136477
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.2495635933888325
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 291.76261303151136
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 5,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 6.848438327401632e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 2.673435478099392e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 84046.64097251995
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.269482426791172
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 294.4970943124827
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 6,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 4.8406572570692063e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 2.9239317113097624e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 90833.91003430597
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.222469387723402
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 300.70658721959643
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 7,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 8.166503534037957e+28,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 4.245425035476145e+21,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 13263.726731850964
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.3087198747102375
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.155546699729788
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 297.96719505942144
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 8,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 4.119905613126668e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 3.0045505710561622e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 90660.11907814123
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.3087198747102375
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.2462106371242445
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 303.1831607564635
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 9,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 6.099107754101553e+30,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 2.4078953066214938e+22,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 76675.5177358321
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.25290701065978
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 291.6626375247269
+          }
+        ]
+      },
+      {
+        "label": "fixtures/data.json",
+        "character": 10,
+        "map": 200,
+        "target": "Divinity",
+        "monsterHp": 5,
+        "highestDamage": 7.61195265536512e+34,
+        "damage": 2.904065019753113e+28,
+        "overkill": {
+          "tier": 51,
+          "monsterHp": 5,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 3.570879863769913e+21,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 12057.934767972281
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 1
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 1
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 1
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1.6
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 2.271219874710238
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1.2
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1.4
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1.3535
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1.5
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1.683425526689029
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 5.151919935285967
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 469.05718731136005
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 597.0095563500603
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 10702.132
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1.4
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 2.42
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 184.28433228432203
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 280.4353986813105
+          }
+        ]
+      }
+    ]
+  },
+  "simple": {
+    "source": "script/coin-multi-oracle.mjs · SIMPLE_SAVE",
+    "characters": [
+      {
+        "label": "simple",
+        "character": 0,
+        "map": 2,
+        "target": "frogG",
+        "monsterHp": 120,
+        "highestDamage": 0,
+        "damage": 20.076281318570704,
+        "overkill": {
+          "tier": 1,
+          "monsterHp": 120,
+          "exponent": 2,
+          "partial": false
+        },
+        "total": 5197.5,
+        "partial": true,
+        "reason": "Partial total: the imported JSON does not include companion ownership or current server vote or Overkill: Partial total: the imported JSON does not include companion ownership or current server vote metadata. metadata.",
+        "groups": [
+          {
+            "name": "Cash Bubbles from Main Stats",
+            "value": 1
+          },
+          {
+            "name": "Companion: Cool Bird",
+            "value": 4
+          },
+          {
+            "name": "Companion: Equinox Broadbass",
+            "value": 1.5
+          },
+          {
+            "name": "Companion: Potluck",
+            "value": 2.5
+          },
+          {
+            "name": "Companion: Balloonfish",
+            "value": 4
+          },
+          {
+            "name": "Event Shop: Monster Cash I",
+            "value": 1.5
+          },
+          {
+            "name": "Event Shop: Monster Cash II",
+            "value": 1
+          },
+          {
+            "name": "Equip Bonus Money",
+            "value": 1
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters I",
+            "value": 1
+          },
+          {
+            "name": "Ring of Glory: extra coins dropped by monsters II",
+            "value": 1
+          },
+          {
+            "name": "Grid Bonus",
+            "value": 1
+          },
+          {
+            "name": "Equip Extra Money",
+            "value": 1
+          },
+          {
+            "name": "Gold Equipment Set",
+            "value": 1
+          },
+          {
+            "name": "Gambit: Coins from monsters",
+            "value": 1
+          },
+          {
+            "name": "Bundle: Monster Cash",
+            "value": 3.5
+          },
+          {
+            "name": "Talent: Dustwalker and Cooking Level",
+            "value": 1
+          },
+          {
+            "name": "Meals, Maneki Kat, Poppy, and Voting",
+            "value": 1
+          },
+          {
+            "name": "Pet Arena, Friends, and Pecunia",
+            "value": 1
+          },
+          {
+            "name": "Mainframe and Vault Progress",
+            "value": 16.5
+          },
+          {
+            "name": "Pristine: Gumball Necklace",
+            "value": 1
+          },
+          {
+            "name": "Prayer: Jawbreaker",
+            "value": 1
+          },
+          {
+            "name": "Divinity and Crop Scientist",
+            "value": 1
+          },
+          {
+            "name": "Other Additive Sources",
+            "value": 1
+          }
+        ]
+      }
+    ]
+  }
+}

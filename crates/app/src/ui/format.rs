@@ -110,6 +110,64 @@ pub fn stat_value(value: Option<f64>) -> String {
     fmt_val(value)
 }
 
+/// The upstream `fmtMonsterCash` tiers, used by the coin multiplier card.
+///
+/// It is the game's own `NotateNumber` ladder: the Big chain above 1e16, the
+/// B/M suffixes up to it, and the `MultiplierInfo` decimals below 1e7.
+pub fn monster_cash(value: f64) -> String {
+    let e = value;
+    if e > 1e24 {
+        let exponent = e.log10().floor();
+        let mantissa = (e / 10_f64.powf(exponent) * 100.0).floor() / 100.0;
+        return format!("{mantissa}E{}", exponent as i64);
+    }
+    if e > 1e22 {
+        return format!("{}QQQ", js_ceil(e / 1e21));
+    }
+    if e > 1e19 {
+        return format!("{}QQ", js_ceil(e / 1e18));
+    }
+    if e > 1e16 {
+        return format!("{}Q", js_ceil(e / 1e15));
+    }
+    if e > 1e10 {
+        return format!("{}B", (e / 1e8).floor() / 10.0);
+    }
+    if e > 1e7 {
+        return format!("{}M", (e / 1e5).floor() / 10.0);
+    }
+    if e > 1e6 {
+        let hundredths = js_round(e / 1e6 * 100.0);
+        let whole = js_round(e / 1e6);
+        if hundredths % 100.0 == 0.0 {
+            return format!("{whole}.00M");
+        }
+        if hundredths % 10.0 == 0.0 {
+            return format!("{}0M", js_round(e / 1e6 * 10.0) / 10.0);
+        }
+        return format!("{}M", hundredths / 100.0);
+    }
+    let hundredths = js_round(100.0 * e);
+    if hundredths % 100.0 == 0.0 {
+        return format!("{}.00", js_round(e));
+    }
+    if hundredths % 10.0 == 0.0 {
+        return format!("{}0", js_round(10.0 * e) / 10.0);
+    }
+    format!("{}", js_round(100.0 * e) / 100.0)
+}
+
+/// JavaScript's `Math.round`, which rounds halves up rather than away from zero.
+fn js_round(value: f64) -> f64 {
+    (value + 0.5).floor()
+}
+
+/// JavaScript's `Math.ceil`, which keeps `-0.0` at `0`.
+fn js_ceil(value: f64) -> f64 {
+    let ceil = value.ceil();
+    if ceil == 0.0 { 0.0 } else { ceil }
+}
+
 /// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
 pub fn fmt_val(value: f64) -> String {
     let magnitude = value.abs();
@@ -438,6 +496,23 @@ mod tests {
         assert_eq!(statue_time(36.0), "1.5d");
         assert_eq!(statue_time(8760.0), "1.0y");
         assert_eq!(statue_time(8760.0 * 1234.0), "1.2Ky");
+    }
+
+    #[test]
+    fn monster_cash_matches_the_upstream_ladder() {
+        assert_eq!(monster_cash(0.5), "0.50");
+        assert_eq!(monster_cash(1234.567), "1234.57");
+        assert_eq!(monster_cash(1e6), "1000000.00");
+        assert_eq!(monster_cash(1_500_000.0), "1.50M");
+        assert_eq!(monster_cash(12_345_678.0), "12.3M");
+        assert_eq!(monster_cash(1e9), "1000M");
+        assert_eq!(monster_cash(1.5e10), "15B");
+        assert_eq!(monster_cash(1e16), "10000000B");
+        assert_eq!(monster_cash(1e17), "100Q");
+        assert_eq!(monster_cash(1.5e19), "15QQ");
+        assert_eq!(monster_cash(3.3e23), "331QQQ");
+        assert_eq!(monster_cash(1e25), "1E25");
+        assert_eq!(monster_cash(3.197_443_852_943_962e22), "32QQQ");
     }
 
     #[test]

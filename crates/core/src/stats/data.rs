@@ -3,9 +3,11 @@
 //!
 //! `MapDispName`, `MapName`, `MapAFKtarget`, `MapAFKtargetSide`, `MapDetails`,
 //! `SceneTransitions`, `ColosseumInfo` and `ClassNames` come from
-//! `js/stats/data/game/customlists.js`, the target names and AFK types from
-//! `monsters.js`, the multi-character requirements from `custommaps.js` and the
-//! dungeon maps from `js/stats/systems/w2/dungeon.js`.
+//! `js/stats/data/game/customlists.js`, the target names, AFK types and combat
+//! rows from `monsters.js`, the multi-character requirements from `custommaps.js`
+//! and the dungeon maps from `js/stats/systems/w2/dungeon.js`. The equipment set
+//! bonuses are `EquipmentSets[name][3][2]`, the lookup upstream's
+//! `equipSetBonus` makes.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -20,6 +22,38 @@ pub(super) struct Data {
     pub(super) maps: Vec<MapRow>,
     pub(super) classes: Vec<String>,
     pub(super) capacity: CapacityData,
+    pub(super) monsters: BTreeMap<String, Monster>,
+    #[serde(rename = "equipmentSets")]
+    pub(super) equipment_sets: BTreeMap<String, EquipmentSet>,
+}
+
+/// One equipment set's pieces and bonus, from `EquipmentSets`.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct EquipmentSet {
+    /// Row 0 slots any of these pieces fill.
+    pub armor: Vec<String>,
+    /// Row 1 slots, up to [`Self::tools_cap`] of them.
+    pub tools: Vec<String>,
+    /// Row 0 slots, one counts no matter how many match.
+    pub special: Vec<String>,
+    /// How many tool pieces the set counts.
+    pub tools_cap: f64,
+    /// Whether one special piece counts (`1` in the game data).
+    pub special_cap: f64,
+    /// `set[3][2]`: the set's bonus percentage.
+    pub bonus: f64,
+}
+
+/// One monster's static combat row, from `js/stats/data/game/monsters.js`.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+pub struct Monster {
+    /// The display name with its underscores, e.g. `Green_Mushroom`.
+    pub name: String,
+    /// `MonsterHPTotal`, the HP the overkill tier compares damage against.
+    pub hp: f64,
+    /// `Defence`, the accuracy gate reads it.
+    pub defence: f64,
 }
 
 /// One map's static row.
@@ -135,6 +169,64 @@ pub fn class_name(id: usize) -> &'static str {
         .unwrap_or("Unknown Class")
 }
 
+/// One monster's static row, by the key the maps and saves name it with.
+pub fn monster(key: &str) -> Option<&'static Monster> {
+    data().monsters.get(key)
+}
+
+/// How many monsters the game data carries.
+pub fn monster_count() -> usize {
+    data().monsters.len()
+}
+
+/// An equipment set's bonus percentage, as `equipSetBonus` returns it.
+pub fn set_bonus(name: &str) -> f64 {
+    equipment_set(name).map(|set| set.bonus).unwrap_or(0.0)
+}
+
+/// An equipment set's pieces and bonus, as `EquipmentSets` carries them.
+pub fn equipment_set(name: &str) -> Option<&'static EquipmentSet> {
+    data().equipment_sets.get(name)
+}
+
+/// The AFK target key a map fights, when the table carries one.
+pub fn afk_target(map: usize) -> Option<&'static str> {
+    data()
+        .maps
+        .get(map)
+        .map(|row| row.afk_target.as_str())
+        .filter(|target| !target.is_empty())
+}
+
+/// A map's kill requirement, `MapDetails[map][0][0]`.
+pub fn kill_requirement(map: usize) -> f64 {
+    data().maps.get(map).map(|row| row.kill_req).unwrap_or(0.0)
+}
+
+/// A map's display name with its underscores, e.g. `Blunder_Hills`.
+pub fn map_name(map: usize) -> String {
+    data()
+        .maps
+        .get(map)
+        .map(|row| row.display_name.replace('_', " "))
+        .unwrap_or_else(|| "Unknown map".to_string())
+}
+
+/// A monster's display name with its underscores replaced, or `Unavailable`.
+///
+/// `coin-multi-calc.html`'s `_targetName` trims the display name and treats an
+/// empty one and `Nothing` as unavailable.
+pub fn target_name(key: &str) -> String {
+    let name = monster(key)
+        .map(|monster| monster.name.replace('_', " ").trim().to_string())
+        .unwrap_or_default();
+    if name.is_empty() || name == "Nothing" {
+        "Unavailable".to_string()
+    } else {
+        name
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -183,5 +275,27 @@ mod tests {
                 "{kind} has no stamp"
             );
         }
+    }
+
+    #[test]
+    fn the_monster_table_carries_the_combat_rows_and_set_bonuses() {
+        assert_eq!(monster_count(), 418);
+        let mushroom = monster("mushG").expect("the green mushroom row is in the table");
+        assert_eq!(mushroom.name, "Green_Mushroom");
+        assert_eq!(mushroom.hp, 32.0);
+        assert_eq!(monster("frogG").map(|row| row.hp), Some(120.0));
+        assert_eq!(monster("not a monster"), None);
+        assert_eq!(target_name("mushG"), "Green Mushroom");
+        assert_eq!(target_name("Nothing"), "Unavailable");
+        assert_eq!(target_name("not a monster"), "Unavailable");
+        assert_eq!(set_bonus("GOLD_SET"), 50.0);
+        assert_eq!(set_bonus("NOT_A_SET"), 0.0);
+        let gold = equipment_set("GOLD_SET").expect("the gold set rows are in the table");
+        assert_eq!(gold.armor[0], "EquipmentHats28");
+        assert_eq!(gold.tools_cap, 1.0);
+        assert_eq!(gold.special_cap, 1.0);
+        assert_eq!(map_name(0), "Blunder Hills");
+        assert_eq!(afk_target(1), Some("mushG"));
+        assert_eq!(afk_target(999), None);
     }
 }

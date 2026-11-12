@@ -771,6 +771,24 @@ const opalSave = () => {
   });
 };
 
+/// A two-character coin save: targets with and without a monster row, the
+/// highest recorded damage and the fields the section's cards read.
+const coinSave = () =>
+  JSON.stringify({
+    Research: '[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]]',
+    Holes: JSON.stringify(Array.from({ length: 34 }, () => [[], [], []])),
+    charNames: ['Ana', 'Bo'],
+    Lv0_0: '[1]',
+    Lv0_1: '[1]',
+    CharacterClass_0: 1,
+    CharacterClass_1: 7,
+    CurrentMap_0: 2,
+    CurrentMap_1: 50,
+    AFKtarget_0: 'frogG',
+    AFKtarget_1: 'Nothing',
+    TaskZZ0: '[[],[500]]',
+  });
+
 /// Section-specific interaction checks. Every ready section must own one; a
 /// planned section's interaction is the back action of its empty state.
 const INTERACTIONS = {
@@ -2302,6 +2320,54 @@ const INTERACTIONS = {
         return label.includes('shared stat pipeline');
       },
       'drop-rate: a normal map names the engine this build lacks',
+    );
+  },
+  'coin-multi': async (lane) => {
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'coin-multi: the import dialog opens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: coinSave() });
+    await waitForNode(lane, 'import-format', 'coin-multi: the save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'coin-map') ?? '').includes('Froggy Fields') &&
+        (labelOf(nodes, 'coin-target') ?? '').includes('Frog') &&
+        (labelOf(nodes, 'coin-hp') ?? '').includes('120') &&
+        (labelOf(nodes, 'coin-damage') ?? '').includes('500'),
+      'coin-multi: the save cards read the map, target, HP and damage',
+    );
+    if (!(labelOf(await lane.tree(), 'coin-total') ?? '').includes('x')) {
+      throw new Error('coin-multi: the total card has no multiplier');
+    }
+    if (!has(await lane.tree(), 'coin-partial')) {
+      throw new Error('coin-multi: the partial badge has no explanation');
+    }
+
+    // Character two follows its own target, which the monster table lacks.
+    await lane.call('focus_element', { id: 'coin-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'coin-map') ?? '').includes('YumYum Grotto') &&
+        (labelOf(nodes, 'coin-target') ?? '').includes('Unavailable'),
+      'coin-multi: the character selector switches to that character\'s target',
+    );
+
+    // Zero damage puts the tier back to one, and the cards follow the field.
+    await lane.call('click_element', { id: 'coin-damage-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: '0' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'coin-damage') ?? '').includes('0') &&
+        (labelOf(nodes, 'coin-overkill') ?? '').includes('1'),
+      'coin-multi: the damage field drives the overkill tier',
     );
   },
   sailing: async (lane) => {
