@@ -1,0 +1,382 @@
+{
+ "meals": [
+  {
+   "name": "Turkey of Thank",
+   "requirement": 10,
+   "bonus": 2
+  },
+  {
+   "name": "Egg",
+   "requirement": 15,
+   "bonus": 5
+  },
+  {
+   "name": "Salad",
+   "requirement": 25,
+   "bonus": 3
+  },
+  {
+   "name": "Pie",
+   "requirement": 40,
+   "bonus": 5
+  },
+  {
+   "name": "Frenk Fries",
+   "requirement": 60,
+   "bonus": 5
+  },
+  {
+   "name": "Spaghetti",
+   "requirement": 90,
+   "bonus": 4
+  },
+  {
+   "name": "Corn",
+   "requirement": 125,
+   "bonus": 2
+  },
+  {
+   "name": "Garlic Bread",
+   "requirement": 175,
+   "bonus": 4
+  },
+  {
+   "name": "Garlicles Bread",
+   "requirement": 250,
+   "bonus": 2
+  },
+  {
+   "name": "Pizza",
+   "requirement": 350,
+   "bonus": 9
+  },
+  {
+   "name": "Apple",
+   "requirement": 500,
+   "bonus": 5
+  },
+  {
+   "name": "Pancakes",
+   "requirement": 700,
+   "bonus": 2
+  },
+  {
+   "name": "Corndog",
+   "requirement": 1000,
+   "bonus": 12
+  },
+  {
+   "name": "Cabbage",
+   "requirement": 1400,
+   "bonus": 5
+  },
+  {
+   "name": "Potato P Pastry",
+   "requirement": 2000,
+   "bonus": 1
+  },
+  {
+   "name": "Dango",
+   "requirement": 3000,
+   "bonus": 2
+  },
+  {
+   "name": "Sourish Fish",
+   "requirement": 4000,
+   "bonus": 4
+  },
+  {
+   "name": "Octoplop",
+   "requirement": 5000,
+   "bonus": 2
+  },
+  {
+   "name": "Croissant",
+   "requirement": 8000,
+   "bonus": 1
+  },
+  {
+   "name": "Canopy",
+   "requirement": 12500,
+   "bonus": 10
+  },
+  {
+   "name": "Cannoli",
+   "requirement": 20000,
+   "bonus": 1
+  },
+  {
+   "name": "Cheese",
+   "requirement": 35000,
+   "bonus": 5
+  },
+  {
+   "name": "Sawdust",
+   "requirement": 50000,
+   "bonus": 5
+  },
+  {
+   "name": "Eggplant",
+   "requirement": 75000,
+   "bonus": 5
+  },
+  {
+   "name": "Cheesy Bread",
+   "requirement": 110000,
+   "bonus": 1
+  },
+  {
+   "name": "Wild Boar",
+   "requirement": 200000,
+   "bonus": 2
+  },
+  {
+   "name": "Donut",
+   "requirement": 300000,
+   "bonus": 15
+  },
+  {
+   "name": "Riceball",
+   "requirement": 500000,
+   "bonus": 3
+  },
+  {
+   "name": "Cauliflower",
+   "requirement": 750000,
+   "bonus": 1
+  },
+  {
+   "name": "Durian Fruit",
+   "requirement": 1000000,
+   "bonus": 6
+  },
+  {
+   "name": "Orange",
+   "requirement": 1500000,
+   "bonus": 3
+  },
+  {
+   "name": "Bunt Cake",
+   "requirement": 3000000,
+   "bonus": 7
+  },
+  {
+   "name": "Chocala Truffle",
+   "requirement": 5000000,
+   "bonus": 25
+  },
+  {
+   "name": "Leek",
+   "requirement": 8000000,
+   "bonus": 2
+  },
+  {
+   "name": "Fortune Cookie",
+   "requirement": 12000000,
+   "bonus": 4
+  },
+  {
+   "name": "Pretzel",
+   "requirement": 20000000,
+   "bonus": 7
+  },
+  {
+   "name": "Sea Urchin",
+   "requirement": 30000000,
+   "bonus": 1
+  },
+  {
+   "name": "Mashed Potato",
+   "requirement": 40000000,
+   "bonus": 6
+  },
+  {
+   "name": "Mutton",
+   "requirement": 90000000,
+   "bonus": 1
+  },
+  {
+   "name": "Wedding Cake",
+   "requirement": 135000000,
+   "bonus": 2
+  },
+  {
+   "name": "Eel",
+   "requirement": 200000000,
+   "bonus": 1
+  },
+  {
+   "name": "Whipped Cocoa",
+   "requirement": 300000000,
+   "bonus": 4
+  },
+  {
+   "name": "Onion",
+   "requirement": 500000000,
+   "bonus": 3
+  },
+  {
+   "name": "Soda",
+   "requirement": 700000000,
+   "bonus": 20
+  },
+  {
+   "name": "Sushi Roll",
+   "requirement": 900000000,
+   "bonus": 7
+  },
+  {
+   "name": "Buncha Banana",
+   "requirement": 1250000000,
+   "bonus": 4
+  },
+  {
+   "name": "Pumpkin",
+   "requirement": 1700000000,
+   "bonus": 2
+  },
+  {
+   "name": "Cotton Candy",
+   "requirement": 4000000000,
+   "bonus": 2
+  },
+  {
+   "name": "Massive Fig",
+   "requirement": 7000000000,
+   "bonus": 3
+  },
+  {
+   "name": "Chef Geustloaf",
+   "requirement": 10000000000,
+   "bonus": 4
+  },
+  {
+   "name": "Kiwi Fruit",
+   "requirement": 14000000000,
+   "bonus": 2
+  },
+  {
+   "name": "Popped Corn",
+   "requirement": 20000000000,
+   "bonus": 2
+  },
+  {
+   "name": "Double Cherry",
+   "requirement": 32000000000,
+   "bonus": 30
+  },
+  {
+   "name": "Ratatouey",
+   "requirement": 52000000000,
+   "bonus": 8
+  },
+  {
+   "name": "Giant Tomato",
+   "requirement": 90000000000,
+   "bonus": 5
+  },
+  {
+   "name": "Wrath Grapes",
+   "requirement": 130000000000,
+   "bonus": 4
+  },
+  {
+   "name": "Sausy Sausage",
+   "requirement": 225000000000,
+   "bonus": 6
+  },
+  {
+   "name": "Seasoned Marrow",
+   "requirement": 350000000000,
+   "bonus": 3
+  },
+  {
+   "name": "Sticky Bun",
+   "requirement": 700000000000,
+   "bonus": 5
+  },
+  {
+   "name": "Frazzleberry",
+   "requirement": 1000000000000,
+   "bonus": 2
+  },
+  {
+   "name": "MrLoin Steak",
+   "requirement": 1700000000000,
+   "bonus": 6
+  },
+  {
+   "name": "Large Pohayoh",
+   "requirement": 6000000000000,
+   "bonus": 2
+  },
+  {
+   "name": "Bill Jack Pep",
+   "requirement": 35000000000000,
+   "bonus": 5
+  },
+  {
+   "name": "Burned Mello",
+   "requirement": 90000000000000,
+   "bonus": 40
+  },
+  {
+   "name": "Yumi Peachring",
+   "requirement": 800000000000000,
+   "bonus": 2
+  },
+  {
+   "name": "Plumpcakes",
+   "requirement": 6000000000000000,
+   "bonus": 6
+  },
+  {
+   "name": "Nyanborgir",
+   "requirement": 50000000000000000,
+   "bonus": 9
+  },
+  {
+   "name": "Tempura Shrimp",
+   "requirement": 2.5e+43,
+   "bonus": 0.07
+  },
+  {
+   "name": "Woahtermelon",
+   "requirement": 5e+48,
+   "bonus": 0.03
+  },
+  {
+   "name": "Cookies",
+   "requirement": 8.8888e+53,
+   "bonus": 0.3
+  },
+  {
+   "name": "Singing Seed",
+   "requirement": 1e+59,
+   "bonus": 0.2
+  },
+  {
+   "name": "Tasty Treat",
+   "requirement": 1e+61,
+   "bonus": 0.01
+  },
+  {
+   "name": "Giga Chip",
+   "requirement": 1e+64,
+   "bonus": 0.01
+  },
+  {
+   "name": "Divorce Cake",
+   "requirement": 1e+66,
+   "bonus": 0.02
+  }
+ ],
+ "numberToLetter": "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ肥肢肖肋肉職耐者箱管算箔策答筒筍白発癒痛痕病疾疲潤潜漬漠演漏漁滞毎殻殺段殖残歳歯歩武歓欲次欠櫛機色村材杉本末未木授掃捧彼役影彫彩胃堪城坑努助加功力創割借候倒老個景是明昇早既掴担想扉戻懸懲憩態感蛮蛍虫虚蘇薬薄蔵",
+ "generatedFrom": {
+  "repo": "Corgan/idleon-research-optimizer",
+  "files": [
+   "js/stats/data/game/customlists.js",
+   "js/stats/data/game/hardcoded.js"
+  ]
+ }
+}

@@ -1,9 +1,12 @@
-//! The ladle section's own rules: who is counted, whose breakdown is drawn, and
-//! what the Cook EXP tab plans for.
+//! The ladle section's own rules: who is counted, whose breakdown is drawn, what
+//! the Cook EXP tab plans for and how the reset tab reads its controls.
 
 use super::exp::{exp_to_level, target_choice};
+use super::forecast::toggle_day;
+use super::kitchens::{inputs, parse_policy, policy_id};
 use super::summary::{all, line, total};
 use super::{adopt, toggle};
+use idleon_core::ladle::kitchen::Policy;
 use idleon_core::ladle::{Character, EXP_BALLOONS, Ladle, Panel};
 
 fn character(index: usize, cooking: bool) -> Character {
@@ -30,6 +33,7 @@ fn ladle(cooking: &[usize]) -> Ladle {
         ladles: Default::default(),
         balloons: vec![Default::default(); EXP_BALLOONS.len()],
         reset_hours: Some(7.5),
+        kitchen: None,
     }
 }
 
@@ -145,5 +149,48 @@ fn close(actual: f64, expected: f64) {
     assert!(
         (actual - expected).abs() <= 1e-9 * expected.abs().max(1.0),
         "{actual} != {expected}"
+    );
+}
+
+#[test]
+fn the_donation_policy_round_trips_through_its_select_value() {
+    for policy in [Policy::None, Policy::All, Policy::Share, Policy::Fixed] {
+        assert_eq!(parse_policy(policy_id(policy)), policy);
+    }
+    // An unknown value falls back to no donations rather than panicking.
+    assert_eq!(parse_policy("auto"), Policy::None);
+}
+
+#[test]
+fn expanding_a_reset_keeps_the_list_in_day_order() {
+    let mut open = vec![1];
+    toggle_day(&mut open, 3);
+    toggle_day(&mut open, 2);
+    assert_eq!(open, vec![1, 2, 3]);
+    toggle_day(&mut open, 2);
+    assert_eq!(open, vec![1, 3]);
+}
+
+#[test]
+fn the_plan_inputs_come_from_the_checked_rates_and_the_save() {
+    let ladle = ladle(&[0, 2]);
+    let panel = Panel {
+        efficiency: 1000.0,
+        afk: 1.0,
+        talent_148: 50.0,
+        ..Panel::default()
+    };
+    let stats = all(&ladle, panel, 24.0);
+    let settings = idleon_core::ladle::kitchen::Inputs::default();
+    let plan = inputs(&settings, &[0, 2], panel, true, &ladle, &stats);
+    // 15 ladles a day each, both checked.
+    assert_eq!(plan.ladles_per_day, 30.0);
+    assert_eq!(plan.hours_to_reset, 7.5);
+    assert_eq!(plan.start_ladles, ladle.ladles.value);
+    assert_eq!(plan.ladle_multi, 1.5);
+    // The save's ladles are only spent when the switch is on.
+    assert_eq!(
+        inputs(&settings, &[0, 2], panel, false, &ladle, &stats).start_ladles,
+        0.0
     );
 }

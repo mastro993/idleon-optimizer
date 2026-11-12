@@ -42,6 +42,7 @@ use idleon_core::drop_rate;
 use idleon_core::game;
 use idleon_core::import as pipeline;
 use idleon_core::ladle::Panel as LadlePanel;
+use idleon_core::ladle::kitchen::Inputs as LadleKitchen;
 use idleon_core::model::{Effort, SimContext, SimOptions, Simulation};
 use idleon_core::pickle::{DEFAULT_TTK, MAX_DPS, MAX_TTK, MIN_TTK};
 use idleon_core::project;
@@ -201,6 +202,11 @@ pub struct LadleConfig {
     balloon: usize,
     target_level: u32,
     split: bool,
+    /// The Kitchens & Jellyfish inputs: the horizon, the donation policy, the
+    /// meal cost terms and the layout pins.
+    kitchen: LadleKitchen,
+    /// Whether the reset plan spends the ladles the save carries.
+    use_owned: bool,
 }
 
 /// The cog board section's config: the objective and the custom weights. The
@@ -462,6 +468,8 @@ pub fn configs(state: &AppState) -> Map<String, Value> {
             balloon: state.ladle_state.balloon,
             target_level: state.ladle_state.target_level,
             split: state.ladle_state.split,
+            kitchen: state.ladle_state.kitchen.clone(),
+            use_owned: state.ladle_state.use_owned,
         }),
     );
     insert("coral-god-rank", value(&state.coral.inputs));
@@ -949,6 +957,8 @@ pub fn assign(
                 .min(idleon_core::ladle::EXP_BALLOONS.len() - 1);
             state.ladle_state.target_level = config.target_level.min(1000);
             state.ladle_state.split = config.split;
+            state.ladle_state.kitchen = config.kitchen;
+            state.ladle_state.use_owned = config.use_owned;
         }
         Config::Coral(config) => {
             state.coral.inputs = config;
@@ -1458,6 +1468,14 @@ mod tests {
             balloon: 1,
             target_level: 60,
             split: true,
+            kitchen: LadleKitchen {
+                days: 12,
+                base_speed: 480.0,
+                policy: idleon_core::ladle::kitchen::Policy::Share,
+                income_fraction: 0.25,
+                ..LadleKitchen::default()
+            },
+            use_owned: false,
         });
         assert_eq!(ladle.tab, LadleTab::Exp);
         assert_eq!(ladle.ladle_character, 3);
@@ -1469,6 +1487,14 @@ mod tests {
         assert_eq!(ladle.balloon, 1);
         assert_eq!(ladle.target_level, 60);
         assert!(ladle.split);
+        assert_eq!(ladle.kitchen.days, 12);
+        assert_eq!(ladle.kitchen.base_speed, 480.0);
+        assert_eq!(
+            ladle.kitchen.policy,
+            idleon_core::ladle::kitchen::Policy::Share
+        );
+        assert_eq!(ladle.kitchen.income_fraction, 0.25);
+        assert!(!ladle.use_owned);
         let statue = round_trip(&StatueConfig {
             character: 4,
             sort: StatueSort::Remaining,

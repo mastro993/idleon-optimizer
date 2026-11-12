@@ -2,9 +2,10 @@
 //! EXP balloons.
 //!
 //! Ported from `ladle-calc.html` and `js/stats/systems/w4/cooking-ladle.js`. LD-01
-//! builds the Ladles and Cooking EXP tabs; the kitchen reset, forecast and NMLB
-//! planner tabs arrive with LD-02 to LD-04 and are added to [`Tab::ALL`] then, so
-//! the strip never offers a tab that has nothing behind it.
+//! builds the Ladles and Cooking EXP tabs; LD-02 adds the Kitchens & Jellyfish
+//! reset, with each reset's layout and its copyable instructions. The forecast
+//! comparison and the NMLB planner arrive with LD-03 and LD-04 and join
+//! [`Tab::ALL`] then, so the strip never offers a tab with nothing behind it.
 //!
 //! The four values a ladle rate needs and a save cannot answer (Cooking
 //! efficiency, AFK gain rate, EXP multiplier and skill prowess) are the panel
@@ -14,6 +15,8 @@
 
 pub mod breakdowns;
 pub mod exp;
+pub mod forecast;
+pub mod kitchens;
 pub mod summary;
 #[cfg(test)]
 mod tests;
@@ -31,6 +34,7 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div,
 };
+use idleon_core::ladle::kitchen;
 use idleon_core::ladle::{EXP_BALLOONS, Panel};
 
 /// The ladle page's tabs.
@@ -40,16 +44,19 @@ pub enum Tab {
     /// The summary, the character rates and the breakdowns.
     #[default]
     Ladles,
+    /// The daily kitchen layout, the reset investment and its instructions.
+    Kitchens,
     /// Cooking EXP balloons per character.
     Exp,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 2] = [Tab::Ladles, Tab::Exp];
+    pub const ALL: [Tab; 3] = [Tab::Ladles, Tab::Kitchens, Tab::Exp];
 
     pub fn id(self) -> &'static str {
         match self {
             Tab::Ladles => "ladles",
+            Tab::Kitchens => "kitchens",
             Tab::Exp => "exp",
         }
     }
@@ -57,6 +64,7 @@ impl Tab {
     pub fn label(self) -> &'static str {
         match self {
             Tab::Ladles => "Ladles",
+            Tab::Kitchens => "Kitchens & Jellyfish",
             Tab::Exp => "Cooking EXP",
         }
     }
@@ -86,6 +94,19 @@ pub struct State {
     pub target_level: u32,
     /// Share the owned balloons to keep levels even.
     pub split: bool,
+    /// The Kitchens & Jellyfish inputs: the horizon, the donation policy, the
+    /// meal cost terms and the layout pins.
+    pub kitchen: kitchen::Inputs,
+    /// Whether the reset plan spends the ladles the save already carries.
+    pub use_owned: bool,
+    /// The reset whose layout the forecast draws, 1-based.
+    pub day: usize,
+    /// The resets whose instructions are expanded, by day number.
+    pub open_days: Vec<u32>,
+    /// Whether the kitchen pins and meal exclusions are shown.
+    pub show_layout: bool,
+    /// The plan the Kitchens tab last computed and the inputs it came from.
+    pub kitchen_plan: Option<KitchenPlan>,
     pub ladles_tree: Entity<FormulaTree>,
     pub claims_tree: Entity<FormulaTree>,
     pub balloons_tree: Entity<FormulaTree>,
@@ -106,6 +127,12 @@ impl State {
             balloon: 0,
             target_level: 0,
             split: false,
+            kitchen: kitchen::Inputs::default(),
+            use_owned: true,
+            day: 1,
+            open_days: vec![1],
+            show_layout: false,
+            kitchen_plan: None,
             ladles_tree,
             claims_tree,
             balloons_tree,
@@ -135,6 +162,69 @@ impl State {
         self.ladle_character = self.ladle_character.min(characters.saturating_sub(1));
         self.breakdown_character = self.breakdown_character.min(characters.saturating_sub(1));
     }
+
+    /// The reset plan for the current inputs, recomputed only when they change.
+    ///
+    /// The plan simulates the whole horizon and searches each reset's layout, so
+    /// the pane caches it: a redraw reuses the stored plan, and the saved
+    /// signature rebuilds it whenever the save or an input moves.
+    pub fn plan(
+        &mut self,
+        reset: &kitchen::Reset,
+        inputs: &kitchen::Inputs,
+    ) -> &Result<kitchen::Plan, kitchen::Problem> {
+        let signature = format!("{reset:?}{inputs:?}");
+        let stale = self
+            .kitchen_plan
+            .as_ref()
+            .is_none_or(|cached| cached.signature != signature);
+        if stale {
+            self.kitchen_plan = Some(KitchenPlan {
+                signature,
+                plan: kitchen::plan(reset, inputs),
+            });
+        }
+        &self
+            .kitchen_plan
+            .as_ref()
+            .expect("the plan was just stored")
+            .plan
+    }
+
+    /// Pin one kitchen to a meal, or let the optimizer choose with `None`.
+    pub fn set_pin(&mut self, index: usize, meal: Option<i32>) {
+        match meal {
+            Some(meal) => self.kitchen.layout.pins.insert(index, meal),
+            None => self.kitchen.layout.pins.remove(&index),
+        };
+    }
+
+    /// Exclude or re-include one meal in the reset layout.
+    pub fn toggle_excluded(&mut self, meal: usize) {
+        match self
+            .kitchen
+            .layout
+            .excluded
+            .iter()
+            .position(|entry| *entry == meal)
+        {
+            Some(position) => {
+                self.kitchen.layout.excluded.remove(position);
+            }
+            None => self.kitchen.layout.excluded.push(meal),
+        }
+    }
+
+    /// Change one input; the next render rebuilds the plan from it.
+    pub fn set_kitchen(&mut self, edit: impl FnOnce(&mut kitchen::Inputs)) {
+        edit(&mut self.kitchen);
+    }
+}
+
+/// The Kitchens tab's cached plan and the inputs it was built from.
+pub struct KitchenPlan {
+    signature: String,
+    plan: Result<kitchen::Plan, kitchen::Problem>,
 }
 
 /// Count or stop counting one character, keeping the list in save order.
@@ -181,6 +271,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
     let tabs = TabBar::new("ladle-tabs")
         .selected(SharedString::from(tab.id()))
         .tab(WindowTab::new(Tab::Ladles.id(), Tab::Ladles.label()))
+        .tab(WindowTab::new(Tab::Kitchens.id(), Tab::Kitchens.label()))
         .tab(WindowTab::new(Tab::Exp.id(), Tab::Exp.label()))
         .on_select(move |id, _window, cx| {
             if let Some(tab) = Tab::from_id(id.as_ref()) {
@@ -222,6 +313,7 @@ pub fn view(state: &mut AppState, window: &mut Window, cx: &mut Context<AppState
         .child(toolbar)
         .child(match tab {
             Tab::Ladles => summary::pane(state, &ladle, window, cx),
+            Tab::Kitchens => kitchens::pane(state, &ladle, window, cx),
             Tab::Exp => exp::pane(state, &ladle, window, cx),
         })
         .into_any_element()

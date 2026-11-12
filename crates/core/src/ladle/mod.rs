@@ -24,6 +24,11 @@
 //! Everything else is save-derived: the roster, Cooking level and EXP, the AFK
 //! target and pending AFK time, the Post Office 19c roll, the Prayer 2 cap and the
 //! ladle and balloon counts across storage and every inventory.
+//!
+//! [`kitchen`] carries the daily reset: the meal levels and stocks, the meal
+//! costs, the reset kitchen layout and the ladle investment instructions.
+
+pub mod kitchen;
 
 use crate::formula::{FormulaNode, ValueFormat};
 use crate::save::Save;
@@ -171,6 +176,9 @@ pub struct Ladle {
     pub balloons: Vec<Count>,
     /// `TimeAway.ShopRestock` in hours, clamped to a day, when the save has it.
     pub reset_hours: Option<f64>,
+    /// The Kitchens & Jellyfish reset state, when the save carries `Cooking` and
+    /// `Meals`.
+    pub kitchen: Option<kitchen::Reset>,
 }
 
 impl Ladle {
@@ -193,6 +201,7 @@ impl Ladle {
             ladles: inventories.count(LADLE_ITEM),
             balloons,
             reset_hours: reset_hours(save),
+            kitchen: kitchen::Reset::from_save(save),
         })
     }
 

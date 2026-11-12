@@ -460,3 +460,35 @@ fn the_fixture_carries_the_ladle_roster() {
         .expect("TimeAway.ShopRestock is in the save");
     assert!((reset - 17.227732320030555).abs() < 1e-9, "{reset}");
 }
+
+#[test]
+fn the_fixture_carries_the_kitchen_reset_state() {
+    // The reset reads `Cooking` (unlocked kitchens, their saved meal and speed
+    // level), `Meals` (levels and stocks), `Menagerie` (the Blue Jellyfish grant)
+    // and the bundle that gives No Meal Left Behind its levels.
+    let ladle = imported()
+        .ladle
+        .expect("the fixture carries a character roster");
+    let kitchen = ladle.kitchen.expect("the fixture carries Cooking rows");
+    let save = imported().save;
+    let meals = save.get("Meals").expect("Meals is in the save");
+    let levels =
+        idleon_core::save::row_values(&idleon_core::save::at(&meals, 0).expect("Meals[0]").clone());
+    assert_eq!(kitchen.meals.levels.len(), levels.len());
+    assert_eq!(kitchen.meals.levels[0], 130.0);
+    assert!(kitchen.meals.stocks[0] > 1e159);
+    assert_eq!(kitchen.kitchens.len(), 10);
+    assert!(kitchen.kitchens.iter().all(|row| row.unlocked));
+    // The first kitchen cooks meal 68 with 628 speed levels.
+    assert_eq!(kitchen.kitchens[0].saved_meal, 68);
+    assert_eq!(kitchen.kitchens[0].speed_level, 628.0);
+    // `Menagerie[0][5]` is the saved grant and rank 5 is owned.
+    assert_eq!(kitchen.jelly.daily_hours, 1039999928.0);
+    assert!(kitchen.jelly.available);
+    assert!(kitchen.jelly.unlocked);
+    // The bundle awards two No Meal Left Behind levels and emporium 16 (`N2L[16]`
+    // is in the save's `Ninja[102][9]`) the third.
+    assert_eq!(kitchen.nmlb, 3.0);
+    assert!(kitchen.speed(1.0) > 0.0);
+    assert_eq!(kitchen.unlocked().count(), 10);
+}
