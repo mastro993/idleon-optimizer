@@ -184,10 +184,10 @@ pub fn evaluate(_save: &Save, context: Context) -> Summary {
 mod tests {
     use super::*;
 
-    /// The upstream fixture's layers, from `damageDebug()` in a checkout of
+    /// Character one's upstream layers from `fixtures/damage.json`, written by
+    /// `script/damage-oracle.mjs` from `damageDebug()` in a checkout of
     /// `Corgan/idleon-research-optimizer`. The arithmetic is the only part this
-    /// module owns until the shared stat pipeline lands, so the values pin the
-    /// exact combine rather than any save read.
+    /// module owns until the shared stat pipeline lands.
     const FIXTURE: Layers = Layers {
         base: 24_314_521.292_961_78,
         percent: 33_196_799.975_627_754,

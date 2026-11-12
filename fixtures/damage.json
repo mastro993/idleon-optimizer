@@ -1,0 +1,220 @@
+{
+  "source": "fixtures/data.json through js/save/loader.js loadSaveData",
+  "descriptor": "js/stats/defs/damage.js",
+  "context": "js/stats/stat-context.js createStatContext",
+  "cases": [
+    {
+      "character": 0,
+      "map": 200,
+      "class": 40,
+      "max": 1.544328446783761e+31,
+      "min": 1.235462757427009e+31,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "WIS",
+        "value": 78941487.82329063
+      },
+      "layers": {
+        "base": 24314521.29296178,
+        "percent": 33196799.975627754,
+        "multiplier": 19132764507064010
+      }
+    },
+    {
+      "character": 1,
+      "map": 200,
+      "class": 14,
+      "max": 7.585578379892645e+30,
+      "min": 6.068462703914117e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "STR",
+        "value": 70188212.44189772
+      },
+      "layers": {
+        "base": 19752050.929664984,
+        "percent": 30142365.878441412,
+        "multiplier": 12740872400559864
+      }
+    },
+    {
+      "character": 2,
+      "map": 200,
+      "class": 22,
+      "max": 5.844959404227181e+30,
+      "min": 4.675967523381745e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "AGI",
+        "value": 43180785.644245066
+      },
+      "layers": {
+        "base": 13066097.733933363,
+        "percent": 45325234.69187677,
+        "multiplier": 9869508723463062
+      }
+    },
+    {
+      "character": 3,
+      "map": 200,
+      "class": 16,
+      "max": 4.606256044034339e+30,
+      "min": 3.6850048352274715e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "STR",
+        "value": 59708982.17927871
+      },
+      "layers": {
+        "base": 12993649.993214315,
+        "percent": 34794874.77777009,
+        "multiplier": 10188297855213528
+      }
+    },
+    {
+      "character": 4,
+      "map": 200,
+      "class": 29,
+      "max": 5.583888037206896e+30,
+      "min": 4.467110429765517e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "AGI",
+        "value": 44505450.64066745
+      },
+      "layers": {
+        "base": 12574491.052508958,
+        "percent": 44647612.62432509,
+        "multiplier": 9945990589766314
+      }
+    },
+    {
+      "character": 5,
+      "map": 200,
+      "class": 34,
+      "max": 6.848438327401632e+30,
+      "min": 5.478750661921305e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "WIS",
+        "value": 62460140.017528586
+      },
+      "layers": {
+        "base": 19647537.58787444,
+        "percent": 26836850.825269666,
+        "multiplier": 12988286764344070
+      }
+    },
+    {
+      "character": 6,
+      "map": 200,
+      "class": 16,
+      "max": 4.8406572570692063e+30,
+      "min": 3.872525805655365e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "STR",
+        "value": 53944614.296074435
+      },
+      "layers": {
+        "base": 13553684.655018644,
+        "percent": 30680970.36486748,
+        "multiplier": 11640666989990760
+      }
+    },
+    {
+      "character": 7,
+      "map": 200,
+      "class": 4,
+      "max": 8.166503534037957e+28,
+      "min": 6.533202827230365e+28,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "LUK",
+        "value": 6001297.178074789
+      },
+      "layers": {
+        "base": 769023.2345870262,
+        "percent": 15036848.06700137,
+        "multiplier": 7062197866643189
+      }
+    },
+    {
+      "character": 8,
+      "map": 200,
+      "class": 10,
+      "max": 4.119905613126668e+30,
+      "min": 3.295924490501335e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "STR",
+        "value": 51806471.34936127
+      },
+      "layers": {
+        "base": 14079770.658878684,
+        "percent": 27356806.633516185,
+        "multiplier": 10696120452074808
+      }
+    },
+    {
+      "character": 9,
+      "map": 200,
+      "class": 22,
+      "max": 6.099107754101553e+30,
+      "min": 4.8792862032812425e+30,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "AGI",
+        "value": 41714685.11427531
+      },
+      "layers": {
+        "base": 13912552.031961665,
+        "percent": 44534322.41996945,
+        "multiplier": 9843842481112636
+      }
+    },
+    {
+      "character": 10,
+      "map": 200,
+      "class": 1,
+      "max": 2.904065019753113e+28,
+      "min": 2.3232520158024904e+28,
+      "mastery": 0.8,
+      "primaryStat": {
+        "stat": "LUK",
+        "value": 2490022.946990344
+      },
+      "layers": {
+        "base": 609019.6965044796,
+        "percent": 10325949.879174203,
+        "multiplier": 4617904894750015
+      }
+    }
+  ],
+  "dungeons": [
+    {
+      "map": 39,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    },
+    {
+      "map": 40,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    },
+    {
+      "map": 70,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    },
+    {
+      "map": 71,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    },
+    {
+      "map": 118,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    },
+    {
+      "map": 119,
+      "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    }
+  ]
+}

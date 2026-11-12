@@ -94,3 +94,12 @@ compares the port field for field. Nine groups still need the account stats engi
 STR/AGI/WIS), the talent, meal, pet arena/friend/statue, Sneaking, prayer, Divinity/Crop Scientist,
 Gambit and card/golden-food/guild systems; the port reports them as not modelled instead of guessing.
 Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+
+`damage.json` is the upstream Damage Breakdown's own output for `data.json`, from
+`js/stats/defs/damage.js` run over every character through `createStatContext`: the character's map
+and class, the maximum and minimum damage, the mastery ratio, the primary stat and the three damage
+layers, plus the descriptor's reason for all six dungeon maps. Regenerate it with
+`node script/damage-oracle.mjs <upstream-repo>`; `crates/damage/tests/damage.rs` recombines the
+upstream layers through the port's own summary arithmetic for every character and reports the
+missing stat pipeline until the three layers can be resolved. Treat it as frozen for the same
+reason: it is the oracle's output, not this app's.
