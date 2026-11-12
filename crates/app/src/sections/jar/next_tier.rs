@@ -163,8 +163,11 @@ fn recommendation(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         text.push_str(&format!(" This speeds up {benefits} production by +5%."));
     }
     let muted = cx.theme().colors.fg_muted;
+    let label = text.clone();
     div()
         .id("jar-next-recommendation")
+        .role(Role::Label)
+        .aria_label(label)
         .flex()
         .flex_col()
         .gap_2()

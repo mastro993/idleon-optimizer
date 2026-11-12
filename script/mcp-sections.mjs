@@ -957,6 +957,10 @@ const INTERACTIONS = {
       throw new Error(`jar: the max tier is not labelled (${maxTier})`);
     }
     await waitForNode(lane, 'jar-next-recommendation', 'jar: the next tier recommendation renders');
+    const recommendation = labelOf(await lane.tree(), 'jar-next-recommendation') ?? '';
+    if (!recommendation.includes('fastest')) {
+      throw new Error(`jar: the next tier recommendation is not actionable (${recommendation})`);
+    }
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },
