@@ -472,6 +472,49 @@ fn the_fixture_yellow_budget_and_context_match_upstream() {
 }
 
 #[test]
+fn the_fixture_yellow_budget_counts_the_companion_and_the_event_shop() {
+    let (yellow, oracle) = imported_yellow();
+    // The fixture save already owns the event shop perk (`OptLacc[311]` holds
+    // its letter); the oracle's variant also owns the Rift Spooker, through the
+    // Pet Bonus Tokens at `OptLacc[606]`, which is worth five more points.
+    let variant = &oracle["yellow"]["budgetVariant"];
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/data.json");
+    let mut save: Value = serde_json::from_str(
+        &std::fs::read_to_string(path).expect("fixtures/data.json is committed"),
+    )
+    .expect("the fixture is JSON");
+    let event = variant["eventShop"]
+        .as_str()
+        .expect("eventShop is a string");
+    let companion = variant["companionToken"]
+        .as_str()
+        .expect("companionToken is a string");
+    let olalacc = save["OptLacc"].as_array_mut().expect("OptLacc is an array");
+    let tokens = olalacc[606]
+        .as_str()
+        .expect("the token list is a string")
+        .to_string();
+    olalacc[311] = Value::String(event.to_string());
+    olalacc[606] = Value::String(format!("{tokens},{companion}"));
+    let imported = import(&serde_json::to_string(&save).expect("the variant serialises"))
+        .expect("the variant imports");
+    let boosted = imported
+        .yellow
+        .expect("the variant carries CookMaster")
+        .budget;
+    close(
+        boosted,
+        number(variant, "budget"),
+        "the budget with the companion and the perk",
+    );
+    close(
+        boosted - yellow.budget,
+        5.0,
+        "the Rift Spooker's five points",
+    );
+}
+
+#[test]
 fn the_fixture_yellow_goal_table_matches_upstream() {
     let (yellow, oracle) = imported_yellow();
     let goals = oracle["yellow"]["goals"]

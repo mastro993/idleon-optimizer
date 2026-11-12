@@ -252,6 +252,7 @@ const {
 const { cookingMealMulti } = await load('js/stats/systems/common/cooking.js');
 const { ribbonBonusAt } = await load('js/game-helpers.js');
 const { jellyRewardBonus } = await load('js/stats/data/w7/jelly-operator.js');
+const { N2L } = await load('js/stats/data/game/hardcoded.js');
 
 function yellowFixture() {
   const budget = yellowPointBudget(saveData);
@@ -299,8 +300,26 @@ function yellowFixture() {
   }));
   const mealKitchens = kitchenCookingAggregate(saveData, 'meal');
   const recipeKitchens = kitchenCookingAggregate(saveData, 'recipe');
+  // The fixture save owns neither the Rift Spooker nor the event shop perk, so
+  // the two budget terms they feed are zero. A variant that owns both pins the
+  // two indexes: five points each.
+  const variant = JSON.parse(JSON.stringify(save));
+  variant.OptLacc = variant.OptLacc.slice();
+  // `OptLacc[311]` is the event shop ownership string; `[606]` the Pet Bonus
+  // Tokens the companion roster is read from.
+  variant.OptLacc[311] = N2L[54];
+  variant.OptLacc[606] = `${variant.OptLacc[606]},87`;
+  loadSaveData({ data: variant, serverVars: {} });
+  const boosted = yellowPointBudget(saveData);
+  // Hand the real fixture save back to the state the rest of the page reads.
+  loadSaveData({ data: save, serverVars: {} });
   return {
     budget,
+    budgetVariant: {
+      eventShop: N2L[54],
+      companionToken: '87',
+      budget: boosted,
+    },
     cookMulti: cookingMealMulti(saveData).val,
     mealMulti: bonusMultiCook(20),
     // Each meal's own ribbon factor, the other half of its base weight.

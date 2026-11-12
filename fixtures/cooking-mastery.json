@@ -223,6 +223,11 @@
   },
   "yellow": {
     "budget": 29,
+    "budgetVariant": {
+      "eventShop": "肢",
+      "companionToken": "87",
+      "budget": 34
+    },
     "cookMulti": 7.98792448,
     "mealMulti": 1.8,
     "ribbons": [
