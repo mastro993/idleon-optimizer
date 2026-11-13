@@ -3,8 +3,10 @@
 //!
 //! Ported from `spelunking-calc.html` and `js/ui/spelunking.js`. SP-01 covers the
 //! controls, the party and elixir belt, and the Depth limits tab; SP-02 adds the
-//! seeded run with its entry, tool, reaction time and event log. Amber policies
-//! and the optimizer stay on the roadmap as SP-03 and SP-04.
+//! seeded run with its entry, tool, reaction time and event log; SP-03 adds the
+//! phased Amber policy with its dump, finisher, reserve, harvest and rope
+//! reserve limits, and the run result's phase record. The optimizer stays on the
+//! roadmap as SP-04.
 //!
 //! The four account multipliers upstream derives from its whole stat context are
 //! user inputs here (see [`idleon_spelunking::Account`]); every other
@@ -63,6 +65,7 @@ pub(crate) fn view(
         );
     }
     let page = page
+        .children(controls::amber_card(state, cx))
         .child(layout::split_pane(
             "spelunking-prep",
             breakpoint,

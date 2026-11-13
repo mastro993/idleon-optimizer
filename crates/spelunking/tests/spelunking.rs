@@ -261,6 +261,13 @@ fn every_profile_matches_the_upstream_calculator() {
             profile.config.full_clear,
             expected_config["fullClear"].as_bool().unwrap()
         );
+        match (&profile.config.amber, &expected_config["amber"]) {
+            (None, Value::Null) => {}
+            (Some(amber), Value::Object(_)) => {
+                compare_amber_policy(amber, &expected_config["amber"], label)
+            }
+            other => panic!("{label}: unexpected amber policy {other:?}"),
+        }
         close(
             profile.config.reaction_ms,
             number(&expected_config["reactionMs"]),
@@ -386,6 +393,11 @@ fn every_simulated_run_matches_the_upstream_calculator() {
                 inputs.shop[index] = 1.0;
             }
         }
+        // The weak run lowers the account Power so the Amber burn finds rocks
+        // this character cannot break.
+        if entry["input"].as_str() == Some("weak") {
+            inputs.power = 25.0;
+        }
         let requested: Requested =
             serde_json::from_value(entry["requested"].clone()).expect("the request decodes");
         let config =
@@ -408,6 +420,13 @@ fn every_simulated_run_matches_the_upstream_calculator() {
             config.full_clear,
             expected_config["fullClear"].as_bool().unwrap()
         );
+        match (&config.amber, &expected_config["amber"]) {
+            (None, Value::Null) => {}
+            (Some(amber), Value::Object(_)) => {
+                compare_amber_policy(amber, &expected_config["amber"], label)
+            }
+            other => panic!("{label}: unexpected amber policy {other:?}"),
+        }
         let seed = entry["seed"].as_u64().unwrap() as u32;
         let mut run = Run::new(&inputs, config, RunOptions { seed })
             .unwrap_or_else(|error| panic!("{label}: {error}"));
@@ -416,6 +435,102 @@ fn every_simulated_run_matches_the_upstream_calculator() {
         }
         let actual = run.result();
         compare_run(&actual, entry, label);
+    }
+}
+
+/// Compare the Amber policy a configuration carries against the upstream object.
+fn compare_amber_policy(actual: &idleon_spelunking::AmberPolicy, expected: &Value, label: &str) {
+    assert_eq!(
+        actual.dump_depth as u64,
+        expected["dumpDepth"].as_u64().unwrap(),
+        "{label}: amber dumpDepth"
+    );
+    assert_eq!(
+        actual.finishers as u64,
+        expected["finishers"].as_u64().unwrap(),
+        "{label}: amber finishers"
+    );
+    assert_eq!(
+        actual.reserve_pct as u64,
+        expected["reservePct"].as_u64().unwrap(),
+        "{label}: amber reservePct"
+    );
+    assert_eq!(
+        actual.harvest_depths as u64,
+        expected["harvestDepths"].as_u64().unwrap(),
+        "{label}: amber harvestDepths"
+    );
+    assert_eq!(
+        actual.rope_reserve_pct as u64,
+        expected["ropeReservePct"].as_u64().unwrap(),
+        "{label}: amber ropeReservePct"
+    );
+}
+
+/// Compare the Amber policy's run record against the upstream object.
+fn compare_amber_result(actual: &idleon_spelunking::AmberResult, expected: &Value, label: &str) {
+    assert_eq!(
+        actual.phase.id(),
+        expected["phase"].as_str().unwrap(),
+        "{label}: amber phase"
+    );
+    close(
+        actual.dump_spent,
+        number(&expected["dumpSpent"]),
+        &format!("{label} dumpSpent"),
+    );
+    assert_eq!(
+        actual.dump_digs,
+        expected["dumpDigs"].as_u64().unwrap(),
+        "{label}: dumpDigs"
+    );
+    let transitions = expected["transitions"].as_array().unwrap();
+    assert_eq!(
+        actual.transitions.len(),
+        transitions.len(),
+        "{label}: amber transitions"
+    );
+    for (transition, upstream) in actual.transitions.iter().zip(transitions) {
+        let path = format!("{label} amber transition");
+        assert_eq!(
+            transition.phase.id(),
+            upstream["phase"].as_str().unwrap(),
+            "{path}: phase"
+        );
+        assert_eq!(
+            transition.reason,
+            upstream["reason"].as_str().unwrap(),
+            "{path}: reason"
+        );
+        assert_eq!(
+            transition.depth as u64,
+            upstream["depth"].as_u64().unwrap(),
+            "{path}: depth"
+        );
+        close(transition.spent, number(&upstream["spent"]), &path);
+        close(transition.time, number(&upstream["time"]), &path);
+    }
+    let activations = expected["activations"].as_array().unwrap();
+    assert_eq!(
+        actual.activations.len(),
+        activations.len(),
+        "{label}: amber activations"
+    );
+    for (activation, upstream) in actual.activations.iter().zip(activations) {
+        let path = format!("{label} amber activation");
+        assert_eq!(
+            activation.depth as u64,
+            upstream["depth"].as_u64().unwrap(),
+            "{path}: depth"
+        );
+        close(activation.spent, number(&upstream["spent"]), &path);
+        close(activation.effect, number(&upstream["effect"]), &path);
+        close(activation.time, number(&upstream["time"]), &path);
+        assert_eq!(
+            activation.slot as u64,
+            upstream["slot"].as_u64().unwrap(),
+            "{path}: slot"
+        );
     }
 }
 
@@ -489,10 +604,20 @@ fn compare_run(actual: &RunResult, expected: &Value, label: &str) {
         (None, Value::Null) => {}
         (Some(exit), Value::Object(_)) => {
             let upstream = &expected["exit"];
+            assert_eq!(
+                exit.kind.id(),
+                upstream["type"].as_str().unwrap(),
+                "{label}: exit kind"
+            );
             close(
                 exit.retained,
                 number(&upstream["retained"]),
                 &format!("{label} retained"),
+            );
+            close(
+                exit.amber_multiplier,
+                upstream["amberMultiplier"].as_f64().unwrap_or(1.0),
+                &format!("{label} amberMultiplier"),
             );
             let items = upstream["items"].as_array().unwrap();
             assert_eq!(exit.items.len(), items.len(), "{label}: exit items");
@@ -634,6 +759,11 @@ fn compare_run(actual: &RunResult, expected: &Value, label: &str) {
         number(&expected["grands"]),
         &format!("{label} grands"),
     );
+    match (&actual.amber, &expected["amber"]) {
+        (None, Value::Null) => {}
+        (Some(amber), Value::Object(_)) => compare_amber_result(amber, &expected["amber"], label),
+        other => panic!("{label}: unexpected amber record {other:?}"),
+    }
     let discoveries: Vec<&str> = expected["discoveries"]
         .as_array()
         .unwrap()

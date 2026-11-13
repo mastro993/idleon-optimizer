@@ -7322,6 +7322,900 @@
      ]
     }
    ]
+  },
+  {
+   "label": "phased amber policy",
+   "requested": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "policy": "amber-farm",
+    "stamina": "full",
+    "amber": {
+     "dumpDepth": 12,
+     "finishers": 2,
+     "reservePct": 80,
+     "harvestDepths": 4,
+     "ropeReservePct": 40
+    }
+   },
+   "range": {
+    "from": 1,
+    "to": 20,
+    "tool": "best"
+   },
+   "config": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "amber-farm",
+    "speed": 4,
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "amber": {
+     "dumpDepth": 12,
+     "finishers": 2,
+     "reservePct": 80,
+     "harvestDepths": 4,
+     "ropeReservePct": 40
+    },
+    "reactionMs": 350,
+    "stamina": "full"
+   },
+   "cave": "Sedimeadow",
+   "budget": 7044,
+   "power": 2500,
+   "refund": 0,
+   "holes": [
+    0,
+    0.915,
+    0.08499999999999996
+   ],
+   "rows": [
+    {
+     "depth": 1,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 2,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 3,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 1,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 4,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.7,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.30000000000000004,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 5,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 6,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.3571428571428572,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6428571428571428,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 7,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.25,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.75,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 8,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.16666666666666663,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.8333333333333334,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 9,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.10000000000000009,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.8099999999999999,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.09,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 10,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 0,
+       "name": "Stubby Coral",
+       "boss": false,
+       "probability": 0.045454545454545414,
+       "hp": 1,
+       "requirement": 1000,
+       "hitChance": 1,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 30,
+       "overBudget": false
+      },
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.7755681818181819,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.17897727272727273,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 11,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.7352941176470589,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.2647058823529412,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 7,
+       "name": "Esquire Numbo",
+       "boss": true,
+       "probability": 1,
+       "hp": 15,
+       "requirement": 250000,
+       "hitChance": 0.06309573444801933,
+       "tool": 0,
+       "hits": 3,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 1426.403873215002,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 12,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6666666666666667,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.3333333333333333,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 13,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.6052631578947368,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.39473684210526316,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 14,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.55,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.44999999999999996,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 15,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 16,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.4545454545454546,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5172413793103448,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.028213166144200625,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 274.38303115639576,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 17,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.4130434782608695,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5282608695652175,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.05869565217391305,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 274.38303115639576,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 18,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.375,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5342741935483871,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.09072580645161289,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 274.38303115639576,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 19,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.33999999999999997,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.53625,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.12375,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 274.38303115639576,
+       "overBudget": false
+      }
+     ]
+    },
+    {
+     "depth": 20,
+     "hard": 0,
+     "blockedExits": 0,
+     "objects": [
+      {
+       "type": 1,
+       "name": "Fuzzy Fungi",
+       "boss": false,
+       "probability": 0.3076923076923077,
+       "hp": 1,
+       "requirement": 4000,
+       "hitChance": 0.7542720420681454,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 39.77344820807984,
+       "overBudget": false
+      },
+      {
+       "type": 2,
+       "name": "Vibrant Coral",
+       "boss": false,
+       "probability": 0.5349650349650349,
+       "hp": 2,
+       "requirement": 20000,
+       "hitChance": 0.2871745887492588,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 104.4660675955349,
+       "overBudget": false
+      },
+      {
+       "type": 3,
+       "name": "Spikey Shell",
+       "boss": false,
+       "probability": 0.15734265734265734,
+       "hp": 3,
+       "requirement": 100000,
+       "hitChance": 0.10933620739432783,
+       "tool": 0,
+       "hits": 1,
+       "cost": 30,
+       "perAttempt": 30,
+       "expected": 274.38303115639576,
+       "overBudget": false
+      }
+     ]
+    }
+   ]
   }
  ],
  "runs": [
@@ -7549,6 +8443,7 @@
     "resistedStamina": 483,
     "blocked": false
    },
+   "amber": null,
    "grands": 0,
    "discoveries": [],
    "rngCalls": 29482,
@@ -8531,6 +9426,7 @@
     "resistedStamina": 987.5999999999999,
     "blocked": false
    },
+   "amber": null,
    "grands": 0,
    "discoveries": [],
    "rngCalls": 21972,
@@ -9718,6 +10614,7 @@
     "resistedStamina": 90,
     "blocked": false
    },
+   "amber": null,
    "grands": 0,
    "discoveries": [
     "Smol_Pebbles",
@@ -10192,6 +11089,7 @@
     "resistedStamina": 2738,
     "blocked": false
    },
+   "amber": null,
    "grands": 0,
    "discoveries": [],
    "rngCalls": 52525,
@@ -18204,6 +19102,2834 @@
     "No AFK skill EXP, purchase sequencing or daily-haul claims are included.",
     "Some account multipliers are partial. Inspect Power and maximum-stamina breakdowns for missing metadata."
    ]
+  },
+  {
+   "label": "phased amber farming, seed 5",
+   "requested": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "policy": "amber-farm",
+    "stamina": "full",
+    "amber": {
+     "dumpDepth": 20,
+     "finishers": 1,
+     "reservePct": 100,
+     "harvestDepths": 3,
+     "ropeReservePct": 25
+    }
+   },
+   "input": "controlled",
+   "seed": 5,
+   "config": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "amber-farm",
+    "speed": 4,
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "amber": {
+     "dumpDepth": 20,
+     "finishers": 1,
+     "reservePct": 100,
+     "harvestDepths": 3,
+     "ropeReservePct": 25
+    },
+    "reactionMs": 350,
+    "stamina": "full"
+   },
+   "status": "exhausted",
+   "settled": true,
+   "seconds": 89.59,
+   "startDepth": 1,
+   "depth": 16,
+   "actions": 159,
+   "spent": 7140,
+   "hits": 347,
+   "misses": 156,
+   "broken": 347,
+   "rewards": [
+    2.347625583049183e+28,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "grossRewards": [
+    2.6084728700546477e+28,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "exit": {
+    "type": "toll",
+    "retained": 0.9,
+    "items": [
+     {
+      "reward": 0,
+      "gross": 2.6084728700546477e+28,
+      "expected": 2.347625583049183e+28,
+      "chance": null,
+      "roundedUp": null,
+      "collected": 2.347625583049183e+28
+     },
+     {
+      "reward": 5,
+      "gross": 2,
+      "expected": 1.8,
+      "chance": 0.8,
+      "roundedUp": true,
+      "collected": 2
+     }
+    ]
+   },
+   "stamina": [
+    {
+     "id": 0,
+     "start": 3522,
+     "end": 0,
+     "max": 3522
+    },
+    {
+     "id": 1,
+     "start": 3522,
+     "end": 0,
+     "max": 3522
+    }
+   ],
+   "diagnostics": {
+    "members": [
+     {
+      "id": 0,
+      "startDepth": 1,
+      "digs": 68,
+      "spent": 3522,
+      "resistedStamina": 222,
+      "hits": 219,
+      "misses": 30,
+      "damage": 222,
+      "broken": 219,
+      "descents": 9,
+      "grands": 0,
+      "rewards": [
+       2.9861114145703533e+26,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": false,
+      "exhausted": true,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     },
+     {
+      "id": 1,
+      "startDepth": 10,
+      "digs": 75,
+      "spent": 3522,
+      "resistedStamina": 1080,
+      "hits": 128,
+      "misses": 126,
+      "damage": 182,
+      "broken": 128,
+      "descents": 6,
+      "grands": 0,
+      "rewards": [
+       2.578611755908944e+28,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": false,
+      "exhausted": true,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     }
+    ],
+    "resistStall": false,
+    "unused": 0,
+    "noAdvance": 0,
+    "resistedStamina": 1302,
+    "blocked": false
+   },
+   "amber": {
+    "phase": "rope-search",
+    "transitions": [
+     {
+      "phase": "activate",
+      "reason": "Finishing stamina reserve reached",
+      "depth": 10,
+      "spent": 3540,
+      "time": 46.63
+     },
+     {
+      "phase": "harvest",
+      "reason": "Available oranges consumed after stamina burn",
+      "depth": 10,
+      "spent": 3540,
+      "time": 49.08
+     },
+     {
+      "phase": "rope-search",
+      "reason": "Harvest depth target reached",
+      "depth": 13,
+      "spent": 4980,
+      "time": 68.28
+     }
+    ],
+    "activations": [
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 3541,
+      "time": 46.63,
+      "slot": 0
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 7081,
+      "time": 46.98,
+      "slot": 0
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 10621,
+      "time": 47.33,
+      "slot": 1
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 14161,
+      "time": 47.68,
+      "slot": 1
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 17701,
+      "time": 48.03,
+      "slot": 2
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 21241,
+      "time": 48.38,
+      "slot": 2
+     },
+     {
+      "depth": 10,
+      "spent": 3540,
+      "effect": 24781,
+      "time": 48.73,
+      "slot": 2
+     },
+     {
+      "depth": 11,
+      "spent": 4080,
+      "effect": 28861,
+      "time": 54.78,
+      "slot": 0
+     },
+     {
+      "depth": 11,
+      "spent": 4080,
+      "effect": 32941,
+      "time": 55.13,
+      "slot": 0
+     },
+     {
+      "depth": 11,
+      "spent": 4080,
+      "effect": 37021,
+      "time": 55.48,
+      "slot": 2
+     },
+     {
+      "depth": 11,
+      "spent": 4080,
+      "effect": 41101,
+      "time": 55.83,
+      "slot": 2
+     }
+    ],
+    "dumpSpent": 0,
+    "dumpDigs": 0,
+    "activationDepth": 10
+   },
+   "grands": 0,
+   "discoveries": [],
+   "rngCalls": 11559,
+   "eventsDropped": 0,
+   "events": [
+    [
+     "floor",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "exit-found",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "descend",
+     1
+    ],
+    [
+     "floor",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "exit-found",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "descend",
+     2
+    ],
+    [
+     "floor",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "exit-found",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "descend",
+     3
+    ],
+    [
+     "floor",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "exit-found",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "descend",
+     4
+    ],
+    [
+     "floor",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "exit-found",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "elixir",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "descend",
+     5
+    ],
+    [
+     "floor",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "exit-found",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "descend",
+     6
+    ],
+    [
+     "floor",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "exit-found",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "descend",
+     7
+    ],
+    [
+     "floor",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "exit-found",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "descend",
+     8
+    ],
+    [
+     "floor",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "exit-found",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "dig",
+     9
+    ],
+    [
+     "descend",
+     9
+    ],
+    [
+     "floor",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "exit-found",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "switch",
+     10
+    ],
+    [
+     "amber-phase",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "elixir",
+     10
+    ],
+    [
+     "amber-phase",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "dig",
+     10
+    ],
+    [
+     "descend",
+     10
+    ],
+    [
+     "floor",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "boss",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "exit-found",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "elixir",
+     11
+    ],
+    [
+     "elixir",
+     11
+    ],
+    [
+     "elixir",
+     11
+    ],
+    [
+     "elixir",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "dig",
+     11
+    ],
+    [
+     "descend",
+     11
+    ],
+    [
+     "floor",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "exit-found",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "dig",
+     12
+    ],
+    [
+     "descend",
+     12
+    ],
+    [
+     "floor",
+     13
+    ],
+    [
+     "amber-phase",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "exit-found",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "dig",
+     13
+    ],
+    [
+     "descend",
+     13
+    ],
+    [
+     "floor",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "exit-found",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "dig",
+     14
+    ],
+    [
+     "descend",
+     14
+    ],
+    [
+     "floor",
+     15
+    ],
+    [
+     "dig",
+     15
+    ],
+    [
+     "exit-found",
+     15
+    ],
+    [
+     "dig",
+     15
+    ],
+    [
+     "descend",
+     15
+    ],
+    [
+     "floor",
+     16
+    ],
+    [
+     "dig",
+     16
+    ],
+    [
+     "exit-found",
+     16
+    ],
+    [
+     "exhausted",
+     16
+    ]
+   ],
+   "notes": [
+    "Native 10 ms callback and animated targeting model, with a seeded local RNG stream. Unsaved global RNG and callback phases prevent reproducing a particular live-client run.",
+    "Account bonuses stay fixed during a run. New discoveries, boss unlocks and records are reported, not fed back into cached account stats.",
+    "No AFK skill EXP, purchase sequencing or daily-haul claims are included.",
+    "Some account multipliers are partial. Inspect Power and maximum-stamina breakdowns for missing metadata."
+   ]
+  },
+  {
+   "label": "phased amber farming, early rope, seed 2",
+   "requested": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "policy": "amber-farm",
+    "stamina": "full",
+    "amber": {
+     "dumpDepth": 3,
+     "finishers": 2,
+     "reservePct": 90,
+     "harvestDepths": 2,
+     "ropeReservePct": 60
+    }
+   },
+   "input": "controlled",
+   "seed": 2,
+   "config": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "amber-farm",
+    "speed": 4,
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "amber": {
+     "dumpDepth": 3,
+     "finishers": 2,
+     "reservePct": 90,
+     "harvestDepths": 2,
+     "ropeReservePct": 60
+    },
+    "reactionMs": 350,
+    "stamina": "full"
+   },
+   "status": "rope",
+   "settled": true,
+   "seconds": 38.84,
+   "startDepth": 1,
+   "depth": 9,
+   "actions": 56,
+   "spent": 2970,
+   "hits": 169,
+   "misses": 17,
+   "broken": 169,
+   "rewards": [
+    2.70291647583716e+26,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "grossRewards": [
+    1.3314859486882559e+26,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "exit": {
+    "type": "rope",
+    "retained": 1,
+    "amberMultiplier": 2.0300000000000002,
+    "items": [
+     {
+      "reward": 0,
+      "gross": 1.3314859486882559e+26,
+      "expected": 2.70291647583716e+26,
+      "chance": null,
+      "roundedUp": null,
+      "collected": 2.70291647583716e+26
+     },
+     {
+      "reward": 3,
+      "gross": 1,
+      "expected": 1,
+      "chance": null,
+      "roundedUp": null,
+      "collected": 1
+     }
+    ]
+   },
+   "stamina": [
+    {
+     "id": 0,
+     "start": 3522,
+     "end": 552,
+     "max": 3522
+    },
+    {
+     "id": 1,
+     "start": 3522,
+     "end": 3522,
+     "max": 3522
+    }
+   ],
+   "diagnostics": {
+    "members": [
+     {
+      "id": 0,
+      "startDepth": 1,
+      "digs": 50,
+      "spent": 2970,
+      "resistedStamina": 60,
+      "hits": 169,
+      "misses": 17,
+      "damage": 169,
+      "broken": 169,
+      "descents": 8,
+      "grands": 0,
+      "rewards": [
+       1.3314859486882559e+26,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": false,
+      "exhausted": false,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     },
+     {
+      "id": 1,
+      "startDepth": null,
+      "digs": 0,
+      "spent": 0,
+      "resistedStamina": 0,
+      "hits": 0,
+      "misses": 0,
+      "damage": 0,
+      "broken": 0,
+      "descents": 0,
+      "grands": 0,
+      "rewards": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": true,
+      "exhausted": false,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     }
+    ],
+    "resistStall": false,
+    "unused": 1,
+    "noAdvance": 0,
+    "resistedStamina": 60,
+    "blocked": false
+   },
+   "amber": {
+    "phase": "rope-search",
+    "transitions": [
+     {
+      "phase": "activate",
+      "reason": "Next dig would consume finishing reserve",
+      "depth": 2,
+      "spent": 330,
+      "time": 5.58
+     },
+     {
+      "phase": "harvest",
+      "reason": "Available oranges consumed after stamina burn",
+      "depth": 2,
+      "spent": 330,
+      "time": 6.99
+     },
+     {
+      "phase": "rope-search",
+      "reason": "Harvest depth target reached",
+      "depth": 4,
+      "spent": 870,
+      "time": 14.19
+     }
+    ],
+    "activations": [
+     {
+      "depth": 2,
+      "spent": 330,
+      "effect": 331,
+      "time": 5.94,
+      "slot": 0
+     },
+     {
+      "depth": 2,
+      "spent": 330,
+      "effect": 661,
+      "time": 6.29,
+      "slot": 1
+     },
+     {
+      "depth": 2,
+      "spent": 330,
+      "effect": 991,
+      "time": 6.64,
+      "slot": 2
+     }
+    ],
+    "dumpSpent": 0,
+    "dumpDigs": 0,
+    "activationDepth": 2
+   },
+   "grands": 0,
+   "discoveries": [],
+   "rngCalls": 5379,
+   "eventsDropped": 0,
+   "events": [
+    [
+     "floor",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "exit-found",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "descend",
+     1
+    ],
+    [
+     "floor",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "amber-phase",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "amber-phase",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "exit-found",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "descend",
+     2
+    ],
+    [
+     "floor",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "exit-found",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "descend",
+     3
+    ],
+    [
+     "floor",
+     4
+    ],
+    [
+     "amber-phase",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "exit-found",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "descend",
+     4
+    ],
+    [
+     "floor",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "exit-found",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "elixir",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "descend",
+     5
+    ],
+    [
+     "floor",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "exit-found",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "dig",
+     6
+    ],
+    [
+     "descend",
+     6
+    ],
+    [
+     "floor",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "exit-found",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "dig",
+     7
+    ],
+    [
+     "descend",
+     7
+    ],
+    [
+     "floor",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "exit-found",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "dig",
+     8
+    ],
+    [
+     "descend",
+     8
+    ],
+    [
+     "floor",
+     9
+    ],
+    [
+     "rope",
+     9
+    ]
+   ],
+   "notes": [
+    "Native 10 ms callback and animated targeting model, with a seeded local RNG stream. Unsaved global RNG and callback phases prevent reproducing a particular live-client run.",
+    "Account bonuses stay fixed during a run. New discoveries, boss unlocks and records are reported, not fed back into cached account stats.",
+    "No AFK skill EXP, purchase sequencing or daily-haul claims are included.",
+    "Some account multipliers are partial. Inspect Power and maximum-stamina breakdowns for missing metadata."
+   ]
+  },
+  {
+   "label": "phased amber farming, stamina burn, seed 3",
+   "requested": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "policy": "amber-farm",
+    "stamina": "full",
+    "amber": {
+     "dumpDepth": 2,
+     "finishers": 1,
+     "reservePct": 100,
+     "harvestDepths": 3,
+     "ropeReservePct": 25
+    }
+   },
+   "input": "weak",
+   "seed": 3,
+   "config": {
+    "cave": 1,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "amber-farm",
+    "speed": 4,
+    "elixirs": [
+     3,
+     3,
+     3,
+     6,
+     6
+    ],
+    "memorized": [
+     3,
+     6
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "amber": {
+     "dumpDepth": 2,
+     "finishers": 1,
+     "reservePct": 100,
+     "harvestDepths": 3,
+     "ropeReservePct": 25
+    },
+    "reactionMs": 350,
+    "stamina": "full"
+   },
+   "status": "exhausted",
+   "settled": true,
+   "seconds": 69.24,
+   "startDepth": 1,
+   "depth": 5,
+   "actions": 170,
+   "spent": 7080,
+   "hits": 70,
+   "misses": 487,
+   "broken": 70,
+   "rewards": [
+    5.254259317327314e+25,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "grossRewards": [
+    5.83806590814146e+25,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "exit": {
+    "type": "toll",
+    "retained": 0.9,
+    "items": [
+     {
+      "reward": 0,
+      "gross": 5.83806590814146e+25,
+      "expected": 5.254259317327314e+25,
+      "chance": null,
+      "roundedUp": null,
+      "collected": 5.254259317327314e+25
+     }
+    ]
+   },
+   "stamina": [
+    {
+     "id": 0,
+     "start": 3522,
+     "end": 0,
+     "max": 3522
+    },
+    {
+     "id": 1,
+     "start": 3522,
+     "end": 0,
+     "max": 3522
+    }
+   ],
+   "diagnostics": {
+    "members": [
+     {
+      "id": 0,
+      "startDepth": 1,
+      "digs": 70,
+      "spent": 3522,
+      "resistedStamina": 2472,
+      "hits": 27,
+      "misses": 245,
+      "damage": 27,
+      "broken": 27,
+      "descents": 1,
+      "grands": 0,
+      "rewards": [
+       6.586462943332324e+23,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": false,
+      "exhausted": true,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     },
+     {
+      "id": 1,
+      "startDepth": 2,
+      "digs": 95,
+      "spent": 3522,
+      "resistedStamina": 2490,
+      "hits": 43,
+      "misses": 242,
+      "damage": 43,
+      "broken": 43,
+      "descents": 3,
+      "grands": 0,
+      "rewards": [
+       5.772201278708136e+25,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ],
+      "unused": false,
+      "exhausted": true,
+      "noAdvance": false,
+      "noFurtherFloor": false,
+      "resistStall": false
+     }
+    ],
+    "resistStall": false,
+    "unused": 0,
+    "noAdvance": 0,
+    "resistedStamina": 4962,
+    "blocked": false
+   },
+   "amber": {
+    "phase": "rope-search",
+    "transitions": [
+     {
+      "phase": "dump",
+      "reason": "Burn on visible objects unlikely to break with this character",
+      "depth": 2,
+      "spent": 3510,
+      "time": 28.33
+     },
+     {
+      "phase": "activate",
+      "reason": "Finishing stamina reserve reached",
+      "depth": 2,
+      "spent": 3540,
+      "time": 28.68
+     },
+     {
+      "phase": "harvest",
+      "reason": "Available oranges consumed after stamina burn",
+      "depth": 2,
+      "spent": 3540,
+      "time": 29.73
+     },
+     {
+      "phase": "rope-search",
+      "reason": "Low finishing stamina",
+      "depth": 4,
+      "spent": 6210,
+      "time": 59.33
+     }
+    ],
+    "activations": [
+     {
+      "depth": 2,
+      "spent": 3540,
+      "effect": 3541,
+      "time": 28.68,
+      "slot": 0
+     },
+     {
+      "depth": 2,
+      "spent": 3540,
+      "effect": 7081,
+      "time": 29.03,
+      "slot": 1
+     },
+     {
+      "depth": 2,
+      "spent": 3540,
+      "effect": 10621,
+      "time": 29.38,
+      "slot": 2
+     }
+    ],
+    "dumpSpent": 30,
+    "dumpDigs": 1,
+    "activationDepth": 2
+   },
+   "grands": 0,
+   "discoveries": [],
+   "rngCalls": 3617,
+   "eventsDropped": 0,
+   "events": [
+    [
+     "floor",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "elixir",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "exit-found",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "dig",
+     1
+    ],
+    [
+     "descend",
+     1
+    ],
+    [
+     "floor",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "exit-found",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "amber-phase",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "switch",
+     2
+    ],
+    [
+     "amber-phase",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "elixir",
+     2
+    ],
+    [
+     "amber-phase",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "dig",
+     2
+    ],
+    [
+     "descend",
+     2
+    ],
+    [
+     "floor",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "exit-found",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "dig",
+     3
+    ],
+    [
+     "descend",
+     3
+    ],
+    [
+     "floor",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "amber-phase",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "exit-found",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "dig",
+     4
+    ],
+    [
+     "descend",
+     4
+    ],
+    [
+     "floor",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "dig",
+     5
+    ],
+    [
+     "exhausted",
+     5
+    ]
+   ],
+   "notes": [
+    "Native 10 ms callback and animated targeting model, with a seeded local RNG stream. Unsaved global RNG and callback phases prevent reproducing a particular live-client run.",
+    "Account bonuses stay fixed during a run. New discoveries, boss unlocks and records are reported, not fed back into cached account stats.",
+    "No AFK skill EXP, purchase sequencing or daily-haul claims are included.",
+    "Some account multipliers are partial. Inspect Power and maximum-stamina breakdowns for missing metadata."
+   ]
   }
  ],
  "rejections": [
@@ -18438,6 +22164,81 @@
    },
    "input": "controlled",
    "error": "Invalid memorized elixir."
+  },
+  {
+   "label": "amber dump depth out of range",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "policy": "amber-farm",
+    "amber": {
+     "dumpDepth": 0
+    }
+   },
+   "input": "controlled",
+   "error": "Invalid Amber dump depth."
+  },
+  {
+   "label": "amber finishers out of range",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "policy": "amber-farm",
+    "amber": {
+     "finishers": 3
+    }
+   },
+   "input": "controlled",
+   "error": "Invalid Amber finishing characters."
+  },
+  {
+   "label": "amber reserve out of range",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "policy": "amber-farm",
+    "amber": {
+     "reservePct": 10
+    }
+   },
+   "input": "controlled",
+   "error": "Invalid Amber finishing reserve."
+  },
+  {
+   "label": "amber harvest depths out of range",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "policy": "amber-farm",
+    "amber": {
+     "harvestDepths": 101
+    }
+   },
+   "input": "controlled",
+   "error": "Invalid Amber harvest depths."
+  },
+  {
+   "label": "amber rope reserve out of range",
+   "requested": {
+    "cave": 0,
+    "party": [
+     0
+    ],
+    "policy": "amber-farm",
+    "amber": {
+     "ropeReservePct": 0
+    }
+   },
+   "input": "controlled",
+   "error": "Invalid Amber rope reserve."
   }
  ]
 }

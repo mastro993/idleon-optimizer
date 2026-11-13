@@ -7,8 +7,8 @@ use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::state::AppState;
 use gpui::{App, Context};
 use idleon_spelunking::{
-    Entry, Inputs, Policy, Preset, ReferenceTool, RunOptions, RunResult as SpelunkRunResult,
-    StaminaMode, ToolChoice, normalize, simulate,
+    AmberPolicy, Entry, Inputs, Policy, Preset, ReferenceTool, RunOptions,
+    RunResult as SpelunkRunResult, StaminaMode, ToolChoice, normalize, simulate,
 };
 use idleon_ui::runner::TaskState;
 
@@ -50,6 +50,12 @@ impl AppState {
     /// Change the expedition policy.
     pub(crate) fn set_spelunk_policy(&mut self, policy: Policy, cx: &mut Context<Self>) {
         self.spelunking.set_policy(policy);
+        cx.notify();
+    }
+
+    /// Change the phased Amber policy's limits.
+    pub(crate) fn set_spelunk_amber_policy(&mut self, amber: AmberPolicy, cx: &mut Context<Self>) {
+        self.spelunking.set_amber_policy(amber);
         cx.notify();
     }
 
@@ -217,10 +223,6 @@ impl AppState {
                 return;
             }
         };
-        if config.policy == Policy::AmberFarm {
-            self.set_status("Phased Amber farming arrives with SP-03.", cx);
-            return;
-        }
         let run_inputs = SpelunkRunInputs {
             requested,
             account: self.spelunking.account.clone(),

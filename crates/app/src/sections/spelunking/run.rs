@@ -20,7 +20,8 @@ use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 use idleon_spelunking::{
-    Account, Entry, EventKind, Inputs, Policy, Requested, RunResult, Status, ToolChoice, data,
+    Account, Entry, EventKind, ExitKind, Inputs, Policy, Requested, RunResult, Status, ToolChoice,
+    data,
 };
 use idleon_ui::format;
 
@@ -42,22 +43,31 @@ const VISIBLE_EVENTS: usize = 200;
 pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let task = state.spelunk_simulation(cx);
-    let amber = state.spelunking.policy == Policy::AmberFarm;
     let mut body = div()
         .id("spelunk-run-panel")
         .flex()
         .flex_col()
         .gap_3()
         .child(controls(state, inputs, &task, cx));
-    if amber {
-        body = body.child(
-            ely_gpui_component::feedback::Banner::new(
-                "spelunk-run-amber",
-                ely_gpui_component::primitives::Severity::Warning,
-                "Phased Amber farming — its dump depth, finishers, reserve, harvest and rope \
-                 reserve phases — arrives with SP-03. Pick another policy to run an expedition.",
+    if state.spelunking.policy == Policy::AmberFarm {
+        let amber = state.spelunking.amber;
+        let finishers = (amber.finishers as usize).min(state.spelunking.party_ids().len());
+        let harvest = if amber.harvest_depths == 0 {
+            "After the oranges, seek the next visible rope immediately.".to_string()
+        } else {
+            format!(
+                "After the oranges, target +{} floors before seeking a rope.",
+                amber.harvest_depths
             )
-            .into_any_element(),
+        };
+        body = body.child(
+            Caption::new(format!(
+                "Planned: look for stamina burn from D{} · preserve the last {finishers} \
+                 character(s), first at {}% stamina. {harvest} Seek a rope sooner below {}% \
+                 finishing stamina; this is a target, not floors actually gained.",
+                amber.dump_depth, amber.reserve_pct, amber.rope_reserve_pct
+            ))
+            .text_color(muted),
         );
     }
     let mut body = body.child(
@@ -186,7 +196,7 @@ fn controls(
     )
     .primary()
     .icon(IconName::Play)
-    .disabled(task.running || spelunking.policy == Policy::AmberFarm)
+    .disabled(task.running)
     .on_click(move |_event, _window, cx| {
         run_entity.update(cx, |state, cx| state.run_spelunk_simulation(cx));
     });
@@ -198,13 +208,10 @@ fn controls(
             cancel_entity.update(cx, |state, cx| state.cancel_spelunk_simulation(cx));
         });
 
-    let mut header = CardHeader::new("Expedition run").description(
+    let header = CardHeader::new("Expedition run").description(
         "Cave, mode, policy, party and belt come from the controls above; the entry and the \
          manual tool are the run's own choices.",
     );
-    if spelunking.policy == Policy::AmberFarm {
-        header = header.action(Badge::new("Amber farming is SP-03").tone(Tone::Warning));
-    }
     Card::new()
         .header(header)
         .child(
@@ -395,17 +402,102 @@ fn results_card(
             .child(rewards_table(result))
             .child(stamina_table(result))
             .child(members_table(result, muted))
+            .children(amber_details(result, muted))
             .child(events_list(result, muted))
-            .child(
-                Caption::new(
-                    "A run banks its loot only when the whole party runs out of stamina and the \
-                     floor transition ends: the Delve toll keeps the retained share and rolls each \
-                     reward's fractional part for one extra item. A blocked run keeps nothing.",
-                )
-                .text_color(muted),
-            ),
+            .child(exit_note(result, muted)),
     )
     .into_any_element()
+}
+
+/// The Amber policy's phase record: every change, its reason and its oranges.
+fn amber_details(result: &RunResult, muted: gpui::Hsla) -> Option<AnyElement> {
+    let amber = result.amber.as_ref()?;
+    let mut transitions = Table::new(["Depth", "Phase", "Reason"]);
+    for (index, transition) in amber.transitions.iter().enumerate() {
+        transitions = transitions.row([
+            div()
+                .id(format!("spelunk-run-amber-transition-{index}"))
+                .child(format!("D{}", transition.depth))
+                .into_any_element(),
+            div().child(transition.phase.label()).into_any_element(),
+            div().child(transition.reason.clone()).into_any_element(),
+        ]);
+    }
+    let mut activations = Table::new(["Depth", "Stamina spent", "Amber effect"]);
+    for (index, activation) in amber.activations.iter().enumerate() {
+        activations = activations.row([
+            div()
+                .id(format!("spelunk-run-amber-activation-{index}"))
+                .child(format!("D{}", activation.depth))
+                .into_any_element(),
+            div()
+                .child(format::value(activation.spent))
+                .into_any_element(),
+            div()
+                .child(format!("{}x", format::value(activation.effect)))
+                .into_any_element(),
+        ]);
+    }
+    Some(
+        div()
+            .id("spelunk-run-amber")
+            .flex()
+            .flex_col()
+            .gap_2()
+            .child(
+                div()
+                    .id("spelunk-run-amber-phase")
+                    .role(gpui::Role::Label)
+                    .aria_label(format!("Amber policy ended in {}", amber.phase.label()))
+                    .text_size(px(14.0))
+                    .child(format!("Amber policy · ended in {}", amber.phase.label())),
+            )
+            .child(transitions)
+            .when(amber.activations.is_empty(), |section| {
+                section.child(Caption::new("No oranges consumed.").text_color(muted))
+            })
+            .when(!amber.activations.is_empty(), |section| {
+                section.child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap_2()
+                        .child(div().text_size(px(14.0)).child("Orange activations"))
+                        .child(activations),
+                )
+            })
+            .child(
+                Caption::new(format!(
+                    "{} deliberate burn digs · {} native spent-stamina credit.",
+                    amber.dump_digs,
+                    format::value(amber.dump_spent)
+                ))
+                .text_color(muted),
+            )
+            .into_any_element(),
+    )
+}
+
+/// How the run banked its loot, or why it kept none.
+fn exit_note(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+    let text = match result.exit.as_ref().map(|exit| exit.kind) {
+        Some(ExitKind::Rope) => format!(
+            "Rope exit: the party kept every reward whole and Amber at {}x. The Amber policy left \
+             early instead of paying the Delve toll.",
+            format::value(
+                result
+                    .exit
+                    .as_ref()
+                    .map_or(1.0, |exit| exit.amber_multiplier)
+            ),
+        ),
+        Some(ExitKind::Toll) => "A run banks its loot only when the whole party runs out of \
+             stamina and the floor transition ends: the Delve toll keeps the retained share and \
+             rolls each reward's fractional part for one extra item. A blocked run keeps nothing."
+            .to_string(),
+        None => "This run banked no loot: a blocked run keeps nothing.".to_string(),
+    };
+    Caption::new(text).text_color(muted).into_any_element()
 }
 
 fn kpi(id: &'static str, label: &str, value: &str, detail: &str, muted: gpui::Hsla) -> AnyElement {
@@ -596,7 +688,9 @@ fn event_label(kind: &EventKind) -> String {
         EventKind::GrandDiscovery => "Grand Discovery".into(),
         EventKind::ExitFound => "Exit revealed".into(),
         EventKind::Descend => "Next floor".into(),
+        EventKind::AmberPhase { phase, .. } => format!("Amber phase: {}", phase.label()),
         EventKind::Exhausted => "Stamina exhausted".into(),
+        EventKind::Rope => "Rope exit".into(),
         EventKind::Blocked => "No way down".into(),
     }
 }
@@ -618,6 +712,7 @@ fn event_detail(kind: &EventKind) -> String {
             character + 1
         ),
         EventKind::Elixir { slot, .. } => format!("Belt slot {}", slot + 1),
+        EventKind::AmberPhase { reason, .. } => reason.clone(),
         _ => String::new(),
     }
 }

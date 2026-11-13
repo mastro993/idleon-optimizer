@@ -7,8 +7,8 @@
 //! records and saved selections; everything else stays as the user left it.
 
 use idleon_spelunking::{
-    Account, Config, ConfigError, DepthRange, Entry, Inputs, Policy, Preset, PresetKind,
-    ReferenceTool, Requested, StaminaMode, ToolChoice, normalize,
+    Account, AmberPolicy, Config, ConfigError, DepthRange, Entry, Inputs, Policy, Preset,
+    PresetKind, ReferenceTool, Requested, StaminaMode, ToolChoice, normalize,
 };
 
 /// The section's visible state, saved with the project.
@@ -45,6 +45,8 @@ pub(crate) struct State {
     pub(crate) sim_tool: ToolChoice,
     /// Where the run starts.
     pub(crate) sim_entry: Entry,
+    /// The phased Amber policy's limits, read only by `amber-farm`.
+    pub(crate) amber: AmberPolicy,
 }
 
 impl Default for State {
@@ -69,6 +71,7 @@ impl Default for State {
             sim_reaction_ms: 350.0,
             sim_tool: ToolChoice::Adaptive,
             sim_entry: Entry::Shortcut,
+            amber: AmberPolicy::default(),
         }
     }
 }
@@ -143,6 +146,7 @@ impl State {
             self.sim_tool = ToolChoice::Adaptive;
         }
         self.sim_reaction_ms = self.sim_reaction_ms.clamp(100.0, 5_000.0);
+        self.set_amber_policy(self.amber);
         self.clamp_range();
     }
 
@@ -171,7 +175,7 @@ impl State {
             tool: Some(self.sim_tool),
             entry: Some(self.sim_entry),
             full_clear: Some(self.full_clear),
-            amber: None,
+            amber: (self.policy == Policy::AmberFarm).then_some(self.amber),
             reaction_ms: Some(self.sim_reaction_ms),
             stamina: Some(self.starting),
         }
@@ -237,6 +241,17 @@ impl State {
         if policy == Policy::AmberFarm {
             self.full_clear = true;
         }
+    }
+
+    /// Set the Amber policy fields, clamped to the ranges the game accepts.
+    pub(crate) fn set_amber_policy(&mut self, amber: AmberPolicy) {
+        self.amber = AmberPolicy {
+            dump_depth: amber.dump_depth.clamp(1, 10_000),
+            finishers: amber.finishers.clamp(1, 2),
+            reserve_pct: amber.reserve_pct.clamp(25, 100),
+            harvest_depths: amber.harvest_depths.min(100),
+            rope_reserve_pct: amber.rope_reserve_pct.clamp(1, 100),
+        };
     }
 
     /// Set one belt slot.
@@ -474,11 +489,46 @@ mod tests {
             sim_tool: ToolChoice::Tool(2),
             sim_entry: Entry::Surface,
             sim_reaction_ms: 500.0,
+            amber: AmberPolicy {
+                dump_depth: 12,
+                finishers: 2,
+                reserve_pct: 80,
+                harvest_depths: 4,
+                rope_reserve_pct: 40,
+            },
             ..State::default()
         };
         let text = serde_json::to_string(&state).expect("the state serialises");
         let restored: State = serde_json::from_str(&text).expect("the state decodes");
         assert_eq!(restored, state);
+    }
+
+    #[test]
+    fn the_amber_policy_is_requested_only_for_amber_farming() {
+        let mut state = State {
+            policy: Policy::Dive,
+            ..State::default()
+        };
+        assert_eq!(state.run_requested().amber, None);
+        state.set_policy(Policy::AmberFarm);
+        assert_eq!(state.run_requested().amber, Some(AmberPolicy::default()));
+        state.set_amber_policy(AmberPolicy {
+            dump_depth: 0,
+            finishers: 9,
+            reserve_pct: 1,
+            harvest_depths: 500,
+            rope_reserve_pct: 0,
+        });
+        assert_eq!(
+            state.amber,
+            AmberPolicy {
+                dump_depth: 1,
+                finishers: 2,
+                reserve_pct: 25,
+                harvest_depths: 100,
+                rope_reserve_pct: 1,
+            }
+        );
     }
 
     #[test]
