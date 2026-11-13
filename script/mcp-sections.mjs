@@ -796,20 +796,29 @@ const jellySave = () => {
 /// carries the daily reset countdown the drain projection reads.
 const royalSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
-  const armory = row(83, { 21: 20, 23: 10, 70: 1 });
+  // The Armory rows the overview and the planners read: the world point bonus,
+  // the orblets and every profession, tool, outpost type and rank-bar shelf the
+  // plans need. Armory 9 also covers the outpost's point spending.
+  const armory = row(83, {
+    9: 20, 17: 1, 21: 20, 23: 10, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1, 32: 1,
+    42: 1, 44: 1, 57: 1, 70: 1, 73: 1, 74: 1, 75: 1,
+  });
   const g = Array.from({ length: 24 }, () => []);
   g[1] = row(80, { 0: 1234 });
   g[2] = armory;
   g[3] = row(20, { 0: 7200 });
   g[4] = row(80, { 7: 500 });
   g[5] = row(80, { 7: 4 });
-  g[6] = row(4, { 0: 4 });
-  g[7] = row(4, { 0: 2 });
+  // A Militia on the clearing map and a Commander on the built one, so the unit
+  // EXP plan has a Command rate to plan against.
+  g[6] = row(4, { 0: 4, 1: 5 });
+  g[7] = row(4, { 0: 2, 1: 1 });
   g[23] = row(10, { 3: 4, 8: 1 });
   const maps = Array.from({ length: 200 }, () => []);
   // A built Normal outpost on map 1: barracks, logistics, education, five rank
-  // bars, two links, the type, the packed units and the glorified flag.
-  maps[1] = [3, 20, 4, 5000, 900, 400, 200, 0, 7, -1, 0, 444111111, 0];
+  // bars, two links, the type, one Trader, one Surveyor, one Worker and a Guard
+  // past the assignable slots, and the glorified flag.
+  maps[1] = [2, 5, 1, 5000, 900, 400, 200, 0, 7, -1, 0, 352411111, 0];
   // Map 2 has progress saved and a militia assignment, so it is clearing.
   maps[2] = [120];
   const research = row(19, {}).map(() => []);
@@ -1109,13 +1118,17 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'royal-tab-upgrades' });
     await waitForNode(lane, 'royal-upgrade-armory', 'royal-guardian: the upgrade list renders');
     await waitForNode(lane, 'royal-armory-table', 'royal-guardian: every shelf is listed');
-    // The save's 31 Armory levels reach the first seven shelves.
+    // The save's 64 Armory levels reach the first ten shelves.
     const shelves = labelOf(await lane.tree(), 'royal-kpi-armory-shelves-figure') ?? '';
-    if (!shelves.includes('7')) throw new Error(`royal-guardian: the shelf KPI reads ${shelves}`);
+    if (!shelves.includes('10')) {
+      throw new Error(`royal-guardian: the shelf KPI reads ${shelves}`);
+    }
     const plan = labelOf(await lane.tree(), 'royal-armory-plan') ?? '';
     if (!plan.includes('level')) throw new Error(`royal-guardian: the cost plan reads ${plan}`);
-    await bringIntoView(lane, 'royal-armory-row-0');
-    await lane.call('click_element', { id: 'royal-armory-row-0' });
+    // The first shelf this save can still buy is order 1 (its order-0 shelf is
+    // already maxed).
+    await bringIntoView(lane, 'royal-armory-row-1');
+    await lane.call('click_element', { id: 'royal-armory-row-1' });
     await waitForNode(lane, 'royal-armory-plan-table', 'royal-guardian: a shelf prices its next levels');
     // The Orblet list switches in and counts what the save owns.
     await lane.call('focus_element', { id: 'royal-upgrade-view' });
@@ -1161,6 +1174,45 @@ const INTERACTIONS = {
     if (!refills.includes('Refills')) {
       throw new Error(`royal-guardian: the forecast refill card reads ${refills}`);
     }
+    // RG-04: the optimizer scores the saved kingdom and stores a recommendation
+    // with its moves.
+    await lane.call('click_element', { id: 'royal-tab-optimizer' });
+    await waitForNode(lane, 'royal-optimizer', 'royal-guardian: the optimizer renders');
+    await lane.call('click_element', { id: 'royal-optimizer-run' });
+    await waitForNode(
+      lane,
+      'royal-optimizer-result',
+      'royal-guardian: the optimizer stores a recommendation',
+      180000,
+    );
+    await waitForNode(lane, 'royal-optimizer-moves', 'royal-guardian: the moves render');
+    // RG-04: a Command target plans the trader split, and the shelf plan lists
+    // the steps toward the next Armory shelf.
+    await lane.call('click_element', { id: 'royal-tab-unit-exp' });
+    await waitForNode(lane, 'royal-unit-exp', 'royal-guardian: the unit EXP pane renders');
+    await lane.call('click_element', { id: 'royal-unit-exp-target-command-more' });
+    await bringIntoView(lane, 'royal-unit-exp-run');
+    await lane.call('click_element', { id: 'royal-unit-exp-run' });
+    await waitForNode(
+      lane,
+      'royal-unit-exp-result',
+      'royal-guardian: the unit EXP plan stores a result',
+      180000,
+    );
+    await waitForNode(lane, 'royal-unit-exp-steps', 'royal-guardian: the split steps render');
+    const status = labelOf(await lane.tree(), 'royal-unit-exp-status') ?? '';
+    if (!status.includes('reached')) {
+      throw new Error(`royal-guardian: the unit EXP status reads ${status}`);
+    }
+    await bringIntoView(lane, 'royal-shelf-run');
+    await lane.call('click_element', { id: 'royal-shelf-run' });
+    await waitForNode(
+      lane,
+      'royal-shelf-result',
+      'royal-guardian: the shelf plan stores a result',
+      180000,
+    );
+    await waitForNode(lane, 'royal-shelf-steps', 'royal-guardian: the shelf steps render');
     await lane.call('click_element', { id: 'royal-tab-overview' });
     await waitForNode(lane, 'royal-overview', 'royal-guardian: the overview reopens');
   },

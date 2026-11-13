@@ -8,16 +8,19 @@
 //! reports and the range target behind an outpost's Advanced Logistics plan.
 //! RG-02 adds the outpost map, the resource nodes, the currencies, the drain
 //! staffing and the banked hours. RG-03 adds the upgrade list with its cost
-//! plans, the global breakdown tree and the forecast. The optimizer and the unit
-//! EXP move with RG-04, so the strip ends at the forecast.
+//! plans, the global breakdown tree and the forecast. RG-04 adds the outpost
+//! optimizer and the unit EXP plan with the shelf steps toward the next Armory
+//! shelf.
 
 mod actions;
 mod breakdowns;
 mod currencies;
 pub(crate) mod forecast;
+mod optimizer;
 mod outposts;
 mod overview;
 mod resources;
+mod unit_exp;
 mod upgrades;
 
 pub(crate) use upgrades::View as UpgradeView;
@@ -54,10 +57,15 @@ pub(crate) enum Tab {
     Breakdowns,
     /// The projection over the collects the player places.
     Forecast,
+    /// The outpost and unit optimizer: a bounded search over legal moves.
+    Optimizer,
+    /// The unit EXP moves and the steps toward the next Armory shelf.
+    #[serde(rename = "unit-exp")]
+    UnitExp,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 7] = [
+    pub(crate) const ALL: [Tab; 9] = [
         Tab::Overview,
         Tab::Outposts,
         Tab::Resources,
@@ -65,6 +73,8 @@ impl Tab {
         Tab::Upgrades,
         Tab::Breakdowns,
         Tab::Forecast,
+        Tab::Optimizer,
+        Tab::UnitExp,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -76,6 +86,8 @@ impl Tab {
             Tab::Upgrades => "upgrades",
             Tab::Breakdowns => "breakdowns",
             Tab::Forecast => "forecast",
+            Tab::Optimizer => "optimizer",
+            Tab::UnitExp => "unit-exp",
         }
     }
 
@@ -88,6 +100,8 @@ impl Tab {
             Tab::Upgrades => "Upgrades",
             Tab::Breakdowns => "Breakdowns",
             Tab::Forecast => "Forecast",
+            Tab::Optimizer => "Optimizer",
+            Tab::UnitExp => "Unit EXP",
         }
     }
 
@@ -122,6 +136,16 @@ pub(crate) struct State {
     pub(crate) collects: Vec<f64>,
     /// The forecast's menu-open windows, as `(start, end)` hours.
     pub(crate) windows: Vec<(f64, f64)>,
+    /// The objective the outpost optimizer maximizes.
+    pub(crate) optimizer: idleon_royal_guardian::Objective,
+    /// The outpost the unit EXP planner plans for.
+    pub(crate) unit_exp_map: Option<usize>,
+    /// The rank targets the unit EXP planner reaches for.
+    pub(crate) unit_exp_targets: idleon_royal_guardian::UnitTargets,
+    /// Whether the unit EXP plan moves same-world assignments.
+    pub(crate) unit_exp_move_transients: bool,
+    /// How many levels the shelf plan may buy.
+    pub(crate) shelf_purchases: usize,
 }
 
 impl Default for State {
@@ -138,6 +162,11 @@ impl Default for State {
             forecast_hours: idleon_royal_guardian::HORIZON.2,
             collects: Vec::new(),
             windows: Vec::new(),
+            optimizer: idleon_royal_guardian::Objective::default(),
+            unit_exp_map: None,
+            unit_exp_targets: idleon_royal_guardian::UnitTargets::default(),
+            unit_exp_move_transients: false,
+            shelf_purchases: 10,
         }
     }
 }
@@ -196,6 +225,8 @@ pub(crate) fn view(
         Tab::Upgrades => upgrades::upgrades(state, cx),
         Tab::Breakdowns => breakdowns::breakdowns(state, cx),
         Tab::Forecast => forecast::forecast(state, cx),
+        Tab::Optimizer => optimizer::optimizer(state, cx),
+        Tab::UnitExp => unit_exp::unit_exp(state, cx),
     };
     div()
         .id("royal-guardian-section")
