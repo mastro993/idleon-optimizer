@@ -142,11 +142,11 @@ order. Sections that share combat or save systems (M2, M26, M27) can reuse the c
 that share a tree renderer reuse the formula-tree component.
 
 The Coin Multiplier Calculator (M6) is partial: the character selector, the map/target/HP/damage
-cards, the overkill tier and 18 of the 23 multiplicative groups are ported and compared against the
-upstream oracle. The other five groups need systems this build does not carry: the shared stat
-pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses, the Hole gambit chain, and
-Divinity's bubble chain; the section names each missing group and marks the total partial, so the
-figure is a lower bound until those systems land.
+cards, the overkill tier and 19 of the 23 multiplicative groups are ported and compared against the
+upstream oracle. The other four groups need systems this build does not carry: the shared stat
+pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses, and Divinity's bubble chain; the
+section names each missing group and marks the total partial, so the figure is a lower bound until
+those systems land.
 
 ## 5. Shared data and JSON import
 

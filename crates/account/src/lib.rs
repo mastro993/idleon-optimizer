@@ -17,6 +17,7 @@ mod cooking;
 mod data;
 mod equipment;
 mod friend;
+mod hole;
 mod jelly;
 mod lab;
 mod mastery;

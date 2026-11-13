@@ -56,10 +56,7 @@ pub(crate) const GROUPS: [(&str, &str); 23] = [
     ("Grid Bonus", ""),
     ("Equip Extra Money", ""),
     ("Gold Equipment Set", ""),
-    (
-        "Gambit 7",
-        "needs the Hole gambit chain (js/stats/systems/w5/hole.js)",
-    ),
+    ("Gambit 7", ""),
     ("Bundle: Monster Cash", ""),
     (
         "Talent 433 and Cooking Level",

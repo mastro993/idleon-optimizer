@@ -28,10 +28,10 @@ fn oracle() -> Value {
 }
 
 /// The group indices `crates/coin-multi/src/save.rs` resolves from the save: the
-/// companions, event shop, equipment, RoG, grid, set, meal, pet, bundle, vault,
-/// pristine and prayer groups.
-const MODELLED: [usize; 18] = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 17, 18, 19, 20,
+/// companions, event shop, equipment, RoG, grid, set, gambit, meal, pet, bundle,
+/// vault, pristine and prayer groups.
+const MODELLED: [usize; 19] = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20,
 ];
 
 fn close(left: f64, right: f64) -> bool {
@@ -172,9 +172,9 @@ fn the_modelled_sources_produce_the_upstream_total_when_the_rest_are_neutral() {
     );
     assert!(
         !evaluation.complete,
-        "five groups still need the shared stat pipeline"
+        "four groups still need the shared stat pipeline"
     );
-    assert_eq!(evaluation.excluded.len(), 5);
+    assert_eq!(evaluation.excluded.len(), 4);
 }
 
 #[test]
