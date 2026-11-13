@@ -107,9 +107,10 @@ app's.
 `coin-multi.json` is the upstream Coin Multiplier calculator's own output, from
 `js/stats/defs/coin-multi.js` run over `data.json` and over one purpose-built save whose unmodelled
 sources are all neutral. It carries every character's map, AFK target, monster HP, computed damage,
-overkill tier and the 23 multiplicative groups, so the port's own overkill tier and every resolved
-group are compared against upstream, and the simple save's total is compared end to end. Regenerate
-it with `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/coin-multi/tests/coin_multi.rs`
+overkill tier and the 23 multiplicative groups' upstream names and values, so the port's own
+overkill tier, every resolved group and the formula tree's group rows are compared against upstream,
+and the simple save's total is compared end to end. Regenerate it with
+`node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/coin-multi/tests/coin_multi.rs`
 compares the port field for field. Four groups still need systems this build does not carry (the
 shared stat pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses, and Divinity's bubble
 chain); the port reports them as not modelled instead of guessing.
@@ -125,3 +126,12 @@ selector lists, and the descriptor's reason for all six dungeon maps. Regenerate
 upstream layers through the port's own summary arithmetic for every character, matches the
 metadata flags and the map rows, and reports the missing stat pipeline until the three layers can
 be resolved. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+
+`clamworks-scurge.json` is the upstream Clamworks Scurge planner's own output for `data.json`, from
+`js/stats/systems/w7/clamworks-scurge.js` run over the save with each case's `Menagerie` row: nine
+cases across the Self Affliction comparison and the optimized EXP allocation, with the locked
+Self Affliction tier, the three unlocked EXP upgrades, both refusals and every row's levels, level
+changes, unspent points and EXP per kill. Regenerate it with
+`node script/clamworks-scurge-oracle.mjs <upstream-repo>`; `crates/clamworks/tests/clamworks_scurge.rs`
+compares the port field for field. Treat it as frozen for the same reason: it is the oracle's output,
+not this app's.

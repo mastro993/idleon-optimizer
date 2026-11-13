@@ -6,6 +6,7 @@
 //! expectation. The fixture runs the upstream stand-in and idle players at
 //! neutral monster tuning with crystal, giant and plunder spawns off.
 
+use idleon_combat::drops::{self, Inputs};
 use idleon_combat::encounter::{self, Options, Outcome, Player};
 use idleon_common::{Control, Progress};
 use serde_json::Value as Json;
@@ -30,11 +31,11 @@ fn case_options(case: &Json) -> Options {
         },
         other => panic!("unknown player {other}"),
     };
-    Options {
-        map: case["map"].as_u64().expect("a map") as usize,
+    Options::basic(
+        case["map"].as_u64().expect("a map") as usize,
         player,
-        duration_ms: case["seconds"].as_u64().expect("a duration") * 1000,
-    }
+        case["seconds"].as_u64().expect("a duration") * 1000,
+    )
 }
 
 #[test]
@@ -42,8 +43,8 @@ fn every_fixture_case_matches_the_upstream_run() {
     for case in fixture()["cases"].as_array().expect("cases") {
         let expected = &case["expected"];
         let options = case_options(case);
-        let outcome = run(options);
         let label = format!("map {} {}", options.map, options.player.id());
+        let outcome = run(options);
 
         assert_eq!(
             outcome.simulated_ms,
@@ -112,8 +113,9 @@ fn every_fixture_case_matches_the_upstream_run() {
 fn the_stand_in_ticks_are_kills_plus_idle_ticks() {
     let case = &fixture()["cases"][0];
     let options = case_options(case);
+    let player = options.player;
     let outcome = run(options);
-    let Player::StandIn { kill_every_ms } = options.player else {
+    let Player::StandIn { kill_every_ms } = player else {
         panic!("the first case uses the stand-in")
     };
     assert_eq!(
@@ -145,11 +147,7 @@ fn the_idle_player_kills_nothing() {
 
 #[test]
 fn a_cancelled_run_reports_nothing() {
-    let options = Options {
-        map: 1,
-        player: Player::StandIn { kill_every_ms: 500 },
-        duration_ms: 600_000,
-    };
+    let options = Options::basic(1, Player::StandIn { kill_every_ms: 500 }, 600_000);
     let mut reports = 0;
     let outcome = encounter::run(options, &mut |progress: Progress| {
         reports += 1;
@@ -178,13 +176,13 @@ fn every_supported_map_runs_and_is_not_excluded() {
             "map {} is both supported and excluded",
             map.index
         );
-        let options = Options {
-            map: map.index,
-            player: Player::StandIn {
+        let options = Options::basic(
+            map.index,
+            Player::StandIn {
                 kill_every_ms: 1_500,
             },
-            duration_ms: 1_000,
-        };
+            1_000,
+        );
         assert!(
             encounter::validate(&options).is_ok(),
             "map {} validates",
@@ -195,11 +193,7 @@ fn every_supported_map_runs_and_is_not_excluded() {
 
 #[test]
 fn an_excluded_map_reports_why() {
-    let options = Options {
-        map: 216,
-        player: Player::Idle,
-        duration_ms: 1_000,
-    };
+    let options = Options::basic(216, Player::Idle, 1_000);
     let error = encounter::validate(&options).expect_err("map 216 is not supported");
     assert!(
         error.contains("cavern"),
@@ -228,12 +222,76 @@ fn the_unsupported_list_names_the_unported_halves() {
 
 #[test]
 fn the_stand_in_interval_must_land_on_a_step() {
-    let options = Options {
-        map: 1,
-        player: Player::StandIn {
+    let options = Options::basic(
+        1,
+        Player::StandIn {
             kill_every_ms: 1_505,
         },
-        duration_ms: 1_000,
-    };
+        1_000,
+    );
     assert!(encounter::validate(&options).is_err());
+}
+
+#[test]
+fn the_timeline_ends_on_the_runs_own_numbers() {
+    let options = Options::basic(1, Player::StandIn { kill_every_ms: 700 }, 45_000);
+    let outcome = run(options);
+    assert_eq!(outcome.timeline[0].t_ms, encounter::TIMELINE_MS);
+    for pair in outcome.timeline.windows(2) {
+        assert!(
+            pair[1].kills >= pair[0].kills,
+            "kills only grow: {:?}",
+            outcome.timeline
+        );
+        assert!(pair[1].t_ms > pair[0].t_ms, "samples advance in time");
+    }
+    let last = outcome.timeline.last().expect("a run samples its end");
+    assert_eq!(
+        last.kills, outcome.kills,
+        "the chart ends on the run's kills"
+    );
+    assert_eq!(last.t_ms, outcome.simulated_ms, "and on its simulated time");
+}
+
+#[test]
+fn an_idle_run_draws_no_drops() {
+    let options = Options::basic(1, Player::Idle, 60_000);
+    let outcome = run(options);
+    assert_eq!(outcome.kills, 0);
+    assert!(outcome.drops.cards.is_empty());
+    assert_eq!(outcome.drops.fragments_earned, 0.0);
+    assert_eq!(outcome.drops.obols_unpicked, 0);
+    assert!(outcome.timeline.iter().all(|sample| sample.kills == 0));
+}
+
+#[test]
+fn the_fixture_accounts_drops_are_reproducible() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/data.json");
+    let text = std::fs::read_to_string(path).expect("fixtures/data.json is committed");
+    let imported = idleon_import::import(&text).expect("the fixture imports");
+    let snapshot = drops::snapshot(&imported.save);
+    assert!(snapshot.auto_trash, "the fixture has Silver Jellyfish");
+    assert!(snapshot.fragments_known);
+    assert!(
+        snapshot.cards.values().any(|count| *count > 0.0),
+        "the fixture owns cards"
+    );
+    let options = Options {
+        map: 1,
+        player: Player::StandIn { kill_every_ms: 200 },
+        duration_ms: 600_000,
+        seed: 7,
+        drops: snapshot,
+        // The fixture's own stats, so the rolls land like the account's would.
+        drop_inputs: Inputs {
+            drop_rate: 4_950.574_185_831_907,
+            card_chance: 17.875_638_048_625_472,
+            talent29: 0.0,
+        },
+    };
+    let outcome = run(options.clone());
+    assert!(outcome.kills > 0);
+    assert!(!outcome.drops.cards.is_empty(), "the run finds cards");
+    let again = run(options);
+    assert_eq!(outcome.drops, again.drops, "a seed reproduces the rolls");
 }

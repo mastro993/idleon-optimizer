@@ -1,13 +1,14 @@
 //! The Clamworks section: the overview, the upgrade tables, the AFK claim, the
 //! plan and the promotion.
 //!
-//! Summary, pearl value, the upgrade priority, the claim, the budgeted plan and
-//! the promotion tracker are ports of the upstream `clamworks-calc.html` tabs and
-//! `js/stats/systems/w7/clamworks.js`. The save-derived inputs (pearl balance,
-//! upgrade and promotion levels) come from the shared import; the multikill
-//! total, the plan's budget, and the claim's kills per hour and drop rate are
-//! manual inputs until the combat simulator lands, exactly like the upstream's
-//! own supplement fields.
+//! Summary, pearl value, the upgrade priority, the claim, the budgeted plan, the
+//! promotion tracker and the Scurge panels are ports of the upstream
+//! `clamworks-calc.html` tabs, `js/stats/systems/w7/clamworks.js` and
+//! `js/stats/systems/w7/clamworks-scurge.js`. The save-derived inputs (pearl
+//! balance, upgrade and promotion levels, Scurge level and upgrades) come from the
+//! shared import; the multikill total, the plan's budget, and the claim's kills
+//! per hour and drop rate are manual inputs until the combat simulator runs Clam
+//! Work, exactly like the upstream's own supplement fields.
 
 mod actions;
 
@@ -16,6 +17,7 @@ pub(crate) mod compare;
 pub(crate) mod optimizer;
 pub(crate) mod overview;
 pub(crate) mod promotion;
+pub(crate) mod scurge;
 pub(crate) mod state;
 pub(crate) mod upgrades;
 
@@ -47,15 +49,18 @@ pub(crate) enum Tab {
     Optimizer,
     /// The promotion tracker and the worker-class rewards.
     Promotion,
+    /// The Self Affliction comparison and the Scurge upgrade allocation.
+    Scurge,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 5] = [
+    pub(crate) const ALL: [Tab; 6] = [
         Tab::Overview,
         Tab::Upgrades,
         Tab::Claim,
         Tab::Optimizer,
         Tab::Promotion,
+        Tab::Scurge,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -65,6 +70,7 @@ impl Tab {
             Tab::Claim => "claim",
             Tab::Optimizer => "optimizer",
             Tab::Promotion => "promotion",
+            Tab::Scurge => "scurge",
         }
     }
 
@@ -75,6 +81,7 @@ impl Tab {
             Tab::Claim => "AFK claim",
             Tab::Optimizer => "Optimizer",
             Tab::Promotion => "Promotion",
+            Tab::Scurge => "Scurge",
         }
     }
 
@@ -152,6 +159,7 @@ pub(crate) fn view(
             Tab::Claim => claim::claim_pane(state, window, cx),
             Tab::Optimizer => optimizer::optimizer_pane(state, window, cx),
             Tab::Promotion => promotion::promotion_pane(state, window, cx),
+            Tab::Scurge => scurge::scurge_pane(state, window, cx),
         })
         .into_any_element()
 }
@@ -199,6 +207,7 @@ mod tests {
         for tab in Tab::ALL {
             assert_eq!(Tab::from_id(tab.id()), Some(tab));
         }
-        assert_eq!(Tab::from_id("scurge"), None);
+        assert_eq!(Tab::from_id("scurge"), Some(Tab::Scurge));
+        assert_eq!(Tab::from_id("combat"), None);
     }
 }

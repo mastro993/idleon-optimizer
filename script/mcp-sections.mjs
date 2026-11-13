@@ -354,8 +354,9 @@ const cglunkoSave = ({ rows = true } = {}) => {
   });
 };
 /// A small flat `save.json` carrying the Clamworks rows: a pearl balance, nine
-/// upgrade levels, a worker-class level and a Scurge level, so the optimizer has
-/// a budget and the promotion tab has progress.
+/// upgrade levels, a worker-class level and an unlocked Scurge menu with unspent
+/// points, so the optimizer has a budget, the promotion tab has progress and the
+/// Scurge tab has an allocation to compare.
 const clamworksSave = () => {
   const options = Array(470).fill(0);
   options[454] = 5_000_000; // pearl balance
@@ -370,10 +371,10 @@ const clamworksSave = () => {
     Menagerie: JSON.stringify([
       [0, 0, 0, 0, 0, 0, 0, 0, 40],
       [0],
+      [0, 0, 0, 0, 1],
       [0],
       [0],
-      [0],
-      [0, 0, 0, 0, 0, 0],
+      [4, 1, 0, 2, 3, 0, 0, 0, 0],
     ]),
   });
 };
@@ -2154,12 +2155,43 @@ const INTERACTIONS = {
         return (
           kills !== null &&
           Number(kills[1]) > 0 &&
-          has(nodes, 'combat-encounter-by-type') &&
           !(labelOf(nodes, 'combat-encounter-damage') ?? '').endsWith(' 0.0')
         );
       },
       'combat-sim: the encounter run reports its kills and damage',
     );
+    // CS-05: every result tab reads the one stored run.
+    await lane.call('click_element', { id: 'result-killroy' });
+    await waitForNode(lane, 'combat-killroy-kills', 'combat-sim: the Killroy tab opens');
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-killroy-skulls') && has(nodes, 'combat-killroy-spawned'),
+      'combat-sim: the Killroy practice reports its skulls and spawns',
+    );
+    await lane.call('click_element', { id: 'result-obols' });
+    await waitForNode(lane, 'combat-obols-fragments', 'combat-sim: the obols tab opens');
+    await lane.call('click_element', { id: 'result-kills' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-kills-panel') &&
+        /Green Mushroom: [\d,]+ kills/.test(labelOf(nodes, 'combat-kill-type-mushG') ?? ''),
+      'combat-sim: the kills tab names the monsters the run killed',
+    );
+    await lane.call('click_element', { id: 'result-cards' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-cards-panel') || has(nodes, 'combat-cards-empty'),
+      'combat-sim: the cards tab lists the drops or says there were none',
+    );
+    await lane.call('click_element', { id: 'result-timeline' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-timeline-panel'),
+      'combat-sim: the timeline tab charts the run',
+    );
+    await lane.call('click_element', { id: 'result-summary' });
+    await waitForNode(lane, 'combat-summary-panel', 'combat-sim: the summary tab reopens');
     await lane.call('click_element', { id: 'gear' });
     await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
     // CS-04: two characters on the same map make a comparison with a delta per
@@ -4172,8 +4204,32 @@ const INTERACTIONS = {
         ),
       'clamworks: every worker-class reward is listed',
     );
-    await lane.call('click_element', { id: 'overview' });
-    await waitForNode(lane, 'clamworks-overview', 'clamworks: the overview tab reopens');
+    // The Scurge tab compares the saved allocation, names the best one an hour
+    // and lists the nine upgrades; the upgrade panel spends the unspent points.
+    await lane.call('click_element', { id: 'scurge' });
+    await waitForNode(lane, 'clamworks-scurge', 'clamworks: the Scurge tab opens');
+    await waitForNode(
+      lane,
+      'clamworks-scurge-table',
+      'clamworks: the Scurge comparison lists its allocations',
+    );
+    await waitForNode(lane, 'clamworks-scurge-upgrades', 'clamworks: the Scurge upgrades list');
+    // No kills-per-hour entry yet, so the headline names EXP a kill; the saved
+    // allocation leaves points the affliction and upgrade panels spend.
+    const perKill = labelOf(await lane.tree(), 'clamworks-scurge-best') ?? '';
+    if (!perKill.includes('Best Scurge EXP a kill:')) {
+      throw new Error(`clamworks: the Scurge headline reads ${perKill}`);
+    }
+    await lane.call('focus_element', { id: 'clamworks-scurge-mode' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'clamworks-scurge-best') ?? '').includes('Optimized'),
+      'clamworks: the upgrade panel spends the unspent points',
+    );
+    // End on the Scurge tab, so the section screenshot shows CW-04.
   },
 };
 

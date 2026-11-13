@@ -33,7 +33,7 @@ pub use forecast::{Encounter, FamilyCount, Forecast, ForecastCharacter, Forecast
 pub use inventory::Bag;
 pub use planner::{
     Comparisons, Job, KillroyError, Plan, PlanInput, Row, Selection, Upgrade, UpgradeChoice, Week,
-    plan, upgrade_choices,
+    plan, trial_inputs, upgrade_choices,
 };
 pub use summary::{Delta, Means, RowSummary, run, summarize, trial_seeds};
 pub use trial::{Record, TrialInputs, UPGRADES, trial};

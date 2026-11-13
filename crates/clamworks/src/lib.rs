@@ -5,19 +5,23 @@
 //! fields: `OptionsListAccount` (or `OptLacc`) index 454 is the pearl balance,
 //! 455..=463 are the nine upgrade levels, 464 the promotion level and 465 how
 //! far the pearl upgrades have unlocked; `Menagerie[5]` holds the Scurge upgrade
-//! levels and `Menagerie[0][8]` the Scurge level.
+//! levels, `Menagerie[0][8]` the Scurge level and `Menagerie[2][4]` the unlock
+//! that buys the Scurge menu.
 //!
 //! Multi-Scalping's bonus depends on the character's multikill total, which the
 //! upstream derives from its combat simulator. Until that lands here the total
 //! is an input; the formulas are the same for any value, and 0 leaves the bonus
 //! at zero.
 //!
-//! [`afk`] ports the claim itself and the `+1` comparison beside it.
+//! [`afk`] ports the claim itself and the `+1` comparison beside it. [`scurge`]
+//! ports the Scurge EXP panels: the per-kill EXP, the Self Affliction comparison
+//! and the allocation of unspent Scurge points.
 
 pub mod afk;
 pub mod data;
 pub mod plan;
 pub mod promotion;
+pub mod scurge;
 
 pub use plan::{Input as PlanInput, Plan, Step as PlanStep};
 pub use promotion::Promotion;
@@ -49,6 +53,8 @@ pub struct Clamworks {
     pub upgrades: [u32; UPGRADE_COUNT],
     /// How many pearl upgrades the save has unlocked, `OptLacc[465]`.
     pub unlocked: u32,
+    /// `Menagerie[2][4]`: whether the Scurge menu is bought.
+    pub scurge_unlocked: bool,
     pub scurge_level: u32,
     pub scurge_upgrades: [u32; SCURGE_COUNT],
 }
@@ -116,31 +122,55 @@ pub struct UpgradeRank {
 
 impl Clamworks {
     /// Read the Clamworks fields a save carries. A save without an options list
-    /// keeps the zero state and reports it; a save without `Menagerie` simply
-    /// has no Scurge progress.
+    /// keeps the pearl state at zero and reports it; the Scurge half reads
+    /// `Menagerie` on its own and names every row it cannot find.
     pub fn from_save(save: &Map<String, Value>, warnings: &mut Vec<String>) -> Self {
-        let Some(options) = options(save) else {
-            warnings.push("OptLacc: not in the save; Clamworks values kept at zero".into());
-            return Self::default();
-        };
-        let number = |index: usize| json::index(&options, &[index]).and_then(json::number);
-        let saved_level = |index: usize| number(index).map(whole_level).unwrap_or(0);
-        let mut clamworks = Self {
-            pearl_balance: number(PEARL_BALANCE).unwrap_or(0.0),
-            promotion_level: saved_level(PROMOTION_LEVEL),
-            upgrades: std::array::from_fn(|index| saved_level(UPGRADE_BASE + index)),
-            unlocked: saved_level(UNLOCK_PROGRESS),
-            ..Self::default()
-        };
-        if let Some(menagerie) = json::parsed_field(save, "Menagerie") {
-            let scurge_level = json::index(&menagerie, &[0, 8]).and_then(json::number);
-            clamworks.scurge_level = scurge_level.map(whole_level).unwrap_or(0);
-            for index in 0..SCURGE_COUNT {
-                let upgrade = json::index(&menagerie, &[5, index]).and_then(json::number);
-                clamworks.scurge_upgrades[index] = upgrade.map(whole_level).unwrap_or(0);
+        let mut clamworks = Self::default();
+        match options(save) {
+            None => {
+                warnings.push("OptLacc: not in the save; Clamworks values kept at zero".into());
+            }
+            Some(options) => {
+                let number = |index: usize| json::index(&options, &[index]).and_then(json::number);
+                let saved_level = |index: usize| number(index).map(whole_level).unwrap_or(0);
+                clamworks.pearl_balance = number(PEARL_BALANCE).unwrap_or(0.0);
+                clamworks.promotion_level = saved_level(PROMOTION_LEVEL);
+                clamworks.upgrades = std::array::from_fn(|index| saved_level(UPGRADE_BASE + index));
+                clamworks.unlocked = saved_level(UNLOCK_PROGRESS);
             }
         }
+        clamworks.read_scurge(save, warnings);
         clamworks
+    }
+
+    /// `Menagerie`: `[0][8]` the Scurge level, `[2][4]` the Scurge unlock and
+    /// `[5]` the nine Scurge upgrade levels.
+    fn read_scurge(&mut self, save: &Map<String, Value>, warnings: &mut Vec<String>) {
+        let Some(menagerie) = json::parsed_field(save, "Menagerie").filter(Value::is_array) else {
+            warnings.push("Menagerie: not in the save; Scurge progress reads as zero".into());
+            return;
+        };
+        let number = |path: &[usize]| json::index(&menagerie, path).and_then(json::number);
+        match number(&[0, 8]) {
+            Some(level) => self.scurge_level = whole_level(level),
+            None => warnings
+                .push("Menagerie[0][8]: Scurge level not in the save; it reads as zero".into()),
+        }
+        match number(&[2, 4]) {
+            Some(unlock) => self.scurge_unlocked = unlock >= 1.0,
+            None => warnings.push(
+                "Menagerie[2][4]: Scurge unlock not in the save; Scurge reads as locked".into(),
+            ),
+        }
+        if !json::index(&menagerie, &[5]).is_some_and(Value::is_array) {
+            warnings.push(
+                "Menagerie[5]: Scurge upgrade levels not in the save; they read as zero".into(),
+            );
+            return;
+        }
+        for index in 0..SCURGE_COUNT {
+            self.scurge_upgrades[index] = number(&[5, index]).map(whole_level).unwrap_or(0);
+        }
     }
 
     /// The raw bonus of one upgrade at its saved level.

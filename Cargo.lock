@@ -3423,6 +3423,7 @@ name = "idleon-coin-multi"
 version = "0.1.0"
 dependencies = [
  "idleon-account",
+ "idleon-common",
  "idleon-import",
  "idleon-research",
  "idleon-save",
@@ -3584,6 +3585,7 @@ dependencies = [
 name = "idleon-killroy"
 version = "0.1.0"
 dependencies = [
+ "idleon-common",
  "idleon-import",
  "idleon-save",
  "serde",

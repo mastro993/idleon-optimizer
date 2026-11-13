@@ -1,0 +1,1027 @@
+{
+ "source": "js/stats/systems/common/combat-sim-rewards.js through script/combat-drops-oracle.mjs",
+ "account": {
+  "dropRate": 4950.574185831907,
+  "cardChanceMulti": 17.875638048625472,
+  "talent29": 0,
+  "bribe1": 15,
+  "bribe8": 20,
+  "tasksObol": 7,
+  "obolAutoTrash": true,
+  "obolAutoTrashRate": 0.28,
+  "obolFragmentBalance": 1348,
+  "obolInvOwn": [
+   19,
+   12,
+   9,
+   8
+  ],
+  "cards0": {
+   "snowball": 92874130,
+   "mini4a": 14841,
+   "steakR": 89,
+   "demonP": 24865,
+   "crabcake": 43534169,
+   "w6c1": 193620,
+   "w5a1": 3868969,
+   "w6c2": 242011,
+   "w5a2": 20766,
+   "Plat": 5156,
+   "w5a3": 33918,
+   "goblinG": 85483397,
+   "w5a4": 70881,
+   "w5a5": 118985,
+   "pincermin": 43187802,
+   "snakeZ2": 3,
+   "iceknight": 3875,
+   "snakeZ3": 0,
+   "ForgeA": 151292,
+   "ForgeB": 4873,
+   "babayaga": 3863,
+   "mini3a": 9610,
+   "luckEvent1": 11,
+   "luckEvent2": 26,
+   "ToiletTree": 5231,
+   "SpelunkingCard0": 83805,
+   "SpelunkingCard1": 145202,
+   "w6b1": 72660,
+   "SpelunkingCard2": 140301,
+   "w6b2": 82516,
+   "SpelunkingCard3": 1060821,
+   "SpelunkingCard4": 65564,
+   "iceBossZ2": 2000009,
+   "w6b3": 142875,
+   "SpelunkingCard5": 2061,
+   "iceBossZ3": 1000001,
+   "w6b4": 3782252,
+   "rocky": 970,
+   "mimicA": 55180606,
+   "moonman": 195242754,
+   "Copper": 4902,
+   "slimeB": 115776,
+   "CritterCard1": 9617,
+   "crabcakeB": 3183,
+   "CritterCard2": 8996,
+   "CritterCard3": 16025,
+   "sandcastle": 119187043,
+   "glass": 1252819,
+   "CritterCard4": 10359,
+   "CritterCard5": 1989,
+   "slimeG": 3095368,
+   "CritterCard6": 2567,
+   "CritterCard7": 2906,
+   "totem": 10000009,
+   "CritterCard8": 3390,
+   "EasterEvent1": 741,
+   "sandgiant": 87259,
+   "cropfallEvent1": 84,
+   "EasterEvent2": 760,
+   "Godshard": 200753,
+   "CritterCard9": 4982,
+   "sheepB": 100229,
+   "loveEvent": 100063,
+   "acorn": 22003064,
+   "slimeR": 39531,
+   "SoulCard1": 6543,
+   "w6a1": 58372,
+   "ghost": 1311,
+   "SoulCard2": 3689,
+   "w6a2": 30780,
+   "SoulCard3": 2051,
+   "PalmTree": 6113,
+   "w6a3": 63591,
+   "target": 54,
+   "SoulCard4": 2509,
+   "SoulCard5": 2440,
+   "w6a4": 61022,
+   "w6a5": 1512902,
+   "SoulCard6": 3477,
+   "SoulCard7": 4608,
+   "caveB": 100020142,
+   "SoulCard8": 89,
+   "caveC": 151290105,
+   "caveD": 135065,
+   "Dementia": 8490,
+   "Boss6A": 12539,
+   "Boss6B": 9229,
+   "Boss6C": 7216,
+   "JungleTree": 53868008,
+   "xmasEvent2": 1000091,
+   "frogD": 970,
+   "xmasEvent3": 494,
+   "xmasEvent4": 101,
+   "plank": 69750648,
+   "frogG": 1111236,
+   "poopD": 523,
+   "Iron": 151292,
+   "frogP": 728,
+   "carrotO": 13766811,
+   "frogR": 4253454425,
+   "w7b1": 661302,
+   "wolfA": 890,
+   "wolfB": 953,
+   "w7b2": 136055,
+   "w7b3": 13596933,
+   "eye": 94009,
+   "snailZ": 151292,
+   "wolfC": 4860,
+   "w7b4": 2320585,
+   "w7b5": 1400662,
+   "frogW": 425346817,
+   "xmasEvent": 100792,
+   "w7b6": 4420885,
+   "Void": 4950,
+   "w7b7": 49026557,
+   "frogY": 970,
+   "w7b8": 7181925,
+   "w7b9": 1055048,
+   "Fish1": 4792094,
+   "Boss5A": 45389,
+   "Boss5B": 2145,
+   "Fish2": 2488366,
+   "Fish3": 1890016,
+   "Boss5C": 2484,
+   "Fish4": 1036313,
+   "Fish5": 124205,
+   "Fish6": 36752,
+   "Fish7": 12824,
+   "Fish8": 4842,
+   "stache": 461958703,
+   "Fish9": 63513,
+   "babaHour": 1110,
+   "anni5Event1": 130,
+   "springEvent1": 15131,
+   "frogGG": 2422,
+   "springEvent2": 15131,
+   "skele": 14167,
+   "w4c1": 27804,
+   "w4c2": 19143,
+   "w4c3": 28420,
+   "BirchTree": 151292,
+   "steak": 93377890,
+   "w4c4": 26166,
+   "frogGR": 728,
+   "shovelR": 6814,
+   "w7a1": 2271,
+   "w7a2": 18654,
+   "w7a3": 9766,
+   "w7a4": 3133,
+   "babaMummy": 6942,
+   "w7a5": 18953,
+   "w7a6": 2317386,
+   "w7a7": 10544,
+   "shovelY": 4276,
+   "w7a8": 4513,
+   "Fish10": 19288,
+   "w7a9": 402,
+   "Fish11": 13382,
+   "Fish12": 14853,
+   "Boss4A": 1042,
+   "sheep": 865565132,
+   "Boss4B": 970,
+   "Boss4C": 2157,
+   "Dreadlo": 7344,
+   "Bug1": 21233,
+   "Bug2": 5040,
+   "Bug3": 18041,
+   "Bug4": 9058,
+   "w7a10": 8629,
+   "Bug5": 19538,
+   "w7a11": 23483,
+   "w7a12": 3061763,
+   "Bug6": 5306,
+   "branch": 1121851,
+   "Bug7": 4842,
+   "Bug8": 6012,
+   "Bug9": 5810,
+   "potato": 84328187,
+   "Starfire": 6389,
+   "mushG": 3187626,
+   "mamoth": 170555104,
+   "w4b1": 35740,
+   "SaharanFoal": 4932,
+   "fm_rat": 4,
+   "w4b2": 22828,
+   "w4b3": 22855,
+   "w4b4": 11976,
+   "w4b5": 18988,
+   "fallEvent1": 1502,
+   "fallEvent2": 36,
+   "mushP": 15340,
+   "Prehistrium": 2420002,
+   "mushR": 41492203,
+   "flake": 2699048727,
+   "CritterCard10": 5810,
+   "CritterCard11": 740,
+   "mushW": 687977,
+   "Boss3A": 805,
+   "potatoB": 128,
+   "Boss3B": 22696,
+   "frogBIG": 3335572886,
+   "bloque": 1209807534,
+   "Boss3C": 5973,
+   "Lustre": 4870,
+   "ratB": 365976,
+   "jarSand": 73312178271,
+   "Gold": 25056147,
+   "poopBig": 1122,
+   "snakeB": 13321898,
+   "iceBossZ": 3535349,
+   "mini6a": 1000053,
+   "anni4Event1": 1000087,
+   "frogGR2": 41,
+   "frogGR3": 8,
+   "frogGR4": 5,
+   "SummerEvent1": 100044,
+   "SummerEvent2": 1000037,
+   "poopSmall": 253127,
+   "snakeG": 27609904,
+   "w5c1": 44758,
+   "w5c2": 119640,
+   "w4a2": 1158429,
+   "w4a3": 19490,
+   "Bandit_Bob": 506,
+   "beanG": 254358647,
+   "thermostat": 197772488,
+   "snakeY": 100260,
+   "Crystal0": 115512327,
+   "snakeZ": 4,
+   "Crystal1": 197254917,
+   "Crystal2": 895001945,
+   "Boss2A": 1124,
+   "Tree10": 7398,
+   "Boss2B": 781,
+   "Crystal3": 85795111,
+   "Crystal4": 11834881,
+   "Boss2C": 5356,
+   "ram": 6882343,
+   "Tree12": 7262,
+   "Crystal5": 75645002,
+   "Tree13": 7262,
+   "Crystal6": 14137,
+   "w7b10": 8738268,
+   "Tree14": 471,
+   "w7b11": 3114304,
+   "w7b12": 5338743,
+   "mini5a": 1000031,
+   "AlienTree": 4842,
+   "loveEvent2": 200793,
+   "loveEvent3": 777,
+   "penguin": 103752373,
+   "skele2": 60153,
+   "w6d1": 13616102,
+   "cactus": 64,
+   "w5b1": 29505,
+   "w6d2": 644151,
+   "w5b2": 786710,
+   "w6d3": 37822502,
+   "w5b3": 31008,
+   "w5b4": 39403,
+   "w5b5": 49944,
+   "w5b6": 44427,
+   "Bug10": 1718005,
+   "coconut": 53202064,
+   "Bug12": 7461,
+   "StumpTree": 5115,
+   "Bug13": 7459,
+   "OakTree": 5666,
+   "Bug14": 6844,
+   "Tree7": 6343,
+   "Tree8": 4842,
+   "ForestTree": 696628,
+   "Tree9": 5919,
+   "speaker": 3689709
+  }
+ },
+ "oddsCases": [
+  {
+   "e": 1,
+   "p": 0.002,
+   "dr": 1,
+   "calls": 0,
+   "result": 0
+  },
+  {
+   "e": 1,
+   "p": 0.002,
+   "dr": 4950.574185831907,
+   "calls": 1,
+   "result": 10
+  },
+  {
+   "e": 1,
+   "p": 0.0007,
+   "dr": 12,
+   "calls": 2,
+   "result": 0
+  },
+  {
+   "e": 3,
+   "p": 0.25,
+   "dr": 1,
+   "calls": 3,
+   "result": 1
+  },
+  {
+   "e": 1,
+   "p": 0.999,
+   "dr": 1,
+   "calls": 4,
+   "result": 1
+  },
+  {
+   "e": 2,
+   "p": 0.6,
+   "dr": 0.5,
+   "calls": 5,
+   "result": 1
+  },
+  {
+   "e": 1,
+   "p": 0.05,
+   "dr": 0,
+   "calls": 6,
+   "result": 0
+  },
+  {
+   "e": 4,
+   "p": 0.11,
+   "dr": 3.5,
+   "calls": 7,
+   "result": 2
+  }
+ ],
+ "resetCases": [
+  {
+   "cards0": {
+    "mushG": 0
+   },
+   "monsters": {
+    "mushG": [
+     {
+      "name": "CardsA0",
+      "chance": 0.17875638048625472,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ],
+    "frogG": [
+     {
+      "name": "CardsA2",
+      "chance": 0.05362691414587642,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.0038,
+      "qty": 1
+     }
+    ]
+   },
+   "tables": {
+    "DropTable1": [
+     {
+      "name": "ObolBronze0",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable5": [
+     {
+      "name": "ObolSilver0",
+      "chance": 0.0009450000000000001,
+      "qty": 1
+     }
+    ],
+    "DropTable2": [
+     {
+      "name": "ObolBronze1",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable4": [
+     {
+      "name": "ObolBronze3",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable3b": [],
+    "DropTable3c": []
+   }
+  },
+  {
+   "cards0": {
+    "frogG": 3,
+    "mushG": 0
+   },
+   "monsters": {
+    "mushG": [
+     {
+      "name": "CardsA0",
+      "chance": 0.17875638048625472,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ],
+    "frogG": [
+     {
+      "name": "CardsA2",
+      "chance": 0.05362691414587642,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.0038,
+      "qty": 1
+     }
+    ]
+   },
+   "tables": {
+    "DropTable1": [
+     {
+      "name": "ObolBronze0",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable5": [
+     {
+      "name": "ObolSilver0",
+      "chance": 0.0009450000000000001,
+      "qty": 1
+     }
+    ],
+    "DropTable2": [
+     {
+      "name": "ObolBronze1",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable4": [
+     {
+      "name": "ObolBronze3",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable3b": [],
+    "DropTable3c": []
+   }
+  },
+  {
+   "cards0": {},
+   "monsters": {
+    "mushG": [
+     {
+      "name": "CardsA0",
+      "chance": 0.03575127609725094,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ],
+    "frogG": [
+     {
+      "name": "CardsA2",
+      "chance": 0.05362691414587642,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.0038,
+      "qty": 1
+     }
+    ]
+   },
+   "tables": {
+    "DropTable1": [
+     {
+      "name": "ObolBronze0",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable5": [
+     {
+      "name": "ObolSilver0",
+      "chance": 0.0009450000000000001,
+      "qty": 1
+     }
+    ],
+    "DropTable2": [
+     {
+      "name": "ObolBronze1",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable4": [
+     {
+      "name": "ObolBronze3",
+      "chance": 0.0014850000000000002,
+      "qty": 1
+     }
+    ],
+    "DropTable3b": [],
+    "DropTable3c": []
+   }
+  }
+ ],
+ "generateCases": [
+  {
+   "type": "mushG",
+   "e": 1,
+   "seed": 1,
+   "rolls": [
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ]
+   ]
+  },
+  {
+   "type": "mushG",
+   "e": 1,
+   "seed": 42,
+   "rolls": [
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ],
+    [
+     [
+      "CardsA0",
+      177
+     ]
+    ]
+   ]
+  },
+  {
+   "type": "frogBIG",
+   "e": 1,
+   "seed": 7,
+   "rolls": [
+    [
+     [
+      "CardsA9",
+      885
+     ]
+    ],
+    [
+     [
+      "CardsA9",
+      885
+     ]
+    ],
+    [
+     [
+      "CardsA9",
+      885
+     ]
+    ],
+    [
+     [
+      "CardsA9",
+      885
+     ]
+    ],
+    [
+     [
+      "CardsA9",
+      885
+     ],
+     [
+      "ObolBronze2",
+      1
+     ]
+    ]
+   ]
+  },
+  {
+   "type": "pincermin",
+   "e": 1,
+   "seed": 9,
+   "rolls": [
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ],
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ],
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ],
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ]
+   ]
+  },
+  {
+   "type": "pincermin",
+   "e": 1,
+   "seed": 3,
+   "rolls": [
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ],
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ],
+    [
+     [
+      "CardsB6",
+      442
+     ]
+    ]
+   ]
+  }
+ ],
+ "pickupCases": [
+  {
+   "note": "auto-trash on: a full page rolls 0-3 fragments per obol",
+   "entries": [
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolSilverDamage",
+     1
+    ],
+    [
+     "ObolSilverDamage",
+     1
+    ]
+   ],
+   "options": {
+    "autoTrash": true,
+    "balance": 1999999999,
+    "rate": 0.28,
+    "own": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "order": [
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cards0": {}
+   },
+   "out": {
+    "picked": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "calls": 4,
+    "fragments": 1,
+    "autoTrashed": 4,
+    "balance": 2000000000,
+    "cards": {},
+    "pages": [
+     {
+      "0": "ObolBronze0",
+      "1": "ObolBronze0",
+      "2": "ObolBronze0",
+      "3": "ObolBronze0"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cardRows": [
+     {
+      "name": "CardsA0",
+      "chance": 0.03575127609725094,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ]
+   }
+  },
+  {
+   "note": "auto-trash off: blank slots fill before anything else",
+   "entries": [
+    [
+     "ObolSilverPop",
+     1
+    ],
+    [
+     "ObolSilverPop",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ],
+    [
+     "ObolBronze0",
+     1
+    ]
+   ],
+   "options": {
+    "autoTrash": false,
+    "balance": 0,
+    "rate": 0.28,
+    "own": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "order": [
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cards0": {}
+   },
+   "out": {
+    "picked": [
+     true,
+     true,
+     true,
+     true
+    ],
+    "calls": 0,
+    "fragments": 0,
+    "autoTrashed": 0,
+    "balance": 0,
+    "cards": {},
+    "pages": [
+     {
+      "0": "ObolSilverPop",
+      "1": "ObolSilverPop",
+      "2": "ObolBronze0",
+      "3": "ObolBronze0"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cardRows": [
+     {
+      "name": "CardsA0",
+      "chance": 0.03575127609725094,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ]
+   }
+  },
+  {
+   "note": "cards count, and a pickup below three resets the unowned x5 row",
+   "entries": [
+    [
+     "CardsA0",
+     2
+    ],
+    [
+     "CardsA0",
+     3
+    ]
+   ],
+   "options": {
+    "autoTrash": true,
+    "balance": 0,
+    "rate": 0.28,
+    "own": [
+     1,
+     1,
+     1,
+     1
+    ],
+    "order": [
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cards0": {
+     "mushG": 0
+    }
+   },
+   "out": {
+    "picked": [
+     true,
+     true
+    ],
+    "calls": 0,
+    "fragments": 0,
+    "autoTrashed": 0,
+    "balance": 0,
+    "cards": {
+     "mushG": 5
+    },
+    "pages": [
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     },
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "ObolSilverPop",
+      "3": "Blank"
+     },
+     {},
+     {
+      "0": "Blank",
+      "1": "Blank",
+      "2": "Blank",
+      "3": "Blank"
+     }
+    ],
+    "cardRows": [
+     {
+      "name": "CardsA0",
+      "chance": 0.03575127609725094,
+      "qty": 1
+     },
+     {
+      "name": "DropTable1",
+      "chance": 0.003,
+      "qty": 1
+     }
+    ]
+   }
+  }
+ ]
+}

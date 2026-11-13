@@ -17,6 +17,7 @@
 //! slot, and a full bag loses it. Unlimited inventory lifts that limit.
 
 use super::inventory::{self, Bag};
+use idleon_common::Rng;
 
 /// Monsters the encounter arms 50 ms into the run.
 const ARRIVALS: usize = 300;
@@ -76,39 +77,6 @@ pub struct Record {
     pub seconds: f64,
 }
 
-/// The combat simulator's stream: mulberry32 with a call counter, from
-/// `createRng` in `js/stats/systems/common/combat-sim-core.js`.
-struct Random {
-    state: u32,
-}
-
-impl Random {
-    fn new(seed: u64) -> Self {
-        let state = seed as u32;
-        Self {
-            state: if state == 0 { 0x9e37_79b9 } else { state },
-        }
-    }
-
-    fn float(&mut self) -> f64 {
-        self.state = self.state.wrapping_add(0x6d2b_79f5);
-        let mut value = self.state;
-        value = (value ^ (value >> 15)).wrapping_mul(value | 1);
-        value ^= value.wrapping_add((value ^ (value >> 7)).wrapping_mul(value | 61));
-        f64::from(value ^ (value >> 14)) / 4_294_967_296.0
-    }
-
-    /// The upstream `randomInt`, including its integer coercion and bounds.
-    fn int(&mut self, low: i64, high: i64) -> i64 {
-        let roll = self.float();
-        if low <= high {
-            low + (roll * (high - low + 1) as f64) as i64
-        } else {
-            high + (roll * (low - high + 1) as f64) as i64
-        }
-    }
-}
-
 /// One run's mutable counters.
 struct Run {
     levels: [f64; UPGRADES],
@@ -116,7 +84,7 @@ struct Run {
     meritoc: f64,
     kills_per_second: f64,
     bag: Bag,
-    random: Random,
+    random: Rng,
     kills: u64,
     skulls_dropped: u64,
     skulls_picked: u64,
@@ -238,7 +206,7 @@ pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
         meritoc: inputs.meritoc,
         kills_per_second: inputs.kills_per_second.max(0.0),
         bag: inputs.bag,
-        random: Random::new(seed),
+        random: Rng::new(seed),
         kills: 0,
         skulls_dropped: 0,
         skulls_picked: 0,

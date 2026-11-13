@@ -1,20 +1,25 @@
-//! The encounter workspace (CS-03): the simulator options and the run.
+//! The encounter workspace (CS-03) and its results (CS-05).
 //!
 //! Ported from the Simulator options and the Run/Cancel pair in
 //! `combat-sim-calc.html` (`startRun`, `cancelRun`, `setProgress`) and run
 //! through the shared [`idleon_ui::runner::TaskRunner`], so the progress card,
 //! the cancel action and the stale marker are the ones every other section
-//! uses. The run itself is [`idleon_combat::encounter`]; its outcome is the
-//! spawn/respawn/kill totals of one map, and the mechanics it cannot yet model
-//! are listed beside it instead of being dropped.
+//! uses. The run itself is [`idleon_combat::encounter`]; the results tabs read
+//! the one stored run: the summary, the Killroy practice, the obol fragments,
+//! the kills by monster, the cards and the kills timeline. Tabs with nothing to
+//! show say why, and the mechanics the run cannot model are listed beside the
+//! options instead of being dropped.
 
+use super::ResultsTab;
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
+use ely_gpui_component::charts::{LineChart, Series};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::forms::{Choice, NumberInput, Select};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::primitives::{IconName, Severity};
+use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
@@ -30,6 +35,7 @@ const DURATIONS: [u64; 8] = [60, 300, 600, 1800, 3600, 21_600, 43_200, 86_400];
 pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let task = state.combat_encounter(cx);
+    let results = state.combat.results;
     let mut body = div()
         .id("combat-encounter-panel")
         .flex()
@@ -41,8 +47,8 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             Caption::new(
                 "The run replays the game's 10 ms tick over the map's spawn roster: monsters \
                  respawn on their saved timers and the stand-in kills one live monster per \
-                 interval. The modelled paths draw no random numbers, so the map, the player \
-                 and the duration fully describe the run.",
+                 interval. Its card and obol rolls draw one seeded stream, so the map, the \
+                 player, the duration and the seed fully describe the run.",
             )
             .text_color(muted),
         );
@@ -67,7 +73,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         ));
     }
     match task.result.clone() {
-        Some(result) => body = body.child(results_card(&result, task.stale, cx)),
+        Some(result) => body = body.child(results_card(&result, task.stale, results, cx)),
         None if !task.running && !task.cancelled => {
             body = body.child(
                 Banner::new(
@@ -92,7 +98,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
 /// The simulator options: encounter, map, player, kill interval and duration.
 fn options_card(
     state: &AppState,
-    task: &idleon_ui::runner::TaskState<Outcome>,
+    task: &idleon_ui::runner::TaskState<super::RunResult>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -156,6 +162,19 @@ fn options_card(
             });
         });
 
+    let seed_entity = cx.entity();
+    let seed_input = NumberInput::new("combat-encounter-seed", options.seed as f64)
+        .range(1.0, 4_294_967_295.0)
+        .step(1.0)
+        .precision(0)
+        .size(ControlSize::Sm)
+        .label("Seed")
+        .on_commit(move |value, _window, cx| {
+            seed_entity.update(cx, |state, cx| {
+                state.set_combat_encounter_seed(value, cx);
+            });
+        });
+
     let duration_entity = cx.entity();
     let duration = options.duration_ms / 1000;
     let duration_select = Select::new(
@@ -179,8 +198,8 @@ fn options_card(
         .header(
             CardHeader::new("Encounter")
                 .description(
-                    "Normal combat on one map. Killroy practice arrives with CS-05; the auto-mode \
-                     player AI is not ported yet, so a run cannot measure character DPS.",
+                    "Normal combat on one map. Every results tab below reads this run; the \
+                     auto-mode player AI is not ported yet, so a run cannot measure character DPS.",
                 )
                 .action(Badge::new("Normal combat").tone(Tone::Accent)),
         )
@@ -201,6 +220,7 @@ fn options_card(
                         .child(player_select)
                         .when(stand_in, |row| row.child(kill_input))
                         .child(duration_select)
+                        .child(seed_input)
                         .child(div().flex_1())
                         .child(
                             Button::new("combat-encounter-run", "Run")
@@ -245,29 +265,73 @@ fn options_card(
 }
 
 /// The stored run: its totals, the kills by monster and how far it got.
-fn results_card(result: &Outcome, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
+///
+/// One [`RunResult`] feeds every results tab: the summary, Killroy practice,
+/// the obol fragments, the kills by monster, the cards and the kills timeline.
+/// A tab with nothing to show says why instead of rendering blank.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct RunResult {
+    pub(crate) run: Outcome,
+    pub(crate) killroy: Option<idleon_killroy::Record>,
+}
+
+/// The results: a tab bar over the one stored run and the picked tab's panel.
+fn results_card(
+    result: &RunResult,
+    stale: bool,
+    current: ResultsTab,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let Some(map) = encounter::map(result.map) else {
+    let run = &result.run;
+    let Some(map) = encounter::map(run.map) else {
         return div().into_any_element();
     };
     let mut header = CardHeader::new(format!("Run result · {}", encounter::map_name(map)))
         .description(format!(
-            "{} · {} · {:.0}s of {:.0}s simulated · {} steps · {} frames",
-            result.scene,
-            player_label(result.player),
-            result.simulated_ms as f64 / 1000.0,
-            result.duration_ms as f64 / 1000.0,
-            result.steps,
-            result.frames,
+            "{} · {} · {:.0}s of {:.0}s simulated · {} steps · {} frames · seed {}",
+            run.scene,
+            player_label(run.player),
+            run.simulated_ms as f64 / 1000.0,
+            run.duration_ms as f64 / 1000.0,
+            run.steps,
+            run.frames,
+            run.seed,
         ));
     if stale {
         header = header.action(idleon_ui::run_chrome::stale_badge("combat-encounter"));
     }
-    let mut card = Card::new().header(header);
+    let select = cx.entity();
+    let tabs = ResultsTab::ALL
+        .into_iter()
+        .fold(TabBar::new("combat-result-tabs"), |bar, tab| {
+            bar.tab(WindowTab::new(tab.id(), tab.label()))
+        })
+        .selected(SharedString::from(current.id()))
+        .on_select(move |id, _window, cx| {
+            if let Some(tab) = ResultsTab::from_id(id.as_ref()) {
+                select.update(cx, |state, cx| state.set_combat_results_tab(tab, cx));
+            }
+        });
+    let mut card = Card::new()
+        .header(header)
+        .child(div().id("combat-result-tabs-row").p_3().child(tabs));
     if stale {
         card = card.child(idleon_ui::run_chrome::stale_banner("combat-encounter"));
     }
+    let panel = match current {
+        ResultsTab::Summary => summary_panel(run, muted),
+        ResultsTab::Killroy => killroy_panel(result, muted),
+        ResultsTab::Obols => obols_panel(run, muted),
+        ResultsTab::Kills => kills_panel(run, muted),
+        ResultsTab::Cards => cards_panel(run, muted),
+        ResultsTab::Timeline => timeline_panel(run, muted),
+    };
+    card.child(panel).into_any_element()
+}
 
+/// The run's totals and how far it got.
+fn summary_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     let kpis = div()
         .id("combat-encounter-kpis")
         .flex()
@@ -277,77 +341,324 @@ fn results_card(result: &Outcome, stale: bool, cx: &mut Context<AppState>) -> An
         .child(kpi(
             "combat-encounter-kills",
             "Kills",
-            &format::count(result.kills),
+            &format::count(run.kills),
             &format!(
                 "{} kill ticks, {} found nothing",
-                format::count(result.kill_ticks()),
-                format::count(result.idle_ticks)
+                format::count(run.kill_ticks()),
+                format::count(run.idle_ticks)
             ),
             muted,
         ))
         .child(kpi(
             "combat-encounter-damage",
             "Damage dealt",
-            &format::value(result.damage),
-            &format!(
-                "{}/s over the run",
-                format::value(result.damage_per_second())
-            ),
+            &format::value(run.damage),
+            &format!("{}/s over the run", format::value(run.damage_per_second())),
             muted,
         ))
         .child(kpi(
             "combat-encounter-rate",
             "Kills / hour",
-            &format::value(result.kills_per_hour()),
+            &format::value(run.kills_per_hour()),
             "Kills × 3,600 ÷ simulated seconds",
             muted,
         ))
         .child(kpi(
             "combat-encounter-interval",
             "Mean kill interval",
-            &result.kill_interval_ms().map_or_else(
+            &run.kill_interval_ms().map_or_else(
                 || "—".to_string(),
                 |interval| format!("{:.2}s", interval / 1000.0),
             ),
             "Simulated time ÷ kills",
             muted,
         ));
+    div()
+        .id("combat-summary-panel")
+        .p_3()
+        .child(kpis)
+        .into_any_element()
+}
 
-    let mut table = Table::new(["Monster", "Kills", "Share"]);
-    let total = result.kills.max(1);
-    for (kind, kills) in &result.kills_by_type {
+/// The Killroy practice: the same run's kill rate through the room's timer.
+fn killroy_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+    let run = &result.run;
+    let Some(record) = result.killroy else {
+        return empty_panel(
+            "combat-killroy-empty",
+            "Killroy needs kills to project from: this run killed nothing. Run the stand-in              player on a map with monsters.",
+            muted,
+        );
+    };
+    let seconds = (run.simulated_ms as f64 / 1000.0).max(1.0);
+    let kpis = div()
+        .id("combat-killroy-kpis")
+        .flex()
+        .flex_wrap()
+        .items_stretch()
+        .gap_2()
+        .child(kpi(
+            "combat-killroy-kills",
+            "Kills",
+            &format::count(record.kills),
+            "The timed attempt's final score",
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-skulls",
+            "Skulls collected",
+            &format::count(record.skulls_picked),
+            &format!("{} dropped", format::count(record.skulls_dropped)),
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-run",
+            "Run length",
+            &format::duration(record.seconds),
+            "100 s + the saved Time upgrade",
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-spawned",
+            "Extra monsters spawned",
+            &format::count(record.spawned),
+            "One queued arrival every 100 ms while the queue holds one",
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-talents",
+            "Talent points",
+            &format::count(record.talent_points),
+            "Talent-point drops the skull rolls leave behind",
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-credits",
+            "Dungeon credits",
+            &format::count(record.dungeon_credits),
+            "Credit drops that fit the bag",
+            muted,
+        ))
+        .child(kpi(
+            "combat-killroy-pearls",
+            "Pearls",
+            &format::count(record.pearls),
+            "Pearl drops that fit the bag",
+            muted,
+        ));
+    div()
+        .id("combat-killroy-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(kpis)
+        .child(
+            Caption::new(format!(
+                "Killroy practice projects this run's {:.2} kills/s onto the room's native timer, \
+             seeded with {}: the weekly rooms and reward choices are not applied, and the skull \
+             count is a per-attempt total, not an hourly yield.",
+                run.kills as f64 / seconds,
+                run.seed,
+            ))
+            .text_color(muted),
+        )
+        .into_any_element()
+}
+
+/// The obol fragments the run's obol drops rolled up.
+fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+    let obols = &run.drops;
+    let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
+    let kpis = div()
+        .id("combat-obols-kpis")
+        .flex()
+        .flex_wrap()
+        .items_stretch()
+        .gap_2()
+        .child(kpi(
+            "combat-obols-fragments",
+            "Fragments earned",
+            &format::number(obols.fragments_earned),
+            &format!("{}/hour", format::number(obols.fragments_earned / hours)),
+            muted,
+        ))
+        .child(kpi(
+            "combat-obols-trashed",
+            "Obols auto-trashed",
+            &format::count(obols.fragments_auto_trashed),
+            "Full obol pages only; Hyper obols are excluded",
+            muted,
+        ))
+        .child(kpi(
+            "combat-obols-balance",
+            "Ending fragment balance",
+            &if obols.fragments_known {
+                format::count(obols.fragments_balance as u64)
+            } else {
+                "Unavailable".to_string()
+            },
+            "Capped at 2 billion",
+            muted,
+        ));
+    let note = if obols.auto_trash {
+        "Silver Jellyfish auto-trash is unlocked. Empty obol slots fill before the auto-trash; \
+         each eligible overflow pickup rolls for up to 3 fragments."
+    } else {
+        "Silver Jellyfish auto-trash is not unlocked; an obol drop only fills a blank page slot."
+    };
+    let mut panel = div()
+        .id("combat-obols-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(kpis)
+        .child(Caption::new(note).text_color(muted));
+    if !obols.fragments_known {
+        panel = panel.child(
+            Caption::new("The save carried no fragment balance; the gains are still reported.")
+                .text_color(muted),
+        );
+    }
+    if obols.obols_unpicked > 0 {
+        panel = panel.child(
+            Caption::new(format!(
+                "{} obol drop(s) needed a bag slot and were not collected; the inventory is not \
+                 modelled.",
+                obols.obols_unpicked
+            ))
+            .text_color(muted),
+        );
+    }
+    panel.into_any_element()
+}
+
+/// The kills by monster, sorted the way the upstream summary sorts them.
+fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+    if run.kills_by_type.is_empty() {
+        return empty_panel(
+            "combat-kills-empty",
+            "The run killed nothing: the idle player never attacks.",
+            muted,
+        );
+    }
+    let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
+    let mut rows: Vec<(&String, &u64)> = run.kills_by_type.iter().collect();
+    rows.sort_by(|left, right| right.1.cmp(left.1).then_with(|| left.0.cmp(right.0)));
+    let mut table = Table::new(["Monster", "Kills", "Kills / hr", "Share"]);
+    let total = run.kills.max(1);
+    for (kind, kills) in rows {
+        let name = idleon_combat::drops::monster_name(kind);
         table = table.row([
             div()
-                .id(SharedString::from(format!("combat-encounter-type-{kind}")))
+                .id(SharedString::from(format!("combat-kill-type-{kind}")))
                 .role(Role::Label)
-                .aria_label(format!("{kind}: {kills} kills"))
+                .aria_label(format!("{name}: {kills} kills"))
                 .text_size(px(12.0))
-                .child(SharedString::from(kind.clone()))
+                .child(SharedString::from(name))
                 .into_any_element(),
             div().child(format::count(*kills)).into_any_element(),
+            div()
+                .child(format::value(*kills as f64 / hours))
+                .into_any_element(),
             div()
                 .child(format!("{:.1}%", *kills as f64 * 100.0 / total as f64))
                 .into_any_element(),
         ]);
     }
-    let table = if result.kills_by_type.is_empty() {
-        div()
-            .id("combat-encounter-no-kills")
-            .p_3()
-            .text_size(px(12.0))
-            .text_color(muted)
-            .child("The run killed nothing: the idle player never attacks.")
-            .into_any_element()
-    } else {
-        div()
-            .id("combat-encounter-by-type")
-            .p_3()
-            .child(table)
-            .into_any_element()
-    };
-
-    card.child(div().p_3().child(kpis))
+    div()
+        .id("combat-kills-panel")
+        .p_3()
         .child(table)
+        .into_any_element()
+}
+
+/// The cards the run's kills dropped.
+fn cards_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+    let cards = &run.drops.cards;
+    if cards.is_empty() {
+        return empty_panel(
+            "combat-cards-empty",
+            "No cards dropped in this run. Cards roll on a monster's drop rows; a longer run or \
+             a higher Drop rate in the Mechanics tab finds more.",
+            muted,
+        );
+    }
+    let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
+    let mut rows: Vec<(&String, &f64)> = cards.iter().collect();
+    rows.sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
+    let mut table = Table::new(["Card", "Found", "Per hour"]);
+    for (kind, found) in rows {
+        let name = format!("{} card", idleon_combat::drops::monster_name(kind));
+        table = table.row([
+            div()
+                .id(SharedString::from(format!("combat-card-{kind}")))
+                .role(Role::Label)
+                .aria_label(format!("{name}: {found} found"))
+                .text_size(px(12.0))
+                .child(SharedString::from(name))
+                .into_any_element(),
+            div().child(format::value(*found)).into_any_element(),
+            div().child(format::value(found / hours)).into_any_element(),
+        ]);
+    }
+    div()
+        .id("combat-cards-panel")
+        .p_3()
+        .child(table)
+        .into_any_element()
+}
+
+/// The kills over time, one point per ten simulated seconds plus the end.
+fn timeline_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+    if run.kills == 0 || run.timeline.len() < 2 {
+        return empty_panel(
+            "combat-timeline-empty",
+            "The chart needs a kill and at least two ten-second samples: a run of ten seconds or more \
+             fills it, and the idle player never attacks.",
+            muted,
+        );
+    }
+    let labels: Vec<String> = run
+        .timeline
+        .iter()
+        .map(|sample| format::duration(sample.t_ms as f64 / 1000.0))
+        .collect();
+    let kills: Vec<f64> = run
+        .timeline
+        .iter()
+        .map(|sample| sample.kills as f64)
+        .collect();
+    let chart = LineChart::new("combat-kills-timeline", labels)
+        .series(Series::new("Kills", kills))
+        .format(|value| format::count(value.max(0.0) as u64))
+        .h(px(240.0));
+    div()
+        .id("combat-timeline-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(chart)
+        .child(Caption::new(format!(
+            "Cumulative kills at every ten simulated seconds, ending on the run's own {} kills at \
+             {}. Every point is the run's timeline, not an average.",
+            format::count(run.kills),
+            format::duration(run.simulated_ms as f64 / 1000.0)
+        ))
+        .text_color(muted))
+        .into_any_element()
+}
+
+/// A results tab with nothing to show yet, and why.
+fn empty_panel(id: &'static str, message: &str, muted: gpui::Hsla) -> AnyElement {
+    div()
+        .id(id)
+        .p_3()
+        .text_size(px(12.0))
+        .text_color(muted)
+        .child(SharedString::from(message.to_string()))
         .into_any_element()
 }
 

@@ -11,7 +11,9 @@
 //! simulator can disable, set or scale, with the active rules shown as chips and
 //! a reset back to the save. The encounter run (CS-03) and the comparison
 //! (CS-04) land on top of both; the editor owns the loadout and overrides they
-//! read.
+//! read. The run's results (CS-05) are tabs over the one stored run: its
+//! summary, Killroy practice, obols, kills by monster, cards and the kills
+//! timeline.
 
 mod actions;
 
@@ -21,6 +23,8 @@ pub(crate) mod equipment;
 pub(crate) mod overrides;
 pub(crate) mod presets;
 pub(crate) mod talents;
+
+pub(crate) use encounter::RunResult;
 
 use crate::state::AppState;
 use crate::ui::layout;
@@ -40,6 +44,55 @@ use gpui::{
 use idleon_combat::Loadout;
 use idleon_save::Save;
 use std::collections::BTreeMap;
+
+/// The result tabs: one stored run read six ways.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum ResultsTab {
+    #[default]
+    Summary,
+    Killroy,
+    Obols,
+    Kills,
+    Cards,
+    Timeline,
+}
+
+impl ResultsTab {
+    pub(crate) const ALL: [ResultsTab; 6] = [
+        ResultsTab::Summary,
+        ResultsTab::Killroy,
+        ResultsTab::Obols,
+        ResultsTab::Kills,
+        ResultsTab::Cards,
+        ResultsTab::Timeline,
+    ];
+
+    pub(crate) fn id(self) -> &'static str {
+        match self {
+            ResultsTab::Summary => "result-summary",
+            ResultsTab::Killroy => "result-killroy",
+            ResultsTab::Obols => "result-obols",
+            ResultsTab::Kills => "result-kills",
+            ResultsTab::Cards => "result-cards",
+            ResultsTab::Timeline => "result-timeline",
+        }
+    }
+
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            ResultsTab::Summary => "Summary",
+            ResultsTab::Killroy => "Killroy",
+            ResultsTab::Obols => "Obols",
+            ResultsTab::Kills => "Kills",
+            ResultsTab::Cards => "Cards",
+            ResultsTab::Timeline => "Timeline",
+        }
+    }
+
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|tab| tab.id() == id)
+    }
+}
 
 /// The editor's tabs, matching the upstream setup editor's character tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -118,6 +171,10 @@ pub(crate) struct State {
     pub(crate) sim_kill_every_ms: u64,
     /// The run's simulated duration in seconds.
     pub(crate) sim_duration_s: u64,
+    /// The seed every drop roll and the Killroy projection read.
+    pub(crate) sim_seed: u64,
+    /// The results tab the Encounter pane shows.
+    pub(crate) results: ResultsTab,
     /// The characters the comparison runs, ascending.
     pub(crate) compare_characters: Vec<usize>,
     /// Each selected character's loadout keys: `saved`, `edited` or
@@ -151,6 +208,8 @@ impl State {
             sim_stand_in: true,
             sim_kill_every_ms: 1_500,
             sim_duration_s: 300,
+            sim_seed: 1,
+            results: ResultsTab::default(),
             compare_characters: vec![0],
             compare_loadouts: BTreeMap::new(),
             compare_maps: vec![

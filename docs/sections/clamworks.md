@@ -5,7 +5,7 @@
 - Milestone: `M26`
 - Section key: `clamworks`
 - Group: `w7`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`, `combat-sim`
 
 Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.

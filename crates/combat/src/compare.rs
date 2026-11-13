@@ -55,11 +55,11 @@ impl Plan {
             return Err("A run lasts at least one 10 ms step.".into());
         }
         for row in &self.rows {
-            encounter::validate(&encounter::Options {
-                map: row.map,
-                player: self.player,
-                duration_ms: self.duration_ms,
-            })?;
+            encounter::validate(&encounter::Options::basic(
+                row.map,
+                self.player,
+                self.duration_ms,
+            ))?;
         }
         Ok(())
     }
@@ -272,11 +272,7 @@ pub fn run(
         let outcome = match outcomes.get(&spec.map) {
             Some(outcome) => outcome.clone(),
             None => {
-                let options = encounter::Options {
-                    map: spec.map,
-                    player: plan.player,
-                    duration_ms: plan.duration_ms,
-                };
+                let options = encounter::Options::basic(spec.map, plan.player, plan.duration_ms);
                 let offset = index as f32 / total as f32;
                 let span = 1.0 / total as f32;
                 let result = encounter::run(options, &mut |inner| {
@@ -426,6 +422,9 @@ mod tests {
             damage: 0.0,
             idle_ticks: 0,
             respawn: Vec::new(),
+            seed: 1,
+            timeline: Vec::new(),
+            drops: crate::drops::Summary::default(),
         };
         outcome.damage = kills as f64;
         Row {

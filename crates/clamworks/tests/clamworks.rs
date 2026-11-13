@@ -19,6 +19,7 @@ fn fixture_state() -> Clamworks {
         promotion_level: 6,
         upgrades: [123, 12, 30, 43, 79, 33, 9, 0, 0],
         unlocked: 6,
+        scurge_unlocked: true,
         scurge_level: 122,
         scurge_upgrades: [18, 2, 3, 18, 27, 54, 0, 0, 0],
     }
@@ -179,7 +180,7 @@ fn optionslistaccount_wins_over_optlacc_and_menagerie_holds_the_scurge_state() {
     let save = serde_json::json!({
         "OptLacc": [99, 99, 99],
         "OptionsListAccount": options,
-        "Menagerie": "[[0,0,0,0,0,0,0,0,7],[0],[0],[0],[0],[4,3]]"
+        "Menagerie": "[[0,0,0,0,0,0,0,0,7],[0],[0,0,0,0,1],[0],[0],[4,3]]"
     });
     let save = save.as_object().expect("object").clone();
     let mut warnings = Vec::new();
@@ -188,8 +189,32 @@ fn optionslistaccount_wins_over_optlacc_and_menagerie_holds_the_scurge_state() {
     assert_eq!(clamworks.pearl_balance, 2.0);
     assert_eq!(clamworks.upgrades[0], 3);
     assert_eq!(clamworks.scurge_level, 7);
+    assert!(clamworks.scurge_unlocked);
     assert_eq!(clamworks.scurge_upgrades[0], 4);
     assert_eq!(clamworks.scurge_upgrades[1], 3);
+}
+
+#[test]
+fn a_save_without_the_menagerie_rows_names_every_missing_one() {
+    let save = serde_json::json!({ "OptLacc": vec![0.0; 470] });
+    let mut warnings = Vec::new();
+    let clamworks = Clamworks::from_save(save.as_object().expect("object"), &mut warnings);
+    assert!(!clamworks.scurge_unlocked);
+    assert_eq!(
+        warnings,
+        ["Menagerie: not in the save; Scurge progress reads as zero",]
+    );
+    let save = serde_json::json!({ "OptLacc": vec![0.0; 470], "Menagerie": "[[0],[0],[0]]" });
+    let mut warnings = Vec::new();
+    let _ = Clamworks::from_save(save.as_object().expect("object"), &mut warnings);
+    assert_eq!(
+        warnings,
+        [
+            "Menagerie[0][8]: Scurge level not in the save; it reads as zero",
+            "Menagerie[2][4]: Scurge unlock not in the save; Scurge reads as locked",
+            "Menagerie[5]: Scurge upgrade levels not in the save; they read as zero",
+        ]
+    );
 }
 
 /// `crates/clamworks/tests/clamworks-oracle.json`, written by `script/clamworks-oracle.mjs`.
