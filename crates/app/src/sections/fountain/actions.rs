@@ -1,11 +1,27 @@
 //! What the window does when the fountain section is edited or run.
 
 use crate::sections;
-use crate::sections::fountain::State;
+use crate::sections::fountain::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, State};
 use crate::state::AppState;
 use gpui::{App, Context};
-use idleon_fountain::{Fountain, OptimizerPlan};
+use idleon_fountain::{Fountain, MarblePlan, MarbleRequest, OptimizerPlan, SimRequest, SimResult};
 use idleon_ui::runner::TaskState;
+
+/// What a marble plan was produced from; a change marks it stale.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct MarblePlanInputs {
+    pub(crate) request: MarbleRequest,
+    /// The save this run read, so a new import is stale.
+    pub(crate) revision: u64,
+}
+
+/// What a simulated run was produced from; a change marks it stale.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct SimInputs {
+    pub(crate) request: SimRequest,
+    /// The save this run read, so a new import is stale.
+    pub(crate) revision: u64,
+}
 
 impl AppState {
     /// The desired currency the fountain currency tab simulates.
@@ -81,6 +97,99 @@ impl AppState {
         self.cancel_run(
             self.fountain_plan.clone(),
             "Cancelling the fountain plan…",
+            cx,
+        );
+    }
+
+    /// The marble plan's progress, result and staleness for the current controls.
+    pub(crate) fn fountain_marble_plan_task(&self, cx: &App) -> TaskState<MarblePlan> {
+        self.fountain_marble_plan
+            .read(cx)
+            .state(&self.fountain_marble_inputs())
+    }
+
+    /// The inputs a marble plan started now would read.
+    pub(crate) fn fountain_marble_inputs(&self) -> MarblePlanInputs {
+        MarblePlanInputs {
+            request: self.fountain_state.marble_plan_request(),
+            revision: self.save_revision,
+        }
+    }
+
+    /// Optimize the marble levels off the UI thread through the shared runner.
+    pub(crate) fn run_fountain_marble_plan(&mut self, cx: &mut Context<Self>) {
+        let Some(fountain) = self.fountain.clone() else {
+            self.set_status("Marble plan: import a save first.", cx);
+            return;
+        };
+        let inputs = self.fountain_marble_inputs();
+        self.start_run(
+            self.fountain_marble_plan.clone(),
+            "Planning fountain marble upgrades…",
+            inputs.clone(),
+            move |inputs, report| fountain.marble_optimize_with(inputs.request, report),
+            cx,
+        );
+    }
+
+    /// Ask a running marble plan to stop at its next purchase.
+    pub(crate) fn cancel_fountain_marble_plan(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.fountain_marble_plan.clone(),
+            "Cancelling the fountain marble plan…",
+            cx,
+        );
+    }
+
+    /// Set the simulation's time limit, in hours.
+    pub(crate) fn set_fountain_sim_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
+        self.fountain_state.sim_hours = if hours.is_finite() {
+            hours.clamp(SIM_MIN_HOURS, SIM_MAX_HOURS)
+        } else {
+            SIM_DEFAULT_HOURS
+        };
+        cx.notify();
+    }
+
+    /// The simulated run's progress, result and staleness for the current controls.
+    pub(crate) fn fountain_sim_task(&self, cx: &App) -> TaskState<SimResult> {
+        self.fountain_sim
+            .read(cx)
+            .state(&self.fountain_sim_inputs())
+    }
+
+    /// The inputs a simulation started now would read.
+    pub(crate) fn fountain_sim_inputs(&self) -> SimInputs {
+        SimInputs {
+            request: self.fountain_state.sim_request(),
+            revision: self.save_revision,
+        }
+    }
+
+    /// Simulate active fountain play off the UI thread through the shared runner.
+    pub(crate) fn run_fountain_sim(&mut self, cx: &mut Context<Self>) {
+        let Some(fountain) = self.fountain.clone() else {
+            self.set_status("Fountain simulation: import a save first.", cx);
+            return;
+        };
+        let inputs = self.fountain_sim_inputs();
+        self.start_run(
+            self.fountain_sim.clone(),
+            format!(
+                "Simulating {}h of fountain play…",
+                self.fountain_state.sim_hours
+            ),
+            inputs.clone(),
+            move |inputs, report| fountain.simulate_with(inputs.request, report),
+            cx,
+        );
+    }
+
+    /// Ask a running simulation to stop; the previous result stays.
+    pub(crate) fn cancel_fountain_sim(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.fountain_sim.clone(),
+            "Cancelling the fountain simulation…",
             cx,
         );
     }

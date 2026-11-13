@@ -46,6 +46,12 @@ fn at(value: &Value, key: &str) -> f64 {
         .unwrap_or_else(|| panic!("{key} is a number"))
 }
 
+fn number(value: &Value) -> f64 {
+    value
+        .as_f64()
+        .unwrap_or_else(|| panic!("{value} is a number"))
+}
+
 /// A save carrying only `Research` and a `Holes` array, for edge cases.
 fn save(rows: Vec<Value>) -> String {
     json!({ "Research": "[]", "Holes": rows }).to_string()
@@ -964,4 +970,429 @@ fn the_optimizer_reports_progress_and_honours_cancel() {
         )
         .expect("a report that never stops finishes");
     assert!(!plan.steps.is_empty());
+}
+
+#[test]
+fn the_marble_planner_matches_upstream_for_every_goal() {
+    let fountain = fountain();
+    let oracle = oracle();
+    for (id, expected) in oracle["marblePlanners"]
+        .as_object()
+        .expect("marble planners are an object")
+    {
+        let goal = Goal::from_id(id).unwrap_or_else(|| panic!("unknown goal {id}"));
+        close(
+            fountain.measure_goal(goal, fountain.desired_currency()),
+            at(expected, "baseline"),
+        );
+        let rows = fountain.marble_planner(fountain::MarbleRequest {
+            goal,
+            affordable: false,
+            ..fountain::MarbleRequest::default()
+        });
+        let expected_rows = expected["rows"].as_array().expect("rows");
+        assert!(
+            rows.len() >= expected_rows.len(),
+            "{id}: the marble planner lists {} rows, upstream {}",
+            rows.len(),
+            expected_rows.len()
+        );
+        for (row, expected) in rows.iter().zip(expected_rows) {
+            assert_eq!(
+                row.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                row.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            assert_eq!(row.name, expected["name"].as_str().expect("name"));
+            close(row.marble_level, at(expected, "marbleLevel"));
+            close(row.cost, at(expected, "cost"));
+            assert_eq!(
+                row.affordable,
+                expected["affordable"].as_bool().expect("affordable")
+            );
+            close(row.delta, at(expected, "delta"));
+            close(row.pct_gain, at(expected, "pctGain"));
+            close(row.efficiency, at(expected, "efficiency"));
+            close(row.seconds_to_afford, seconds(&expected["seconds"]));
+            close(row.royal_chance, at(expected, "royalChance"));
+            close(row.royal_delta, at(expected, "royalDelta"));
+            close(row.duck_chance, at(expected, "duckChance"));
+            close(row.duck_delta, at(expected, "duckDelta"));
+            close(row.lucky_delta, at(expected, "luckyDelta"));
+            close(row.speed_pct, at(expected, "speedPct"));
+            close(row.value_pct, at(expected, "valuePct"));
+            if let Some(fill) = expected.get("fillDelta").and_then(Value::as_f64) {
+                close(row.fill_delta, fill);
+            }
+            if let Some(fill) = expected.get("marbleFillDelta").and_then(Value::as_f64) {
+                close(row.marble_fill_delta, fill);
+            }
+            if let Some(fill) = expected.get("duckFillDelta").and_then(Value::as_f64) {
+                close(row.duck_fill_delta.expect("a duck fill delta"), fill);
+            }
+        }
+    }
+}
+
+#[test]
+fn the_marble_optimizer_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    for (id, expected) in oracle["marbleOptimizers"]
+        .as_object()
+        .expect("marble optimizers are an object")
+    {
+        let (goal, affordable, max_steps) = match id.as_str() {
+            "currency" => (Goal::Currency, true, 50),
+            "optimal" => (Goal::Optimal, true, 25),
+            "royalUnaffordable" => (Goal::Royal, false, 25),
+            other => panic!("unknown marble optimizer fixture {other}"),
+        };
+        let plan = fountain.marble_optimize(fountain::MarbleRequest {
+            goal,
+            max_steps,
+            affordable,
+            ..fountain::MarbleRequest::default()
+        });
+        assert_eq!(plan.goal, goal);
+        close(plan.start_value, at(expected, "startValue"));
+        close(plan.end_value, at(expected, "endValue"));
+        close(plan.gain_pct, at(expected, "totalGainPct"));
+        close(plan.remaining, at(expected, "remaining"));
+        let expected_steps = expected["steps"].as_array().expect("steps");
+        assert_eq!(plan.steps.len(), expected_steps.len(), "{id}: steps");
+        for (step, expected) in plan.steps.iter().zip(expected_steps) {
+            assert_eq!(
+                step.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                step.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            assert_eq!(step.name, expected["name"].as_str().expect("name"));
+            close(step.marble_level, at(expected, "marbleLevel"));
+            close(step.cost, at(expected, "cost"));
+            close(step.delta, at(expected, "delta"));
+            close(step.pct_gain, at(expected, "pctGain"));
+            close(step.value, at(expected, "value"));
+            close(step.cumulative_seconds, at(expected, "cumulative"));
+        }
+        let expected_groups = expected["groups"].as_array().expect("groups");
+        assert_eq!(plan.groups.len(), expected_groups.len(), "{id}: groups");
+        for (group, expected) in plan.groups.iter().zip(expected_groups) {
+            assert_eq!(
+                group.water,
+                expected["water"].as_u64().expect("water") as usize
+            );
+            assert_eq!(
+                group.upgrade,
+                expected["upgrade"].as_u64().expect("upgrade") as usize
+            );
+            assert_eq!(group.name, expected["name"].as_str().expect("name"));
+            assert_eq!(
+                group.count,
+                expected["count"].as_u64().expect("count") as usize
+            );
+            close(group.start_level, at(expected, "startLevel"));
+            close(group.end_level, at(expected, "endLevel"));
+            close(group.total_cost, at(expected, "totalCost"));
+            close(group.cumulative_seconds, at(expected, "cumulative"));
+        }
+    }
+}
+
+#[test]
+fn the_simulation_matches_upstream() {
+    let fountain = fountain();
+    let oracle = oracle();
+    let expected = &oracle["simulation"];
+    let result = fountain.simulate(fountain::SimRequest {
+        hours: at(expected, "hours"),
+        desired: None,
+    });
+    close(result.start_marble_rate, at(expected, "startMarbleRate"));
+    close(result.end_marble_rate, at(expected, "endMarbleRate"));
+    close(result.start_base_currency, at(expected, "startBaseCurr"));
+    close(result.end_base_currency, at(expected, "endBaseCurr"));
+    close(result.clock_seconds, at(expected, "clockSec"));
+    assert_eq!(
+        result.steps,
+        expected["stepCount"].as_u64().expect("stepCount") as usize
+    );
+    close(result.marbles, at(expected, "marbles"));
+    close(
+        result.marble_bar_progress,
+        at(expected, "marbleBarProgress"),
+    );
+    for (currency, value) in result.start_currency_rates.iter().enumerate() {
+        close(*value, number(&expected["startCurrRates"][currency]));
+    }
+    for (currency, value) in result.end_currency_rates.iter().enumerate() {
+        close(*value, number(&expected["endCurrRates"][currency]));
+    }
+    for (currency, value) in result.currencies.iter().enumerate() {
+        close(*value, number(&expected["currencies"][currency]));
+    }
+    let expected_levels = expected["uLvs"].as_array().expect("upgrade levels");
+    assert_eq!(result.upgrade_levels.len(), expected_levels.len());
+    for (water, levels) in result.upgrade_levels.iter().enumerate() {
+        let expected = expected_levels[water].as_array().expect("levels");
+        assert_eq!(levels.len(), expected.len());
+        for (level, expected) in levels.iter().zip(expected) {
+            close(*level, expected.as_f64().expect("level"));
+        }
+    }
+    let expected_levels = expected["mLvs"].as_array().expect("marble levels");
+    assert_eq!(result.marble_levels.len(), expected_levels.len());
+    for (water, levels) in result.marble_levels.iter().enumerate() {
+        let expected = expected_levels[water].as_array().expect("levels");
+        for (level, expected) in levels.iter().zip(expected) {
+            close(*level, expected.as_f64().expect("level"));
+        }
+    }
+
+    // The run buys thousands of cheap levels, so the fixture keeps a leading,
+    // early and trailing sample of the timeline; the count above pins the rest.
+    let sample = &expected["eventSample"];
+    let leading = sample["leading"].as_u64().expect("leading") as usize;
+    let after_start = sample["afterStart"].as_u64().expect("afterStart") as usize;
+    let trailing = sample["trailing"].as_u64().expect("trailing") as usize;
+    assert_eq!(
+        result.events.len(),
+        expected["eventCount"].as_u64().expect("eventCount") as usize
+    );
+    let mut sampled: Vec<&idleon_fountain::SimEvent> = result.events.iter().take(leading).collect();
+    sampled.extend(
+        result
+            .events
+            .iter()
+            .filter(|event| event.time > 0.0)
+            .take(after_start),
+    );
+    sampled.extend(result.events.iter().skip(result.events.len() - trailing));
+    let expected_events = expected["events"].as_array().expect("events");
+    assert_eq!(sampled.len(), expected_events.len(), "sampled events");
+    for (event, expected) in sampled.into_iter().zip(expected_events) {
+        close(event.time, at(expected, "time"));
+        close(event.marble_rate, at(expected, "marbleRate"));
+        close(event.base_currency_rate, at(expected, "baseCurrRate"));
+        for (currency, rate) in event.currency_rates.iter().enumerate() {
+            close(*rate, number(&expected["currRates"][currency]));
+        }
+        let kind = expected["type"].as_str().expect("type");
+        match (&event.kind, kind) {
+            (
+                idleon_fountain::SimEventKind::BuyUpgrade {
+                    water,
+                    upgrade,
+                    name,
+                    cost,
+                    currency,
+                    level,
+                },
+                "buy-upgrade",
+            ) => {
+                assert_eq!(*water, expected["water"].as_u64().expect("water") as usize);
+                assert_eq!(
+                    *upgrade,
+                    expected["upgrade"].as_u64().expect("upgrade") as usize
+                );
+                assert_eq!(*name, expected["name"].as_str().expect("name"));
+                close(*cost, at(expected, "cost"));
+                assert_eq!(
+                    *currency,
+                    expected["currency"].as_u64().expect("currency") as usize
+                );
+                close(*level, at(expected, "level"));
+            }
+            (
+                idleon_fountain::SimEventKind::BuyMarble {
+                    water,
+                    upgrade,
+                    name,
+                    cost,
+                    marble_level,
+                },
+                "buy-marble",
+            ) => {
+                assert_eq!(*water, expected["water"].as_u64().expect("water") as usize);
+                assert_eq!(
+                    *upgrade,
+                    expected["upgrade"].as_u64().expect("upgrade") as usize
+                );
+                assert_eq!(*name, expected["name"].as_str().expect("name"));
+                close(*cost, at(expected, "cost"));
+                close(*marble_level, at(expected, "marbleLevel"));
+            }
+            (idleon_fountain::SimEventKind::Switch { desired, focus }, "switch") => {
+                assert_eq!(
+                    *desired,
+                    expected["desired"].as_u64().expect("desired") as usize
+                );
+                assert_eq!(
+                    *focus,
+                    expected["focus"].as_u64().map(|value| value as usize)
+                );
+            }
+            (
+                idleon_fountain::SimEventKind::Claim {
+                    currency,
+                    amount,
+                    seconds,
+                },
+                "claim",
+            ) => {
+                assert_eq!(
+                    *currency,
+                    expected["currency"].as_u64().expect("currency") as usize
+                );
+                close(*amount, at(expected, "amount"));
+                close(*seconds, at(expected, "seconds"));
+            }
+            (idleon_fountain::SimEventKind::MarbleFill { marbles, total }, "marble-fill") => {
+                close(*marbles, at(expected, "marbles"));
+                close(*total, at(expected, "total"));
+            }
+            (_, other) => panic!("unexpected upstream event {other}"),
+        }
+    }
+}
+
+#[test]
+fn the_marble_planner_ranks_by_the_gain_per_marble() {
+    let fountain = fountain();
+    let rows = fountain.marble_planner(fountain::MarbleRequest {
+        affordable: false,
+        ..fountain::MarbleRequest::default()
+    });
+    assert!(!rows.is_empty());
+    for pair in rows.windows(2) {
+        assert!(
+            pair[0].efficiency >= pair[1].efficiency,
+            "{} ({}) ranks above {} ({})",
+            pair[1].name,
+            pair[1].efficiency,
+            pair[0].name,
+            pair[0].efficiency
+        );
+    }
+    let baseline = fountain.measure_goal(Goal::Currency, fountain.desired_currency());
+    for row in &rows {
+        assert!(row.delta > 0.0);
+        assert!(
+            fountain.upgrade_level(row.water, row.upgrade) > 0.0,
+            "{} is owned",
+            row.name
+        );
+        assert!(
+            Fountain::can_marble(row.water, row.upgrade),
+            "{} has a marble track",
+            row.name
+        );
+        assert_eq!(
+            row.marble_level,
+            fountain.marble_level(row.water, row.upgrade)
+        );
+        close(
+            row.cost,
+            Fountain::marble_cost(row.water, row.upgrade, row.marble_level),
+        );
+        close(row.pct_gain, row.delta / baseline * 100.0);
+        close(row.efficiency, row.pct_gain / row.cost);
+    }
+    let fill = fountain.marble_planner(fountain::MarbleRequest {
+        goal: Goal::Fill,
+        affordable: false,
+        ..fountain::MarbleRequest::default()
+    });
+    assert_ne!(
+        rows.first().map(|row| (row.water, row.upgrade)),
+        fill.first().map(|row| (row.water, row.upgrade)),
+        "the fill goal ranks a different marble level first"
+    );
+}
+
+#[test]
+fn the_marble_optimizer_respects_the_marble_budget() {
+    let fountain = fountain();
+    let plan = fountain.marble_optimize(fountain::MarbleRequest::default());
+    assert!(!plan.steps.is_empty());
+    let spent: f64 = plan.steps.iter().map(|step| step.cost).sum();
+    assert!(
+        spent <= fountain.marble(),
+        "the plan spends {spent} marble of {}",
+        fountain.marble()
+    );
+    close(plan.remaining, fountain.marble() - spent);
+    let grouped: usize = plan.groups.iter().map(|group| group.count).sum();
+    assert_eq!(grouped, plan.steps.len(), "every step is in one group");
+}
+
+#[test]
+fn the_simulation_is_deterministic() {
+    let fountain = fountain();
+    let request = fountain::SimRequest {
+        hours: 1.0,
+        desired: None,
+    };
+    let first = fountain.simulate(request);
+    let second = fountain.simulate(request);
+    assert_eq!(first, second, "the same request replays the same run");
+    assert_eq!(first.steps, second.steps);
+    assert!(!first.events.is_empty());
+}
+
+#[test]
+fn the_simulation_reports_progress_and_honours_cancel() {
+    let fountain = fountain();
+    let marble = fountain.marble();
+    let level = fountain.upgrade_level(0, 12);
+    let mut reports: Vec<Progress> = Vec::new();
+    let outcome = fountain.simulate_with(
+        fountain::SimRequest {
+            hours: 8.0,
+            desired: None,
+        },
+        |progress| {
+            reports.push(progress);
+            if reports.len() == 2 {
+                Control::Stop
+            } else {
+                Control::Continue
+            }
+        },
+    );
+    assert!(outcome.is_none(), "a cancelled run stores nothing");
+    assert_eq!(reports.len(), 2, "the run stops at the second report");
+    assert!(reports[1].fraction >= reports[0].fraction);
+    assert!(reports[0].message.contains("Simulated"));
+    assert_eq!(fountain.marble(), marble, "the source cavern is untouched");
+    assert_eq!(
+        fountain.upgrade_level(0, 12),
+        level,
+        "the source levels are untouched"
+    );
+
+    let mut fractions = Vec::new();
+    let result = fountain
+        .simulate_with(
+            fountain::SimRequest {
+                hours: 8.0,
+                desired: None,
+            },
+            |progress| {
+                fractions.push(progress.fraction);
+                Control::Continue
+            },
+        )
+        .expect("a report that never stops finishes");
+    assert!(!result.events.is_empty());
+    assert!(
+        fractions.windows(2).all(|pair| pair[0] <= pair[1]),
+        "progress never goes backwards: {fractions:?}"
+    );
 }

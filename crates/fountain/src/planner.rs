@@ -484,7 +484,7 @@ impl Fountain {
     }
 
     /// One upgrade level above the saved one, on a copy of the cavern.
-    fn with_upgrade_level(&self, water: usize, upgrade: usize, level: f64) -> Fountain {
+    pub(super) fn with_upgrade_level(&self, water: usize, upgrade: usize, level: f64) -> Fountain {
         let mut simulated = self.clone();
         if let Some(cells) = simulated.upg_lvs.get_mut(water)
             && let Some(cell) = cells.get_mut(upgrade)
@@ -576,7 +576,7 @@ struct Candidate {
 }
 
 /// `pctGainFrom`: the gain as a percentage of the baseline.
-fn pct_gain(baseline: f64, delta: f64) -> f64 {
+pub(super) fn pct_gain(baseline: f64, delta: f64) -> f64 {
     if delta <= 0.0 {
         return 0.0;
     }
@@ -588,7 +588,7 @@ fn pct_gain(baseline: f64, delta: f64) -> f64 {
 }
 
 /// The gain relative to a starting figure, in percent.
-fn ratio_pct(start: f64, end: f64) -> f64 {
+pub(super) fn ratio_pct(start: f64, end: f64) -> f64 {
     if start > 0.0 {
         (end / start - 1.0) * 100.0
     } else {

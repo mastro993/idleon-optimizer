@@ -5,7 +5,7 @@
 //! they live in the project document like every other section's.
 
 use idleon_fountain::Fountain;
-use idleon_fountain::{self as fountain, Goal, PlanRequest, WATERS};
+use idleon_fountain::{self as fountain, Goal, MarbleRequest, PlanRequest, SimRequest, WATERS};
 use serde::{Deserialize, Serialize};
 
 /// The fountain tabs this build implements.
@@ -21,10 +21,21 @@ pub(crate) enum Tab {
     Upgrades,
     /// The upgrade planner and the greedy optimizer.
     Planner,
+    /// The marble planner and the greedy marble optimizer.
+    Marble,
+    /// The simulated run.
+    Sim,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 4] = [Tab::Overview, Tab::Currency, Tab::Upgrades, Tab::Planner];
+    pub(crate) const ALL: [Tab; 6] = [
+        Tab::Overview,
+        Tab::Currency,
+        Tab::Upgrades,
+        Tab::Planner,
+        Tab::Marble,
+        Tab::Sim,
+    ];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
@@ -32,6 +43,8 @@ impl Tab {
             Tab::Currency => "currency",
             Tab::Upgrades => "upgrades",
             Tab::Planner => "planner",
+            Tab::Marble => "marble",
+            Tab::Sim => "sim",
         }
     }
 
@@ -41,6 +54,8 @@ impl Tab {
             Tab::Currency => "Currency",
             Tab::Upgrades => "Upgrades",
             Tab::Planner => "Planner",
+            Tab::Marble => "Marble",
+            Tab::Sim => "Sim",
         }
     }
 
@@ -51,6 +66,12 @@ impl Tab {
 
 /// The optimizer's step caps, as the page's selector lists them.
 pub(crate) const STEP_CHOICES: [usize; 5] = [10, 25, 50, 100, 250];
+
+/// The simulation's time limit bounds, in hours. The page's input has no
+/// maximum; the section caps a run so a typo cannot start an endless one.
+pub(crate) const SIM_MIN_HOURS: f64 = 1.0;
+pub(crate) const SIM_MAX_HOURS: f64 = 720.0;
+pub(crate) const SIM_DEFAULT_HOURS: f64 = 24.0;
 
 /// The section's selections, kept across tab switches and dashboard visits.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -83,6 +104,20 @@ pub(crate) struct State {
     pub(crate) optimizer_normalize: bool,
     /// Rank by the hours needed to earn the cost.
     pub(crate) optimizer_per_hr: bool,
+    /// The marble planner's goal.
+    pub(crate) marble_goal: Goal,
+    /// The desired currency the `optimal` marble goal simulates.
+    pub(crate) marble_desired: Option<usize>,
+    /// Only rank marble levels the saved balance can pay for.
+    pub(crate) marble_affordable: bool,
+    /// The marble optimizer's goal.
+    pub(crate) marble_optimizer_goal: Goal,
+    /// The marble optimizer's step cap.
+    pub(crate) marble_optimizer_steps: usize,
+    /// Only buy marble levels the saved balance can pay for.
+    pub(crate) marble_optimizer_affordable: bool,
+    /// The simulated run's time limit, in hours.
+    pub(crate) sim_hours: f64,
 }
 
 impl Default for State {
@@ -102,6 +137,13 @@ impl Default for State {
             optimizer_affordable: true,
             optimizer_normalize: false,
             optimizer_per_hr: false,
+            marble_goal: Goal::Currency,
+            marble_desired: None,
+            marble_affordable: false,
+            marble_optimizer_goal: Goal::Currency,
+            marble_optimizer_steps: 50,
+            marble_optimizer_affordable: true,
+            sim_hours: SIM_DEFAULT_HOURS,
         }
     }
 }
@@ -122,9 +164,19 @@ impl State {
         self.planner_desired = self.planner_desired.filter(|currency| {
             *currency < fountain::CURRENCIES && fountain.currency_unlocked(*currency)
         });
+        self.marble_desired = self.marble_desired.filter(|currency| {
+            *currency < fountain::CURRENCIES && fountain.currency_unlocked(*currency)
+        });
         if !STEP_CHOICES.contains(&self.optimizer_steps) {
             self.optimizer_steps = 50;
         }
+        if !STEP_CHOICES.contains(&self.marble_optimizer_steps) {
+            self.marble_optimizer_steps = 50;
+        }
+        if !self.sim_hours.is_finite() {
+            self.sim_hours = SIM_DEFAULT_HOURS;
+        }
+        self.sim_hours = self.sim_hours.clamp(SIM_MIN_HOURS, SIM_MAX_HOURS);
     }
 
     /// The planner's request: its own goal, desired currency and ranking.
@@ -136,6 +188,35 @@ impl State {
             affordable: self.planner_affordable,
             normalize: self.planner_normalize,
             per_hr: self.planner_per_hr,
+        }
+    }
+
+    /// The marble planner's request: its own goal, desired currency and
+    /// affordability, with one step per candidate.
+    pub(crate) fn marble_planner_request(&self) -> MarbleRequest {
+        MarbleRequest {
+            goal: self.marble_goal,
+            desired: self.marble_desired,
+            max_steps: 1,
+            affordable: self.marble_affordable,
+        }
+    }
+
+    /// The marble optimizer's request, including its step cap.
+    pub(crate) fn marble_plan_request(&self) -> MarbleRequest {
+        MarbleRequest {
+            goal: self.marble_optimizer_goal,
+            desired: None,
+            max_steps: self.marble_optimizer_steps,
+            affordable: self.marble_optimizer_affordable,
+        }
+    }
+
+    /// The simulated run's request.
+    pub(crate) fn sim_request(&self) -> SimRequest {
+        SimRequest {
+            hours: self.sim_hours,
+            desired: None,
         }
     }
 

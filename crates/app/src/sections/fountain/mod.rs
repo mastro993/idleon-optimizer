@@ -5,18 +5,22 @@
 //! coins and ducks, the ground coin stacks and the cross-system bonuses); FN-02
 //! adds the currency values, the desired-currency simulator and the upgrade
 //! list with its cost curve; FN-03 adds the upgrade planner and the greedy
-//! optimizer. The marble tab arrives with FN-04.
+//! optimizer; FN-04 adds the marble planner, its optimizer and the simulated
+//! run.
 
 mod actions;
 
 mod bonuses;
 mod currency;
+mod marble;
 mod overview;
 mod planner;
+mod sim;
 pub(crate) mod state;
 mod upgrades;
 
-pub(crate) use state::{STEP_CHOICES, State, Tab};
+pub(crate) use actions::{MarblePlanInputs, SimInputs};
+pub(crate) use state::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, STEP_CHOICES, State, Tab};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -97,6 +101,8 @@ pub(crate) fn view(
         Tab::Currency => currency::currency_pane(state, cx),
         Tab::Upgrades => upgrades::upgrades_pane(state, cx),
         Tab::Planner => planner::planner_pane(state, cx),
+        Tab::Marble => marble::marble_pane(state, cx),
+        Tab::Sim => sim::sim_pane(state, cx),
     };
     div()
         .id("fountain-section")

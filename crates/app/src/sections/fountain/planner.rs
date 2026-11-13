@@ -543,7 +543,7 @@ fn plan_result(plan: &OptimizerPlan, stale: bool) -> AnyElement {
 }
 
 /// A goal selector shared by the planner and the optimizer.
-fn goal_select(
+pub(super) fn goal_select(
     id: &'static str,
     selected: Goal,
     entity: Entity<AppState>,
@@ -566,7 +566,7 @@ fn goal_select(
 }
 
 /// The `optimal` goal's simulated desired currency.
-fn desired_select(
+pub(super) fn desired_select(
     id: &'static str,
     selected: Option<usize>,
     saved: usize,
@@ -597,7 +597,7 @@ fn desired_select(
 }
 
 /// One boolean planner or optimizer control.
-fn flag(
+pub(super) fn flag(
     id: &'static str,
     label: &'static str,
     checked: bool,
@@ -614,7 +614,7 @@ fn flag(
 }
 
 /// The seconds until an upgrade is affordable.
-fn afford(seconds: f64) -> AnyElement {
+pub(super) fn afford(seconds: f64) -> AnyElement {
     if seconds <= 0.0 {
         return div()
             .child(Badge::new("Now").tone(Tone::Success))
@@ -630,7 +630,7 @@ fn afford(seconds: f64) -> AnyElement {
 }
 
 /// A cumulative plan ETA.
-fn eta(seconds: f64) -> AnyElement {
+pub(super) fn eta(seconds: f64) -> AnyElement {
     if seconds <= 0.0 {
         return div()
             .child(Badge::new("Now").tone(Tone::Success))

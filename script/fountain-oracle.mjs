@@ -516,6 +516,232 @@ const optimizers = {
   optimalUnaffordable: optimizer('optimal', { affordable: false, maxSteps: 50 }),
 };
 
+
+// ----- Marble planner and optimizer -----
+// `_renderMarblePlanner` and `_renderMarbleOptimizer` also compute their
+// candidates in the page, so the loops are repeated here over the exported
+// helpers, including the page's top-thirty cut.
+function marblePlanner(goal, options) {
+  const affordableOnly = options.affordable ?? false;
+  const desiredType = options.desired ?? desired;
+  const baseline = F.measureGoal(saveData, goal, uLvs, mLvs, desiredType);
+  const marbleAvail = F.marbleCurrency(saveData);
+  const baseFill = F.barFillTime(saveData, uLvs, mLvs) / F.activeSpeedMulti(uLvs, mLvs);
+  const baseMarbleFill = F.marbleBarFillTime() / F.activeSpeedMulti(uLvs, mLvs);
+  const baseDuckFill = F.duckBarUnlocked(uLvs, mLvs)
+    ? F.duckBarFillTime() / F.activeSpeedMulti(uLvs, mLvs) : 0;
+  const baseDuck = F.duckBarUnlocked(uLvs, mLvs) ? F.duckChance(saveData, uLvs, mLvs) : 0;
+  const baseLucky = F.luckyCoinBaseChance(uLvs, mLvs);
+  const marblePerHour = F.marblePerHr(saveData, uLvs, mLvs);
+  const isOptimal = goal === 'optimal';
+  const baseStacks = isOptimal ? F.optimalStacksPerHr(saveData, uLvs, mLvs) : 0;
+  const baseStackVal = isOptimal ? F.optimalStackValue(saveData, uLvs, mLvs, desiredType) : 0;
+  const candidates = [];
+  for (let w = 0; w < F.WATERS_IMPLEMENTED; w++) {
+    for (let u = 0; u < 20; u++) {
+      const upgLv = uLvs[w][u] || 0;
+      if (upgLv <= 0) continue;
+      if (!F.canMarble(w, u)) continue;
+      const mLv = mLvs[w][u] || 0;
+      const cost = F.marbleCost(w, u, mLv);
+      const canAfford = marbleAvail >= cost;
+      if (affordableOnly && !canAfford) continue;
+      const simMLvs = F.cloneMarbleLvs(mLvs);
+      simMLvs[w][u] = mLv + 1;
+      const newVal = F.measureGoal(saveData, goal, uLvs, simMLvs, desiredType);
+      const delta = newVal - baseline;
+      if (delta <= 0) continue;
+      const pctGain = pctGainFrom(baseline, delta);
+      const efficiency = cost > 0 ? pctGain / cost : 0;
+      const row = {
+        water: w, upgrade: u, name: F.UPG_DATA[w][u][0], marbleLevel: mLv,
+        cost, affordable: canAfford, delta, pctGain, efficiency,
+        seconds: marblePerHour > 0 && cost > marbleAvail
+          ? (cost - marbleAvail) / marblePerHour * 3600 : (cost > marbleAvail ? null : 0),
+        royalChance: F.royalChance(uLvs, simMLvs),
+        duckChance: F.duckChance(saveData, uLvs, simMLvs),
+        luckyDelta: F.luckyCoinBaseChance(uLvs, simMLvs) - baseLucky,
+        speedPct: isOptimal && baseStacks > 0
+          ? (F.optimalStacksPerHr(saveData, uLvs, simMLvs) / baseStacks - 1) * 100 : 0,
+        valuePct: isOptimal && baseStackVal > 0
+          ? (F.optimalStackValue(saveData, uLvs, simMLvs, desiredType) / baseStackVal - 1) * 100 : 0,
+      };
+      if (goal === 'fill') {
+        row.fillDelta = baseFill
+          - F.barFillTime(saveData, uLvs, simMLvs) / F.activeSpeedMulti(uLvs, simMLvs);
+        row.marbleFillDelta = baseMarbleFill
+          - F.marbleBarFillTime() / F.activeSpeedMulti(uLvs, simMLvs);
+        if (baseDuckFill > 0) {
+          row.duckFillDelta = baseDuckFill
+            - F.duckBarFillTime() / F.activeSpeedMulti(uLvs, simMLvs);
+        }
+      }
+      row.duckDelta = row.duckChance - baseDuck;
+      row.royalDelta = row.royalChance - F.royalChance(uLvs, mLvs);
+      candidates.push(row);
+    }
+  }
+  candidates.sort((a, b) => b.efficiency - a.efficiency);
+  return { baseline, rows: candidates.slice(0, 8) };
+}
+
+const marblePlanners = {};
+for (const goal of plannerGoals) marblePlanners[goal] = marblePlanner(goal, {});
+
+function marbleOptimizer(goal, options) {
+  const affordable = options.affordable ?? true;
+  const maxSteps = options.maxSteps ?? 50;
+  const desiredType = options.desired ?? desired;
+  const simMLvs = F.cloneMarbleLvs(mLvs);
+  let budget = F.marbleCurrency(saveData);
+  const startValue = F.measureGoal(saveData, goal, uLvs, mLvs, desiredType);
+  let baseline = F.measureGoal(saveData, goal, uLvs, simMLvs, desiredType);
+  const steps = [];
+  let clock = 0;
+  for (let step = 0; step < maxSteps; step++) {
+    let best = null;
+    for (let w = 0; w < F.WATERS_IMPLEMENTED; w++) {
+      for (let u = 0; u < 20; u++) {
+        if ((uLvs[w][u] || 0) <= 0) continue;
+        if (!F.canMarble(w, u)) continue;
+        const mLv = simMLvs[w][u] || 0;
+        const cost = F.marbleCost(w, u, mLv);
+        if (affordable && budget < cost) continue;
+        if (!affordable && budget < cost && !(F.marblePerHr(saveData, uLvs, simMLvs) > 0)) continue;
+        const tryMLvs = F.cloneMarbleLvs(simMLvs);
+        tryMLvs[w][u] = mLv + 1;
+        const newVal = F.measureGoal(saveData, goal, uLvs, tryMLvs, desiredType);
+        const delta = newVal - baseline;
+        if (delta <= 0) continue;
+        const pctGain = pctGainFrom(baseline, delta);
+        const efficiency = cost > 0 ? pctGain / cost : 0;
+        if (best === null || efficiency > best.efficiency) {
+          best = { w, u, name: F.UPG_DATA[w][u][0], cost, delta, pctGain, efficiency, newMLv: mLv + 1 };
+        }
+      }
+    }
+    if (best === null) break;
+    if (!affordable && budget < best.cost) {
+      const marbleRate = F.marblePerHr(saveData, uLvs, simMLvs);
+      if (!(marbleRate > 0)) break;
+      const wait = (best.cost - budget) / marbleRate * 3600;
+      budget += marbleRate * wait / 3600;
+      clock += wait;
+    }
+    budget = Math.max(0, budget - best.cost);
+    simMLvs[best.w][best.u] = best.newMLv;
+    baseline += best.delta;
+    steps.push({
+      water: best.w, upgrade: best.u, name: best.name, marbleLevel: best.newMLv,
+      cost: best.cost, delta: best.delta, pctGain: best.pctGain,
+      value: baseline, cumulative: clock,
+    });
+  }
+  const groups = [];
+  for (const step of steps) {
+    const group = groups.find((g) => g.water === step.water && g.upgrade === step.upgrade);
+    if (group) {
+      group.count++;
+      group.totalCost += step.cost;
+      group.endLevel = step.marbleLevel;
+      group.cumulative = step.cumulative;
+    } else {
+      groups.push({
+        water: step.water, upgrade: step.upgrade, name: step.name, count: 1,
+        startLevel: step.marbleLevel - 1, endLevel: step.marbleLevel,
+        totalCost: step.cost, cumulative: step.cumulative,
+      });
+    }
+  }
+  groups.sort((a, b) => a.cumulative - b.cumulative);
+  return {
+    goal,
+    startValue,
+    endValue: baseline,
+    totalGainPct: pctGainFrom(startValue, baseline - startValue),
+    steps,
+    groups,
+    remaining: budget,
+  };
+}
+
+const marbleOptimizers = {
+  currency: marbleOptimizer('currency', { affordable: true, maxSteps: 50 }),
+  optimal: marbleOptimizer('optimal', { affordable: true, maxSteps: 25 }),
+  royalUnaffordable: marbleOptimizer('royal', { affordable: false, maxSteps: 25 }),
+};
+
+// ----- Simulation -----
+// The page runs `runSim` in a module worker; the same exported function runs
+// here on the fixture cavern, with the page's default 24-hour limit.
+const { runSim } = await import(join(source, 'js/fountain-sim-worker.js'));
+const simRun = runSim({
+  saveData,
+  uLvs,
+  mLvs,
+  desired,
+  timeLimit: 24,
+  marbleBarProgress: F.marbleBarProgress(saveData),
+  currencies: Array.from({ length: 9 }, (_, type) => F.fountCurrencyAvail(saveData, type)),
+  marbles: F.marbleCurrency(saveData),
+});
+const simEvents = simRun.events.map((event) => {
+  const line = {
+    time: event.time,
+    type: event.type,
+    marbleRate: event.marbleRate,
+    baseCurrRate: event.baseCurrRate,
+    currRates: event.currRates,
+  };
+  if (event.type === 'buy-upgrade') {
+    Object.assign(line, {
+      water: event.w, upgrade: event.u, name: event.name, cost: event.cost,
+      currency: event.costType, level: event.newLv,
+    });
+  } else if (event.type === 'buy-marble') {
+    Object.assign(line, {
+      water: event.w, upgrade: event.u, name: event.name, cost: event.cost,
+      marbleLevel: event.newLv,
+    });
+  } else if (event.type === 'switch') {
+    line.desired = event.newDesired;
+    line.focus = event.newFocus >= 0 ? event.newFocus : null;
+  } else if (event.type === 'claim') {
+    Object.assign(line, {
+      currency: event.currType, amount: event.amount, seconds: event.duration,
+    });
+  } else if (event.type === 'marble-fill') {
+    Object.assign(line, { marbles: event.marbles, total: event.totalMarbles });
+  }
+  return line;
+});
+const simulation = {
+  hours: 24,
+  startMarbleRate: simRun.startMarbleRate,
+  endMarbleRate: simRun.endMarbleRate,
+  startBaseCurr: simRun.startBaseCurr,
+  endBaseCurr: simRun.endBaseCurr,
+  startCurrRates: simRun.startCurrRates,
+  endCurrRates: simRun.endCurrRates,
+  clockSec: simRun.clockSec,
+  stepCount: simRun.stepCount,
+  currencies: simRun.currencies,
+  marbles: simRun.marbles,
+  marbleBarProgress: simRun.marbleBarProgress,
+  uLvs: simRun.uLvs,
+  mLvs: simRun.mLvs,
+  eventCount: simEvents.length,
+  // The 24-hour run buys thousands of cheap levels at the start, so the
+  // fixture keeps a leading and trailing sample of the timeline instead of all
+  // of it; the count and the final cavern pin the rest.
+  eventSample: { leading: 40, afterStart: 40, trailing: 80 },
+  events: [
+    ...simEvents.slice(0, 40),
+    ...simEvents.filter((event) => event.time > 0).slice(0, 40),
+    ...simEvents.slice(-80),
+  ],
+};
+
 const payload = {
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
@@ -610,6 +836,9 @@ const payload = {
   },
   planners,
   optimizers,
+  marblePlanners,
+  marbleOptimizers,
+  simulation,
 };
 
 writeFileSync(

@@ -1,7 +1,7 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research (including the Minehead and Sushi Station tabs), statue, jar, farming, ladle,
-Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
+Clamworks, the Prisma calculator, Cooking Mastery, the Opal Optimizer's current state, the
 Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
 the Coral God Rank planner, the Spelunking controls, depth estimates, expedition run and Amber
 policy, the Sneaking loadout, inventory, formula breakdown, charm optimizer and floor × mastery
@@ -10,7 +10,7 @@ the Clamworks optimizer, the Jelly Operator overview, layout editor, operation s
 planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial
 total, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
-BoneJoePickle and Cglunko done, Monument, the All Stats context, breakdowns,
+BoneJoePickle, Cglunko and Fountain done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
@@ -471,15 +471,18 @@ fifty descriptors, so the page reports the missing-pipeline state instead of a g
 Details:
 [`docs/sections/damage.md`](sections/damage.md).
 
-The Fountain section has its overview (FN-01) and its currency and upgrade tabs (FN-02): the
-fountain summary, the fill and income rates per currency, lucky coins and rubber ducks, the ground
-coin stacks, the eighteen cross-system bonuses and the level planner, then the currency value table
-with a simulated desired currency, the per-water POW 10 multipliers, the desired-currency simulator,
-the next unlock tracker and every water's upgrade list with its cap state and a log-scale cost
-curve. `idleon_fountain::Fountain` reads the cavern rows and names every bonus source the save
-does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
-`fixtures/fountain.json`, and `script/extract-fountain-data.mjs` extracts the upgrade table. Missing:
-the upgrade planner, marble planner and simulator (FN-03 and FN-04).
+The Fountain section implements FN-01 to FN-04: the fountain summary, the fill and income rates per
+currency, lucky coins and rubber ducks, the ground coin stacks, the eighteen cross-system bonuses and
+the level planner, then the currency value table with a simulated desired currency, the per-water
+POW 10 multipliers, the desired-currency simulator, the next unlock tracker and every water's upgrade
+list with its cap state and a log-scale cost curve, then the upgrade planner and greedy optimizer,
+the marble planner and marble optimizer, and the simulated run. `idleon_fountain::Fountain` reads
+the cavern rows and names every bonus source the save does not carry; `script/fountain-oracle.mjs`
+regenerates the upstream figures in `fixtures/fountain.json`, including the marble plans and the
+24-hour timeline, and `script/extract-fountain-data.mjs` extracts the upgrade table. The simulation
+has no randomness or wall clock, so the same cavern and limit replay the same timeline, and both
+optimizers and the run go through the shared task runner, whose cancel keeps the previous result
+and leaves the section's controls untouched.
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
 
 The Jar Calculator implements JR-01 to JR-04: the overview and its rupie balances, the shared
