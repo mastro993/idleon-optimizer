@@ -315,6 +315,8 @@ pub(crate) struct AppState {
     pub(crate) sneaking: Option<idleon_sneaking::Loadout>,
     /// The sneaking workspace's login context and selected slot.
     pub(crate) sneaking_state: crate::sections::sneaking::State,
+    /// The shared runner for the sneaking charm placement search.
+    pub(crate) sneaking_opt: Entity<TaskRunner<idleon_sneaking::Outcome, idleon_sneaking::Request>>,
     /// The shared formula tree on the sneaking breakdowns workspace.
     pub(crate) sneaking_breakdown: Entity<FormulaTree>,
     /// The BoneJoePickle section's inputs, kept alive the same way.
@@ -895,6 +897,31 @@ impl AppState {
         let stats_breakdown = ui::formula_tree("stats-formula", window, cx);
         let stats_explorer_formula = ui::formula_tree("stats-explorer-formula", window, cx);
         let sneaking_breakdown = ui::formula_tree("sneaking-formula", window, cx);
+        let sneaking_opt = report_run::<idleon_sneaking::Outcome, idleon_sneaking::Request>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the sneaking charm placement…"),
+                cancelled_kept: "Sneaking optimizer cancelled; the previous recommendation is unchanged.",
+                cancelled_empty: "Sneaking optimizer cancelled; nothing was stored, and the loadout is untouched.",
+            },
+            |_, outcome| {
+                Some(if outcome.improved() {
+                    format!(
+                        "Sneaking optimizer ready: {} {:.3} → {:.3} ({:+.1}%).",
+                        outcome.request.objective.unit(),
+                        outcome.baseline.score,
+                        outcome.winner.score,
+                        outcome.gain_percent()
+                    )
+                } else {
+                    format!(
+                        "Sneaking optimizer: the saved placement already scores best for {}.",
+                        outcome.request.objective.label()
+                    )
+                })
+            },
+        );
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
@@ -963,6 +990,7 @@ impl AppState {
             opal_manual: [0.0; idleon_opal::VILLAGERS],
             sneaking: None,
             sneaking_state: Default::default(),
+            sneaking_opt,
             sneaking_breakdown,
             pickle: PickleState::default(),
             prisma,

@@ -1347,23 +1347,28 @@ const INTERACTIONS = {
     await waitForNode(lane, 'opal-overview', 'opal: the current tab reopens');
   },
   sneaking: async (lane) => {
+    await openImport(lane, 'sneaking');
     await lane.call('click_element', { id: 'import-input' });
     await lane.call('keyboard', { keystroke: 'secondary-a' });
-    await lane.call('type_text', { text: sneakingSave() });
+    await typeInChunks(lane, sneakingSave());
     await waitForNode(lane, 'import-format', 'sneaking: the save previews');
     await lane.call('click_element', { id: 'import-apply' });
     await waitForNode(lane, 'sneaking-loadout', 'sneaking: the loadout opens after Apply');
     await waitForNode(lane, 'sneaking-inventory', 'sneaking: the inventory renders');
     await waitForNode(lane, 'sneaking-saved-floors', 'sneaking: the saved floors render');
     const before = labelOf(await lane.tree(), 'sneak-slot-0-3') ?? '';
+    await scrollTo(lane, 'sneak-slot-0-3');
     await lane.call('click_element', { id: 'sneak-slot-0-3' });
-    // Inventory row 24 holds a non-Gold Lotus Flower, a legal second charm.
+    // Inventory row 24 holds a non-Gold Lotus Flower, a legal second charm. The
+    // grid sits below the fold, so the wheel has to reach it before the click.
+    await scrollTo(lane, 'sneak-inv-23');
     await lane.call('click_element', { id: 'sneak-inv-23' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') !== before,
       'sneaking: the inventory charm swaps into the slot'
     );
+    await scrollTo(lane, 'sneak-reset-loadout');
     await lane.call('click_element', { id: 'sneak-reset-loadout' });
     await waitFor(
       lane,
@@ -1388,6 +1393,58 @@ const INTERACTIONS = {
         `sneaking: the ${tab} tree renders`
       );
     }
+    // SN-03: the charm search runs off the UI thread, ranks the placement and
+    // only writes the loadout through Apply.
+    await lane.call('click_element', { id: 'sneaking-tab-optimizer' });
+    await waitForNode(lane, 'sneaking-optimizer', 'sneaking: the optimizer pane renders');
+    await scrollTo(lane, 'sneak-optimize-run');
+    await lane.call('click_element', { id: 'sneak-optimize-run' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneaking-optimizer-score') ?? '').startsWith('Jade:'),
+      'sneaking: the Jade search reports its result',
+      30000
+    );
+    // The objective switch re-measures: EXP is the picker's second choice.
+    await lane.call('focus_element', { id: 'sneak-optimize-objective' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await lane.call('click_element', { id: 'sneak-optimize-run' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneaking-optimizer-score') ?? '').startsWith('EXP:'),
+      'sneaking: the objective switch re-measures',
+      30000
+    );
+    const kept = labelOf(await lane.tree(), 'sneaking-optimizer-score');
+    // A cancel only stops the run: the recommendation the window already shows
+    // stays, and the loadout is untouched until Apply. Either click can lose a
+    // race with a finished run, so both are advisory and the assertion below
+    // reads the result.
+    await lane.call('click_element', { id: 'sneak-optimize-run' }).catch(() => {});
+    await lane.call('click_element', { id: 'sneak-optimize-cancel' }).catch(() => {});
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneaking-optimizer-score') ?? '') === kept,
+      'sneaking: cancelling keeps the stored recommendation',
+      30000
+    );
+    await scrollTo(lane, 'sneak-optimize-apply');
+    await lane.call('click_element', { id: 'sneak-optimize-apply' });
+    await lane.call('click_element', { id: 'sneaking-tab-loadout' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'sneak-reset-loadout'),
+      'sneaking: Apply writes the recommendation into the loadout'
+    );
+    await scrollTo(lane, 'sneak-reset-loadout');
+    await lane.call('click_element', { id: 'sneak-reset-loadout' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') === before,
+      'sneaking: reset after Apply restores the saved charms'
+    );
   },
   fountain: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -3861,6 +3918,18 @@ const waitFor = async (lane, predicate, label, timeoutMs = 15000) => {
 
 const waitForNode = (lane, id, label, timeoutMs) =>
   waitFor(lane, (nodes) => has(nodes, id), label, timeoutMs);
+
+/// Types a long text in pieces: the bridge caps one input command at 64 KiB, and
+/// the synthetic account fixture is far larger than that.
+const typeInChunks = async (lane, text, limit = 60 * 1024) => {
+  let start = 0;
+  while (start < text.length) {
+    let end = Math.min(text.length, start + limit);
+    while (end > start + 1 && Buffer.byteLength(text.slice(start, end), 'utf8') > limit) end -= 1;
+    await lane.call('type_text', { text: text.slice(start, end) });
+    start = end;
+  }
+};
 
 /// A wheel point on a scrolling page, clear of the cards that own their own
 /// scroll areas: the right margin of the scroll container.

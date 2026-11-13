@@ -67,6 +67,14 @@ impl Twin {
         &self.slots[slot.index()]
     }
 
+    /// The two charms the twin wears.
+    pub fn charms(&self) -> [Item; 2] {
+        [
+            self.slot(SlotKind::Charm(0)).clone(),
+            self.slot(SlotKind::Charm(1)).clone(),
+        ]
+    }
+
     /// Whether a slot differs from the save.
     pub fn changed(&self, slot: SlotKind) -> bool {
         self.slots[slot.index()] != self.saved[slot.index()]

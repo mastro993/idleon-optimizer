@@ -993,6 +993,7 @@ pub(crate) fn assign(
                 breakdown_twin: config
                     .breakdown_twin
                     .filter(|index| *index < players.max(1)),
+                objective: config.objective,
             };
         }
         Config::Ladle(config) => {

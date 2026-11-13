@@ -555,7 +555,8 @@ the manual counts live in `sections.opal` in the project document, so an export 
 `crates/opal/tests/opal.rs` pins.
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
-The Sneaking section has its loadout, inventory and formula breakdown workspaces (SN-01 and SN-02):
+The Sneaking section has its loadout, inventory, formula breakdown and charm optimizer workspaces
+(SN-01, SN-02 and SN-03):
 `idleon_sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
 equipment rows per twin, the 39-slot inventory and the Ninja Knowledge levels — and computes the
 item stats, the charm bonus map, the Gold inventory scan, action speed, KO recovery, the level,
@@ -568,12 +569,22 @@ statues, cards, achievements, gemstones, lamps, Hole upgrades, Emperor, RoG, Jel
 and `idleon_sneaking::breakdown` builds the five upstream trees: Stealth, Jade per hour, EXP
 per action, door damage per hour and the runtime action loop. The breakdowns workspace selects a
 twin and a formula tab and renders each tree through the shared formula tree with its search,
-expand and copy controls. `script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
+expand and copy controls. `Loadout::optimize_with` is the optimizer half of
+`optimizeSneakingLoadout`: it scores the saved placement first, then offers each untied twin every
+legal ordered charm pair the owned pool can supply — the equipped and inventory charms, never a copy
+the account does not own, with the Scroll of Power still account-unique — re-measures the whole
+layout with the aim's own metric (`Loadout::score`: Jade per hour, EXP per hour, item claims, door
+clears or untie progress per hour) and keeps a pair only when it beats what the twin had. Passes
+repeat until nothing improves. The search moves charms only, so the saved floors, hats and weapons
+stay put, and it runs off the UI thread through the shared task runner: it reports each twin, cancels
+without touching the editor, and writes a recommendation only through the explicit Apply action,
+which banks the charms it displaces so the account keeps every charm it owned. The Items objective
+scores the deterministic claim rate upstream shortlists loadouts with; its Monte-Carlo claim
+simulation needs the flower pass this section does not build yet. `script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
 and the account tables, and `script/sneaking-oracle.mjs` regenerates `fixtures/sneaking.json` from
 the upstream formulas, including the breakdown factor map the account decoder is compared against.
 The Gambit point chain and the terms that the All-Talent resolver rescales stay explicit inputs, and
-each such node says so in its note. Missing: the placement optimizer (SN-03) and the floor × mastery
-table with the door ETA (SN-04).
+each such node says so in its note. Missing: the floor × mastery table with the door ETA (SN-04).
 Details: [`docs/sections/sneaking.md`](sections/sneaking.md).
 
 The Prisma section implements PR-01 and PR-02: the plan for one character and cauldron (every

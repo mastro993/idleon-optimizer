@@ -266,6 +266,8 @@ impl AppState {
             .map_or([0.0; idleon_opal::VILLAGERS], Opal::opals);
         self.royal = imported.royal;
         self.sneaking = imported.sneaking;
+        // A recommendation from the previous save describes slots this one no longer has.
+        discard_run(&self.sneaking_opt, cx);
         self.research.selected_cell = None;
         self.sailing_state.island = self
             .fleet

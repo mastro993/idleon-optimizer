@@ -3,10 +3,9 @@
 //! Ported from `sneaking-calc.html` and `js/stats/systems/w6/sneaking-math.js`.
 //! SN-01 builds the loadout half: the scenario strip, the saved floor
 //! assignments, the per-twin loadout cards with their four slots and the 39-slot
-//! inventory, all backed by the save's `Ninja` rows. The formula breakdowns
-//! (SN-02), the placement optimizer (SN-03) and the floor × mastery table with
-//! the door ETA (SN-04) arrive next, so the page renders its one built workspace
-//! without a tab strip until then, as the fountain page does.
+//! inventory, all backed by the save's `Ninja` rows. SN-02 adds the formula
+//! breakdowns and SN-03 the charm placement search. The floor × mastery table
+//! with the door ETA (SN-04) arrives next.
 //!
 //! The numbers a loadout card shows are the save-backed totals: the charm bonus
 //! map with its symbol and Gold terms, action speed, KO recovery, the level,
@@ -17,6 +16,7 @@
 mod breakdowns;
 mod inventory;
 mod loadout;
+mod optimizer;
 mod state;
 
 pub(crate) use state::{State, Workspace};
@@ -78,6 +78,20 @@ pub(crate) fn view(
                     .child(loadout::saved_floors(state, loadout, cx))
                     .child(loadout::loadout_card(state, loadout, cx))
                     .child(inventory::card(state, loadout, cx)),
+            )
+            .into_any_element(),
+        Workspace::Optimizer => ScrollArea::new("sneaking-optimizer-pane")
+            .vertical()
+            .flex_1()
+            .min_h_0()
+            .child(
+                div()
+                    .id("sneaking-optimizer-pane")
+                    .flex()
+                    .flex_col()
+                    .gap_3()
+                    .p_4()
+                    .child(optimizer::pane(state, cx)),
             )
             .into_any_element(),
         Workspace::Breakdowns => ScrollArea::new("sneaking-breakdown-pane")
