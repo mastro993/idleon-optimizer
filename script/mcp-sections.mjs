@@ -964,6 +964,41 @@ const INTERACTIONS = {
     if (!phase.includes('Amber policy')) {
       throw new Error(`spelunking: the Amber phase reads ${phase}`);
     }
+    // SP-04 screens every allowed configuration off the UI thread and leaves a
+    // copyable recommendation. Party, belt, memory and entry default fixed, so
+    // the fixture's scope stays small.
+    await bringIntoView(lane, 'spelunk-optimizer');
+    await waitForNode(lane, 'spelunk-optimizer-mode', 'spelunking: the optimizer controls render');
+    await waitForNode(lane, 'spelunk-optimizer-party', 'spelunking: the search sections render');
+    await bringIntoView(lane, 'spelunk-optimizer-start');
+    await lane.call('click_element', { id: 'spelunk-optimizer-start' });
+    await waitForNode(
+      lane,
+      'spelunk-optimizer-winner',
+      'spelunking: the optimizer stores a recommendation',
+      180000,
+    );
+    await waitForNode(lane, 'spelunk-optimizer-row-0', 'spelunking: the compared rows render');
+    const winner = labelOf(await lane.tree(), 'spelunk-optimizer-winner') ?? '';
+    if (!winner.includes('Depth')) {
+      throw new Error(`spelunking: the optimizer winner reads ${winner}`);
+    }
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'spelunk-optimizer-plan') ?? '').includes('party'),
+      'spelunking: the optimizer plan names the cave and party',
+    );
+    const plan = labelOf(await lane.tree(), 'spelunk-optimizer-plan') ?? '';
+    if (!plan.includes('Pebble Cove')) {
+      throw new Error(`spelunking: the optimizer plan reads ${plan}`);
+    }
+    await bringIntoView(lane, 'spelunk-optimizer-copy');
+    await lane.call('click_element', { id: 'spelunk-optimizer-copy' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('Copied the expedition plan'),
+      'spelunking: the optimizer plan copies',
+    );
   },
   'jelly-operator': async (lane) => {
     await lane.call('click_element', { id: 'jelly-import' });
