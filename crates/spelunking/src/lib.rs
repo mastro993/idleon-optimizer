@@ -31,8 +31,9 @@ pub use data::{Cave, Elixir, Preset, PresetKind, Rock, Tool, data};
 pub use depth::{DepthRange, Object, Profile, ReferenceTool, Row, profile};
 pub use save::Save;
 pub use sim::{
-    Contribution, DEFAULT_SEED, Diagnostics, Event, EventKind, Exit, ExitItem, MemberStamina, Run,
-    RunOptions, RunResult, Status, simulate,
+    AmberActivation, AmberPhase, AmberResult, AmberTransition, Contribution, DEFAULT_SEED,
+    Diagnostics, Event, EventKind, Exit, ExitItem, ExitKind, MemberStamina, Run, RunOptions,
+    RunResult, Status, simulate,
 };
 
 use std::fmt;

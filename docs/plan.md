@@ -3,7 +3,8 @@
 Status: **foundation in progress, research (including the Minehead and Sushi Station tabs), statue, jar, farming, ladle,
 Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
 Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
-the Coral God Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout,
+the Coral God Rank planner, the Spelunking controls, depth estimates, expedition run and Amber
+policy, the Sneaking loadout,
 inventory and formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
 the Clamworks optimizer, the Jelly Operator overview, layout editor, operation simulator and section
 planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial
@@ -525,7 +526,7 @@ collect suggestions are not carried. Missing: the optimizer, unit EXP and shelf 
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run
-(SP-01, SP-02). `idleon_spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
+(SP-01, SP-02), with the phased Amber policy (SP-03). `idleon_spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
 unlocks and depth records from the save, normalises the party, belt, mode and policy with the
 upstream `normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits
 profile from `spelunk-depth.js`. The four account multipliers upstream derives from its whole stat
@@ -538,12 +539,15 @@ the whole expedition from `spelunk-expedition.js` — the seeded 10 ms tick, flo
 the elixir belt with its refills, party switching, exits, the Delve toll and the run log — so the same
 inputs and seed reproduce the run; the page runs it through the shared task runner with progress and
 cancel, and shows the outcome, rewards, stamina, per-member contributions and the event log. The
-phased Amber policy is not ported yet, so `amber-farm` is rejected instead of behaving like another
-policy. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
-four configurations, three whole runs and nineteen rejected inputs, compared field for field by
-`crates/spelunking/tests/spelunking.rs`; regenerate it with `script/spelunking-oracle.mjs`, and
-`script/extract-spelunk-data.mjs` extracts the cave, rock, tool, elixir, chapter and sprite tables.
-Missing: the Amber policies and the optimizer (SP-03, SP-04).
+phased Amber policy ports the upstream `amber` object: full-clear buildup, the stamina burn from the
+dump depth, the orange activation at the finisher reserve, the boosted harvest and the rope search,
+with a rope exit keeping every reward whole. Its five limits — dump depth, finishers, reserve,
+harvest depths and rope reserve — normalise with the upstream rejection messages, and every phase
+change, its reason and each orange snapshot land in the result and the event log. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
+five configurations, seven whole runs (three of them amber farming) and twenty-four rejected inputs,
+compared field for field by `crates/spelunking/tests/spelunking.rs`; regenerate it with
+`script/spelunking-oracle.mjs`, and `script/extract-spelunk-data.mjs` extracts the cave, rock, tool,
+elixir, chapter and sprite tables. Missing: the optimizer (SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
 The Opal Optimizer section implements OP-01, OP-02 and OP-03. The `Current state` tab shows the

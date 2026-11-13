@@ -120,21 +120,89 @@ fn a_run_reports_progress_until_it_settles() {
 }
 
 #[test]
-fn the_amber_policy_is_not_portable_yet() {
+fn the_amber_policy_changes_the_outcome() {
     let input = fixture_inputs();
-    let requested = Requested {
-        cave: Some(0),
-        party: Some(vec![0]),
+    let request = |amber: crate::AmberPolicy| Requested {
+        cave: Some(1),
+        party: Some(vec![0, 1]),
         policy: Some(Policy::AmberFarm),
+        elixirs: Some(vec![3, 3, 3, 6, 6]),
+        memorized: Some(vec![3, 6]),
         stamina: Some(crate::StaminaMode::Full),
+        amber: Some(amber),
         ..Requested::default()
     };
-    let config = config(&input, requested);
-    let error = Run::new(&input, config, RunOptions::default())
-        .err()
-        .expect("amber is rejected");
-    assert_eq!(
-        error.to_string(),
-        "Phased Amber farming is not supported yet."
+    let patient = run(
+        &input,
+        request(crate::AmberPolicy {
+            dump_depth: 20,
+            ..crate::AmberPolicy::default()
+        }),
+        5,
     );
+    let eager = run(
+        &input,
+        request(crate::AmberPolicy {
+            dump_depth: 3,
+            finishers: 2,
+            reserve_pct: 90,
+            harvest_depths: 2,
+            rope_reserve_pct: 60,
+        }),
+        5,
+    );
+    assert_ne!(
+        (patient.depth, patient.gross_rewards[0]),
+        (eager.depth, eager.gross_rewards[0]),
+        "the two Amber policies produced the same outcome"
+    );
+    assert_eq!(
+        patient.config.amber,
+        Some(crate::AmberPolicy {
+            dump_depth: 20,
+            ..crate::AmberPolicy::default()
+        })
+    );
+    let explained = patient.amber.expect("the Amber policy reports its phases");
+    assert!(
+        !explained.transitions.is_empty(),
+        "the policy never changed phase"
+    );
+    for transition in &explained.transitions {
+        assert!(
+            !transition.reason.is_empty(),
+            "{} has no reason",
+            transition.phase.id()
+        );
+        assert!(transition.depth >= patient.start_depth);
+    }
+    assert!(
+        explained.transitions.first().map(|first| first.phase) == Some(crate::AmberPhase::Activate),
+        "the run should start in buildup"
+    );
+}
+
+#[test]
+fn an_amber_run_is_deterministic_by_seed() {
+    let input = fixture_inputs();
+    let requested = Requested {
+        cave: Some(1),
+        party: Some(vec![0, 1]),
+        policy: Some(Policy::AmberFarm),
+        elixirs: Some(vec![3, 3, 3, 6, 6]),
+        memorized: Some(vec![3, 6]),
+        stamina: Some(crate::StaminaMode::Full),
+        amber: Some(crate::AmberPolicy {
+            dump_depth: 3,
+            finishers: 2,
+            reserve_pct: 90,
+            harvest_depths: 2,
+            rope_reserve_pct: 60,
+        }),
+        ..Requested::default()
+    };
+    let first = run(&input, requested.clone(), 2);
+    let second = run(&input, requested, 2);
+    assert_eq!(first, second, "the same Amber inputs and seed diverged");
+    assert!(first.amber.is_some(), "the Amber phases are reported");
 }

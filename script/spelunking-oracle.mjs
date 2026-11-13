@@ -106,6 +106,25 @@ const CONFIGS = [
     },
     range: { from: 5, to: 7, tool: 0 },
   },
+  {
+    label: 'phased amber policy',
+    requested: {
+      cave: 1,
+      party: [0, 1],
+      elixirs: [3, 3, 3, 6, 6],
+      memorized: [3, 6],
+      policy: 'amber-farm',
+      stamina: 'full',
+      amber: {
+        dumpDepth: 12,
+        finishers: 2,
+        reservePct: 80,
+        harvestDepths: 4,
+        ropeReservePct: 40,
+      },
+    },
+    range: { from: 1, to: 20, tool: 'best' },
+  },
 ];
 
 /** The normalized config plus the whole profile, as the port serialises them. */
@@ -146,7 +165,7 @@ const UNBEATEN = {
   discoveries: [],
   shop: controlled.shop.map((value, index) => ([36, 39, 40].includes(index) ? 1 : value)),
 };
-const RUN_INPUTS = { controlled, unbeaten: UNBEATEN };
+const RUN_INPUTS = { controlled, unbeaten: UNBEATEN, weak: { ...controlled, pow: 25 } };
 
 /** One whole simulated expedition, compacted for the fixture. */
 function run(entry) {
@@ -176,6 +195,7 @@ function run(entry) {
     exit: result.exit,
     stamina: result.stamina,
     diagnostics: result.diagnostics,
+    amber: result.amber ?? null,
     grands: result.grands,
     discoveries: result.discoveries,
     rngCalls: result.rngCalls,
@@ -230,6 +250,64 @@ const RUNS = [
       policy: 'clear',
       entry: 'surface',
       stamina: 'saved',
+    },
+    seed: 3,
+  },
+  {
+    label: 'phased amber farming, seed 5',
+    requested: {
+      cave: 1,
+      party: [0, 1],
+      elixirs: [3, 3, 3, 6, 6],
+      memorized: [3, 6],
+      policy: 'amber-farm',
+      stamina: 'full',
+      amber: {
+        dumpDepth: 20,
+        finishers: 1,
+        reservePct: 100,
+        harvestDepths: 3,
+        ropeReservePct: 25,
+      },
+    },
+    seed: 5,
+  },
+  {
+    label: 'phased amber farming, early rope, seed 2',
+    requested: {
+      cave: 1,
+      party: [0, 1],
+      elixirs: [3, 3, 3, 6, 6],
+      memorized: [3, 6],
+      policy: 'amber-farm',
+      stamina: 'full',
+      amber: {
+        dumpDepth: 3,
+        finishers: 2,
+        reservePct: 90,
+        harvestDepths: 2,
+        ropeReservePct: 60,
+      },
+    },
+    seed: 2,
+  },
+  {
+    label: 'phased amber farming, stamina burn, seed 3',
+    input: 'weak',
+    requested: {
+      cave: 1,
+      party: [0, 1],
+      elixirs: [3, 3, 3, 6, 6],
+      memorized: [3, 6],
+      policy: 'amber-farm',
+      stamina: 'full',
+      amber: {
+        dumpDepth: 2,
+        finishers: 1,
+        reservePct: 100,
+        harvestDepths: 3,
+        ropeReservePct: 25,
+      },
     },
     seed: 3,
   },
@@ -333,6 +411,31 @@ const parties = [
     label: 'locked memorized elixir',
     input: controlled,
     requested: { memorized: [99], party: [0] },
+  },
+  {
+    label: 'amber dump depth out of range',
+    input: controlled,
+    requested: { cave: 0, party: [0], policy: 'amber-farm', amber: { dumpDepth: 0 } },
+  },
+  {
+    label: 'amber finishers out of range',
+    input: controlled,
+    requested: { cave: 0, party: [0], policy: 'amber-farm', amber: { finishers: 3 } },
+  },
+  {
+    label: 'amber reserve out of range',
+    input: controlled,
+    requested: { cave: 0, party: [0], policy: 'amber-farm', amber: { reservePct: 10 } },
+  },
+  {
+    label: 'amber harvest depths out of range',
+    input: controlled,
+    requested: { cave: 0, party: [0], policy: 'amber-farm', amber: { harvestDepths: 101 } },
+  },
+  {
+    label: 'amber rope reserve out of range',
+    input: controlled,
+    requested: { cave: 0, party: [0], policy: 'amber-farm', amber: { ropeReservePct: 0 } },
   },
 ];
 

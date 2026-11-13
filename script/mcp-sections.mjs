@@ -896,6 +896,17 @@ const INTERACTIONS = {
     if (stamina !== 'Saved stamina') {
       throw new Error(`spelunking: the starting stamina reads ${stamina}`);
     }
+    // The Amber policy carries its own dump, finisher, reserve, harvest and rope
+    // reserve limits; the run explains the phases it actually took.
+    const policySelect = (await lane.tree()).find((node) =>
+      (node.id ?? '').endsWith('spelunk-policy'),
+    );
+    if (!policySelect) throw new Error('spelunking: the policy select is missing');
+    await lane.call('focus_element', { id: policySelect.id });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    for (let n = 0; n < 5; n += 1) await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitForNode(lane, 'spelunk-amber-policy', 'spelunking: the Amber policy renders');
     // The seeded run drives the whole expedition through the shared task runner
     // and leaves its depth, loot and event log on the page.
     await bringIntoView(lane, 'spelunk-run-start');
@@ -915,6 +926,22 @@ const INTERACTIONS = {
     const run = labelOf(await lane.tree(), 'spelunk-run-summary') ?? '';
     if (!run.includes('depth ')) {
       throw new Error(`spelunking: the run summary reads ${run}`);
+    }
+    await waitForNode(
+      lane,
+      'spelunk-run-amber-phase',
+      'spelunking: the Amber policy explains its phases',
+      60000,
+    );
+    await waitForNode(
+      lane,
+      'spelunk-run-amber-transition-0',
+      'spelunking: the Amber policy lists its phase changes',
+      60000,
+    );
+    const phase = labelOf(await lane.tree(), 'spelunk-run-amber-phase') ?? '';
+    if (!phase.includes('Amber policy')) {
+      throw new Error(`spelunking: the Amber phase reads ${phase}`);
     }
   },
   'jelly-operator': async (lane) => {

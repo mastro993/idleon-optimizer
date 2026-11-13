@@ -7,12 +7,14 @@
 //! draw, so the same inputs and seed reproduce the same run — which
 //! `fixtures/spelunking.json` pins against the JS.
 //!
-//! The phased Amber policy (`amber-farm`) is not part of this port yet: its
-//! dump/harvest phases arrive with SP-03, so a run that asks for it is rejected
-//! instead of silently behaving like another policy.
+//! The phased Amber policy (`amber-farm`) ports the upstream `amber` object: the
+//! full-clear buildup, the deliberate stamina burn from the dump depth, the
+//! orange activation at the finishing reserve, the boosted harvest and the rope
+//! search. Every phase change is recorded with its reason, so a result explains
+//! the policy it ran.
 
 use super::depth::{dig_power, entry_effects, hit_damage, rock_stats, shop, stamina_multiplier};
-use super::{Cave, Config, ConfigError, Inputs, Policy, ToolChoice, data, js_round};
+use super::{Cave, Config, ConfigError, Inputs, Policy, Tool, ToolChoice, data, js_round};
 use idleon_common::Control;
 use idleon_common::Progress;
 
@@ -54,6 +56,8 @@ pub enum Status {
     Running,
     /// The whole party ran out of stamina and paid the Delve toll.
     Exhausted,
+    /// The Amber policy took a rope out before the party ran dry.
+    Rope,
     /// No reachable exit and no live rock left.
     Blocked,
     /// The floor generator hit a value outside the supported range.
@@ -65,6 +69,7 @@ impl Status {
         match self {
             Status::Running => "running",
             Status::Exhausted => "exhausted",
+            Status::Rope => "rope",
             Status::Blocked => "blocked",
             Status::Failed => "failed",
         }
@@ -74,6 +79,7 @@ impl Status {
         match self {
             Status::Running => "Running",
             Status::Exhausted => "Stamina exhausted",
+            Status::Rope => "Rope exit",
             Status::Blocked => "No way down",
             Status::Failed => "Run failed",
         }
@@ -93,11 +99,33 @@ pub struct ExitItem {
     pub collected: f64,
 }
 
-/// What the Delve toll did to the loot.
+/// How a settled run banked its loot.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExitKind {
+    /// The Delve toll: it keeps a share and rolls each fraction.
+    Toll,
+    /// A rope out: the party keeps everything, Amber at the rope's multiplier.
+    Rope,
+}
+
+impl ExitKind {
+    /// The upstream exit name.
+    pub fn id(self) -> &'static str {
+        match self {
+            ExitKind::Toll => "toll",
+            ExitKind::Rope => "rope",
+        }
+    }
+}
+
+/// What the exit did to the loot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Exit {
+    pub kind: ExitKind,
     /// The share of each reward the toll leaves before the item roll.
     pub retained: f64,
+    /// The multiplier a rope applies to Amber; `1` for the toll.
+    pub amber_multiplier: f64,
     pub items: Vec<ExitItem>,
 }
 
@@ -136,6 +164,90 @@ pub struct Contribution {
     pub no_further_floor: bool,
     /// The member spent stamina only on resisted hits and never broke a rock.
     pub resist_stall: bool,
+}
+
+/// The five phases of the phased Amber policy, in the order they run.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AmberPhase {
+    /// Full-clear buildup with the oranges saved.
+    Buildup,
+    /// Deliberate stamina burn on rocks this character cannot break.
+    Dump,
+    /// Drink the available oranges.
+    Activate,
+    /// Harvest within the remaining stamina budget.
+    Harvest,
+    /// Take the first untouched rope.
+    RopeSearch,
+}
+
+impl AmberPhase {
+    /// The upstream phase id.
+    pub fn id(self) -> &'static str {
+        match self {
+            AmberPhase::Buildup => "buildup",
+            AmberPhase::Dump => "dump",
+            AmberPhase::Activate => "activate",
+            AmberPhase::Harvest => "harvest",
+            AmberPhase::RopeSearch => "rope-search",
+        }
+    }
+
+    /// The menu label, matching the upstream page.
+    pub fn label(self) -> &'static str {
+        match self {
+            AmberPhase::Buildup => "Full-clear buildup",
+            AmberPhase::Dump => "Stamina burn",
+            AmberPhase::Activate => "Drink oranges",
+            AmberPhase::Harvest => "Boosted harvest",
+            AmberPhase::RopeSearch => "Seek untouched rope",
+        }
+    }
+}
+
+/// One phase change the Amber policy made, with the reason the decision read.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AmberTransition {
+    pub phase: AmberPhase,
+    pub reason: String,
+    /// The in-game depth, one above the zero-based rock depth.
+    pub depth: usize,
+    /// Stamina spent when the phase changed.
+    pub spent: f64,
+    pub time: f64,
+}
+
+/// One orange the party drank, with the snapshot the effect accumulated from.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AmberActivation {
+    pub depth: usize,
+    pub spent: f64,
+    pub effect: f64,
+    pub time: f64,
+    pub slot: usize,
+}
+
+/// What the Amber policy did during one run.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AmberResult {
+    /// The phase the run ended in.
+    pub phase: AmberPhase,
+    pub transitions: Vec<AmberTransition>,
+    pub activations: Vec<AmberActivation>,
+    /// The native spent-stamina credit the burn digs earned.
+    pub dump_spent: f64,
+    pub dump_digs: u64,
+}
+
+/// The Amber policy state a run advances, which the result reports.
+#[derive(Clone, Debug)]
+struct AmberFarm {
+    phase: AmberPhase,
+    transitions: Vec<AmberTransition>,
+    activations: Vec<AmberActivation>,
+    dump_spent: f64,
+    dump_digs: u64,
+    activation_depth: Option<usize>,
 }
 
 /// The run's per-member breakdown and the flags it raises.
@@ -182,7 +294,13 @@ pub enum EventKind {
     GrandDiscovery,
     ExitFound,
     Descend,
+    /// The Amber policy changed phase, with the reason the decision read.
+    AmberPhase {
+        phase: AmberPhase,
+        reason: String,
+    },
     Exhausted,
+    Rope,
     Blocked,
 }
 
@@ -199,7 +317,9 @@ impl EventKind {
             EventKind::GrandDiscovery => "grand-discovery",
             EventKind::ExitFound => "exit-found",
             EventKind::Descend => "descend",
+            EventKind::AmberPhase { .. } => "amber-phase",
             EventKind::Exhausted => "exhausted",
+            EventKind::Rope => "rope",
             EventKind::Blocked => "blocked",
         }
     }
@@ -225,6 +345,8 @@ pub struct RunResult {
     pub rewards: [f64; 12],
     pub gross_rewards: [f64; 12],
     pub exit: Option<Exit>,
+    /// The Amber policy's record, when the run ran one.
+    pub amber: Option<AmberResult>,
     pub stamina: Vec<MemberStamina>,
     pub diagnostics: Diagnostics,
     /// New Grand Discoveries this run, above the saved count.
@@ -430,7 +552,10 @@ pub struct Run<'a> {
     tool_id: usize,
     status: Status,
     settled: bool,
-    manual_tool: Option<usize>,
+    /// The Amber policy's state, `Some` exactly for [`Policy::AmberFarm`].
+    amber: Option<AmberFarm>,
+    /// The last `finishers` party members, whose stamina the policy preserves.
+    finishing_party: Vec<usize>,
     grand_count: f64,
     exalt: f64,
     prisma: f64,
@@ -449,11 +574,6 @@ impl<'a> Run<'a> {
         config: Config,
         options: RunOptions,
     ) -> Result<Run<'a>, ConfigError> {
-        if config.policy == Policy::AmberFarm {
-            return Err(ConfigError(
-                "Phased Amber farming is not supported yet.".into(),
-            ));
-        }
         let cave = input
             .caves
             .get(config.cave)
@@ -516,6 +636,18 @@ impl<'a> Run<'a> {
             0
         };
         contributions[0].start_depth = Some(depth as usize + 1);
+        let amber = config.amber.map(|_| AmberFarm {
+            phase: AmberPhase::Buildup,
+            transitions: Vec::new(),
+            activations: Vec::new(),
+            dump_spent: 0.0,
+            dump_digs: 0,
+            activation_depth: None,
+        });
+        let finishing_party = config.amber.map_or_else(Vec::new, |policy| {
+            let count = (policy.finishers as usize).max(1);
+            config.party[config.party.len().saturating_sub(count)..].to_vec()
+        });
         let mut run = Run {
             input,
             cave,
@@ -556,10 +688,8 @@ impl<'a> Run<'a> {
             tool_id: input.tools.last().map_or(0, |tool| tool.id),
             status: Status::Running,
             settled: false,
-            manual_tool: match config.tool {
-                ToolChoice::Adaptive => None,
-                ToolChoice::Tool(id) => Some(id),
-            },
+            amber,
+            finishing_party,
             grand_count: input.grands.get(cave.id).copied().unwrap_or(0.0),
             exalt: 0.0,
             prisma: 0.0,
@@ -659,6 +789,13 @@ impl<'a> Run<'a> {
             rewards: self.rewards,
             gross_rewards: self.gross_rewards.unwrap_or(self.rewards),
             exit: self.exit.clone(),
+            amber: self.amber.as_ref().map(|amber| AmberResult {
+                phase: amber.phase,
+                transitions: amber.transitions.clone(),
+                activations: amber.activations.clone(),
+                dump_spent: amber.dump_spent,
+                dump_digs: amber.dump_digs,
+            }),
             stamina: self
                 .config
                 .party
@@ -727,6 +864,128 @@ impl<'a> Run<'a> {
         } else {
             1.0
         }
+    }
+
+    /// The share of the first finisher's starting stamina the policy preserves.
+    fn amber_reserve(&self) -> f64 {
+        self.config
+            .amber
+            .map_or(0.0, |amber| amber.reserve_pct as f64 / 100.0)
+    }
+
+    /// Whether the finishing party's turn has come, or the first finisher is at
+    /// the reserve.
+    fn at_amber_reserve(&self) -> bool {
+        let Some(first) = self.finishing_party.first().copied() else {
+            return false;
+        };
+        let Some(first_index) = self.config.party.iter().position(|id| *id == first) else {
+            return false;
+        };
+        let index = self.active_slot();
+        index > first_index
+            || (index == first_index
+                && self.stamina[self.active] <= self.start[self.active] * self.amber_reserve())
+    }
+
+    /// Record one Amber phase change, with the reason the decision read.
+    fn amber_phase(&mut self, phase: AmberPhase, reason: &str) {
+        let depth = self.depth as usize + 1;
+        let spent = self.spent;
+        let time = self.seconds();
+        let Some(amber) = self.amber.as_mut() else {
+            return;
+        };
+        if amber.phase == phase {
+            return;
+        }
+        amber.phase = phase;
+        amber.transitions.push(AmberTransition {
+            phase,
+            reason: reason.to_string(),
+            depth,
+            spent,
+            time,
+        });
+        self.record(EventKind::AmberPhase {
+            phase,
+            reason: reason.to_string(),
+        });
+    }
+
+    /// Leave through the first untouched rope once the harvest target or the
+    /// finishing reserve says to seek one.
+    fn try_amber_rope(&mut self) -> bool {
+        let Some(policy) = self.config.amber else {
+            return false;
+        };
+        let Some(phase) = self.amber.as_ref().map(|amber| amber.phase) else {
+            return false;
+        };
+        if !matches!(phase, AmberPhase::Harvest | AmberPhase::RopeSearch) {
+            return false;
+        }
+        let remaining: f64 = self.config.party.iter().map(|id| self.stamina[*id]).sum();
+        let reserve: f64 = self
+            .finishing_party
+            .iter()
+            .map(|id| self.start[*id])
+            .sum::<f64>()
+            * policy.rope_reserve_pct as f64
+            / 100.0;
+        let activation_depth = self
+            .amber
+            .as_ref()
+            .and_then(|amber| amber.activation_depth)
+            .unwrap_or(0) as i64;
+        if self.depth + 1 >= activation_depth + policy.harvest_depths as i64 || remaining <= reserve
+        {
+            let reason = if remaining <= reserve {
+                "Low finishing stamina"
+            } else {
+                "Harvest depth target reached"
+            };
+            self.amber_phase(AmberPhase::RopeSearch, reason);
+        }
+        if self.amber.as_ref().map(|amber| amber.phase) != Some(AmberPhase::RopeSearch) {
+            return false;
+        }
+        if !self.rocks.iter().any(|rock| rock.kind == ROPE) {
+            return false;
+        }
+        self.settle(Status::Rope);
+        true
+    }
+
+    /// What a dig costs after the refund elixir, as the harvest budget reads it.
+    fn harvest_net(&self, tool: &Tool) -> f64 {
+        let refund = if self.effects[0] > 0.0 {
+            1.0 - self.quantity(2) / 100.0
+        } else {
+            1.0
+        };
+        tool.cost * self.cost_multi() * refund
+    }
+
+    /// What a burn dig costs after the refund elixir, as the dump search reads it.
+    fn burn_net(&self, tool: &Tool) -> f64 {
+        let cost = tool.cost * self.cost_multi();
+        let refund = if self.effects[0] > 0.0 {
+            cost * self.quantity(2) / 100.0
+        } else {
+            0.0
+        };
+        (cost - refund).max(0.0)
+    }
+
+    /// Whether the party's remaining stamina budget can still break this rock.
+    fn can_harvest(&self, rock: &Rock, tool: &Tool, remaining: f64) -> bool {
+        let ratio = self.power() / rock.requirement;
+        let chance = ratio.powf(0.6).min(1.0);
+        let damage = hit_damage(self.input, tool.damage, ratio);
+        chance > 0.0
+            && damage > 0.0
+            && (rock.hp / damage).ceil() / chance * self.harvest_net(tool).max(0.0) <= remaining
     }
 
     fn record(&mut self, kind: EventKind) {
@@ -1289,7 +1548,19 @@ impl<'a> Run<'a> {
         }
         match id {
             0 | 2 | 4 | 9 => self.effects[id as usize] = 1.0,
-            3 => self.effects[3] = js_round(self.effects[3] + self.spent),
+            3 => {
+                self.effects[3] = js_round(self.effects[3] + self.spent);
+                let activation = AmberActivation {
+                    depth: self.depth as usize + 1,
+                    spent: self.spent,
+                    effect: self.effects[3],
+                    time: self.seconds(),
+                    slot,
+                };
+                if let Some(amber) = self.amber.as_mut() {
+                    amber.activations.push(activation);
+                }
+            }
             5 => self.effects[5] += 2.0,
             6 | 7 | 10 => self.effects[id as usize] += 1.0,
             8 => self.nova(),
@@ -1323,7 +1594,14 @@ impl<'a> Run<'a> {
     /// `chooseElixir`: whether the party drinks one charge before digging.
     fn choose_elixir(&mut self) -> bool {
         let manual = self.config.policy != Policy::Auto;
-        // The amber policy drinks its orange elixirs first; that phase is SP-03.
+        // The Amber policy drinks its double-Amber oranges ahead of everything.
+        if self.amber.is_some() {
+            for slot in 0..self.charges.len() {
+                if self.config.elixirs.get(slot) == Some(&6) && self.use_elixir(slot) {
+                    return true;
+                }
+            }
+        }
         let party_max: f64 = (0..self.config.party.len())
             .map(|index| {
                 self.input
@@ -1347,7 +1625,13 @@ impl<'a> Run<'a> {
                 self.flags[1] = 0.0;
             }
             if id == 3 {
-                use_it = self.spent > 0.6 * party_max;
+                use_it = match self.amber.as_ref().map(|amber| amber.phase) {
+                    Some(phase) => matches!(
+                        phase,
+                        AmberPhase::Activate | AmberPhase::Harvest | AmberPhase::RopeSearch
+                    ),
+                    None => self.spent > 0.6 * party_max,
+                };
             }
             if id == 4 {
                 use_it = self.flags[4] == 1.0
@@ -1509,11 +1793,36 @@ impl<'a> Run<'a> {
     /// `settle`: end the run and bank or keep its loot.
     fn settle(&mut self, status: Status) {
         self.status = status;
-        if status != Status::Exhausted {
+        if !matches!(status, Status::Exhausted | Status::Rope) {
             return;
         }
         self.settled = true;
         self.gross_rewards = Some(self.rewards);
+        if status == Status::Rope {
+            let amber_multiplier = 1.0 + self.shop(22) / 100.0;
+            let mut items = Vec::new();
+            for reward in self.reward_order.clone() {
+                if reward == 0 {
+                    self.rewards[0] *= amber_multiplier;
+                }
+                items.push(ExitItem {
+                    reward,
+                    gross: self.gross_rewards.unwrap_or(self.rewards)[reward],
+                    expected: self.rewards[reward],
+                    chance: None,
+                    rounded_up: None,
+                    collected: self.rewards[reward],
+                });
+            }
+            self.exit = Some(Exit {
+                kind: ExitKind::Rope,
+                retained: 1.0,
+                amber_multiplier,
+                items,
+            });
+            self.record(EventKind::Rope);
+            return;
+        }
         let retained = 1.0 - self.shop(19) / 100.0;
         let mut items = Vec::new();
         for reward in self.reward_order.clone() {
@@ -1541,7 +1850,12 @@ impl<'a> Run<'a> {
                 collected: self.rewards[reward],
             });
         }
-        self.exit = Some(Exit { retained, items });
+        self.exit = Some(Exit {
+            kind: ExitKind::Toll,
+            retained,
+            amber_multiplier: 1.0,
+            items,
+        });
         self.record(EventKind::Exhausted);
     }
 
@@ -1551,6 +1865,21 @@ impl<'a> Run<'a> {
         let live: Vec<usize> = (0..self.rocks.len())
             .filter(|index| self.rocks[*index].kind >= 0)
             .collect();
+        if self.amber.is_some() {
+            if matches!(
+                self.amber.as_ref().map(|amber| amber.phase),
+                Some(AmberPhase::Buildup | AmberPhase::Dump)
+            ) && self.at_amber_reserve()
+            {
+                if let Some(amber) = self.amber.as_mut() {
+                    amber.activation_depth = Some(self.depth as usize + 1);
+                }
+                self.amber_phase(AmberPhase::Activate, "Finishing stamina reserve reached");
+            }
+            if self.try_amber_rope() {
+                return;
+            }
+        }
         if self.choose_elixir() {
             self.countdown = if manual {
                 -36.0 + (self.config.reaction_ms / 10.0).ceil()
@@ -1559,8 +1888,26 @@ impl<'a> Run<'a> {
             };
             return;
         }
+        if self.amber.as_ref().map(|amber| amber.phase) == Some(AmberPhase::Activate) {
+            let waiting = self.config.elixirs.iter().enumerate().any(|(slot, id)| {
+                *id == 3
+                    && self.charges.get(slot).copied().unwrap_or(0.0) > 0.0
+                    && self.ready.get(slot).copied().unwrap_or(0.0) != 0.0
+            });
+            if waiting {
+                return;
+            }
+            self.amber_phase(
+                AmberPhase::Harvest,
+                "Available oranges consumed after stamina burn",
+            );
+            if self.try_amber_rope() {
+                return;
+            }
+        }
         let clear = if manual {
             self.config.policy == Policy::Clear
+                || self.amber.is_some()
                 || (self.config.policy == Policy::ClearFifth && (self.depth + 1) % 5 == 0)
         } else {
             self.config.full_clear
@@ -1614,6 +1961,111 @@ impl<'a> Run<'a> {
         {
             tools.push(first.id);
         }
+        let harvesting = matches!(
+            self.amber.as_ref().map(|amber| amber.phase),
+            Some(AmberPhase::Harvest | AmberPhase::RopeSearch)
+        );
+        let remaining: f64 = if harvesting {
+            self.config.party.iter().map(|id| self.stamina[*id]).sum()
+        } else {
+            0.0
+        };
+        let reachable_loot = harvesting
+            && tools.iter().any(|tool| {
+                let Some(definition) = self.input.tools.iter().find(|def| def.id == *tool) else {
+                    return false;
+                };
+                live.iter()
+                    .any(|index| self.can_harvest(&self.rocks[*index], definition, remaining))
+            });
+        if harvesting && self.found && !grand && !reachable_loot {
+            self.descend();
+            return;
+        }
+        if matches!(
+            self.amber.as_ref().map(|amber| amber.phase),
+            Some(AmberPhase::Buildup | AmberPhase::Dump)
+        ) && self.finishing_party.first() == Some(&self.active)
+        {
+            let available =
+                self.stamina[self.active] - self.start[self.active] * self.amber_reserve();
+            tools.retain(|tool| {
+                self.input
+                    .tools
+                    .iter()
+                    .find(|definition| definition.id == *tool)
+                    .is_some_and(|definition| self.harvest_net(definition) <= available)
+            });
+            if tools.is_empty() {
+                if let Some(amber) = self.amber.as_mut() {
+                    amber.activation_depth = Some(self.depth as usize + 1);
+                }
+                self.amber_phase(
+                    AmberPhase::Activate,
+                    "Next dig would consume finishing reserve",
+                );
+                return;
+            }
+        }
+        if matches!(
+            self.amber.as_ref().map(|amber| amber.phase),
+            Some(AmberPhase::Buildup | AmberPhase::Dump)
+        ) && let Some(policy) = self.config.amber
+            && self.depth + 1 >= policy.dump_depth as i64
+        {
+            let mut dump: Option<(f64, f64, usize, f64, f64)> = None;
+            for tool in &tools {
+                let Some(definition) = self.input.tools.iter().find(|def| def.id == *tool) else {
+                    continue;
+                };
+                for index in &live {
+                    let rock = &self.rocks[*index];
+                    let ratio = self.power() / rock.requirement;
+                    let chance = ratio.powf(0.6).min(1.0);
+                    let net = self.stamina[self.active].min(self.burn_net(definition));
+                    if net == 0.0 {
+                        continue;
+                    }
+                    let damage = hit_damage(self.input, definition.damage, ratio);
+                    if chance * damage * self.stamina[self.active] / net >= rock.hp {
+                        continue;
+                    }
+                    let position = self.position(*index);
+                    let (x, y) = (position.x, position.y - position.h / 2.0);
+                    let mut hit = 0.0;
+                    for other in &live {
+                        if !self.within(*other, x, y, definition.radius) {
+                            continue;
+                        }
+                        let other = &self.rocks[*other];
+                        let other_ratio = self.power() / other.requirement;
+                        hit += other_ratio.powf(0.6).min(1.0)
+                            * (hit_damage(self.input, definition.damage, other_ratio) / other.hp)
+                                .min(1.0);
+                    }
+                    let score = hit / net;
+                    if dump.is_none_or(|(_, _, _, best, best_net)| {
+                        score < best || (score == best && net > best_net)
+                    }) {
+                        dump = Some((x, y, *tool, score, net));
+                    }
+                }
+            }
+            if let Some((x, y, tool, _, _)) = dump {
+                self.amber_phase(
+                    AmberPhase::Dump,
+                    "Burn on visible objects unlikely to break with this character",
+                );
+                let before = self.spent;
+                self.dig(x, y, tool);
+                if let Some(amber) = self.amber.as_mut() {
+                    amber.dump_spent += self.spent - before;
+                    amber.dump_digs += 1;
+                }
+                self.countdown = -36.0 + (self.config.reaction_ms / 10.0).ceil();
+                return;
+            }
+        }
         let mut best: Option<(f64, f64, usize, f64)> = None;
         let mut best_score = -1.0;
         for tool in &tools {
@@ -1621,8 +2073,6 @@ impl<'a> Run<'a> {
                 continue;
             };
             let radius = definition.radius;
-            let damage = definition.damage;
-            let cost = definition.cost * cost_multi;
             let points: Vec<(f64, f64)> = if manual {
                 live.iter()
                     .map(|index| {
@@ -1652,8 +2102,18 @@ impl<'a> Run<'a> {
                     let rock = &self.rocks[*index];
                     let ratio = self.power() / rock.requirement;
                     let chance = ratio.powf(0.6).min(1.0);
-                    let dealt = damage * (1.0 + self.shop(33) / 100.0);
-                    score += if self.config.policy == Policy::Dive {
+                    let dealt = if harvesting {
+                        hit_damage(self.input, definition.damage, ratio)
+                    } else {
+                        definition.damage * (1.0 + self.shop(33) / 100.0)
+                    };
+                    score += if harvesting {
+                        if reachable_loot && !self.can_harvest(rock, definition, remaining) {
+                            0.0
+                        } else {
+                            chance * (dealt / rock.hp).min(1.0)
+                        }
+                    } else if self.config.policy == Policy::Dive {
                         chance
                             * (f64::from(u8::from(dealt >= rock.hp))
                                 + 0.05 * (dealt / rock.hp).min(1.0))
@@ -1667,7 +2127,9 @@ impl<'a> Run<'a> {
                 if !manual {
                     score = count as f64;
                 } else {
-                    score /= cost * if self.effects[0] > 0.0 { 0.7 } else { 1.0 };
+                    score /= definition.cost
+                        * cost_multi
+                        * if self.effects[0] > 0.0 { 0.7 } else { 1.0 };
                 }
                 if manual
                     && !self.found
@@ -1684,9 +2146,6 @@ impl<'a> Run<'a> {
             }
         }
         if let Some((x, y, tool, _)) = best {
-            if manual {
-                self.manual_tool = Some(tool);
-            }
             self.dig(x, y, tool);
         }
         if !manual

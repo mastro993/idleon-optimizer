@@ -15,7 +15,7 @@ use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, SharedString, Styled, div, px};
-use idleon_spelunking::{Inputs, Policy, StaminaMode};
+use idleon_spelunking::{AmberPolicy, Inputs, Policy, StaminaMode};
 
 /// The toolbar card: character, cave, mode, policy, full-clear and speed.
 pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
@@ -291,6 +291,147 @@ pub(crate) fn account_card(
                 )),
         )
         .into_any_element()
+}
+
+/// The phased Amber policy's limits, shown for `amber-farm` only.
+pub(crate) fn amber_card(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
+    if state.spelunking.policy != Policy::AmberFarm {
+        return None;
+    }
+    let amber = state.spelunking.amber;
+    let entity = cx.entity();
+    let dump_entity = entity.clone();
+    let finishers_entity = entity.clone();
+    let reserve_entity = entity.clone();
+    let harvest_entity = entity.clone();
+    let rope_entity = entity;
+
+    let dump = NumberInput::new("spelunk-amber-dump-depth", f64::from(amber.dump_depth))
+        .range(1.0, 10_000.0)
+        .step(1.0)
+        .precision(0)
+        .size(ControlSize::Sm)
+        .label("Amber dump depth")
+        .on_change(move |value, _window, cx| {
+            dump_entity.update(cx, |state, cx| {
+                state.set_spelunk_amber_policy(
+                    AmberPolicy {
+                        dump_depth: value.max(0.0) as u32,
+                        ..state.spelunking.amber
+                    },
+                    cx,
+                );
+            });
+        });
+    let finishers = Select::new(
+        "spelunk-amber-finishers",
+        [
+            Choice::new("1", "Last character"),
+            Choice::new("2", "Last two characters"),
+        ],
+    )
+    .label("Finishing characters")
+    .selected(amber.finishers.to_string())
+    .size(ControlSize::Sm)
+    .on_change(move |value, _window, cx| {
+        if let Ok(finishers) = value.parse::<u32>() {
+            finishers_entity.update(cx, |state, cx| {
+                state.set_spelunk_amber_policy(
+                    AmberPolicy {
+                        finishers,
+                        ..state.spelunking.amber
+                    },
+                    cx,
+                );
+            });
+        }
+    });
+    let reserve = NumberInput::new("spelunk-amber-reserve", f64::from(amber.reserve_pct))
+        .range(25.0, 100.0)
+        .step(1.0)
+        .precision(0)
+        .size(ControlSize::Sm)
+        .label("First finisher's stamina to keep (%)")
+        .on_change(move |value, _window, cx| {
+            reserve_entity.update(cx, |state, cx| {
+                state.set_spelunk_amber_policy(
+                    AmberPolicy {
+                        reserve_pct: value.max(0.0) as u32,
+                        ..state.spelunking.amber
+                    },
+                    cx,
+                );
+            });
+        });
+    let harvest = NumberInput::new("spelunk-amber-harvest", f64::from(amber.harvest_depths))
+        .range(0.0, 100.0)
+        .step(1.0)
+        .precision(0)
+        .size(ControlSize::Sm)
+        .label("Floors after oranges before seeking rope")
+        .on_change(move |value, _window, cx| {
+            harvest_entity.update(cx, |state, cx| {
+                state.set_spelunk_amber_policy(
+                    AmberPolicy {
+                        harvest_depths: value.max(0.0) as u32,
+                        ..state.spelunking.amber
+                    },
+                    cx,
+                );
+            });
+        });
+    let rope = NumberInput::new(
+        "spelunk-amber-rope-reserve",
+        f64::from(amber.rope_reserve_pct),
+    )
+    .range(1.0, 100.0)
+    .step(1.0)
+    .precision(0)
+    .size(ControlSize::Sm)
+    .label("Seek rope below finishing stamina (%)")
+    .on_change(move |value, _window, cx| {
+        rope_entity.update(cx, |state, cx| {
+            state.set_spelunk_amber_policy(
+                AmberPolicy {
+                    rope_reserve_pct: value.max(0.0) as u32,
+                    ..state.spelunking.amber
+                },
+                cx,
+            );
+        });
+    });
+
+    Some(
+        Card::new()
+            .header(CardHeader::new("Amber policy").description(
+                "Manual targeting throughout: full clear and drink teals as they come, saving the \
+                 oranges, then burn stamina on visible objects from the dump depth. The first \
+                 finisher keeps the reserve; later finishers stay untouched until needed. Drink \
+                 the oranges when the reserve is reached, harvest within the remaining stamina \
+                 budget, and take the first untouched rope after the harvest target or below the \
+                 rope reserve.",
+            ))
+            .child(
+                div()
+                    .id("spelunk-amber-policy")
+                    .flex()
+                    .flex_wrap()
+                    .items_end()
+                    .gap_4()
+                    .child(super::field("Dump depth", dump.into_any_element()))
+                    .child(super::field(
+                        "Finishing characters",
+                        finishers.into_any_element(),
+                    ))
+                    .child(super::field(
+                        "Finisher reserve (%)",
+                        reserve.into_any_element(),
+                    ))
+                    .child(super::field("Harvest floors", harvest.into_any_element()))
+                    .child(super::field("Rope reserve (%)", rope.into_any_element())),
+            )
+            .into_any_element(),
+    )
 }
 
 /// The starting-stamina choice shared by the party card.
