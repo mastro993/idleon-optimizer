@@ -6,9 +6,9 @@
 //! with their exact values, and the mastery card with its bar. The three damage
 //! layers come from the upstream shared stat pipeline, which this build does
 //! not decode, so the page renders the upstream dungeon and missing-pipeline
-//! states instead of a number it cannot justify. The context, the layer arithmetic and the
-//! upstream formatting live in [`idleon_damage`] and are ready for that
-//! provider.
+//! states instead of a number it cannot justify. The context, the selector rows,
+//! the layer arithmetic and the upstream formatting live in [`idleon_damage`]
+//! and are ready for that provider.
 
 mod actions;
 
@@ -23,9 +23,9 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_damage::{self as damage, Context as DamageContext, Summary};
+use idleon_damage::{self as damage, Context as DamageContext, MapRow, Summary};
 use idleon_save::Save;
-use idleon_stats::{self as stats, MapVisibility, Snapshot};
+use idleon_stats::{self as stats, Snapshot};
 use idleon_ui::format;
 
 /// The section's own state: the context and the save slice it reads.
@@ -50,12 +50,12 @@ impl State {
         self.refresh();
     }
 
-    /// The map selector's rows for the current character; upstream lists every
-    /// valid map, not the character's accessible subset.
-    pub(crate) fn options(&self) -> Vec<stats::MapOption> {
+    /// The map selector's rows for the current character, as upstream
+    /// `populateMapSel` builds them: every named map, not the accessible subset.
+    pub(crate) fn map_rows(&self) -> Vec<MapRow> {
         self.snapshot
             .as_ref()
-            .map(|snapshot| self.context.map_options(snapshot))
+            .map(|snapshot| self.context.map_rows(snapshot))
             .unwrap_or_default()
     }
 
@@ -75,8 +75,7 @@ impl State {
         }
         if let Some(dropped) = self.context.clamp_map(snapshot) {
             warnings.push(format!(
-                "damage: map {dropped} is not in the {} map list; map {} is used",
-                MapVisibility::All.label(),
+                "damage: map {dropped} is not in the map selector; map {} is used",
                 self.context.map
             ));
         }
@@ -104,7 +103,7 @@ impl State {
 
     /// Pick a map from the list the save allows.
     pub(crate) fn select_map(&mut self, map: usize) {
-        if !self.options().iter().any(|option| option.class.map == map) {
+        if !self.map_rows().iter().any(|row| row.map == map) {
             return;
         }
         self.context.map = map;
@@ -151,22 +150,11 @@ pub(crate) fn view(
             })
             .collect(),
     };
-    let options = damage.options();
-    let map_choices: Vec<Choice> = snapshot
-        .map(|snapshot| {
-            options
-                .iter()
-                .map(|option| {
-                    let map = option.class.map;
-                    let mut label = option.class.name.clone();
-                    if option.class.category == stats::Category::Dungeon {
-                        label.push_str(" (dungeon)");
-                    }
-                    Choice::new(map.to_string(), option.label(snapshot.map_bonus(map))).note(label)
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let rows = damage.map_rows();
+    let map_choices: Vec<Choice> = rows
+        .iter()
+        .map(|row| Choice::new(row.map.to_string(), row.label.clone()))
+        .collect();
 
     let character = entity.clone();
     let map = entity.clone();
@@ -304,7 +292,7 @@ fn summary_card(
     };
     let game_sub = if !summary.available {
         "Unavailable"
-    } else if summary.partial {
+    } else if summary.partial() {
         "Partial result"
     } else {
         "As shown on the character sheet"
@@ -341,6 +329,22 @@ fn summary_card(
                     Caption::new(summary.reason.clone())
                         .text_color(muted)
                         .into_any_element(),
+                ),
+        );
+    }
+    // The import's own gap, which upstream reports beside the value: the
+    // `it.json` companion roster and the server's active vote.
+    if summary.partial() {
+        let reason = summary.partial_reason();
+        body = body.child(
+            div()
+                .id("damage-partial")
+                .role(Role::Label)
+                .aria_label(reason.clone())
+                .child(
+                    Callout::new(Severity::Warning)
+                        .title("Partial result")
+                        .child(Caption::new(reason).text_color(muted).into_any_element()),
                 ),
         );
     }
@@ -420,10 +424,7 @@ mod tests {
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
-        assert_eq!(
-            state.options().first().map(|option| option.class.map),
-            Some(0)
-        );
+        assert_eq!(state.map_rows().first().map(|row| row.map), Some(0));
         let summary = state
             .summary
             .expect("the missing-pipeline state is computed");
@@ -432,6 +433,26 @@ mod tests {
             summary.reason.contains("shared stat pipeline"),
             "{summary:?}"
         );
+        // A flat save carries neither the companion roster nor the vote row, so
+        // the page names the partial import as the descriptor does.
+        assert!(summary.partial());
+        assert!(summary.partial_reason().contains("companion ownership"));
+    }
+
+    #[test]
+    fn the_map_row_labels_carry_the_dungeon_and_current_markers() {
+        let mut state = State::default();
+        state.load(&save());
+        let rows = state.map_rows();
+        let current: Vec<&MapRow> = rows.iter().filter(|row| row.current).collect();
+        assert_eq!(current.len(), 1);
+        assert_eq!(current[0].map, 0);
+        assert!(current[0].label.ends_with(" (current)"));
+        let dungeon = rows
+            .iter()
+            .find(|row| row.dungeon)
+            .expect("the selector lists dungeons");
+        assert!(dungeon.label.ends_with(" (dungeon)"), "{}", dungeon.label);
     }
 
     #[test]

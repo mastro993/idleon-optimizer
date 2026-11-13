@@ -18,6 +18,11 @@ jobs:
   # not start four macOS jobs.
   changes:
     runs-on: ubuntu-24.04
+    # `paths-filter` lists the PR's changed files through the API, which the
+    # default token cannot read on a private repository.
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
     steps:

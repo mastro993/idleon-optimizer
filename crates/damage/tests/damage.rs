@@ -12,7 +12,7 @@
 //! against upstream as soon as that changes, so the provider cannot land
 //! without matching this fixture.
 
-use idleon_damage::{self as damage, DUNGEON, Layers, STATS_ENGINE, Summary};
+use idleon_damage::{self as damage, DUNGEON, Layers, Metadata, STATS_ENGINE, Summary};
 use idleon_import::{Imported, import};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
@@ -146,10 +146,99 @@ fn the_summary_reports_the_missing_engine_until_the_provider_lands() {
         }
         assert_eq!(summary.reason, STATS_ENGINE, "character {character}");
         assert_eq!(summary.game_range(), None);
-        assert!(
-            !summary.partial,
-            "an unavailable summary is not a partial one"
+        assert_eq!(
+            summary.partial(),
+            expected["partial"]
+                .as_bool()
+                .expect("the descriptor's partial"),
+            "character {character}"
         );
+        assert_eq!(
+            summary.partial_reason(),
+            expected["reason"]
+                .as_str()
+                .expect("the descriptor's reason"),
+            "character {character}"
+        );
+    }
+}
+
+#[test]
+fn the_metadata_flags_match_the_descriptor() {
+    let imported = imported();
+    let oracle = oracle();
+    let summary = evaluate(&imported.save, 0, 200);
+    assert_eq!(
+        summary.partial_reason(),
+        oracle["metadata"]["missing"]
+            .as_str()
+            .expect("the fixture carries the missing-metadata reason")
+    );
+    // The descriptor clears both flags once the wrapper carries the roster and
+    // the vote row; the port reads the same two fields.
+    assert!(!summary.metadata.complete());
+    let text = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../fixtures/data.json"
+    ))
+    .expect("fixtures/data.json is committed");
+    let flat: Value = serde_json::from_str(&text).expect("the fixture is JSON");
+    let wrapped = Save::new(serde_json::json!({
+        "data": flat,
+        "companion": { "l": [] },
+        "serverVars": { "voteCategories": [0] },
+    }));
+    let metadata = Metadata::read(&wrapped);
+    assert_eq!(
+        metadata.complete(),
+        !oracle["metadata"]["complete"]["partial"]
+            .as_bool()
+            .expect("the fixture carries the complete case")
+    );
+    assert_eq!(metadata.reason(), "");
+}
+
+#[test]
+fn the_map_selector_lists_the_upstream_maps() {
+    let save = fixture();
+    let snapshot = Snapshot::from_save(&save);
+    let oracle = oracle();
+    let maps = oracle["maps"]
+        .as_array()
+        .expect("the fixture lists the maps");
+    let table: Vec<(usize, String)> = maps
+        .iter()
+        .map(|row| {
+            (
+                row["map"].as_u64().expect("a map") as usize,
+                row["name"].as_str().expect("a name").to_string(),
+            )
+        })
+        .collect();
+    let dungeons: Vec<usize> = oracle["dungeons"]
+        .as_array()
+        .expect("the dungeon maps")
+        .iter()
+        .map(|row| row["map"].as_u64().expect("a map") as usize)
+        .collect();
+    for expected in cases(&oracle) {
+        let character = expected["character"].as_u64().expect("an index") as usize;
+        let map = expected["map"].as_u64().expect("a map") as usize;
+        let rows = damage::Context { character, map }.map_rows(&snapshot);
+        assert_eq!(rows.len(), table.len(), "character {character}");
+        for (row, (index, name)) in rows.iter().zip(&table) {
+            assert_eq!(row.map, *index);
+            let mut label = name.clone();
+            if dungeons.contains(index) {
+                label.push_str(" (dungeon)");
+            }
+            if *index == map {
+                label.push_str(" (current)");
+            }
+            assert_eq!(row.label, label, "map {index}");
+            assert_eq!(row.dungeon, dungeons.contains(index), "map {index}");
+            assert_eq!(row.current, *index == map, "map {index}");
+        }
     }
 }
 
