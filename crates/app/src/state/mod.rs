@@ -60,6 +60,7 @@ use gpui_mcp::BridgeHandle;
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_clamworks::Clamworks;
+use idleon_clamworks::scurge::Inputs as ScurgeInputs;
 use idleon_clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_cog::{CogResult, PerfectBoard};
 use idleon_combat::compare::{Comparison as CombatComparison, Plan as CombatComparePlan};
@@ -260,6 +261,8 @@ pub(crate) struct AppState {
     pub(crate) clamworks_projection: Option<[u32; 9]>,
     /// The AFK claim's character, stand-ins, hours and pearl table.
     pub(crate) clamworks_claim: ClamworksState,
+    /// The Scurge panel the section was left on.
+    pub(crate) clamworks_scurge: ScurgeInputs,
     /// The endgame section's audit of the last applied save.
     pub(crate) endgame: endgame::State,
     /// The Jelly Operator board the last imported save carried.
@@ -1061,6 +1064,7 @@ impl AppState {
             clamworks_budget: 0.0,
             clamworks_projection: None,
             clamworks_claim: sections::clamworks::State::new(window, cx),
+            clamworks_scurge: ScurgeInputs::default(),
             endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar_tier: 0,
