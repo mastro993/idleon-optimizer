@@ -265,6 +265,9 @@ impl AppState {
             .as_ref()
             .map_or([0.0; idleon_opal::VILLAGERS], Opal::opals);
         self.royal = imported.royal;
+        // A forecast from the previous save describes rows this one no longer has.
+        self.royal_forecast = None;
+        self.royal_forecast_key = None;
         self.sneaking = imported.sneaking;
         // A recommendation from the previous save describes slots this one no longer has.
         discard_run(&self.sneaking_opt, cx);

@@ -167,4 +167,35 @@ impl RoyalGuardian {
     pub fn total_units(&self, map: usize) -> f64 {
         self.units_by_type(map).iter().sum()
     }
+
+    /// The points a map has left to spend: upstream `outpostPointsLeft`.
+    pub fn points_left(&self, map: usize) -> f64 {
+        if self.map_row(map).len() <= 3 {
+            return 0.0;
+        }
+        let rank = self.rank(map, 0);
+        let level_71 = self.armory_level(71);
+        let world = (map / MAPS_PER_WORLD).min(6);
+        let world_reward = [3.0, 15.0, 32.0, 43.0, 48.0, 52.0, 61.0][world];
+        let mut points =
+            2.0 + self.jelly_bonus(world_reward as usize) + self.armory_bonus(9 + world) + rank;
+        if level_71 >= 1.0 {
+            points += (rank / (11.0 - level_71)).floor();
+        }
+        if self.map_cell(map, cell::GLORIFIED) > 0.0 {
+            points += 10.0;
+        }
+        points - self.map_cell(map, 0) * 12.0 - self.map_cell(map, 1) * 2.0 - self.map_cell(map, 2)
+    }
+
+    /// A rank bar's EXP per hour, for one outpost: upstream `barExpRate`.
+    pub fn bar_exp_rate(&self, bar: usize, map: usize) -> f64 {
+        let education = 1.0 + 10.0 * self.map_cell(map, 2) / 100.0;
+        self.bar_exp_rate_base(bar)
+            * education
+            * if self.glorified(map) { 2.0 } else { 1.0 }
+            * if self.purified(map) { 3.0 } else { 1.0 }
+            * (1.0 + self.rank(map, 1) * self.armory_bonus(72) / 100.0)
+            * (1.0 + self.support_collection() * self.support_count(map) as f64 / 100.0)
+    }
 }

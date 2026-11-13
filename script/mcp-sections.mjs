@@ -1029,6 +1029,62 @@ const INTERACTIONS = {
     if (!balance.includes('1,234')) {
       throw new Error(`royal-guardian: the currency balance reads ${balance}`);
     }
+    // RG-03: the upgrade list prices the shelves and plans their next levels.
+    await lane.call('click_element', { id: 'royal-tab-upgrades' });
+    await waitForNode(lane, 'royal-upgrade-armory', 'royal-guardian: the upgrade list renders');
+    await waitForNode(lane, 'royal-armory-table', 'royal-guardian: every shelf is listed');
+    // The save's 31 Armory levels reach the first seven shelves.
+    const shelves = labelOf(await lane.tree(), 'royal-kpi-armory-shelves-figure') ?? '';
+    if (!shelves.includes('7')) throw new Error(`royal-guardian: the shelf KPI reads ${shelves}`);
+    const plan = labelOf(await lane.tree(), 'royal-armory-plan') ?? '';
+    if (!plan.includes('level')) throw new Error(`royal-guardian: the cost plan reads ${plan}`);
+    await bringIntoView(lane, 'royal-armory-row-0');
+    await lane.call('click_element', { id: 'royal-armory-row-0' });
+    await waitForNode(lane, 'royal-armory-plan-table', 'royal-guardian: a shelf prices its next levels');
+    // The Orblet list switches in and counts what the save owns.
+    await lane.call('focus_element', { id: 'royal-upgrade-view' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'down' });
+    await lane.call('keyboard', { keystroke: 'enter' });
+    await waitForNode(lane, 'royal-orblet-table', 'royal-guardian: the orblet list renders');
+    const orblets = labelOf(await lane.tree(), 'royal-kpi-orblets-owned-figure') ?? '';
+    if (!orblets.includes('0')) throw new Error(`royal-guardian: the orblet count reads ${orblets}`);
+    // The breakdown tree opens on the collection rule and switches to range.
+    await lane.call('click_element', { id: 'royal-tab-breakdowns' });
+    await waitForNode(
+      lane,
+      'royal-breakdown-node-root',
+      'royal-guardian: the breakdown tree renders'
+    );
+    const collection = labelOf(await lane.tree(), 'royal-breakdown-summary') ?? '';
+    if (!collection.includes('Collection')) {
+      throw new Error(`royal-guardian: the breakdown summary reads ${collection}`);
+    }
+    await lane.call('click_element', { id: 'royal-breakdown-range' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'royal-breakdown-summary') ?? '').includes('Range'),
+      'royal-guardian: the range breakdown replaces the collection one'
+    );
+    // The forecast commits a menu-open window: no Armory 30, so only a window collects.
+    await lane.call('click_element', { id: 'royal-tab-forecast' });
+    await waitForNode(lane, 'royal-forecast-summary', 'royal-guardian: the forecast summary renders');
+    const empty = labelOf(await lane.tree(), 'royal-kpi-forecast-collects-figure') ?? '';
+    if (!empty.includes('0')) throw new Error(`royal-guardian: the collect count reads ${empty}`);
+    await lane.call('click_element', { id: 'royal-forecast-window-start' });
+    await lane.call('type_text', { text: '1' });
+    await lane.call('click_element', { id: 'royal-forecast-window-end' });
+    await lane.call('type_text', { text: '2' });
+    await lane.call('click_element', { id: 'royal-forecast-add-window' });
+    await waitForNode(lane, 'royal-forecast-window-0', 'royal-guardian: the window joins the agenda');
+    await lane.call('click_element', { id: 'royal-forecast-collect' });
+    await lane.call('type_text', { text: '0.5' });
+    await lane.call('click_element', { id: 'royal-forecast-add-collect' });
+    await waitForNode(lane, 'royal-forecast-collect-0', 'royal-guardian: the collect joins the agenda');
+    const refills = labelOf(await lane.tree(), 'royal-kpi-forecast-refills-figure') ?? '';
+    if (!refills.includes('Refills')) {
+      throw new Error(`royal-guardian: the forecast refill card reads ${refills}`);
+    }
     await lane.call('click_element', { id: 'royal-tab-overview' });
     await waitForNode(lane, 'royal-overview', 'royal-guardian: the overview reopens');
   },

@@ -102,7 +102,7 @@ for (let world = 0; world < WORLDS; world += 1) {
 const derived = R.royalGuardianDerivedInputs(S);
 const rateExt = {
   derivedInputs: derived,
-  talent231Multi: derived.talent231Multi,
+  talent231Multi: purchasedMulti,
   spelunkBigFish6: derived.spelunkBigFish6,
 };
 const globalRate = R.globalResourceRateBreakdown(S, rateExt);
@@ -290,6 +290,263 @@ for (const row of rows) {
   });
 }
 
+
+// RG-03: the upgrade list, the global breakdowns and the forecast.
+//
+// Three sources the port does not decode yet - the all-talent bonus levels, the
+// W14 alchemy bubble and the companion roster - are handed to the upstream as
+// explicit overrides, so the comparison is against the same inputs the port
+// reads. Without the override the upstream would price and project with bonuses
+// the port leaves out, and every figure would differ for the wrong reason.
+const purchased = {
+  talent225: purchasedTalents[225],
+  talent226: purchasedTalents[226],
+  talent230Multi: purchasedTalents[230],
+};
+const portExt = {
+  derivedInputs: derived,
+  talent231Multi: purchasedMulti,
+  spelunkBigFish6: derived.spelunkBigFish6,
+  talent225: purchased.talent225,
+  talent226: purchased.talent226,
+  talent230Multi: purchased.talent230Multi,
+  alchemyW14: 0,
+  companion141: 0,
+};
+
+const redux = R.allMasterclassCostReduxDetail(S);
+const unlockedCount = R.armoryUnlockedCount(S);
+const armoryList = R.armoryRows(S).map((row) => {
+  const upgrade = data.ARMORY_UPGRADES[row.index];
+  const balance = number(S.royalGData?.[1]?.[row.cost.currencySlot]);
+  return {
+    index: row.index,
+    order: row.orderIndex,
+    name: upgrade?.name ?? '',
+    level: row.currentLevel,
+    maxLevel: number(upgrade?.maxLevel),
+    bonus: row.currentBonus,
+    nextBonus: row.nextBonus,
+    bonusPerLevel: number(upgrade?.bonusPerLevel),
+    cost: row.cost.value,
+    currencySlot: row.cost.currencySlot,
+    balance,
+    maxed: row.currentLevel >= number(upgrade?.maxLevel),
+    unlocked: row.orderIndex < unlockedCount,
+    affordable: row.currentLevel < number(upgrade?.maxLevel) && row.cost.value <= balance,
+  };
+});
+const planFor = (order) => {
+  const plan = R.armoryCostProjection(S, order, 50);
+  if (!plan) return null;
+  return {
+    index: plan.index,
+    order: plan.orderIndex,
+    currencySlot: plan.currencySlot,
+    balance: plan.balance,
+    dailyPurchaseLimit: plan.dailyPurchaseLimit,
+    purchaseCounter: plan.purchaseCounter,
+    discountsLeftToday: plan.discountsLeftToday,
+    discountAvailable: plan.discountAvailable,
+    rows: plan.rows.map((row) => ({
+      level: row.level,
+      nextLevel: row.nextLevel,
+      discounted: row.discounted,
+      full: row.full,
+      cumulativeDiscounted: row.cumulativeDiscounted,
+      cumulativeFull: row.cumulativeFull,
+    })),
+  };
+};
+const orbletList = R.orbletRows(S).map((row) => ({
+  index: row.index,
+  name: row.name,
+  level: row.level,
+  maxLevel: row.maxLevel,
+  maxed: row.maxed,
+  unlocked: row.unlocked,
+  kind: row.kind,
+  cost: Number.isFinite(row.cost) ? row.cost : null,
+  bonus: row.bonus,
+  nextBonus: row.nextBonus,
+  owned: row.owned,
+  affordable: row.affordable,
+  partial: row.partial,
+  missing: row.missing,
+}));
+const ownedOrblets = R.orbletOwnedDetail(S);
+
+const collectionRate = R.globalResourceRateBreakdown(S, portExt);
+const rangeRules = R.globalRangeBreakdown(S);
+const rankExp = R.globalRankExpBreakdown(S, portExt);
+const pointRules = R.globalPointBreakdown(S);
+const unitRules = R.globalUnitBreakdowns(S, portExt);
+const supportRules = R.globalSupportBreakdown(S);
+const savageRules = R.globalSavageBreakdown(S);
+const breakdowns = {
+  collection: {
+    value: collectionRate.value,
+    factors: collectionRate.factors.map((factor) => ({ name: factor.name, value: factor.value })),
+  },
+  range: {
+    base: rangeRules.base,
+    orblet: rangeRules.orblet.bonus,
+    cap: rangeRules.cap,
+    resourceAllowance: rangeRules.allowances.resource,
+    outpostAllowance: rangeRules.allowances.outpost,
+    value: rangeRules.base + rangeRules.orblet.bonus,
+  },
+  rankExp: {
+    value: rankExp.bars[rankExp.selectedBar].baseRate,
+    selectedBar: rankExp.selectedBar,
+    orblet: rankExp.orblet.bonus,
+    shop65: rankExp.shop65,
+    shop77: rankExp.shop77,
+    bars: rankExp.bars.map((bar) => ({ bar: bar.bar, name: bar.name, baseRate: bar.baseRate })),
+  },
+  points: {
+    value: pointRules.base + pointRules.worlds.reduce((sum, world) => sum + world.armory.bonus, 0),
+    base: pointRules.base,
+    worlds: pointRules.worlds.map((world) => world.armory.bonus),
+  },
+  units: {
+    value: unitRules.rules.reduce((sum, rule) => sum + rule.stats[0].value, 0),
+    rules: unitRules.rules.map((rule) => ({
+      id: rule.id,
+      name: rule.name,
+      label: rule.stats[0].label,
+      base: rule.stats[0].base,
+      armory: rule.stats[0].armory.bonus,
+      value: rule.stats[0].value,
+      unit: rule.stats[0].unit,
+    })),
+  },
+  support: {
+    value: supportRules.value,
+    base: supportRules.basePercent,
+    armory: supportRules.armory.bonus,
+    jelly: supportRules.jellyBonus,
+  },
+  savage: {
+    value: savageRules.value,
+    base: savageRules.baseMultiplier,
+    armory: savageRules.armory.bonus,
+    currency: savageRules.currencyMultiplier,
+  },
+};
+
+// The forecast engine, ported by royal-forecast.js. Two scenarios: the default
+// horizon with no collects, and a three-collect run with a menu-open window.
+const F = await import(join(source, 'js/stats/systems/w7/royal-forecast.js'));
+const flattenForecast = (result) => ({
+  horizonHours: result.horizonHours,
+  partial: result.partial,
+  missing: result.missing,
+  banks: result.banks,
+  bankedStartHours: result.bankedStartHours,
+  endBankedHours: result.endBankedHours,
+  resets: result.resets,
+  ignoredCollects: result.ignoredCollects,
+  truncated: result.truncated,
+  collects: result.collects.map((commit) => ({
+    at: commit.at,
+    kind: commit.kind,
+    banked: commit.banked,
+    currency: commit.currency,
+    drained: commit.drained,
+    rankUps: commit.rankUps.map((up) => ({ map: up.mapIdx, bar: up.bar, from: up.from, to: up.to, pointsBefore: up.pointsBefore, pointsAfter: up.pointsAfter })),
+    points: commit.points,
+    secured: commit.secured,
+    // A commit's affordable entries carry no hour upstream; the ghost versions do.
+    affordable: commit.affordable.map((item) => ({ index: item.index, order: item.orderIndex, cost: item.cost, currencySlot: item.currencySlot, at: item.at ?? null })),
+  })),
+  windows: result.windows.map((window) => ({
+    start: window.start,
+    end: window.end,
+    entry: window.entry ? { at: window.entry.at, kind: window.entry.kind, banked: window.entry.banked, currency: window.entry.currency } : null,
+    summary: {
+      currency: window.summary.currency,
+      drained: window.summary.drained,
+      rankUps: window.summary.rankUps.length,
+      points: window.summary.points,
+      secured: window.summary.secured,
+      affordable: window.summary.affordable.map((item) => ({ index: item.index, order: item.orderIndex, cost: item.cost, at: item.at })),
+    },
+    steps: window.steps,
+    truncated: window.truncated,
+  })),
+  resetEvents: result.resetEvents.map((event) => ({
+    at: event.at,
+    refills: event.refills,
+    refilled: event.refilled,
+    gradeGains: event.gradeGains,
+    missed: event.missed.map((item) => ({ resource: item.resourceIdx, readyAt: item.readyAt })),
+  })),
+  segments: result.segments.map((segment) => ({
+    start: segment.start,
+    end: segment.end,
+    bankedAtStart: segment.bankedAtStart,
+    bankedAtEnd: segment.bankedAtEnd,
+    ghosts: {
+      fills: segment.ghosts.fills.map((fill) => ({ resource: fill.resourceIdx, at: fill.at })),
+      ranks: segment.ghosts.ranks.map((ghost) => ({ map: ghost.mapIdx, bar: ghost.bar, rank: ghost.rank, from: ghost.from, at: ghost.at, ready: ghost.ready === true })),
+      affordable: segment.ghosts.affordable.map((item) => ({ index: item.index, cost: item.cost, currencySlot: item.currencySlot, at: item.at })),
+      clears: segment.ghosts.clears.map((ghost) => ({ map: ghost.mapIdx, at: ghost.at })),
+    },
+    nodes: segment.nodes.map((node) => ({
+      resource: node.resourceIdx,
+      capacity: node.capacity,
+      grade: node.grade,
+      quantity: node.quantity,
+      drained: node.drained,
+      committed: node.committed,
+      fillAt: node.fillAt,
+      projected: node.projected.map((point) => ({ t: point.t, f: point.f })),
+    })),
+    currency: segment.currency,
+  })),
+  summary: {
+    collects: result.summary.collects,
+    windows: result.summary.windows,
+    currency: result.summary.currency,
+    rankUps: result.summary.rankUps,
+    points: result.summary.points,
+    secured: result.summary.secured,
+    refilled: result.summary.refilled,
+    missed: result.summary.missed,
+    gradeGains: result.summary.gradeGains,
+    bankedAtHorizon: result.summary.bankedAtHorizon,
+  },
+});
+const forecastDefault = flattenForecast(F.forecastRoyal(S, { horizonHours: 72, ext: portExt }));
+const forecastPlanned = flattenForecast(F.forecastRoyal(S, {
+  horizonHours: 48,
+  collects: [6, 12.5, 30],
+  windows: [{ start: 20, end: 22 }],
+  ext: portExt,
+}));
+
+const planOrders = armoryList
+  .filter((row) => !row.maxed)
+  .slice(0, 2)
+  .map((row) => row.order);
+const upgrades = {
+  masterclassRedux: {
+    value: redux.value,
+    prefix: redux.prefix,
+    bargain: redux.bargain,
+    reductionPercent: redux.reductionPercent,
+    purchaseCounter: redux.purchaseCounter,
+    dailyLimit: redux.dailyPurchaseLimit,
+  },
+  unlockedCount,
+  armory: armoryList,
+  planOrders,
+  plans: planOrders.map((order) => planFor(order)),
+  orblets: orbletList,
+  owned: ownedOrblets,
+};
+
 const payload = {
   counters: {
     builtOutposts: counters.outposts,
@@ -371,6 +628,9 @@ const payload = {
   built,
   rangeTargets,
   clearing: clearingRows,
+  upgrades,
+  breakdowns,
+  forecast: { default: forecastDefault, planned: forecastPlanned },
   // The map names the tables print, kept beside the numbers so a rename shows up.
   names: Object.fromEntries(
     [...new Set(clearingRows.map((row) => row.map))].map((map) => [map, maps.mapDisplayName(map)]),
@@ -391,5 +651,6 @@ writeFileSync(
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(
-  `wrote ${clearingRows.length} clearing rows, ${built.length} built outposts, ${rangeTargets.length} range rows`,
+  `wrote ${clearingRows.length} clearing rows, ${built.length} built outposts, ${rangeTargets.length} range rows, ` +
+    `${armoryList.length} shelves, ${forecastPlanned.summary.collects} planned collects`,
 );

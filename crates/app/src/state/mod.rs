@@ -38,6 +38,7 @@ use crate::sections::research::minehead::{
     OptimizeInputs as MineheadOptimizeInputs, RunInputs as MineheadRunInputs,
 };
 use crate::sections::royal_guardian::State as RoyalState;
+use crate::sections::royal_guardian::forecast::Inputs as RoyalForecastInputs;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
@@ -311,6 +312,14 @@ pub(crate) struct AppState {
     pub(crate) royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
     pub(crate) royal_state: RoyalState,
+    /// The shared formula tree on the Royal Guardian breakdowns pane.
+    pub(crate) royal_breakdown: Entity<FormulaTree>,
+    /// The Royal Guardian forecast's live collect and window fields.
+    pub(crate) royal_forecast_inputs: RoyalForecastInputs,
+    /// The forecast for the current inputs, kept until they move.
+    pub(crate) royal_forecast: Option<idleon_royal_guardian::Forecast>,
+    /// The inputs `royal_forecast` was computed from.
+    pub(crate) royal_forecast_key: Option<idleon_royal_guardian::ForecastOptions>,
     /// The ninja loadout and inventory the loaded save carries, if it has any.
     pub(crate) sneaking: Option<idleon_sneaking::Loadout>,
     /// The sneaking workspace's login context and selected slot.
@@ -943,6 +952,10 @@ impl AppState {
             sailing_state: SailingState::default(),
             royal: None,
             royal_state: RoyalState::default(),
+            royal_breakdown: crate::ui::formula_tree("royal-breakdown", window, cx),
+            royal_forecast_inputs: RoyalForecastInputs::new(window, cx),
+            royal_forecast: None,
+            royal_forecast_key: None,
             sailing_trees,
             sailing_sim,
             farm: Farm::default(),

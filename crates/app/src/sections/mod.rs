@@ -455,7 +455,7 @@ pub(crate) const SECTIONS: [Section; 30] = [
         title: "Royal Guardian Calculator",
         icon: "👑",
         group: Group::W7,
-        description: "Outposts, resources and currencies, Armory, statues, and map quick views",
+        description: "Outposts, resources and currencies, the Armory and Orblet upgrades, global breakdowns and the collect forecast",
         spec: "docs/sections/royal-guardian.md",
         status: Status::Ready,
         dashboard: true,
