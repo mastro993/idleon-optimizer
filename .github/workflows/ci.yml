@@ -3,7 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # Docs and assets change no code the gates can see.
+    paths-ignore: ["**/*.md", "docs/**", "assets/**"]
   pull_request:
+    paths-ignore: ["**/*.md", "docs/**", "assets/**"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,18 +14,34 @@ concurrency:
 
 jobs:
   static:
-    # The workspace builds GPUI from the vendored gpui-pre snapshot (objc2/metal),
-    # so the static gates only run where a developer runs them: macOS.
-    runs-on: macos-latest
+    # Both gates run at once; the first failure cancels the other, so a broken
+    # `main` never costs a full clippy run after a one-second fmt failure.
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Formatting needs no build, no cache and no submodule: cheapest runner.
+          - check: fmt
+            os: ubuntu-latest
+            submodules: false
+            command: cargo fmt --all -- --check
+          # Clippy compiles the workspace, whose GUI comes from the vendored
+          # gpui-pre snapshot (objc2/metal), so it runs where a developer does.
+          - check: clippy
+            os: macos-latest
+            submodules: recursive
+            command: cargo clippy --workspace --all-targets -- -D warnings
+    name: ${{ matrix.check }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
         with:
-          submodules: recursive
+          submodules: ${{ matrix.submodules }}
       # Pinned to the workspace's rust-version so a new stable clippy lint cannot
       # turn -D warnings red on a branch that changed nothing.
       - uses: dtolnay/rust-toolchain@1.96.0
         with:
           components: clippy, rustfmt
-      - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - if: matrix.check == 'clippy'
+        uses: Swatinem/rust-cache@v2
+      - run: ${{ matrix.command }}
