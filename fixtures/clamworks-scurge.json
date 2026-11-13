@@ -1,0 +1,946 @@
+{
+ "savedBy": "script/clamworks-scurge-oracle.mjs",
+ "source": "js/stats/systems/w7/clamworks-scurge.js",
+ "multikillTotal": 1234.5,
+ "cases": [
+  {
+   "name": "saved-affliction",
+   "mode": "affliction",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 122,
+   "unlocked": true,
+   "levels": [
+    18,
+    2,
+    3,
+    18,
+    27,
+    54,
+    0,
+    0,
+    0
+   ],
+   "available": 0,
+   "selfBudget": 3,
+   "maximum": 3,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      18,
+      2,
+      3,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 0,
+     "expPerKill": 5519.5
+    },
+    {
+     "label": "Self Affliction 0",
+     "levels": [
+      18,
+      2,
+      0,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 3,
+       "to": 0
+      }
+     ],
+     "pointsLeft": 3,
+     "expPerKill": 788.5
+    },
+    {
+     "label": "Self Affliction 1",
+     "levels": [
+      18,
+      2,
+      1,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 3,
+       "to": 1
+      }
+     ],
+     "pointsLeft": 2,
+     "expPerKill": 2365.5
+    },
+    {
+     "label": "Self Affliction 2",
+     "levels": [
+      18,
+      2,
+      2,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 3,
+       "to": 2
+      }
+     ],
+     "pointsLeft": 1,
+     "expPerKill": 3942.5
+    }
+   ]
+  },
+  {
+   "name": "saved-upgrades",
+   "mode": "upgrades",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 122,
+   "unlocked": true,
+   "levels": [
+    18,
+    2,
+    3,
+    18,
+    27,
+    54,
+    0,
+    0,
+    0
+   ],
+   "available": 0,
+   "selfBudget": 3,
+   "maximum": 3,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      18,
+      2,
+      3,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 0,
+     "expPerKill": 5519.5
+    }
+   ]
+  },
+  {
+   "name": "unspent-upgrades-swarming",
+   "mode": "upgrades",
+   "maxAffliction": 12,
+   "otherPlayers": 3,
+   "rank": 700,
+   "unlocked": true,
+   "levels": [
+    18,
+    2,
+    3,
+    18,
+    27,
+    54,
+    0,
+    0,
+    0
+   ],
+   "available": 578,
+   "selfBudget": 581,
+   "maximum": 12,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      18,
+      2,
+      3,
+      18,
+      27,
+      54,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 578,
+     "expPerKill": 5519.5
+    },
+    {
+     "label": "Optimized EXP upgrades",
+     "levels": [
+      208,
+      2,
+      3,
+      18,
+      209,
+      54,
+      0,
+      206,
+      0
+     ],
+     "changes": [
+      {
+       "index": 0,
+       "name": "RECKONING",
+       "from": 18,
+       "to": 208
+      },
+      {
+       "index": 4,
+       "name": "EVEN BETTER",
+       "from": 27,
+       "to": 209
+      },
+      {
+       "index": 7,
+       "name": "SWARMING",
+       "from": 0,
+       "to": 206
+      }
+     ],
+     "pointsLeft": 0,
+     "expPerKill": 28895127.799999997
+    }
+   ]
+  },
+  {
+   "name": "affliction-spread",
+   "mode": "affliction",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 30,
+   "unlocked": true,
+   "levels": [
+    10,
+    0,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "available": 15,
+   "selfBudget": 20,
+   "maximum": 12,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      10,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 15,
+     "expPerKill": 121
+    },
+    {
+     "label": "Self Affliction 0",
+     "levels": [
+      10,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 0
+      }
+     ],
+     "pointsLeft": 20,
+     "expPerKill": 11
+    },
+    {
+     "label": "Self Affliction 1",
+     "levels": [
+      10,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 1
+      }
+     ],
+     "pointsLeft": 19,
+     "expPerKill": 33
+    },
+    {
+     "label": "Self Affliction 2",
+     "levels": [
+      10,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 2
+      }
+     ],
+     "pointsLeft": 18,
+     "expPerKill": 55
+    },
+    {
+     "label": "Self Affliction 3",
+     "levels": [
+      10,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 3
+      }
+     ],
+     "pointsLeft": 17,
+     "expPerKill": 77
+    },
+    {
+     "label": "Self Affliction 4",
+     "levels": [
+      10,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 4
+      }
+     ],
+     "pointsLeft": 16,
+     "expPerKill": 99
+    },
+    {
+     "label": "Self Affliction 6",
+     "levels": [
+      10,
+      0,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 6
+      }
+     ],
+     "pointsLeft": 14,
+     "expPerKill": 143
+    },
+    {
+     "label": "Self Affliction 7",
+     "levels": [
+      10,
+      0,
+      7,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 7
+      }
+     ],
+     "pointsLeft": 13,
+     "expPerKill": 165
+    },
+    {
+     "label": "Self Affliction 8",
+     "levels": [
+      10,
+      0,
+      8,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 8
+      }
+     ],
+     "pointsLeft": 12,
+     "expPerKill": 187
+    },
+    {
+     "label": "Self Affliction 9",
+     "levels": [
+      10,
+      0,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 9
+      }
+     ],
+     "pointsLeft": 11,
+     "expPerKill": 209
+    },
+    {
+     "label": "Self Affliction 10",
+     "levels": [
+      10,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 10
+      }
+     ],
+     "pointsLeft": 10,
+     "expPerKill": 231
+    },
+    {
+     "label": "Self Affliction 11",
+     "levels": [
+      10,
+      0,
+      11,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 11
+      }
+     ],
+     "pointsLeft": 9,
+     "expPerKill": 253
+    },
+    {
+     "label": "Self Affliction 12",
+     "levels": [
+      10,
+      0,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 5,
+       "to": 12
+      }
+     ],
+     "pointsLeft": 8,
+     "expPerKill": 275
+    }
+   ]
+  },
+  {
+   "name": "affliction-locked",
+   "mode": "affliction",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 5,
+   "unlocked": true,
+   "levels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "available": 5,
+   "selfBudget": 5,
+   "maximum": 0,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 5,
+     "expPerKill": 1
+    }
+   ]
+  },
+  {
+   "name": "upgrades-locked",
+   "mode": "upgrades",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 5,
+   "unlocked": true,
+   "levels": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "available": 5,
+   "selfBudget": 5,
+   "maximum": 0,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 5,
+     "expPerKill": 1
+    },
+    {
+     "label": "Optimized EXP upgrades",
+     "levels": [
+      5,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 0,
+       "name": "RECKONING",
+       "from": 0,
+       "to": 5
+      }
+     ],
+     "pointsLeft": 0,
+     "expPerKill": 6
+    }
+   ]
+  },
+  {
+   "name": "unspent-affliction",
+   "mode": "affliction",
+   "maxAffliction": 8,
+   "otherPlayers": 0,
+   "rank": 60,
+   "unlocked": true,
+   "levels": [
+    5,
+    0,
+    2,
+    0,
+    10,
+    0,
+    0,
+    0,
+    0
+   ],
+   "available": 43,
+   "selfBudget": 45,
+   "maximum": 8,
+   "rows": [
+    {
+     "label": "Current loadout",
+     "levels": [
+      5,
+      0,
+      2,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [],
+     "pointsLeft": 43,
+     "expPerKill": 480
+    },
+    {
+     "label": "Self Affliction 0",
+     "levels": [
+      5,
+      0,
+      0,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 0
+      }
+     ],
+     "pointsLeft": 45,
+     "expPerKill": 96
+    },
+    {
+     "label": "Self Affliction 1",
+     "levels": [
+      5,
+      0,
+      1,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 1
+      }
+     ],
+     "pointsLeft": 44,
+     "expPerKill": 288
+    },
+    {
+     "label": "Self Affliction 3",
+     "levels": [
+      5,
+      0,
+      3,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 3
+      }
+     ],
+     "pointsLeft": 42,
+     "expPerKill": 672
+    },
+    {
+     "label": "Self Affliction 4",
+     "levels": [
+      5,
+      0,
+      4,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 4
+      }
+     ],
+     "pointsLeft": 41,
+     "expPerKill": 864
+    },
+    {
+     "label": "Self Affliction 5",
+     "levels": [
+      5,
+      0,
+      5,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 5
+      }
+     ],
+     "pointsLeft": 40,
+     "expPerKill": 1056
+    },
+    {
+     "label": "Self Affliction 6",
+     "levels": [
+      5,
+      0,
+      6,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 6
+      }
+     ],
+     "pointsLeft": 39,
+     "expPerKill": 1248
+    },
+    {
+     "label": "Self Affliction 7",
+     "levels": [
+      5,
+      0,
+      7,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 7
+      }
+     ],
+     "pointsLeft": 38,
+     "expPerKill": 1440
+    },
+    {
+     "label": "Self Affliction 8",
+     "levels": [
+      5,
+      0,
+      8,
+      0,
+      10,
+      0,
+      0,
+      0,
+      0
+     ],
+     "changes": [
+      {
+       "index": 2,
+       "name": "SELF AFFLICTION",
+       "from": 2,
+       "to": 8
+      }
+     ],
+     "pointsLeft": 37,
+     "expPerKill": 1632
+    }
+   ]
+  },
+  {
+   "name": "not-unlocked",
+   "mode": "upgrades",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 122,
+   "unlocked": false,
+   "levels": [
+    18,
+    2,
+    3,
+    18,
+    27,
+    54,
+    0,
+    0,
+    0
+   ],
+   "error": "Scurge is not unlocked in this loadout"
+  },
+  {
+   "name": "over-budget",
+   "mode": "affliction",
+   "maxAffliction": 12,
+   "otherPlayers": 0,
+   "rank": 10,
+   "unlocked": true,
+   "levels": [
+    5,
+    0,
+    7,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "error": "Saved Scurge upgrades spend more points than the saved Scurge level provides"
+  }
+ ]
+}

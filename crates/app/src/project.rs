@@ -40,6 +40,9 @@ use crate::sections::worship_td::{PlanSource, Tab as WorshipTab};
 use crate::state::{AppState, Route};
 use gpui::Context;
 use idleon_clamworks::afk::Phase as ClaimPhase;
+use idleon_clamworks::scurge::{
+    Inputs as ScurgeInputs, MAX_AFFLICTION, MAX_OTHER_PLAYERS, Mode as ScurgeMode,
+};
 use idleon_cog::{Goal as CogGoal, WeightInputs as CogWeights};
 use idleon_combat::Preset as CombatPreset;
 use idleon_coral as coral;
@@ -178,9 +181,9 @@ impl Default for WorshipConfig {
 }
 
 /// The Clamworks section's config: its tab, the entered multikill total, the
-/// plan's budget and the AFK claim's character, hours, pearl table and
-/// per-character stand-ins. A document written before the budget existed leaves
-/// the current budget alone rather than zeroing it.
+/// plan's budget, the AFK claim's character, hours, pearl table and
+/// per-character stand-ins, and the Scurge panel's inputs. A document written
+/// before a field existed leaves the current value alone rather than zeroing it.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct ClamworksConfig {
@@ -191,6 +194,9 @@ pub(crate) struct ClamworksConfig {
     hours: f64,
     phase: ClaimPhase,
     stand_ins: BTreeMap<usize, StandIn>,
+    scurge_mode: ScurgeMode,
+    scurge_max_affliction: u32,
+    scurge_other_players: u32,
 }
 
 /// The Ladle section's config: its tab, selectors, panel inputs and the checked
@@ -431,6 +437,9 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             hours: state.clamworks_claim.hours,
             phase: state.clamworks_claim.phase,
             stand_ins: state.clamworks_claim.stand_ins.clone(),
+            scurge_mode: state.clamworks_scurge.mode,
+            scurge_max_affliction: state.clamworks_scurge.max_affliction,
+            scurge_other_players: state.clamworks_scurge.other_players,
         }),
     );
     insert(
@@ -914,6 +923,11 @@ pub(crate) fn assign(
                 count,
                 cx,
             );
+            state.clamworks_scurge = ScurgeInputs {
+                mode: config.scurge_mode,
+                max_affliction: config.scurge_max_affliction.min(MAX_AFFLICTION),
+                other_players: config.scurge_other_players.min(MAX_OTHER_PLAYERS),
+            };
         }
         Config::Cog(config) => {
             state.cog.goal = config.goal;
@@ -1510,6 +1524,9 @@ mod tests {
                     drop_rate: 1.5,
                 },
             )]),
+            scurge_mode: ScurgeMode::Upgrades,
+            scurge_max_affliction: 20,
+            scurge_other_players: 3,
         });
         assert_eq!(clamworks.tab, ClamworksTab::Claim);
         assert_eq!(clamworks.multikill, 7.0);
@@ -1524,6 +1541,9 @@ mod tests {
                 drop_rate: 1.5,
             })
         );
+        assert_eq!(clamworks.scurge_mode, ScurgeMode::Upgrades);
+        assert_eq!(clamworks.scurge_max_affliction, 20);
+        assert_eq!(clamworks.scurge_other_players, 3);
         let legacy: ClamworksConfig = serde_json::from_value(serde_json::json!({
             "tab": "promotion",
             "multikill": 7.0,

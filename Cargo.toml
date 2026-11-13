@@ -81,3 +81,9 @@ idleon-pickle = { path = "crates/pickle" }
 # compile against one GPUI.
 [patch.crates-io]
 gpui-pre = { path = "vendor/gpui-mcp/vendor/gpui-pre" }
+
+# Most tests import the whole fixture save, which an unoptimized build spends
+# seconds on; level 1 runs the suite several times faster for a small compile
+# cost. Debug assertions and overflow checks stay on, as in `dev`.
+[profile.test]
+opt-level = 1

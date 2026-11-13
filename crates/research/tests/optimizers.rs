@@ -84,6 +84,7 @@ fn run(simulation: &Simulation, ctx: &SimContext, effort: Effort) -> OptimizeRes
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn no_effort_makes_the_rate_worse() {
     for level in [1, 60, 90, 150] {
         for glasses in [0, 2, 5] {
@@ -142,6 +143,7 @@ fn grid_spending_stays_within_the_earned_points() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn runs_are_deterministic() {
     let (simulation, ctx) = seeded(90, 2);
     let (thorough, _) = kaleidoscope_pool(150);

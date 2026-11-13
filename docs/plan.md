@@ -1,7 +1,7 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research (including the Minehead and Sushi Station tabs), statue, jar, farming, ladle,
-Clamworks, the Prisma calculator, Cooking Mastery, the Opal Optimizer's current state, the
+the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
 Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
 the Coral God Rank planner, the Spelunking controls, depth estimates, expedition run and Amber
 policy, the Sneaking loadout, inventory, formula breakdown, charm optimizer and floor × mastery
@@ -10,7 +10,7 @@ the Clamworks optimizer, the Jelly Operator overview, layout editor, operation s
 planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs, partial
 total and formula tree, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
-BoneJoePickle, Cglunko and Fountain done, Monument, the All Stats context, breakdowns,
+BoneJoePickle, Cglunko, Clamworks and Fountain done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
@@ -285,6 +285,7 @@ script/extract-jar-data.mjs         extract the jar collectible, schematic and m
 script/jar-oracle.mjs               regenerate the jar formula oracle fixture
 script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan oracle fixture
 script/clamworks-afk-oracle.mjs     regenerate the AFK claim and comparison oracle fixture
+script/clamworks-scurge-oracle.mjs  regenerate the Scurge comparison and allocation oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir, chapter and sprite tables
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles, runs and rejections
 script/extract-royal-data.mjs       extract the Royal Guardian upgrade, resource, map and talent tables
@@ -350,7 +351,7 @@ decodes them, and the ranking and the depth search hold efficiency and the EXP m
 fixed across combinations because the upstream recomputes them per toolkit through the
 skill systems. Details: [`docs/sections/fishing.md`](sections/fishing.md).
 
-The Clamworks section implements CW-01, CW-02 and CW-03: the overview with the pearl-value
+The Clamworks section implements CW-01 to CW-04: the overview with the pearl-value
 breakdown, every pearl upgrade, the upstream priority ranking, the AFK claim with its drop
 distribution, payout and `+1` comparison, the budgeted upgrade plan (a greedy pass over the same
 ranking, priced at the levels each purchase reaches and run through the shared task runner, with
@@ -362,7 +363,19 @@ the plans are compared with the source of truth, and `script/clamworks-afk-oracl
 `fixtures/clamworks-afk.json` for the claim. Multi-Scalping takes a manual multikill total, and the
 claim takes the character's kills per hour and drop rate, until the combat simulator lands. The
 claim does not carry the upstream reroll-for-pure-pearls policy, which needs the talent and guild
-bonuses the stats context resolves. Missing: Scurge combat.
+bonuses the stats context resolves.
+CW-04 adds the Scurge tab: `idleon_clamworks::scurge` ports `clamworks-scurge.js`, so one Clamworks
+kill banks `(1 + RECKONING) × (1 + EVEN BETTER / 100) × (1 + SELF AFFLICTION / 100) ×
+(1 + SWARMING × other players / 100)` Scurge EXP, the Self Affliction panel tests one level from
+zero to the selected limit, and the upgrade panel water-fills the unspent points across the
+unlocked RECKONING, EVEN BETTER and SWARMING. The tab renders both panels, names the best allocation
+an hour, lists the nine Scurge upgrades with their unlock levels, and refuses a save whose Scurge
+menu is not bought or whose saved upgrades overspend its level, while the import names every
+missing `Menagerie` row. `script/clamworks-scurge-oracle.mjs` writes
+`fixtures/clamworks-scurge.json` from the upstream planner — nine cases across both modes, the
+locked Self Affliction tier and both refusals — and `crates/clamworks/tests/clamworks_scurge.rs`
+compares every row, level, change and EXP figure. The rates multiply the row's EXP per kill by the
+character's kills-per-hour stand-in, because the shared simulator does not run Clam Work.
 Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
 The Killroy section implements KL-01 and KL-02: the weekly forecast with every character's three
@@ -859,9 +872,9 @@ including the beam-dependent case and offering rows with and without a Y4 free c
   drives one core flow and saves a screenshot.
 - **Import parity:** raw save, ROv2 string, project JSON and section config round-trip; malformed
   input leaves state untouched.
-- **Gates:** `cargo test`, `cargo clippy --workspace --all-targets -- -D warnings`,
-  `cargo fmt --all -- --check`, `node script/roadmap.mjs`, `node script/mcp-drive.mjs`,
-  `node script/mcp-sections.mjs`.
+- **Gates:** `cargo test` (`-- --include-ignored` adds the long simulations),
+  `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --all -- --check`,
+  `node script/roadmap.mjs`, `node script/mcp-drive.mjs`, `node script/mcp-sections.mjs`.
 
 ## 11. Milestones and progress tracking
 

@@ -126,3 +126,12 @@ selector lists, and the descriptor's reason for all six dungeon maps. Regenerate
 upstream layers through the port's own summary arithmetic for every character, matches the
 metadata flags and the map rows, and reports the missing stat pipeline until the three layers can
 be resolved. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+
+`clamworks-scurge.json` is the upstream Clamworks Scurge planner's own output for `data.json`, from
+`js/stats/systems/w7/clamworks-scurge.js` run over the save with each case's `Menagerie` row: nine
+cases across the Self Affliction comparison and the optimized EXP allocation, with the locked
+Self Affliction tier, the three unlocked EXP upgrades, both refusals and every row's levels, level
+changes, unspent points and EXP per kill. Regenerate it with
+`node script/clamworks-scurge-oracle.mjs <upstream-repo>`; `crates/clamworks/tests/clamworks_scurge.rs`
+compares the port field for field. Treat it as frozen for the same reason: it is the oracle's output,
+not this app's.
