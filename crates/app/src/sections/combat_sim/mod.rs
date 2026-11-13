@@ -410,7 +410,7 @@ pub(crate) fn view(
         .child(presets::bar(state, cx))
         .when_some(overrides::chips(state, cx), |page, chips| page.child(chips))
         .child(match tab {
-            Tab::Gear => equipment::pane(state, breakpoint, cx),
+            Tab::Gear => equipment::pane(state, breakpoint, window, cx),
             Tab::Talents => talents::pane(state, window, cx),
             Tab::Mechanics => overrides::pane(state, window, cx),
             Tab::Encounter => encounter::pane(state, cx),
