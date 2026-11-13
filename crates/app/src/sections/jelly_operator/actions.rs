@@ -1,12 +1,14 @@
 //! What the window does when the jelly operator section is edited or run.
 
 use crate::sections::jelly_operator::{
-    Planner as JellyPlanner, Simulator as JellySimulator, Tab as JellyTab,
+    Optimizer as JellyOptimizer, Planner as JellyPlanner, Simulator as JellySimulator,
+    Tab as JellyTab,
 };
 use crate::state::AppState;
 use gpui::{App, Context};
 use idleon_common::{Control, Progress};
 use idleon_jelly::operation::{RevivePolicy, simulate as simulate_jelly_operation};
+use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::{Objective, Plan as JellyPlan, Quality, Strategy};
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_ui::runner::TaskState;
@@ -355,5 +357,77 @@ impl AppState {
             "Cancelling the Jelly section plan…",
             cx,
         );
+    }
+
+    /// What the shared Jelly optimizer runner shows against the controls and
+    /// the board on screen.
+    pub(crate) fn jelly_optimize_task(&self, cx: &App) -> TaskState<JellyOptimization> {
+        let inputs = self
+            .jelly_state
+            .optimizer
+            .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
+        self.jelly_optimize_run.read(cx).state(&inputs)
+    }
+
+    /// Apply one optimizer control edit.
+    pub(crate) fn edit_jelly_optimizer(
+        &mut self,
+        cx: &mut Context<Self>,
+        edit: impl FnOnce(&mut JellyOptimizer),
+    ) {
+        edit(&mut self.jelly_state.optimizer);
+        self.jelly_state.optimizer_message.clear();
+        cx.notify();
+    }
+
+    /// Optimize the whole board off the UI thread through the shared runner.
+    pub(crate) fn run_jelly_optimize(&mut self, cx: &mut Context<Self>) {
+        let inputs = self
+            .jelly_state
+            .optimizer
+            .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
+        let Some(jelly) = inputs.jelly.clone() else {
+            self.set_status("Jelly optimizer: import a save with a board first.", cx);
+            return;
+        };
+        let options = inputs.options();
+        self.start_run(
+            self.jelly_optimize_run.clone(),
+            "Optimizing the Jelly board…",
+            inputs,
+            move |_inputs, report| {
+                JellyOptimization::run_with(&jelly, options, |progress| {
+                    report(progress) == Control::Continue
+                })
+            },
+            cx,
+        );
+    }
+
+    /// Ask a running optimizer to stop at its next round or finalist.
+    pub(crate) fn cancel_jelly_optimize(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.jelly_optimize_run.clone(),
+            "Cancelling the Jelly optimizer…",
+            cx,
+        );
+    }
+
+    /// Put the optimizer's recommendation on the board on screen.
+    pub(crate) fn apply_jelly_optimized_layout(&mut self, cx: &mut Context<Self>) {
+        let Some(result) = self.jelly_optimize_task(cx).result else {
+            self.set_status(
+                "Jelly optimizer: run the search before applying a board.",
+                cx,
+            );
+            return;
+        };
+        let moves = result.moves.len();
+        self.jelly_state.layout = result.recommended.layout.clone();
+        self.jelly_state.optimizer_message = format!(
+            "Board replaced with the optimizer's recommendation ({moves} anchor change(s))."
+        );
+        self.set_status(self.jelly_state.optimizer_message.clone(), cx);
+        cx.notify();
     }
 }

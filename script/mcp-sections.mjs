@@ -1094,6 +1094,29 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-sections-final-board', 'jelly: the recommended board renders');
     await waitForNode(lane, 'jelly-sections-candidates', 'jelly: the ranked sequences render');
     await waitForNode(lane, 'jelly-sections-individual', 'jelly: every individual section renders');
+    // The coordinator optimizer searches the full board and applies its winner.
+    await lane.call('click_element', { id: 'jelly-tab-optimizer' });
+    await waitForNode(lane, 'jelly-optimizer', 'jelly: the optimizer opens');
+    await waitForNode(lane, 'jelly-optimizer-objective', 'jelly: the objective select renders');
+    await waitForNode(lane, 'jelly-optimizer-starts', 'jelly: the start count renders');
+    await waitForNode(lane, 'jelly-optimizer-beam', 'jelly: the beam input renders');
+    await waitForNode(lane, 'jelly-optimizer-iterations', 'jelly: the build rounds render');
+    await waitForNode(lane, 'jelly-optimizer-finalists', 'jelly: the finalist count renders');
+    await waitForNode(lane, 'jelly-optimizer-trials', 'jelly: the trial count renders');
+    await waitForNode(lane, 'jelly-optimizer-seed', 'jelly: the seed input renders');
+    await lane.call('click_element', { id: 'jelly-optimizer-run' });
+    await waitForNode(lane, 'jelly-optimizer-result', 'jelly: the search stores a board', 300000);
+    await waitForNode(lane, 'jelly-optimizer-score', 'jelly: the board score card renders');
+    await waitForNode(lane, 'jelly-optimizer-final-board', 'jelly: the optimized board renders');
+    await waitForNode(lane, 'jelly-optimizer-ranked', 'jelly: the ranked finalists render');
+    await waitForNode(lane, 'jelly-timeline', 'jelly: the critical target timeline renders');
+    await bringIntoView(lane, 'jelly-optimizer-apply', await wheelPoint(lane, 'jelly-scroll'));
+    await lane.call('click_element', { id: 'jelly-optimizer-apply' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-optimizer-message') ?? '').includes('Board replaced'),
+      'jelly: the recommendation applies to the layout',
+    );
   },
   'royal-guardian': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

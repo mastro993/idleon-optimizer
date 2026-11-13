@@ -2972,7 +2972,7 @@
       "key": "jelly-operator",
       "title": "Jelly Operator Optimizer",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.",
       "upstream": [
         "jelly-operator-calc.html",

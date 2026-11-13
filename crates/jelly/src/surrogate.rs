@@ -6,10 +6,12 @@
 //! attack cadence. The overview's obstruction outlook reads it for every row
 //! instead of running a Monte Carlo per obstruction.
 
+use super::Jelly;
+use super::board::Layout;
 use super::data::data;
 use super::metrics::{Cadence, MetricOptions, attack_cadence};
 use super::operation::{RoidTiming, boss_interval_seconds, projectile_hit_delay};
-use super::{Jelly, boss_hp, boss_time, roid_duration_seconds};
+use super::{boss_hp, boss_time, roid_duration_seconds};
 
 /// Which metric the surrogate scores a board by.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -54,6 +56,38 @@ pub struct Surrogate {
     pub clear_time: f64,
     pub critical_events: f64,
     pub score: f64,
+}
+
+/// `proxyObjectiveScore`: the deterministic projection a layout ranks by.
+///
+/// Steady DPS reads the board metrics; every other objective reads the
+/// surrogate's score. `obstruction` defaults to the save's own stage.
+pub fn proxy_score(
+    jelly: &Jelly,
+    layout: &Layout,
+    objective: Objective,
+    exp_cell_type: Option<usize>,
+    obstruction: Option<usize>,
+) -> f64 {
+    if objective == Objective::Dps {
+        let metrics = jelly.layout_metrics(layout, MetricOptions::default());
+        return if metrics.valid {
+            metrics.dps
+        } else {
+            f64::NEG_INFINITY
+        };
+    }
+    Surrogate::project(
+        jelly,
+        layout,
+        SurrogateOptions {
+            objective,
+            exp_cell_type,
+            obstruction,
+            ..SurrogateOptions::default()
+        },
+    )
+    .score
 }
 
 impl Surrogate {

@@ -23,6 +23,7 @@ writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 const loader = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const J = await import(join(source, 'js/stats/systems/w7/jelly-operator.js'));
+const C = await import(join(source, 'js/optimizers/jelly-coordinator.js'));
 const D = await import(join(source, 'js/stats/data/w7/jelly-operator.js'));
 const { CELL_NAMES } = D;
 const { fmtVal } = await import(join(source, 'js/renderers/format.js'));
@@ -498,11 +499,80 @@ const SECTION_PLOTS = {
   ),
 };
 
+/// Five legal boards from the saved one, each scored by the surrogate the
+/// layout search ranks with, then the coordinator's own assignments.
+const OPTIMIZER_FOCUSES = ['explore', 'refine', 'repair', 'measure'];
+
+function optimizerOf(S) {
+  const saved = J.jellyLayoutFromSave(S);
+  const unlocked = Array.from(J.jellyUnlockedSlots(S)).sort((a, b) => a - b);
+  const savedKey = J.jellyLayoutKey(saved);
+  const layouts = [saved];
+  for (const fill of [0, 1, 3, 5]) {
+    let layout = {};
+    for (const anchor of unlocked) {
+      if (J.jellyLayoutOccupancy(layout).has(anchor)) continue;
+      const next = J.jellyPlaceCell(layout, anchor, fill, S);
+      if (next) layout = next;
+    }
+    const key = J.jellyLayoutKey(layout);
+    if (key !== savedKey && J.jellyValidateLayout(layout, S).valid) layouts.push(layout);
+  }
+  const scoreOf = (layout, objective) => objective === 'dps'
+    ? J.jellyLayoutMetrics(layout, S, { fever: J.jellyProgress(S).fever }).dps
+    : J.jellyOperationSurrogate(layout, S, { objective }).score;
+  const savedScore = scoreOf(saved, 'clear');
+  const base = layouts.map((layout, index) => ({
+    start: index,
+    elapsedMs: 900 + 100 * index,
+    assignment: { focus: OPTIMIZER_FOCUSES[index % OPTIMIZER_FOCUSES.length], baselineScore: savedScore },
+    result: { layout, score: scoreOf(layout, 'clear'), savedScore },
+  }));
+  const elites = C.jellySelectSharedElites(base);
+  const coordinator = [];
+  let running = [];
+  for (let start = 0; start < 8; start++) {
+    const assignment = C.jellySearchAssignment(running, start, {
+      iterations: 20,
+      savedRefinementRounds: 3,
+      simulationTrials: 64,
+    });
+    coordinator.push({
+      focus: assignment.focus,
+      overrides: {
+        iterations: assignment.overrides.iterations ?? 20,
+        savedRefinementRounds: assignment.overrides.savedRefinementRounds ?? 3,
+        activeExactNodeBudget: assignment.overrides.activeExactNodeBudget ?? 0,
+      },
+      baselineScore: assignment.baselineScore,
+      sourceStarts: assignment.sourceStarts,
+    });
+    const row = base[start % base.length];
+    running = [...running, {
+      ...row,
+      start,
+      assignment: { focus: assignment.focus, baselineScore: savedScore },
+    }];
+  }
+  const scores = [];
+  for (const layout of layouts) {
+    for (const objective of ['clear', 'dps', 'bloodcells', 'exp', 'survival']) {
+      scores.push({ layout, objective, score: scoreOf(layout, objective) });
+    }
+  }
+  return { rows: base, coordinator, elites, scores };
+}
+
 const cases = [
   {
     name: 'save',
     overrides: {},
     estimate: { trials: 8, seed: 7 },
+  },
+  {
+    name: 'optimizer-coordinator',
+    overrides: SECTION_PLOTS,
+    optimizer: {},
   },
   {
     name: 'small-board',
@@ -677,6 +747,16 @@ const payload = {
     if (entry.sections) {
       output.sectionsOptions = entry.sections;
       output.sections = sectionPlanOf(S, entry.sections);
+    }
+    if (entry.optimizer) {
+      const optimizer = optimizerOf(S);
+      output.coordinatorRows = optimizer.rows;
+      output.coordinator = optimizer.coordinator;
+      output.coordinatorElites = optimizer.elites.map((elite) => ({
+        sourceStart: elite.sourceStart,
+        layout: elite.layout,
+      }));
+      output.optimizerScores = optimizer.scores;
     }
     if (!entry.estimate && !entry.simulation && !entry.sections) {
       const validation = J.jellyValidateLayout(layout, S);
