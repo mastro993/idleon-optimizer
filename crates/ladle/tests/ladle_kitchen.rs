@@ -7,6 +7,7 @@
 //! level and the gem doubler the port carries. The fixture is that calculator's
 //! own output; this test compares every field the section shows.
 
+use idleon_common::Control;
 use idleon_ladle::kitchen::{
     self, CostInputs, Kitchen, LayoutChoice, LayoutMode, Meals, Objective, PhaseKind, Policy,
     Reset, Scenario,
@@ -25,6 +26,8 @@ struct Oracle {
     batch_scenarios: Vec<Batch>,
     plan_scenarios: Vec<PlanScenario>,
     forecast_scenarios: Vec<ForecastScenario>,
+    steer_scenarios: Vec<SteerScenario>,
+    donation_scenarios: Vec<DonationScenario>,
     nmlb_cases: Vec<NmlbCase>,
 }
 
@@ -144,7 +147,15 @@ struct PlanScenario {
     nmlb: f64,
     inputs: InputsCase,
     settings: SettingsCase,
+    donation_schedule: ScheduleCase,
     expected: PlanCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ScheduleCase {
+    owned: f64,
+    daily: Vec<f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -166,7 +177,8 @@ struct SettingsCase {
     passive: bool,
     ladleable_only: bool,
     max_level: f64,
-    policy: PolicyCase,
+    #[serde(default)]
+    policy: Option<PolicyCase>,
     #[serde(default)]
     objective: String,
     #[serde(default)]
@@ -358,6 +370,140 @@ struct NmlbCase {
     result: f64,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SteerScenario {
+    base_speed: f64,
+    speed: f64,
+    levels: Vec<f64>,
+    stocks: Vec<f64>,
+    kitchens: Vec<KitchenCase>,
+    max_level: f64,
+    inputs: InputsCase,
+    ladle_multi: f64,
+    nmlb: f64,
+    day_hours: f64,
+    rotation_days: u32,
+    expected: FloorCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FloorCase {
+    day_hours: f64,
+    current_pick: i32,
+    current_on_target: bool,
+    current_saved: f64,
+    floor_meal: i32,
+    floor_level: Option<f64>,
+    floor_saved: f64,
+    blocker_ladles: f64,
+    blocker_hours: f64,
+    fits_in_day: bool,
+    ladleable_count: usize,
+    target_count: usize,
+    classes: Vec<ClassCase>,
+    blockers: Vec<BlockerCase>,
+    targets: Vec<TargetCase>,
+    rotation: Vec<RotationCase>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClassCase {
+    meal: usize,
+    level: f64,
+    open: bool,
+    nmlb_eligible: bool,
+    next_ladles: f64,
+    next_hours: f64,
+    ladleable: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BlockerCase {
+    meal: usize,
+    level: f64,
+    need: f64,
+    levels: f64,
+    ladles: f64,
+    hours: f64,
+    target: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TargetCase {
+    meal: usize,
+    level: f64,
+    next_ladles: f64,
+    ladles_saved: f64,
+    rotation_day: Option<u32>,
+    current: bool,
+    floor: bool,
+    ladleable_blockers: usize,
+    target_blockers: usize,
+    steer_ladles: f64,
+    feasible: bool,
+    fits_in_day: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RotationCase {
+    day: u32,
+    meal: usize,
+    from: f64,
+    to: f64,
+    ladles_saved: f64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DonationScenario {
+    base_speed: f64,
+    levels: Vec<f64>,
+    stocks: Vec<f64>,
+    kitchens: Vec<KitchenCase>,
+    jelly: JellyCase,
+    nmlb: f64,
+    inputs: InputsCase,
+    settings: SettingsCase,
+    expected: DonationCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DonationCase {
+    improved: bool,
+    evaluated: usize,
+    policy: SplitCase,
+    schedule: ScheduleCase,
+    baseline: PlanSummaryCase,
+    plan: PlanSummaryCase,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SplitCase {
+    owned_fraction: f64,
+    income_fraction: f64,
+    #[serde(default)]
+    from_day: u32,
+    until_day: u32,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanSummaryCase {
+    ranks: f64,
+    score: f64,
+    donated: f64,
+    daily_hours_end: f64,
+    levels: Vec<f64>,
+}
+
 fn oracle() -> Oracle {
     serde_json::from_str(ORACLE).expect("the ladle kitchen oracle fixture is valid")
 }
@@ -494,10 +640,14 @@ fn the_daily_plan_matches_the_upstream_simulation() {
             targets: settings.targets.clone(),
             base_speed: scenario.base_speed,
             cost: scenario.inputs.cost_inputs(),
-            policy: policy(&settings.policy),
-            income_fraction: settings.policy.income_fraction,
-            donation_per_day: settings.policy.per_day,
-            owned_fraction: settings.policy.owned_fraction,
+            policy: kitchen::Policy::None,
+            donations: Some(kitchen::Schedule {
+                owned: scenario.donation_schedule.owned,
+                daily: scenario.donation_schedule.daily.clone(),
+            }),
+            income_fraction: 0.0,
+            donation_per_day: 0.0,
+            owned_fraction: 0.0,
             layout: choice(&settings.kitchen_layout),
         };
         close(reset.speed(scenario.base_speed), scenario.expected.speed);
@@ -575,10 +725,20 @@ fn the_forecast_scenarios_match_the_upstream_comparison() {
             targets: settings.targets.clone(),
             base_speed: scenario.base_speed,
             cost: scenario.inputs.cost_inputs(),
-            policy: policy(&settings.policy),
-            income_fraction: settings.policy.income_fraction,
-            donation_per_day: settings.policy.per_day,
-            owned_fraction: settings.policy.owned_fraction,
+            policy: settings.policy.as_ref().map_or(Policy::None, policy),
+            income_fraction: settings
+                .policy
+                .as_ref()
+                .map_or(0.0, |policy| policy.income_fraction),
+            donation_per_day: settings
+                .policy
+                .as_ref()
+                .map_or(0.0, |policy| policy.per_day),
+            owned_fraction: settings
+                .policy
+                .as_ref()
+                .map_or(0.0, |policy| policy.owned_fraction),
+            donations: None,
             layout: choice(&settings.kitchen_layout),
         };
         let result = kitchen::forecast(&reset, &inputs).expect("the fixture's forecast is valid");
@@ -598,6 +758,170 @@ fn the_forecast_scenarios_match_the_upstream_comparison() {
             0.0,
             "the assignment-only baseline never donates"
         );
+    }
+}
+
+#[test]
+fn the_nmlb_steering_plan_matches_the_upstream_floor_plan() {
+    let oracle = oracle();
+    for scenario in &oracle.steer_scenarios {
+        let kitchens: Vec<Kitchen> = scenario.kitchens.iter().map(kitchen).collect();
+        let reset = Reset {
+            meals: Meals {
+                levels: scenario.levels.clone(),
+                stocks: scenario.stocks.clone(),
+            },
+            kitchens,
+            jelly: kitchen::Jelly::default(),
+            nmlb: scenario.nmlb,
+        };
+        // The fixture's speed is the upstream model's total at these levels, which
+        // the neutral model reduces to the port's entered base speed.
+        close(reset.speed(scenario.base_speed), scenario.speed);
+        let input = kitchen::steer::Input {
+            levels: &scenario.levels,
+            stocks: &scenario.stocks,
+            max_level: scenario.max_level,
+            cost: scenario.inputs.cost_inputs(),
+            speed: scenario.speed,
+            ladle_multi: scenario.ladle_multi,
+            nmlb: scenario.nmlb,
+            day_hours: scenario.day_hours,
+            rotation_days: scenario.rotation_days,
+        };
+        let floor = kitchen::steer::floor_plan(&input);
+        let expected = &scenario.expected;
+        close(floor.day_hours, expected.day_hours);
+        assert_eq!(
+            floor.current_pick.map_or(-1, |meal| meal as i32),
+            expected.current_pick
+        );
+        assert_eq!(floor.current_on_target, expected.current_on_target);
+        close(floor.current_saved, expected.current_saved);
+        assert_eq!(
+            floor.floor_meal.map_or(-1, |meal| meal as i32),
+            expected.floor_meal
+        );
+        match (floor.floor_level, expected.floor_level) {
+            (Some(level), Some(expected)) => close(level, expected),
+            (None, None) => {}
+            (level, expected) => panic!("floor level mismatch: {level:?} vs {expected:?}"),
+        }
+        close(floor.floor_saved, expected.floor_saved);
+        close(floor.blocker_ladles, expected.blocker_ladles);
+        close(floor.blocker_hours, expected.blocker_hours);
+        assert_eq!(floor.fits_in_day, expected.fits_in_day);
+        assert_eq!(floor.ladleable_count, expected.ladleable_count);
+        assert_eq!(floor.target_count, expected.target_count);
+        assert_eq!(floor.classes.len(), expected.classes.len());
+        for (class, expected) in floor.classes.iter().zip(&expected.classes) {
+            assert_eq!(class.meal, expected.meal);
+            close(class.level, expected.level);
+            assert_eq!(class.open, expected.open);
+            assert_eq!(class.nmlb_eligible, expected.nmlb_eligible);
+            close(class.next_ladles, expected.next_ladles);
+            close(class.next_hours, expected.next_hours);
+            assert_eq!(class.ladleable, expected.ladleable);
+        }
+        assert_eq!(floor.blockers.len(), expected.blockers.len());
+        for (blocker, expected) in floor.blockers.iter().zip(&expected.blockers) {
+            assert_eq!(blocker.meal, expected.meal);
+            close(blocker.level, expected.level);
+            close(blocker.need, expected.need);
+            close(blocker.levels, expected.levels);
+            close(blocker.ladles, expected.ladles);
+            close(blocker.hours, expected.hours);
+            assert_eq!(blocker.target, expected.target);
+        }
+        assert_eq!(floor.targets.len(), expected.targets.len());
+        for (target, expected) in floor.targets.iter().zip(&expected.targets) {
+            assert_eq!(target.meal, expected.meal);
+            close(target.level, expected.level);
+            close(target.next_ladles, expected.next_ladles);
+            close(target.ladles_saved, expected.ladles_saved);
+            assert_eq!(target.rotation_day, expected.rotation_day);
+            assert_eq!(target.current, expected.current);
+            assert_eq!(target.floor, expected.floor);
+            assert_eq!(target.ladleable_blockers, expected.ladleable_blockers);
+            assert_eq!(target.target_blockers, expected.target_blockers);
+            close(target.steer_ladles, expected.steer_ladles);
+            assert_eq!(target.feasible, expected.feasible);
+            assert_eq!(target.fits_in_day, expected.fits_in_day);
+        }
+        assert_eq!(floor.rotation.len(), expected.rotation.len());
+        for (day, expected) in floor.rotation.iter().zip(&expected.rotation) {
+            assert_eq!(day.day, expected.day);
+            assert_eq!(day.meal, expected.meal);
+            close(day.from, expected.from);
+            close(day.to, expected.to);
+            close(day.ladles_saved, expected.ladles_saved);
+        }
+    }
+}
+
+#[test]
+fn the_donation_search_matches_the_upstream_optimizer() {
+    let oracle = oracle();
+    for scenario in &oracle.donation_scenarios {
+        let kitchens: Vec<Kitchen> = scenario.kitchens.iter().map(kitchen).collect();
+        let reset = Reset {
+            meals: Meals {
+                levels: scenario.levels.clone(),
+                stocks: scenario.stocks.clone(),
+            },
+            kitchens,
+            jelly: kitchen::Jelly {
+                available: scenario.jelly.available,
+                unlocked: scenario.jelly.unlocked,
+                daily_hours: scenario.jelly.daily_hours,
+            },
+            nmlb: scenario.nmlb,
+        };
+        let settings = &scenario.settings;
+        let inputs = kitchen::Inputs {
+            days: settings.days,
+            hours_to_reset: settings.hours_to_reset,
+            ladles_per_day: settings.ladles_per_day,
+            start_ladles: settings.start_ladles,
+            ladle_multi: settings.ladle_multi,
+            passive: settings.passive,
+            ladleable_only: settings.ladleable_only,
+            max_level: settings.max_level,
+            objective: objective(&settings.objective),
+            targets: settings.targets.clone(),
+            base_speed: scenario.base_speed,
+            cost: scenario.inputs.cost_inputs(),
+            policy: kitchen::Policy::None,
+            layout: choice(&settings.kitchen_layout),
+            ..kitchen::Inputs::default()
+        };
+        let donation = kitchen::donation::optimize(&reset, &inputs, &mut |_| Control::Continue)
+            .expect("the fixture's search completes");
+        let expected = &scenario.expected;
+        assert_eq!(donation.improved, expected.improved);
+        assert_eq!(donation.evaluated, expected.evaluated);
+        close(
+            donation.split.owned_fraction,
+            expected.policy.owned_fraction,
+        );
+        close(
+            donation.split.income_fraction,
+            expected.policy.income_fraction,
+        );
+        assert_eq!(donation.split.from_day, expected.policy.from_day);
+        assert_eq!(donation.split.until_day, expected.policy.until_day);
+        close(donation.schedule.owned, expected.schedule.owned);
+        close_list(&donation.schedule.daily, &expected.schedule.daily);
+        for (plan, expected) in [
+            (&donation.baseline, &expected.baseline),
+            (&donation.plan, &expected.plan),
+        ] {
+            close(plan.gained.iter().sum::<f64>(), expected.ranks);
+            close(kitchen::donation::score(plan, &inputs), expected.score);
+            close(plan.jelly.donated, expected.donated);
+            close(plan.jelly.daily_hours_end, expected.daily_hours_end);
+            close_list(&plan.levels, &expected.levels);
+        }
     }
 }
 

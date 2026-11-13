@@ -241,6 +241,9 @@ impl AppState {
         }
         self.ladle_state
             .adopt(&imported.ladle.clone().unwrap_or_default());
+        // A donation search from the previous save answers inputs this one no
+        // longer has.
+        discard_run(&self.ladle_plan, cx);
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
         self.yellow = imported.yellow;

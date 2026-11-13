@@ -569,6 +569,213 @@ for (const scenario of [
   });
 }
 
+// The No Meal Left Behind steering plan: the meal split, tonight's pick, the
+// floor, its blockers and the rotation holding the floor predicts. The oracle's
+// speed model is neutral, so the split only depends on the day's kitchen hours.
+const steerScenarios = [];
+for (const [index, kitchens] of kitchenSets.entries()) {
+  const model = speedModel(kitchens, index === 1 ? 2 : 0);
+  const speed = speedTotal(model, levels);
+  for (const dayHours of [24, 40, 4]) {
+    for (const nmlbLevels of [1, 3]) {
+      const options = {
+        levels,
+        stocks,
+        maxLevel: 30,
+        inputs: mealCostInputs({ comp162: 10, dream11: 4 }),
+        kitchenSpeed: speed,
+        ladleMulti: 1.5,
+        nmlb: { active: true, levels: nmlbLevels },
+        dayHours,
+        rotationDays: 10,
+      };
+      const plan = L.nmlbFloorPlan({}, options);
+      steerScenarios.push({
+        baseSpeed: baseSpeed(model, levels),
+        speed,
+        levels,
+        stocks,
+        kitchens: kitchens.map((kitchen, position) => ({
+          index: position,
+          ...kitchen,
+          doubler: index === 1 && position < 2,
+        })),
+        maxLevel: options.maxLevel,
+        inputs: options.inputs,
+        ladleMulti: options.ladleMulti,
+        nmlb: nmlbLevels,
+        dayHours,
+        rotationDays: options.rotationDays,
+        expected: {
+          dayHours: plan.dayHours,
+          currentPick: plan.currentPick,
+          currentOnTarget: plan.currentOnTarget,
+          currentSaved: plan.currentSaved,
+          floorMeal: plan.floorMeal,
+          floorLevel: plan.floorLevel,
+          floorSaved: plan.floorSaved,
+          blockerLadles: plan.blockerLadles,
+          blockerHours: plan.blockerHours,
+          fitsInDay: plan.fitsInDay,
+          ladleableCount: plan.ladleableCount,
+          targetCount: plan.targetCount,
+          classes: plan.classes.map((row) => ({
+            meal: row.meal,
+            level: row.level,
+            open: row.open,
+            nmlbEligible: row.nmlbEligible,
+            nextLadles: row.nextLadles,
+            nextHours: row.nextHours,
+            ladleable: row.ladleable,
+          })),
+          blockers: plan.blockers.map((row) => ({
+            meal: row.meal,
+            level: row.level,
+            need: row.need,
+            levels: row.levels,
+            ladles: row.ladles,
+            hours: row.hours,
+            target: row.ladleable ? false : true,
+          })),
+          targets: plan.targets.map((row) => ({
+            meal: row.meal,
+            level: row.level,
+            nextLadles: row.nextLadles,
+            ladlesSaved: row.ladlesSaved,
+            rotationDay: row.rotationDay,
+            current: row.current,
+            floor: row.floor,
+            ladleableBlockers: row.ladleableBlockers,
+            targetBlockers: row.expensiveBlockers,
+            steerLadles: row.steerLadles,
+            feasible: row.feasible,
+            fitsInDay: row.fitsInDay,
+          })),
+          rotation: plan.rotation.map((row) => ({
+            day: row.day,
+            meal: row.meal,
+            from: row.from,
+            to: row.to,
+            ladlesSaved: row.ladlesSaved,
+          })),
+        },
+      });
+    }
+  }
+}
+
+// The Blue Jellyfish donation search. The port ranks it by the section's own
+// objective, because kitchen speed is one entered rate there and does not follow
+// the meal levels; the oracle passes the same objective so both search the same
+// thing. `floorGuard` stays off, as the port spends like `cheapest`.
+const donationScenarios = [];
+for (const scenario of [
+  {
+    name: 'rank the levels a share of the income buys',
+    kitchens: kitchenSets[0],
+    inputs: mealCostInputs({ comp162: 10, dream11: 4 }),
+    settings: {
+      days: 5,
+      hoursToReset: 6,
+      ladlesPerDay: 24,
+      startLadles: 60,
+      ladleMulti: 1.5,
+      passive: true,
+      ladleableOnly: true,
+      maxLevel: 30,
+      objective: 'ranks',
+      kitchenLayout: { mode: 'optimized' },
+    },
+  },
+  {
+    name: 'rank the targets a full donation buys',
+    kitchens: kitchenSets[1],
+    inputs: mealCostInputs({ ach233: 1, cloud33: 0.5, dream11: 3 }),
+    settings: {
+      days: 4,
+      hoursToReset: 24,
+      ladlesPerDay: 40,
+      startLadles: 120,
+      ladleMulti: 1,
+      passive: true,
+      ladleableOnly: true,
+      maxLevel: 30,
+      objective: 'targets',
+      targets,
+      kitchenLayout: { mode: 'optimized', excluded: [5] },
+    },
+  },
+]) {
+  const { settings } = scenario;
+  const model = speedModel(scenario.kitchens, 0);
+  const saved = {
+    menagerieData: [[0, 0, 0, 0, 0, 9], [], [0, 0, 0, 0, 0, 1], []],
+    menagerieDataAvailable: true,
+    mealsData: [levels, [], stocks],
+  };
+  const options = {
+    model,
+    levels,
+    stocks,
+    inputs: scenario.inputs,
+    maxLevel: settings.maxLevel,
+    ladleMulti: settings.ladleMulti,
+    days: settings.days,
+    ladlesPerDay: settings.ladlesPerDay,
+    startLadles: settings.startLadles,
+    passive: settings.passive,
+    ladleableOnly: settings.ladleableOnly,
+    hoursToReset: settings.hoursToReset,
+    objective: settings.objective,
+    targets: (settings.targets || []).reduce((map, level, meal) => {
+      map[meal] = level;
+      return map;
+    }, {}),
+    kitchenLayout: settings.kitchenLayout,
+    strategy: 'cheapest',
+    floorGuard: false,
+    nmlb: { active: true, levels: 2 },
+  };
+  const result = L.optimizeBlueJellyfish(saved, options);
+  // The upstream result keeps only the baseline's speed and levels, so the
+  // fixture plans the same horizon without donations to compare field for field.
+  const baseline = L.planMealLeveling(saved, { ...options, jellyDonations: undefined });
+  const objective = (plan) => settings.objective === 'ranks'
+    ? plan.gained.reduce((sum, gained) => sum + gained, 0)
+    : plan.levels.reduce((sum, level, meal) => sum
+      + Math.max(0, Math.min(level, (settings.targets || [])[meal] || 0) - plan.startLevels[meal]), 0);
+  const summarize = (plan) => ({
+    ranks: plan.gained.reduce((sum, gained) => sum + gained, 0),
+    score: objective(plan),
+    donated: plan.jelly.donated,
+    dailyHoursEnd: plan.jelly.dailyHoursEnd,
+    levels: plan.levels,
+  });
+  donationScenarios.push({
+    name: scenario.name,
+    baseSpeed: baseSpeed(model, levels),
+    levels,
+    stocks,
+    kitchens: scenario.kitchens.map((kitchen, position) => ({
+      index: position,
+      ...kitchen,
+      doubler: false,
+    })),
+    jelly: { available: true, unlocked: true, dailyHours: 9 },
+    nmlb: 2,
+    inputs: scenario.inputs,
+    settings,
+    expected: {
+      improved: result.improved,
+      evaluated: result.evaluated,
+      policy: result.policy,
+      schedule: result.schedule,
+      baseline: summarize(baseline),
+      plan: summarize(result.plan),
+    },
+  });
+}
+
 // The rules the plan shares with the save: the lowest eligible NMLB meal.
 const nmlbCases = [];
 for (const candidate of [
@@ -600,6 +807,8 @@ const payload = {
   batchScenarios,
   planScenarios,
   forecastScenarios,
+  steerScenarios,
+  donationScenarios,
   nmlbCases,
   generatedFrom: {
     repo: 'Corgan/idleon-research-optimizer',
@@ -614,5 +823,5 @@ writeFileSync(
   `${JSON.stringify(payload, null, 1)}\n`,
 );
 console.log(
-  `ladle kitchen: ${costGrid.length} costs, ${batchScenarios.length} batches, ${planScenarios.length} plans, ${forecastScenarios.length} forecasts, ${nmlbCases.length} NMLB cases`,
+  `ladle kitchen: ${costGrid.length} costs, ${batchScenarios.length} batches, ${planScenarios.length} plans, ${forecastScenarios.length} forecasts, ${steerScenarios.length} steering plans, ${donationScenarios.length} donation searches, ${nmlbCases.length} NMLB cases`,
 );

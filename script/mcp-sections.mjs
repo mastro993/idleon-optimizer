@@ -281,7 +281,9 @@ const ladleSave = () => {
       [1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [2, 1, 0, 0, 0, 0, 10, 0, 0, 0, 0],
     ],
-    Meals: [[3, 2, 1, 1], [], [140, 0, 0, 0], []],
+    // The last meal is far past a day of kitchen time, so it is an NMLB target
+    // and the steering panel has a rotation to draw.
+    Meals: [[3, 2, 1, 1, 20], [], [140, 0, 0, 0, 0], []],
     Menagerie: [[0, 0, 0, 0, 0, 9], [], [0, 0, 0, 0, 0, 1], []],
     BundlesReceived: { bun_s: 1 },
   });
@@ -2911,6 +2913,40 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'kitchens-day-header-1' });
     await waitForNode(lane, 'kitchens-day-body-1', 'ladle: expanding a reset shows its instructions');
     await waitForNode(lane, 'kitchens-day-copy-1', 'ladle: the reset instructions are copyable');
+
+    // The steering panel reads the split, the floor and the rotation the floor
+    // holding predicts.
+    await bringIntoView(lane, 'ladle-steer-targets');
+    await waitForNode(lane, 'ladle-steer-targets', 'ladle: the NMLB targets render');
+    await waitForNode(lane, 'ladle-steer-rotation', 'ladle: the predicted rotation renders');
+    // The donation search runs off the UI thread. A cancel keeps the previous
+    // recommendation, and either click can lose a race with a finished run, so
+    // the cancel is only taken while its progress card is still up.
+    await bringIntoView(lane, 'ladle-plan-start');
+    await lane.call('click_element', { id: 'ladle-plan-start' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'ladle-plan-run-progress') || has(nodes, 'ladle-plan-result'),
+      'ladle: the donation search starts',
+      120000
+    );
+    await waitForNode(
+      lane,
+      'ladle-plan-result',
+      'ladle: the donation search recommends a schedule',
+      120000
+    );
+    await waitForNode(lane, 'ladle-plan-schedule', 'ladle: the recommendation lists its donations');
+    // Either click can lose a race with a finished run, so both are advisory:
+    // the assertion below reads the recommendation the cancel must keep.
+    await lane.call('click_element', { id: 'ladle-plan-start' }).catch(() => {});
+    await lane.call('click_element', { id: 'ladle-plan-run-cancel' }).catch(() => {});
+    await waitForNode(
+      lane,
+      'ladle-plan-result',
+      'ladle: cancelling keeps the recommendation',
+      120000
+    );
 
     // The target objective without a target refuses the forecast but keeps its
     // target inputs on screen, so the missing input can be fixed from the tab.

@@ -9197,6 +9197,4421 @@
    }
   }
  ],
+ "steerScenarios": [
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 24,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 24,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.9915658232489915,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 245.48318083224208,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 2578.3860780672444,
+      "rotationDay": 8,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 422.51707220406,
+      "rotationDay": 3,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 245.48318083224208,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 12,
+      "ladlesSaved": 245.48318083224208
+     },
+     {
+      "day": 2,
+      "meal": 2,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 704.1951203401001
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 422.51707220406
+     },
+     {
+      "day": 4,
+      "meal": 2,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 2093.382358842834
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 1256.0294153057002
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 6445.965195168112
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 3867.579117100867
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 2578.3860780672444
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 20548.212160394793
+     },
+     {
+      "day": 10,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 12328.927296236876
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 24,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 24,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 7.202649431609826,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 3043.060660015176,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 37906.07138226916,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 5546.125604610627,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 3043.060660015176,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 14,
+      "ladlesSaved": 3043.060660015176
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 5546.125604610627
+     },
+     {
+      "day": 3,
+      "meal": 2,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 94765.17845567291
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 37906.07138226916
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 191657.15919582883
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 4008301.3292624224
+     },
+     {
+      "day": 7,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 1603320.5317049688
+     },
+     {
+      "day": 8,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 8940345.626937382
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 225966665.94657555
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 90386666.3786302
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 40,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 40,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.9915658232489915,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 245.48318083224208,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 2578.3860780672444,
+      "rotationDay": 8,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 422.51707220406,
+      "rotationDay": 3,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 245.48318083224208,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 12,
+      "ladlesSaved": 245.48318083224208
+     },
+     {
+      "day": 2,
+      "meal": 2,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 704.1951203401001
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 422.51707220406
+     },
+     {
+      "day": 4,
+      "meal": 2,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 2093.382358842834
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 1256.0294153057002
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 6445.965195168112
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 3867.579117100867
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 2578.3860780672444
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 20548.212160394793
+     },
+     {
+      "day": 10,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 12328.927296236876
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 40,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 40,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 7.202649431609826,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 3043.060660015176,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 37906.07138226916,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 5546.125604610627,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 3043.060660015176,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 14,
+      "ladlesSaved": 3043.060660015176
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 5546.125604610627
+     },
+     {
+      "day": 3,
+      "meal": 2,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 94765.17845567291
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 37906.07138226916
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 191657.15919582883
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 4008301.3292624224
+     },
+     {
+      "day": 7,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 1603320.5317049688
+     },
+     {
+      "day": 8,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 8940345.626937382
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 225966665.94657555
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 90386666.3786302
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 4,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 4,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.9915658232489915,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 245.48318083224208,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 2578.3860780672444,
+      "rotationDay": 8,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 422.51707220406,
+      "rotationDay": 3,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 245.48318083224208,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 12,
+      "ladlesSaved": 245.48318083224208
+     },
+     {
+      "day": 2,
+      "meal": 2,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 704.1951203401001
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 422.51707220406
+     },
+     {
+      "day": 4,
+      "meal": 2,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 2093.382358842834
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 1256.0294153057002
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 6445.965195168112
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 3867.579117100867
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 2578.3860780672444
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 20548.212160394793
+     },
+     {
+      "day": 10,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 12328.927296236876
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 90.9,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 4,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 4,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 7.202649431609826,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 3043.060660015176,
+    "blockerLadles": 2699.9692432181264,
+    "blockerHours": 4049.9538648271896,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 2578.3860780672444,
+      "nextHours": 3867.579117100867,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 395.0143219290325,
+      "nextHours": 592.5214828935488,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 153.80734658215042,
+      "nextHours": 230.7110198732256,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 226.82595254548198,
+      "hours": 340.238928818223,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 478.94949058088395,
+      "hours": 718.4242358713259,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 570.3039141165253,
+      "hours": 855.455871174788,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 570.7292160186836,
+      "hours": 856.0938240280254,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 485.284273825437,
+      "hours": 727.9264107381555,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 367.8763961311146,
+      "hours": 551.8145941966718,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 2578.3860780672444,
+      "ladlesSaved": 37906.07138226916,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 276308.83240400907,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 395.0143219290325,
+      "ladlesSaved": 5546.125604610627,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 23544.144805285086,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 153.80734658215042,
+      "ladlesSaved": 3043.060660015176,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 2699.9692432181264,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 14,
+      "ladlesSaved": 3043.060660015176
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 5546.125604610627
+     },
+     {
+      "day": 3,
+      "meal": 2,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 94765.17845567291
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 37906.07138226916
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 191657.15919582883
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 4008301.3292624224
+     },
+     {
+      "day": 7,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 1603320.5317049688
+     },
+     {
+      "day": 8,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 8940345.626937382
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 225966665.94657555
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 90386666.3786302
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 24,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 24,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.16837910206114953,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 41.685823160192065,
+    "blockerLadles": 458.48534318798386,
+    "blockerHours": 687.7280147819758,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 38.51761458319506,
+      "hours": 57.77642187479259,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 81.3310455703388,
+      "hours": 121.9965683555082,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 96.84406088771188,
+      "hours": 145.26609133156782,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 96.91628196543688,
+      "hours": 145.3744229481553,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 82.40676347979121,
+      "hours": 123.61014521968681,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 62.46957670151004,
+      "hours": 93.70436505226506,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 437.83914533217376,
+      "rotationDay": 8,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 46920.367766718526,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 71.74818207238756,
+      "rotationDay": 3,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 3998.06232542577,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 26.118228664893472,
+      "ladlesSaved": 41.685823160192065,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 458.48534318798386,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 12,
+      "ladlesSaved": 41.685823160192065
+     },
+     {
+      "day": 2,
+      "meal": 2,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 119.58030345397928
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 71.74818207238756
+     },
+     {
+      "day": 4,
+      "meal": 2,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 355.4800231997266
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 213.28801391983595
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 1094.5978633304344
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 656.7587179982605
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 437.83914533217376
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 3489.319046104777
+     },
+     {
+      "day": 10,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 2093.5914276628664
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 24,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 24,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 1.2230914129148764,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 516.746149813898,
+    "blockerLadles": 458.48534318798386,
+    "blockerHours": 687.7280147819758,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 38.51761458319506,
+      "hours": 57.77642187479259,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 81.3310455703388,
+      "hours": 121.9965683555082,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 96.84406088771188,
+      "hours": 145.26609133156782,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 96.91628196543688,
+      "hours": 145.3744229481553,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 82.40676347979121,
+      "hours": 123.61014521968681,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 62.46957670151004,
+      "hours": 93.70436505226506,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 6436.880046045708,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 46920.367766718526,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 941.794913990484,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 3998.06232542577,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 26.118228664893472,
+      "ladlesSaved": 516.746149813898,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 458.48534318798386,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 14,
+      "ladlesSaved": 516.746149813898
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 941.794913990484
+     },
+     {
+      "day": 3,
+      "meal": 2,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 16092.20011511427
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 6436.880046045708
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 32545.55533514075
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 680654.9427049399
+     },
+     {
+      "day": 7,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 272261.9770819759
+     },
+     {
+      "day": 8,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 1518171.8989138952
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 38371697.990927935
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 15348679.196371172
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 40,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 40,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.16837910206114953,
+    "floorMeal": 1,
+    "floorLevel": 12,
+    "floorSaved": 71.74818207238756,
+    "blockerLadles": 4143.760857544643,
+    "blockerHours": 6215.641286316964,
+    "fitsInDay": false,
+    "ladleableCount": 8,
+    "targetCount": 2,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": true
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 13,
+      "levels": 11,
+      "ladles": 1234.3206491229878,
+      "hours": 1851.4809736844818,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 13,
+      "levels": 10,
+      "ladles": 918.3931697481937,
+      "hours": 1377.5897546222905,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 13,
+      "levels": 9,
+      "ladles": 694.7455781576082,
+      "hours": 1042.1183672364123,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 13,
+      "levels": 7,
+      "ladles": 527.4053743997623,
+      "hours": 791.1080615996434,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 13,
+      "levels": 6,
+      "ladles": 369.39949176934147,
+      "hours": 554.0992376540122,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 13,
+      "levels": 4,
+      "ladles": 253.7980622278769,
+      "hours": 380.69709334181533,
+      "target": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "need": 13,
+      "levels": 2,
+      "ladles": 145.69853211887275,
+      "hours": 218.5477981783091,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 437.83914533217376,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 7,
+      "targetBlockers": 1,
+      "steerLadles": 48516.144185367564,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 71.74818207238756,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 7,
+      "targetBlockers": 0,
+      "steerLadles": 4143.760857544643,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 71.74818207238756
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 213.28801391983595
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 656.7587179982605
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 437.83914533217376
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 2093.5914276628664
+     },
+     {
+      "day": 6,
+      "meal": 0,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 1395.7276184419109
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 16,
+      "to": 17,
+      "ladlesSaved": 6904.969923407435
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 16,
+      "to": 17,
+      "ladlesSaved": 4603.313282271623
+     },
+     {
+      "day": 9,
+      "meal": 1,
+      "from": 17,
+      "to": 18,
+      "ladlesSaved": 23546.99398407045
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 17,
+      "to": 18,
+      "ladlesSaved": 15697.9959893803
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 40,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 40,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 1.2230914129148764,
+    "floorMeal": 1,
+    "floorLevel": 12,
+    "floorSaved": 941.794913990484,
+    "blockerLadles": 4143.760857544643,
+    "blockerHours": 6215.641286316964,
+    "fitsInDay": false,
+    "ladleableCount": 8,
+    "targetCount": 2,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": true
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 13,
+      "levels": 11,
+      "ladles": 1234.3206491229878,
+      "hours": 1851.4809736844818,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 13,
+      "levels": 10,
+      "ladles": 918.3931697481937,
+      "hours": 1377.5897546222905,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 13,
+      "levels": 9,
+      "ladles": 694.7455781576082,
+      "hours": 1042.1183672364123,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 13,
+      "levels": 7,
+      "ladles": 527.4053743997623,
+      "hours": 791.1080615996434,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 13,
+      "levels": 6,
+      "ladles": 369.39949176934147,
+      "hours": 554.0992376540122,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 13,
+      "levels": 4,
+      "ladles": 253.7980622278769,
+      "hours": 380.69709334181533,
+      "target": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "need": 13,
+      "levels": 2,
+      "ladles": 145.69853211887275,
+      "hours": 218.5477981783091,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 6436.880046045708,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 7,
+      "targetBlockers": 1,
+      "steerLadles": 48516.144185367564,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 941.794913990484,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 7,
+      "targetBlockers": 0,
+      "steerLadles": 4143.760857544643,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 941.794913990484
+     },
+     {
+      "day": 2,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 6436.880046045708
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 32545.55533514075
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 272261.9770819759
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 1518171.8989138952
+     },
+     {
+      "day": 6,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 15348679.196371172
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 21,
+      "to": 24,
+      "ladlesSaved": 93789860.03199479
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 23,
+      "to": 26,
+      "ladlesSaved": 1131705917.3192878
+     },
+     {
+      "day": 9,
+      "meal": 1,
+      "from": 24,
+      "to": 27,
+      "ladlesSaved": 7532468299.94526
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 26,
+      "to": 29,
+      "ladlesSaved": 107221458010.0729
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 1,
+   "dayHours": 4,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 4,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 0.16837910206114953,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 41.685823160192065,
+    "blockerLadles": 458.48534318798386,
+    "blockerHours": 687.7280147819758,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 38.51761458319506,
+      "hours": 57.77642187479259,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 81.3310455703388,
+      "hours": 121.9965683555082,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 96.84406088771188,
+      "hours": 145.26609133156782,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 96.91628196543688,
+      "hours": 145.3744229481553,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 82.40676347979121,
+      "hours": 123.61014521968681,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 62.46957670151004,
+      "hours": 93.70436505226506,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 437.83914533217376,
+      "rotationDay": 8,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 46920.367766718526,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 71.74818207238756,
+      "rotationDay": 3,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 3998.06232542577,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 26.118228664893472,
+      "ladlesSaved": 41.685823160192065,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 458.48534318798386,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 12,
+      "ladlesSaved": 41.685823160192065
+     },
+     {
+      "day": 2,
+      "meal": 2,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 119.58030345397928
+     },
+     {
+      "day": 3,
+      "meal": 1,
+      "from": 12,
+      "to": 13,
+      "ladlesSaved": 71.74818207238756
+     },
+     {
+      "day": 4,
+      "meal": 2,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 355.4800231997266
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 13,
+      "to": 14,
+      "ladlesSaved": 213.28801391983595
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 1094.5978633304344
+     },
+     {
+      "day": 7,
+      "meal": 1,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 656.7587179982605
+     },
+     {
+      "day": 8,
+      "meal": 0,
+      "from": 14,
+      "to": 15,
+      "ladlesSaved": 437.83914533217376
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 3489.319046104777
+     },
+     {
+      "day": 10,
+      "meal": 1,
+      "from": 15,
+      "to": 16,
+      "ladlesSaved": 2093.5914276628664
+     }
+    ]
+   }
+  },
+  {
+   "baseSpeed": 10.1,
+   "speed": 535.3,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": true
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": true
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "maxLevel": 30,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "ladleMulti": 1.5,
+   "nmlb": 3,
+   "dayHours": 4,
+   "rotationDays": 10,
+   "expected": {
+    "dayHours": 4,
+    "currentPick": 8,
+    "currentOnTarget": false,
+    "currentSaved": 1.2230914129148764,
+    "floorMeal": 2,
+    "floorLevel": 11,
+    "floorSaved": 516.746149813898,
+    "blockerLadles": 458.48534318798386,
+    "blockerHours": 687.7280147819758,
+    "fitsInDay": false,
+    "ladleableCount": 7,
+    "targetCount": 3,
+    "classes": [
+     {
+      "meal": 0,
+      "level": 14,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 437.83914533217376,
+      "nextHours": 656.7587179982606,
+      "ladleable": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 67.07790372379799,
+      "nextHours": 100.61685558569698,
+      "ladleable": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 26.118228664893472,
+      "nextHours": 39.177342997340205,
+      "ladleable": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 8,
+      "level": 2,
+      "open": true,
+      "nmlbEligible": true,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     },
+     {
+      "meal": 9,
+      "level": 1,
+      "open": true,
+      "nmlbEligible": false,
+      "nextLadles": 0,
+      "nextHours": 0,
+      "ladleable": true
+     }
+    ],
+    "blockers": [
+     {
+      "meal": 8,
+      "level": 2,
+      "need": 12,
+      "levels": 10,
+      "ladles": 38.51761458319506,
+      "hours": 57.77642187479259,
+      "target": false
+     },
+     {
+      "meal": 7,
+      "level": 3,
+      "need": 12,
+      "levels": 9,
+      "ladles": 81.3310455703388,
+      "hours": 121.9965683555082,
+      "target": false
+     },
+     {
+      "meal": 6,
+      "level": 4,
+      "need": 12,
+      "levels": 8,
+      "ladles": 96.84406088771188,
+      "hours": 145.26609133156782,
+      "target": false
+     },
+     {
+      "meal": 5,
+      "level": 6,
+      "need": 12,
+      "levels": 6,
+      "ladles": 96.91628196543688,
+      "hours": 145.3744229481553,
+      "target": false
+     },
+     {
+      "meal": 4,
+      "level": 7,
+      "need": 12,
+      "levels": 5,
+      "ladles": 82.40676347979121,
+      "hours": 123.61014521968681,
+      "target": false
+     },
+     {
+      "meal": 3,
+      "level": 9,
+      "need": 12,
+      "levels": 3,
+      "ladles": 62.46957670151004,
+      "hours": 93.70436505226506,
+      "target": false
+     }
+    ],
+    "targets": [
+     {
+      "meal": 0,
+      "level": 14,
+      "nextLadles": 437.83914533217376,
+      "ladlesSaved": 6436.880046045708,
+      "rotationDay": 4,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 2,
+      "steerLadles": 46920.367766718526,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 1,
+      "level": 12,
+      "nextLadles": 67.07790372379799,
+      "ladlesSaved": 941.794913990484,
+      "rotationDay": 2,
+      "current": false,
+      "floor": false,
+      "ladleableBlockers": 6,
+      "targetBlockers": 1,
+      "steerLadles": 3998.06232542577,
+      "feasible": false,
+      "fitsInDay": false
+     },
+     {
+      "meal": 2,
+      "level": 11,
+      "nextLadles": 26.118228664893472,
+      "ladlesSaved": 516.746149813898,
+      "rotationDay": 1,
+      "current": false,
+      "floor": true,
+      "ladleableBlockers": 6,
+      "targetBlockers": 0,
+      "steerLadles": 458.48534318798386,
+      "feasible": true,
+      "fitsInDay": false
+     }
+    ],
+    "rotation": [
+     {
+      "day": 1,
+      "meal": 2,
+      "from": 11,
+      "to": 14,
+      "ladlesSaved": 516.746149813898
+     },
+     {
+      "day": 2,
+      "meal": 1,
+      "from": 12,
+      "to": 15,
+      "ladlesSaved": 941.794913990484
+     },
+     {
+      "day": 3,
+      "meal": 2,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 16092.20011511427
+     },
+     {
+      "day": 4,
+      "meal": 0,
+      "from": 14,
+      "to": 17,
+      "ladlesSaved": 6436.880046045708
+     },
+     {
+      "day": 5,
+      "meal": 1,
+      "from": 15,
+      "to": 18,
+      "ladlesSaved": 32545.55533514075
+     },
+     {
+      "day": 6,
+      "meal": 2,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 680654.9427049399
+     },
+     {
+      "day": 7,
+      "meal": 0,
+      "from": 17,
+      "to": 20,
+      "ladlesSaved": 272261.9770819759
+     },
+     {
+      "day": 8,
+      "meal": 1,
+      "from": 18,
+      "to": 21,
+      "ladlesSaved": 1518171.8989138952
+     },
+     {
+      "day": 9,
+      "meal": 2,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 38371697.990927935
+     },
+     {
+      "day": 10,
+      "meal": 0,
+      "from": 20,
+      "to": 23,
+      "ladlesSaved": 15348679.196371172
+     }
+    ]
+   }
+  }
+ ],
+ "donationScenarios": [
+  {
+   "name": "rank the levels a share of the income buys",
+   "baseSpeed": 10.1,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 20,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 1,
+     "speedLv": 0,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": -1,
+     "speedLv": 40,
+     "doubler": false
+    },
+    {
+     "index": 3,
+     "unlocked": false,
+     "savedMeal": -1,
+     "speedLv": 0,
+     "doubler": false
+    }
+   ],
+   "jelly": {
+    "available": true,
+    "unlocked": true,
+    "dailyHours": 9
+   },
+   "nmlb": 2,
+   "inputs": {
+    "comp162": 10,
+    "ach233": 0,
+    "cloud33": 0,
+    "ola193": 0,
+    "dream11": 4
+   },
+   "settings": {
+    "days": 5,
+    "hoursToReset": 6,
+    "ladlesPerDay": 24,
+    "startLadles": 60,
+    "ladleMulti": 1.5,
+    "passive": true,
+    "ladleableOnly": true,
+    "maxLevel": 30,
+    "objective": "ranks",
+    "kitchenLayout": {
+     "mode": "optimized"
+    }
+   },
+   "expected": {
+    "improved": false,
+    "evaluated": 43,
+    "policy": {
+     "ownedFraction": 0,
+     "incomeFraction": 0,
+     "untilDay": 0
+    },
+    "schedule": {
+     "owned": 0,
+     "daily": [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    "baseline": {
+     "ranks": 58,
+     "score": 58,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      12,
+      12,
+      13,
+      13,
+      13,
+      13,
+      13,
+      12
+     ]
+    },
+    "plan": {
+     "ranks": 58,
+     "score": 58,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      12,
+      12,
+      13,
+      13,
+      13,
+      13,
+      13,
+      12
+     ]
+    }
+   }
+  },
+  {
+   "name": "rank the targets a full donation buys",
+   "baseSpeed": 10.1,
+   "levels": [
+    14,
+    12,
+    11,
+    9,
+    7,
+    6,
+    4,
+    3,
+    2,
+    1
+   ],
+   "stocks": [
+    0,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1500,
+    1750,
+    2000,
+    2250
+   ],
+   "kitchens": [
+    {
+     "index": 0,
+     "unlocked": true,
+     "savedMeal": 0,
+     "speedLv": 100,
+     "doubler": false
+    },
+    {
+     "index": 1,
+     "unlocked": true,
+     "savedMeal": 2,
+     "speedLv": 50,
+     "doubler": false
+    },
+    {
+     "index": 2,
+     "unlocked": true,
+     "savedMeal": 4,
+     "speedLv": 10,
+     "doubler": false
+    }
+   ],
+   "jelly": {
+    "available": true,
+    "unlocked": true,
+    "dailyHours": 9
+   },
+   "nmlb": 2,
+   "inputs": {
+    "comp162": 0,
+    "ach233": 1,
+    "cloud33": 0.5,
+    "ola193": 0,
+    "dream11": 3
+   },
+   "settings": {
+    "days": 4,
+    "hoursToReset": 24,
+    "ladlesPerDay": 40,
+    "startLadles": 120,
+    "ladleMulti": 1,
+    "passive": true,
+    "ladleableOnly": true,
+    "maxLevel": 30,
+    "objective": "targets",
+    "targets": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     20,
+     12,
+     0
+    ],
+    "kitchenLayout": {
+     "mode": "optimized",
+     "excluded": [
+      5
+     ]
+    }
+   },
+   "expected": {
+    "improved": true,
+    "evaluated": 51,
+    "policy": {
+     "ownedFraction": 0,
+     "incomeFraction": 0.125,
+     "untilDay": 1
+    },
+    "schedule": {
+     "owned": 0,
+     "daily": [
+      5,
+      0,
+      0,
+      0
+     ]
+    },
+    "baseline": {
+     "ranks": 30,
+     "score": 13,
+     "donated": 0,
+     "dailyHoursEnd": 9,
+     "levels": [
+      14,
+      12,
+      11,
+      9,
+      8,
+      8,
+      9,
+      9,
+      9,
+      10
+     ]
+    },
+    "plan": {
+     "ranks": 31,
+     "score": 14,
+     "donated": 5,
+     "dailyHoursEnd": 14,
+     "levels": [
+      14,
+      12,
+      11,
+      9,
+      8,
+      8,
+      9,
+      10,
+      9,
+      10
+     ]
+    }
+   }
+  }
+ ],
  "nmlbCases": [
   {
    "levels": [

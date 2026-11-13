@@ -31,6 +31,7 @@ use crate::sections::jelly_operator::{
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
+use crate::sections::ladle::planner::{LadleDonation, LadlePlanRequest};
 use crate::sections::monument::State as MonumentState;
 use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
@@ -295,6 +296,8 @@ pub(crate) struct AppState {
     pub(crate) ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
     pub(crate) ladle_state: LadleSectionState,
+    /// The shared runner for the Blue Jellyfish donation search.
+    pub(crate) ladle_plan: Entity<TaskRunner<LadleDonation, LadlePlanRequest>>,
     /// The Cooking Mastery state the last imported save carried.
     pub(crate) mastery: Option<Mastery>,
     /// The yellow point allocator's meal state, from the same save section.
@@ -1006,6 +1009,22 @@ impl AppState {
             },
         );
         let ladle_state = LadleSectionState::new(window, cx);
+        let ladle_plan = report_run::<LadleDonation, LadlePlanRequest>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Comparing donation schedules…"),
+                cancelled_kept: "Donation search cancelled; the previous recommendation is unchanged.",
+                cancelled_empty: "Donation search cancelled; nothing was stored.",
+            },
+            |_, donation| {
+                Some(format!(
+                    "Donation plan ready: {} ladles over the plan, {} schedules compared.",
+                    idleon_ui::format::number(donation.plan.jelly.donated),
+                    donation.evaluated
+                ))
+            },
+        );
         let cglunko_breakdown = ui::formula_tree("cglunko-formula", window, cx);
         let clamworks_breakdown = ui::formula_tree("clamworks-formula", window, cx);
         let fishing_breakdown = ui::formula_tree("fishing-formula", window, cx);
@@ -1119,6 +1138,7 @@ impl AppState {
             spelunk_opt,
             ladle: None,
             ladle_state,
+            ladle_plan,
             mastery: None,
             yellow: None,
             mastery_plan: MasteryPlanState::default(),

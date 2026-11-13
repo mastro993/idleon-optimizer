@@ -812,12 +812,21 @@ Speed Lv 0 and the meal max level stand in for the Cooking speed model, and the 
 Upstream's `speed` objective is left out on purpose: it ranks by the meal-level
 `kitchenSpeedEvaluator`, which this build does not have, so the select offers only the two
 objectives it can compute rather than a constant ordering.
+The NMLB panel splits every meal into ladleable meals (the next level fits in a day of kitchen
+time) and targets, then holds the floor: the lowest target level, with the ladleable blockers that
+must rise first and the rotation NMLB walks while the floor is held. The Blue Jellyfish donation
+planner compares an up-front share of the owned ladles and a share of the guaranteed income until a
+cutoff reset, refines the best split and shows the whole-ladle schedule; it runs through the shared
+task runner, so cancelling keeps the recommendation the tab already shows, and an improved schedule
+can be applied to the meal plan. Upstream ranks that search by the kitchen speed the horizon
+reaches; because speed is a fixed entered rate here, the search ranks by the section objective
+instead, with every other search rule the upstream one.
 `script/ladle-kitchen-oracle.mjs` regenerates `crates/ladle/tests/ladle-kitchen-oracle.json` from the
 upstream module, with a model whose account multipliers are neutral so every rate is the port's
 `base × (1 + Speed Lv / 10) × (1 + gem doubler)`; `script/extract-cooking-data.mjs` extracts
 `MealINFO` and the `N2L` encoding. The fixture covers the target objective's batches and plans, the
-per-meal outcomes and the three forecast scenarios. The Blue Jellyfish donation planner with its
-task runner (LD-04) stays on the roadmap.
+per-meal outcomes, the three forecast scenarios, the NMLB floor plans and rotations and the donation
+search's schedule and both plans.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
 The Jelly Operator section implements JO-01, JO-02, JO-03 and JO-04: the overview, the layout

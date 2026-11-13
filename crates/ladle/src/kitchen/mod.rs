@@ -10,7 +10,8 @@
 //! Upstream offers three objectives: the most meal ranks, the meal targets and
 //! kitchen speed. [`Objective`] carries the first two; the speed objective ranks by
 //! the meal-level `kitchenSpeedEvaluator`, which this build does not have, so it is
-//! not offered rather than ranked by a constant.
+//! not offered rather than ranked by a constant. [`donation`] ranks its search by
+//! the two objectives the section can compute for the same reason.
 //!
 //! The kitchen speed model upstream builds from the account stats engine
 //! (`cookingSpeedModel`) is one entered number here: the Cooking speed /hr a
@@ -20,15 +21,20 @@
 //! and their speed levels, the meal levels and stocks, the Blue Jellyfish grant
 //! and No Meal Left Behind's level count.
 
+pub mod donation;
 pub mod forecast;
 pub mod layout;
 mod plan;
+pub mod steer;
 #[cfg(test)]
 mod tests;
 
+pub use donation::{Donation, Split};
 pub use forecast::{Forecast, SCENARIOS, Scenario, forecast};
 pub use layout::{Layout, LayoutChoice, LayoutKitchen, LayoutMeal, LayoutMode};
-pub use plan::{Day, Inputs, MealOutcome, Phase, PhaseKind, Plan, Policy, Saving, Spend, plan};
+pub use plan::{
+    Day, Inputs, MealOutcome, Phase, PhaseKind, Plan, Policy, Saving, Schedule, Spend, plan,
+};
 
 use idleon_save::Save;
 use serde::Deserialize;
