@@ -442,3 +442,223 @@ fn the_crop_scientist_rows_match_the_upstream_table() {
         close(row.value, number(expected, "value"), row.name);
     }
 }
+
+/// One chain's own figures against the upstream `evolutionChainPlan`.
+fn close_chain(chain: &idleon_farming::EvolutionChain, expected: &Value, what: &str) {
+    close(
+        chain.target_crop as f64,
+        number(expected, "targetCropId"),
+        &format!("{what} target crop"),
+    );
+    close(
+        chain.family as f64,
+        number(expected, "familyId"),
+        &format!("{what} family"),
+    );
+    close(
+        chain.current_depth as f64,
+        number(expected, "currentDepth"),
+        &format!("{what} current depth"),
+    );
+    close(
+        f64::from(chain.target_depth),
+        number(expected, "targetDepth"),
+        &format!("{what} target depth"),
+    );
+    close(
+        chain.plot_count as f64,
+        number(expected, "plotCount"),
+        &format!("{what} plot count"),
+    );
+    assert_eq!(
+        chain.step_count(),
+        number(expected, "stepCount") as usize,
+        "{what} step count"
+    );
+    close(
+        chain.expected_seconds(),
+        optional(expected, "expectedSeconds"),
+        &format!("{what} expected ETA"),
+    );
+    close(
+        chain.median_seconds(),
+        optional(expected, "medianSeconds"),
+        &format!("{what} median ETA"),
+    );
+    close(
+        chain.p90_seconds(),
+        optional(expected, "p90Seconds"),
+        &format!("{what} p90 ETA"),
+    );
+    close(
+        chain.p95_seconds(),
+        optional(expected, "p95Seconds"),
+        &format!("{what} p95 ETA"),
+    );
+}
+
+#[test]
+fn the_evolution_chain_matches_upstream_for_every_family() {
+    let (farm, oracle) = imported();
+    let snapshot = farm.snapshot();
+    let chains = oracle["evolution"]["chains"].as_array().expect("chains");
+    assert_eq!(chains.len(), 22);
+    for expected in chains {
+        let target = number(expected, "targetCropId") as i64;
+        let what = format!("crop {target} chain");
+        let chain = farm
+            .evolution_chain(target, &snapshot)
+            .unwrap_or_else(|| panic!("{what} is in a seed family"));
+        close_chain(&chain, expected, &what);
+        let steps = expected["steps"].as_array().expect("steps");
+        assert_eq!(chain.steps.len(), steps.len(), "{what} steps");
+        for (step, expected) in chain.steps.iter().zip(steps) {
+            let what = format!("{what} step to crop {}", step.target_crop);
+            close(
+                step.target_crop as f64,
+                number(expected, "targetCropId"),
+                &format!("{what} crop"),
+            );
+            close(
+                step.family as f64,
+                number(expected, "familyId"),
+                &format!("{what} family"),
+            );
+            close(
+                f64::from(step.predecessor_depth),
+                number(expected, "predecessorDepth"),
+                &format!("{what} predecessor"),
+            );
+            close(
+                step.plot_count as f64,
+                number(expected, "plotCount"),
+                &format!("{what} plots"),
+            );
+            close(
+                step.per_plot_min,
+                number(expected, "perPlotMin"),
+                &format!("{what} weakest plot"),
+            );
+            close(
+                step.per_plot_max,
+                number(expected, "perPlotMax"),
+                &format!("{what} strongest plot"),
+            );
+            close(
+                step.plan.chance,
+                number(expected, "chance"),
+                &format!("{what} chance"),
+            );
+            close(
+                step.plan.cycle_seconds,
+                optional(expected, "cycleSeconds"),
+                &format!("{what} cycle"),
+            );
+            close(
+                step.plan.expected_attempts,
+                optional(expected, "expectedAttempts"),
+                &format!("{what} expected attempts"),
+            );
+            close(
+                step.plan.expected_seconds,
+                optional(expected, "expectedSeconds"),
+                &format!("{what} expected seconds"),
+            );
+            close(
+                step.plan.median_attempts,
+                optional(expected, "medianAttempts"),
+                &format!("{what} median attempts"),
+            );
+            close(
+                step.plan.median_seconds,
+                optional(expected, "medianSeconds"),
+                &format!("{what} median seconds"),
+            );
+            close(
+                step.plan.p90_attempts,
+                optional(expected, "p90Attempts"),
+                &format!("{what} p90 attempts"),
+            );
+            close(
+                step.plan.p90_seconds,
+                optional(expected, "p90Seconds"),
+                &format!("{what} p90 seconds"),
+            );
+            close(
+                step.plan.p95_attempts,
+                optional(expected, "p95Attempts"),
+                &format!("{what} p95 attempts"),
+            );
+            close(
+                step.plan.p95_seconds,
+                optional(expected, "p95Seconds"),
+                &format!("{what} p95 seconds"),
+            );
+        }
+    }
+    // A family's first crop has no step, and a crop outside the families has
+    // no chain at all.
+    for start in oracle["evolution"]["familyStarts"]
+        .as_array()
+        .expect("family starts")
+    {
+        let start = start.as_f64().expect("a crop id") as i64;
+        let chain = farm.evolution_chain(start, &snapshot).expect("a chain");
+        assert_eq!(chain.step_count(), 0, "crop {start} is a family start");
+    }
+    assert!(farm.evolution_chain(330, &snapshot).is_none());
+}
+
+#[test]
+fn the_chain_reaches_the_target_it_names() {
+    let (farm, oracle) = imported();
+    let snapshot = farm.snapshot();
+    let longest = oracle["evolution"]["chains"]
+        .as_array()
+        .expect("chains")
+        .iter()
+        .max_by_key(|chain| number(chain, "stepCount") as usize)
+        .expect("a chain");
+    let target = number(longest, "targetCropId") as i64;
+    let chain = farm.evolution_chain(target, &snapshot).expect("a chain");
+    assert_eq!(chain.step_count(), 38);
+    // Every depth from the deepest plot to the target is one step, in order,
+    // so the chain is complete and its steps are the crops to grow in turn.
+    let family_start = idleon_farming::data().seeds[chain.family].start;
+    let first = chain.steps.first().expect("a first step").predecessor_depth;
+    for (offset, step) in chain.steps.iter().enumerate() {
+        assert_eq!(step.predecessor_depth, first + offset as u32);
+        assert_eq!(
+            step.target_crop,
+            family_start + i64::from(step.predecessor_depth) + 1
+        );
+    }
+    assert_eq!(chain.steps.last().unwrap().target_crop, target);
+    let hardest = chain.hardest_steps(20);
+    assert_eq!(hardest.len(), 20);
+    assert_eq!(hardest[0].target_crop, target);
+}
+
+#[test]
+fn the_overgrowth_advice_follows_each_plots_own_target() {
+    let (farm, oracle) = imported();
+    let snapshot = farm.snapshot();
+    for expected in oracle["curves"].as_array().expect("curves") {
+        let index = number(expected, "plotIdx") as usize;
+        let curve = farm.overgrowth_curve(index, &snapshot);
+        let best = number(expected, "bestTargetOg") as u32;
+        let best_row = curve.rows[best as usize];
+        let what = format!("plot {} advice", index + 1);
+        match curve.advice() {
+            idleon_farming::OvergrowthAdvice::Harvest => assert!(
+                curve.current_og >= best,
+                "{what}: harvest only at or past the target"
+            ),
+            idleon_farming::OvergrowthAdvice::Wait(seconds) => {
+                assert!(curve.current_og < best, "{what}: waits below the target");
+                close(seconds, best_row.eta_from_current, &what);
+            }
+        }
+        assert_eq!(curve.best.target, best, "{what} target");
+    }
+}

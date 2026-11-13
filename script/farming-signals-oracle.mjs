@@ -29,7 +29,7 @@ const { loadSaveData } = await load('js/save/loader.js');
 const { saveData } = await load('js/state.js');
 const planner = await load('js/stats/systems/w6/farming-planner.js');
 const { computeCropSC } = await load('js/stats/systems/w6/farming.js');
-const { seedFamilyCount } = await load('js/stats/data/w5/farming.js');
+const { seedFamily, seedFamilyCount } = await load('js/stats/data/w5/farming.js');
 
 // ===== The purpose-built save =====
 // One plot per seed family plus an empty field cell, a saved overgrowth and
@@ -91,6 +91,62 @@ const curves = Array.from({ length: 36 }, (_, plot) =>
 
 /** `Infinity` has no JSON form; `null` is the fixture's word for it. */
 const finite = (value) => (Number.isFinite(Number(value)) ? Number(value) : null);
+
+// The evolution chain to a target crop, for every family: the family's first
+// crop (no predecessor, no steps), one step, the first eight depths and — in the
+// longest family — a forty-step climb, so the port is compared against a chain
+// of every length.
+const seedFamilies = Array.from({ length: seedFamilyCount() }, (_, id) => seedFamily(id));
+const chainTargets = seedFamilies.flatMap((family) => [
+  family.start,
+  family.start + 1,
+  Math.min(family.end, family.start + 8),
+]);
+chainTargets.push(seedFamilies[5].start + 40);
+const evolutionChains = chainTargets.map((targetCropId) => {
+  const chain = planner.evolutionChainPlan(targetCropId, saveData, snapshot);
+  if (!chain) throw new Error(`the upstream planner has no chain for crop ${targetCropId}`);
+  if (chain.steps.length !== chain.stepCount) throw new Error('the upstream chain disagrees on its step count');
+  return {
+    targetCropId,
+    familyId: chain.familyId,
+    currentDepth: chain.currentDepth,
+    targetDepth: chain.targetDepth,
+    plotCount: chain.plotCount,
+    stepCount: chain.stepCount,
+    expectedSeconds: finite(chain.expectedSeconds),
+    medianSeconds: finite(chain.medianSeconds),
+    p90Seconds: finite(chain.p90Seconds),
+    p95Seconds: finite(chain.p95Seconds),
+    steps: chain.steps.map((step) => ({
+      targetCropId: step.targetCropId,
+      familyId: step.familyId,
+      predecessorDepth: step.predecessorDepth,
+      plotCount: step.plotCount,
+      perPlotMin: step.perPlotMin,
+      perPlotMax: step.perPlotMax,
+      chance: step.chance,
+      cycleSeconds: finite(step.cycleSeconds),
+      expectedAttempts: finite(step.expectedAttempts),
+      expectedSeconds: finite(step.expectedSeconds),
+      medianAttempts: finite(step.medianAttempts),
+      medianSeconds: finite(step.medianSeconds),
+      p90Attempts: finite(step.p90Attempts),
+      p90Seconds: finite(step.p90Seconds),
+      p95Attempts: finite(step.p95Attempts),
+      p95Seconds: finite(step.p95Seconds),
+    })),
+  };
+});
+// A crop past the last family has no chain at all, and a family's first crop
+// has no step for it to evolve out of.
+if (planner.evolutionChainPlan(330, saveData, snapshot) !== null) {
+  throw new Error('the upstream planner chains a crop outside the seed families');
+}
+for (const family of seedFamilies) {
+  const empty = planner.evolutionChainPlan(family.start, saveData, snapshot);
+  if (empty?.stepCount !== 0) throw new Error(`crop ${family.start} has no empty chain upstream`);
+}
 
 const payload = {
   source: `the upstream js/stats/systems/w6/farming-planner.js and farming.js at ${'Corgan/idleon-research-optimizer'}`,
@@ -176,6 +232,10 @@ const payload = {
     id: index,
     value: computeCropSC(index, saveData),
   })),
+  evolution: {
+    chains: evolutionChains,
+    familyStarts: seedFamilies.map((family) => family.start),
+  },
 };
 
 if (payload.growthBreakpoints.length !== seedFamilyCount()) {
@@ -185,5 +245,6 @@ if (payload.growthBreakpoints.length !== seedFamilyCount()) {
 writeFileSync(join(root, 'fixtures/farming-signals.json'), `${JSON.stringify(payload, null, 2)}\n`);
 console.log(
   `wrote fixtures/farming-signals.json: ${payload.plots.length} plots, ` +
-    `${payload.curves.length} curves, ${payload.cropScientist.length} Crop Scientist rows`
+    `${payload.curves.length} curves, ${payload.cropScientist.length} Crop Scientist rows, ` +
+    `${payload.evolution.chains.length} evolution chains`
 );

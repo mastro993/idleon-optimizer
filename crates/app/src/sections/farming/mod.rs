@@ -8,11 +8,12 @@
 //! crop each plot should grow, and the allocator spends the account's Land Rank
 //! points off the UI thread through the shared task runner. FM-03 adds the
 //! upstream "Preset Comparison" table — every goal planned from the current
-//! baseline — and the named presets the project document keeps. FM-05 adds the
-//! upstream Overview tab — the priority signals, account multipliers, GMO
-//! thresholds, Crop Scientist bonuses, growth breakpoints and every plot's
-//! overgrowth curve. The evolution chain adds its own tab later in the
-//! milestone.
+//! baseline — and the named presets the project document keeps. FM-04 adds the
+//! Evolution & OG tab — the evolution chain to the target crop, its hardest
+//! remaining steps, the overgrowth stopping advice, every plot's overgrowth
+//! curve and the evolution assignment. FM-05 adds the upstream Overview tab —
+//! the priority signals, account multipliers, GMO thresholds, Crop Scientist
+//! bonuses and growth breakpoints.
 
 mod actions;
 
@@ -35,6 +36,7 @@ mod assignment;
 mod comparison;
 mod curves;
 mod detail;
+mod evolution;
 mod field;
 mod overview;
 mod presets;
@@ -50,15 +52,18 @@ pub(crate) enum Tab {
     Overview,
     /// The full 9×4 field, the plot detail, the assignment and the allocator.
     Plots,
+    /// The evolution chain, its hardest steps and the overgrowth stopping.
+    Evolution,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 2] = [Tab::Overview, Tab::Plots];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Overview, Tab::Plots, Tab::Evolution];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Plots => "plots",
+            Tab::Evolution => "evolution",
         }
     }
 
@@ -66,6 +71,7 @@ impl Tab {
         match self {
             Tab::Overview => "Overview",
             Tab::Plots => "Full Plot Grid",
+            Tab::Evolution => "Evolution & OG",
         }
     }
 
@@ -183,6 +189,7 @@ pub(crate) fn view(
     let tabs = tabs(state, cx);
     let pane = match state.farming.tab {
         Tab::Overview => overview::overview(state, cx),
+        Tab::Evolution => evolution::evolution(state, cx),
         Tab::Plots => {
             let breakpoint = Breakpoint::of(window);
             let plots: Vec<PlotMetrics> = (0..farming::PLOTS)
@@ -197,7 +204,7 @@ pub(crate) fn view(
                 cx,
             );
             let detail = detail::detail_pane(state, &plots[selected], &snapshot, cx);
-            let assignment = assignment::assignment_card(state, cx);
+            let assignment = assignment::assignment_card(&state.farming.assignment, cx);
             let presets = presets::presets_card(state, cx);
             let allocation = allocation::allocation_card(state, cx);
             let comparison = comparison::comparison_card(state, cx);
@@ -387,7 +394,10 @@ mod tests {
     fn the_tab_strip_opens_on_the_overview_and_round_trips_its_ids() {
         let mut state = State::default();
         assert_eq!(state.tab, Tab::Overview);
-        assert_eq!(Tab::ALL.map(Tab::label), ["Overview", "Full Plot Grid"]);
+        assert_eq!(
+            Tab::ALL.map(Tab::label),
+            ["Overview", "Full Plot Grid", "Evolution & OG"]
+        );
         for tab in Tab::ALL {
             assert_eq!(Tab::from_id(tab.id()), Some(tab));
         }
