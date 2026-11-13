@@ -42,6 +42,7 @@ pub(crate) fn pane(
             prefix: "jelly-sim",
             layout: &simulator.layout,
             unlocked: &board::unlocked_slots(&sandbox),
+            highlight: &[],
             obstruction: stage,
             selected,
             action: grid::BoardAction::Simulator,

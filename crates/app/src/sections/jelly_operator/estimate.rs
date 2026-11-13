@@ -28,7 +28,7 @@ pub(crate) fn stat(id: &'static str, label: &'static str, value: f64) -> Statist
 /// A headline that is not a number, in the KPI row's own type scale.
 pub(crate) fn text_kpi(
     id: &'static str,
-    label: &'static str,
+    label: impl Into<String>,
     value: String,
     caption: String,
     cx: &mut Context<AppState>,
@@ -49,7 +49,7 @@ pub(crate) fn text_kpi(
             div()
                 .text_size(px(11.0))
                 .text_color(colors.fg_muted)
-                .child(label.to_string()),
+                .child(label.into()),
         )
         .child(
             div()

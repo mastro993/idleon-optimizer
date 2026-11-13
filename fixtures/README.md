@@ -42,6 +42,14 @@ eight God Ranks. Regenerate it with
 the port action by action. Treat it as frozen for the same reason: it is the oracle's output, not
 this app's.
 
+`jelly.json` is the upstream Jelly Operator calculator's own output for `data.json`: the decoded
+board state and multipliers, the seeded estimate and its first trial, two single simulator operations,
+the progression outlook and five board section plans (one token, three tokens at beam widths 2 and 8,
+a low-risk strategy and a zero-token plan). Regenerate it with
+`node script/jelly-oracle.mjs <upstream-repo>`; `crates/jelly/tests/jelly.rs`,
+`crates/jelly/tests/jelly-estimate.rs` and `crates/jelly/tests/jelly-planner.rs` compare the port
+field for field. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+
 `farming.json` is the upstream Farming planner's own output for one purpose-built save: the
 account snapshot, the plot assignment for all seven objectives and the Land Rank allocation in both
 modes, with the points, scores, levels and change list. Regenerate it with

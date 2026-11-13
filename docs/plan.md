@@ -5,8 +5,9 @@ Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer'
 Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
 the Coral God Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout,
 inventory and formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
-the Clamworks optimizer, the Jelly Operator overview, layout editor and operation simulator, the
-drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial total, the
+the Clamworks optimizer, the Jelly Operator overview, layout editor, operation simulator and section
+planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial
+total, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
 BoneJoePickle and Cglunko done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built, 2 sections planned.** The live breakdown is
@@ -737,8 +738,8 @@ per-meal outcomes and the three forecast scenarios. The Blue Jellyfish donation 
 task runner (LD-04) stays on the roadmap.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
-The Jelly Operator section implements JO-01 and JO-02: the overview, the layout editor and the
-operation simulator. The section decodes the save's own board (`Research[14]`), its progress row,
+The Jelly Operator section implements JO-01, JO-02 and JO-04: the overview, the layout editor, the
+operation simulator and the board section planner. The section decodes the save's own board (`Research[14]`), its progress row,
 the cell EXP and levels, the upgrade levels and the plot tokens, then reads the account systems the
 page multiplies (research grid nodes 185-187, Spelunking palette 1, Legend Talent 41, the Bloodclot
 artifact, arcade 72, Atom 15, the `ban_j` bundle, event shop 56/57, Sushi's `rogBonusQty(63)` and
@@ -760,9 +761,20 @@ from save, and hypothetical board sections that reflow the board through `board:
 page's `normalizeSimulatorLayout`). A run shows the outcome cards, the per-cell contribution table
 and the critical target timeline. `script/jelly-oracle.mjs` also writes two seeded single operations
 (Stronkroid at 5s with `dps-first` revives, and an empty sandbox board), and
-`crates/jelly/tests/jelly-estimate.rs` compares every trial field. The upgrades, bonuses and
-breakdowns (JO-03), the section planner (JO-04) and the coordinator optimizer (JO-05) stay on the
-roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
+`crates/jelly/tests/jelly-estimate.rs` compares every trial field. The sections tab ranks every
+unpurchased plot: `idleon_jelly::planner` ports `planJellySections`, screening each section's
+geometry, completing the board around it with `jellyCompleteLayout` (the one-slot fill, then the new
+large-cell anchors the section opens), keeping the strongest sequences with a bounded non-greedy
+beam, and comparing the finalists with shared-seed trials (`simulateSectionCandidates`,
+`pairedOperationConfidence`, `upgradeMarginalScore`). The strategy presets, objective, EXP target,
+token count, quality profile, beam width and seed are the page's own controls; the plan keeps the
+current board as its baseline and shows the recommended sequence, both boards, the operation
+comparison and both ranked tables. A plan is deterministic for its inputs, and the beam width
+changes which section combinations the search keeps. `script/jelly-oracle.mjs` also writes five plans
+into `fixtures/jelly.json` (one token, three tokens at beam 2 and 8, a low-risk strategy and a
+zero-token plan), and `crates/jelly/tests/jelly-planner.rs` compares every row, layout and operation
+field and holds the planner's legality and reproducibility rules. The upgrades, bonuses and
+breakdowns (JO-03) and the coordinator optimizer (JO-05) stay on the roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
 a save-export timing bug from the page's own local storage, and this app reads the save's shape
 overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).

@@ -972,6 +972,22 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-sim-result', 'jelly: the simulator stores a run', 120000);
     await waitForNode(lane, 'jelly-sim-contribution', 'jelly: the run contribution renders');
     await waitForNode(lane, 'jelly-sim-timeline', 'jelly: the critical timeline renders');
+    // The section planner screens every section, then simulates the finalists.
+    await lane.call('click_element', { id: 'jelly-tab-sections' });
+    await waitForNode(lane, 'jelly-sections', 'jelly: the sections planner opens');
+    await waitForNode(lane, 'jelly-sections-strategy', 'jelly: the strategy select renders');
+    await waitForNode(lane, 'jelly-sections-objective', 'jelly: the objective select renders');
+    await waitForNode(lane, 'jelly-sections-tokens', 'jelly: the token input renders');
+    await waitForNode(lane, 'jelly-sections-quality', 'jelly: the quality select renders');
+    await waitForNode(lane, 'jelly-sections-beam', 'jelly: the beam input renders');
+    await waitForNode(lane, 'jelly-sections-seed', 'jelly: the seed input renders');
+    await lane.call('click_element', { id: 'jelly-sections-run' });
+    await waitForNode(lane, 'jelly-sections-result', 'jelly: the plan stores a result', 180000);
+    await waitForNode(lane, 'jelly-sections-recommended', 'jelly: the recommendation renders');
+    await waitForNode(lane, 'jelly-sections-steps', 'jelly: the purchase sequence renders');
+    await waitForNode(lane, 'jelly-sections-final-board', 'jelly: the recommended board renders');
+    await waitForNode(lane, 'jelly-sections-candidates', 'jelly: the ranked sequences render');
+    await waitForNode(lane, 'jelly-sections-individual', 'jelly: every individual section renders');
   },
   'royal-guardian': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

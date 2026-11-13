@@ -20,6 +20,9 @@
 //! - [`Insights`] is `jellyOperationInsights` and [`surrogate`] is
 //!   `jellyOperationSurrogate`, the deterministic projection the obstruction
 //!   outlook rows use.
+//! - [`planner`] is `planJellySections`: it screens every unpurchased board
+//!   section, completes the board around the strongest, and compares the
+//!   finalists with shared-seed trials.
 //!
 //! The shape overrides the upstream page persists for grid nodes 185 and 187
 //! are not ported: they are a localStorage correction for a save-export timing
@@ -31,6 +34,7 @@ pub mod estimate;
 pub mod insights;
 pub mod metrics;
 pub mod operation;
+pub mod planner;
 pub mod surrogate;
 
 #[cfg(test)]

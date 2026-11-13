@@ -19,12 +19,13 @@ use idleon_jelly::board::{self, Layout};
 use idleon_jelly::data;
 use idleon_ui::format;
 
-/// Where a board click goes: the layout tab's editable save board or the
-/// simulator's sandbox.
+/// Where a board click goes: the layout tab's editable save board, the
+/// simulator's sandbox, or nowhere for a board a result only shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum BoardAction {
     Layout,
     Simulator,
+    ReadOnly,
 }
 
 /// The page's cell pitch and grid padding, in pixels (`JELLY_CELL_PITCH`).
@@ -63,6 +64,8 @@ pub(crate) struct BoardView<'a> {
     pub(crate) prefix: &'static str,
     pub(crate) layout: &'a Layout,
     pub(crate) unlocked: &'a [bool],
+    /// The slots a plan's sections newly unlock, drawn with the page's ring.
+    pub(crate) highlight: &'a [usize],
     pub(crate) obstruction: usize,
     pub(crate) selected: Option<usize>,
     pub(crate) action: BoardAction,
@@ -78,6 +81,7 @@ pub(crate) fn board(
         prefix,
         layout,
         unlocked,
+        highlight,
         obstruction,
         selected,
         action,
@@ -120,7 +124,15 @@ pub(crate) fn board(
                 format!("slot {slot}, column {column}, row {row}"),
             ),
         };
-        let aria = format!("Slot {slot}: {label}, {detail}");
+        let new_section = highlight.contains(&slot);
+        let aria = format!(
+            "Slot {slot}: {label}, {detail}{}",
+            if new_section {
+                ", a new section slot"
+            } else {
+                ""
+            }
+        );
         let hover = format!("Slot {slot} · {label}");
         let tint = cell
             .map(|(_, cell_type)| format::hex(CELL_COLORS[cell_type].0))
@@ -129,7 +141,11 @@ pub(crate) fn board(
         slots.push(
             div()
                 .id(format!("{prefix}-slot-{slot}"))
-                .role(Role::Button)
+                .role(if action == BoardAction::ReadOnly {
+                    Role::Label
+                } else {
+                    Role::Button
+                })
                 .aria_label(aria.clone())
                 .absolute()
                 .left(px(PADDING + column as f32 * PITCH))
@@ -144,6 +160,9 @@ pub(crate) fn board(
                 })
                 .when(PROXIMITY_ANCHORS.contains(&slot), |slot| {
                     slot.border_color(colors.success)
+                })
+                .when(new_section, |slot| {
+                    slot.border_color(format::hex("#ffd166"))
                 })
                 .when(cell.is_some_and(|(anchor, _)| anchor == slot), |slot| {
                     // The core slot carries a small marker, as the page's `.core` does.
@@ -171,12 +190,15 @@ pub(crate) fn board(
                     )
                 })
                 .tooltip(Tooltip::text(hover))
-                .on_click(move |_event, _window, cx| {
-                    let entity = entity.clone();
-                    entity.update(cx, |state, cx| match action {
-                        BoardAction::Layout => state.jelly_click_slot(slot, cx),
-                        BoardAction::Simulator => state.jelly_sim_click_slot(slot, cx),
-                    });
+                .when(action != BoardAction::ReadOnly, |element| {
+                    element.on_click(move |_event, _window, cx| {
+                        let entity = entity.clone();
+                        entity.update(cx, |state, cx| match action {
+                            BoardAction::Layout => state.jelly_click_slot(slot, cx),
+                            BoardAction::Simulator => state.jelly_sim_click_slot(slot, cx),
+                            BoardAction::ReadOnly => {}
+                        });
+                    })
                 })
                 .into_any_element(),
         );
@@ -249,9 +271,10 @@ pub(crate) fn board(
         .id(format!("{prefix}-board"))
         .role(Role::Group)
         .aria_label(format!(
-            "Jelly Operator board, {} cells, {} slots unlocked, palette pick {}",
+            "Jelly Operator board, {} cells, {} slots unlocked, {} new section slots, palette pick {}",
             layout.len(),
             unlocked.iter().filter(|open| **open).count(),
+            highlight.len(),
             selected.map_or("remove mode", |cell_type| data.cell_name(cell_type))
         ))
         .relative()
