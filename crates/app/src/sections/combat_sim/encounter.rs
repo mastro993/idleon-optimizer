@@ -479,8 +479,8 @@ fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
         .child(kpi(
             "combat-obols-fragments",
             "Fragments earned",
-            &format::value(obols.fragments_earned),
-            &format!("{}/hour", format::value(obols.fragments_earned / hours)),
+            &format::number(obols.fragments_earned),
+            &format!("{}/hour", format::number(obols.fragments_earned / hours)),
             muted,
         ))
         .child(kpi(
