@@ -13,6 +13,7 @@
 //! damage-scaled talent reads. [`tree`] turns the evaluated groups into the
 //! shared formula tree's expansion of the total.
 
+mod divinity;
 pub mod overkill;
 mod save;
 pub mod tree;
@@ -233,7 +234,7 @@ const GROUPS: [Spec; 23] = [
     Spec {
         name: "Divinity and Crop Scientist",
         source: "js/stats/systems/w5/divinity.js · computeDivinityMinor + w6/farming.js · computeCropSC(4)",
-        reason: "needs the Divinity minor bonus and its bubble chain (js/stats/systems/w5/divinity.js)",
+        reason: "",
         note: "",
     },
     Spec {

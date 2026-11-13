@@ -362,7 +362,9 @@ impl Decoder<'_> {
         god >= 0.0 && self.god_type(god) == god_type
     }
 
-    fn god_type(&self, god: f64) -> f64 {
+    /// `GodsInfo[god][13]`: the Divinity style a god answers to, `-1` when the
+    /// table does not carry it.
+    pub fn god_type(&self, god: f64) -> f64 {
         self.data
             .god_types
             .get(god as usize)

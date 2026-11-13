@@ -97,6 +97,7 @@ const payload = {
   arenaThresholds: menagerie.arenaCrucibleThresholds(),
   petArenaThresholds: Array.from({ length: 16 }, (_, idx) => Number(lists.RANDOlist[53]?.[idx]) || 0),
   godTypes: lists.GodsInfo.map((row) => Number(row[13]) || 0),
+  godBases: lists.GodsInfo.map((row) => Number(row[3]) || 0),
   jellyReward: lists.Research[47].map(Number),
   stickerBase: lists.Research[25].map(Number),
   dancingCoralBase: lists.Spelunky[24].map(Number),
@@ -158,6 +159,7 @@ const payload = {
   arcaneNoMulti: (await import(join(source, 'js/stats/data/game-constants.js'))).ARCANE_NO_MULTI ? Array.from((await import(join(source, 'js/stats/data/game-constants.js'))).ARCANE_NO_MULTI) : [],
   bubbles: {
     y13: alchemy.bubbleParams(3, 32),
+    y2: alchemy.bubbleParams(3, 21),
     statueStart: alchemy.bubbleParams(3, 2),
     prismaEligible: Number(lists.AlchemyDescription[3][32][10]) === 0,
   },

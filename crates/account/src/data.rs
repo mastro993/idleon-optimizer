@@ -30,6 +30,9 @@ pub struct AccountData {
     pub pet_arena_thresholds: Vec<f64>,
     #[serde(rename = "godTypes")]
     pub god_types: Vec<f64>,
+    /// `GodsInfo[t][3]`: the bonus a Divinity minor link pays at full level.
+    #[serde(rename = "godBases")]
+    pub god_bases: Vec<f64>,
     #[serde(rename = "jellyReward")]
     pub jelly_reward: Vec<f64>,
     #[serde(rename = "stickerBase")]
@@ -162,13 +165,16 @@ pub struct ExoticParam {
 }
 
 /// The alchemy bubbles the account decoder reads: the gallery's
-/// `CODFREY_RULZ_OK` (Kazam 32) and the statue calculator's STARTUE EXP bubble
-/// (`AlchemyDescription[3][2]`).
+/// `CODFREY_RULZ_OK` (Kazam 32), the statue calculator's STARTUE EXP bubble
+/// (`AlchemyDescription[3][2]`) and Divinity's Big P bubble
+/// (`AlchemyDescription[3][21]`).
 #[derive(Debug, Deserialize)]
 pub struct Bubbles {
     pub y13: BubbleParam,
     #[serde(rename = "statueStart")]
     pub statue_start: BubbleParam,
+    /// `Y2ACTIVE`, the bubble Divinity's minor links scale with.
+    pub y2: BubbleParam,
 }
 
 #[derive(Debug, Deserialize)]
@@ -193,6 +199,11 @@ impl AccountData {
         self.arcade
             .get(&index.to_string())
             .map(|(formula, x1, x2)| (formula.as_str(), *x1, *x2))
+    }
+
+    /// `GodsInfo[index][3]`: a god's minor-link base bonus.
+    pub fn god_base(&self, index: usize) -> f64 {
+        self.god_bases.get(index).copied().unwrap_or(0.0)
     }
 
     /// An exotic market upgrade's curve.
