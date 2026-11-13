@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
-    # Docs and assets change no code the gates can see.
+    # Docs and assets change no code the gates can see: no run at all.
     paths-ignore: ["**/*.md", "docs/**", "assets/**"]
   pull_request:
     paths-ignore: ["**/*.md", "docs/**", "assets/**"]
@@ -13,31 +13,65 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # One cheap runner decides whether the expensive matrix has anything to look
+  # at, so a change confined to the harness scripts or the workflow files does
+  # not start four macOS jobs.
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain*'
+              - 'crates/**/data/**'
+              - 'fixtures/**'
+              - '.github/workflows/**'
+
   static:
-    # Both gates run at once; the first failure cancels the other, so a broken
-    # `main` never costs a full clippy run after a one-second fmt failure.
+    needs: changes
+    if: needs.changes.outputs.rust == 'true'
+    # Everything runs at once; the first failure cancels the rest, so a broken
+    # `main` never pays for the remaining macOS jobs.
     strategy:
       fail-fast: true
       matrix:
         include:
           # Formatting needs no build, no cache and no submodule: cheapest runner.
-          - check: fmt
+          - label: fmt
             os: ubuntu-24.04
             submodules: false
+            cache: false
             command: cargo fmt --all -- --check
           # Clippy compiles the workspace, whose GUI comes from the vendored
           # gpui-pre snapshot (objc2/metal), so it runs where a developer does.
-          - check: clippy
+          - label: clippy
             os: macos-latest
             submodules: recursive
+            cache: true
             command: cargo clippy --workspace --all-targets -- -D warnings
-          # Same build tree as clippy: one shared cache bucket, not two that
-          # evict each other under the repository's cache limit.
-          - check: test
+          # Tests shard by test, not by crate, so one cache bucket keeps serving
+          # both shards and clippy (two buckets would evict each other).
+          - label: test 1/2
             os: macos-latest
             submodules: recursive
-            command: cargo test --workspace
-    name: ${{ matrix.check }}
+            cache: true
+            nextest: true
+            command: cargo nextest run --workspace --partition count:1/2
+          - label: test 2/2
+            os: macos-latest
+            submodules: recursive
+            cache: true
+            nextest: true
+            command: cargo nextest run --workspace --partition count:2/2
+    name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -48,7 +82,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.96.0
         with:
           components: clippy, rustfmt
-      - if: matrix.check != 'fmt'
+      # nextest ships the sharding (`--partition count:n/N`); no script of ours.
+      - if: matrix.nextest
+        uses: taiki-e/install-action@nextest
+      - if: matrix.cache
         uses: Swatinem/rust-cache@v2
         with:
           shared-key: macos-workspace
