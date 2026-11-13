@@ -25,6 +25,7 @@ const loader = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const R = await import(join(source, 'js/stats/systems/w7/royal-guardian.js'));
 const O = await import(join(source, 'js/stats/systems/w7/royal-guardian-optimizer.js'));
+const U = await import(join(source, 'js/stats/systems/w7/royal-unit-exp.js'));
 const royalData = await import(join(source, 'js/stats/data/w7/royal-guardian.js'));
 const C = await import(join(source, 'js/stats/systems/w7/royal-collect.js'));
 const sushi = await import(join(source, 'js/stats/systems/w7/sushi.js'));
@@ -639,11 +640,91 @@ const payload = {
     repo: 'Corgan/idleon-research-optimizer',
     files: [
       'js/stats/systems/w7/royal-guardian.js',
+      'js/stats/systems/w7/royal-guardian-optimizer.js',
+      'js/stats/systems/w7/royal-unit-exp.js',
       'js/stats/data/w7/royal-guardian.js',
       'js/stats/data/common/talent.js',
     ],
-    save: 'fixtures/data.json',
+    saves: ['fixtures/data.json', 'fixtures/royal-guardian-plan.json'],
   },
+};
+
+// RG-04: the optimizer's starting metrics and the unit EXP plan, on the small
+// save whose cross-system inputs are all zero. Both sides read the same rows,
+// so no override is needed and a drift here is the port's.
+const planSave = JSON.parse(
+  readFileSync(new URL('../fixtures/royal-guardian-plan.json', import.meta.url), 'utf8'),
+);
+loader.loadSaveData({ data: planSave });
+const P = state.saveData;
+const planMetrics = O.kingdomMetrics(P, {}, { currencyPortfolio: [] });
+const unitExpFigure = (result) => ({
+  map: result.mapIdx,
+  targets: result.targets,
+  pool: result.pool,
+  currentTraders: result.currentTraders,
+  surveyorsUnlocked: result.surveyorsUnlocked,
+  bankedHours: result.bankedHours,
+  savedRanks: result.savedRanks,
+  startRanks: result.startRanks,
+  plan: {
+    status: result.plan.status,
+    etaHours: result.plan.etaHours,
+    reachedAt: result.plan.reachedAt,
+    finalRanks: result.plan.finalRanks,
+    steps: result.plan.steps.map((step) => ({
+      hours: step.hours,
+      traders: step.traders,
+      surveyors: step.surveyors,
+      reason: step.reason,
+      changes: step.changes,
+      packed: step.packed,
+    })),
+  },
+  current: { status: result.current.status, etaHours: result.current.etaHours },
+  savedHours: result.savedHours,
+  transients: result.transients && {
+    counts: result.transients.counts,
+    rows: result.transients.table.map((row) => ({
+      type: row.type,
+      current: row.current,
+      available: row.available,
+      best: row.best,
+    })),
+  },
+});
+const planThresholds = data.ARMORY_UPGRADES
+  .map((upgrade) => Number(upgrade.researchOrder))
+  .filter(Number.isFinite)
+  .sort((a, b) => a - b)
+  .slice(0, R.armoryUnlockOrder().length);
+const planNextThreshold = planThresholds[R.armoryUnlockedCount(P)] ?? null;
+const planMixed = unitExpFigure(
+  U.planRoyalUnitExp(P, 2, {
+    targets: { trading: 2, command: 2 },
+    ext: {},
+    moveTransients: true,
+  }),
+);
+const planTrading = unitExpFigure(
+  U.planRoyalUnitExp(P, 1, { targets: { trading: 3 }, ext: {}, moveTransients: true }),
+);
+
+payload.plan = {
+  metrics: {
+    resourcesPerHour: planMetrics.resourcesPerHour,
+    rankExpPerHour: planMetrics.rankExpPerHour,
+    range: planMetrics.range,
+  },
+  armory: {
+    unlocked: R.armoryUnlockedCount(P),
+    total: R.armoryTotalLevels(P),
+    nextThreshold: planNextThreshold,
+    levelsToNext: planNextThreshold === null
+      ? 0
+      : Math.max(0, Math.ceil(planNextThreshold - R.armoryTotalLevels(P))),
+  },
+  unitExp: { mixed: planMixed, trading: planTrading },
 };
 
 writeFileSync(

@@ -40685,9 +40685,234 @@
   "repo": "Corgan/idleon-research-optimizer",
   "files": [
    "js/stats/systems/w7/royal-guardian.js",
+   "js/stats/systems/w7/royal-guardian-optimizer.js",
+   "js/stats/systems/w7/royal-unit-exp.js",
    "js/stats/data/w7/royal-guardian.js",
    "js/stats/data/common/talent.js"
   ],
-  "save": "fixtures/data.json"
+  "saves": [
+   "fixtures/data.json",
+   "fixtures/royal-guardian-plan.json"
+  ]
+ },
+ "plan": {
+  "metrics": {
+   "resourcesPerHour": 1152.03125,
+   "rankExpPerHour": 17.35,
+   "range": 516
+  },
+  "armory": {
+   "unlocked": 10,
+   "total": 56,
+   "nextThreshold": 70,
+   "levelsToNext": 14
+  },
+  "unitExp": {
+   "mixed": {
+    "map": 2,
+    "targets": {
+     "trading": 2,
+     "command": 2,
+     "military": null
+    },
+    "pool": 1,
+    "currentTraders": 1,
+    "surveyorsUnlocked": true,
+    "bankedHours": 2,
+    "savedRanks": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "startRanks": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "plan": {
+     "status": "reached",
+     "etaHours": 123.36421423796793,
+     "reachedAt": {
+      "trading": 101.92200247326205,
+      "command": 123.36421423796793
+     },
+     "finalRanks": [
+      2,
+      7,
+      2,
+      0,
+      0
+     ],
+     "steps": [
+      {
+       "hours": 0,
+       "traders": 0,
+       "surveyors": 1,
+       "reason": "start",
+       "changes": [
+        {
+         "slot": 0,
+         "from": 1,
+         "to": 3
+        }
+       ],
+       "packed": 512111111
+      },
+      {
+       "hours": 95.15729659090911,
+       "traders": 1,
+       "surveyors": 0,
+       "reason": "intel-rank",
+       "changes": [
+        {
+         "slot": 0,
+         "from": 3,
+         "to": 1
+        }
+       ],
+       "packed": 312111111
+      },
+      {
+       "hours": 101.92200247326205,
+       "traders": 0,
+       "surveyors": 1,
+       "reason": "trading-target",
+       "changes": [
+        {
+         "slot": 0,
+         "from": 1,
+         "to": 3
+        }
+       ],
+       "packed": 512111111
+      }
+     ]
+    },
+    "current": {
+     "status": "no-progress",
+     "etaHours": null
+    },
+    "savedHours": null,
+    "transients": {
+     "counts": {
+      "4": 1,
+      "5": 1,
+      "6": 0
+     },
+     "rows": [
+      {
+       "type": 4,
+       "current": 1,
+       "available": 2,
+       "best": 1
+      },
+      {
+       "type": 5,
+       "current": 0,
+       "available": 1,
+       "best": 1
+      },
+      {
+       "type": 6,
+       "current": 0,
+       "available": 1,
+       "best": 0
+      }
+     ]
+    }
+   },
+   "trading": {
+    "map": 1,
+    "targets": {
+     "trading": 3,
+     "command": null,
+     "military": null
+    },
+    "pool": 2,
+    "currentTraders": 1,
+    "surveyorsUnlocked": true,
+    "bankedHours": 2,
+    "savedRanks": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "startRanks": [
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "plan": {
+     "status": "reached",
+     "etaHours": 2.4141414141414144,
+     "reachedAt": {
+      "trading": 2.4141414141414144
+     },
+     "finalRanks": [
+      3,
+      0,
+      0,
+      1,
+      0
+     ],
+     "steps": [
+      {
+       "hours": 0,
+       "traders": 2,
+       "surveyors": 0,
+       "reason": "start",
+       "changes": [
+        {
+         "slot": 1,
+         "from": 3,
+         "to": 1
+        }
+       ],
+       "packed": 332411111
+      }
+     ]
+    },
+    "current": {
+     "status": "reached",
+     "etaHours": 4.413376186103458
+    },
+    "savedHours": 1.999234771962044,
+    "transients": {
+     "counts": {
+      "4": 2,
+      "5": 1,
+      "6": 1
+     },
+     "rows": [
+      {
+       "type": 4,
+       "current": 1,
+       "available": 2,
+       "best": 2
+      },
+      {
+       "type": 5,
+       "current": 1,
+       "available": 1,
+       "best": 1
+      },
+      {
+       "type": 6,
+       "current": 1,
+       "available": 1,
+       "best": 1
+      }
+     ]
+    }
+   }
+  }
  }
 }

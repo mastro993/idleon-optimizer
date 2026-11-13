@@ -38,10 +38,14 @@ mod connections;
 mod counters;
 mod data;
 mod forecast;
+mod optimizer;
 mod outposts;
 mod ranges;
 mod rates;
 mod resources;
+pub mod sandbox;
+mod shelf;
+mod unit_exp;
 mod upgrades;
 
 #[cfg(test)]
@@ -63,8 +67,15 @@ pub use forecast::{
     Affordable, ClearGhost, Commit, FillGhost, Forecast, ForecastOptions, Ghosts, HORIZON, Missed,
     RankGhost, ResetEvent, Segment, SegmentNode, Summary, Window, WindowSummary,
 };
+pub use optimizer::{Candidate, Caps, Metrics, Objective, Outcome, Request};
 pub use rates::{CollectionInputs, Factor, Rate, TotalStats};
 pub use resources::{NodeCycle, ResourceNode, WindowMetrics, resource_position};
+pub use sandbox::{Move, PROFESSIONS, Sandbox, apply, candidates, changes, validate};
+pub use shelf::{ShelfAction, ShelfPlan, ShelfRequest, ShelfStep};
+pub use unit_exp::{
+    Donor, ExpPlan, ProfessionChange, Refusal, Run, Spec, Status, Step, StepReason, Target,
+    TransientOption, TransientRow, Transients, UnitExpPlan, UnitExpRequest, UnitTargets, step_text,
+};
 pub use upgrades::{
     ArmoryRow, Cost, CostPlan, CostStep, OrbletRow, Owned, PROJECTION_LEVELS, Redux,
 };
@@ -275,7 +286,7 @@ pub struct Counters {
 }
 
 /// The Royal Guardian rows one save carries.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RoyalGuardian {
     /// `RoyalG`: the account rows the armory, orblets and militia live in.
     g: Vec<Value>,
@@ -308,7 +319,7 @@ pub struct RoyalGuardian {
 }
 
 /// The item inventories the Orblet count reads: upstream `itemQuantityData`.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Inventories {
     /// `ChestOrder` with `ChestQuantity`.
     pub(crate) chest: Option<(Vec<Value>, Vec<Value>)>,
@@ -397,6 +408,16 @@ impl RoyalGuardian {
     /// A cell of `Spelunk`.
     fn spelunk_cell(&self, row: usize, cell: usize) -> f64 {
         nested_cell(&self.spelunk, row, cell)
+    }
+
+    /// How many map rows the save carries.
+    pub fn outpost_count(&self) -> usize {
+        self.maps.len()
+    }
+
+    /// One saved `RoyalMaps` cell, for a section that prints the raw row.
+    pub fn map_cell_at(&self, map: usize, cell: usize) -> f64 {
+        self.map_cell(map, cell)
     }
 
     /// Whether the save carries a Royal Guardian character.

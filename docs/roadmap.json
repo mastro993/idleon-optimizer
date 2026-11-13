@@ -2770,7 +2770,7 @@
       "key": "royal-guardian",
       "title": "Royal Guardian Calculator",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.",
       "upstream": [
         "royal-guardian-calc.html",
