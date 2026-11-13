@@ -1106,6 +1106,7 @@ fn the_marble_optimizer_matches_upstream() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn the_simulation_matches_upstream() {
     let fountain = fountain();
     let oracle = oracle();
@@ -1333,6 +1334,7 @@ fn the_marble_optimizer_respects_the_marble_budget() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn the_simulation_is_deterministic() {
     let fountain = fountain();
     let request = fountain::SimRequest {
@@ -1347,6 +1349,7 @@ fn the_simulation_is_deterministic() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn the_simulation_reports_progress_and_honours_cancel() {
     let fountain = fountain();
     let marble = fountain.marble();
