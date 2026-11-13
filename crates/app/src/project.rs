@@ -19,6 +19,7 @@ use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::Tab as FountainTab;
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
+use crate::sections::jelly_operator::Planner as JellyPlanner;
 use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
@@ -241,6 +242,8 @@ pub(crate) struct JellyConfig {
     palette: usize,
     trials: u32,
     seed: u32,
+    /// The Sections planner's controls; its plan itself is a run result.
+    planner: JellyPlanner,
 }
 
 /// The Royal Guardian section's config: the pane, the world the tables list, the
@@ -451,6 +454,7 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             palette: state.jelly_state.selected,
             trials: state.jelly_state.trials,
             seed: state.jelly_state.seed,
+            planner: state.jelly_state.planner.clone(),
         }),
     );
     insert(
@@ -945,8 +949,10 @@ pub(crate) fn assign(
                 warnings.push(
                     "jelly-operator: the saved board no longer fits this save; the save's layout is shown".into(),
                 );
-                state.jelly_state.layout = jelly.layout;
+                state.jelly_state.layout = jelly.layout.clone();
             }
+            state.jelly_state.planner = config.planner;
+            state.jelly_state.planner.adopt(&jelly);
         }
         Config::Jar(config) => {
             state.jar_tab = config.tab;
@@ -2015,9 +2021,33 @@ mod tests {
                 assert_eq!(config.palette, 3);
                 assert_eq!(config.trials, 4);
                 assert_eq!(config.seed, 9);
+                assert_eq!(
+                    config.planner,
+                    crate::sections::jelly_operator::Planner::default(),
+                    "a document from before the planner keeps its defaults"
+                );
             }
             _ => panic!("the jelly config decodes as the jelly variant"),
         }
+    }
+
+    #[test]
+    fn the_jelly_config_round_trips_the_planner_controls() {
+        let planner = crate::sections::jelly_operator::Planner {
+            strategy: idleon_jelly::planner::Strategy::LowRisk,
+            objective: idleon_jelly::planner::Objective::Exp,
+            exp_cell_type: Some(2),
+            tokens: Some(3),
+            quality: idleon_jelly::planner::Quality::Fast,
+            beam_width: 12,
+            seed: 7,
+        };
+        let text = serde_json::to_string(&planner).expect("the planner serializes");
+        let decoded: crate::sections::jelly_operator::Planner =
+            serde_json::from_str(&text).expect("the planner deserializes");
+        assert_eq!(decoded, planner);
+        assert!(text.contains("\"expCellType\":2"), "{text}");
+        assert!(text.contains("\"beamWidth\":12"), "{text}");
     }
 
     #[test]

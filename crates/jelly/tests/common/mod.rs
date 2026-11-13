@@ -68,6 +68,12 @@ pub fn apply(jelly: &mut Jelly, overrides: &Value) {
             jelly.upgrades[id] = level.as_u64().expect("levels are integers") as u32;
         }
     }
+    if let Some(plots) = overrides["plots"].as_array() {
+        jelly.plots = plots
+            .iter()
+            .map(|plot| plot.as_u64().expect("plot ids are integers") as usize)
+            .collect();
+    }
     if let Some(levels) = overrides["cellLevels"].as_array() {
         for (cell_type, level) in levels.iter().enumerate() {
             jelly.cell_level[cell_type] = level.as_u64().expect("levels are integers") as u32;

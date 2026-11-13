@@ -4,9 +4,11 @@
 //! with every cell type placeable, the account snapshot and the seeded operation
 //! estimate with its outlook. JO-02 adds the Simulator tab: a sandbox copy of
 //! the board with the stage, Fever, Stronkroid, revive policy, remove mode,
-//! board sections and one seeded operation through the shared task runner. The
-//! upgrades and breakdowns (JO-03), section planner (JO-04) and coordinator
-//! optimizer (JO-05) are the later features on the same section.
+//! board sections and one seeded operation through the shared task runner.
+//! JO-04 adds the Sections tab: strategy, objective, EXP target, token count,
+//! quality and beam, then the ranked section plan through the same runner. The
+//! upgrades and breakdowns (JO-03) and coordinator optimizer (JO-05) are the
+//! later features on the same section.
 //!
 //! The maths lives in `idleon_jelly`; this module owns the board on
 //! screen and the shared task runner's inputs.
@@ -18,8 +20,10 @@ mod grid;
 mod layout_editor;
 mod outlook;
 mod overview;
+mod planner;
 mod simulator;
 
+pub(crate) use planner::{Planner, RunInputs as PlannerRunInputs};
 pub(crate) use simulator::RunInputs as SimulatorRunInputs;
 pub(crate) use simulator::Simulator;
 
@@ -43,6 +47,7 @@ pub(crate) enum Tab {
     Overview,
     Layout,
     Simulator,
+    Sections,
 }
 
 impl Tab {
@@ -51,6 +56,7 @@ impl Tab {
             Tab::Overview => "overview",
             Tab::Layout => "layout",
             Tab::Simulator => "simulator",
+            Tab::Sections => "sections",
         }
     }
 
@@ -59,6 +65,7 @@ impl Tab {
             Tab::Overview => "Overview",
             Tab::Layout => "Layout",
             Tab::Simulator => "Simulator",
+            Tab::Sections => "Sections",
         }
     }
 }
@@ -86,6 +93,8 @@ pub(crate) struct State {
     pub(crate) seed: u32,
     /// The simulator tab's own sandbox board and knobs.
     pub(crate) simulator: simulator::Simulator,
+    /// The Sections tab's planner controls.
+    pub(crate) planner: Planner,
 }
 
 impl Default for State {
@@ -98,6 +107,7 @@ impl Default for State {
             trials: 32,
             seed: 1,
             simulator: simulator::Simulator::default(),
+            planner: Planner::default(),
         }
     }
 }
@@ -109,6 +119,7 @@ impl State {
         self.selected = 0;
         self.message = String::new();
         self.simulator = simulator::Simulator::new(jelly);
+        self.planner.adopt(jelly);
     }
 
     /// Put the board back to the save's own layout.
@@ -170,7 +181,7 @@ pub(crate) fn view(
     let entity = cx.entity();
     let active = state.jelly_state.tab;
     let tabs = div().id("jelly-tabs").flex().flex_none().gap_2().children(
-        [Tab::Overview, Tab::Layout, Tab::Simulator].map(|tab| {
+        [Tab::Overview, Tab::Layout, Tab::Simulator, Tab::Sections].map(|tab| {
             let entity = entity.clone();
             Button::new(format!("jelly-tab-{}", tab.id()), tab.label())
                 .variant(if tab == active {
@@ -190,6 +201,7 @@ pub(crate) fn view(
         Tab::Overview => overview::overview(state, window, cx, &jelly),
         Tab::Layout => layout_editor::layout_editor(state, window, cx, &jelly),
         Tab::Simulator => simulator::pane(state, window, cx, &jelly),
+        Tab::Sections => planner::pane(state, window, cx, &jelly),
     };
     div()
         .id("jelly-operator")
@@ -252,6 +264,7 @@ fn unavailable(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 mod tests {
     use super::{RunInputs, State, Tab};
     use idleon_jelly::board;
+    use idleon_jelly::planner::{Objective, Strategy};
 
     /// A flat save with the eight cell unlocks and two Plasmids on the board.
     fn save() -> String {
@@ -338,6 +351,44 @@ mod tests {
             state.layout, jelly.layout,
             "a refused place changes nothing"
         );
+    }
+
+    #[test]
+    fn the_planner_starts_from_the_saves_unused_sections() {
+        // The committed account has one unused section token.
+        let text = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../fixtures/data.json"
+        ));
+        let imported = idleon_import::import(text).expect("the fixture imports");
+        let jelly = imported.jelly.expect("the fixture carries a board");
+        assert_eq!(board::slot_purchases_left(&jelly), 1.0);
+        let mut state = State::default();
+        state.adopt(&jelly);
+        assert_eq!(state.planner.tokens, Some(1));
+        assert_eq!(state.planner.objective, Objective::Clear);
+        let options = state.planner.inputs(Some(&jelly), &state.layout).options();
+        assert!(!options.allow_hypothetical_tokens);
+        assert_eq!(options.layout, Some(state.layout.clone()));
+
+        // Asking for more sections than the save owns is hypothetical.
+        state.planner.tokens = Some(3);
+        assert!(
+            state
+                .planner
+                .inputs(Some(&jelly), &state.layout)
+                .options()
+                .allow_hypothetical_tokens
+        );
+
+        // A strategy moves the objective it plays for.
+        state.planner.set_strategy(Strategy::Critical);
+        assert_eq!(state.planner.objective, Objective::Survival);
+
+        // The runner inputs follow every control the plan reads.
+        let before = state.planner.inputs(Some(&jelly), &state.layout);
+        state.planner.beam_width = 12;
+        assert_ne!(before, state.planner.inputs(Some(&jelly), &state.layout));
     }
 
     #[test]

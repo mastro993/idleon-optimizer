@@ -25,7 +25,8 @@ use crate::sections::fountain::State as FountainState;
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
-    RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
+    PlannerRunInputs as JellyPlanRunInputs, RunInputs as JellyRunInputs,
+    SimulatorRunInputs as JellySimRunInputs, State as JellyState,
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
@@ -69,6 +70,7 @@ use idleon_fishing::FishingSave;
 use idleon_fountain::{Fountain, OptimizerPlan, PlanRequest};
 use idleon_import::Shadow;
 use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
+use idleon_jelly::planner::Plan as JellySectionPlan;
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_killroy::Plan as KillroyPlan;
 use idleon_ladle::Ladle;
@@ -387,6 +389,7 @@ pub(crate) struct AppState {
     pub(crate) coral_run: Entity<TaskRunner<CoralPlan, CoralInputs>>,
     /// The shared runner for the Jelly Operator operation estimate.
     pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
+    pub(crate) jelly_plan_run: Entity<TaskRunner<JellySectionPlan, JellyPlanRunInputs>>,
     /// The shared runner for one simulator operation.
     pub(crate) jelly_sim_run: Entity<TaskRunner<JellyTrial, JellySimRunInputs>>,
     /// The shared runner for the cog board optimizer.
@@ -688,6 +691,33 @@ impl AppState {
                     "Jelly estimate ready: {} of {} trials cleared.",
                     estimate.success_count, estimate.trials
                 ))
+            },
+        );
+        let jelly_plan_run = report_run::<JellySectionPlan, JellyPlanRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Ranking the Jelly board sections…"),
+                cancelled_kept: "Jelly section plan cancelled; the previous plan is unchanged.",
+                cancelled_empty: "Jelly section plan cancelled; nothing was stored.",
+            },
+            |_, plan| {
+                Some(match plan.recommended.as_ref() {
+                    Some(row) => format!(
+                        "Jelly section plan ready: {}, {} sequence(s) ranked.",
+                        if row.plot_ids.is_empty() {
+                            "none recommended".to_string()
+                        } else {
+                            row.plot_ids
+                                .iter()
+                                .map(|plot| format!("section {}", plot + 1))
+                                .collect::<Vec<_>>()
+                                .join(" then ")
+                        },
+                        plan.sequences.len()
+                    ),
+                    None => "Jelly section plan ready: no recommendation.".to_string(),
+                })
             },
         );
         let jelly_sim_run = report_run::<JellyTrial, JellySimRunInputs>(
@@ -1034,6 +1064,7 @@ impl AppState {
             killroy_run,
             coral_run,
             jelly_run,
+            jelly_plan_run,
             jelly_sim_run,
             cog_run,
             cog_perfect_run,

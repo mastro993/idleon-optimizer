@@ -69,6 +69,7 @@ pub(crate) fn layout_editor(
                                 prefix: "jelly",
                                 layout: &layout,
                                 unlocked: &idleon_jelly::board::unlocked_slots(jelly),
+                                highlight: &[],
                                 obstruction: jelly.progress.obstruction,
                                 selected: Some(state.jelly_state.selected),
                                 action: grid::BoardAction::Layout,

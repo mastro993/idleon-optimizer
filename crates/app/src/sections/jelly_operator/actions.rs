@@ -1,10 +1,13 @@
 //! What the window does when the jelly operator section is edited or run.
 
-use crate::sections::jelly_operator::{Simulator as JellySimulator, Tab as JellyTab};
+use crate::sections::jelly_operator::{
+    Planner as JellyPlanner, Simulator as JellySimulator, Tab as JellyTab,
+};
 use crate::state::AppState;
 use gpui::{App, Context};
 use idleon_common::{Control, Progress};
 use idleon_jelly::operation::{RevivePolicy, simulate as simulate_jelly_operation};
+use idleon_jelly::planner::{Objective, Plan as JellyPlan, Quality, Strategy};
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_ui::runner::TaskState;
 
@@ -245,6 +248,99 @@ impl AppState {
         self.cancel_run(
             self.jelly_sim_run.clone(),
             "Cancelling the Jelly simulation…",
+            cx,
+        );
+    }
+
+    /// What the shared Jelly section plan runner shows against the controls and
+    /// the board on screen.
+    pub(crate) fn jelly_plan_task(&self, cx: &App) -> TaskState<JellyPlan> {
+        let inputs = self
+            .jelly_state
+            .planner
+            .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
+        self.jelly_plan_run.read(cx).state(&inputs)
+    }
+
+    /// Apply one planner control edit.
+    fn edit_jelly_planner(&mut self, cx: &mut Context<Self>, edit: impl FnOnce(&mut JellyPlanner)) {
+        edit(&mut self.jelly_state.planner);
+        cx.notify();
+    }
+
+    /// The planner's strategy, which also moves the objective it plays for.
+    pub(crate) fn set_jelly_plan_strategy(&mut self, strategy: Strategy, cx: &mut Context<Self>) {
+        self.edit_jelly_planner(cx, |planner| planner.set_strategy(strategy));
+    }
+
+    /// The planner's objective.
+    pub(crate) fn set_jelly_plan_objective(
+        &mut self,
+        objective: Objective,
+        cx: &mut Context<Self>,
+    ) {
+        self.edit_jelly_planner(cx, |planner| planner.objective = objective);
+    }
+
+    /// The cell type the EXP objective maximizes; `None` is total EXP.
+    pub(crate) fn set_jelly_plan_exp_cell_type(
+        &mut self,
+        cell_type: Option<usize>,
+        cx: &mut Context<Self>,
+    ) {
+        self.edit_jelly_planner(cx, |planner| planner.exp_cell_type = cell_type);
+    }
+
+    /// How many board sections the plan unlocks.
+    pub(crate) fn set_jelly_plan_tokens(&mut self, tokens: usize, cx: &mut Context<Self>) {
+        self.edit_jelly_planner(cx, |planner| planner.tokens = Some(tokens.clamp(1, 40)));
+    }
+
+    /// The planner's screening quality.
+    pub(crate) fn set_jelly_plan_quality(&mut self, quality: Quality, cx: &mut Context<Self>) {
+        self.edit_jelly_planner(cx, |planner| planner.quality = quality);
+    }
+
+    /// The combination's beam width.
+    pub(crate) fn set_jelly_plan_beam(&mut self, beam_width: usize, cx: &mut Context<Self>) {
+        self.edit_jelly_planner(cx, |planner| planner.beam_width = beam_width.clamp(2, 24));
+    }
+
+    /// The seed the shared-seed trials derive from.
+    pub(crate) fn set_jelly_plan_seed(&mut self, seed: u32, cx: &mut Context<Self>) {
+        self.edit_jelly_planner(cx, |planner| planner.seed = seed);
+    }
+
+    /// Rank the board sections off the UI thread through the shared runner.
+    pub(crate) fn run_jelly_plan(&mut self, cx: &mut Context<Self>) {
+        let inputs = self
+            .jelly_state
+            .planner
+            .inputs(self.jelly.as_ref(), &self.jelly_state.layout);
+        let Some(jelly) = inputs.jelly.clone() else {
+            self.set_status("Jelly sections: import a save with a board first.", cx);
+            return;
+        };
+        let options = inputs.options();
+        let tokens = options.tokens.unwrap_or(0);
+        self.start_run(
+            self.jelly_plan_run.clone(),
+            format!("Ranking the Jelly board sections ({tokens} token(s))…"),
+            inputs,
+            move |_inputs, report| {
+                JellyPlan::run_with(&jelly, options, |progress| {
+                    report(progress) == Control::Continue
+                })
+            },
+            cx,
+        );
+    }
+
+    /// Ask a running section plan to stop at its next report.
+    pub(crate) fn cancel_jelly_plan(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.jelly_plan_run.clone(),
+            "Cancelling the Jelly section plan…",
             cx,
         );
     }

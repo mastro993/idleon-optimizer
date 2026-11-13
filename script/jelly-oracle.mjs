@@ -5,9 +5,9 @@
 //
 // Every case runs `js/stats/systems/w7/jelly-operator.js` itself: the layout,
 // its metrics, the seeded Monte Carlo estimate, the simulator's single seeded
-// operation and the progression insights. A case may override the save's Fever,
-// upgrade levels, cell levels and layout; the overrides are written to the
-// fixture and replayed by the Rust test.
+// operation, the progression insights and the board section plan. A case may
+// override the save's Fever, upgrade levels, cell levels and layout; the
+// overrides are written to the fixture and replayed by the Rust test.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -40,6 +40,7 @@ function patched(overrides) {
     for (const [id, level] of Object.entries(overrides.upgrades)) upgrades[Number(id)] = level;
     S.research[17] = upgrades;
   }
+  if (overrides.plots) S.research[18] = overrides.plots.slice();
   if (overrides.cellLevels) S.research[16] = overrides.cellLevels;
   if (overrides.cellExp) S.research[15] = overrides.cellExp;
   if (overrides.layout) {
@@ -223,6 +224,83 @@ function simulationOf(S, layout, options) {
   return { valid: trial.valid, reason: trial.reason || '', trial: trialOf(trial) };
 }
 
+/// The operation summary a section plan row keeps: `stripTrialResults` without
+/// the per-trial records the planner only uses while ranking.
+function operationSummaryOf(operation) {
+  if (!operation) return null;
+  return {
+    valid: operation.valid,
+    reason: operation.reason || '',
+    trials: operation.trials,
+    seed: operation.seed,
+    successCount: operation.successCount,
+    clearProbability: operation.clearProbability,
+    clearProbabilityLow: operation.clearProbabilityLow,
+    clearProbabilityHigh: operation.clearProbabilityHigh,
+    meanTime: operation.meanTime,
+    meanDamage: operation.meanDamage,
+    meanDamageStandardError: operation.meanDamageStandardError,
+    meanBloodcells: operation.meanBloodcells,
+    meanCellExp: operation.meanCellExp,
+    meanCellExpByType: operation.meanCellExpByType,
+    meanCriticalTime: operation.meanCriticalTime,
+    meanBossAttacks: operation.meanBossAttacks,
+  };
+}
+
+function sectionPlanOf(S, options) {
+  const plan = J.planJellySections(S, {
+    ...options,
+    layout: J.jellyLayoutFromSave(S),
+  });
+  const rowOf = (row) => row == null ? null : {
+    plotId: row.plotId ?? null,
+    start: row.start ?? null,
+    width: row.width ?? null,
+    height: row.height ?? null,
+    plotIds: row.plotIds,
+    newUsableSlots: row.newUsableSlots,
+    newSlots: row.newSlots,
+    proximitySlots: row.proximitySlots,
+    newlyLegalFootprintPlacements: row.newlyLegalFootprintPlacements,
+    // A single section's completed board is compared by key; the simulated
+    // sequences carry the whole map, so the test can also validate it.
+    layout: row.plotId == null ? row.layout : undefined,
+    layoutKey: row.layout ? J.jellyLayoutKey(row.layout) : '',
+    proxyScore: row.proxyScore,
+    proxyGain: row.proxyGain,
+    operation: operationSummaryOf(row.operation),
+    objectiveValue: row.objectiveValue ?? null,
+    objectiveGain: row.objectiveGain ?? null,
+    gainPerSlot: row.gainPerSlot ?? null,
+    confidence: row.confidence,
+    chanceBeatsBaseline: row.chanceBeatsBaseline,
+    simulationTrials: row.simulationTrials ?? null,
+    finalist: row.finalist ?? null,
+  };
+  return {
+    objective: plan.objective,
+    expCellType: plan.expCellType,
+    quality: plan.quality,
+    qualityProfile: plan.qualityProfile,
+    strategy: plan.strategy,
+    tokens: plan.tokens,
+    requestedTokens: plan.requestedTokens,
+    availableTokens: plan.availableTokens,
+    baselineLayout: plan.baselineLayout,
+    baselineUnlockedSlots: plan.baselineUnlockedSlots,
+    baselineObstruction: plan.baselineObstruction,
+    baselineOperation: operationSummaryOf(plan.baselineOperation),
+    plots: plan.plots.map(rowOf),
+    sequences: plan.sequences.map(rowOf),
+    recommendedSequence: rowOf(plan.recommendedSequence),
+    recommendedPlotIds: plan.recommendedPlotIds,
+    finalLayout: plan.finalLayout,
+    finalOperation: operationSummaryOf(plan.finalOperation),
+    note: plan.note,
+  };
+}
+
 function insightsOf(S, layout, operation) {
   const insights = J.jellyOperationInsights(operation, S, { layout });
   return {
@@ -260,6 +338,14 @@ function insightsOf(S, layout, operation) {
     })),
   };
 }
+
+/// Eight unpurchased plots, so a multi-token plan screens a real beam without
+/// the committed save's twenty-five sections making the case slow.
+const SECTION_PLOTS = {
+  plots: Array.from({ length: 40 }, (_, plot) => plot).filter(
+    (plot) => ![11, 39, 1, 29, 36, 6, 21, 12].includes(plot),
+  ),
+};
 
 const cases = [
   {
@@ -325,6 +411,68 @@ const cases = [
     simulation: { seed: 4, useRoid: false, roidTiming: 'none', revivePolicy: 'none' },
   },
   {
+    name: 'sections-single',
+    overrides: {},
+    sections: { tokens: 1, quality: 'fast', seed: 5 },
+  },
+  {
+    name: 'sections-beam-narrow',
+    overrides: SECTION_PLOTS,
+    sections: {
+      tokens: 3,
+      allowHypotheticalTokens: true,
+      quality: 'fast',
+      seed: 5,
+      beamWidth: 2,
+    },
+  },
+  {
+    name: 'sections-beam-wide',
+    overrides: SECTION_PLOTS,
+    sections: {
+      tokens: 3,
+      allowHypotheticalTokens: true,
+      quality: 'fast',
+      seed: 5,
+      beamWidth: 8,
+    },
+  },
+  {
+    name: 'sections-low-risk',
+    overrides: SECTION_PLOTS,
+    sections: {
+      tokens: 1,
+      allowHypotheticalTokens: true,
+      quality: 'fast',
+      seed: 9,
+      strategy: 'low-risk',
+      objective: 'clear',
+    },
+  },
+  {
+    name: 'sections-zero',
+    overrides: SECTION_PLOTS,
+    sections: { tokens: 0, quality: 'fast', seed: 5 },
+  },
+  {
+    name: 'sections-exp',
+    overrides: SECTION_PLOTS,
+    sections: {
+      tokens: 1,
+      allowHypotheticalTokens: true,
+      quality: 'fast',
+      seed: 7,
+      strategy: 'exp',
+      objective: 'exp',
+      expCellType: 1,
+    },
+  },
+  {
+    name: 'sections-dps',
+    overrides: SECTION_PLOTS,
+    sections: { tokens: 0, quality: 'fast', seed: 5, objective: 'dps' },
+  },
+  {
     name: 'locked-cell',
     overrides: {
       obstruction: 0,
@@ -372,7 +520,11 @@ const payload = {
       output.simulationOptions = entry.simulation;
       output.simulation = simulationOf(S, layout, entry.simulation);
     }
-    if (!entry.estimate && !entry.simulation) {
+    if (entry.sections) {
+      output.sectionsOptions = entry.sections;
+      output.sections = sectionPlanOf(S, entry.sections);
+    }
+    if (!entry.estimate && !entry.simulation && !entry.sections) {
       const validation = J.jellyValidateLayout(layout, S);
       output.validation = { valid: validation.valid, reason: validation.reason };
     }
@@ -395,6 +547,12 @@ for (const entry of payload.cases) {
     console.log(
       `${entry.name}: ${entry.simulation.valid ? 'valid' : entry.simulation.reason}, ` +
         `${entry.simulation.trial.endedBy}, ${entry.simulation.trial.damage.toFixed(0)} damage`,
+    );
+  } else if (entry.sections) {
+    console.log(
+      `${entry.name}: tokens ${entry.sections.tokens}, ` +
+        `${entry.sections.sequences.length} sequence(s), ` +
+        `recommended ${entry.sections.recommendedPlotIds.join(',') || 'none'}`,
     );
   } else {
     console.log(`${entry.name}: ${entry.validation.valid ? 'valid' : entry.validation.reason}`);
