@@ -112,6 +112,7 @@ jobs:
             cache: true
             nextest: true
             command: cargo nextest run --workspace --run-ignored only
-    name: ${{ matrix.label }}
+    # A skipped job never expands `matrix.label`, so the name is literal.
+    name: simulations
     runs-on: ${{ matrix.os }}
     steps: *steps
