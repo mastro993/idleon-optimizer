@@ -16,6 +16,16 @@ impl AppState {
         self.damage_context_changed(cx);
     }
 
+    /// Open one of the three damage layer tabs.
+    pub(crate) fn set_damage_layer(
+        &mut self,
+        layer: idleon_damage::LayerId,
+        cx: &mut Context<Self>,
+    ) {
+        self.damage.select_layer(layer);
+        cx.notify();
+    }
+
     /// A damage context change refreshes the summary the page shows.
     pub(crate) fn damage_context_changed(&mut self, cx: &mut Context<Self>) {
         let Some(snapshot) = self.damage.snapshot.as_ref() else {

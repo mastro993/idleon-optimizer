@@ -3006,6 +3006,33 @@ const INTERACTIONS = {
     );
     await waitForNode(lane, 'damage-game', 'damage: the summary cards render');
     await waitForNode(lane, 'damage-mastery-bar', 'damage: the mastery bar renders');
+    // The layer tabs are always there; without the shared stat pipeline the
+    // selected layer reads a dash and the descriptor's note names the gap.
+    await waitForNode(lane, 'damage-layer-tabs', 'damage: the three layer tabs render');
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'damage-layer') ?? '').startsWith('DDL0: Base Damage: ') &&
+        (labelOf(nodes, 'damage-layer-value') ?? '') === '—' &&
+        (labelOf(nodes, 'damage-layer-note') ?? '').includes('shared stat pipeline'),
+      'damage: the base layer names the missing stat pipeline',
+    );
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'damage-mastery-gap') ?? '').includes('shared stat pipeline'),
+      'damage: the mastery breakdown names the missing stat pipeline',
+    );
+    // A layer switch moves the card to that layer's upstream title.
+    await lane.call('click_element', { id: 'segment-1' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'damage-layer') ?? '').startsWith(
+          'DDL1: Percentage Damage Multiplier: ',
+        ),
+      'damage: the layer tabs switch to the percentage multiplier',
+    );
     // A flat save carries neither the companion roster nor the server vote, so
     // the page flags the partial import the descriptor names.
     await waitFor(

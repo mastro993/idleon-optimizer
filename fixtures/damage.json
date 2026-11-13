@@ -19,11 +19,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 1.544328446783761e+31,
       "min": 1.235462757427009e+31,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 24314521.29296178,
-        "percent": 33196799.975627754,
-        "multiplier": 19132764507064010
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 24314521.29296178,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 4591588409.642382
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 33196799.975627754,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 14592923047.441711
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 19132764507064010,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 2705975188164973000
+        }
       }
     },
     {
@@ -34,11 +80,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 7.585578379892645e+30,
       "min": 6.068462703914117e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 19752050.929664984,
-        "percent": 30142365.878441412,
-        "multiplier": 12740872400559864
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 19752050.929664984,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 3497948085.403932
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 30142365.878441412,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 11658870961.523981
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 12740872400559864,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 6018711621255233000
+        }
       }
     },
     {
@@ -49,11 +141,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 5.844959404227181e+30,
       "min": 4.675967523381745e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 4.483841318260782,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 13066097.733933363,
-        "percent": 45325234.69187677,
-        "multiplier": 9869508723463062
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 13066097.733933363,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 2036193379.5697002
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 45325234.69187677,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 30106681703.789516
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 9869508723463062,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 2071192922547020000
+        }
       }
     },
     {
@@ -64,11 +202,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.606256044034339e+30,
       "min": 3.6850048352274715e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0.16140495867768595,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 12993649.993214315,
-        "percent": 34794874.77777009,
-        "multiplier": 10188297855213528
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 12993649.993214315,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 2021419757.3309846
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 34794874.77777009,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 16279028273.71858
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 10188297855213528,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 3331740732045678000
+        }
       }
     },
     {
@@ -79,11 +263,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 5.583888037206896e+30,
       "min": 4.467110429765517e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 4.483841318260782,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 12574491.052508958,
-        "percent": 44647612.62432509,
-        "multiplier": 9945990589766314
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 12574491.052508958,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 1936446035.2167115
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 44647612.62432509,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 29070289355.87127
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 9945990589766314,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 2324623238031077400
+        }
       }
     },
     {
@@ -94,11 +324,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 6.848438327401632e+30,
       "min": 5.478750661921305e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 19647537.58787444,
-        "percent": 26836850.825269666,
-        "multiplier": 12988286764344070
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 19647537.58787444,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 3473736857.9412627
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 26836850.825269666,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 8898989382.159418
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 12988286764344070,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 3108458858164355000
+        }
       }
     },
     {
@@ -109,11 +385,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.8406572570692063e+30,
       "min": 3.872525805655365e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0.1566839378238342,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 13553684.655018644,
-        "percent": 30680970.36486748,
-        "multiplier": 11640666989990760
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 13553684.655018644,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 2136275956.6194031
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 30680970.36486748,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 12149105388.67293
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 11640666989990760,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 1077144068648174300
+        }
       }
     },
     {
@@ -124,11 +446,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 8.166503534037957e+28,
       "min": 6.533202827230365e+28,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 769023.2345870262,
-        "percent": 15036848.06700137,
-        "multiplier": 7062197866643189
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 769023.2345870262,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 48915931.03091827
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 15036848.06700137,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 2313571149.5628834
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 7062197866643189,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 14526108729170088
+        }
       }
     },
     {
@@ -139,11 +507,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.119905613126668e+30,
       "min": 3.295924490501335e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 14079770.658878684,
-        "percent": 27356806.633516185,
-        "multiplier": 10696120452074808
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 14079770.658878684,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 2245513213.9453063
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 27356806.633516185,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 9305114828.902529
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 10696120452074808,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 3164119941137571000
+        }
       }
     },
     {
@@ -154,11 +568,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 6.099107754101553e+30,
       "min": 4.8792862032812425e+30,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 4.483841318260782,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 13912552.031961665,
-        "percent": 44534322.41996945,
-        "multiplier": 9843842481112636
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 13912552.031961665,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 2210652783.106686
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 44534322.41996945,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 28899033962.970387
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 9843842481112636,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 1992094102117308200
+        }
       }
     },
     {
@@ -169,11 +629,57 @@
       "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 2.904065019753113e+28,
       "min": 2.3232520158024904e+28,
-      "mastery": 0.8,
+      "mastery": {
+        "name": "Mastery (min/max ratio)",
+        "value": 0.8,
+        "cap": 0.8,
+        "base": 0.35,
+        "penalty": 0,
+        "terms": [
+          {
+            "name": "Mastery Bubble",
+            "value": 0.5458304589041308,
+            "format": "raw"
+          },
+          {
+            "name": "Card Bonus: Mastery",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Talent: Mastery Up",
+            "value": 0,
+            "format": "raw"
+          },
+          {
+            "name": "Combined Item Sources: MASTERY",
+            "value": 0,
+            "format": "raw"
+          }
+        ]
+      },
       "layers": {
-        "base": 609019.6965044796,
-        "percent": 10325949.879174203,
-        "multiplier": 4617904894750015
+        "base": {
+          "name": "Base Damage (with softcap)",
+          "value": 609019.6965044796,
+          "note": "",
+          "format": "raw",
+          "preSoftcap": 35820088.25825539
+        },
+        "percent": {
+          "name": "Percentage Damage Multiplier",
+          "value": 10325949.879174203,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 965350840.090895
+        },
+        "multiplier": {
+          "name": "Multiplicative Damage Bonuses",
+          "value": 4617904894750015,
+          "note": "after softcaps",
+          "format": "x",
+          "preSoftcap": 4369777099677177.5
+        }
       }
     }
   ],

@@ -41,6 +41,71 @@ const layer = (children, prefix) => {
   return child ? Number(child.val) : null;
 };
 
+// `damage-calc.html` builds the three DDL cards from the descriptor's children:
+// the title, the `note` under it and the `_debug.preSoftcap` value the card's
+// second line prints. The mastery tree is the `Mastery (min/max ratio)` child
+// and its four terms; its formula's base and penalty come from the descriptor's
+// own expansion (`formulaDetails`).
+const recordLayer = (children, prefix, preSoftcapKey = 'preSoftcap') => {
+  const child = children.find((node) => String(node.name).startsWith(prefix));
+  if (!child) throw new Error(`the descriptor left out ${prefix}`);
+  return {
+    name: String(child.name),
+    value: Number(child.val),
+    note: String(child.note ?? ''),
+    format: String(child.fmt ?? 'raw'),
+    // DDL0's `_debug.preSoftcap` is the with-softcap value; `preSoftcapRaw` is
+    // the one before the chain (the page labels it 'Base Damage Before Softcaps
+    // and Food'), so the card's note compares like the other two layers.
+    preSoftcap: Number(child._debug?.[preSoftcapKey] ?? 0),
+  };
+};
+
+const findNode = (node, name) => {
+  if (!node) return null;
+  if (String(node.name).startsWith(name)) return node;
+  for (const child of node.children ?? []) {
+    const found = findNode(child, name);
+    if (found) return found;
+  }
+  return null;
+};
+
+const resolveExpanded = (character, map) =>
+  createStatContext({
+    charIdx: character,
+    mapIdx: map,
+    saveData,
+    mapBon: data.mapBonData,
+    layer1: { formulaDetails: true },
+  }).resolve('damage');
+
+const recordMastery = (children, expanded) => {
+  const node = children.find((child) => String(child.name).startsWith('Mastery'));
+  if (!node) throw new Error('the descriptor left out the mastery node');
+  const minDamage = (expanded.children ?? []).find((child) =>
+    String(child.name).startsWith('Min Damage')
+  );
+  const detail = findNode(minDamage, 'Mastery (min/max ratio)');
+  if (!detail) throw new Error('the expanded damage tree left out the mastery node');
+  const base = findNode(detail, 'Base Mastery minus talent');
+  const penalty = findNode(detail, 'Talent Mastery penalty');
+  const cap = (detail.children ?? []).find((child) => Number(child.val) === 0.8);
+  if (!base || !penalty || !cap) throw new Error('the mastery detail tree changed shape');
+  return {
+    name: String(node.name),
+    value: Number(node.val),
+    cap: Number(cap.val),
+    base: Number((base.children ?? [])[0]?.val),
+    penalty: Number(penalty.val),
+    terms: (node.children ?? []).map((child) => ({
+      name: String(child.name),
+      value: Number(child.val),
+      format: String(child.fmt ?? 'raw'),
+    })),
+  };
+};
+
 const cases = [];
 for (let character = 0; character < characters; character += 1) {
   const map = Number(data.currentMapData?.[character]) || 0;
@@ -55,11 +120,11 @@ for (let character = 0; character < characters; character += 1) {
     reason: String(result.reason ?? ''),
     max: layer(children, 'Max Damage'),
     min: layer(children, 'Min Damage'),
-    mastery: layer(children, 'Mastery'),
+    mastery: recordMastery(children, resolveExpanded(character, map)),
     layers: {
-      base: layer(children, 'Base Damage'),
-      percent: layer(children, 'Percentage Damage Multiplier'),
-      multiplier: layer(children, 'Multiplicative Damage Bonuses'),
+      base: recordLayer(children, 'Base Damage', 'preSoftcapRaw'),
+      percent: recordLayer(children, 'Percentage Damage Multiplier'),
+      multiplier: recordLayer(children, 'Multiplicative Damage Bonuses'),
     },
   });
 }
