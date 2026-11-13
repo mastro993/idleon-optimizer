@@ -106,8 +106,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - label: simulations
-            os: macos-latest
+          - os: macos-latest
             submodules: recursive
             cache: true
             nextest: true
