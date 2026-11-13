@@ -4,9 +4,9 @@
 // Sources, all in `Corgan/idleon-research-optimizer`:
 // - `js/stats/data/w7/jelly-operator.js`: `CELL_NAMES`, `CELL_BASE_COOLDOWNS`,
 //   `CELL_BASE_DAMAGE`, `jellyUpgradeData` (`JellyUPG`), `jellyUpgradeOrder`
-//   (`Research[44]`), `jellyRewardData` (`Research[45..47]`), `cellFootprint`
-//   (`Research[49]`), `jellySlotPlots` (`Research[50]`) and
-//   `jellyProjectileData` (`Research[51]`).
+//   (`Research[44]`), `jellyRewardData` and `jellyRewardTarget`
+//   (`Research[45..47]`), `cellFootprint` (`Research[49]`), `jellySlotPlots`
+//   (`Research[50]`) and `jellyProjectileData` (`Research[51]`).
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -47,6 +47,7 @@ const payload = {
   upgradeOrder: data.jellyUpgradeOrder().map(Number),
   rewards: data.jellyRewards().map((reward) => ({
     name: reward.name,
+    target: data.jellyRewardTarget(reward.index),
     description: reward.description,
     value: reward.value,
   })),

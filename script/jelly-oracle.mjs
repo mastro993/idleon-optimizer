@@ -23,6 +23,9 @@ writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 const loader = await import(join(source, 'js/save/loader.js'));
 const state = await import(join(source, 'js/state.js'));
 const J = await import(join(source, 'js/stats/systems/w7/jelly-operator.js'));
+const D = await import(join(source, 'js/stats/data/w7/jelly-operator.js'));
+const { CELL_NAMES } = D;
+const { fmtVal } = await import(join(source, 'js/renderers/format.js'));
 
 const save = JSON.parse(
   readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'),
@@ -301,6 +304,154 @@ function sectionPlanOf(S, options) {
   };
 }
 
+// `gameDescription` and `rewardEffectText` are `jelly-operator-calc.html`'s own
+// functions, copied expression for expression; the page's `fmt` is `fmtVal`.
+function gameDescription(description, value) {
+  const amount = Number(value) || 0;
+  return String(description || '')
+    .replace(/}/g, (1 + amount / 100).toFixed(2))
+    .replace(/[{$]/g, fmtVal(amount))
+    .replace(/@/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function rewardEffectText(reward) {
+  const description = String(reward.description || '');
+  const value = Number(reward.value) || 0;
+  if (/Nothing yet/i.test(description)) return 'No effect';
+  if (reward.index === 0) return `${(1 + value / 100).toFixed(2)}x Research EXP; +2 Jelly slots`;
+  if (reward.index === 1) return `${(1 + value / 100).toFixed(2)}x Rank EXP; +2 Jelly slots`;
+  if (reward.index === 8) return `+${fmtVal(value)}% Crystal chance; ${(1 + value / 100).toFixed(2)}x Minehead currency`;
+  if (/^Unlocks/i.test(description)) return 'Unlock';
+  if (/slot unlock|Golden Tile|weekly Exotic|Regal Mob|Research Point|Talent PTS|Cooking Mastery|Max LV|maximum possible roll/i.test(description)) return `+${fmtVal(value)}`;
+  if (/0\.01x higher/i.test(description)) return `+${(value / 100).toFixed(2)}x`;
+  if (/0\.1% Chance/i.test(description)) return `+${(value / 10).toFixed(1)}%`;
+  if (/}x/i.test(description)) return `${(1 + value / 100).toFixed(2)}x`;
+  if (/%/i.test(description)) return `+${fmtVal(value)}%`;
+  return `+${fmtVal(value)}`;
+}
+
+/// The upgrade list: `jellyUpgradeDisplay` joined with the slot's price and
+/// status for the forty slots `upgradesHtml` prints.
+function upgradesOf(S) {
+  const order = D.jellyUpgradeOrder();
+  return order.slice(0, 40).map((id, slot) => {
+    const display = J.jellyUpgradeDisplay(S, id);
+    const status = J.jellyUpgradeStatus(S, slot);
+    return {
+      order: slot,
+      id,
+      name: display.name,
+      description: display.description,
+      level: display.level,
+      quantity: display.quantity,
+      doubled: display.doubled,
+      maxLevel: display.maxLevel,
+      effectText: display.effectText,
+      perLevelText: display.perLevelText,
+      sourceNote: display.sourceNote,
+      cost: J.jellyUpgradeCost(S, slot),
+      status: {
+        requiredResearchLevel: status.requiredResearchLevel,
+        researchLevel: status.researchLevel,
+        levelVisible: status.levelVisible,
+        prerequisiteMet: status.prerequisiteMet,
+        belowMax: status.belowMax,
+        affordable: status.affordable,
+        canBuy: status.canBuy,
+      },
+    };
+  });
+}
+
+/// The reward table: `jellyRewards` plus the page's target, description and
+/// effect wording for every obstruction reward.
+function bonusesOf(S) {
+  const obstruction = J.jellyProgress(S).obstruction;
+  return D.jellyRewards().map((reward) => ({
+    index: reward.index,
+    name: reward.name,
+    target: D.jellyRewardTarget(reward.index),
+    description: gameDescription(reward.description, reward.value),
+    value: reward.value,
+    active: obstruction > reward.index,
+    effectText: rewardEffectText(reward),
+  }));
+}
+
+/// One breakdown factor as the port's tree node: its label, its number, the
+/// format the page prints it with and its own children.
+function factorOf(factor) {
+  return {
+    label: factor.label,
+    value: factor.value,
+    unit: factor.unit || '',
+    children: (factor.children || []).map(factorOf),
+  };
+}
+
+function multiplierTree(label, breakdown) {
+  return {
+    label,
+    value: breakdown.value,
+    unit: 'x',
+    children: (breakdown.factors || []).map(factorOf),
+  };
+}
+
+/// The six breakdown trees the page's Breakdowns tab draws, plus its per-cell
+/// table, for the board the save carries.
+function breakdownsOf(S, layout) {
+  const fever = J.jellyProgress(S).fever;
+  const damage = J.jellyCellDamageBreakdown(S, { fever });
+  const speed = J.jellyCellSpeedBreakdown(S, fever);
+  const exp = J.jellyCellExpBreakdown(S, fever);
+  const bloodcells = J.jellyBloodcellBreakdown(S, fever);
+  const layoutBreakdown = J.jellyLayoutBreakdown(layout, S, { fever });
+  const metrics = layoutBreakdown.metrics;
+  const cellRows = [];
+  if (layoutBreakdown.available) {
+    CELL_NAMES.slice(0, 8).forEach((name, type) => {
+      const cells = (metrics.cells || []).filter((cell) => cell.type === type);
+      const attacks = cells.reduce((sum, cell) => sum + cell.attacksPerSecond, 0);
+      const dps = cells.reduce((sum, cell) => sum + cell.dps, 0);
+      const hit = cells.length ? cells.reduce((sum, cell) => sum + cell.damage, 0) / cells.length : 0;
+      cellRows.push({ type, name, placed: cells.length, averageHit: hit, attacksPerSecond: attacks, dps });
+    });
+  }
+  return {
+    damage: multiplierTree('Cell Damage', damage),
+    speed: multiplierTree('Cell Speed', speed),
+    exp: multiplierTree('Cell EXP per hit', exp),
+    bloodcells: multiplierTree('Bloodcells per damage', bloodcells),
+    layout: {
+      available: Boolean(layoutBreakdown.available),
+      reason: layoutBreakdown.reason || '',
+      damage: layoutBreakdown.available
+        ? {
+            label: 'Layout Damage',
+            value: layoutBreakdown.layoutDamageMultiplier,
+            unit: 'x',
+            children: (layoutBreakdown.damageFactors || []).map(factorOf),
+          }
+        : null,
+      speed: layoutBreakdown.available
+        ? {
+            label: 'Layout Speed',
+            value: layoutBreakdown.layoutSpeedMultiplier,
+            unit: 'x',
+            children: (layoutBreakdown.speedFactors || []).map(factorOf),
+          }
+        : null,
+      damagePassive: metrics?.damagePassive ?? null,
+      speedPassive: metrics?.speedPassive ?? null,
+      virusMultiplier: metrics?.virusMultiplier ?? null,
+      cellRows,
+    },
+  };
+}
+
 function insightsOf(S, layout, operation) {
   const insights = J.jellyOperationInsights(operation, S, { layout });
   return {
@@ -515,6 +666,9 @@ const payload = {
       output.estimateOptions = entry.estimate;
       output.metrics = metricsOf(S, layout);
       output.insights = estimate.valid ? insightsOf(S, layout, operation) : null;
+      output.upgrades = upgradesOf(S);
+      output.bonuses = bonusesOf(S);
+      output.breakdowns = breakdownsOf(S, layout);
     }
     if (entry.simulation) {
       output.simulationOptions = entry.simulation;

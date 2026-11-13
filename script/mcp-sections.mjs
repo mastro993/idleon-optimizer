@@ -999,6 +999,29 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-sim-result', 'jelly: the simulator stores a run', 120000);
     await waitForNode(lane, 'jelly-sim-contribution', 'jelly: the run contribution renders');
     await waitForNode(lane, 'jelly-sim-timeline', 'jelly: the critical timeline renders');
+    // JO-03's tabs: the upgrade list, the reward table and the six trees.
+    await lane.call('click_element', { id: 'jelly-tab-upgrades' });
+    await waitForNode(lane, 'jelly-upgrades', 'jelly: the upgrade list opens');
+    await waitForNode(lane, 'jelly-upgrades-table', 'jelly: the upgrade table renders');
+    await waitForNode(lane, 'jelly-upgrade-row-0', 'jelly: the first purchase slot renders');
+    await lane.call('click_element', { id: 'jelly-tab-bonuses' });
+    await waitForNode(lane, 'jelly-bonuses', 'jelly: the bonuses open');
+    await waitForNode(lane, 'jelly-bonuses-table', 'jelly: the reward table renders');
+    await waitForNode(lane, 'jelly-bonus-row-0', 'jelly: the first obstruction reward renders');
+    await lane.call('click_element', { id: 'jelly-tab-breakdowns' });
+    await waitForNode(lane, 'jelly-breakdowns', 'jelly: the breakdowns open');
+    await waitForNode(lane, 'jelly-breakdown-node-root', 'jelly: the formula tree renders');
+    await waitForNode(lane, 'jelly-breakdown-cells', 'jelly: the per-cell output renders');
+    const damage = labelOf(await lane.tree(), 'jelly-breakdown-node-root') ?? '';
+    if (!damage.includes('Cell Damage')) {
+      throw new Error(`jelly: the breakdown tree root reads ${damage}`);
+    }
+    await lane.call('click_element', { id: 'jelly-breakdown-speed' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-breakdown-node-root') ?? '').includes('Cell Speed'),
+      'jelly: the speed breakdown replaces the damage one',
+    );
     // The section planner screens every section, then simulates the finalists.
     await lane.call('click_element', { id: 'jelly-tab-sections' });
     await waitForNode(lane, 'jelly-sections', 'jelly: the sections planner opens');

@@ -76,6 +76,8 @@ pub struct Upgrade {
 #[derive(Debug, Deserialize)]
 pub struct Reward {
     pub name: String,
+    /// The account system the reward feeds (`jellyRewardTarget`).
+    pub target: String,
     pub description: String,
     pub value: f64,
 }

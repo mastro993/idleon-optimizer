@@ -93,8 +93,7 @@ impl Insights {
             .map(|attempts| attempts / daily_attempts);
         let expected_daily_cycles_to_clear = (probability_within_daily_attempts > 0.0)
             .then(|| 1.0 / probability_within_daily_attempts);
-        let saved_daily_passive_bloodcells =
-            jelly.progress.best_bloodcells * jelly.upgrade_quantity(38) / 100.0;
+        let saved_daily_passive_bloodcells = jelly.daily_bloodcells();
         let expected_bloodcells_per_attempt = if valid { estimate.mean_bloodcells } else { 0.0 };
         let expected_bloodcells_per_daily_cycle =
             expected_bloodcells_per_attempt * daily_attempts + saved_daily_passive_bloodcells;

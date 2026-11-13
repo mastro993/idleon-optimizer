@@ -72,6 +72,7 @@ impl Decoder<'_> {
             grid_187: self.grid_bonus(187),
             grid_186: f64::from(self.grid.level(186)),
             palette_1: self.palette(1),
+            legend_points: self.spelunk(LEGEND_ROW, LEGEND_PLOT_TALENT),
             legend_41: self.legend(LEGEND_PLOT_TALENT),
             bloodclot_tier: fields::at(self.save, "Sailing", &[3, BLOODCLOT_ARTIFACT])
                 .unwrap_or(0.0),
@@ -86,6 +87,7 @@ impl Decoder<'_> {
                 .min(3.0),
             rog_63: self.rog_qty(SASHIMI_63),
             doubled,
+            research_level: f64::from(self.save_research_level),
         };
         let mut level = [0_u32; 9];
         for (cell_type, raw) in cell_level.iter().take(9).enumerate() {

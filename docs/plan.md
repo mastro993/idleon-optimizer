@@ -761,8 +761,9 @@ per-meal outcomes and the three forecast scenarios. The Blue Jellyfish donation 
 task runner (LD-04) stays on the roadmap.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
-The Jelly Operator section implements JO-01, JO-02 and JO-04: the overview, the layout editor, the
-operation simulator and the board section planner. The section decodes the save's own board (`Research[14]`), its progress row,
+The Jelly Operator section implements JO-01, JO-02, JO-03 and JO-04: the overview, the layout
+editor, the operation simulator, the upgrade list, the obstruction rewards, the formula breakdowns
+and the board section planner. The section decodes the save's own board (`Research[14]`), its progress row,
 the cell EXP and levels, the upgrade levels and the plot tokens, then reads the account systems the
 page multiplies (research grid nodes 185-187, Spelunking palette 1, Legend Talent 41, the Bloodclot
 artifact, arcade 72, Atom 15, the `ban_j` bundle, event shop 56/57, Sushi's `rogBonusQty(63)` and
@@ -796,8 +797,25 @@ comparison and both ranked tables. A plan is deterministic for its inputs, and t
 changes which section combinations the search keeps. `script/jelly-oracle.mjs` also writes five plans
 into `fixtures/jelly.json` (one token, three tokens at beam 2 and 8, a low-risk strategy and a
 zero-token plan), and `crates/jelly/tests/jelly-planner.rs` compares every row, layout and operation
-field and holds the planner's legality and reproducibility rules. The upgrades, bonuses and
-breakdowns (JO-03) and the coordinator optimizer (JO-05) stay on the roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
+field and holds the planner's legality and reproducibility rules. The upgrades tab is
+`idleon_jelly::upgrades`: one row per slot of the `Research[44]` purchase order with its game
+description filled in (`jellyUpgradeDisplay`), the slot's own price curve
+(`jellyUpgradeCost`), and `jellyUpgradeStatus`'s Research level, prerequisite, max-level and
+affordability answers; the price divides by Lower Cholesterol's quantity and the row says when
+Menagerie's Upgrade Doubler doubles it. The bonuses tab is `idleon_jelly::bonuses`: all 72
+`Research[45..47]` obstruction rewards with their account target, the page's corrected bonus text
+(`gameDescription`) and its normalised effect line (`rewardEffectText`), each marked active once the
+obstruction is cleared, and the pane warns while Operational Bonuses (upgrade 39) is still locked.
+The breakdowns tab is `idleon_jelly::breakdowns`: `jellyCellDamageBreakdown`,
+`jellyCellSpeedBreakdown`, `jellyCellExpBreakdown` and `jellyBloodcellBreakdown` as the shared
+formula tree, `jellyLayoutBreakdown`'s damage and speed passives, and the page's per-cell output
+table; the rail picks one tree at a time. A tree's factors multiply back to the multiplier its
+category reports, its `Additive …` groups turn their own percentages into their factor, and a
+breakdown the save cannot compute (Cell EXP without Cell Biology, Bloodcells without Bloodcell
+Coagulation, a board the rules refuse) says what is missing instead of printing one.
+`script/jelly-oracle.mjs` also writes the three cases' upgrade rows, reward rows and six trees, and
+`crates/jelly/tests/jelly-upgrades.rs` compares every row, string and node and holds both
+invariants. The coordinator optimizer (JO-05) stays on the roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
 a save-export timing bug from the page's own local storage, and this app reads the save's shape
 overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).

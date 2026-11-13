@@ -23,12 +23,22 @@
 //! - [`planner`] is `planJellySections`: it screens every unpurchased board
 //!   section, completes the board around the strongest, and compares the
 //!   finalists with shared-seed trials.
+//! - [`upgrades`] is the upgrade list: `jellyUpgradeCost`,
+//!   `jellyUpgradeStatus` and `jellyUpgradeDisplay` over the `Research[44]`
+//!   purchase order.
+//! - [`breakdowns`] is `jellyCellDamageBreakdown`, `jellyCellSpeedBreakdown`,
+//!   `jellyCellExpBreakdown`, `jellyBloodcellBreakdown` and
+//!   `jellyLayoutBreakdown` as [`FormulaNode`](idleon_common::formula::FormulaNode)
+//!   trees, and [`bonuses`] is the 72 obstruction rewards
+//!   (`jellyRewards`, `jellyRewardTarget`, `gameDescription`).
 //!
 //! The shape overrides the upstream page persists for grid nodes 185 and 187
 //! are not ported: they are a localStorage correction for a save-export timing
 //! bug, and this app reads the save's own shape overlay.
 
 pub mod board;
+pub mod bonuses;
+pub mod breakdowns;
 pub mod data;
 pub mod estimate;
 pub mod insights;
@@ -36,16 +46,20 @@ pub mod metrics;
 pub mod operation;
 pub mod planner;
 pub mod surrogate;
+pub mod upgrades;
 
 #[cfg(test)]
 mod tests;
 
 pub use board::Layout;
+pub use bonuses::Bonus;
+pub use breakdowns::{Breakdown, Category as BreakdownCategory, CellRow, LayoutBreakdown};
 pub use data::data;
 pub use estimate::Estimate;
 pub use insights::{ExpOutlook, Insights, ObstructionOutlook};
 pub use metrics::{Cadence, CellMetrics, MetricOptions, Metrics};
 pub use operation::{OperationOptions, Trial};
+pub use upgrades::{Row as UpgradeRow, Status as UpgradeStatus};
 
 /// The slots the board starts with (`STARTING_SLOTS`).
 pub const STARTING_SLOTS: [usize; 4] = [77, 95, 78, 96];
@@ -123,6 +137,8 @@ pub struct Account {
     pub grid_187: f64,
     /// Spelunking palette 1 (`computePaletteBonus(1)`).
     pub palette_1: f64,
+    /// Legend Talent 41's points (`Spelunk[18][41]`).
+    pub legend_points: f64,
     /// Legend Talent 41 (`legendPTSbonus(41)`).
     pub legend_41: f64,
     /// Bloodclot artifact tier (`Sailing[3][40]`).
@@ -144,6 +160,8 @@ pub struct Account {
     pub doubled: Vec<usize>,
     /// Research grid node 186, the daily attempt count.
     pub grid_186: f64,
+    /// The save's Research level (`S.researchLevel`), which gates upgrades.
+    pub research_level: f64,
 }
 
 /// The save's Jelly Operator state.
@@ -241,6 +259,32 @@ impl Jelly {
     pub fn legend_slot_tokens(&self) -> f64 {
         self.account.legend_slot_tokens.min(3.0)
     }
+}
+
+/// The game's own number format (`fmtVal`), which the upgrade and reward text
+/// print their numbers with. Only the suffix tiers below the exponential are
+/// reachable from these tables.
+pub fn fmt_val(value: f64) -> String {
+    let magnitude = value.abs();
+    if magnitude >= 1e24 {
+        return format!("{value:.2e}");
+    }
+    for (scale, suffix) in [
+        (1e21, "QQQ"),
+        (1e18, "QQ"),
+        (1e15, "Q"),
+        (1e12, "T"),
+        (1e9, "B"),
+        (1e6, "M"),
+    ] {
+        if magnitude >= scale {
+            return format!("{:.2}{suffix}", value / scale);
+        }
+    }
+    if magnitude >= 1e3 {
+        return format!("{:.1}K", value / 1e3);
+    }
+    format!("{value:.1}")
 }
 
 /// `jellyBossHp`: the obstruction's HP curve.
