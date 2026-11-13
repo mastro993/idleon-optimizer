@@ -12,16 +12,14 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Every job runs on Linux. Set the repository variable `CI_RUNNER_LINUX` to
-# another fleet (Blacksmith's `blacksmith-4vcpu-ubuntu-2404`, a self-hosted
-# label) and the whole workflow follows it; unset falls back to GitHub's
-# `ubuntu-24.04`, whose Linux minutes are the cheapest this repo has.
+# Every job runs on the same Ubuntu image: Linux minutes are the cheapest the
+# plan has, and no gate needs a macOS host.
 jobs:
   # One cheap runner decides whether the expensive matrix has anything to look
   # at, so a change confined to the harness scripts or the workflow files does
   # not start three build jobs.
   changes:
-    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-24.04' }}
+    runs-on: ubuntu-24.04
     # `paths-filter` lists the PR's changed files through the API, which the
     # default token cannot read on a private repository.
     permissions:
@@ -82,7 +80,7 @@ jobs:
             nextest: true
             command: cargo nextest run --workspace --partition count:2/2
     name: ${{ matrix.label }}
-    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-24.04' }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
         with:
