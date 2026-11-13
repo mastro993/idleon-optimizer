@@ -1,20 +1,21 @@
 //! The Coin Multiplier Calculator section: the character selector, the current
-//! calculation cards and the partial state.
+//! calculation cards, the partial state and the formula tree behind the total.
 //!
-//! Ported from `coin-multi-calc.html`: the character select, the six cards and
-//! the partial badge. The cards read the save through
-//! [`idleon_coin_multi`], which resolves the groups this build ports and
-//! names the ones it does not, so the badge always explains itself. The damage
-//! card is the one editable value: upstream resolves it through the damage
-//! descriptor, which this build does not carry yet, so the field opens on the
-//! save's highest recorded hit and the overkill tier follows what it holds.
+//! Ported from `coin-multi-calc.html`: the character select, the six cards, the
+//! partial badge and the `#tree` breakdown. The cards read the save through
+//! [`idleon_coin_multi`], which resolves the groups this build ports and names
+//! the ones it does not, so the badge always explains itself and the breakdown
+//! lists all 23 terms. The damage card is the one editable value: upstream
+//! resolves it through the damage descriptor, which this build does not carry
+//! yet, so the field opens on the save's highest recorded hit and the overkill
+//! tier follows what it holds.
 
 mod actions;
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::forms::{Choice, Select, TextInput};
-use ely_gpui_component::layout::{Card, CardHeader};
+use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
@@ -24,15 +25,18 @@ use gpui::{
 };
 use idleon_coin_multi::{self as coin_multi, Character, Evaluation};
 use idleon_import::Imported;
+use idleon_ui::formula::FormulaTree;
 
-/// The section's state: the save slice, the selected character and the damage
-/// field.
+/// The section's state: the save slice, the selected character, the damage
+/// field and the breakdown tree.
 pub(crate) struct State {
     /// Every character's cards, from the last applied save.
     pub(crate) snapshot: Option<coin_multi::Snapshot>,
     pub(crate) character: usize,
     /// The editable damage value; the save's highest recorded hit prefills it.
     pub(crate) damage: Entity<TextInput>,
+    /// The `#tree` breakdown behind the total card.
+    pub(crate) tree: Entity<FormulaTree>,
 }
 
 impl State {
@@ -42,6 +46,7 @@ impl State {
             snapshot: None,
             character: 0,
             damage,
+            tree: crate::ui::formula_tree("coin-formula", window, cx),
         }
     }
 
@@ -122,7 +127,14 @@ pub(crate) fn view(
     let selected = state.coin_multi.character;
     let character = entity.clone();
     let damage_focus = state.coin_multi.damage.read(cx).focus().clone();
+    // The tree's root is set before the palette is borrowed: updating the child
+    // entity needs the context mutably.
+    let tree = state.coin_multi.tree.clone();
     let evaluation = state.coin_multi.evaluation(cx);
+    if let Ok(evaluation) = &evaluation {
+        let root = coin_multi::tree(evaluation);
+        tree.update(cx, |tree, cx| tree.set_root(root, cx));
+    }
     let character_row = state.coin_multi.character().cloned();
 
     let selector = div()
@@ -172,31 +184,24 @@ pub(crate) fn view(
         (Some(character), Err(error)) => format!("{} · {error}", character.name),
     };
 
-    let mut page = div()
-        .id("coin-multi-section")
-        .flex()
-        .flex_col()
-        .size_full()
-        .min_h_0()
-        .gap_3()
-        .child(
-            Card::new()
-                .header(CardHeader::new("Calculation Context").description(
-                    "The saved character's map, AFK target and combat values, which every card and the total read.",
-                ))
-                .child(selector)
-                .child(
-                    div()
-                        .id("coin-context-note")
-                        .role(Role::Label)
-                        .aria_label(character_note.clone())
-                        .px_3()
-                        .pb_3()
-                        .text_size(px(12.0))
-                        .text_color(muted)
-                        .child(character_note),
-                ),
-        );
+    let mut page = div().flex().flex_col().gap_3().child(
+        Card::new()
+            .header(CardHeader::new("Calculation Context").description(
+                "The saved character's map, AFK target and combat values, which every card and the total read.",
+            ))
+            .child(selector)
+            .child(
+                div()
+                    .id("coin-context-note")
+                    .role(Role::Label)
+                    .aria_label(character_note.clone())
+                    .px_3()
+                    .pb_3()
+                    .text_size(px(12.0))
+                    .text_color(muted)
+                    .child(character_note),
+            ),
+    );
 
     let missing = character_row.is_none();
     let cards = cards(
@@ -213,22 +218,26 @@ pub(crate) fn view(
             .child(cards),
     );
 
-    match evaluation {
+    match &evaluation {
         Ok(evaluation) => {
-            page = page.child(partial_card(&evaluation, muted));
+            page = page
+                .child(partial_card(evaluation, muted))
+                .child(formula_card(tree.clone()));
         }
         Err(error) => {
-            page = page.child(
-                div()
-                    .id("coin-total-state")
-                    .role(Role::Label)
-                    .aria_label(error.clone())
-                    .px_3()
-                    .pb_3()
-                    .text_size(px(12.0))
-                    .text_color(muted)
-                    .child(error),
-            );
+            page = page
+                .child(
+                    div()
+                        .id("coin-total-state")
+                        .role(Role::Label)
+                        .aria_label(error.clone())
+                        .px_3()
+                        .pb_3()
+                        .text_size(px(12.0))
+                        .text_color(muted)
+                        .child(error.clone()),
+                )
+                .child(formula_gap(error, muted));
         }
     }
     if missing && !snapshot_missing {
@@ -243,7 +252,58 @@ pub(crate) fn view(
                 .child("The save has no rows for this character."),
         );
     }
-    page.into_any_element()
+    div()
+        .id("coin-multi-section")
+        .flex()
+        .flex_col()
+        .size_full()
+        .min_h_0()
+        .child(
+            ScrollArea::new("coin-multi-scroll")
+                .vertical()
+                .flex_1()
+                .min_h_0()
+                .child(page),
+        )
+        .into_any_element()
+}
+
+/// The shared formula tree in its card, sized like the other sections'
+/// breakdown cards.
+fn formula_card(tree: Entity<FormulaTree>) -> AnyElement {
+    Card::new()
+        .header(CardHeader::new("Formula Breakdown").description(
+            "The 23 groups behind the total, each with the upstream source that owns it.",
+        ))
+        .child(
+            div()
+                .id("coin-formula-card-body")
+                .h(px(320.0))
+                .min_h_0()
+                .child(tree),
+        )
+        .into_any_element()
+}
+
+/// The tree card's empty state: there is no total to expand yet.
+fn formula_gap(message: &str, muted: Hsla) -> AnyElement {
+    Card::new()
+        .header(
+            CardHeader::new("Formula Breakdown")
+                .description("Nothing to expand until the total resolves."),
+        )
+        .child(
+            div()
+                .id("coin-formula-gap")
+                .role(Role::Label)
+                .aria_label(message.to_string())
+                .px_3()
+                .pb_3()
+                .text_size(px(12.0))
+                .text_color(muted)
+                .child(message.to_string()),
+        )
+        .into_any_element()
 }
 
 /// The six current-calculation cards, in upstream's order.
