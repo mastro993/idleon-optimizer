@@ -318,6 +318,10 @@ fn every_breakdown_multiplies_to_the_number_it_reports() {
         };
         for category in BreakdownCategory::ALL {
             let breakdown = jelly.breakdown(category, &jelly.layout, options);
+            assert_eq!(
+                breakdown.category, category,
+                "{name}: the tree names itself"
+            );
             assert_multiplies(&breakdown.root, &format!("{name} {}", category.id()));
         }
         let layout = jelly.layout_breakdown(&jelly.layout, fever);

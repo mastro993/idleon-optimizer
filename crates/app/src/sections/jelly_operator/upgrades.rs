@@ -32,6 +32,11 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
         .map(|row| row.name.clone())
         .collect();
     let next = rows.iter().find(|row| row.status.below_max);
+    let gate = rows
+        .iter()
+        .filter(|row| !row.status.level_visible)
+        .map(|row| row.status.required_research_level)
+        .fold(f64::INFINITY, f64::min);
     let muted = cx.theme().colors.fg_muted;
 
     let mut body = div().id("jelly-upgrades").flex().flex_col().gap_3().child(
@@ -50,10 +55,11 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
             )
             .child(
                 KpiCard::new(stat("jelly-upgrade-gated", "Hidden slots", gated as f64)).caption(
-                    format!(
-                        "Research Lv {} reveals the rest",
-                        format::number(jelly.account.research_level)
-                    ),
+                    if gate.is_finite() {
+                        format!("Research Lv {} reveals the rest", format::number(gate))
+                    } else {
+                        "Every slot is revealed".to_string()
+                    },
                 ),
             )
             .child(
@@ -81,7 +87,7 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                         .description(next.description.clone()),
                 )
                 .child(div().p_3().child(Caption::new(format!(
-                    "{} × {} · {} · {} Bloodcells saved",
+                    "{} · current {} · {} · {} saved",
                     next.per_level,
                     next.effect,
                     cost_text(next.cost),
@@ -110,14 +116,9 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                 Callout::new(Severity::Info)
                     .title(format!("{gated} slots are not revealed yet"))
                     .child(Caption::new(format!(
-                        "The purchase order reveals a slot at Research Lv {}. Their prices and \
-                         effects read from the save anyway, so a plan can see what is coming.",
-                        format::number(
-                            rows.iter()
-                                .filter(|row| !row.status.level_visible)
-                                .map(|row| row.status.required_research_level)
-                                .fold(f64::INFINITY, f64::min)
-                        )
+                        "The purchase order reveals the next one at Research Lv {}. Their prices \
+                         and effects read from the save anyway, so a plan can see what is coming.",
+                        format::number(gate)
                     ))),
             ),
         );
@@ -150,11 +151,11 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
         }
         if !row.status.level_visible {
             name = name.child(
-                Badge::new(format!(
-                    "Research Lv {}",
+                Caption::new(format!(
+                    "Hidden until Research Lv {}",
                     format::number(row.status.required_research_level)
                 ))
-                .tone(Tone::Neutral),
+                .text_color(muted),
             );
         }
         name = name.child(Caption::new(row.description.clone()).text_color(muted));
@@ -182,13 +183,13 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                 .flex_col()
                 .gap_0p5()
                 .child(cost_text(row.cost))
-                .child(if row.status.can_buy {
+                .child(div().flex().items_center().child(if row.status.can_buy {
                     Badge::new("Affordable").tone(Tone::Success)
                 } else if row.status.below_max {
                     Badge::new("Saving").tone(Tone::Neutral)
                 } else {
                     Badge::new("Maxed").tone(Tone::Neutral)
-                })
+                }))
                 .into_any_element(),
         ]);
     }

@@ -65,11 +65,11 @@ pub(crate) fn pane(jelly: &Jelly, cx: &mut Context<AppState>) -> AnyElement {
                 .flex_col()
                 .gap_0p5()
                 .child(bonus.name.clone())
-                .child(if bonus.active {
+                .child(div().flex().items_center().child(if bonus.active {
                     Badge::new("Active").tone(Tone::Success)
                 } else {
                     Badge::new("Not cleared").tone(Tone::Neutral)
-                })
+                }))
                 .into_any_element(),
             div().child(bonus.target.clone()).into_any_element(),
             div()

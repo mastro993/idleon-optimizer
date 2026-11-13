@@ -110,9 +110,7 @@ fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
                             ))
                             .caption(format!(
                                 "Daily: {}",
-                                format::value(
-                                    progress.best_bloodcells * jelly.upgrade_quantity(38) / 100.0
-                                )
+                                format::value(jelly.daily_bloodcells())
                             )),
                         )
                         .child(

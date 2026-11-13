@@ -114,7 +114,12 @@ impl LayoutBreakdown {
                     .iter()
                     .filter(|cell| cell.cell_type == cell_type)
                     .collect();
-                let hit: f64 = cells.iter().map(|cell| cell.damage).sum();
+                // An empty `Iterator::sum` over floats starts at -0.0, which the
+                // table would print as `-0.0`; the fold keeps a plain zero.
+                let fold = |value: fn(&super::metrics::CellMetrics) -> f64| {
+                    cells.iter().fold(0.0, |total, cell| total + value(cell))
+                };
+                let hit = fold(|cell| cell.damage);
                 CellRow {
                     cell_type,
                     name: names
@@ -127,8 +132,8 @@ impl LayoutBreakdown {
                     } else {
                         hit / cells.len() as f64
                     },
-                    attacks_per_second: cells.iter().map(|cell| cell.attacks_per_second).sum(),
-                    dps: cells.iter().map(|cell| cell.dps).sum(),
+                    attacks_per_second: fold(|cell| cell.attacks_per_second),
+                    dps: fold(|cell| cell.dps),
                 }
             })
             .collect()

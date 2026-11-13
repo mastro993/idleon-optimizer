@@ -49,45 +49,52 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
         .flex()
         .flex_col()
         .gap_3()
-        .child(rail(category, cx))
-        .child(
-            div()
-                .id("jelly-breakdown-head")
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap_3()
-                .child(
-                    KpiCard::new(stat(
-                        "jelly-breakdown-value",
-                        category.label(),
-                        breakdown.root.value,
-                    ))
-                    .caption(format!(
-                        "{} · {} nodes",
-                        category.id(),
-                        breakdown.root.node_count()
-                    )),
-                )
-                .child(
-                    div()
-                        .id("jelly-breakdown-summary")
-                        .role(gpui::Role::Label)
-                        .aria_label(summary.clone())
-                        .child(summary),
-                )
-                .child(Caption::new(description(category)).text_color(muted)),
-        );
+        .child(rail(category, cx));
     if !breakdown.available {
+        // The page prints the locked text instead of a tree, so a factor the save
+        // cannot compute never reads as a number.
         body = body.child(
             div().id("jelly-breakdown-warning").child(
                 Callout::new(Severity::Warning)
                     .title("This breakdown is not available")
-                    .child(Caption::new(breakdown.reason.clone())),
+                    .child(
+                        Caption::new(format!("{}.", breakdown.reason.trim_end_matches('.')))
+                            .text_color(muted),
+                    )
+                    .child(Caption::new(description(category)).text_color(muted)),
             ),
         );
+        return body.into_any_element();
     }
-    body = body.child(
+    body.child(
+        div()
+            .id("jelly-breakdown-head")
+            .flex()
+            .flex_wrap()
+            .items_center()
+            .gap_3()
+            .child(
+                KpiCard::new(stat(
+                    "jelly-breakdown-value",
+                    category.label(),
+                    breakdown.root.value,
+                ))
+                .caption(format!(
+                    "{} · {} nodes",
+                    category.id(),
+                    breakdown.root.node_count()
+                )),
+            )
+            .child(
+                div()
+                    .id("jelly-breakdown-summary")
+                    .role(gpui::Role::Label)
+                    .aria_label(summary.clone())
+                    .child(summary),
+            )
+            .child(Caption::new(description(category)).text_color(muted)),
+    )
+    .child(
         Card::new()
             .header(
                 CardHeader::new(category.label())
@@ -100,11 +107,9 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
                     .min_h_0()
                     .child(tree),
             ),
-    );
-    if layout.available {
-        body = body.child(per_cell(&layout, cx));
-    }
-    body.into_any_element()
+    )
+    .when(layout.available, |body| body.child(per_cell(&layout, cx)))
+    .into_any_element()
 }
 
 /// The six trees, as the pane's rail.
@@ -133,7 +138,7 @@ fn rail(category: BreakdownCategory, cx: &mut Context<AppState>) -> AnyElement {
         .id("jelly-breakdown-rail")
         .flex()
         .items_center()
-        .child(tabs)
+        .child(div().flex_1().min_w_0().child(tabs))
         .into_any_element()
 }
 
