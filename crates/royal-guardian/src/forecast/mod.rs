@@ -209,6 +209,9 @@ pub struct Summary {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Forecast {
     pub horizon_hours: f64,
+    /// Whether the reset countdown is missing, which leaves the resets out.
+    pub partial: bool,
+    pub missing: Vec<String>,
     /// Whether time banks while the menu is closed.
     pub banks: bool,
     pub banked_start_hours: f64,
@@ -302,6 +305,8 @@ impl RoyalGuardian {
         });
         let mut forecast = Forecast {
             horizon_hours: horizon,
+            partial: !timing.available,
+            missing: timing.missing.clone(),
             banks,
             banked_start_hours: state.banked_hours(),
             resets: resets.clone(),

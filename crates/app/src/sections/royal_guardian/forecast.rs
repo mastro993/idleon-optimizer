@@ -164,7 +164,9 @@ fn summary(result: &Forecast, cx: &mut Context<AppState>) -> AnyElement {
         } else {
             "only menu-open windows collect"
         },
-        if result.resets.is_empty() {
+        if result.partial {
+            "the reset countdown is missing"
+        } else if result.resets.is_empty() {
             "no reset inside the horizon"
         } else {
             "the daily reset is projected"

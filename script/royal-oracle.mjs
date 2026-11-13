@@ -440,6 +440,8 @@ const breakdowns = {
 const F = await import(join(source, 'js/stats/systems/w7/royal-forecast.js'));
 const flattenForecast = (result) => ({
   horizonHours: result.horizonHours,
+  partial: result.partial,
+  missing: result.missing,
   banks: result.banks,
   bankedStartHours: result.bankedStartHours,
   endBankedHours: result.endBankedHours,

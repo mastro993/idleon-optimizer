@@ -609,6 +609,22 @@ fn assert_forecast(got: &idleon_royal_guardian::Forecast, expected: &Value, labe
         expected["banks"].as_bool().expect("a banking flag"),
         "{label} banks"
     );
+    assert_eq!(
+        got.partial,
+        expected["partial"].as_bool().expect("a partial flag"),
+        "{label} partial"
+    );
+    let missing: Vec<&str> = expected["missing"]
+        .as_array()
+        .expect("the missing list")
+        .iter()
+        .map(|value| value.as_str().expect("a source"))
+        .collect();
+    assert_eq!(
+        got.missing.iter().map(String::as_str).collect::<Vec<_>>(),
+        missing,
+        "{label} missing"
+    );
     near(
         &format!("{label} banked start"),
         got.banked_start_hours,

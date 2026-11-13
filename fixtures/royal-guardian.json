@@ -18299,6 +18299,8 @@
  "forecast": {
   "default": {
    "horizonHours": 72,
+   "partial": false,
+   "missing": [],
    "banks": true,
    "bankedStartHours": 0.0025,
    "endBankedHours": 72.0025,
@@ -27671,6 +27673,8 @@
   },
   "planned": {
    "horizonHours": 48,
+   "partial": false,
+   "missing": [],
    "banks": true,
    "bankedStartHours": 0.0025,
    "endBankedHours": 18,
