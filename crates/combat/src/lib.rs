@@ -12,6 +12,7 @@
 
 pub mod compare;
 pub mod data;
+pub mod drops;
 pub mod encounter;
 pub mod loadout;
 pub mod overrides;

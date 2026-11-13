@@ -408,6 +408,19 @@ pub fn plan(save: &Save, input: &PlanInput) -> Result<Plan, KillroyError> {
     })
 }
 
+/// The inputs one trial runs with from a save and a kill rate: the six saved
+/// upgrade levels, the talent-drop counter, the character's bag and the rate the
+/// caller measured. A section that already knows a character's kills per second
+/// (the combat simulator's run) reads this instead of planning a full upgrade
+/// comparison.
+pub fn trial_inputs(save: &Save, character: usize, kills_per_second: f64) -> super::TrialInputs {
+    super::TrialInputs {
+        kills_per_second: kills_per_second.max(0.0),
+        bag: inventory::bag(save, character),
+        ..killroy_levels(save)
+    }
+}
+
 /// The trial levels a save carries: the six upgrade levels, the talent-drop
 /// counter and the meritoc skull bonus.
 fn killroy_levels(save: &Save) -> super::TrialInputs {

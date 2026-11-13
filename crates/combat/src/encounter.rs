@@ -11,15 +11,21 @@
 //! [`Player::StandIn`] (`scriptedPlayer`), which kills one live monster per
 //! interval for its remaining HP.
 //!
+//! Since CS-05 the run also rolls the kill's card and obol drops through
+//! [`drops`], the extracted half of the reward tables, and samples its kills on
+//! the upstream 10-second timeline.
+//!
 //! Not modelled, and listed by [`unsupported`]:
 //!
 //! - the auto-mode player AI: movement, auto attack, skills, projectiles and
 //!   contact damage (`combat-sim-player.js`);
-//! - the reward engine: EXP, drops, cards, obols, coins, crystals, giants and
-//!   plunder spawns, and the inventory (`combat-sim-rewards.js`);
+//! - the rest of the reward engine: EXP, coins, equipment, the inventory,
+//!   crystals, giants and plunder spawns (`combat-sim-rewards.js`);
 //! - the account tuning of monster HP and respawn time (W7 tasks, achievements,
 //!   Death Note), held at the base values in `data/encounters.json`;
-//! - Killroy, The Den, the Rift, caverns, Clam Work and dungeon-specific state.
+//! - The Den, the Rift, caverns, Clam Work and dungeon-specific state; Killroy
+//!   practice is projected from a run's kill rate by `idleon_killroy`, not
+//!   replayed here.
 //!
 //! The run is deterministic: the modelled paths draw no random numbers, so a
 //! map, player and duration fully describe it.
@@ -29,7 +35,8 @@
 //! is the upstream engine's own kills, damage and respawn counters at neutral
 //! monster tuning.
 
-use idleon_common::{Control, Progress};
+use crate::drops::{self, Inputs, Snapshot};
+use idleon_common::{Control, Progress, Rng};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
@@ -132,19 +139,48 @@ impl Player {
 }
 
 /// What one run simulates.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Options {
     pub map: usize,
     pub player: Player,
     /// The simulated length; the game steps in 10 ms units.
     pub duration_ms: u64,
+    /// The stream seed every roll draws from.
+    pub seed: u64,
+    /// The saved cards, obol pages and fragments the drops start from.
+    pub drops: Snapshot,
+    /// The stat multipliers the drop rolls read.
+    pub drop_inputs: Inputs,
 }
 
 impl Options {
+    /// A run with no drop state and the neutral drop multipliers, which is all
+    /// a comparison needs: it reads kills, damage and respawn times.
+    pub fn basic(map: usize, player: Player, duration_ms: u64) -> Self {
+        Self {
+            map,
+            player,
+            duration_ms,
+            seed: 1,
+            drops: Snapshot::default(),
+            drop_inputs: Inputs::default(),
+        }
+    }
+
     /// The run in 10 ms steps, as upstream's `_run` counts them.
     pub fn steps(&self) -> u64 {
         (self.duration_ms + STEP_MS / 2) / STEP_MS
     }
+}
+
+/// The upstream timeline's sampling period: `timelineEveryMs`.
+pub const TIMELINE_MS: u64 = 10_000;
+
+/// One kills-over-time sample, taken every ten simulated seconds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Sample {
+    pub t_ms: u64,
+    pub kills: u64,
 }
 
 /// What a finished run reports.
@@ -174,6 +210,12 @@ pub struct Outcome {
     /// Each roster monster's respawn counter at the end: `0` or less is ready
     /// to respawn, a positive value is the seconds left.
     pub respawn: Vec<f64>,
+    /// The seed the run rolled with.
+    pub seed: u64,
+    /// The cumulative kills at every ten-second mark, plus the run's end.
+    pub timeline: Vec<Sample>,
+    /// The cards and obol fragments the kills dropped.
+    pub drops: drops::Summary,
 }
 
 impl Outcome {
@@ -210,8 +252,9 @@ pub fn unsupported() -> &'static [&'static str] {
     &[
         "Auto-mode player AI (movement, auto attack, skills, projectiles), so a run cannot yet \
          measure character DPS or survival.",
-        "Reward engine: EXP, drops, cards, obols, coins and the inventory; those result tabs \
-         arrive with CS-05 and CS-06.",
+        "The rest of the reward engine: EXP, coins, equipment and the inventory. The card and \
+         obol rows are modelled, but an obol that needs a bag slot (a full page without the \
+         auto-trash) is not collected.",
         "Crystals, giants and Plunder spawns, which the reward engine creates on a kill.",
         "Account monster tuning (W7 tasks, achievements, Death Note): the run uses the base \
          monster HP and respawn time.",
@@ -277,7 +320,7 @@ pub fn run(
         None => format!("Map {} has no extracted scene roster.", options.map),
     })?;
     let steps = options.steps();
-    let mut sim = Sim::new(map, options.player);
+    let mut sim = Sim::new(map, &options);
     let report_every = (steps / 100).max(1);
     for step in 0..steps {
         if step % report_every == 0 {
@@ -330,10 +373,14 @@ struct Sim {
     kills_by_type: BTreeMap<String, u64>,
     damage: f64,
     idle_ticks: u64,
+    rng: Rng,
+    drops: drops::State,
+    timeline: Vec<Sample>,
 }
 
 impl Sim {
-    fn new(map: &Map, player: Player) -> Self {
+    fn new(map: &Map, options: &Options) -> Self {
+        let player = options.player;
         let mut timers = Vec::new();
         // The player module's `init` registers its timers before the scene
         // starts, so the stand-in's tick is armed before the respawn tick.
@@ -362,6 +409,9 @@ impl Sim {
             kills_by_type: BTreeMap::new(),
             damage: 0.0,
             idle_ticks: 0,
+            rng: Rng::new(options.seed),
+            drops: drops::State::new(options.drops.clone(), options.drop_inputs),
+            timeline: Vec::new(),
         }
     }
 
@@ -372,10 +422,21 @@ impl Sim {
         self.fire_timers();
         self.time_ms += STEP_MS;
         self.steps += 1;
+        if self.time_ms.is_multiple_of(TIMELINE_MS) {
+            self.sample();
+        }
         self.frame_steps_left -= 1;
         if self.frame_steps_left == 0 {
             self.draw();
         }
+    }
+
+    /// One kills-over-time sample, the upstream timeline push.
+    fn sample(&mut self) {
+        self.timeline.push(Sample {
+            t_ms: self.time_ms,
+            kills: self.kills,
+        });
     }
 
     /// `_beginFrame`: accumulate frame time, take whole steps while the
@@ -474,12 +535,27 @@ impl Sim {
         // `max(RespawnTime - talent302, 4)`: no buffs are active in this run.
         mob.counter = mob.respawn.max(4.0);
         mob.alive = false;
+        let kind = mob.kind.clone();
         self.kills += 1;
         self.damage += mob.hit;
-        *self.kills_by_type.entry(mob.kind.clone()).or_insert(0) += 1;
+        *self.kills_by_type.entry(kind.clone()).or_insert(0) += 1;
+        // The reward gate's drop branch runs inside the kill handler; only the
+        // card and obol rows are modelled.
+        if drops::rolls(&kind) {
+            self.drops.kill(&mut self.rng, &kind);
+        }
     }
 
-    fn outcome(self, options: Options, map: &Map) -> Outcome {
+    fn outcome(mut self, options: Options, map: &Map) -> Outcome {
+        // The chart always ends on the run's own numbers, even when the
+        // duration is not a whole ten-second mark.
+        if self
+            .timeline
+            .last()
+            .is_none_or(|sample| sample.t_ms != self.time_ms)
+        {
+            self.sample();
+        }
         Outcome {
             map: options.map,
             scene: map.scene.clone(),
@@ -493,6 +569,9 @@ impl Sim {
             damage: self.damage,
             idle_ticks: self.idle_ticks,
             respawn: self.mobs.iter().map(|mob| mob.counter).collect(),
+            seed: options.seed,
+            timeline: self.timeline,
+            drops: self.drops.summary(),
         }
     }
 }
