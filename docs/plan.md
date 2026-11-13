@@ -460,14 +460,22 @@ The Damage Breakdown's context and summary shell is built (part of DMG-01): the 
 selectors, their save defaults, the map list built the way `populateMapSel` builds it (every named
 map in index order, with the dungeon and current markers), the summary cards and mastery bar, the
 upstream dungeon, missing-pipeline and missing-metadata states, project/session persistence, and the
-layer arithmetic ported from the final combine in `js/stats/defs/damage.js`.
-`script/damage-oracle.mjs` pins the combine and both selector rules against the upstream calculator
-in `fixtures/damage.json`: every character's three layers recombine into upstream's own minimum and
-maximum, the descriptor's dungeon reason matches the page's, its `partial` flag and reason match the
-loader's companion-roster and server-vote fields on both a save with them and one without, and the
-map rows match `MapDispName`. The three layers themselves need
+layer arithmetic ported from the final combine in `js/stats/defs/damage.js`. The damage layers and
+mastery (DMG-02) are the `Damage Layers` tabs and the `Mastery Breakdown` card: DDL0, DDL1 and DDL2
+carry the descriptor's own title, value, `note` (`after softcaps`) and pre-softcap value, and the
+mastery ratio is `min(0.8, 0.35 - talent 113 / 100 + (Mastery bubble + card 21 + talent 123 +
+etc 21) / 100)`, drawn as the page's tree with the base and one node per term, so the terms add up
+to the ratio the bar shows.
+`script/damage-oracle.mjs` pins the combine, the layer text and the mastery tree against the upstream
+calculator in `fixtures/damage.json`: every character's three layers recombine into upstream's own
+minimum and maximum, each layer keeps the descriptor's name, note, format and pre-softcap value, the
+mastery base, cap, penalty and four terms rebuild upstream's own ratio and tree, the descriptor's
+dungeon reason matches the page's, its `partial` flag and reason match the loader's
+companion-roster and server-vote fields on both a save with them and one without, and the map rows
+match `MapDispName`. The three layers themselves need
 the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for its other
-fifty descriptors, so the page reports the missing-pipeline state instead of a guessed number.
+fifty descriptors, so the layer tabs show a dash, the mastery card names the same gap, and the page
+never prints a guessed number.
 Details:
 [`docs/sections/damage.md`](sections/damage.md).
 

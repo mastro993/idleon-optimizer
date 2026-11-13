@@ -361,8 +361,10 @@ pub(crate) struct AppState {
     pub(crate) drop_rate: DropRateState,
     /// The Coin Multiplier Calculator's cards and damage field.
     pub(crate) coin_multi: coin_multi::State,
-    /// The Damage Breakdown's character/map context and summary.
+    /// The Damage Breakdown's character/map context, layer tab and summary.
     pub(crate) damage: DamageState,
+    /// The shared formula tree on the damage section's mastery breakdown card.
+    pub(crate) damage_mastery: Entity<FormulaTree>,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub(crate) coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -1106,6 +1108,7 @@ impl AppState {
             drop_rate: DropRateState::new(window, cx),
             coin_multi: sections::coin_multi::State::new(window, cx),
             damage: DamageState::default(),
+            damage_mastery: crate::ui::formula_tree("damage-mastery", window, cx),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),

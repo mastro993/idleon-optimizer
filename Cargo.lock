@@ -3469,6 +3469,7 @@ dependencies = [
 name = "idleon-damage"
 version = "0.1.0"
 dependencies = [
+ "idleon-common",
  "idleon-import",
  "idleon-save",
  "idleon-stats",

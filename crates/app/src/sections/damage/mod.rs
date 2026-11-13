@@ -1,44 +1,64 @@
-//! The Damage Breakdown section: the two upstream context selectors and the
-//! four summary cards.
+//! The Damage Breakdown section: the two upstream context selectors, the four
+//! summary cards, the damage layers and the mastery breakdown.
 //!
-//! Ported from the summary block in `damage-calc.html`: the character and map
-//! selects, the "Character Sheet Range" card, the minimum and maximum cards
-//! with their exact values, and the mastery card with its bar. The three damage
-//! layers come from the upstream shared stat pipeline, which this build does
-//! not decode, so the page renders the upstream dungeon and missing-pipeline
-//! states instead of a number it cannot justify. The context, the selector rows,
-//! the layer arithmetic and the upstream formatting live in [`idleon_damage`]
-//! and are ready for that provider.
+//! Ported from `damage-calc.html`: the character and map selects, the
+//! "Character Sheet Range" card, the minimum and maximum cards with their exact
+//! values, the mastery card with its bar, the `Damage Layers` block whose three
+//! cards carry a value, the descriptor's note and its pre-softcap value, and the
+//! `Mastery Breakdown` tree. The three layers come from the upstream shared stat
+//! pipeline, which this build does not decode, so the layer cards show a dash
+//! and the page's reason instead of a number it cannot justify. The context, the
+//! selector rows, the layers, the mastery terms and the upstream formatting live
+//! in [`idleon_damage`] and are ready for that provider.
 
 mod actions;
 
 use crate::state::AppState;
 use crate::ui::layout::figure;
+use ely_gpui_component::buttons::SegmentedControl;
 use ely_gpui_component::feedback::{Callout, EmptyState};
 use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::motion::ProgressBar;
 use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::theme::ActiveTheme as _;
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
-use idleon_damage::{self as damage, Context as DamageContext, MapRow, Summary};
+use gpui::{
+    AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, Window, div, px,
+};
+use idleon_common::ValueFormat;
+use idleon_common::formula::FormulaNode;
+use idleon_damage::{self as damage, Context as DamageContext, LayerId, MapRow, Summary};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
 use idleon_ui::format;
+use idleon_ui::formula::FormulaTree;
 
-/// The section's own state: the context and the save slice it reads.
+/// The section's own state: the context, the save slice it reads and the layer
+/// tab the page has open.
 #[derive(Default)]
 pub(crate) struct State {
     pub(crate) context: DamageContext,
     pub(crate) snapshot: Option<Snapshot>,
     /// The last computed summary; `None` before a save loads.
     pub(crate) summary: Option<Summary>,
+    /// The damage layer the tabs show.
+    pub(crate) layer: LayerId,
     save: Option<Save>,
 }
 
 impl State {
+    /// The mastery breakdown's root, or nothing while the layers are unresolved.
+    pub(crate) fn mastery_tree(&self) -> Option<FormulaNode> {
+        self.summary.as_ref().and_then(Summary::mastery_tree)
+    }
+
+    /// Open one of the three layer tabs.
+    pub(crate) fn select_layer(&mut self, layer: LayerId) {
+        self.layer = layer;
+    }
+
     /// Take a freshly imported save, opening on character one and its current
     /// map exactly like upstream `onLoad`.
     pub(crate) fn load(&mut self, save: &Save) {
@@ -111,7 +131,8 @@ impl State {
     }
 }
 
-/// The section page: the context card and the summary cards.
+/// The section page: the context card, the summary cards, the damage layers and
+/// the mastery breakdown.
 pub(crate) fn view(
     state: &mut AppState,
     _window: &mut Window,
@@ -119,6 +140,12 @@ pub(crate) fn view(
 ) -> AnyElement {
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
+    // The tree's root is set before anything is borrowed: updating the child
+    // entity needs the context mutably.
+    let tree = state.damage_mastery.clone();
+    if let Some(root) = state.damage.mastery_tree() {
+        tree.update(cx, |tree, cx| tree.set_root(root, cx));
+    }
     let damage = &state.damage;
     let context = damage.context;
     let snapshot = damage.snapshot.as_ref();
@@ -197,6 +224,12 @@ pub(crate) fn view(
         );
 
     let summary_cards = summary_card(&summary, muted, cx);
+    let layers = summary
+        .as_ref()
+        .map(|summary| layers_card(summary, damage.layer, muted, entity.clone()));
+    let mastery = summary
+        .as_ref()
+        .map(|summary| mastery_breakdown(summary, tree, muted));
 
     div()
         .id("damage-page")
@@ -233,10 +266,120 @@ pub(crate) fn view(
                                         .child(note),
                                 ),
                         )
-                        .child(summary_cards),
+                        .child(summary_cards)
+                        .children(layers)
+                        .children(mastery),
                 ),
         )
         .into_any_element()
+}
+
+/// The `Damage Layers` block: one tab per layer, with the descriptor's own title,
+/// value, note and pre-softcap value. A layer the shared stat pipeline cannot
+/// resolve shows a dash and the page's reason instead of a made-up zero.
+fn layers_card(
+    summary: &Summary,
+    selected: LayerId,
+    muted: Hsla,
+    entity: Entity<AppState>,
+) -> AnyElement {
+    let mut tabs = SegmentedControl::new("damage-layer-tabs", selected.id())
+        .size(ControlSize::Sm)
+        .on_change(move |value, _window, cx| {
+            if let Some(layer) = LayerId::from_id(value) {
+                entity.update(cx, |state, cx| state.set_damage_layer(layer, cx));
+            }
+        });
+    for id in LayerId::ALL {
+        tabs = tabs.segment(id.id(), id.id().to_uppercase(), None);
+    }
+    let layer = summary.layers().map(|layers| layers.get(selected));
+    let value = match layer {
+        Some(layer) => match selected.format() {
+            ValueFormat::Raw => format::value(layer.value),
+            _ => format!("×{}", format::value(layer.value)),
+        },
+        None => "—".to_string(),
+    };
+    let note = match layer {
+        Some(layer) if selected.note().is_empty() => {
+            format!("before softcaps: {}", format::value(layer.pre_softcap))
+        }
+        Some(layer) => format!(
+            "{} · before softcaps: {}",
+            selected.note(),
+            format::value(layer.pre_softcap)
+        ),
+        None => summary.reason.clone(),
+    };
+    Card::new()
+        .header(
+            CardHeader::new("Damage Layers")
+                .description("The three layers the maximum damage multiplies"),
+        )
+        .child(div().id("damage-layer-controls").px_3().child(tabs))
+        .child(
+            div()
+                .id("damage-layer")
+                .role(Role::Label)
+                .aria_label(format!("{}: {value}", selected.title()))
+                .flex()
+                .flex_col()
+                .gap_1()
+                .p_3()
+                .child(Caption::new(selected.title()).text_color(muted))
+                .child(
+                    div()
+                        .id("damage-layer-value")
+                        .role(Role::Label)
+                        .aria_label(value.clone())
+                        .text_size(px(20.0))
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .child(value),
+                )
+                .child(
+                    div()
+                        .id("damage-layer-note")
+                        .role(Role::Label)
+                        .aria_label(note.clone())
+                        .text_size(px(12.0))
+                        .text_color(muted)
+                        .child(note),
+                ),
+        )
+        .into_any_element()
+}
+
+/// The `Mastery Breakdown` card: the shared formula tree over the mastery terms,
+/// or the reason the ratio has none.
+fn mastery_breakdown(summary: &Summary, tree: Entity<FormulaTree>, muted: Hsla) -> AnyElement {
+    let card = Card::new().header(
+        CardHeader::new("Mastery Breakdown").description("The minimum/maximum ratio, term by term"),
+    );
+    match summary.layers() {
+        Some(_) => card
+            .child(
+                div()
+                    .id("damage-mastery-breakdown")
+                    .h(px(240.0))
+                    .min_h_0()
+                    .child(tree),
+            )
+            .into_any_element(),
+        None => card
+            .child(
+                div()
+                    .id("damage-mastery-gap")
+                    .role(Role::Label)
+                    .aria_label(summary.reason.clone())
+                    .px_3()
+                    .pb_3()
+                    .text_size(px(12.0))
+                    .text_color(muted)
+                    .child(summary.reason.clone()),
+            )
+            .into_any_element(),
+    }
 }
 
 /// The four upstream cards. While the layers cannot be resolved they show a
@@ -471,6 +614,61 @@ mod tests {
         let summary = state.summary.expect("the dungeon state is computed");
         assert!(!summary.available);
         assert!(summary.reason.contains("Dungeon"), "{summary:?}");
+    }
+
+    #[test]
+    fn the_layer_tabs_open_on_the_first_layer_and_switch() {
+        let mut state = State::default();
+        state.load(&save());
+        assert_eq!(state.layer, LayerId::Base);
+        state.select_layer(LayerId::Multiplier);
+        assert_eq!(state.layer, LayerId::Multiplier);
+        assert_eq!(LayerId::from_id("ddl2"), Some(state.layer));
+    }
+
+    #[test]
+    fn the_layer_tabs_and_the_mastery_breakdown_read_the_summary() {
+        // The provider has not landed, so the page has no layers to tab through
+        // and no mastery terms to break down; it names the gap instead.
+        let mut state = State::default();
+        state.load(&save());
+        assert_eq!(state.mastery_tree(), None);
+        assert!(state.summary.as_ref().unwrap().layers().is_none());
+
+        // The same page once the layers resolve: all three tabs, and the mastery
+        // tree's root is the ratio the mastery card prints.
+        let summary = Summary::from_layers(damage::Layers {
+            base: damage::Layer {
+                value: 100.0,
+                pre_softcap: 500.0,
+            },
+            percent: damage::Layer {
+                value: 2.0,
+                pre_softcap: 8.0,
+            },
+            multiplier: damage::Layer {
+                value: 3.0,
+                pre_softcap: 12.0,
+            },
+            mastery: damage::Mastery {
+                bubble: 0.2,
+                ..damage::Mastery::default()
+            },
+        });
+        let layers = summary.layers().expect("the layers are kept");
+        assert_eq!(summary.max, 600.0);
+        assert_eq!(layers.get(LayerId::Base).value, 100.0);
+        assert_eq!(layers.get(LayerId::Percent).pre_softcap, 8.0);
+        assert_eq!(layers.get(LayerId::Multiplier).value, 3.0);
+        let tree = summary.mastery_tree().expect("the mastery tree resolves");
+        assert_eq!(tree.value, summary.mastery);
+        assert!(
+            (summary.mastery - 0.55).abs() < 1e-12,
+            "{}",
+            summary.mastery
+        );
+        state.summary = Some(summary);
+        assert_eq!(state.mastery_tree().map(|tree| tree.value), Some(0.55));
     }
 
     #[test]

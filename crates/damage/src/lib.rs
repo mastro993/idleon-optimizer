@@ -4,10 +4,11 @@
 //! wiring in `damage-calc.html`: the summary is the base damage, percentage
 //! multiplier and multiplicative-bonus layers multiplied together, the minimum
 //! is that maximum times the mastery ratio, and the "character sheet" card is
-//! the same pair. The three layers themselves come from the upstream shared
-//! stat pipeline (`js/stats/systems/common/stats.js` and the talent, stamp,
-//! bubble, card and equipment systems it reads), which this build does not
-//! decode; `crates/stats/src/breakdowns` names the same gap for its
+//! the same pair. [`layers`] carries the three layers' values and notes and the
+//! mastery terms the ratio is built from. The layers themselves come from the
+//! upstream shared stat pipeline (`js/stats/systems/common/stats.js` and the
+//! talent, stamp, bubble, card and equipment systems it reads), which this build
+//! does not decode; `crates/stats/src/breakdowns` names the same gap for its
 //! `damage` row. This module keeps the arithmetic, the dungeon rule and the
 //! missing-input state separate so the provider can land without changing the
 //! section.
@@ -23,9 +24,14 @@
 //! reason, and [`Metadata`] ports that rule so the page names a partial result
 //! instead of a complete one.
 
+mod layers;
+
+use idleon_common::formula::FormulaNode;
 use idleon_save::{Roster, Save};
 use idleon_stats::{self as stats, Category, Snapshot};
 use serde::{Deserialize, Serialize};
+
+pub use layers::{Layer, LayerId, Layers, Mastery};
 
 /// Why a summary cannot be computed without the shared stat pipeline.
 pub const STATS_ENGINE: &str = "The shared stat pipeline (talents, stamps, bubbles, cards and equipment) is not ported yet, so the damage layers cannot be resolved.";
@@ -226,23 +232,6 @@ fn js_number(value: &serde_json::Value) -> Option<f64> {
     }
 }
 
-/// The three damage layers and the mastery ratio they combine with.
-///
-/// Upstream's `damage` descriptor returns `Max Damage`, `Min Damage` and
-/// `Mastery` children; the layers are its `Base Damage (with softcap)`,
-/// `Percentage Damage Multiplier` and `Multiplicative Damage Bonuses` children.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
-pub struct Layers {
-    /// DDL0: base damage after its softcaps.
-    pub base: f64,
-    /// DDL1: percentage damage multiplier after its softcaps.
-    pub percent: f64,
-    /// DDL2: multiplicative bonuses after their softcap chain.
-    pub multiplier: f64,
-    /// The minimum/maximum ratio, capped at 0.8 upstream.
-    pub mastery: f64,
-}
-
 /// A computed summary, or the reason the page cannot compute one.
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -259,6 +248,10 @@ pub struct Summary {
     pub max: f64,
     /// The mastery ratio, capped exactly as upstream caps it.
     pub mastery: f64,
+    /// The layers the summary was built from, for the layer tabs and the
+    /// mastery breakdown; `None` while they cannot be resolved.
+    #[serde(skip)]
+    layers: Option<Layers>,
 }
 
 impl Summary {
@@ -266,11 +259,11 @@ impl Summary {
     ///
     /// Upstream computes `MaxDmg = DDL[0] * DDL[1] * DDL[2]` and
     /// `MinDmg = MaxDmg * mastery`, with mastery already capped at 0.8 by the
-    /// descriptor. The cap is applied again here so a hand-entered layer cannot
-    /// produce a minimum above the maximum.
+    /// descriptor. The ratio is [`Mastery::value`], so the minimum is the
+    /// mastery breakdown tree's root times the maximum.
     pub fn from_layers(layers: Layers) -> Self {
-        let mastery = layers.mastery.clamp(0.0, 0.8);
-        let max = layers.base * layers.percent * layers.multiplier;
+        let mastery = layers.mastery.value();
+        let max = layers.max();
         let max = if max.is_finite() { max } else { 0.0 };
         Self {
             available: true,
@@ -279,7 +272,19 @@ impl Summary {
             min: max * mastery,
             max,
             mastery,
+            layers: Some(layers),
         }
+    }
+
+    /// The three layers and the mastery terms, for the layer tabs and the
+    /// mastery breakdown; `None` while the summary is unavailable.
+    pub fn layers(&self) -> Option<&Layers> {
+        self.layers.as_ref()
+    }
+
+    /// The mastery breakdown's root, or nothing while the layers are unresolved.
+    pub fn mastery_tree(&self) -> Option<FormulaNode> {
+        self.layers.as_ref().map(|layers| layers.mastery.tree())
     }
 
     /// Attach the saved metadata the descriptor reads, so a summary built from
@@ -347,19 +352,36 @@ mod tests {
     use super::*;
 
     /// Character one's upstream layers from `fixtures/damage.json`, written by
-    /// `script/damage-oracle.mjs` from `damageDebug()` in a checkout of
-    /// `Corgan/idleon-research-optimizer`. The arithmetic is the only part this
-    /// module owns until the shared stat pipeline lands.
-    const FIXTURE: Layers = Layers {
-        base: 24_314_521.292_961_78,
-        percent: 33_196_799.975_627_754,
-        multiplier: 19_132_764_507_064_010.0,
-        mastery: 0.8,
-    };
+    /// `script/damage-oracle.mjs` from the descriptor's own children in a
+    /// checkout of `Corgan/idleon-research-optimizer`. The arithmetic is the
+    /// only part this module owns until the shared stat pipeline lands.
+    fn fixture() -> Layers {
+        Layers {
+            base: Layer {
+                value: 24_314_521.292_961_78,
+                pre_softcap: 4_591_588_409.642_382,
+            },
+            percent: Layer {
+                value: 33_196_799.975_627_754,
+                pre_softcap: 14_592_923_047.441_711,
+            },
+            multiplier: Layer {
+                value: 19_132_764_507_064_010.0,
+                pre_softcap: 2_705_975_188_164_973_000.0,
+            },
+            mastery: Mastery {
+                penalty: 0.0,
+                bubble: 0.545_830_458_904_130_8,
+                cards: 0.0,
+                talent: 0.0,
+                etc: 0.0,
+            },
+        }
+    }
 
     #[test]
     fn the_summary_is_the_three_layers_and_the_mastery_ratio() {
-        let summary = Summary::from_layers(FIXTURE);
+        let summary = Summary::from_layers(fixture());
         assert!(summary.available);
         assert_eq!(summary.max, 1.544_328_446_783_761e31);
         assert_eq!(summary.min, 1.235_462_757_427_009e31);
@@ -371,15 +393,66 @@ mod tests {
     #[test]
     fn mastery_is_capped_at_the_upstream_eight_tenths() {
         let summary = Summary::from_layers(Layers {
-            base: 100.0,
-            percent: 2.0,
-            multiplier: 3.0,
-            mastery: 1.5,
+            base: Layer {
+                value: 100.0,
+                pre_softcap: 500.0,
+            },
+            percent: Layer {
+                value: 2.0,
+                pre_softcap: 2.0,
+            },
+            multiplier: Layer {
+                value: 3.0,
+                pre_softcap: 3.0,
+            },
+            mastery: Mastery {
+                penalty: 0.1,
+                bubble: 0.3,
+                cards: 0.2,
+                talent: 0.1,
+                etc: 0.06,
+            },
         });
         assert_eq!(summary.max, 600.0);
-        assert_eq!(summary.min, 480.0);
+        // 0.35 - 0.1 + 0.66 = 0.91, capped at 0.8.
         assert_eq!(summary.mastery, 0.8);
+        assert_eq!(summary.min, 480.0);
         assert_eq!(summary.mastery_fill(), 100.0);
+    }
+
+    #[test]
+    fn a_ratio_below_the_cap_reaches_the_minimum_and_the_tree() {
+        let summary = Summary::from_layers(Layers {
+            base: Layer::default(),
+            percent: Layer::default(),
+            multiplier: Layer::default(),
+            mastery: Mastery {
+                penalty: 0.05,
+                bubble: 0.2,
+                ..Mastery::default()
+            },
+        });
+        assert!((summary.mastery - 0.5).abs() < 1e-12, "{}", summary.mastery);
+        let tree = summary.mastery_tree().expect("the layers resolve a tree");
+        assert_eq!(tree.value, summary.mastery);
+        let sum: f64 = tree.children.iter().map(|child| child.value).sum();
+        assert!((sum - summary.mastery).abs() < 1e-12, "{sum}");
+    }
+
+    #[test]
+    fn the_layer_tabs_read_the_layer_they_name() {
+        let summary = Summary::from_layers(fixture());
+        let layers = summary.layers().expect("the layers are kept");
+        assert_eq!(
+            layers.get(LayerId::Multiplier).value,
+            19_132_764_507_064_010.0
+        );
+        assert_eq!(summary.max, layers.max());
+        assert_eq!(
+            Summary::unavailable(DUNGEON).layers(),
+            None,
+            "an unavailable summary has no layers to tab through"
+        );
     }
 
     #[test]

@@ -12,7 +12,9 @@
 //! against upstream as soon as that changes, so the provider cannot land
 //! without matching this fixture.
 
-use idleon_damage::{self as damage, DUNGEON, Layers, Metadata, STATS_ENGINE, Summary};
+use idleon_damage::{
+    self as damage, DUNGEON, Layer, LayerId, Layers, Mastery, Metadata, STATS_ENGINE, Summary,
+};
 use idleon_import::{Imported, import};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
@@ -89,15 +91,7 @@ fn every_character_context_matches_the_upstream_cases() {
 fn the_layer_combine_matches_every_upstream_case() {
     let oracle = oracle();
     for expected in cases(&oracle) {
-        let layers = Layers {
-            base: expected["layers"]["base"].as_f64().expect("a base"),
-            percent: expected["layers"]["percent"].as_f64().expect("a percent"),
-            multiplier: expected["layers"]["multiplier"]
-                .as_f64()
-                .expect("a multiplier"),
-            mastery: expected["mastery"].as_f64().expect("a mastery"),
-        };
-        let summary = Summary::from_layers(layers);
+        let summary = Summary::from_layers(layers(expected));
         let expected_max = expected["max"].as_f64().expect("a max");
         let expected_min = expected["min"].as_f64().expect("a min");
         assert!(
@@ -112,7 +106,121 @@ fn the_layer_combine_matches_every_upstream_case() {
             expected["character"],
             summary.min
         );
-        assert!(close(summary.mastery, layers.mastery));
+        assert!(close(
+            summary.mastery,
+            expected["mastery"]["value"].as_f64().unwrap()
+        ));
+    }
+}
+
+/// The fixture's three layers and mastery terms, in the model's shape.
+fn layers(expected: &Value) -> Layers {
+    let layer = |key: &str| {
+        let value = &expected["layers"][key];
+        Layer {
+            value: value["value"].as_f64().expect("a layer value"),
+            pre_softcap: value["preSoftcap"].as_f64().expect("a pre-softcap value"),
+        }
+    };
+    let mastery = &expected["mastery"];
+    let term = |name: &str| {
+        mastery["terms"]
+            .as_array()
+            .expect("the mastery terms")
+            .iter()
+            .find(|term| term["name"].as_str() == Some(name))
+            .and_then(|term| term["value"].as_f64())
+            .unwrap_or_else(|| panic!("the fixture lost the {name} term"))
+    };
+    Layers {
+        base: layer("base"),
+        percent: layer("percent"),
+        multiplier: layer("multiplier"),
+        mastery: Mastery {
+            penalty: mastery["penalty"].as_f64().expect("a penalty"),
+            bubble: term("Mastery Bubble"),
+            cards: term("Card Bonus: Mastery"),
+            talent: term("Talent: Mastery Up"),
+            etc: term("Combined Item Sources: MASTERY"),
+        },
+    }
+}
+
+#[test]
+fn every_layer_keeps_the_descriptor_text_and_the_page_note() {
+    let save = fixture();
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let layers = layers(expected);
+        for id in LayerId::ALL {
+            let layer = layers.get(id);
+            let upstream = &expected["layers"][match id {
+                LayerId::Base => "base",
+                LayerId::Percent => "percent",
+                LayerId::Multiplier => "multiplier",
+            }];
+            assert_eq!(id.note(), upstream["note"].as_str().expect("a note"));
+            let format = match id.format() {
+                idleon_common::ValueFormat::Raw => "raw",
+                idleon_common::ValueFormat::Multiplier => "x",
+                other => panic!("{other:?} is not a layer format"),
+            };
+            assert_eq!(format, upstream["format"].as_str().expect("a format"));
+            assert!(close(layer.value, upstream["value"].as_f64().unwrap()));
+            assert!(close(
+                layer.pre_softcap,
+                upstream["preSoftcap"].as_f64().unwrap()
+            ));
+        }
+    }
+    // The layer block stays empty until the shared stat pipeline lands.
+    assert_eq!(evaluate(&save, 0, 200).layers(), None);
+}
+
+#[test]
+fn the_mastery_ratio_is_the_formula_tree() {
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let mastery = layers(expected).mastery;
+        let mastery_node = &expected["mastery"];
+        assert_eq!(
+            mastery_node["base"].as_f64().expect("a base"),
+            Mastery::BASE,
+            "character {}",
+            expected["character"]
+        );
+        assert_eq!(
+            mastery_node["cap"].as_f64().expect("a cap"),
+            Mastery::CAP,
+            "character {}",
+            expected["character"]
+        );
+        assert!(
+            close(
+                mastery.value(),
+                mastery_node["value"].as_f64().expect("a mastery")
+            ),
+            "character {}: {} != {}",
+            expected["character"],
+            mastery.value(),
+            mastery_node["value"]
+        );
+        // The tree the page draws: the base and one node per descriptor term,
+        // and its root is the ratio the mastery card shows.
+        let tree = mastery.tree();
+        assert_eq!(tree.label, mastery_node["name"].as_str().unwrap());
+        assert!(close(tree.value, mastery.value()));
+        let upstream_terms = mastery_node["terms"].as_array().expect("the terms");
+        assert_eq!(tree.children.len(), upstream_terms.len() + 1);
+        for (node, term) in tree.children.iter().skip(1).zip(upstream_terms) {
+            assert_eq!(node.label, term["name"].as_str().expect("a term name"));
+            assert!(
+                close(node.value, term["value"].as_f64().expect("a term value")),
+                "character {}: {}",
+                expected["character"],
+                node.label
+            );
+        }
     }
 }
 
@@ -140,7 +248,7 @@ fn the_summary_reports_the_missing_engine_until_the_provider_lands() {
             );
             assert!(close(
                 summary.mastery,
-                expected["mastery"].as_f64().expect("a mastery")
+                expected["mastery"]["value"].as_f64().expect("a mastery")
             ));
             continue;
         }
