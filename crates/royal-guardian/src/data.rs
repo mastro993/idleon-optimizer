@@ -17,8 +17,18 @@ const ROYAL_JSON: &str = include_str!("../data/royal-guardian.json");
 pub struct Data {
     /// `ArmoryUpg[idx][5]`: an armory upgrade's bonus per level.
     pub armory_bonus_per_level: Vec<f64>,
+    /// `ArmoryUpg[idx]`: every column the upgrade list reads.
+    pub armory: Vec<Armory>,
+    /// `Research[43]`: the shelf order the upgrade list prints.
+    pub armory_order: Vec<f64>,
     /// `OrbletMarket[idx][4]`: an orblet's bonus per level.
     pub orblet_bonus_per_level: Vec<f64>,
+    /// `OrbletMarket[idx]`: every column the orblet list reads.
+    pub orblets: Vec<Orblet>,
+    /// `LegendTalents[23][2]`: the daily Masterclass discount limit per point.
+    pub legend_talent_per_point23: f64,
+    /// `SpelunkUpg[65][4]` and `SpelunkUpg[77][4]`: the rank-EXP shop rows.
+    pub spelunk_shop_per_level: BTreeMap<String, f64>,
     pub resources: Vec<Resource>,
     /// One entry per map index; every index the game data carries has a row.
     pub maps: Vec<Map>,
@@ -28,6 +38,34 @@ pub struct Data {
     pub collection: Collection,
     /// `Spelunky[18]`: the base of each big-fish bonus.
     pub big_fish_base: Vec<f64>,
+}
+
+/// One `ArmoryUpg` row: a shelf's name, its cost curve and the Armory level
+/// total that unlocks it.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Armory {
+    pub name: String,
+    /// `ArmoryUpg[idx][1]`.
+    pub base_cost: f64,
+    /// `ArmoryUpg[idx][2]`.
+    pub cost_growth: f64,
+    pub currency_slot: i64,
+    pub max_level: f64,
+    pub bonus_per_level: f64,
+    /// The Armory level total at which the shelf appears.
+    pub research_order: f64,
+}
+
+/// One `OrbletMarket` row.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Orblet {
+    pub name: String,
+    pub base_cost: f64,
+    pub cost_growth: f64,
+    pub max_level: f64,
+    pub bonus_per_level: f64,
 }
 
 /// The cross-system rows the global collection rate multiplies in: RG-02 reads
@@ -100,6 +138,30 @@ pub fn map(index: usize) -> Option<&'static Map> {
     data().maps.get(index)
 }
 
+/// One Armory shelf's static row.
+pub fn armory(index: usize) -> Option<&'static Armory> {
+    data().armory.get(index)
+}
+
+/// One Orblet market row.
+pub fn orblet(index: usize) -> Option<&'static Orblet> {
+    data().orblets.get(index)
+}
+
+/// The shelf order: `Research[43]`, one Armory index per shelf.
+pub fn armory_order() -> &'static [f64] {
+    &data().armory_order
+}
+
+/// `SpelunkUpg[idx][4]`: the per-level value of a rank-EXP shop row.
+pub fn spelunk_shop_per_level(index: usize) -> f64 {
+    data()
+        .spelunk_shop_per_level
+        .get(&index.to_string())
+        .copied()
+        .unwrap_or(0.0)
+}
+
 /// One resource node's static row.
 pub fn resource(index: usize) -> Option<&'static Resource> {
     data().resources.get(index)
@@ -133,11 +195,14 @@ mod tests {
             83,
             "ArmoryUpg has 83 rows"
         );
+        assert_eq!(data.armory.len(), 83, "the cost columns travel with it");
+        assert_eq!(data.armory_order.len(), 69, "Research[43] lists 69 shelves");
         assert_eq!(
             data.orblet_bonus_per_level.len(),
             10,
             "OrbletMarket has 10 rows"
         );
+        assert_eq!(data.orblets.len(), 10, "the orblet cost columns travel too");
         assert_eq!(data.resources.len(), 80, "RoyalResources has 80 rows");
         assert_eq!(data.maps.len(), 327, "MapDetails has 327 rows");
         assert_eq!(data.big_fish_base.len(), 7, "Spelunky[18] lists 7");
@@ -160,6 +225,32 @@ mod tests {
         assert_eq!(data.collection.arcade70.kind, "decay");
         assert_eq!(data.collection.arcade70.base, 6.0);
         assert_eq!(data.collection.arcade70.denominator, 100.0);
+        // The daily Masterclass discount and the two rank-EXP shop rows.
+        assert_eq!(data.legend_talent_per_point23, 8.0);
+        assert_eq!(spelunk_shop_per_level(65), 1.0);
+        assert_eq!(
+            spelunk_shop_per_level(77),
+            0.0,
+            "the game data carries no SpelunkUpg[77], so upstream reads zero"
+        );
+    }
+
+    #[test]
+    fn the_upgrade_rows_carry_their_cost_curves() {
+        // `ArmoryUpg[0]` is the grade unlock: one level, one point.
+        let row = armory(0).expect("armory 0");
+        assert_eq!(row.name, "Resource Grades");
+        assert_eq!((row.base_cost, row.cost_growth), (1.0, 1.0));
+        assert_eq!((row.max_level, row.currency_slot), (1.0, 0));
+        assert_eq!(
+            armory_order().first().copied(),
+            Some(30.0),
+            "Research[43] opens on shelf 30"
+        );
+        // `OrbletMarket[0]` is the first orblet: two Orblets, five levels.
+        let orblet = orblet(0).expect("orblet 0");
+        assert_eq!((orblet.base_cost, orblet.cost_growth), (2.0, 50.0));
+        assert_eq!(orblet.max_level, 5.0);
     }
 
     #[test]

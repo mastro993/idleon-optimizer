@@ -243,8 +243,9 @@ pub(crate) struct JellyConfig {
     seed: u32,
 }
 
-/// The Royal Guardian section's config: the pane, the world the tables list and
-/// the outpost, node and currency the panels explain.
+/// The Royal Guardian section's config: the pane, the world the tables list, the
+/// outpost, node and currency the panels explain, the upgrade list and breakdown
+/// it shows, and the forecast's horizon, collects and menu-open windows.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct RoyalConfig {
@@ -253,6 +254,12 @@ pub(crate) struct RoyalConfig {
     outpost: Option<usize>,
     resource: Option<usize>,
     currency: Option<i64>,
+    upgrade_view: crate::sections::royal_guardian::UpgradeView,
+    armory_plan: Option<usize>,
+    breakdown: idleon_royal_guardian::Category,
+    forecast_hours: f64,
+    collects: Vec<f64>,
+    windows: Vec<(f64, f64)>,
 }
 
 /// The Jar section's config: its tab, the tier the rupie value projects and
@@ -471,6 +478,12 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             outpost: state.royal_state.outpost,
             resource: state.royal_state.resource,
             currency: state.royal_state.currency,
+            upgrade_view: state.royal_state.upgrade_view,
+            armory_plan: state.royal_state.armory_plan,
+            breakdown: state.royal_state.breakdown,
+            forecast_hours: state.royal_state.forecast_hours,
+            collects: state.royal_state.collects.clone(),
+            windows: state.royal_state.windows.clone(),
         }),
     );
     insert(
@@ -961,7 +974,15 @@ pub(crate) fn assign(
                 outpost: config.outpost,
                 resource: config.resource,
                 currency: config.currency,
+                upgrade_view: config.upgrade_view,
+                armory_plan: config.armory_plan,
+                breakdown: config.breakdown,
+                forecast_hours: config.forecast_hours,
+                collects: config.collects,
+                windows: config.windows,
             };
+            state.royal_forecast = None;
+            state.royal_forecast_key = None;
         }
         Config::Opal(config) => {
             state.set_opal_villager(config.selected, cx);
@@ -1401,6 +1422,33 @@ mod tests {
             !monument.worksheet.can_undo(),
             "a project keeps the worksheet, not its trail"
         );
+        let royal = round_trip(&RoyalConfig {
+            tab: RoyalTab::Forecast,
+            world: 2,
+            outpost: Some(51),
+            resource: Some(44),
+            currency: Some(3),
+            upgrade_view: crate::sections::royal_guardian::UpgradeView::Orblets,
+            armory_plan: Some(4),
+            breakdown: idleon_royal_guardian::Category::Savage,
+            forecast_hours: 168.0,
+            collects: vec![6.0, 30.0],
+            windows: vec![(20.0, 22.0)],
+        });
+        assert_eq!(royal.tab, RoyalTab::Forecast);
+        assert_eq!(royal.world, 2);
+        assert_eq!(royal.outpost, Some(51));
+        assert_eq!(royal.resource, Some(44));
+        assert_eq!(royal.currency, Some(3));
+        assert_eq!(
+            royal.upgrade_view,
+            crate::sections::royal_guardian::UpgradeView::Orblets
+        );
+        assert_eq!(royal.armory_plan, Some(4));
+        assert_eq!(royal.breakdown, idleon_royal_guardian::Category::Savage);
+        assert_eq!(royal.forecast_hours, 168.0);
+        assert_eq!(royal.collects, vec![6.0, 30.0]);
+        assert_eq!(royal.windows, vec![(20.0, 22.0)]);
         let pickle = round_trip(&PickleState {
             dps: 5.5e7,
             max_ttk: 120.0,

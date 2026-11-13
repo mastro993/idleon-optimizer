@@ -34,10 +34,43 @@ const number = (value) => Number(value) || 0;
 
 // `ArmoryUpg[idx][5]` is the bonus per level: an armory upgrade's effect is
 // its saved level times that bonus, which is what opens worlds and scales the
-// outpost stats. RG-03 extends the extractor with the cost columns.
+// outpost stats. RG-03 adds the cost columns and the shelf order.
 // `OrbletMarket[idx][4]` is the same kind of per-level bonus.
 const armoryBonusPerLevel = data.ARMORY_UPGRADES.map((row) => row.bonusPerLevel);
 const orbletBonusPerLevel = data.ORBLET_MARKET.map((row) => row.bonusPerLevel);
+
+// The upgrade list reads every cost column: the base cost, its growth per
+// level, the currency slot the shelf is paid in, the level cap and the Armory
+// level total that unlocks the shelf (`researchOrder`). The 製 glyph in a name
+// is the in-game help button, not part of the name.
+const armory = data.ARMORY_UPGRADES.map((row) => ({
+  name: row.name.replace(/\s+/g, ' ').trim(),
+  baseCost: row.baseCost,
+  costGrowth: row.costGrowth,
+  currencySlot: row.currencySlot,
+  maxLevel: row.maxLevel,
+  bonusPerLevel: row.bonusPerLevel,
+  researchOrder: row.researchOrder,
+}));
+const orblets = data.ORBLET_MARKET.map((row) => ({
+  name: row.name,
+  baseCost: row.baseCost,
+  costGrowth: row.costGrowth,
+  maxLevel: row.maxLevel,
+  bonusPerLevel: row.bonusPerLevel,
+}));
+const armoryOrder = data.ARMORY_ORDER.map(number);
+
+// The daily Masterclass discount: `legendPTSbonus(23)` reads Spelunk[18][23]
+// through the legend talent table, and the Armory cost multiplies it in.
+const legend = await import(join(source, 'js/stats/data/w7/legendTalent.js'));
+const legendTalentPerPoint23 = number(legend.legendTalentPerPt(23));
+
+// The rank-EXP shop rows the global rate reads, `SpelunkUpg[idx][4]`. Upstream
+// reads rows 65 and 77; a row the game data does not carry contributes zero.
+const spelunkShopPerLevel = Object.fromEntries(
+  [65, 77].map((index) => [String(index), number(lists.SpelunkUpg?.[index]?.[4])]),
+);
 
 // `MapDetails[idx][2]` is the map anchor the outpost range is measured from;
 // `outpostKillRequirement(idx)` is the kill requirement the clearing values use:
@@ -95,6 +128,11 @@ const collection = {
 const payload = {
   armoryBonusPerLevel,
   orbletBonusPerLevel,
+  armory,
+  orblets,
+  armoryOrder,
+  legendTalentPerPoint23,
+  spelunkShopPerLevel,
   resources,
   maps: mapRows,
   talents: Object.fromEntries(TALENTS.map((id) => [String(id), talent(id)])),
@@ -114,7 +152,11 @@ const payload = {
       'js/stats/data/w7/sushi.js',
     ],
     rows: {
-      armory: 'ArmoryUpg',
+      armory: 'ArmoryUpg[i][0..6]',
+      armoryOrder: 'Research[43]',
+      orblets: 'OrbletMarket[i][0..4]',
+      legendTalentPerPoint23: 'LegendTalents[23][2]',
+      spelunkShopPerLevel: 'SpelunkUpg[65,77][4]',
       resources: 'RoyalResources[i][2..3]',
       maps: 'MapDetails[i][2]',
       talents: 'TalentDescriptions[225,226,230,231][1]',

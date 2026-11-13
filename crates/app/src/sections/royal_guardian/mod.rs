@@ -1,5 +1,5 @@
-//! The Royal Guardian Calculator: the upstream Overview, Outposts, Resources
-//! and Currencies tabs.
+//! The Royal Guardian Calculator: the upstream Overview, Outposts, Resources,
+//! Currencies, Upgrades, Breakdowns and Forecast tabs.
 //!
 //! Ported from `royal-guardian-calc.html`,
 //! `js/stats/systems/w7/royal-guardian.js` and
@@ -7,15 +7,20 @@
 //! the counters, the world progress cards, the raw clearing values every outpost
 //! reports and the range target behind an outpost's Advanced Logistics plan.
 //! RG-02 adds the outpost map, the resource nodes, the currencies, the drain
-//! staffing and the banked hours. The upgrades arrive with RG-03 and the
-//! optimizer with RG-04, so the strip lists only the panes behind it.
+//! staffing and the banked hours. RG-03 adds the upgrade list with its cost
+//! plans, the global breakdown tree and the forecast. The optimizer and the unit
+//! EXP move with RG-04, so the strip ends at the forecast.
 
 mod actions;
-
+mod breakdowns;
 mod currencies;
+pub(crate) mod forecast;
 mod outposts;
 mod overview;
 mod resources;
+mod upgrades;
+
+pub(crate) use upgrades::View as UpgradeView;
 
 #[cfg(test)]
 mod tests;
@@ -43,14 +48,23 @@ pub(crate) enum Tab {
     Resources,
     /// The currency balances and the nodes that pay them.
     Currencies,
+    /// The Armory shelves and the Orblet market, with their cost plans.
+    Upgrades,
+    /// The account-wide rules as the shared formula tree.
+    Breakdowns,
+    /// The projection over the collects the player places.
+    Forecast,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 4] = [
+    pub(crate) const ALL: [Tab; 7] = [
         Tab::Overview,
         Tab::Outposts,
         Tab::Resources,
         Tab::Currencies,
+        Tab::Upgrades,
+        Tab::Breakdowns,
+        Tab::Forecast,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -59,6 +73,9 @@ impl Tab {
             Tab::Outposts => "outposts",
             Tab::Resources => "resources",
             Tab::Currencies => "currencies",
+            Tab::Upgrades => "upgrades",
+            Tab::Breakdowns => "breakdowns",
+            Tab::Forecast => "forecast",
         }
     }
 
@@ -68,6 +85,9 @@ impl Tab {
             Tab::Outposts => "Outposts",
             Tab::Resources => "Resources",
             Tab::Currencies => "Currencies",
+            Tab::Upgrades => "Upgrades",
+            Tab::Breakdowns => "Breakdowns",
+            Tab::Forecast => "Forecast",
         }
     }
 
@@ -77,7 +97,7 @@ impl Tab {
 }
 
 /// The section's own state, kept across dashboard visits.
-#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct State {
     /// The pane the strip shows.
@@ -90,6 +110,43 @@ pub(crate) struct State {
     pub(crate) resource: Option<usize>,
     /// The currency slot the currencies pane explains.
     pub(crate) currency: Option<i64>,
+    /// The upgrade list the Upgrades pane shows.
+    pub(crate) upgrade_view: upgrades::View,
+    /// The shelf whose cost plan the Upgrades pane prices.
+    pub(crate) armory_plan: Option<usize>,
+    /// The global rule the Breakdowns pane expands.
+    pub(crate) breakdown: idleon_royal_guardian::Category,
+    /// The forecast horizon, in hours.
+    pub(crate) forecast_hours: f64,
+    /// The hours the forecast's collects sit at.
+    pub(crate) collects: Vec<f64>,
+    /// The forecast's menu-open windows, as `(start, end)` hours.
+    pub(crate) windows: Vec<(f64, f64)>,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            tab: Tab::default(),
+            world: 0,
+            outpost: None,
+            resource: None,
+            currency: None,
+            upgrade_view: upgrades::View::default(),
+            armory_plan: None,
+            breakdown: idleon_royal_guardian::Category::default(),
+            forecast_hours: idleon_royal_guardian::HORIZON.2,
+            collects: Vec::new(),
+            windows: Vec::new(),
+        }
+    }
+}
+
+impl State {
+    /// The forecast inputs as the engine reads them.
+    pub(crate) fn forecast_options(&self) -> idleon_royal_guardian::ForecastOptions {
+        forecast::options(self.forecast_hours, &self.collects, &self.windows)
+    }
 }
 
 /// The Royal Guardian section: the tab strip and its pane, or the import prompt
@@ -128,11 +185,17 @@ pub(crate) fn view(
         .px_3()
         .pt_2()
         .child(tabs);
+    if tab == Tab::Forecast {
+        state.ensure_royal_forecast();
+    }
     let pane = match tab {
         Tab::Overview => overview::overview(state, cx),
         Tab::Outposts => outposts::outposts(state, cx),
         Tab::Resources => resources::resources(state, cx),
         Tab::Currencies => currencies::currencies(state, cx),
+        Tab::Upgrades => upgrades::upgrades(state, cx),
+        Tab::Breakdowns => breakdowns::breakdowns(state, cx),
+        Tab::Forecast => forecast::forecast(state, cx),
     };
     div()
         .id("royal-guardian-section")

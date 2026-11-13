@@ -2,9 +2,9 @@
 
 Status: **foundation in progress, research (including the Minehead and Sushi Station tabs), statue, jar, farming, ladle,
 Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
-Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God Rank planner, the
-Spelunking controls and depth estimates, the Sneaking loadout, inventory and formula breakdown
-workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
+Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
+the Coral God Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout,
+inventory and formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
 the Clamworks optimizer, the Jelly Operator overview, layout editor and operation simulator, the
 drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial total, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
@@ -281,7 +281,7 @@ script/clamworks-oracle.mjs         regenerate the Clamworks promotion and plan 
 script/clamworks-afk-oracle.mjs     regenerate the AFK claim and comparison oracle fixture
 script/extract-spelunk-data.mjs     extract the cave, rock, tool, elixir, chapter and sprite tables
 script/spelunking-oracle.mjs        regenerate the Spelunking inputs, profiles, runs and rejections
-script/extract-royal-data.mjs       extract the Royal Guardian armory, resource, map and talent tables
+script/extract-royal-data.mjs       extract the Royal Guardian upgrade, resource, map and talent tables
 script/royal-oracle.mjs             regenerate the Royal Guardian oracle fixture
 script/extract-farming-data.mjs     extract the farming tables, emporium encoding and gates
 script/farming-signals-oracle.mjs   regenerate the farming signals and curves fixture
@@ -496,21 +496,31 @@ keeps the newest 200, and the tab clears it. Missing: the sparkline the page dra
 history tile, which reads as the current-spread and recent-snapshot tables instead.
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
-The Royal Guardian section implements RG-01 and RG-02: the overview with the counters (built
+The Royal Guardian section implements RG-01, RG-02 and RG-03: the overview with the counters (built
 outposts, worlds unlocked, Armory levels, stationed units, militia clearing), the world progress
 cards, the raw clearing values every unbuilt outpost reports (progress, requirement, remaining,
-militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; then the
-outpost map with its saved Normal, Support and Savage links, the resource nodes with their grade,
-capacity, collected progress and drain projection, the currencies with their balances and source
-nodes, and the banked hours and daily reset countdown. `idleon_royal_guardian` reads `RoyalG`,
-`RoyalMaps`, `Spelunk`, `Sushi`, `ArcadeUpg`, `Lv0_<n>` and `TimeAway`;
-`script/extract-royal-data.mjs` extracts the Armory, resource (capacity and currency slot), map and
-talent tables plus the three cross-system constants the collection rate reads, and
-`script/royal-oracle.mjs` regenerates `fixtures/royal-guardian.json` from the upstream JS. Every
-rate reads its talents' purchased level; the all-talent bonus levels that raise them are not decoded
-yet, and the collection multiplier also leaves the W14 alchemy bubble and the `it.json` companion
-roster out, so the rate card names those sources instead of guessing. Missing: the upgrades, the
-breakdown tree and the forecast (RG-03) and the optimizer, unit EXP and shelf steps (RG-04).
+militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; the outpost map
+with its saved Normal, Support and Savage links, the resource nodes with their grade, capacity,
+collected progress and drain projection, the currencies with their balances and source nodes, and the
+banked hours and daily reset countdown; the upgrade list with every Armory shelf priced from the
+seven-factor Masterclass cost and every Orblet, with the next fifty levels of one shelf priced level
+by level against the saved balance; the seven global breakdown rules (collection, range, rank EXP,
+points, units, support, savage) through the shared formula tree; and the forecast, which projects the
+native collect pass over the horizon, the collects the player places, the menu-open windows and the
+daily reset, with the fill, rank, clear and affordable-upgrade events each collection would commit.
+`idleon_royal_guardian` reads `RoyalG`, `RoyalMaps`, `Spelunk`, `Sushi`, `ArcadeUpg`, `OptLacc`,
+`BundlesReceived`, `ChestOrder`/`ChestQuantity`, `InventoryOrder_<n>`/`ItemQTY_<n>`, `Lv0_<n>` and
+`TimeAway`; `script/extract-royal-data.mjs` extracts the Armory name, cost, level-cap, currency and
+unlock-order columns, the Orblet rows, the Legend talent's daily discount rate, the two rank-EXP shop
+rows, the resource (capacity and currency slot), map and talent tables plus the three cross-system
+constants the collection rate reads, and `script/royal-oracle.mjs` regenerates
+`fixtures/royal-guardian.json` from the upstream JS. Every rate reads its talents' purchased level;
+the all-talent bonus levels that raise them are not decoded yet, and the collection multiplier also
+leaves the W14 alchemy bubble and the `it.json` companion roster out, so the rate card names those
+sources instead of guessing. The shelf descriptions upstream prints read systems this build does not
+decode, so the upgrade list shows each shelf's own bonus instead. The forecast's upstream timeline
+chart is not drawn: the agenda lists the same events with their hours, and the sleep block and the
+collect suggestions are not carried. Missing: the optimizer, unit EXP and shelf steps (RG-04).
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run

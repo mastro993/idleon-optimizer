@@ -30,15 +30,19 @@
 //! lower rate than the game shows. [`RoyalGuardian::missing_sources`] names the
 //! sources the save itself does not carry.
 
+mod breakdowns;
 mod clearing;
 mod collect;
+mod collect_exp;
 mod connections;
 mod counters;
 mod data;
+mod forecast;
 mod outposts;
 mod ranges;
 mod rates;
 mod resources;
+mod upgrades;
 
 #[cfg(test)]
 mod tests;
@@ -47,14 +51,23 @@ use idleon_save::json;
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 
+pub use breakdowns::{Breakdown, Category, RANK_BARS, RANK_CONTRIBUTORS};
 pub use collect::{
     Allocation, Banked, CurrencyIncome, NodeAllocation, ResetTiming, ResourceStream,
 };
+pub use collect_exp::RankUp;
 pub use connections::{
     Connection, Endpoint, ReachableOutpost, ReachableResource, SupportLink, SupportTarget,
 };
+pub use forecast::{
+    Affordable, ClearGhost, Commit, FillGhost, Forecast, ForecastOptions, Ghosts, HORIZON, Missed,
+    RankGhost, ResetEvent, Segment, SegmentNode, Summary, Window, WindowSummary,
+};
 pub use rates::{CollectionInputs, Factor, Rate, TotalStats};
 pub use resources::{NodeCycle, ResourceNode, WindowMetrics, resource_position};
+pub use upgrades::{
+    ArmoryRow, Cost, CostPlan, CostStep, OrbletRow, Owned, PROJECTION_LEVELS, Redux,
+};
 
 /// How many worlds the game ships outposts for.
 pub const WORLDS: usize = 7;
@@ -112,6 +125,8 @@ mod row {
     pub const ORBLET: usize = 23;
     /// The first world's militia assignment types; the map row follows.
     pub const MILITIA: usize = 6;
+    /// The rank bar the Purity Shop bonus targets: `RoyalG[3][7]`.
+    pub const SELECTED_BAR_CELL: usize = 7;
 }
 
 /// One outpost's map-page row: upstream `outpostEligibility`.
@@ -272,6 +287,12 @@ pub struct RoyalGuardian {
     sushi: Vec<Value>,
     /// `ArcadeUpg`: the arcade levels the collection rate reads.
     arcade: Vec<Value>,
+    /// `OptLacc`: the options list the daily purchase counter lives in.
+    options: Vec<Value>,
+    /// `BundlesReceived`: the bundle that lowers the Masterclass prefix.
+    bundles: Map<String, Value>,
+    /// The chest and every character inventory, which the Orblet count reads.
+    inventories: Inventories,
     /// `Lv0_<n>`: one row per character, whose first cell is its level.
     levels: Vec<Value>,
     /// `TimeAway.ShopRestock`: the seconds left before the daily reset.
@@ -284,6 +305,15 @@ pub struct RoyalGuardian {
     character: Option<usize>,
     /// The bonus sources the save does not carry.
     missing: Vec<String>,
+}
+
+/// The item inventories the Orblet count reads: upstream `itemQuantityData`.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Inventories {
+    /// `ChestOrder` with `ChestQuantity`.
+    pub(crate) chest: Option<(Vec<Value>, Vec<Value>)>,
+    /// One `InventoryOrder_<n>` with `ItemQTY_<n>` per character.
+    pub(crate) characters: Vec<Option<(Vec<Value>, Vec<Value>)>>,
 }
 
 impl RoyalGuardian {
@@ -303,6 +333,11 @@ impl RoyalGuardian {
             spelunk: cells(save, "Spelunk"),
             sushi: cells(save, "Sushi"),
             arcade: cells(save, "ArcadeUpg"),
+            options: cells(save, "OptLacc"),
+            bundles: json::parsed_field(save, "BundlesReceived")
+                .and_then(|value| value.as_object().cloned())
+                .unwrap_or_default(),
+            inventories: inventories(save, levels.len()),
             levels,
             reset_seconds: reset_seconds(save),
             jelly: jelly.cloned(),
@@ -537,6 +572,28 @@ fn levels(save: &Map<String, Value>) -> Vec<Value> {
         index += 1;
     }
     rows
+}
+
+/// The chest and every character inventory, for the Orblet count.
+fn inventories(save: &Map<String, Value>, characters: usize) -> Inventories {
+    let pair = |order: &str, quantity: &str| {
+        let order = json::parsed_field(save, order).and_then(into_array)?;
+        let quantity = json::parsed_field(save, quantity)
+            .and_then(into_array)
+            .unwrap_or_default();
+        Some((order, quantity))
+    };
+    Inventories {
+        chest: pair("ChestOrder", "ChestQuantity"),
+        characters: (0..characters)
+            .map(|index| {
+                pair(
+                    &format!("InventoryOrder_{index}"),
+                    &format!("ItemQTY_{index}"),
+                )
+            })
+            .collect(),
+    }
 }
 
 /// A saved account row, as a flat list of cells.

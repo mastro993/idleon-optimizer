@@ -460,3 +460,94 @@ fn a_stream_travels_from_its_outpost_to_its_node() {
     assert_eq!(detail.streams.len(), 1);
     assert_eq!(detail.rate, stream.rate);
 }
+
+#[test]
+fn the_two_fixed_first_level_prices_hold_until_their_level() {
+    let g = blank_rows();
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    // Shelf 46 at its first two levels is a flat 2, and shelf 58 at level 0 is
+    // a flat 3: the source hard-codes both.
+    let cheap = royal
+        .armory_unlock_order()
+        .iter()
+        .position(|index| *index == 46.0)
+        .expect("shelf 46 is in the order");
+    let cost = royal.armory_upgrade_cost_at(cheap, 2.0, 0.0);
+    assert_eq!(cost.value, 2.0);
+    assert_eq!(cost.factors.len(), 1, "the special case has one factor");
+    // At level 3 the product takes over.
+    assert!(royal.armory_upgrade_cost_at(cheap, 3.0, 0.0).value > 2.0);
+    let late = royal
+        .armory_unlock_order()
+        .iter()
+        .position(|index| *index == 58.0)
+        .expect("shelf 58 is in the order");
+    assert_eq!(royal.armory_upgrade_cost_at(late, 0.0, 0.0).value, 3.0);
+    assert!(royal.armory_upgrade_cost_at(late, 1.0, 0.0).value > 3.0);
+}
+
+#[test]
+fn a_cost_plan_stops_at_the_level_cap() {
+    let mut g = blank_rows();
+    // Shelf 0 has one level; a level-1 save has nothing left to plan.
+    let mut armory = vec![0.0; 83];
+    armory[0] = 1.0;
+    g[row::ARMORY] = json!(armory);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    let order = royal
+        .armory_unlock_order()
+        .iter()
+        .position(|index| *index == 0.0)
+        .expect("shelf 0 is in the order");
+    let plan = royal.armory_cost_plan(order, 10).expect("shelf 0 prices");
+    assert!(plan.rows.is_empty(), "a maxed shelf has no next level");
+    assert_eq!(plan.covered_full(), 0);
+}
+
+#[test]
+fn an_orblet_level_price_grows_and_rounds_down() {
+    let g = blank_rows();
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    // Orblet 0 costs 2 at level 0 and 1 + 2 × 50 = 101 at level 1.
+    assert_eq!(royal.orblet_cost(0), 2.0);
+    assert!(!royal.orblet_unlocked(1), "orblet 0 is not bought yet");
+    let mut g = blank_rows();
+    g[row::ORBLET] = json!(vec![1.0]);
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    assert_eq!(royal.orblet_cost(0), 101.0);
+    assert!(royal.orblet_unlocked(1));
+}
+
+#[test]
+fn the_forecast_clamps_its_horizon_and_folds_a_collect_into_a_window() {
+    let g = blank_rows();
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    // A horizon past the maximum reads at the maximum, and a missing one at
+    // the default.
+    assert_eq!(
+        royal
+            .forecast(&ForecastOptions {
+                horizon_hours: 10_000.0,
+                ..ForecastOptions::default()
+            })
+            .horizon_hours,
+        HORIZON.1
+    );
+    assert_eq!(
+        royal.forecast(&ForecastOptions::default()).horizon_hours,
+        HORIZON.2
+    );
+    // A collect inside a menu-open window is covered by the window, so it is
+    // reported as ignored instead of committing twice.
+    let forecast = royal.forecast(&ForecastOptions {
+        horizon_hours: 24.0,
+        collects: vec![5.0, 12.0],
+        windows: vec![(10.0, 14.0)],
+    });
+    assert_eq!(forecast.ignored_collects, vec![12.0]);
+    assert_eq!(
+        forecast.collects.len(),
+        1,
+        "only the collect outside the window commits"
+    );
+}
