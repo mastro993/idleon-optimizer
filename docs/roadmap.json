@@ -2662,7 +2662,7 @@
       "key": "clamworks",
       "title": "Clamworks Calculator",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.",
       "upstream": [
         "clamworks-calc.html",

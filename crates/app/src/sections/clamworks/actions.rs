@@ -3,6 +3,7 @@
 use crate::sections::clamworks::Tab as ClamworksTab;
 use crate::state::AppState;
 use gpui::{App, Context};
+use idleon_clamworks::scurge::{self, MAX_AFFLICTION, MAX_OTHER_PLAYERS, Mode, Plan};
 use idleon_clamworks::{Clamworks, Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_ui::runner::TaskState;
 
@@ -141,6 +142,49 @@ impl AppState {
         self.clamworks_claim
             .set_stand_in(character, |stand_in| stand_in.drop_rate = drop_rate);
         cx.notify();
+    }
+
+    /// Pick the Scurge panel: the Self Affliction comparison or the optimized
+    /// EXP allocation.
+    pub(crate) fn set_clamworks_scurge_mode(&mut self, mode: Mode, cx: &mut Context<Self>) {
+        self.clamworks_scurge.mode = mode;
+        cx.notify();
+    }
+
+    /// The highest Self Affliction level the comparison tests.
+    pub(crate) fn set_clamworks_scurge_max_affliction(
+        &mut self,
+        level: u32,
+        cx: &mut Context<Self>,
+    ) {
+        self.clamworks_scurge.max_affliction = level.min(MAX_AFFLICTION);
+        cx.notify();
+    }
+
+    /// The other real players sharing the map, which SWARMING scales with.
+    pub(crate) fn set_clamworks_scurge_other_players(
+        &mut self,
+        players: u32,
+        cx: &mut Context<Self>,
+    ) {
+        self.clamworks_scurge.other_players = players.min(MAX_OTHER_PLAYERS);
+        cx.notify();
+    }
+
+    /// The Scurge comparison the section's current inputs ask for, or why it
+    /// cannot be built.
+    pub(crate) fn clamworks_scurge_plan(&self) -> Result<Plan, scurge::Error> {
+        // The plan previews the levels the section shows, so an applied pearl
+        // plan's projection reads through here too.
+        Plan::build(&self.clamworks_view(), self.clamworks_scurge)
+    }
+
+    /// The selected character's kills per hour, the stand-in the Scurge rates
+    /// and the AFK claim share until the combat simulator runs Clam Work.
+    pub(crate) fn clamworks_kills_per_hour(&self) -> f64 {
+        self.clamworks_claim
+            .stand_in(self.clamworks_claim.character)
+            .kills_per_hour
     }
 
     /// Read the typed hours and let the claim accept or refuse them.
