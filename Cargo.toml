@@ -48,6 +48,7 @@ idleon-research = { path = "crates/research" }
 idleon-stats-data = { path = "crates/stats-data" }
 idleon-account = { path = "crates/account" }
 idleon-minehead = { path = "crates/minehead" }
+idleon-sushi = { path = "crates/sushi" }
 idleon-import = { path = "crates/import" }
 idleon-project = { path = "crates/project" }
 idleon-ui = { path = "crates/ui" }
