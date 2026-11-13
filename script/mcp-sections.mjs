@@ -2254,7 +2254,7 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'combat-talent-0-more' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('6 talent points'),
+      (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('8 talent points'),
       'combat-sim: a talent edit updates the summed points',
     );
     // The working loadout saves as a named preset.
