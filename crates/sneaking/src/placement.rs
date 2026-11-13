@@ -24,22 +24,23 @@ impl Loadout {
             .any(|other| other.index != twin && other.floor == entry.floor)
     }
 
+    /// The floor each captive waits on: `NinjaInfo[7]`.
+    pub(crate) fn captive_floor(&self, twin: usize) -> Option<usize> {
+        data::data()
+            .info
+            .captive_floor
+            .get(twin)
+            .copied()
+            .map(|floor| floor.max(0.0) as usize)
+    }
+
     /// `captiveTargetForFloor`: the first untied-less twin whose captive waits
     /// on `floor`, or `None`.
     pub(super) fn captive_target(&self, floor: usize) -> Option<usize> {
         self.twins
             .iter()
             .take(self.players.min(self.twins.len()))
-            .find(|twin| {
-                !twin.untied
-                    && data::data()
-                        .info
-                        .captive_floor
-                        .get(twin.index)
-                        .copied()
-                        .unwrap_or(0.0) as usize
-                        == floor
-            })
+            .find(|twin| !twin.untied && self.captive_floor(twin.index) == Some(floor))
             .map(|twin| twin.index)
     }
 
@@ -56,7 +57,13 @@ impl Loadout {
     /// `doorHP(floor, mastery)`: the door's maximum HP at a mastery level.
     /// Whether this floor's door still needs hits.
     fn door_active(&self, floor: usize) -> bool {
-        floor > 0 && self.mastery >= self.mastery_max && self.active_door_floor() == Some(floor)
+        if floor == 0 || floor >= FLOOR_COUNT {
+            return false;
+        }
+        if self.projected {
+            return self.mastery >= self.mastery_max && door_hp(floor, self.mastery) > 0.0;
+        }
+        self.mastery >= self.mastery_max && self.active_door_floor() == Some(floor)
     }
 
     /// `sneakingActionMode`: what the twin's next action does.

@@ -310,6 +310,10 @@ pub struct Loadout {
     pub(super) item_find_phase: u32,
     pub(super) mastery: u32,
     pub(super) mastery_max: u32,
+    /// Whether `mastery` is a what-if level the floor table projects: the save's
+    /// own mastery and its flowers stay on the loadout, the game has not relocked
+    /// a floor and every door reads fresh at full HP.
+    pub(super) projected: bool,
     pub(super) charmed: bool,
     pub(super) players: usize,
     pub(super) account: Account,
@@ -352,6 +356,7 @@ impl Loadout {
             item_find_phase,
             mastery,
             mastery_max,
+            projected: false,
             charmed,
             players,
             account: Account::default(),

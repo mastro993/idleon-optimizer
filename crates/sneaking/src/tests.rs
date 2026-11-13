@@ -345,3 +345,24 @@ fn the_search_never_wears_a_charm_the_account_owns_once() {
         }
     }
 }
+
+#[test]
+fn the_mastery_levels_clamp_at_zero() {
+    let loadout = empty_loadout(Vec::new(), Vec::new());
+    assert_eq!(loadout.mastery_levels(), vec![0, 1]);
+    let rows = loadout.floor_mastery();
+    assert_eq!(rows.len(), 2 * FLOOR_COUNT);
+    // No twins, no doors and no captives: every row is a state, never a blank.
+    for row in &rows {
+        assert!(row.twins.is_empty());
+        assert!(row.best_detection.is_none());
+        assert!(!row.door_state.is_empty());
+        // No attackers: a door that needs hits has no ETA, a finished one is 0.
+        assert!(row.door_eta.is_none() || row.door_eta == Some(0.0));
+        assert!(row.untie_eta.is_none());
+    }
+    // No doors saved means the first door is the unfinished one, and no twin
+    // can hit it yet.
+    assert!(loadout.active_door().unwrap().eta.is_none());
+    assert!(loadout.next_captive().is_none());
+}

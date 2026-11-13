@@ -128,6 +128,126 @@ const doorTree = (twin) => {
   });
 };
 
+// ----- SN-04: the floor × mastery table, the active door and the next captive -----
+const flowers = S.spelunkData?.[15] || [];
+const floorCharmMaps = Array.from({ length: players }, (_, twin) =>
+  stealth.twinCharmBonuses(twin, nd, spelunk, gold.bonuses),
+);
+const masteryLevels = [...new Set([Math.max(0, mastery - 1), mastery, mastery + 1])];
+const metricRows = (level) =>
+  Array.from({ length: players }, (_, twin) => {
+    const floor = floors[twin];
+    const state = math.doorState(floor, level, masteryMax, mastery, nd);
+    const st = stealth.computeTwinStealth(twin, floor, floors, S, 0);
+    const funeralPct = level === mastery ? math.funeralStealthBonus(flowers[floor] || 0, knowledge) : 0;
+    const stealthValue = st.coreStealth * st.allyBonus * (1 + funeralPct / 100);
+    const detection = math.detectionChance(stealthValue, floor, level);
+    return {
+      twin,
+      floor,
+      job: math.sneakingActionMode(twin, floor, nd, {
+        doorActive: state.active,
+        playerCount: players,
+      }),
+      detection,
+      actionSpeed: stealth.computeActionSpeed(twin, S, 0),
+      koTime: math.koDuration(knowledge, floorCharmMaps[twin][1] || 0, omni),
+      dodgePct: floorCharmMaps[twin][0] || 0,
+      taunting: (floorCharmMaps[twin][1] || 0) > 0,
+      jade: jade.computeJadeCoin(twin, S, {
+        activeCharIdx: 0,
+        floor,
+        twinFloors: floors,
+        detection,
+        charmBonuses: floorCharmMaps[twin],
+        mastery: level,
+      }).coin,
+      exp: exp.computeSneakingExpPerAction(twin, S, {
+        activeCharIdx: 0,
+        floor,
+        mastery: level,
+        playerCount: players,
+        charmBonuses: floorCharmMaps[twin],
+      }).exp,
+      doorDamage: stealth.computeDoorDamageDetailed(twin, S, 0).damage,
+      untie: stealth.computeUntieProgressDetailed(twin, S, 0).progress,
+    };
+  });
+const groupRates = (metrics, floor) => {
+  const group = metrics.filter((metric) => metric.floor === floor);
+  const rates = jade.computeTeamDoorRates(
+    group.map((metric) => ({
+      actionSpeed: metric.actionSpeed,
+      detection: metric.detection,
+      koTime: metric.koTime,
+      dodgePct: metric.dodgePct,
+      taunting: metric.taunting,
+    })),
+    knowledge,
+  );
+  return group.map((metric, index) => ({ metric, rate: rates[index] }));
+};
+const doorLabel = (floor, level, state) => {
+  if (floor === 0) return 'No door';
+  if (level !== mastery) return state.maxHP > 0 ? 'Fresh' : 'Unavailable';
+  if (mastery < masteryMax || !(state.maxHP > 0)) return 'Unavailable';
+  if (state.progress >= state.maxHP) return 'Cleared';
+  if (state.active) return 'Active';
+  return state.activeFloor != null && state.activeFloor >= 0
+    ? 'Locked by F' + state.activeFloor
+    : 'Inactive';
+};
+const floorRows = masteryLevels.flatMap((level) => {
+  const metrics = metricRows(level);
+  return Array.from({ length: math.FLOOR_COUNT }, (_, index) => math.FLOOR_COUNT - 1 - index)
+    .map((floor) => {
+      const state = math.doorState(floor, level, masteryMax, mastery, nd);
+      const captiveIdx = math.captiveTargetForFloor(floor, nd, players);
+      const untieRemaining = captiveIdx >= 0
+        ? Math.max(0, math.untieReq(captiveIdx) - (Number(nd[captiveIdx]?.[3]) || 0))
+        : 0;
+      const members = groupRates(metrics, floor).map(({ metric }) => metric);
+      return {
+        floor,
+        mastery: level,
+        current: level === mastery,
+        flowers: level === mastery ? Number(flowers[floor]) || 0 : 0,
+        funeralPercent: level === mastery ? math.funeralStealthBonus(Number(flowers[floor]) || 0, knowledge) : 0,
+        detectionBase: num(math.floorDetectionBase(floor, level)),
+        jadeBase: num(math.floorJadeBase(floor, level)),
+        expBase: num(math.floorExpMult(floor, level)),
+        doorHp: num(math.doorHP(floor, level)),
+        doorState: doorLabel(floor, level, state),
+        twins: members.map((metric) => metric.twin),
+        jobs: members.map((metric) => metric.job),
+        captive: captiveIdx >= 0 ? captiveIdx : null,
+        untieRemaining: num(untieRemaining),
+      };
+    });
+});
+const activeFloor = Array.from({ length: math.FLOOR_COUNT - 1 }, (_, i) => i + 1)
+  .find((floor) => math.doorState(floor, mastery, masteryMax, mastery, nd).active);
+const activeDoor = activeFloor == null ? null : (() => {
+  const state = math.doorState(activeFloor, mastery, masteryMax, mastery, nd);
+  return {
+    floor: activeFloor,
+    maxHp: num(state.maxHP),
+    progress: num(state.progress),
+    remainingHp: num(state.remainingHP),
+  };
+})();
+const nextCaptiveIdx = Array.from({ length: players }, (_, twin) => twin)
+  .find((twin) => !math.isTwinUntied(twin, nd));
+const nextCaptive = nextCaptiveIdx == null ? null : (() => {
+  const floor = math.floorActions(nextCaptiveIdx) || Number(nd[nextCaptiveIdx]?.[0]) || 0;
+  const remaining = Math.max(0, math.untieReq(nextCaptiveIdx) - (Number(nd[nextCaptiveIdx]?.[3]) || 0));
+  return {
+    twin: nextCaptiveIdx,
+    floor,
+    remaining: num(remaining),
+  };
+})();
+
 const equip = (twin) =>
   math.parseTwinEquip(nd, twin).map((item) =>
     item ? { key: item.name, level: item.level } : { key: 'Blank', level: 0 },
@@ -177,6 +297,14 @@ const payload = {
   charmMaps: Array.from({ length: players }, (_, twin) =>
     stealth.twinCharmBonuses(twin, nd, spelunk, gold.bonuses),
   ),
+  // Snapshots for the floor × mastery table, the active door and the next
+  // captive; the Rust test compares them row by row.
+  floorMastery: {
+    levels: masteryLevels,
+    rows: floorRows,
+    activeDoor,
+    nextCaptive,
+  },
   actionSpeeds: Array.from({ length: players }, (_, twin) => stealth.computeActionSpeed(twin, S, 0)),
   // The pure functions, with explicit inputs.
   functions: {
@@ -242,6 +370,21 @@ const payload = {
         value: num(math.stealthForDetection(floor, target, mastery)),
       })),
     ).flat(),
+    // computeDoorClearEstimate's pieces, including the no-attacker and
+    // already-cleared cases the port reports as "no ETA".
+    doorClearEstimate: [
+      [0, 1, 1],
+      [100, 0, 10],
+      [100, 10, 0],
+      [100, 50, 2],
+      [1000, 300, 7],
+      [1e20, 1e18, 3],
+    ].map(([remaining, damage, hits]) => ({
+      remaining,
+      damage,
+      hits,
+      hours: num(jade.computeDoorClearEstimate(remaining, damage, hits).hours),
+    })),
     // Every catalog item at five levels: charmStat for charms and
     // weaponItemStat for weapons, zero for hats.
     items: Object.keys(maps.NjEQ).flatMap((key) =>
@@ -306,6 +449,8 @@ const payload = {
       'js/stats/systems/w6/sneaking-math.js',
       'js/stats/systems/w6/sneaking-stealth.js',
       'js/stats/systems/w6/sneaking-optimizer.js',
+      'js/stats/systems/w6/sneaking-jade.js',
+      'js/stats/systems/w6/sneaking-exp.js',
     ],
   },
 };

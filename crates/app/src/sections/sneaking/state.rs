@@ -20,13 +20,15 @@ pub(crate) enum Workspace {
     Loadout,
     Breakdowns,
     Optimizer,
+    Floors,
 }
 
 impl Workspace {
-    pub(crate) const ALL: [Workspace; 3] = [
+    pub(crate) const ALL: [Workspace; 4] = [
         Workspace::Loadout,
         Workspace::Breakdowns,
         Workspace::Optimizer,
+        Workspace::Floors,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -34,6 +36,7 @@ impl Workspace {
             Workspace::Loadout => "loadout",
             Workspace::Breakdowns => "breakdowns",
             Workspace::Optimizer => "optimizer",
+            Workspace::Floors => "floors",
         }
     }
 
@@ -42,6 +45,7 @@ impl Workspace {
             Workspace::Loadout => "Loadout",
             Workspace::Breakdowns => "Breakdowns",
             Workspace::Optimizer => "Optimizer",
+            Workspace::Floors => "Floor Mastery",
         }
     }
 

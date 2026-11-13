@@ -1544,6 +1544,46 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'sneak-slot-0-3') ?? '') === before,
       'sneaking: reset after Apply restores the saved charms'
     );
+    // SN-04: the floor × mastery table, the active door and the next captive.
+    // The fixture's twins wear Gloves, so the door starts without a hitter; a
+    // Nunchaku swap on the active floor gives the ETA a value.
+    await lane.call('click_element', { id: 'sneaking-tab-floors' });
+    await waitForNode(lane, 'sneaking-floor-mastery', 'sneaking: the floor × mastery table renders');
+    await waitForNode(lane, 'sneak-floor-empty-5-7', 'sneaking: an empty floor shows its state');
+    const doorBefore = labelOf(await lane.tree(), 'sneak-active-door') ?? '';
+    if (doorBefore !== 'No door hitter') {
+      throw new Error(`sneaking: the door ETA starts at ${doorBefore}`);
+    }
+    const captive = labelOf(await lane.tree(), 'sneak-next-captive') ?? '';
+    if (!captive.includes('No Kunai')) {
+      throw new Error(`sneaking: the next captive reads ${captive}`);
+    }
+    await lane.call('click_element', { id: 'sneaking-tab-loadout' });
+    await scrollTo(lane, 'sneak-slot-0-1');
+    const weaponBefore = labelOf(await lane.tree(), 'sneak-slot-0-1') ?? '';
+    await lane.call('click_element', { id: 'sneak-slot-0-1' });
+    await scrollTo(lane, 'sneak-inv-22');
+    await lane.call('click_element', { id: 'sneak-inv-22' });
+    await lane.call('click_element', { id: 'sneaking-tab-floors' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const eta = labelOf(nodes, 'sneak-active-door') ?? '';
+        return eta !== doorBefore && eta !== 'No door hitter' && eta !== '—';
+      },
+      'sneaking: the door ETA follows the loadout'
+    );
+    await lane.call('click_element', { id: 'sneaking-tab-loadout' });
+    await scrollTo(lane, 'sneak-reset-loadout');
+    await lane.call('click_element', { id: 'sneak-reset-loadout' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'sneak-slot-0-1') ?? '') === weaponBefore,
+      'sneaking: the weapon swap resets to the save'
+    );
+    // End on the floor table, so the section screenshot shows SN-04.
+    await lane.call('click_element', { id: 'sneaking-tab-floors' });
+    await waitForNode(lane, 'sneaking-floor-mastery', 'sneaking: the floor table reopens');
   },
   fountain: async (lane) => {
     await lane.call('click_element', { id: 'header-import' });

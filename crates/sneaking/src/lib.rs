@@ -23,6 +23,7 @@
 mod account;
 pub mod breakdown;
 pub mod data;
+mod floor;
 mod loadout;
 mod math;
 mod optimizer;
@@ -34,6 +35,7 @@ mod tests;
 
 pub use account::{Account, DoorAccount, ExpAccount, JadeAccount};
 pub use data::{ItemDef, charm_bonus_label, item};
+pub use floor::{ActiveDoor, FloorMastery, NextCaptive, door_eta};
 pub use loadout::{
     Bonuses, EquipError, EquipInfo, GoldBonuses, GoldPick, Issue, Job, Loadout, SCROLL_OF_POWER,
     Twin, can_equip_pair, charmed_perk, equip_info,

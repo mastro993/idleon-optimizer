@@ -4,8 +4,8 @@
 //! SN-01 builds the loadout half: the scenario strip, the saved floor
 //! assignments, the per-twin loadout cards with their four slots and the 39-slot
 //! inventory, all backed by the save's `Ninja` rows. SN-02 adds the formula
-//! breakdowns and SN-03 the charm placement search. The floor × mastery table
-//! with the door ETA (SN-04) arrives next.
+//! breakdowns, SN-03 the charm placement search and SN-04 the floor × mastery
+//! table with the active door, the next captive and their ETAs.
 //!
 //! The numbers a loadout card shows are the save-backed totals: the charm bonus
 //! map with its symbol and Gold terms, action speed, KO recovery, the level,
@@ -14,6 +14,7 @@
 //! formula trees.
 
 mod breakdowns;
+mod floors;
 mod inventory;
 mod loadout;
 mod optimizer;
@@ -92,6 +93,20 @@ pub(crate) fn view(
                     .gap_3()
                     .p_4()
                     .child(optimizer::pane(state, cx)),
+            )
+            .into_any_element(),
+        Workspace::Floors => ScrollArea::new("sneaking-floors-pane")
+            .vertical()
+            .flex_1()
+            .min_h_0()
+            .child(
+                div()
+                    .id("sneaking-floors-pane")
+                    .flex()
+                    .flex_col()
+                    .gap_3()
+                    .p_4()
+                    .child(floors::pane(state, cx)),
             )
             .into_any_element(),
         Workspace::Breakdowns => ScrollArea::new("sneaking-breakdown-pane")
