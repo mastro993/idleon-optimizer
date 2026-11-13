@@ -6,8 +6,11 @@
 //! presets the project JSON keeps. The mechanics overrides (CS-02) are the
 //! second half: the curated [`overrides`] catalog and the rules that turn it into
 //! simulator input overrides. The encounter run (CS-03) replays the game's
-//! spawn, respawn and kill loop over one map's roster in [`encounter`].
+//! spawn, respawn and kill loop over one map's roster in [`encounter`], and the
+//! comparison (CS-04) runs that loop for character, loadout and map setups in
+//! [`compare`].
 
+pub mod compare;
 pub mod data;
 pub mod encounter;
 pub mod loadout;

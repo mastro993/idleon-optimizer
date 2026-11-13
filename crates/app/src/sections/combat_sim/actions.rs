@@ -2,7 +2,9 @@
 
 use crate::sections::combat_sim::Tab as CombatTab;
 use crate::state::AppState;
-use gpui::{App, Context};
+use gpui::{App, ClipboardItem, Context};
+use idleon_combat::Loadout;
+use idleon_combat::compare::{self, Comparison, Plan};
 use idleon_combat::encounter::{self, Options, Outcome, Player};
 use idleon_ui::runner::TaskState;
 
@@ -246,5 +248,183 @@ impl AppState {
         self.combat_encounter
             .read(cx)
             .state(&self.combat_encounter_options())
+    }
+
+    /// Add or remove a character from the comparison.
+    pub(crate) fn set_combat_compare_character(
+        &mut self,
+        character: usize,
+        selected: bool,
+        cx: &mut Context<Self>,
+    ) {
+        if selected {
+            if !self.combat.compare_characters.contains(&character) {
+                self.combat.compare_characters.push(character);
+                self.combat.compare_characters.sort_unstable();
+            }
+        } else {
+            self.combat
+                .compare_characters
+                .retain(|index| *index != character);
+        }
+        cx.notify();
+    }
+
+    /// Add or remove one of a character's loadouts from the comparison.
+    pub(crate) fn set_combat_compare_loadout(
+        &mut self,
+        character: usize,
+        key: &str,
+        selected: bool,
+        cx: &mut Context<Self>,
+    ) {
+        let mut keys = self.combat.compare_loadout_keys(character);
+        if selected {
+            if !keys.iter().any(|current| current == key) {
+                keys.push(key.to_string());
+            }
+        } else {
+            keys.retain(|current| current != key);
+        }
+        self.combat.compare_loadouts.insert(character, keys);
+        cx.notify();
+    }
+
+    /// Add a map to the comparison.
+    pub(crate) fn add_combat_compare_map(&mut self, map: usize, cx: &mut Context<Self>) {
+        if encounter::map(map).is_none() {
+            return;
+        }
+        if !self.combat.compare_maps.contains(&map) {
+            self.combat.compare_maps.push(map);
+            self.combat.compare_maps.sort_unstable();
+        }
+        cx.notify();
+    }
+
+    /// Remove a map from the comparison.
+    pub(crate) fn remove_combat_compare_map(&mut self, map: usize, cx: &mut Context<Self>) {
+        self.combat.compare_maps.retain(|current| *current != map);
+        cx.notify();
+    }
+
+    /// The loadouts one character compares, in the picker's order: the imported
+    /// save, the working edits, then the character's named presets.
+    fn combat_compare_setups(&self, character: usize) -> Vec<(String, Loadout)> {
+        let Some(save) = self.save.as_ref() else {
+            return Vec::new();
+        };
+        let keys = self.combat.compare_loadout_keys(character);
+        let mut setups = Vec::new();
+        if keys.iter().any(|key| key == "saved") {
+            setups.push((
+                "Imported save".to_string(),
+                Loadout::from_save(save, character),
+            ));
+        }
+        if character == self.combat.character && keys.iter().any(|key| key == "edited") {
+            setups.push((
+                format!("Working edits ({} changes)", self.combat.loadout.changed()),
+                self.combat.loadout.clone(),
+            ));
+        }
+        for preset in self
+            .combat
+            .presets
+            .items
+            .iter()
+            .filter(|preset| preset.character == character)
+        {
+            let key = format!("preset:{}", preset.name);
+            if !keys.contains(&key) {
+                continue;
+            }
+            let mut loadout = Loadout::from_save(save, character);
+            if preset.apply_to(&mut loadout).is_ok() {
+                setups.push((preset.name.clone(), loadout));
+            }
+        }
+        setups
+    }
+
+    /// Every selected character, loadout and map as one run plan. An empty save
+    /// or selection gives an empty plan, which the run refuses.
+    pub(crate) fn combat_comparison_plan(&self) -> Plan {
+        let options = self.combat_encounter_options();
+        let mut rows = Vec::new();
+        if let Some(save) = self.save.as_ref() {
+            for character in &self.combat.compare_characters {
+                if *character >= save.character_count() {
+                    continue;
+                }
+                for (loadout, setup) in self.combat_compare_setups(*character) {
+                    let totals = setup.totals();
+                    for map in &self.combat.compare_maps {
+                        rows.push(compare::RowSpec {
+                            character: *character,
+                            character_name: setup.character.name.clone(),
+                            loadout: loadout.clone(),
+                            map: *map,
+                            totals: totals.clone(),
+                        });
+                    }
+                }
+            }
+        }
+        Plan {
+            player: options.player,
+            duration_ms: options.duration_ms,
+            rows,
+        }
+    }
+
+    /// Run the comparison off the UI thread through the shared task runner.
+    pub(crate) fn run_combat_comparison(&mut self, cx: &mut Context<Self>) {
+        let plan = self.combat_comparison_plan();
+        if let Err(error) = plan.validate() {
+            self.set_status(error, cx);
+            return;
+        }
+        let line = format!("Comparing {} setups…", plan.rows.len());
+        self.start_run(
+            self.combat_compare.clone(),
+            line,
+            plan,
+            move |plan, report| compare::run(&plan, report).ok().flatten(),
+            cx,
+        );
+    }
+
+    /// Ask a running comparison to stop; the previous result stays.
+    pub(crate) fn cancel_combat_comparison(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.combat_compare.clone(),
+            "Cancelling the comparison…",
+            cx,
+        );
+    }
+
+    /// The stored comparison and whether its plan changed since the run.
+    pub(crate) fn combat_comparison(&self, cx: &App) -> TaskState<Comparison> {
+        self.combat_compare
+            .read(cx)
+            .state(&self.combat_comparison_plan())
+    }
+
+    /// Copy the last comparison as the section's JSON export.
+    pub(crate) fn copy_combat_comparison(&mut self, cx: &mut Context<Self>) {
+        let Some(comparison) = self.combat_compare.read(cx).result().cloned() else {
+            self.set_status("Run a comparison before exporting it.", cx);
+            return;
+        };
+        let json = compare::document_json(&comparison);
+        cx.write_to_clipboard(ClipboardItem::new_string(json.clone()));
+        self.set_status(
+            format!(
+                "Copied the comparison JSON to the clipboard ({} bytes).",
+                json.len()
+            ),
+            cx,
+        );
     }
 }

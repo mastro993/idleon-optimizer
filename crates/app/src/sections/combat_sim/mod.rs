@@ -9,11 +9,13 @@
 //!
 //! The mechanics overrides (CS-02) sit beside it: the curated mechanics the
 //! simulator can disable, set or scale, with the active rules shown as chips and
-//! a reset back to the save. The encounter run (CS-03) and the result tabs land
-//! on top of both; the editor owns the loadout and overrides they read.
+//! a reset back to the save. The encounter run (CS-03) and the comparison
+//! (CS-04) land on top of both; the editor owns the loadout and overrides they
+//! read.
 
 mod actions;
 
+pub(crate) mod compare;
 pub(crate) mod encounter;
 pub(crate) mod equipment;
 pub(crate) mod overrides;
@@ -37,6 +39,7 @@ use gpui::{
 };
 use idleon_combat::Loadout;
 use idleon_save::Save;
+use std::collections::BTreeMap;
 
 /// The editor's tabs, matching the upstream setup editor's character tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -47,10 +50,17 @@ pub(crate) enum Tab {
     Talents,
     Mechanics,
     Encounter,
+    Compare,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 4] = [Tab::Gear, Tab::Talents, Tab::Mechanics, Tab::Encounter];
+    pub(crate) const ALL: [Tab; 5] = [
+        Tab::Gear,
+        Tab::Talents,
+        Tab::Mechanics,
+        Tab::Encounter,
+        Tab::Compare,
+    ];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
@@ -58,6 +68,7 @@ impl Tab {
             Tab::Talents => "talents",
             Tab::Mechanics => "mechanics",
             Tab::Encounter => "encounter",
+            Tab::Compare => "compare",
         }
     }
 
@@ -67,6 +78,7 @@ impl Tab {
             Tab::Talents => "Talents",
             Tab::Mechanics => "Mechanics",
             Tab::Encounter => "Encounter",
+            Tab::Compare => "Compare",
         }
     }
 
@@ -106,6 +118,13 @@ pub(crate) struct State {
     pub(crate) sim_kill_every_ms: u64,
     /// The run's simulated duration in seconds.
     pub(crate) sim_duration_s: u64,
+    /// The characters the comparison runs, ascending.
+    pub(crate) compare_characters: Vec<usize>,
+    /// Each selected character's loadout keys: `saved`, `edited` or
+    /// `preset:<name>`. A missing entry means the character's default.
+    pub(crate) compare_loadouts: BTreeMap<usize, Vec<String>>,
+    /// The maps the comparison runs, ascending.
+    pub(crate) compare_maps: Vec<usize>,
 }
 
 impl State {
@@ -132,17 +151,59 @@ impl State {
             sim_stand_in: true,
             sim_kill_every_ms: 1_500,
             sim_duration_s: 300,
+            compare_characters: vec![0],
+            compare_loadouts: BTreeMap::new(),
+            compare_maps: vec![
+                idleon_combat::encounter::maps()
+                    .first()
+                    .map_or(1, |map| map.index),
+            ],
         }
     }
 
     /// Replace the working loadout with the save's defaults for `character`,
     /// keeping the selected slot when it still exists. Named presets stay: they
-    /// live in the project, not in the save.
+    /// live in the project, not in the save. The comparison's selection keeps
+    /// only characters and maps the new save has.
     pub(crate) fn load(&mut self, save: &Save, character: usize) {
         self.character = character;
         self.loadout = Loadout::from_save(save, character);
         if self.selected >= self.loadout.slots.len() {
             self.selected = 0;
+        }
+        let count = save.character_count();
+        self.compare_characters.retain(|index| *index < count);
+        if self.compare_characters.is_empty() {
+            self.compare_characters
+                .push(character.min(count.saturating_sub(1)));
+        }
+        self.compare_characters.sort_unstable();
+        self.compare_loadouts.retain(|index, _| *index < count);
+        self.compare_maps
+            .retain(|map| idleon_combat::encounter::map(*map).is_some());
+        if self.compare_maps.is_empty() {
+            let fallback = if idleon_combat::encounter::map(self.sim_map).is_some() {
+                self.sim_map
+            } else {
+                idleon_combat::encounter::maps()[0].index
+            };
+            self.compare_maps.push(fallback);
+        }
+        self.compare_maps.sort_unstable();
+        self.compare_maps.dedup();
+    }
+
+    /// The loadout keys a character compares, or its default when the user has
+    /// not edited the selection: the working edits when they exist, the save
+    /// otherwise, the same default the upstream picker keeps.
+    pub(crate) fn compare_loadout_keys(&self, character: usize) -> Vec<String> {
+        if let Some(keys) = self.compare_loadouts.get(&character) {
+            return keys.clone();
+        }
+        if character == self.character && self.loadout.changed() > 0 {
+            vec!["edited".into()]
+        } else {
+            vec!["saved".into()]
         }
     }
 
@@ -188,6 +249,7 @@ pub(crate) fn view(
         .tab(WindowTab::new(Tab::Talents.id(), Tab::Talents.label()))
         .tab(WindowTab::new(Tab::Mechanics.id(), Tab::Mechanics.label()))
         .tab(WindowTab::new(Tab::Encounter.id(), Tab::Encounter.label()))
+        .tab(WindowTab::new(Tab::Compare.id(), Tab::Compare.label()))
         .on_select(move |id, _window, cx| {
             if let Some(tab) = Tab::from_id(id.as_ref()) {
                 select_tab.update(cx, |state, cx| state.set_combat_tab(tab, cx));
@@ -293,6 +355,7 @@ pub(crate) fn view(
             Tab::Talents => talents::pane(state, window, cx),
             Tab::Mechanics => overrides::pane(state, window, cx),
             Tab::Encounter => encounter::pane(state, cx),
+            Tab::Compare => compare::pane(state, cx),
         })
         .into_any_element()
 }

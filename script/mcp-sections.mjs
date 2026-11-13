@@ -438,16 +438,20 @@ const worshipSave = () => {
   });
 };
 
-/// A small flat `save.json` with a levelled warrior, an equipped helmet and a
-/// weapon slot holding a key the item catalog does not know, so the loadout
-/// editor loads saved defaults, its totals move and its flags fire.
+/// A small flat `save.json` with two levelled characters, an equipped helmet
+/// and a weapon slot holding a key the item catalog does not know, so the
+/// loadout editor loads saved defaults, its totals move, its flags fire and the
+/// comparison has a second character with a different weapon.
 const combatSave = () => {
   const armor = Array(16).fill('');
   armor[0] = 'EquipmentHats1';
   armor[1] = 'NotAnItem';
+  const other = Array(16).fill('');
+  other[0] = 'EquipmentHats15';
+  other[1] = 'EquipmentPunching1';
   return JSON.stringify({
     Research: '[]',
-    charNames: ['Ana'],
+    charNames: ['Ana', 'Bo'],
     Lv0_0: JSON.stringify([120]),
     CharacterClass_0: 7,
     EquipOrder_0: JSON.stringify([armor, Array(7).fill(''), []]),
@@ -455,6 +459,11 @@ const combatSave = () => {
     EMm1_0: '{}',
     SL_0: JSON.stringify({ 0: 5, 3: 2 }),
     SM_0: JSON.stringify({ 0: 20, 3: 10 }),
+    Lv0_1: JSON.stringify([80]),
+    CharacterClass_1: 1,
+    EquipOrder_1: JSON.stringify([other, Array(7).fill(''), []]),
+    SL_1: JSON.stringify({ 0: 3 }),
+    SM_1: JSON.stringify({ 0: 10 }),
   });
 };
 
@@ -2116,6 +2125,41 @@ const INTERACTIONS = {
     );
     await lane.call('click_element', { id: 'gear' });
     await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
+    // CS-04: two characters on the same map make a comparison with a delta per
+    // metric, and the export copies the comparison as JSON.
+    await lane.call('click_element', { id: 'compare' });
+    await waitForNode(lane, 'combat-compare-char-1', 'combat-sim: the compare tab opens');
+    await lane.call('click_element', { id: 'combat-compare-char-1' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'combat-compare-count') ?? '').includes('2 runs'),
+      'combat-sim: the comparison plans two setups',
+    );
+    await scrollTo(lane, 'combat-compare-run');
+    await lane.call('click_element', { id: 'combat-compare-run' });
+    await waitFor(
+      lane,
+      (nodes) => {
+        const kills = labelOf(nodes, 'combat-compare-kills-1') ?? '';
+        const weapon = labelOf(nodes, 'combat-compare-weapon-1') ?? '';
+        return (
+          has(nodes, 'combat-compare-row-1') &&
+          kills.includes('No change') &&
+          !weapon.includes('No change')
+        );
+      },
+      'combat-sim: the comparison shows a delta per metric',
+    );
+    await scrollTo(lane, 'combat-compare-export');
+    await lane.call('click_element', { id: 'combat-compare-export' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'status-status') ?? '').includes('Copied the comparison JSON'),
+      'combat-sim: the comparison exports as JSON',
+    );
+    await lane.call('click_element', { id: 'gear' });
+    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
     // Pick the weapon slot, then the first weapon the picker offers.
     await lane.call('click_element', { id: 'combat-slot-0-1' });
     await waitForNode(lane, 'combat-item-select', 'combat-sim: the slot detail opens');
@@ -2153,8 +2197,6 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'combat-preset-0') ?? '').includes('Bossing'),
       'combat-sim: the preset is saved',
     );
-    await lane.call('click_element', { id: 'gear' });
-    await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
   },
   'cooking-mastery': async (lane) => {
     // The empty state is the import action: a save without the mastery rows
