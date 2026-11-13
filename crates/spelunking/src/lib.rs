@@ -23,12 +23,19 @@
 pub mod config;
 pub mod data;
 pub mod depth;
+pub mod planner;
 pub mod save;
 pub mod sim;
 
 pub use config::{Config, ConfigError, Requested, normalize};
 pub use data::{Cave, Elixir, Preset, PresetKind, Rock, Tool, data};
 pub use depth::{DepthRange, Object, Profile, ReferenceTool, Row, profile};
+pub use planner::{
+    AmberSearchInfo, AmberSearchOptions, Clear, DiagnosticsSummary, Enabled, MemberSummary, Mode,
+    Objective, Paired, PartyAnalysis, PartyRow, Rate, Row as OptimizerRow, ScopeRequest,
+    SearchOptions, SearchResult, SearchScope, Summary, amber_search, metric, normalize_scope,
+    plan_text, result_text, run_metric, search, search_space,
+};
 pub use save::Save;
 pub use sim::{
     AmberActivation, AmberPhase, AmberResult, AmberTransition, Contribution, DEFAULT_SEED,

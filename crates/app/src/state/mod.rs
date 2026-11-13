@@ -44,6 +44,7 @@ use crate::sections::royal_guardian::forecast::Inputs as RoyalForecastInputs;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
+use crate::sections::spelunking::OptimizerInputs as SpelunkOptimizerInputs;
 use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
@@ -92,6 +93,7 @@ use idleon_royal_guardian::RoyalGuardian;
 use idleon_sailing::{Fleet, RouteContext, SimResult};
 use idleon_save::Save;
 use idleon_spelunking::RunResult as SpelunkRunResult;
+use idleon_spelunking::SearchResult as SpelunkSearchResult;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::runner::TaskRunner;
 use idleon_worship::Inputs as WorshipInputs;
@@ -287,6 +289,8 @@ pub(crate) struct AppState {
     pub(crate) spelunking_save: Option<idleon_spelunking::Save>,
     /// The shared runner for the Spelunking expedition run.
     pub(crate) spelunk_sim: Entity<TaskRunner<SpelunkRunResult, SpelunkRunInputs>>,
+    /// The shared runner for the Spelunking optimizer.
+    pub(crate) spelunk_opt: Entity<TaskRunner<SpelunkSearchResult, SpelunkOptimizerInputs>>,
     /// The ladle optimizer's save-derived roster and counts.
     pub(crate) ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
@@ -981,6 +985,26 @@ impl AppState {
                 ))
             },
         );
+        let spelunk_opt = report_run::<SpelunkSearchResult, SpelunkOptimizerInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the expedition…"),
+                cancelled_kept: "Expedition optimization cancelled; the previous recommendation is unchanged.",
+                cancelled_empty: "Expedition optimization cancelled; no recommendation was stored.",
+            },
+            |_, result| {
+                Some(match &result.winner {
+                    Some(winner) => format!(
+                        "Expedition optimization ready: {} {} against a baseline of {}.",
+                        result.objective.label(),
+                        winner.summary.score,
+                        result.baseline.summary.score
+                    ),
+                    None => "Expedition optimization finished without a recommendation.".into(),
+                })
+            },
+        );
         let ladle_state = LadleSectionState::new(window, cx);
         let cglunko_breakdown = ui::formula_tree("cglunko-formula", window, cx);
         let clamworks_breakdown = ui::formula_tree("clamworks-formula", window, cx);
@@ -1092,6 +1116,7 @@ impl AppState {
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
             spelunk_sim,
+            spelunk_opt,
             ladle: None,
             ladle_state,
             mastery: None,

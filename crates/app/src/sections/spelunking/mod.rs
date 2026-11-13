@@ -5,8 +5,7 @@
 //! controls, the party and elixir belt, and the Depth limits tab; SP-02 adds the
 //! seeded run with its entry, tool, reaction time and event log; SP-03 adds the
 //! phased Amber policy with its dump, finisher, reserve, harvest and rope
-//! reserve limits, and the run result's phase record. The optimizer stays on the
-//! roadmap as SP-04.
+//! reserve limits, the run result's phase record, and the depth optimizer (SP-04).
 //!
 //! The four account multipliers upstream derives from its whole stat context are
 //! user inputs here (see [`idleon_spelunking::Account`]); every other
@@ -17,12 +16,14 @@ mod belt;
 mod chart;
 mod controls;
 mod depth;
+mod optimizer;
 mod party;
 mod run;
-mod state;
+pub(crate) mod state;
 
+pub(crate) use optimizer::OptimizerInputs;
 pub(crate) use run::RunInputs;
-pub(crate) use state::State;
+pub(crate) use state::{OptimizerMode, State};
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
@@ -75,6 +76,7 @@ pub(crate) fn view(
         ))
         .child(controls::account_card(state, &inputs, cx))
         .child(run::card(state, &inputs, cx))
+        .child(optimizer::card(state, &inputs, cx))
         .child(depth::card(state, &inputs, cx));
     div()
         .id("spelunking-section")

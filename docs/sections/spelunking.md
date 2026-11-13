@@ -5,7 +5,7 @@
 - Milestone: `M28`
 - Section key: `spelunking`
 - Group: `w7`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.
