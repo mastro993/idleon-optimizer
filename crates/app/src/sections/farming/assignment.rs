@@ -9,12 +9,11 @@ use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
-use idleon_farming as farming;
+use idleon_farming::{self as farming, Assignment};
 
 /// `plotAssignmentPlan`: every plot's target crop, with the plots that differ.
-pub(super) fn assignment_card(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(super) fn assignment_card(assignment: &Assignment, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let assignment = &state.farming.assignment;
     let objective = assignment.objective;
     let changes = assignment.changes();
     let mut table = Table::new(["Plot", "Current", "Target", "Seed", "Change"]);

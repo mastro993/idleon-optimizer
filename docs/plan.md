@@ -687,9 +687,8 @@ is the upstream planner's own output for one purpose-built save, including all s
 allocation modes, so `crates/farming/tests/farming_planner.rs` compares the assignment rows, the
 allocator's levels, points and scores, and the account snapshot field for field; regenerate it with
 `script/farming-oracle.mjs`. FM-05 adds the upstream Overview tab: the priority signals, the account
-multipliers, the GMO thresholds, the ten Crop Scientist bonuses, the seven growth breakpoints and
-every plot's long-run overgrowth curve, with the plot selection switching the curve. The account
-snapshot applies only the terms the save carries, so every figure is a lower bound;
+multipliers, the GMO thresholds, the ten Crop Scientist bonuses and the seven growth breakpoints.
+The account snapshot applies only the terms the save carries, so every figure is a lower bound;
 `script/farming-signals-oracle.mjs` regenerates `fixtures/farming-signals.json` from the upstream
 `farming-planner.js` and `farming.js` on a purpose-built save whose unmodelled systems are all
 absent, and `crates/farming/tests/farming_signals.rs` compares the snapshot, the diagnostics, the
@@ -700,8 +699,18 @@ the points it spends and the Land Rank rows it raises from the current baseline,
 keeps a named goal, baseline and crop target in the project document. The built-in presets are the
 page's own seven `OBJECTIVES` goals: `fixtures/farming.json` carries that list and both comparison
 tables, so `crates/farming/tests/farming_planner.rs` proves every upstream preset exists and each
-comparison row matches upstream field for field. The evolution chain with overgrowth advice (FM-04)
-stays on the roadmap. Details: [`docs/sections/farming.md`](sections/farming.md).
+comparison row matches upstream field for field. FM-04 adds the Evolution & OG tab:
+`idleon_farming::evolution` ports `evolutionChainPlan` and `evolutionStepPlan`, so the chain from the
+deepest eligible plot to the target crop prices every remaining depth — the chance any eligible plot
+rolls it, the per-plot range, the cycle, and the expected, median, p90 and p95 attempts — and the tab
+shows the upstream cards, the "Hardest Remaining Steps" table (the twenty slowest stages), the
+overgrowth stopping cards for the selected plot and the evolution assignment. Every plot's long-run
+overgrowth curve, with the plot selection switching it, sits on that tab too, as upstream does.
+`script/farming-signals-oracle.mjs` writes 22 chains (a family's first crop, one step, the first
+eight depths and a thirty-eight-step climb) into `fixtures/farming-signals.json`, and
+`crates/farming/tests/farming_signals.rs` compares every chain, stage and curve field against the
+upstream planner, plus the advice each plot's curve gives. Details:
+[`docs/sections/farming.md`](sections/farming.md).
 The Cooking Mastery section's Mastery EXP tab is built (CK-01): the mastery rank, the free points,
 the current EXP rate, the EXP the next level takes and the hours that needs, the upgrade comparison
 ranked by the gain one more point buys, and the EXP rate breakdown in the shared formula tree. Every

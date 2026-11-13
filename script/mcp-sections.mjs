@@ -1651,7 +1651,7 @@ const INTERACTIONS = {
     };
 
     // The Overview tab leads: the priority signals, the Crop Scientist table
-    // and the growth breakpoints from the save, then every plot's curve.
+    // and the growth breakpoints from the save.
     await waitForNode(lane, 'farming-cards', 'farming: the overview cards render');
     await waitForNode(lane, 'farming-signals', 'farming: the priority signals render');
     await waitForNode(
@@ -1660,6 +1660,16 @@ const INTERACTIONS = {
       'farming: the Crop Scientist table renders'
     );
     await waitForNode(lane, 'farming-growth-table', 'farming: the growth breakpoints render');
+
+    // The Evolution & OG tab prices the chain to the target crop and stops the
+    // overgrowth, and carries every plot's curve.
+    await lane.call('click_element', { id: 'evolution' });
+    await waitForNode(lane, 'farming-chain', 'farming: the evolution chain renders');
+    await waitForNode(
+      lane,
+      'farming-overgrowth-stopping',
+      'farming: the overgrowth stopping advice renders'
+    );
     await waitFor(
       lane,
       (nodes) => {
@@ -1710,6 +1720,29 @@ const INTERACTIONS = {
         (labelOf(nodes, 'farming-assignment-summary') ?? '').includes('of 36 plots differ'),
       'farming: the loaded field is assigned for the objective'
     );
+
+    // With a real field the chain has a step to price: crop target 1 is where
+    // the first plot stands, so two steps up leaves one evolution roll.
+    await lane.call('click_element', { id: 'evolution' });
+    await lane.call('click_element', { id: 'farming-target-more' });
+    await lane.call('click_element', { id: 'farming-target-more' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'farming-chain') ?? '').includes('1 step(s)') &&
+        has(nodes, 'farming-step-3'),
+      'farming: the chain prices the step to the target crop'
+    );
+    const stopping = labelOf(await lane.tree(), 'farming-overgrowth-stopping') ?? '';
+    if (!/^Overgrowth stopping: plot \d+ · target OG \d+ · /.test(stopping)) {
+      throw new Error(`farming: the stopping advice reads ${stopping}`);
+    }
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'farming-assignment') ?? '') === 'Plot assignment: Crop Evolution',
+      'farming: the evolution tab assigns the predecessor crop'
+    );
+    await lane.call('click_element', { id: 'plots' });
 
     // Switching the objective re-plans the assignment: the first Down opens
     // the list, the second moves the highlight and Enter commits it.

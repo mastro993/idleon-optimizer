@@ -3,9 +3,9 @@
 //!
 //! Ported from `farming-calc.html`'s `renderOverview`, which leads with six
 //! cards, four callouts and three tables. The bean trade card and its callout
-//! belong to the markets tab and are not built here.
+//! belong to the markets tab and are not built here; every plot's overgrowth
+//! curve belongs to the Evolution & OG tab.
 
-use crate::sections::farming::curves::curves_card;
 use crate::sections::farming::field::family_name;
 use crate::state::AppState;
 use ely_gpui_component::data_display::Badge;
@@ -45,7 +45,6 @@ pub(super) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
         )
         .child(crop_scientist(&state.farm, cx))
         .child(growth_breakpoints(&state.farm, &snapshot))
-        .child(curves_card(state, &snapshot, cx))
         .child(
             Caption::new(
                 "Chances and values use the multipliers this save carries; account systems outside it are not applied.",
@@ -62,7 +61,7 @@ pub(super) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
 
 /// A card whose headline is a formatted figure: the upstream cards show scaled
 /// numbers, which the numeric statistic cannot.
-fn stat_card(
+pub(super) fn stat_card(
     id: &'static str,
     title: &'static str,
     value: String,
