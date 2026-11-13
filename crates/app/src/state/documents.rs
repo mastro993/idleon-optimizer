@@ -268,6 +268,10 @@ impl AppState {
         // A forecast from the previous save describes rows this one no longer has.
         self.royal_forecast = None;
         self.royal_forecast_key = None;
+        // The plans describe outposts and levels this save may not carry.
+        discard_run(&self.royal_optimizer, cx);
+        discard_run(&self.royal_unit_exp, cx);
+        discard_run(&self.royal_shelf, cx);
         self.sneaking = imported.sneaking;
         // A recommendation from the previous save describes slots this one no longer has.
         discard_run(&self.sneaking_opt, cx);

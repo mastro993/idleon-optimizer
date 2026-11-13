@@ -55,7 +55,7 @@ use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{Context, Entity, FocusHandle, Subscription, Window};
+use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
@@ -332,6 +332,16 @@ pub(crate) struct AppState {
     pub(crate) royal_forecast: Option<idleon_royal_guardian::Forecast>,
     /// The inputs `royal_forecast` was computed from.
     pub(crate) royal_forecast_key: Option<idleon_royal_guardian::ForecastOptions>,
+    /// The shared runner for the Royal Guardian outpost optimizer.
+    pub(crate) royal_optimizer:
+        Entity<TaskRunner<idleon_royal_guardian::Outcome, idleon_royal_guardian::Request>>,
+    /// The shared runner for the unit EXP plan.
+    pub(crate) royal_unit_exp: Entity<
+        TaskRunner<idleon_royal_guardian::UnitExpPlan, idleon_royal_guardian::UnitExpRequest>,
+    >,
+    /// The shared runner for the next-shelf plan.
+    pub(crate) royal_shelf:
+        Entity<TaskRunner<idleon_royal_guardian::ShelfPlan, idleon_royal_guardian::ShelfRequest>>,
     /// The ninja loadout and inventory the loaded save carries, if it has any.
     pub(crate) sneaking: Option<idleon_sneaking::Loadout>,
     /// The sneaking workspace's login context and selected slot.
@@ -1047,6 +1057,9 @@ impl AppState {
             royal_forecast_inputs: RoyalForecastInputs::new(window, cx),
             royal_forecast: None,
             royal_forecast_key: None,
+            royal_optimizer: cx.new(|_| TaskRunner::new()),
+            royal_unit_exp: cx.new(|_| TaskRunner::new()),
+            royal_shelf: cx.new(|_| TaskRunner::new()),
             sailing_trees,
             sailing_sim,
             farm: Farm::default(),

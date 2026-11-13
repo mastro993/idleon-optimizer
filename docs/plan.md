@@ -532,7 +532,7 @@ keeps the newest 200, and the tab clears it. Missing: the sparkline the page dra
 history tile, which reads as the current-spread and recent-snapshot tables instead.
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
-The Royal Guardian section implements RG-01, RG-02 and RG-03: the overview with the counters (built
+The Royal Guardian section implements RG-01 to RG-04: the overview with the counters (built
 outposts, worlds unlocked, Armory levels, stationed units, militia clearing), the world progress
 cards, the raw clearing values every unbuilt outpost reports (progress, requirement, remaining,
 militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; the outpost map
@@ -556,7 +556,23 @@ leaves the W14 alchemy bubble and the `it.json` companion roster out, so the rat
 sources instead of guessing. The shelf descriptions upstream prints read systems this build does not
 decode, so the upgrade list shows each shelf's own bonus instead. The forecast's upstream timeline
 chart is not drawn: the agenda lists the same events with their hours, and the sleep block and the
-collect suggestions are not carried. Missing: the optimizer, unit EXP and shelf steps (RG-04).
+collect suggestions are not carried.
+The optimizer runs a bounded, deterministic beam search over the legal moves (outpost upgrades,
+adjacent type switches, resource and Support links, profession changes), scored by the currency the
+linked nodes pay, the rank EXP the units and militia earn, or the balanced score that sums both with
+the outposts' reach. Every accepted move is re-validated, so a recommendation is a layout the game
+accepts and its moves replay to it. Upstream's fourteen objectives include several this build does
+not model (an Armory purchase target, a currency portfolio and the reset-collection objectives), so
+the picker offers the three the kingdom metrics carry on their own. The unit EXP planner ports the
+trading/surveyor split search with its switch points and the same-world Militia, Commander and
+Knight moves; its steps only retarget slots the outpost already fields, and the port sets no Purity
+target the way upstream does. The shelf planner alternates a layout step (minimum Guards for reach,
+the rest Workers, the focused currency first, Trader/Surveyor rank fallback for outposts with nothing
+left) with the purchase step it spends the balance on, advancing through node depletions and the
+daily reset; upstream's multi-currency portfolio scoring and profession beam are not carried, so the
+plan is deterministic but not the portfolio optimum. Both planners run through the shared task
+runner, so they report progress and cancel like every other long run.
+`fixtures/royal-guardian-plan.json` is the small plan save the oracle and the RG-04 tests share.
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
 The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run
