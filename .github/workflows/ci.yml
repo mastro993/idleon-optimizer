@@ -22,7 +22,7 @@ jobs:
         include:
           # Formatting needs no build, no cache and no submodule: cheapest runner.
           - check: fmt
-            os: ubuntu-latest
+            os: ubuntu-24.04
             submodules: false
             command: cargo fmt --all -- --check
           # Clippy compiles the workspace, whose GUI comes from the vendored
