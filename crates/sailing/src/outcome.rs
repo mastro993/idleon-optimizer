@@ -456,9 +456,7 @@ mod tests {
         assert_eq!(max_artifact_tier(unlocked), 7);
 
         let mut fleet = fleet;
-        for tier in &mut fleet.artifact_tiers {
-            *tier = 7;
-        }
+        fleet.artifact_tiers.fill(7);
         assert_eq!(incomplete_artifacts(&fleet, 0, unlocked), 0);
         assert_eq!(
             incomplete_artifacts(&fleet, 0, locked),

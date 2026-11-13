@@ -177,8 +177,14 @@ pub(super) fn rock_probabilities(cave: &data::Cave, depth: i64) -> Vec<f64> {
     let mut probabilities = vec![0.0; cave.rocks.len().saturating_sub(1)];
     let mut current = 0usize;
     let mut remaining = 1.0f64;
-    for kind in 1..probabilities.len() {
-        let threshold = cave.rocks[kind].depth;
+    for (kind, rock) in cave
+        .rocks
+        .iter()
+        .enumerate()
+        .take(probabilities.len())
+        .skip(1)
+    {
+        let threshold = rock.depth;
         if (depth as f64) < threshold {
             continue;
         }
