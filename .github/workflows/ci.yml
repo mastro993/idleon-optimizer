@@ -44,7 +44,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     # Everything runs at once; the first failure cancels the rest, so a broken
-    # `main` never pays for the remaining macOS jobs.
+    # `main` never pays for the remaining macOS jobs. The compiling jobs take the
+    # 5-core M2 runner over the 3-core default: the build is CPU-bound, so more
+    # cores shorten it directly.
     strategy:
       fail-fast: true
       matrix:
@@ -58,14 +60,14 @@ jobs:
           # Clippy compiles the workspace, whose GUI comes from the vendored
           # gpui-pre snapshot (objc2/metal), so it runs where a developer does.
           - label: clippy
-            os: macos-latest
+            os: macos-latest-xlarge
             submodules: recursive
             cache: macos-clippy
             command: cargo clippy --workspace --all-targets -- -D warnings
           # One job: the suite runs in about a minute, while every shard would
           # build the whole workspace again, so a shard only adds a build.
           - label: test
-            os: macos-latest
+            os: macos-latest-xlarge
             submodules: recursive
             cache: macos-test
             nextest: true
@@ -105,7 +107,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
+          - os: macos-latest-xlarge
             submodules: recursive
             cache: macos-test
             nextest: true
