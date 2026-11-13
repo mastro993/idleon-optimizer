@@ -51,7 +51,7 @@ use idleon_save::json;
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 
-pub use breakdowns::{Breakdown, Category, RANK_BARS, RANK_CONTRIBUTORS};
+pub use breakdowns::{Breakdown, Category, RANK_BARS};
 pub use collect::{
     Allocation, Banked, CurrencyIncome, NodeAllocation, ResetTiming, ResourceStream,
 };

@@ -569,7 +569,6 @@ fn the_orblet_count_names_the_inventories_it_could_not_read() {
 
     // Without the chest the count still reads the character, and says what is
     // missing instead of calling the roster empty.
-    let mut save = save;
     save.remove("ChestOrder");
     save.remove("ChestQuantity");
     let royal = RoyalGuardian::from_save(&save, None).expect("the rows read");
