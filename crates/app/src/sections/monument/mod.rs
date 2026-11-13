@@ -1,17 +1,18 @@
-//! The Monument (W5) section: the Bravery, Justice and Wisdom tabs and the
-//! training sources every monument shares.
+//! The Monument (W5) section: the Bravery, Justice, Wisdom and Sources tabs and
+//! the training sources every monument shares.
 
 mod actions;
 
 pub(crate) mod bravery;
 pub(crate) mod justice;
+pub(crate) mod sources;
 pub(crate) mod wisdom;
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::EmptyState;
 use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
+use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::shell::{TabBar, WindowTab};
 use ely_gpui_component::tables::Table;
@@ -210,65 +211,8 @@ fn pane(
             let wisdom = state.monument_wisdom();
             wisdom::pane(state, wisdom.as_ref(), cx)
         }
-        Tab::Sources => sources_pane(snapshot),
+        Tab::Sources => sources::pane(state, cx),
     }
-}
-
-/// The additive training pool, which Bravery milestones and the other
-/// monuments share.
-fn sources_pane(snapshot: Option<&Snapshot>) -> AnyElement {
-    let body = match snapshot.filter(|snapshot| snapshot.available) {
-        Some(snapshot) => {
-            let mut table = Table::new(["Source", "Bonus"]);
-            for source in &snapshot.training.sources {
-                table = table.row([
-                    div()
-                        .min_w_0()
-                        .child(source.name.clone())
-                        .into_any_element(),
-                    div()
-                        .child(format!("+{}%", format::value(source.value)))
-                        .into_any_element(),
-                ]);
-            }
-            div()
-                .flex()
-                .flex_col()
-                .gap_3()
-                .child(
-                    Card::new()
-                        .header(
-                            CardHeader::new("Paying Respect: additive pool").description(format!(
-                                "+{}% before the {}x Clutch Overtime Block",
-                                format::value(snapshot.training.pct),
-                                format::value(snapshot.training.multi)
-                            )),
-                        )
-                        .child(table),
-                )
-                .into_any_element()
-        }
-        None => Card::new()
-            .header(CardHeader::new("Bonus sources"))
-            .child(Caption::new(
-                "Import a save to see the training pool Bravery milestones use.",
-            ))
-            .into_any_element(),
-    };
-    div()
-        .id("monument-pane-sources")
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .child(
-            ScrollArea::new("monument-sources-scroll")
-                .vertical()
-                .flex_1()
-                .min_h_0()
-                .child(body),
-        )
-        .into_any_element()
 }
 
 /// The card an empty tab shows before a save is imported.
@@ -485,7 +429,7 @@ fn effect_text(text: &str, value: f64) -> String {
 /// A metric card with a formatted value, matching the upstream cards.
 pub(crate) fn metric_card(
     id: &'static str,
-    title: &'static str,
+    title: &str,
     value: String,
     sub: String,
     cx: &mut Context<AppState>,

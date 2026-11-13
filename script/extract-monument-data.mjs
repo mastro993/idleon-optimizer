@@ -89,9 +89,10 @@ const payload = {
   ),
   mineheadBonusQty: minehead.MINEHEAD_BONUS_QTY.map(number),
   // Companion 27 (reindeer) doubles a maxed arcade upgrade; 39 and 161 raise
-  // the Meritoc vote the reward charge reads.
+  // the Meritoc vote the reward charge reads; 135 multiplies the permanent
+  // reward levels.
   companions: Object.fromEntries(
-    [27, 39, 161].map((index) => [String(index), [number(game.CompanionDB[index]?.[2]),
+    [27, 39, 135, 161].map((index) => [String(index), [number(game.CompanionDB[index]?.[2]),
       number(game.CompanionDB[index]?.[11])]]),
   ),
   // MERITOC_BASE[7]: the vote whose bonus multiplies the reward charge.

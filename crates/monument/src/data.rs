@@ -239,6 +239,7 @@ mod tests {
         assert_eq!(data.fountain_per_level.len(), 3);
         assert_eq!(data.companion(27), Some([1.0, 1.5]));
         assert_eq!(data.companion(39), Some([50.0, 75.0]));
+        assert_eq!(data.companion(135), Some([100.0, 200.0]));
         assert_eq!(data.companion(161), Some([100.0, 150.0]));
         assert_eq!(data.meritoc_base(7), 200.0);
         assert_eq!(data.rog_bonus_qty(51), 10.0);

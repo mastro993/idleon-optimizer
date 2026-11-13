@@ -2265,7 +2265,7 @@
       "key": "monument",
       "title": "Monument Calculator",
       "group": "w5",
-      "status": "partial",
+      "status": "done",
       "summary": "Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.",
       "upstream": [
         "monument-calc.html",
