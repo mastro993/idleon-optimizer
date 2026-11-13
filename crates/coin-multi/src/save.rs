@@ -14,62 +14,142 @@ use idleon_save::fields;
 use idleon_stats as stats;
 use serde_json::{Map, Value};
 
+use crate::{Group, Term};
+
 /// The number of groups `coin-multi.js` multiplies.
 const GROUP_COUNT: usize = 23;
 
-/// Decode every character's coin groups, indexed like [`crate::GROUPS`].
+/// Decode every character's coin groups, in [`crate::GROUPS`] order.
 fn coin_groups(
     save: &Map<String, Value>,
     root: &Map<String, Value>,
     characters: &[idleon_save::Character],
     simulation: &idleon_research::model::Simulation,
-) -> Vec<[Option<f64>; GROUP_COUNT]> {
+) -> Vec<Vec<Group>> {
     let mut warnings = Vec::new();
     let mut decoder = Decoder::new(save, root, characters, simulation, &mut warnings);
 
     let killz = vault_killz(&decoder);
     // Gambit is account-wide, so it is decoded once for every character row.
     let gambit = decoder.gambit_bonus7();
-    let mut groups = vec![[None; GROUP_COUNT]; characters.len()];
-    for (index, values) in groups.iter_mut().enumerate() {
-        values[1] = Some(1.0 + decoder.companion(24).min(4.0));
-        values[2] = Some(1.0 + decoder.companion(45).min(4.0));
-        values[3] = Some(1.0 + decoder.companion(159).min(4.0));
-        values[4] = Some(1.0 + decoder.companion(38));
-        values[5] = Some(1.0 + 0.5 * decoder.event_shop(9));
-        values[6] = Some(1.0 + 0.6 * decoder.event_shop(20));
-        values[7] = Some(1.0 + decoder.etc(77, index) / 100.0);
-        values[8] = Some(1.0 + decoder.rog_qty(18) / 100.0);
-        values[9] = Some(1.0 + decoder.rog_qty(37) / 100.0);
-        values[10] = Some(1.0 + (decoder.grid_bonus(149) + decoder.grid_bonus(169)) / 100.0);
-        values[11] = Some(1.0 + decoder.etc(100, index) / 100.0);
-        values[12] = Some(1.0 + gold_set_bonus(&decoder, index) / 100.0);
-        values[13] = Some(1.0 + gambit / 100.0);
-        values[14] = Some(1.0 + 2.5 * if decoder.bundle("bun_y") { 1.0 } else { 0.0 });
+    let mut rows = Vec::with_capacity(characters.len());
+    for index in 0..characters.len() {
+        let mut groups: Vec<Group> = (0..GROUP_COUNT).map(|i| crate::group(i, None)).collect();
+        groups[1] = crate::group(1, Some(1.0 + decoder.companion(24).min(4.0)));
+        groups[2] = crate::group(2, Some(1.0 + decoder.companion(45).min(4.0)));
+        groups[3] = crate::group(3, Some(1.0 + decoder.companion(159).min(4.0)));
+        groups[4] = crate::group(4, Some(1.0 + decoder.companion(38)));
+        groups[5] = crate::group(5, Some(1.0 + 0.5 * decoder.event_shop(9)));
+        groups[6] = crate::group(6, Some(1.0 + 0.6 * decoder.event_shop(20)));
+        let etc77 = decoder.etc(77, index);
+        let mut terms = Vec::new();
+        push(&mut terms, "Combined Item Sources: BONUS MONEY", etc77);
+        groups[7] = crate::group(7, Some(1.0 + etc77 / 100.0)).with_terms(terms, 100.0);
+        let rog18 = decoder.rog_qty(18);
+        groups[8] = crate::group(8, Some(1.0 + rog18 / 100.0)).with_note(format!("{rog18}%"));
+        let rog37 = decoder.rog_qty(37);
+        groups[9] = crate::group(9, Some(1.0 + rog37 / 100.0)).with_note(format!("{rog37}%"));
+        let (grid149, grid169) = (decoder.grid_bonus(149), decoder.grid_bonus(169));
+        let mut terms = Vec::new();
+        push(&mut terms, "Grid: J5 Glimbo Linguistics", grid149);
+        push(&mut terms, "Grid: J4 Glimbo BOGO Offer", grid169);
+        groups[10] =
+            crate::group(10, Some(1.0 + (grid149 + grid169) / 100.0)).with_terms(terms, 100.0);
+        let etc100 = decoder.etc(100, index);
+        let mut terms = Vec::new();
+        push(&mut terms, "Combined Item Sources: EXTRA MONEY", etc100);
+        groups[11] = crate::group(11, Some(1.0 + etc100 / 100.0)).with_terms(terms, 100.0);
+        groups[12] = crate::group(12, Some(1.0 + gold_set_bonus(&decoder, index) / 100.0));
+        groups[13] = crate::group(13, Some(1.0 + gambit / 100.0)).with_note(if gambit > 0.0 {
+            format!("{gambit:.1}%")
+        } else {
+            "Not unlocked".into()
+        });
+        groups[14] = crate::group(
+            14,
+            Some(1.0 + 2.5 * if decoder.bundle("bun_y") { 1.0 } else { 0.0 }),
+        );
         // Voting pays only while the vote is the server-wide winner, which a
         // save alone does not carry, so the term reads zero on most imports.
-        let vote = decoder.voting(34);
-        values[16] = Some(
-            1.0 + (decoder.meal("Cash") + decoder.maneki_kat() + decoder.roo(6) + vote) / 100.0,
+        let (meal, maneki, poppy, vote) = (
+            decoder.meal("Cash"),
+            decoder.maneki_kat(),
+            decoder.roo(6),
+            decoder.voting(34),
         );
-        values[17] = Some(
-            1.0 + 0.5 * decoder.pet_arena(5)
-                + decoder.friend(5)
-                + decoder.pet_arena(14)
-                + decoder.statue(19) / 100.0,
+        let mut terms = Vec::new();
+        push(&mut terms, "Meals: Monster Cash", meal);
+        push(&mut terms, "Artifact: Maneki Kat", maneki);
+        push(&mut terms, "Poppy: Monster Cash", poppy);
+        push(&mut terms, "Voting: Monster Cash", vote);
+        groups[16] = crate::group(16, Some(1.0 + (meal + maneki + poppy + vote) / 100.0))
+            .with_terms(terms, 100.0);
+        let (friend5, arena5, arena14, statue19) = (
+            decoder.friend(5),
+            decoder.pet_arena(5),
+            decoder.pet_arena(14),
+            decoder.statue(19),
         );
-        values[18] = Some(
-            1.0 + (decoder.mainframe(9).unwrap_or(0.0)
-                + decoder.vault(34) * killz[8]
-                + decoder.vault(37) * killz[9])
-                / 100.0,
+        let mut terms = Vec::new();
+        push(&mut terms, "Friend Bonus: Monster Cash", friend5);
+        push(&mut terms, "Pet Arena: Cash I", 0.5 * arena5);
+        push(&mut terms, "Pet Arena: Cash II", arena14);
+        if statue19 > 0.0 {
+            terms.push(Term::annotated(
+                "Statue: Pecunia",
+                statue19 / 100.0,
+                format!("Statue bonus {statue19:.1}"),
+            ));
+        }
+        // This group's terms are already fractions, so it is `1 + Σ terms`.
+        groups[17] = crate::group(
+            17,
+            Some(1.0 + 0.5 * arena5 + friend5 + arena14 + statue19 / 100.0),
+        )
+        .with_terms(terms, 1.0);
+        let (mf9, vault34, vault37) = (
+            decoder.mainframe(9).unwrap_or(0.0),
+            decoder.vault(34),
+            decoder.vault(37),
         );
-        values[19] = Some(1.0 + decoder.pristine_charm(16) / 100.0);
+        let mut terms = Vec::new();
+        push(&mut terms, "Mainframe: Fungi Finger Pocketer", mf9);
+        if vault34 * killz[8] > 0.0 {
+            terms.push(Term::annotated(
+                "Vault: Recipe for Profit",
+                vault34 * killz[8],
+                format!("{} completed tasks", killz[8]),
+            ));
+        }
+        if vault37 * killz[9] > 0.0 {
+            terms.push(Term::annotated(
+                "Vault: Bubble Money",
+                vault37 * killz[9],
+                format!("{} capped bubble levels", killz[9]),
+            ));
+        }
+        groups[18] = crate::group(
+            18,
+            Some(1.0 + (mf9 + vault34 * killz[8] + vault37 * killz[9]) / 100.0),
+        )
+        .with_terms(terms, 100.0);
+        groups[19] = crate::group(19, Some(1.0 + decoder.pristine_charm(16) / 100.0));
         // `computePrayerReal`, shared with the All Stats capacity breakdown.
-        values[20] = Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0);
+        groups[20] = crate::group(
+            20,
+            Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0),
+        );
+        rows.push(groups);
     }
 
-    groups
+    rows
+}
+
+/// Adds a term the way upstream draws it: only when the value is above zero.
+fn push(terms: &mut Vec<Term>, name: &'static str, value: f64) {
+    if value > 0.0 {
+        terms.push(Term::new(name, value));
+    }
 }
 
 /// The whole coin snapshot, cards included.
@@ -126,9 +206,7 @@ pub fn coin(
             target_name: stats::target_name(&target),
             highest_damage,
             target,
-            groups: crate::character_groups(
-                decoded.get(index).copied().unwrap_or([None; GROUP_COUNT]),
-            ),
+            groups: decoded.get(index).cloned().unwrap_or_default(),
         });
     }
     crate::Snapshot { characters: rows }

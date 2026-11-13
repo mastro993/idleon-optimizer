@@ -7,8 +7,8 @@ the Coral God Rank planner, the Spelunking controls, depth estimates, expedition
 policy, the Sneaking loadout, inventory, formula breakdown, charm optimizer and floor × mastery
 workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
 the Clamworks optimizer, the Jelly Operator overview, layout editor, operation simulator and section
-planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial
-total, the
+planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs, partial
+total and formula tree, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
 BoneJoePickle, Cglunko and Fountain done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built, 2 sections planned.** The live breakdown is
@@ -143,10 +143,14 @@ that share a tree renderer reuse the formula-tree component.
 
 The Coin Multiplier Calculator (M6) is partial: the character selector, the map/target/HP/damage
 cards, the overkill tier and 19 of the 23 multiplicative groups are ported and compared against the
-upstream oracle. The other four groups need systems this build does not carry: the shared stat
-pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses, and Divinity's bubble chain; the
-section names each missing group and marks the total partial, so the figure is a lower bound until
-those systems land.
+upstream oracle. The formula breakdown renders through the shared formula tree: the total's 23
+group factors, in upstream's order and with upstream's names, each carrying the source that owns it
+and, where the save already resolves the group's sources, the additive terms it sums back to. Every
+group multiplies back to the total card, a group this build cannot resolve is neutral and names what
+it needs, and the shared search reaches group names, term names and sources. The other four groups
+need systems this build does not carry: the shared stat pipeline's total STR/AGI/WIS, talents and
+card/golden-food bonuses, and Divinity's bubble chain; the section names each missing group and
+marks the total partial, so the figure is a lower bound until those systems land.
 
 ## 5. Shared data and JSON import
 
