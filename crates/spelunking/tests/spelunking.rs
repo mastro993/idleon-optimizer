@@ -322,7 +322,6 @@ fn every_profile_matches_the_upstream_calculator() {
 #[test]
 fn every_rejection_reports_the_upstream_message() {
     let oracle = oracle();
-    // One import serves every entry: each one edits its own copy.
     let saved = inputs(&oracle);
     for entry in oracle["rejections"].as_array().unwrap() {
         let label = entry["label"].as_str().unwrap();

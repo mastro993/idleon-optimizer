@@ -64,8 +64,7 @@ jobs:
             command: cargo clippy --workspace --all-targets -- -D warnings
           # Tests shard by test, not by crate, so one cache bucket keeps serving
           # both shards and clippy (two buckets would evict each other). `slice`
-          # deals tests round-robin across every binary; `count` split each
-          # binary on its own and left one shard far heavier.
+          # deals tests round-robin across every binary.
           - label: test 1/2
             os: macos-latest
             submodules: recursive
