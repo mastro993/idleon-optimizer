@@ -388,3 +388,41 @@ fn a_collectible_effect_fills_its_placeholder() {
     assert_eq!(collectible_effect(31, 9.0), "Future cavern");
     assert!(collectible_effect(99, 0.0).is_empty());
 }
+
+#[test]
+fn the_enchant_odds_list_six_tiers_per_bought_jar_type() {
+    let mut rows = blank_rows();
+    // Two types bought, so the odds table has two jar columns per tier.
+    rows[11][37] = 2.0;
+    rows[9][20] = 1_000.0;
+    let jar = jar(json!(rows));
+    let chance = Jar::enchant_chance_at(4, jar.enchant_multi());
+    let odds = jar.enchant_tier_hours(4);
+    assert_eq!(odds.len(), 6);
+    assert_eq!(odds[0].len(), 2);
+    for (tier, row) in odds.iter().enumerate() {
+        for (jar_type, hours) in row.iter().enumerate() {
+            let expected = jar.time_to_tier(jar_type, tier as u32 + 1) / chance;
+            assert!(
+                (hours - expected).abs() < 1e-9,
+                "tier {tier} jar {jar_type}"
+            );
+        }
+        // A tier ten times higher takes ten times as long to break.
+        assert!(row.iter().all(|hours| hours.is_finite() && *hours > 0.0));
+    }
+}
+
+#[test]
+fn the_saved_collectible_levels_are_the_forty_rows() {
+    let mut rows = blank_rows();
+    rows[24][0] = 3.0;
+    rows[24][36] = 5.0;
+    let jar = jar(json!(rows));
+    let levels = jar.collectible_levels();
+    assert_eq!(levels.len(), COLLECTIBLES);
+    assert_eq!(levels[0], 3);
+    assert_eq!(levels[36], 5);
+    assert_eq!(levels[1], 0);
+    assert_eq!(jar.enchant_levels(), 2 + 4);
+}

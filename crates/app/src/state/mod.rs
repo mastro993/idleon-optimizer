@@ -22,6 +22,7 @@ use crate::sections::farming::{
 };
 use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::State as FountainState;
+use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
     RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
@@ -66,7 +67,7 @@ use idleon_farming::{Allocation as FarmingOutcome, Comparison as FarmingComparis
 use idleon_fishing::FishingSave;
 use idleon_fountain::{Fountain, OptimizerPlan, PlanRequest};
 use idleon_import::Shadow;
-use idleon_jar::Jar;
+use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_killroy::Plan as KillroyPlan;
 use idleon_ladle::Ladle;
@@ -267,6 +268,10 @@ pub(crate) struct AppState {
     pub(crate) jar_breakdown: Entity<FormulaTree>,
     /// The Jar Cavern the loaded save carries, if it has one.
     pub(crate) jar: Option<Jar>,
+    /// The enchant simulator's controls and the saved history.
+    pub(crate) jar_state: JarState,
+    /// The shared runner for the enchant simulation.
+    pub(crate) jar_sim: Entity<TaskRunner<JarSimResult, JarSimInputs>>,
     /// The Spelunking section's controls and account inputs.
     pub(crate) spelunking: SpelunkingState,
     /// The Spelunking rows the loaded save carries, if it has them.
@@ -862,6 +867,21 @@ impl AppState {
         let mastery_breakdown = ui::formula_tree("cooking-mastery-formula", window, cx);
         let fountain_breakdown = ui::formula_tree("fountain-formula", window, cx);
         let jar_breakdown = ui::formula_tree("jar-formula", window, cx);
+        let jar_sim = report_run::<JarSimResult, JarSimInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Simulating enchants…"),
+                cancelled_kept: "Enchant simulation cancelled; the previous spread is unchanged.",
+                cancelled_empty: "Enchant simulation cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Enchant simulation ready: {} enchants over {} sims with seed {}.",
+                    result.enchants, result.sims, result.seed
+                ))
+            },
+        );
         let opal_breakdown = ui::formula_tree("opal-formula", window, cx);
         let stats_breakdown = ui::formula_tree("stats-formula", window, cx);
         let stats_explorer_formula = ui::formula_tree("stats-explorer-formula", window, cx);
@@ -913,6 +933,8 @@ impl AppState {
             jelly_state: JellyState::default(),
             jar_breakdown,
             jar: None,
+            jar_state: JarState::default(),
+            jar_sim,
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
             spelunk_sim,

@@ -1,20 +1,26 @@
 //! The Jar Calculator section: the upstream Overview, Production, Rupie Value,
-//! Chances, Collectibles, Upgrades and Next Tier tabs.
+//! Chances, Collectibles, Upgrades, Next Tier, Enchant Simulator and Enchant
+//! History tabs.
 //!
 //! The upstream `jar-calc.html` has nine tabs. JR-01 and JR-02 build the first
 //! four; JR-03 adds Collectibles, Upgrades and Next Tier, and JR-04 adds the
-//! enchant simulator and history to [`Tab::ALL`] then, so the strip never offers
-//! a tab that has nothing behind it.
+//! enchant simulator and history, so the strip never offers a tab that has
+//! nothing behind it.
 
 mod actions;
 
 mod chances;
 mod collectibles;
+mod enchant;
+mod history;
 mod next_tier;
 mod overview;
 mod production;
 mod rupies;
+pub(crate) mod state;
 mod upgrades;
+
+pub(crate) use state::State;
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -50,10 +56,14 @@ pub(crate) enum Tab {
     Upgrades,
     /// The next power-of-ten milestone and the off-map tier accumulation.
     NextTier,
+    /// The seeded enchant simulation over the found collectibles.
+    EnchantSim,
+    /// The saved spreads and their changes over time.
+    EnchantHistory,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 7] = [
+    pub(crate) const ALL: [Tab; 9] = [
         Tab::Overview,
         Tab::Production,
         Tab::RupieValue,
@@ -61,6 +71,8 @@ impl Tab {
         Tab::Collectibles,
         Tab::Upgrades,
         Tab::NextTier,
+        Tab::EnchantSim,
+        Tab::EnchantHistory,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -72,6 +84,8 @@ impl Tab {
             Tab::Collectibles => "collectibles",
             Tab::Upgrades => "upgrades",
             Tab::NextTier => "nexttier",
+            Tab::EnchantSim => "enchantsim",
+            Tab::EnchantHistory => "enchanthistory",
         }
     }
 
@@ -84,6 +98,8 @@ impl Tab {
             Tab::Collectibles => "Collectibles",
             Tab::Upgrades => "Upgrades",
             Tab::NextTier => "Next Tier",
+            Tab::EnchantSim => "Enchant Sim",
+            Tab::EnchantHistory => "Enchant History",
         }
     }
 
@@ -124,6 +140,8 @@ pub(crate) fn view(
                     Tab::Collectibles => collectibles::collectibles(state, cx),
                     Tab::Upgrades => upgrades::upgrades(state, cx),
                     Tab::NextTier => next_tier::next_tier(state, cx),
+                    Tab::EnchantSim => enchant::enchant(state, cx),
+                    Tab::EnchantHistory => history::history(state, cx),
                 }),
         )
         .into_any_element()

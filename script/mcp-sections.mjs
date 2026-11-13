@@ -1183,6 +1183,48 @@ const INTERACTIONS = {
     if (!recommendation.includes('fastest')) {
       throw new Error(`jar: the next tier recommendation is not actionable (${recommendation})`);
     }
+    // JR-04: the enchant simulator runs off the UI thread and repeats exactly
+    // for the same seed, and the history records the applied save and clears.
+    await lane.call('click_element', { id: 'enchantsim' });
+    await waitForNode(lane, 'jar-enchant-sim', 'jar: the enchant simulator opens');
+    await waitForNode(lane, 'jar-sim-controls', 'jar: the simulator controls render');
+    await waitForNode(lane, 'jar-sim-target-0', 'jar: the target grid lists the found collectibles');
+    await scrollTo(lane, 'jar-sim-run');
+    await lane.call('click_element', { id: 'jar-sim-run' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jar-sim-result-line') ?? '').includes('seed 1'),
+      'jar: the simulation reports its seed and average'
+    );
+    const first = labelOf(await lane.tree(), 'jar-sim-result-line') ?? '';
+    await waitForNode(lane, 'jar-sim-spread', 'jar: the spread table renders');
+    await waitForNode(lane, 'jar-sim-odds', 'jar: the enchant odds table renders');
+    const odds = labelOf(await lane.tree(), 'jar-sim-odds') ?? '';
+    if (!odds.includes('average enchant levels')) {
+      throw new Error(`jar: the odds table names no simulated average (${odds})`);
+    }
+    await scrollTo(lane, 'jar-sim-run');
+    await lane.call('click_element', { id: 'jar-sim-run' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jar-sim-result-line') ?? '') === first,
+      'jar: the same seed reproduces the same spread'
+    );
+    await lane.call('click_element', { id: 'enchanthistory' });
+    await waitForNode(lane, 'jar-enchant-history', 'jar: the enchant history opens');
+    const recorded = labelOf(await lane.tree(), 'jar-history-snapshots') ?? '';
+    if (!/Snapshots: [1-9]/.test(recorded)) {
+      throw new Error(`jar: the imported save left no snapshot (${recorded})`);
+    }
+    await waitForNode(lane, 'jar-history-count', 'jar: the history counts its snapshots');
+    await waitForNode(lane, 'jar-history-spread-0', 'jar: the current spread renders');
+    await scrollTo(lane, 'jar-history-clear');
+    await lane.call('click_element', { id: 'jar-history-clear' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jar-history-snapshots') ?? '').includes('0'),
+      'jar: clearing the history empties it'
+    );
     await lane.call('click_element', { id: 'overview' });
     await waitForNode(lane, 'jar-overview', 'jar: the overview tab reopens');
   },

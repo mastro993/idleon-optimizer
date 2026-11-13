@@ -475,17 +475,23 @@ does not carry; `script/fountain-oracle.mjs` regenerates the upstream figures in
 the upgrade planner, marble planner and simulator (FN-03 and FN-04).
 Details: [`docs/sections/fountain.md`](sections/fountain.md).
 
-The Jar Calculator implements JR-01 to JR-03: the overview and its rupie balances, the shared
+The Jar Calculator implements JR-01 to JR-04: the overview and its rupie balances, the shared
 production rate and six-tier slot table, the rupie value breakdown with its extra-chance and
 per-break payouts, the opal/collectible/enchant chances and their tier scaling, the forty
 collectibles grouped by effect with the enchant priority, the nineteen jar schematics and the
-jar-type upgrade plan, and the next-tier tab with its pow10 milestone ranking and off-map tier
-accumulation. `idleon_jar::Jar` reads `Holes`, `Spelunk`, `OptLacc`, `Gaming` and the account
-rows; `script/extract-jar-data.mjs` extracts the collectible, schematic and measurement tables, and
-`script/jar-oracle.mjs` regenerates `crates/jar/tests/jar-oracle.json` from the upstream
-`js/stats/systems/w5/jar.js` plus the inline `jar-calc.html` accumulation loop. The upgrade plan
-marks only the next jar type affordable and never spends past the rupie balance it is paid from.
-Missing: the enchant simulator and history (JR-04).
+jar-type upgrade plan, the next-tier tab with its pow10 milestone ranking and off-map tier
+accumulation, and the enchant simulator with its history. `idleon_jar::Jar` reads `Holes`,
+`Spelunk`, `OptLacc`, `Gaming` and the account rows; `script/extract-jar-data.mjs` extracts the
+collectible, schematic and measurement tables, and `script/jar-oracle.mjs` regenerates
+`crates/jar/tests/jar-oracle.json` from the upstream `js/stats/systems/w5/jar.js` plus the inline
+`jar-calc.html` accumulation loop. The upgrade plan marks only the next jar type affordable and
+never spends past the rupie balance it is paid from. `idleon_jar::simulate` ports the page's
+worker with a seeded generator instead of `Math.random`, so the same inputs and seed reproduce the
+same spread; the tab sets the enchant count, simulation count, strategy, focus and every found
+collectible's target, and the result adds the enchant odds per jar tier. Every applied save records
+one history snapshot in the project document, a repeat of the last spread is skipped, the history
+keeps the newest 200, and the tab clears it. Missing: the sparkline the page draws behind each
+history tile, which reads as the current-spread and recent-snapshot tables instead.
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
 The Royal Guardian section implements RG-01 and RG-02: the overview with the counters (built

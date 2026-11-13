@@ -8,8 +8,7 @@
 //! reader.
 //!
 //! The overview, production, rupie value, break chances, collectibles, upgrade
-//! plan and next tier are complete; the enchant simulator and history are
-//! JR-04.
+//! plan, next tier, enchant simulator and its history are complete.
 //!
 //! The external bonuses the formulas read live in [`Ext`]. Everything the save
 //! itself carries is decoded here; two bonuses (the Cavern Resource stamp and
@@ -21,8 +20,10 @@ mod bonus;
 mod chance;
 mod collectibles;
 mod data;
+mod enchant;
 mod ext;
 mod game_data;
+mod history;
 mod next_tier;
 mod production;
 mod rupies;
@@ -32,11 +33,14 @@ pub use chance::ChanceEvent;
 pub use collectibles::{
     Collectible, CollectibleGroup, EnchantPriority, collectible_effect, collectible_name,
 };
+pub use enchant::{SimInputs, SimResult, Spread, Strategy, simulate};
 pub use ext::Ext;
 pub use game_data::{
-    BASE_PRODUCTION_PER_HOUR, RUPIE_COLORS, RUPIE_NAMES, TYPE_CATEGORIES, TYPE_NAMES, TypeCategory,
+    BASE_PRODUCTION_PER_HOUR, COLLECTIBLES, RUPIE_COLORS, RUPIE_NAMES, TYPE_CATEGORIES, TYPE_NAMES,
+    TypeCategory,
 };
-use game_data::{COLLECTIBLES, PAGE_TWO_COLLECTIBLES, STANDARD_RUPIES};
+use game_data::{PAGE_TWO_COLLECTIBLES, STANDARD_RUPIES};
+pub use history::{EnchantSnapshot, HISTORY_LIMIT, record_snapshot};
 pub use next_tier::{MilestoneRow, TierProjection};
 pub use rupies::{INCOME_TIERS, VALUE_TIERS};
 pub use upgrades::{GILDED_TIERS, JarTypeUpgrade, Schematic, UpgradePlan, UpgradeStatus};

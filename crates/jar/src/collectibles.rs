@@ -85,6 +85,11 @@ impl Jar {
         groups
     }
 
+    /// `collectibleLevels`: every collectible's saved level, in save order.
+    pub fn collectible_levels(&self) -> [u32; COLLECTIBLES] {
+        std::array::from_fn(|index| self.collectible_level(index))
+    }
+
     /// One collectible at its saved level.
     pub fn collectible(&self, index: usize) -> Option<Collectible> {
         let row = data().collectible(index)?;
