@@ -1,15 +1,15 @@
-//! The Cglunko section: the save-derived overview, the upgrade list and the
-//! upgrade plan.
+//! The Cglunko section: the save-derived overview, the upgrade list, the upgrade
+//! plan and the stone focus.
 //!
 //! CL-01 builds the Overview tab of `cglunko-calc.html`; CL-02 adds the
-//! Upgrades and Optimizer tabs with a page selector that drives both. The
-//! stone focus (CL-03) arrives later and adds its own tab to a strip that never
-//! offers a page with nothing behind it, the way the Jar calculator grew.
+//! Upgrades and Optimizer tabs with a page selector that drives both; CL-03 adds
+//! the Stones tab, whose blue and purple pages the same selector picks.
 
 mod actions;
 
 mod optimizer;
 mod overview;
+mod stones;
 mod upgrades;
 
 use crate::state::AppState;
@@ -35,16 +35,19 @@ pub(crate) enum Tab {
     Upgrades,
     /// The ranked priority and the plan the saved stones buy.
     Optimizer,
+    /// The selected page's stones, their digit impact and the focus target.
+    Stones,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 3] = [Tab::Overview, Tab::Upgrades, Tab::Optimizer];
+    pub(crate) const ALL: [Tab; 4] = [Tab::Overview, Tab::Upgrades, Tab::Optimizer, Tab::Stones];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Overview => "overview",
             Tab::Upgrades => "upgrades",
             Tab::Optimizer => "optimizer",
+            Tab::Stones => "stones",
         }
     }
 
@@ -53,6 +56,7 @@ impl Tab {
             Tab::Overview => "Overview",
             Tab::Upgrades => "Upgrades",
             Tab::Optimizer => "Optimizer",
+            Tab::Stones => "Stones",
         }
     }
 
@@ -155,6 +159,7 @@ pub(crate) fn view(
             Tab::Overview => overview::overview_pane(state, window, cx),
             Tab::Upgrades => upgrades::upgrades_pane(state, window, cx),
             Tab::Optimizer => optimizer::optimizer_pane(state, window, cx),
+            Tab::Stones => stones::stones_pane(state, window, cx),
         })
         .into_any_element()
 }
@@ -168,6 +173,6 @@ mod tests {
         for tab in Tab::ALL {
             assert_eq!(Tab::from_id(tab.id()), Some(tab));
         }
-        assert_eq!(Tab::from_id("stones"), None);
+        assert_eq!(Tab::from_id("plans"), None);
     }
 }

@@ -438,6 +438,7 @@ mod tests {
             kills: 1000.0,
             normal_dr: 100.0,
             saved: true,
+            ..Cglunko::default()
         }
     }
 

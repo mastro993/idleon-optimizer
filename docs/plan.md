@@ -1,16 +1,14 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
 Status: **foundation in progress, research (including the Minehead tab), statue, jar, farming, ladle,
-Clamworks, the Cglunko
-overview and upgrade plan, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's
-current state, the Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God
-Rank planner, the Spelunking controls and depth estimates, the Sneaking loadout, inventory and
-formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog
-board optimizer, the Clamworks optimizer, the Jelly Operator overview, layout editor and operation
-simulator, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs
-and partial total, the Damage Breakdown context and
-summary shell partial, sailing, shadow-ban, endgame, Fishing,
-Killroy and BoneJoePickle done, Monument, the All Stats context, breakdowns,
+Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
+Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God Rank planner, the
+Spelunking controls and depth estimates, the Sneaking loadout, inventory and formula breakdown
+workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
+the Clamworks optimizer, the Jelly Operator overview, layout editor and operation simulator, the
+drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial total, the
+Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
+BoneJoePickle and Cglunko done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built, 2 sections planned.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).

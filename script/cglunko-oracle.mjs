@@ -164,6 +164,30 @@ const payload = {
   ext,
   dr: C.drBonus(S),
   upgrades,
+  // `stoneEfficiency` and `bestStoneFocus` read the module's `optionsListData`
+  // and the saved focus rows, so the fixture's own 666/667 are the scenario.
+  stones: C.stoneEfficiency(S).map((row) => ({
+    index: row.idx,
+    color: row.color,
+    current: row.current,
+    digits: row.digits,
+    nextPow10: row.nextPow10,
+    deficit: row.deficit,
+    baseRate: row.baseRate,
+    dropsPerKill: row.dropsPerKill,
+    killsNeeded: row.killsNeeded,
+    focused: row.focused,
+    focusMulti: row.focusMulti,
+  })),
+  focus: C.bestStoneFocus(S).map((row) => ({
+    index: row.idx,
+    color: row.color,
+    stone: row.stoneIdx,
+    deficit: row.deficit,
+    killsWithFocus: row.killsWithFocus,
+    killsWithout: row.killsWithout,
+    drPerDigit: row.drPerDigit,
+  })),
   priority: { blue: order(0), purple: order(1) },
   scenario,
   plans: { blue: plan(0), purple: plan(1) },
@@ -173,5 +197,5 @@ const payload = {
 const out = new URL('../crates/cglunko/tests/cglunko-oracle.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
-  `wrote ${upgrades.length} upgrades, ${payload.plans.blue.steps.length} blue steps and ${payload.plans.purple.steps.length} purple steps`
+  `wrote ${upgrades.length} upgrades, ${payload.stones.length} stones, ${payload.focus.length} focus rows, ${payload.plans.blue.steps.length} blue steps and ${payload.plans.purple.steps.length} purple steps`
 );

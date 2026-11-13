@@ -1,20 +1,22 @@
-//! Cglunko (The Cove, W5): the overview metrics, the upgrade priority and the
-//! upgrade plan.
+//! Cglunko (The Cove, W5): the overview metrics, the upgrade priority, the
+//! upgrade plan and the stone focus.
 //!
-//! Ports the Overview, Upgrades and Optimizer tabs of `cglunko-calc.html` and
-//! `js/stats/systems/w5/cglunko.js`. Save fields: `OptionsListAccount` (or
-//! `OptLacc`), where 630..=653 are the 24 upgrade levels over two pages,
-//! 654..=659 the blue shape counts, 660..=665 the purple ones, 668 the Glunko
+//! Ports the Overview, Upgrades, Optimizer and Stones tabs of
+//! `cglunko-calc.html` and `js/stats/systems/w5/cglunko.js`. Save fields:
+//! `OptionsListAccount` (or `OptLacc`), where 630..=653 are the 24 upgrade
+//! levels over two pages, 654..=659 the blue shape counts, 660..=665 the purple
+//! ones, 666 and 667 the focused blue and purple stone slots, 668 the Glunko
 //! kills and 200 the account's highest drop rate the formula reads.
 //!
 //! [`Page`] and [`Cglunko::priority`] carry the priority table; [`Cglunko::plan`]
 //! spends one page's saved stones with [`Cglunko::next_cost`], never overdrawing
-//! a stone and never ending below the state it started from. The stone focus and
-//! the recommended target are the later CL-03 feature. `Option`-less decoding
-//! matches the upstream page: a missing `OptLacc` row reads as zero and is
-//! reported once by [`Cglunko::from_save`].
+//! a stone and never ending below the state it started from. [`Cglunko::stone_rows`]
+//! and [`Cglunko::best_focus`] carry the stone focus the Stones tab prints.
+//! `Option`-less decoding matches the upstream page: a missing `OptLacc` row
+//! reads as zero and is reported once by [`Cglunko::from_save`].
 
 mod data;
+mod stone;
 mod upgrade;
 
 use idleon_common::curve::log as game_log;
@@ -26,6 +28,7 @@ pub use data::cost_base as upgrade_cost_base;
 pub use data::description as upgrade_description;
 pub use data::name as upgrade_name;
 pub use data::per_lv as upgrade_per_lv;
+pub use stone::{Focus, Stone};
 pub use upgrade::{Page, Plan, Rank, Step, stone};
 
 /// The upgrades across both pages.
@@ -39,6 +42,10 @@ const UPGRADE_BASE: usize = 630;
 const BLUE_BASE: usize = 654;
 /// `OptLacc[660]`: purple shape count 0.
 const PURPLE_BASE: usize = 660;
+/// `OptLacc[666]`: the focused blue stone slot, 1..=6 with 0 for none.
+const BLUE_FOCUS: usize = 666;
+/// `OptLacc[667]`: the focused purple stone slot.
+const PURPLE_FOCUS: usize = 667;
 /// `OptLacc[668]`: Glunko kills, the `POW 10` count of upgrade 4.
 const KILLS: usize = 668;
 /// `OptLacc[200]`: the account's highest drop rate, the `POW 10` count of 18.
@@ -53,6 +60,10 @@ pub struct Cglunko {
     pub blue_stones: [f64; STONE_COUNT],
     /// The six purple shape counts, `OptLacc[660..666]`.
     pub purple_stones: [f64; STONE_COUNT],
+    /// The focused blue stone slot, `OptLacc[666]`: 1..=6, 0 for none.
+    pub blue_focus: u32,
+    /// The focused purple stone slot, `OptLacc[667]`.
+    pub purple_focus: u32,
     /// The Glunko kill count, `OptLacc[668]`.
     pub kills: f64,
     /// The normal drop rate the digit bonus reads, `OptLacc[200]`.
@@ -124,6 +135,8 @@ impl Cglunko {
             upgrades: std::array::from_fn(|index| level(UPGRADE_BASE + index)),
             blue_stones: std::array::from_fn(|index| number(BLUE_BASE + index).unwrap_or(0.0)),
             purple_stones: std::array::from_fn(|index| number(PURPLE_BASE + index).unwrap_or(0.0)),
+            blue_focus: focus_slot(number(BLUE_FOCUS)),
+            purple_focus: focus_slot(number(PURPLE_FOCUS)),
             kills: number(KILLS).unwrap_or(0.0),
             normal_dr: number(NORMAL_DR).unwrap_or(0.0),
             saved,
@@ -326,6 +339,12 @@ fn digits(value: f64) -> u32 {
     game_log(value).ceil().max(0.0) as u32
 }
 
+/// A saved focus row as the game writes it: rounded, clamped at zero, 1..=6 for
+/// a stone and 0 for no focus. [`Cglunko::focus`] turns it into a slot index.
+fn focus_slot(value: Option<f64>) -> u32 {
+    value.map_or(0, |slot| slot.round().max(0.0) as u32)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -349,6 +368,7 @@ mod tests {
             kills: 1000.0,
             normal_dr: 100.0,
             saved: true,
+            ..Cglunko::default()
         }
     }
 
@@ -463,6 +483,7 @@ mod tests {
         options[631] = 26.0;
         options[654] = 3400.1;
         options[659] = 1.1;
+        options[666] = 2.0;
         options[668] = 320_986_464.0;
         options[200] = 5933.67663835006;
         let save = json!({ "OptLacc": serde_json::to_string(&options).unwrap() });
@@ -474,6 +495,8 @@ mod tests {
         assert_eq!(cglunko.level(1), 26);
         assert_eq!(cglunko.blue_stones[0], 3400.1);
         assert_eq!(cglunko.blue_stones[5], 1.1);
+        assert_eq!(cglunko.blue_focus, 2);
+        assert_eq!(cglunko.purple_focus, 0);
         assert_eq!(cglunko.kills, 320_986_464.0);
         assert_eq!(cglunko.blue_digits(), 5);
         assert_eq!(cglunko.normal_dr_digits(), 4);
