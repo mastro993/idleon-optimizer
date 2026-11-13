@@ -60,23 +60,16 @@ jobs:
           - label: clippy
             os: macos-latest
             submodules: recursive
-            cache: true
+            cache: macos-clippy
             command: cargo clippy --workspace --all-targets -- -D warnings
-          # Tests shard by test, not by crate, so one cache bucket keeps serving
-          # both shards and clippy (two buckets would evict each other). `slice`
-          # deals tests round-robin across every binary.
-          - label: test 1/2
+          # One job: the suite runs in about a minute, while every shard would
+          # build the whole workspace again, so a shard only adds a build.
+          - label: test
             os: macos-latest
             submodules: recursive
-            cache: true
+            cache: macos-test
             nextest: true
-            command: cargo nextest run --workspace --partition slice:1/2
-          - label: test 2/2
-            os: macos-latest
-            submodules: recursive
-            cache: true
-            nextest: true
-            command: cargo nextest run --workspace --partition slice:2/2
+            command: cargo nextest run --workspace
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps: &steps
@@ -88,18 +81,24 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.96.0
         with:
           components: clippy, rustfmt
-      # nextest ships the sharding (`--partition count:n/N`); no script of ours.
       - if: matrix.nextest
         uses: taiki-e/install-action@nextest
+      # Clippy keeps check metadata and tests keep `test`-profile libraries, so
+      # one shared bucket held only whichever saved first and the other rebuilt
+      # every dependency. Only `main` saves: pull requests restore its caches
+      # instead of filling the quota with their own. The root manifest's
+      # `[profile]` tables are not part of the key, so rename a bucket when they
+      # change.
       - if: matrix.cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: macos-workspace
+          shared-key: ${{ matrix.cache }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: ${{ matrix.command }}
 
   # The long simulations are `#[ignore]`d so pull requests skip them; `main`
   # runs them beside the gates. The one-entry matrix feeds the gates' steps,
-  # reused through the anchor, so both share one toolchain and cache bucket.
+  # reused through the anchor, so it shares the toolchain and the test cache.
   simulations:
     needs: changes
     if: github.event_name == 'push' && needs.changes.outputs.rust == 'true'
@@ -108,7 +107,7 @@ jobs:
         include:
           - os: macos-latest
             submodules: recursive
-            cache: true
+            cache: macos-test
             nextest: true
             command: cargo nextest run --workspace --run-ignored only
     # A skipped job never expands `matrix.label`, so the name is literal.
