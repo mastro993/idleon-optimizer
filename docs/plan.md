@@ -4,8 +4,8 @@ Status: **foundation in progress, research (including the Minehead and Sushi Sta
 Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
 Royal Guardian overview, outpost map, resource nodes, currencies, upgrades, breakdowns and forecast,
 the Coral God Rank planner, the Spelunking controls, depth estimates, expedition run and Amber
-policy, the Sneaking loadout,
-inventory and formula breakdown workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
+policy, the Sneaking loadout, inventory, formula breakdown, charm optimizer and floor × mastery
+workspaces, the combat simulator's loadout editor and mechanics overrides, the cog board optimizer,
 the Clamworks optimizer, the Jelly Operator overview, layout editor, operation simulator and section
 planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs and partial
 total, the
@@ -570,8 +570,8 @@ the manual counts live in `sections.opal` in the project document, so an export 
 `crates/opal/tests/opal.rs` pins.
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
-The Sneaking section has its loadout, inventory, formula breakdown and charm optimizer workspaces
-(SN-01, SN-02 and SN-03):
+The Sneaking section has its loadout, inventory, formula breakdown, charm optimizer and floor
+mastery workspaces (SN-01, SN-02, SN-03 and SN-04):
 `idleon_sneaking::Loadout` reads the save's `Ninja` rows — the twin placements, the four
 equipment rows per twin, the 39-slot inventory and the Ninja Knowledge levels — and computes the
 item stats, the charm bonus map, the Gold inventory scan, action speed, KO recovery, the level,
@@ -595,11 +595,21 @@ stay put, and it runs off the UI thread through the shared task runner: it repor
 without touching the editor, and writes a recommendation only through the explicit Apply action,
 which banks the charms it displaces so the account keeps every charm it owned. The Items objective
 scores the deterministic claim rate upstream shortlists loadouts with; its Monte-Carlo claim
-simulation needs the flower pass this section does not build yet. `script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
+simulation needs the flower pass this section does not build yet. The Floor Mastery workspace is
+`Loadout::floor_mastery`: one row per floor at the saved mastery and its neighbours, with the floor's
+flowers, funeral multiplier, detection base, Jade base, EXP base and mastery-scaled door HP, plus the
+saved placement's best detection, Jade and EXP per hour, door state and ETA, and the captive's untie
+ETA. A projected mastery resets the flowers and relocks the doors, the game's own what-if when the
+mastery advances. `Loadout::active_door` prints the one unfinished door with the saved placement's
+damage and hits per hour and the hours `computeDoorClearEstimate` needs; `Loadout::next_captive`
+prints the first captive in roster order and its untie ETA. A floor with no twin says so, its
+detection is a dash, and a door with no hitter prints its state instead of an endless ETA.
+`script/extract-sneaking-data.mjs` extracts the catalog, the floor tables
 and the account tables, and `script/sneaking-oracle.mjs` regenerates `fixtures/sneaking.json` from
-the upstream formulas, including the breakdown factor map the account decoder is compared against.
+the upstream formulas, including the breakdown factor map the account decoder is compared against
+and the floor × mastery rows, the decision cards and the door-clear estimate.
 The Gambit point chain and the terms that the All-Talent resolver rescales stay explicit inputs, and
-each such node says so in its note. Missing: the floor × mastery table with the door ETA (SN-04).
+each such node says so in its note.
 Details: [`docs/sections/sneaking.md`](sections/sneaking.md).
 
 The Prisma section implements PR-01 and PR-02: the plan for one character and cauldron (every

@@ -14,8 +14,8 @@ use idleon_common::FormulaNode;
 use idleon_save::Save;
 use idleon_sneaking::{
     Account, EquipError, Issue, Job, Loadout, Objective, Request, SlotKind, action_speed,
-    breakdown, can_equip_pair, charm_stat, detection_base, detection_chance, door_hp, ko_duration,
-    ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
+    breakdown, can_equip_pair, charm_stat, detection_base, detection_chance, door_eta, door_hp,
+    ko_duration, ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
 };
 use serde_json::{Value, json};
 
@@ -757,4 +757,245 @@ fn the_objective_switch_changes_what_is_measured() {
     // The fixture's twins wear Gloves, so no twin hits a door or frees a captive.
     assert_eq!(loadout.score(Objective::Door), 0.0);
     assert_eq!(loadout.score(Objective::Untie), 0.0);
+}
+
+// ----- SN-04: the floor × mastery table, the active door and the captive -----
+
+/// The word upstream prints for an action.
+fn job_name(job: Job) -> &'static str {
+    match job {
+        Job::Jade => "normal",
+        other => other.label(),
+    }
+}
+
+fn option(cell: &Value) -> Option<f64> {
+    match cell {
+        Value::Null => None,
+        cell => Some(value(cell)),
+    }
+}
+
+#[test]
+fn the_floor_mastery_table_matches_upstream() {
+    let loadout = loadout();
+    let oracle = oracle();
+    let expected = &oracle["floorMastery"];
+    let rows = loadout.floor_mastery();
+    let upstream_rows = expected["rows"].as_array().expect("floor rows");
+    assert_eq!(rows.len(), upstream_rows.len());
+    let levels: Vec<u32> = expected["levels"]
+        .as_array()
+        .expect("mastery levels")
+        .iter()
+        .map(|level| level.as_u64().unwrap() as u32)
+        .collect();
+    assert_eq!(loadout.mastery_levels(), levels);
+    for row in &rows {
+        let name = format!("floor {} at M{}", row.floor, row.mastery);
+        let upstream = upstream_rows
+            .iter()
+            .find(|candidate| {
+                candidate["floor"].as_u64().unwrap() as usize == row.floor
+                    && candidate["mastery"].as_u64().unwrap() as u32 == row.mastery
+            })
+            .unwrap_or_else(|| panic!("{name}: upstream records the row"));
+        assert_eq!(
+            row.current,
+            upstream["current"].as_bool().unwrap(),
+            "{name}"
+        );
+        // The mastery values themselves: the flowers, the floor bases and the
+        // mastery-scaled door HP.
+        close(
+            row.flowers,
+            value(&upstream["flowers"]),
+            &format!("{name} flowers"),
+        );
+        close(
+            row.funeral_percent,
+            value(&upstream["funeralPercent"]),
+            &format!("{name} funeral"),
+        );
+        close(
+            row.detection_base,
+            value(&upstream["detectionBase"]),
+            &format!("{name} detection base"),
+        );
+        close(
+            row.jade_base,
+            value(&upstream["jadeBase"]),
+            &format!("{name} jade base"),
+        );
+        close(
+            row.exp_base,
+            value(&upstream["expBase"]),
+            &format!("{name} exp base"),
+        );
+        close(
+            row.door_hp,
+            value(&upstream["doorHp"]),
+            &format!("{name} door HP"),
+        );
+        assert_eq!(
+            row.door_state,
+            upstream["doorState"].as_str().unwrap(),
+            "{name} door state"
+        );
+        // Who stands where and what the floor's action is at this mastery.
+        let twins: Vec<usize> = upstream["twins"]
+            .as_array()
+            .expect("twins")
+            .iter()
+            .map(|twin| twin.as_u64().unwrap() as usize)
+            .collect();
+        assert_eq!(row.twins, twins, "{name} twins");
+        let jobs: Vec<&str> = upstream["jobs"]
+            .as_array()
+            .expect("jobs")
+            .iter()
+            .map(|job| job.as_str().unwrap())
+            .collect();
+        let actual_jobs: Vec<&str> = row.jobs.iter().copied().map(job_name).collect();
+        assert_eq!(actual_jobs, jobs, "{name} jobs");
+        assert_eq!(
+            row.captive,
+            upstream["captive"].as_u64().map(|index| index as usize),
+            "{name} captive"
+        );
+        close(
+            row.untie_remaining,
+            value(&upstream["untieRemaining"]),
+            &format!("{name} untie remaining"),
+        );
+        // The loadout's own rates stay finite, and an empty floor has no
+        // detection to report.
+        assert!(row.jade_per_hour.is_finite() && row.jade_per_hour >= 0.0);
+        assert!(row.exp_per_hour.is_finite() && row.exp_per_hour >= 0.0);
+        assert_eq!(row.best_detection.is_some(), !row.twins.is_empty());
+    }
+}
+
+#[test]
+fn the_active_door_and_next_captive_match_upstream() {
+    let loadout = loadout();
+    let upstream = &oracle()["floorMastery"];
+    let door = loadout
+        .active_door()
+        .expect("the fixture has an unfinished door");
+    let expected = &upstream["activeDoor"];
+    assert_eq!(door.floor, expected["floor"].as_u64().unwrap() as usize);
+    close(door.max_hp, value(&expected["maxHp"]), "door max HP");
+    close(door.progress, value(&expected["progress"]), "door progress");
+    close(
+        door.remaining_hp,
+        value(&expected["remainingHp"]),
+        "door remaining HP",
+    );
+    // The fixture's twins wear Gloves, so the saved placement cannot hit it.
+    assert!(door.eta.is_none());
+
+    let captive = loadout.next_captive().expect("the fixture holds a captive");
+    let expected = &upstream["nextCaptive"];
+    assert_eq!(captive.twin, expected["twin"].as_u64().unwrap() as usize);
+    assert_eq!(captive.floor, expected["floor"].as_u64().unwrap() as usize);
+    close(
+        captive.remaining,
+        value(&expected["remaining"]),
+        "untie remaining",
+    );
+    assert!(captive.eta.is_none());
+}
+
+#[test]
+fn the_door_clear_estimate_matches_upstream() {
+    let functions = &oracle()["functions"];
+    for case in functions["doorClearEstimate"]
+        .as_array()
+        .expect("estimates")
+    {
+        let remaining = value(&case["remaining"]);
+        let damage = value(&case["damage"]);
+        let hits = value(&case["hits"]);
+        // An endless estimate is the port's `None`, which the table prints as
+        // the door's state instead of an infinity.
+        let expected = option(&case["hours"]).filter(|hours| hours.is_finite());
+        let actual = door_eta(remaining, damage, hits);
+        match (actual, expected) {
+            (None, None) => {}
+            (Some(actual), Some(expected)) => close(
+                actual,
+                expected,
+                &format!("estimate {remaining}/{damage}/{hits}"),
+            ),
+            (actual, expected) => {
+                panic!("estimate {remaining}/{damage}/{hits}: {actual:?} vs {expected:?}")
+            }
+        }
+    }
+}
+
+#[test]
+fn the_door_eta_and_empty_floors_follow_the_loadout() {
+    let mut loadout = loadout();
+    let table = loadout.floor_mastery();
+    // An empty floor is a state, not a blank row: no twins, no detection, and
+    // the door says why it cannot be hit.
+    let empty = table
+        .iter()
+        .find(|row| row.floor == 5 && row.current)
+        .expect("floor five is in the table");
+    assert!(empty.twins.is_empty());
+    assert!(empty.best_detection.is_none());
+    assert_eq!(empty.door_state, "Locked by F4");
+    // A locked door has no remaining HP, so the estimate is zero; the state is
+    // what the table prints.
+    assert_eq!(empty.door_eta, Some(0.0));
+    // The captured twin's floor shows the captive and no Kunai wielder.
+    let captive = table
+        .iter()
+        .find(|row| row.floor == 10 && row.current)
+        .expect("floor ten is in the table");
+    assert_eq!(captive.captive, Some(10));
+    assert!(captive.untie_eta.is_none());
+    assert!(loadout.active_door().unwrap().eta.is_none());
+
+    // A Nunchaku on the active door's floor gives the ETA a value; the loadout
+    // edit is what moves it, so the table reads the editor's own state.
+    loadout
+        .equip(0, SlotKind::Weapon, 22)
+        .expect("inventory row 22 holds a Nunchaku");
+    let attack = loadout.active_door().expect("the door is still unfinished");
+    assert!(attack.damage_per_hour > 0.0);
+    assert!(
+        attack
+            .eta
+            .is_some_and(|hours| hours.is_finite() && hours > 0.0)
+    );
+    let floor = loadout
+        .floor_mastery()
+        .into_iter()
+        .find(|row| row.floor == attack.floor && row.current)
+        .expect("the active floor is in the table");
+    assert_eq!(floor.door_eta, attack.eta);
+    assert!(loadout.next_captive().unwrap().eta.is_none());
+}
+
+#[test]
+fn a_projected_mastery_relocks_the_floors() {
+    let loadout = loadout();
+    let (mastery, _) = loadout.mastery();
+    let table = loadout.floor_mastery();
+    let current = table
+        .iter()
+        .find(|row| row.floor == 4 && row.current)
+        .expect("floor four at the saved mastery");
+    let projected = table
+        .iter()
+        .find(|row| row.floor == 4 && row.mastery == mastery + 1)
+        .expect("the next mastery projects floor four");
+    assert!(!projected.current);
+    assert_eq!(projected.flowers, 0.0);
+    assert_eq!(projected.door_state, "Fresh");
+    assert!(projected.door_hp > current.door_hp);
 }

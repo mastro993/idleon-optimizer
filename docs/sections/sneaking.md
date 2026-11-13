@@ -5,7 +5,7 @@
 - Milestone: `M24`
 - Section key: `sneaking`
 - Group: `w6`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.

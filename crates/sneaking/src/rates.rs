@@ -164,6 +164,8 @@ pub struct UntieProgress {
 pub struct DoorState {
     pub active: bool,
     pub floor: usize,
+    /// The floor whose door is the one unfinished floor, when the save has one.
+    pub active_floor: Option<usize>,
     pub max_hp: f64,
     pub progress: f64,
     pub remaining_hp: f64,
@@ -277,33 +279,52 @@ impl Loadout {
             return DoorState::default();
         }
         let max_hp = door_hp(floor, self.mastery);
-        if max_hp <= 0.0 || self.mastery < self.mastery_max {
+        if max_hp <= 0.0 {
             return DoorState {
                 floor,
                 ..DoorState::default()
             };
         }
-        let mut active_floor = None;
-        for candidate in 1..FLOOR_COUNT {
-            let candidate_max = door_hp(candidate, self.mastery);
-            let progress = self.doors.get(candidate).copied().unwrap_or(0.0);
-            if candidate_max > progress {
-                active_floor = Some(candidate);
-                break;
+        // A projected mastery is a what-if: the game has not relocked a floor,
+        // so upstream's `doorState` shows every door fresh at its full HP. A
+        // projection below the saved maximum has no door at all.
+        if self.projected {
+            if self.mastery < self.mastery_max {
+                return DoorState {
+                    floor,
+                    ..DoorState::default()
+                };
             }
+            return DoorState {
+                active: true,
+                floor,
+                active_floor: Some(floor),
+                max_hp,
+                progress: 0.0,
+                remaining_hp: max_hp,
+            };
         }
+        if self.mastery < self.mastery_max {
+            return DoorState {
+                floor,
+                ..DoorState::default()
+            };
+        }
+        let active_floor = (1..FLOOR_COUNT).find(|candidate| {
+            let candidate_max = door_hp(*candidate, self.mastery);
+            let progress = self.doors.get(*candidate).copied().unwrap_or(0.0);
+            candidate_max > progress
+        });
         let progress = self.doors.get(floor).copied().unwrap_or(0.0);
         let remaining = (max_hp - progress).max(0.0);
+        let active = active_floor == Some(floor) && remaining > 0.0;
         DoorState {
-            active: active_floor == Some(floor) && remaining > 0.0,
+            active,
             floor,
+            active_floor,
             max_hp,
             progress,
-            remaining_hp: if active_floor == Some(floor) {
-                remaining
-            } else {
-                0.0
-            },
+            remaining_hp: if active { remaining } else { 0.0 },
         }
     }
 
