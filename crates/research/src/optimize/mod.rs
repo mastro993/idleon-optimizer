@@ -12,7 +12,9 @@ pub mod mags;
 pub mod shapes;
 
 use crate::engine::{self, Refit, TargetRun};
-use crate::model::{Effort, OptimizeRequest, OptimizeResult, SimContext, Simulation, Target};
+use crate::model::{
+    Effort, OptimizeRequest, OptimizeResult, SimContext, Simulation, Strategy, Target,
+};
 use crate::sim;
 use idleon_common::Control;
 use idleon_common::Progress;
@@ -163,10 +165,18 @@ pub fn run(
     // The saved layout has to beat the optimized one outright; a tie keeps the
     // plan the optimizer built.
     let optimized_wins = !engine::better(&baseline.projection, &optimized.projection, planned);
-    let (after, chosen, other) = if optimized_wins {
-        (after, &optimized, &baseline)
+    let saved = Strategy {
+        label: "Saved layout",
+        projection: baseline.projection.clone(),
+    };
+    let built = Strategy {
+        label: "Optimized layout",
+        projection: optimized.projection.clone(),
+    };
+    let (after, chosen, other, (best, worst)) = if optimized_wins {
+        (after, &optimized, &baseline, (built, saved))
     } else {
-        (before.clone(), &baseline, &optimized)
+        (before.clone(), &baseline, &optimized, (saved, built))
     };
     steps.push(format!(
         "The {} layout {}; the {} layout {}.",
@@ -184,7 +194,6 @@ pub fn run(
     }
 
     let after_rate = sim::exp_rate(&after, ctx).total;
-    let projection = chosen.projection.clone();
     let gain = if before_rate > 0.0 {
         (after_rate / before_rate - 1.0) * 100.0
     } else {
@@ -193,8 +202,8 @@ pub fn run(
     steps.push(format!(
         "Finished at {} EXP/hr ({gain:+.1}%); the projection ends at level {} after {}.",
         sim::format_rate(after_rate),
-        projection.final_level,
-        hours_label(projection.hours)
+        best.projection.final_level,
+        hours_label(best.projection.hours)
     ));
     if report(Progress {
         fraction: 1.0,
@@ -209,7 +218,9 @@ pub fn run(
         after,
         before_rate,
         after_rate,
-        projection,
+        best,
+        worst,
+        target: planned,
         steps,
         elapsed_ms: started.elapsed().as_millis(),
     })

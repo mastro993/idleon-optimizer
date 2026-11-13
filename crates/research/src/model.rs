@@ -449,6 +449,23 @@ pub struct OptimizeRequest {
     pub grid_points: Option<u32>,
 }
 
+/// One layout a run took all the way to its target.
+#[derive(Clone, Debug)]
+pub struct Strategy {
+    /// Which layout it is: the save's own, or the one the optimizers built.
+    pub label: &'static str,
+    pub projection: crate::sim::Projection,
+}
+
+/// How far ahead of the worst tested layout the best one finished.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Lead {
+    /// Hours the best layout saved.
+    pub hours: f64,
+    /// That saving as a share of the worst layout's time.
+    pub pct: f64,
+}
+
 /// Outcome of one optimizer run.
 #[derive(Clone, Debug)]
 pub struct OptimizeResult {
@@ -456,7 +473,14 @@ pub struct OptimizeResult {
     pub after: Simulation,
     pub before_rate: f64,
     pub after_rate: f64,
-    pub projection: crate::sim::Projection,
+    /// The tested strategy the run kept.
+    pub best: Strategy,
+    /// The one it beat.
+    pub worst: Strategy,
+    /// The target the run simulated; a level it had already reached projects a
+    /// day instead.
+    pub target: Target,
+    /// What the optimizers did to the layout, as sentences, newest last.
     pub steps: Vec<String>,
     pub elapsed_ms: u128,
 }
@@ -468,6 +492,26 @@ impl OptimizeResult {
             return 0.0;
         }
         (self.after_rate / self.before_rate - 1.0) * 100.0
+    }
+
+    /// How far the best tested layout finished ahead of the worst, when both
+    /// reached a level target and the gap is worth showing. An hour target runs
+    /// both layouts for the same window, so there is no time to save.
+    pub fn lead(&self) -> Option<Lead> {
+        let Target::Level(level) = self.target else {
+            return None;
+        };
+        if self.worst.projection.final_level < level {
+            return None;
+        }
+        let hours = self.worst.projection.hours - self.best.projection.hours;
+        if hours <= 0.0 || self.worst.projection.hours <= 0.0 {
+            return None;
+        }
+        Some(Lead {
+            hours,
+            pct: hours / self.worst.projection.hours * 100.0,
+        })
     }
 }
 

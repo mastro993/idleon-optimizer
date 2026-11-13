@@ -711,11 +711,20 @@ impl AppState {
             self.edit(move |sim| *sim = result.after, cx);
             self.status = format!("Applied the optimized layout ({gain:+.1}%).");
         }
+        self.research.run_phase = None;
         cx.notify();
     }
 
     pub(crate) fn dismiss_result(&mut self, cx: &mut Context<Self>) {
         self.optimizer.update(cx, |runner, _| runner.clear());
+        self.research.run_phase = None;
+        cx.notify();
+    }
+
+    /// The action the result's timeline marks; opening it again closes it.
+    pub(crate) fn toggle_run_phase(&mut self, index: usize, cx: &mut Context<Self>) {
+        let phase = &mut self.research.run_phase;
+        *phase = (*phase != Some(index)).then_some(index);
         cx.notify();
     }
 
@@ -727,6 +736,7 @@ impl AppState {
     /// Run the optimizers off the UI thread through the shared task runner.
     pub(crate) fn optimize(&mut self, cx: &mut Context<Self>) {
         let inputs = self.run_inputs();
+        self.research.run_phase = None;
         let request = OptimizeRequest {
             target: inputs.target,
             effort: inputs.effort,
