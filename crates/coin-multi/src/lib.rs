@@ -10,25 +10,37 @@
 //!
 //! [`save`] decodes the save-derived groups through the account view; this
 //! module owns the card inputs, their validation and the overkill tier the
-//! damage-scaled talent reads.
+//! damage-scaled talent reads. [`tree`] turns the evaluated groups into the
+//! shared formula tree's expansion of the total.
 
 pub mod overkill;
 mod save;
+pub mod tree;
 
 use idleon_stats as stats;
 
 pub use overkill::Overkill;
 pub use save::coin;
+pub use tree::tree;
 
 /// One of the 23 multiplicative groups in upstream's `coin-multi` descriptor.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Group {
-    /// The upstream descriptor's child name, e.g. `Companion 24`.
+    /// The upstream descriptor's child name, e.g. `Companion: Cool Bird`.
     pub name: &'static str,
+    /// The upstream source that owns the term.
+    pub source: &'static str,
     /// The group's factor, or `None` when this build cannot resolve it.
     pub value: Option<f64>,
     /// The upstream source a missing group needs; empty when it is resolved.
     pub reason: &'static str,
+    /// Upstream's own annotation, e.g. `cap 4`; empty when it has none.
+    pub note: String,
+    /// The additive terms the group's formula sums, in upstream's units.
+    pub terms: Vec<Term>,
+    /// The divisor the terms sum over: `100` for a percentage bonus, `1` for
+    /// the one group whose terms are already fractions.
+    pub divisor: f64,
 }
 
 impl Group {
@@ -36,45 +48,200 @@ impl Group {
     pub fn is_modelled(&self) -> bool {
         self.value.is_some()
     }
+
+    /// Sets the group's own formula: `1 + Σ terms / divisor`.
+    pub(crate) fn with_terms(mut self, terms: Vec<Term>, divisor: f64) -> Self {
+        self.terms = terms;
+        self.divisor = divisor;
+        self
+    }
+
+    /// Sets upstream's annotation.
+    pub(crate) fn with_note(mut self, note: impl Into<String>) -> Self {
+        self.note = note.into();
+        self
+    }
+}
+
+/// One additive term inside a group, in upstream's own units.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Term {
+    /// The upstream node's name, e.g. `Vault: Recipe for Profit`.
+    pub name: &'static str,
+    pub value: f64,
+    /// Upstream's annotation, e.g. `104 completed tasks`.
+    pub note: Option<String>,
+}
+
+impl Term {
+    /// A term as upstream shows it, without an annotation.
+    pub(crate) fn new(name: &'static str, value: f64) -> Self {
+        Self {
+            name,
+            value,
+            note: None,
+        }
+    }
+
+    /// An annotated term, e.g. a vault tier and the count it scales with.
+    pub(crate) fn annotated(name: &'static str, value: f64, note: impl Into<String>) -> Self {
+        Self {
+            name,
+            value,
+            note: Some(note.into()),
+        }
+    }
+}
+
+/// One group's static description: what `coin-multi.js` calls it, where it comes
+/// from and why this build cannot resolve it.
+struct Spec {
+    name: &'static str,
+    source: &'static str,
+    reason: &'static str,
+    note: &'static str,
 }
 
 /// The 23 groups, in the order `coin-multi.js` multiplies them.
-pub(crate) const GROUPS: [(&str, &str); 23] = [
-    (
-        "Cash Bubbles from Main Stats",
-        "needs the total STR/AGI/WIS stat engine (stats-all category breakdowns)",
-    ),
-    ("Companion 24", ""),
-    ("Companion 45", ""),
-    ("Companion 159", ""),
-    ("Companion 38", ""),
-    ("Event Shop: Monster Cash I", ""),
-    ("Event Shop: Monster Cash II", ""),
-    ("Equip Bonus Money", ""),
-    ("RoG 18 I", ""),
-    ("RoG 37 II", ""),
-    ("Grid Bonus", ""),
-    ("Equip Extra Money", ""),
-    ("Gold Equipment Set", ""),
-    ("Gambit 7", ""),
-    ("Bundle: Monster Cash", ""),
-    (
-        "Talent 433 and Cooking Level",
-        "needs the talent system (js/stats/systems/common/talent.js)",
-    ),
-    ("Meals, Maneki Kat, Poppy, and Voting", ""),
-    ("Pet Arena, Friends, and Pecunia", ""),
-    ("Mainframe and Vault Progress", ""),
-    ("Pristine 16", ""),
-    ("Prayer 8", ""),
-    (
-        "Divinity and Crop Scientist",
-        "needs the Divinity minor bonus and its bubble chain (js/stats/systems/w5/divinity.js)",
-    ),
-    (
-        "Other Additive Sources",
-        "needs talents 657/22/643/644, cards, golden food, guild, flurbo, box rewards and the Monster Cash vial",
-    ),
+const GROUPS: [Spec; 23] = [
+    Spec {
+        name: "Cash Bubbles from Main Stats",
+        source: "js/stats/defs/coin-multi.js · bubbleValByKey('CashSTR'/'CashAGI'/'CashWIS') × floor(stat / 250)",
+        reason: "needs the total STR/AGI/WIS stat engine (stats-all category breakdowns)",
+        note: "",
+    },
+    Spec {
+        name: "Companion: Cool Bird",
+        source: "js/stats/systems/common/companions.js · companion(24)",
+        reason: "",
+        note: "cap 4",
+    },
+    Spec {
+        name: "Companion: Equinox Broadbass",
+        source: "js/stats/systems/common/companions.js · companion(45)",
+        reason: "",
+        note: "cap 4",
+    },
+    Spec {
+        name: "Companion: Potluck",
+        source: "js/stats/systems/common/companions.js · companion(159)",
+        reason: "",
+        note: "cap 4",
+    },
+    Spec {
+        name: "Companion: Balloonfish",
+        source: "js/stats/systems/common/companions.js · companion(38)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Event Shop: Monster Cash I",
+        source: "js/stats/defs/coin-multi.js · eventShopOwned(9)",
+        reason: "",
+        note: "0.5 per purchase",
+    },
+    Spec {
+        name: "Event Shop: Monster Cash II",
+        source: "js/stats/defs/coin-multi.js · eventShopOwned(20)",
+        reason: "",
+        note: "0.6 per purchase",
+    },
+    Spec {
+        name: "Equip Bonus Money",
+        source: "js/stats/systems/common/etcBonus.js · etcBonus('77')",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Ring of Glory: extra coins dropped by monsters I",
+        source: "js/stats/systems/w7/sushi.js · rogBonusQTY(18)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Ring of Glory: extra coins dropped by monsters II",
+        source: "js/stats/systems/w7/sushi.js · rogBonusQTY(37)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Grid Bonus",
+        source: "js/stats/systems/w4/lab.js · grid(149) + grid(169)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Equip Extra Money",
+        source: "js/stats/systems/common/etcBonus.js · etcBonus('100')",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Gold Equipment Set",
+        source: "js/stats/systems/w3/setBonus.js · getSetBonus('GOLD_SET')",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Gambit: Coins from monsters",
+        source: "js/stats/systems/w5/hole.js · computeGambitBonus7",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Bundle: Monster Cash",
+        source: "js/stats/defs/coin-multi.js · bundlesData.bun_y",
+        reason: "",
+        note: "+250% when owned",
+    },
+    Spec {
+        name: "Talent: Dustwalker and Cooking Level",
+        source: "js/stats/systems/common/talent.js · talent(433) × getLOG(OLA[362])",
+        reason: "needs the talent system (js/stats/systems/common/talent.js)",
+        note: "",
+    },
+    Spec {
+        name: "Meals, Maneki Kat, Poppy, and Voting",
+        source: "js/stats/systems/common/stats.js · computeMealBonus('Cash') + Maneki Kat + Poppy + votingBonusz(34)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Pet Arena, Friends, and Pecunia",
+        source: "js/stats/defs/coin-multi.js · computePetArenaBonus(5/14) + friend(5) + computeStatueBonusGiven(19)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Mainframe and Vault Progress",
+        source: "js/stats/defs/coin-multi.js · mainframeBonus(9) + vault(34/37) × computeVaultKillzTotal",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Pristine: Gumball Necklace",
+        source: "js/stats/systems/w6/sneaking.js · pristine(16)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Prayer: Jawbreaker",
+        source: "js/stats/systems/w3/prayer.js · computePrayerReal(8)",
+        reason: "",
+        note: "",
+    },
+    Spec {
+        name: "Divinity and Crop Scientist",
+        source: "js/stats/systems/w5/divinity.js · computeDivinityMinor + w6/farming.js · computeCropSC(4)",
+        reason: "needs the Divinity minor bonus and its bubble chain (js/stats/systems/w5/divinity.js)",
+        note: "",
+    },
+    Spec {
+        name: "Other Additive Sources",
+        source: "js/stats/defs/coin-multi.js · the 22 additive terms of g22",
+        reason: "needs talents 657/22/643/644, cards, golden food, guild, flurbo, box rewards and the Monster Cash vial",
+        note: "",
+    },
 ];
 
 /// One character's save-derived card values and coin groups.
@@ -226,17 +393,18 @@ pub fn evaluate(snapshot: &Snapshot, inputs: &Inputs) -> Result<Evaluation, Stri
     })
 }
 
-/// The 23 groups one character's save resolves; the rest carry their source.
-pub(crate) fn character_groups(values: [Option<f64>; 23]) -> Vec<Group> {
-    GROUPS
-        .iter()
-        .zip(values)
-        .map(|((name, reason), value)| Group {
-            name,
-            value,
-            reason,
-        })
-        .collect()
+/// One group as upstream names and sources it, before the save fills it in.
+pub(crate) fn group(index: usize, value: Option<f64>) -> Group {
+    let spec = &GROUPS[index];
+    Group {
+        name: spec.name,
+        source: spec.source,
+        value,
+        reason: spec.reason,
+        note: spec.note.into(),
+        terms: Vec::new(),
+        divisor: 100.0,
+    }
 }
 
 #[cfg(test)]
@@ -253,7 +421,7 @@ mod tests {
             target_name: stats::target_name(target),
             monster_hp: overkill::target_hp(target),
             highest_damage: 0.0,
-            groups: character_groups([Some(2.0); 23]),
+            groups: (0..23).map(|index| group(index, Some(2.0))).collect(),
         }
     }
 
@@ -275,7 +443,7 @@ mod tests {
     #[test]
     fn a_missing_group_is_named_and_makes_the_total_partial() {
         let mut snapshot = snapshot();
-        snapshot.characters[0].groups = character_groups([None; 23]);
+        snapshot.characters[0].groups = (0..23).map(|index| group(index, None)).collect();
         let evaluation = evaluate(&snapshot, &snapshot.inputs(0).unwrap()).unwrap();
         assert!(!evaluation.complete);
         assert_eq!(evaluation.excluded.len(), 23);
