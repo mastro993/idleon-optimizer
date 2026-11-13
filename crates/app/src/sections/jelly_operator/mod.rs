@@ -6,15 +6,20 @@
 //! the board with the stage, Fever, Stronkroid, revive policy, remove mode,
 //! board sections and one seeded operation through the shared task runner.
 //! JO-04 adds the Sections tab: strategy, objective, EXP target, token count,
-//! quality and beam, then the ranked section plan through the same runner. The
-//! upgrades and breakdowns (JO-03) and coordinator optimizer (JO-05) are the
-//! later features on the same section.
+//! quality and beam, then the ranked section plan through the same runner.
+//! JO-03 adds the Upgrades tab (the `Research[44]` purchase list and its
+//! prices), the Bonuses tab (the 72 obstruction rewards) and the Breakdowns tab
+//! (the four cell multipliers, the layout's two passives and the per-cell
+//! output), with every warning the save earns. The coordinator optimizer (JO-05)
+//! is the later feature on the same section.
 //!
 //! The maths lives in `idleon_jelly`; this module owns the board on
 //! screen and the shared task runner's inputs.
 
 mod actions;
 
+mod bonuses;
+mod breakdowns;
 mod estimate;
 mod grid;
 mod layout_editor;
@@ -22,6 +27,7 @@ mod outlook;
 mod overview;
 mod planner;
 mod simulator;
+mod upgrades;
 
 pub(crate) use planner::{Planner, RunInputs as PlannerRunInputs};
 pub(crate) use simulator::RunInputs as SimulatorRunInputs;
@@ -47,6 +53,9 @@ pub(crate) enum Tab {
     Overview,
     Layout,
     Simulator,
+    Upgrades,
+    Bonuses,
+    Breakdowns,
     Sections,
 }
 
@@ -56,6 +65,9 @@ impl Tab {
             Tab::Overview => "overview",
             Tab::Layout => "layout",
             Tab::Simulator => "simulator",
+            Tab::Upgrades => "upgrades",
+            Tab::Bonuses => "bonuses",
+            Tab::Breakdowns => "breakdowns",
             Tab::Sections => "sections",
         }
     }
@@ -65,6 +77,9 @@ impl Tab {
             Tab::Overview => "Overview",
             Tab::Layout => "Layout",
             Tab::Simulator => "Simulator",
+            Tab::Upgrades => "Upgrades",
+            Tab::Bonuses => "Bonuses",
+            Tab::Breakdowns => "Breakdowns",
             Tab::Sections => "Sections",
         }
     }
@@ -95,6 +110,8 @@ pub(crate) struct State {
     pub(crate) simulator: simulator::Simulator,
     /// The Sections tab's planner controls.
     pub(crate) planner: Planner,
+    /// Which formula tree the Breakdowns tab shows.
+    pub(crate) breakdown: idleon_jelly::BreakdownCategory,
 }
 
 impl Default for State {
@@ -108,6 +125,7 @@ impl Default for State {
             seed: 1,
             simulator: simulator::Simulator::default(),
             planner: Planner::default(),
+            breakdown: idleon_jelly::BreakdownCategory::default(),
         }
     }
 }
@@ -126,6 +144,11 @@ impl State {
     pub(crate) fn reset(&mut self, jelly: &Jelly) {
         self.layout = jelly.layout.clone();
         self.message = "Board reset to the saved layout.".to_string();
+    }
+
+    /// Pick which breakdown tree the tab shows.
+    pub(crate) fn set_breakdown(&mut self, category: idleon_jelly::BreakdownCategory) {
+        self.breakdown = category;
     }
 
     /// Pick a palette cell type.
@@ -181,7 +204,16 @@ pub(crate) fn view(
     let entity = cx.entity();
     let active = state.jelly_state.tab;
     let tabs = div().id("jelly-tabs").flex().flex_none().gap_2().children(
-        [Tab::Overview, Tab::Layout, Tab::Simulator, Tab::Sections].map(|tab| {
+        [
+            Tab::Overview,
+            Tab::Layout,
+            Tab::Simulator,
+            Tab::Upgrades,
+            Tab::Bonuses,
+            Tab::Breakdowns,
+            Tab::Sections,
+        ]
+        .map(|tab| {
             let entity = entity.clone();
             Button::new(format!("jelly-tab-{}", tab.id()), tab.label())
                 .variant(if tab == active {
@@ -201,6 +233,9 @@ pub(crate) fn view(
         Tab::Overview => overview::overview(state, window, cx, &jelly),
         Tab::Layout => layout_editor::layout_editor(state, window, cx, &jelly),
         Tab::Simulator => simulator::pane(state, window, cx, &jelly),
+        Tab::Upgrades => upgrades::pane(&jelly, cx),
+        Tab::Bonuses => bonuses::pane(&jelly, cx),
+        Tab::Breakdowns => breakdowns::pane(state, cx, &jelly),
         Tab::Sections => planner::pane(state, window, cx, &jelly),
     };
     div()
@@ -389,6 +424,28 @@ mod tests {
         let before = state.planner.inputs(Some(&jelly), &state.layout);
         state.planner.beam_width = 12;
         assert_ne!(before, state.planner.inputs(Some(&jelly), &state.layout));
+    }
+
+    #[test]
+    fn the_breakdowns_tab_switches_the_tree_it_shows() {
+        let imported = idleon_import::import(&save()).expect("the save imports");
+        let jelly = imported.jelly.expect("the save carries a board");
+        let mut state = State::default();
+        state.adopt(&jelly);
+        assert_eq!(state.breakdown, idleon_jelly::BreakdownCategory::Damage);
+        state.set_breakdown(idleon_jelly::BreakdownCategory::LayoutSpeed);
+        assert_eq!(
+            state.breakdown,
+            idleon_jelly::BreakdownCategory::LayoutSpeed
+        );
+        let options = idleon_jelly::MetricOptions::default();
+        let breakdown = jelly.breakdown(state.breakdown, &state.layout, options);
+        assert_eq!(breakdown.root.label, "Layout Speed");
+        // This board has neither Cell Biology nor Bloodcell Coagulation, so the
+        // pane warns instead of printing a factor.
+        let exp = jelly.exp_breakdown(None);
+        assert!(!exp.available);
+        assert!(exp.reason.contains("Cell Biology"));
     }
 
     #[test]

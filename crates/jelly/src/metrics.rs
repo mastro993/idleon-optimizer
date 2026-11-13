@@ -22,6 +22,8 @@ pub struct MetricOptions {
     pub fever_ramp_pct: f64,
     /// The total cell level the damage multiplier reads.
     pub total_cell_level: Option<f64>,
+    /// The Best DPS the Bloodcell breakdown prices from; the save's own if unset.
+    pub best_dps: Option<f64>,
     /// Whether Stronkroid is active for this metric.
     pub roid_active: bool,
     /// The Amoeba weakening stacks the damage formula reads.

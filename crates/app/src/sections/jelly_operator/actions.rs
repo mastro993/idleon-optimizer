@@ -26,6 +26,18 @@ impl AppState {
         }
     }
 
+    /// Switch the Breakdowns tab to another formula tree.
+    pub(crate) fn set_jelly_breakdown(
+        &mut self,
+        category: idleon_jelly::BreakdownCategory,
+        cx: &mut Context<Self>,
+    ) {
+        if self.jelly_state.breakdown != category {
+            self.jelly_state.set_breakdown(category);
+            cx.notify();
+        }
+    }
+
     /// Pick the palette cell type the next board click places.
     pub(crate) fn jelly_select(&mut self, cell_type: usize, cx: &mut Context<Self>) {
         self.jelly_state.select(cell_type);

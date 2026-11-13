@@ -392,6 +392,8 @@ pub(crate) struct AppState {
     pub(crate) jelly_plan_run: Entity<TaskRunner<JellySectionPlan, JellyPlanRunInputs>>,
     /// The shared runner for one simulator operation.
     pub(crate) jelly_sim_run: Entity<TaskRunner<JellyTrial, JellySimRunInputs>>,
+    /// The shared formula tree on the Jelly Operator breakdowns pane.
+    pub(crate) jelly_breakdown: Entity<FormulaTree>,
     /// The shared runner for the cog board optimizer.
     pub(crate) cog_run: Entity<TaskRunner<CogResult, CogRunInputs>>,
     /// The shared runner for the perfect cog board.
@@ -1066,6 +1068,7 @@ impl AppState {
             jelly_run,
             jelly_plan_run,
             jelly_sim_run,
+            jelly_breakdown: crate::ui::formula_tree("jelly-breakdown", window, cx),
             cog_run,
             cog_perfect_run,
             cglunko_run,

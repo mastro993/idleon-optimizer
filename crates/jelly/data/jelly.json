@@ -876,361 +876,433 @@
  "rewards": [
   {
    "name": "Longbone",
+   "target": "Research EXP",
    "description": "}x multiplier to Research EXP gain @ Also, +2 Jelly Operator slots!",
    "value": 50
   },
   {
    "name": "Jawbone",
+   "target": "Royal Guardian rank EXP and slots",
    "description": "All Rank EXP gain is }x higher for all of your Royal Guardian's Outposts @ Also, +2 Jelly Operator slots!",
    "value": 35
   },
   {
    "name": "Spine",
+   "target": "Royal Guardian clearing",
    "description": "All forms of Clearing Mobs in order to build Outposts on your Royal Guardian is }x higher",
    "value": 25
   },
   {
    "name": "Antler",
+   "target": "W1 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 1 get +{ PTS",
    "value": 5
   },
   {
    "name": "Vertebrae",
+   "target": "Research Grid points",
    "description": "+{ Research Point",
    "value": 1
   },
   {
    "name": "Skull",
+   "target": "Yellow Cooking Mastery points",
    "description": "+{ Yellow PTS for Cooking Mastery",
    "value": 1
   },
   {
    "name": "Mawbone",
+   "target": "Royal Guardian talent points",
    "description": "+{ Talent PTS specifically for the Royal Guardian Masterclass",
    "value": 15
   },
   {
    "name": "Reintler",
+   "target": "Kaleidoscope observation EXP",
    "description": "All Optical Monocles generate }x more Insight for your Research Observations!",
    "value": 40
   },
   {
    "name": "Fatbone",
+   "target": "Crystal spawns and Minehead currency",
    "description": "+{% Crystal Monster spawn chance @ Also, }x Minehead Currency gain",
    "value": 25
   },
   {
    "name": "Invertedbrae",
+   "target": "Minehead damage",
    "description": "Boost your Damage dealt during Mr. Minehead's Depth Charge by }x",
    "value": 30
   },
   {
    "name": "Spinine",
+   "target": "Golden Food bonuses",
    "description": "+{% total Golden Food bonus",
    "value": 100
   },
   {
    "name": "Demonicle",
+   "target": "Early Royal Armory costs",
    "description": "The first 5 upgrades in the Royal Armory are {% cheaper",
    "value": 50
   },
   {
    "name": "Ruby Ring",
+   "target": "Observation maximum roll",
    "description": "+{ maximum possible roll when rolling for new Observations",
    "value": 1
   },
   {
    "name": "Starry Bling",
+   "target": "Purple Cooking Mastery points",
    "description": "+{ Purple PTS for Cooking Mastery",
    "value": 1
   },
   {
    "name": "Gold Bangle",
+   "target": "Drop Rate",
    "description": "}x Drop Rate",
    "value": 5
   },
   {
    "name": "Emerald Broach",
+   "target": "W2 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 2 get +{ PTS",
    "value": 4
   },
   {
    "name": "Gildrose",
+   "target": "Sneaking stealth",
    "description": "}x more Stealth for all your Ninja Twins in Sneaking",
    "value": 200
   },
   {
    "name": "Opal Pendant",
+   "target": "Atom Collider unlocks",
    "description": "Unlocks a new Atom, which boosts Bloodcell gain",
    "value": 1
   },
   {
    "name": "Crescent Bling",
+   "target": "Sushi upgrade costs",
    "description": "All Sushi upgrades are {% cheaper",
    "value": 25
   },
   {
    "name": "Sapphire Ring",
+   "target": "Sailing artifact find odds",
    "description": "}x artifact find chance",
    "value": 20
   },
   {
    "name": "Stud Pendant",
+   "target": "Poppy fish output",
    "description": "}x Bluefin Fish gains from Poppy",
    "value": 150
   },
   {
    "name": "Wiltrose",
+   "target": "Spelunking power",
    "description": "}x Spelunking POW",
    "value": 30
   },
   {
    "name": "Morning Glory",
+   "target": "Spelunking shop costs",
    "description": "All Spelunk Shop upgrades are permanently {% off",
    "value": 10
   },
   {
    "name": "Tiger Eye",
+   "target": "Research EXP",
    "description": "}x multiplier to Research EXP gain",
    "value": 40
   },
   {
    "name": "Apol",
+   "target": "Jelly Bloodcell gain",
    "description": "Multiplies Bloodcell gain by }x",
    "value": 30
   },
   {
    "name": "Blubbury",
+   "target": "Kaleidoscope strength",
    "description": "All your Kaleidoscopes multiply surrounding Magnifiers and Monocles by +{% more than before",
    "value": 1
   },
   {
    "name": "Pair",
+   "target": "Early Royal Armory costs",
    "description": "The first 10 upgrades in the Royal Armory are an extra {% cheaper",
    "value": 30
   },
   {
    "name": "Mongo",
+   "target": "Summoning upgrade costs",
    "description": "All Summoning upgrades are {% cheaper",
    "value": 200
   },
   {
    "name": "Strabbury",
+   "target": "Emperor bonuses",
    "description": "All earned Emperor Bonuses are }x bigger than before!",
    "value": 2
   },
   {
    "name": "Cosmico",
+   "target": "Tiny Cog tier chance",
    "description": "When getting a new Tiny Cog, there's a {% chance it'll be +1 Tier higher, up to T10.",
    "value": 20
   },
   {
    "name": "Surrage",
+   "target": "Class EXP",
    "description": "}x Class EXP gain",
    "value": 20
   },
   {
    "name": "Big Nut",
+   "target": "Spelunking Grand Discovery chance",
    "description": "}x Grand Discovery Chance in Spelunking",
    "value": 25
   },
   {
    "name": "Splega",
+   "target": "W3 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 3 get +{ PTS",
    "value": 3
   },
   {
    "name": "Onyx Apple",
+   "target": "Meritocracy bonuses",
    "description": "+{% higher Multi Meritocracy bonus",
    "value": 1
   },
   {
    "name": "Rassbury",
+   "target": "Farming Exotic purchases",
    "description": "+{ more weekly Exotic Market purchases for Farming",
    "value": 1
   },
   {
    "name": "Diamapair",
+   "target": "Royal Intervention mobs",
    "description": "+{ Regal Mob spawned from your Royal Guardian's 'Regal Intervention' effect!",
    "value": 1
   },
   {
    "name": "Bowling Pin",
+   "target": "Prisma Bubble effects",
    "description": "All your Prisma Bubbles give a 0.01x higher bonus than before",
    "value": 1
   },
   {
    "name": "Broken Ball",
+   "target": "Total Damage",
    "description": "}x Total DMG",
    "value": 10
   },
   {
    "name": "Sody Can",
+   "target": "Spelunking power",
    "description": "}x Spelunking POW",
    "value": 35
   },
   {
    "name": "Balloon",
+   "target": "Poppy fish requirement",
    "description": "}x Tartar Fish gains from Poppy",
    "value": 75
   },
   {
    "name": "Arcade Ticket",
+   "target": "Parchment drops",
    "description": "Verminous rats in the Royal Castle have a +{% higher chance to drop Parchments of Enchantment",
    "value": 15
   },
   {
    "name": "Proball",
+   "target": "Royal Support strength",
    "description": "Your Royal Guardian's Support Camps provide +{% higher bonuses to connected Outposts",
    "value": 5
   },
   {
    "name": "Empty Can",
+   "target": "Rat Crown odds",
    "description": "}x higher odds of getting new crowns for the Rat King in Gaming",
    "value": 25
   },
   {
    "name": "Ceramic Ball",
+   "target": "W4 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 4 get +{ PTS",
    "value": 3
   },
   {
    "name": "Loveloon",
+   "target": "Jelly board plot unlock",
    "description": "+{ slot unlock to use right here in Jelly Operator",
    "value": 1
   },
   {
    "name": "Mangled Ball",
+   "target": "Minehead golden tiles",
    "description": "+{ Golden Tile for Mr. Minehead's Depth Charge game",
    "value": 1
   },
   {
    "name": "Golden Ticket",
+   "target": "Research EXP",
    "description": "}x multiplier to Research EXP gain",
    "value": 30
   },
   {
    "name": "Angelpin",
+   "target": "Spelunking multi-page ore",
    "description": "+{% Multi Page Drop Chance while Spelunking for all characters",
    "value": 6
   },
   {
    "name": "Cool Gem",
+   "target": "W5 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 5 get +{ PTS",
    "value": 3
   },
   {
    "name": "Pointed Prism",
+   "target": "Divinity blessing maximum level",
    "description": "+{ Max LV for all Divinity Blessings",
    "value": 25
   },
   {
    "name": "Fancy Facet",
+   "target": "Exalted Stamp multiplier",
    "description": "All your Exalted Stamps give a 0.01x higher bonus than before",
    "value": 1
   },
   {
    "name": "Smooth Stone",
+   "target": "Golden Food bonuses",
    "description": "+{% total Golden Food bonus",
    "value": 200
   },
   {
    "name": "Funky Rock",
+   "target": "W6 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 6 get +{ PTS",
    "value": 3
   },
   {
    "name": "Quirky Quartz",
+   "target": "Sneaking symbol chance",
    "description": "All Symbols in Sneaking have a }x higher chance of being successful",
    "value": 20
   },
   {
    "name": "Janky Jewel",
+   "target": "Research EXP",
    "description": "}x multiplier to Research EXP gain",
    "value": 60
   },
   {
    "name": "Jaguar Shard",
+   "target": "Burger system",
    "description": "+{% Burger",
    "value": 5
   },
   {
    "name": "Slick Sphere",
+   "target": "Royal Intervention chance",
    "description": "+0.1% Chance for Royal Guardian 'Royal Intervention' effect to trigger",
    "value": 1
   },
   {
    "name": "Barbed Ball",
+   "target": "Research Grid points",
    "description": "+{ Research Point",
    "value": 1
   },
   {
    "name": "Jagged Mineral",
+   "target": "Bubba meat slices",
    "description": "Bubba now produces }x more Meat Slices",
    "value": 150
   },
   {
    "name": "Conical Crystal",
+   "target": "Royal Guardian talent points",
    "description": "+{ Talent PTS specifically for the Royal Guardian Masterclass",
    "value": 20
   },
   {
    "name": "Soldier Shiv",
+   "target": "Ribbon bonuses",
    "description": "Ribbons that are Tier 20 or above now give a +{% higher multiplier to meal bonus!",
    "value": 5
   },
   {
    "name": "Knightly Rapier",
+   "target": "W7 Royal outpost points",
    "description": "All Royal Guardian Outposts in World 7 get +{ PTS",
    "value": 3
   },
   {
    "name": "Tribunal Helmet",
+   "target": "Class EXP",
    "description": "}x Class EXP gain",
    "value": 25
   },
   {
    "name": "Sharpened Axe",
+   "target": "Divinity blessing maximum level",
    "description": "+{ Max LV for all Divinity Blessings",
    "value": 25
   },
   {
    "name": "Hotforge Mace",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Lord Shield",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Molten Shiv",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Damascus Axe",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Coldsteel Mace",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Radiant Shield",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Eloquent Rapier",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   },
   {
    "name": "Centurion Helmet",
+   "target": "Account unlock or bonus described by the reward text",
    "description": "Nothing yet...",
    "value": 1
   }
