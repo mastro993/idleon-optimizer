@@ -78,7 +78,7 @@ jobs:
           submodules: ${{ matrix.submodules }}
       # Pinned to the workspace's rust-version so a new stable clippy lint cannot
       # turn -D warnings red on a branch that changed nothing.
-      - uses: dtolnay/rust-toolchain@1.96.0
+      - uses: dtolnay/rust-toolchain@1.100.0
         with:
           components: clippy, rustfmt
       - if: matrix.nextest

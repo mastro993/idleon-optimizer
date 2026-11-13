@@ -168,8 +168,8 @@ impl Clamworks {
             );
             return;
         }
-        for index in 0..SCURGE_COUNT {
-            self.scurge_upgrades[index] = number(&[5, index]).map(whole_level).unwrap_or(0);
+        for (index, level) in self.scurge_upgrades.iter_mut().enumerate() {
+            *level = number(&[5, index]).map(whole_level).unwrap_or(0);
         }
     }
 

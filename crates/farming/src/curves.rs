@@ -132,8 +132,8 @@ mod tests {
     #[test]
     fn every_plot_has_a_full_curve() {
         let mut farm = Farm::default();
-        for index in 0..PLOTS {
-            farm.plots[index] = Plot {
+        for (index, plot) in farm.plots.iter_mut().enumerate() {
+            *plot = Plot {
                 seed_family: (index % 7) as i64,
                 ..Plot::default()
             };

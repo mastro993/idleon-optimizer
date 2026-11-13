@@ -363,8 +363,8 @@ fn a_plan_with_no_target_or_no_villagers_stays_empty() {
     assert_eq!(locked.spent(), 0.0);
 
     let mut empty = sample();
-    for villager in 0..VILLAGERS {
-        empty.villagers[villager].level = 0.0;
+    for villager in &mut empty.villagers {
+        villager.level = 0.0;
     }
     let none = best_plan(&empty, Target::Total, 100.0);
     assert_eq!(none.spent(), 0.0);

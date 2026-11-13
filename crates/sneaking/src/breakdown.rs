@@ -247,11 +247,12 @@ pub fn stealth(loadout: &Loadout, twin: usize) -> FormulaNode {
                 ),
             ]),
     ];
-    for name in ["Alchemy + Star Sign"] {
-        if let Some(index) = core_children.iter().position(|node| node.label == name) {
-            let node = core_children.remove(index);
-            core_children.insert(5, node);
-        }
+    if let Some(index) = core_children
+        .iter()
+        .position(|node| node.label == "Alchemy + Star Sign")
+    {
+        let node = core_children.remove(index);
+        core_children.insert(5, node);
     }
     let core_node = FormulaNode::new("Core Multipliers", core)
         .with_format(ValueFormat::Multiplier)
