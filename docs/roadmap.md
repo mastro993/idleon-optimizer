@@ -27,7 +27,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M12 | Killroy Calculator | World 2 | 3 | done | foundation | [killroy](sections/killroy.md) |
 | M13 | Cog Board Optimizer | World 3 | 4 | partial | foundation | [cog](sections/cog.md) |
 | M14 | Worship Tower Defense | World 3 | 4 | partial | foundation | [worship-td](sections/worship-td.md) |
-| M15 | Ladle Optimizer | World 4 | 4 | partial | foundation | [ladle](sections/ladle.md) |
+| M15 | Ladle Optimizer | World 4 | 4 | done | foundation | [ladle](sections/ladle.md) |
 | M16 | Cooking Mastery | World 4 | 3 | done | foundation | [cooking-mastery](sections/cooking-mastery.md) |
 | M17 | Fountain Calculator | World 5 | 4 | done | foundation | [fountain](sections/fountain.md) |
 | M18 | Jar Calculator | World 5 | 4 | done | foundation | [jar](sections/jar.md) |

@@ -5,7 +5,7 @@
 - Milestone: `M15`
 - Section key: `ladle`
 - Group: `w4`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.

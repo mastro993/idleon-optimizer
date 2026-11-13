@@ -526,3 +526,84 @@ fn the_forecast_compares_the_saved_layout_the_optimized_one_and_the_policy() {
         forecast(&reset, &inputs).expect("the forecast builds again")
     );
 }
+
+#[test]
+fn an_explicit_schedule_replaces_the_policy() {
+    let reset = reset();
+    let inputs = Inputs {
+        days: 3,
+        start_ladles: 10.0,
+        policy: Policy::All,
+        donations: Some(Schedule {
+            owned: 1.0,
+            daily: vec![2.0, 0.0, 0.0],
+        }),
+        ..inputs()
+    };
+    let planned = plan(&reset, &inputs).expect("the schedule plans");
+    assert_eq!(planned.jelly.owned_donation, 1.0);
+    assert_eq!(
+        planned.timeline[0].jelly_donation, 3.0,
+        "the first reset donates the owned ladle and the schedule's share"
+    );
+    assert_eq!(planned.timeline[1].jelly_donation, 0.0);
+    assert_eq!(
+        plan(
+            &reset,
+            &Inputs {
+                donations: Some(Schedule {
+                    owned: 0.5,
+                    daily: Vec::new(),
+                }),
+                ..inputs
+            }
+        ),
+        Err(Problem::Donation),
+        "a schedule of part ladles is refused"
+    );
+}
+
+#[test]
+fn the_donation_search_is_deterministic() {
+    let reset = reset();
+    let inputs = Inputs {
+        days: 4,
+        ladles_per_day: 40.0,
+        start_ladles: 120.0,
+        max_level: 30.0,
+        ..inputs()
+    };
+    let search = |report: &mut dyn FnMut(idleon_common::Progress) -> idleon_common::Control| {
+        donation::optimize(&reset, &inputs, report)
+    };
+    let first = search(&mut |_| idleon_common::Control::Continue).expect("the search completes");
+    assert!(
+        first.evaluated > 1,
+        "the search compares schedules before answering"
+    );
+    assert!(
+        first
+            .plan
+            .levels
+            .iter()
+            .zip(&first.baseline.levels)
+            .all(|(planned, baseline)| planned.is_finite() && baseline.is_finite())
+    );
+    assert_eq!(
+        first,
+        search(&mut |_| idleon_common::Control::Continue).expect("the search completes again")
+    );
+}
+
+#[test]
+fn a_cancelled_donation_search_stores_nothing() {
+    let reset = reset();
+    let inputs = inputs();
+    let mut reports = 0;
+    let result = donation::optimize(&reset, &inputs, &mut |_| {
+        reports += 1;
+        idleon_common::Control::Stop
+    });
+    assert!(result.is_none());
+    assert_eq!(reports, 1, "the first report stops the search");
+}

@@ -10,8 +10,11 @@
 //!
 //! Upstream picks the best speed-per-hour meal when the objective is kitchen
 //! speed; that ranking reads the meal-level speed engine this build does not have,
-//! so the plan always spends like upstream's `cheapest` strategy. Steering, the
-//! NMLB floor guard and the new-donation search belong to the NMLB planner.
+//! so the plan always spends like upstream's `cheapest` strategy. The NMLB floor
+//! guard is [`super::steer`]; the new-donation search is [`super::donation`].
+//!
+//! A [`Schedule`] replaces the section's [`Policy`] with the whole ladles the
+//! planner's search donates, so the same simulation scores every candidate.
 
 use super::layout::{self, Layout, LayoutMeal};
 use super::{
@@ -55,6 +58,8 @@ pub struct Inputs {
     pub donation_per_day: f64,
     /// The fraction of the owned ladles donated up front.
     pub owned_fraction: f64,
+    /// An explicit donation schedule the search sets; `None` uses [`Policy`].
+    pub donations: Option<Schedule>,
     pub layout: layout::LayoutChoice,
 }
 
@@ -77,9 +82,22 @@ impl Default for Inputs {
             income_fraction: 1.0,
             donation_per_day: 0.0,
             owned_fraction: 1.0,
+            donations: None,
             layout: layout::LayoutChoice::default(),
         }
     }
+}
+
+/// An explicit donation schedule: the whole ladles donated up front and on each
+/// reset. The NMLB planner's search tries these; a section's own [`Policy`] fills
+/// the same two numbers.
+#[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Schedule {
+    /// The ladles donated before the first claim.
+    pub owned: f64,
+    /// The ladles donated on each reset, in day order.
+    pub daily: Vec<f64>,
 }
 
 /// How much of the daily ladle income the plan donates.
@@ -276,11 +294,20 @@ pub fn plan(reset: &Reset, inputs: &Inputs) -> Result<Plan, Problem> {
     let ladle_multi = inputs.ladle_multi.max(0.0);
     let max_level = inputs.max_level.max(0.0);
     let jelly = reset.jelly;
-    let owned_donation = match inputs.policy {
-        Policy::None => 0.0,
-        _ => (inputs.start_ladles.max(0.0) * inputs.owned_fraction.clamp(0.0, 1.0)).floor(),
+    let (owned_donation, schedule) = match &inputs.donations {
+        Some(schedule) => (
+            donation(schedule.owned, inputs.start_ladles.max(0.0), jelly.unlocked)?,
+            Some(schedule.clone()),
+        ),
+        None => {
+            let owned = match inputs.policy {
+                Policy::None => 0.0,
+                _ => (inputs.start_ladles.max(0.0) * inputs.owned_fraction.clamp(0.0, 1.0)).floor(),
+            };
+            donation(owned, inputs.start_ladles.max(0.0), jelly.unlocked)?;
+            (owned, None)
+        }
     };
-    donation(owned_donation, inputs.start_ladles.max(0.0), jelly.unlocked)?;
     let start_ladles = inputs.start_ladles.max(0.0) - owned_donation;
     let speed = reset.speed(inputs.base_speed);
     let passive_hours = if inputs.passive { 24.0 } else { 0.0 };
@@ -330,6 +357,7 @@ pub fn plan(reset: &Reset, inputs: &Inputs) -> Result<Plan, Problem> {
         timeline: Vec::new(),
         start_ladles,
         owned_donation,
+        schedule,
     };
     let full_day_income = run.claim_income(24.0).0;
     run.class_hours = passive_hours + full_day_income * ladle_multi;
@@ -407,6 +435,8 @@ struct Run<'a> {
     timeline: Vec<Day>,
     start_ladles: f64,
     owned_donation: f64,
+    /// The planner's explicit schedule, or `None` for the section's policy.
+    schedule: Option<Schedule>,
 }
 
 impl Run<'_> {
@@ -743,17 +773,30 @@ impl Run<'_> {
             false => 24.0,
         };
         let (income, expected) = self.claim_income(window);
-        let target = match self.inputs.policy {
-            Policy::None => 0.0,
-            Policy::All => income,
-            Policy::Share => income * self.inputs.income_fraction.clamp(0.0, 1.0),
-            Policy::Fixed => income.min(self.inputs.donation_per_day.max(0.0)),
+        let daily_donation = match &self.schedule {
+            Some(schedule) => donation(
+                schedule
+                    .daily
+                    .get((day as usize).saturating_sub(1))
+                    .copied()
+                    .unwrap_or(0.0),
+                income,
+                self.reset.jelly.unlocked,
+            )?,
+            None => {
+                let target = match self.inputs.policy {
+                    Policy::None => 0.0,
+                    Policy::All => income,
+                    Policy::Share => income * self.inputs.income_fraction.clamp(0.0, 1.0),
+                    Policy::Fixed => income.min(self.inputs.donation_per_day.max(0.0)),
+                };
+                let daily = match self.inputs.policy {
+                    Policy::None => 0.0,
+                    _ => target.floor(),
+                };
+                donation(daily, income, self.reset.jelly.unlocked)?
+            }
         };
-        let daily_donation = match self.inputs.policy {
-            Policy::None => 0.0,
-            _ => target.floor(),
-        };
-        donation(daily_donation, income, self.reset.jelly.unlocked)?;
         self.jelly_hours += daily_donation;
         self.total_donated += daily_donation;
         let mut phases: Vec<Phase> = Vec::new();

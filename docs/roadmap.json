@@ -1620,7 +1620,7 @@
       "key": "ladle",
       "title": "Ladle Optimizer",
       "group": "w4",
-      "status": "partial",
+      "status": "done",
       "summary": "Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.",
       "upstream": [
         "ladle-calc.html",
