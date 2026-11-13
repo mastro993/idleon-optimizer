@@ -1,0 +1,211 @@
+{
+ "source": "js/stats/systems/common/combat-sim-setup-compare.js setupCompareCell",
+ "metric": "kills",
+ "cases": [
+  {
+   "name": "three_seeds",
+   "values": [
+    {
+     "seed": 1,
+     "kills": 120,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 150,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 135,
+     "timeMs": 300000
+    }
+   ],
+   "baseline": [
+    {
+     "seed": 1,
+     "kills": 100,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 100,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 100,
+     "timeMs": 300000
+    }
+   ],
+   "expected": {
+    "mean": 1620,
+    "n": 3,
+    "delta": 420,
+    "deltaPct": 0.35,
+    "se": 103.92304845413264,
+    "baseMean": 1200
+   }
+  },
+  {
+   "name": "one_seed",
+   "values": [
+    {
+     "seed": 1,
+     "kills": 90,
+     "timeMs": 300000
+    }
+   ],
+   "baseline": [
+    {
+     "seed": 1,
+     "kills": 75,
+     "timeMs": 300000
+    }
+   ],
+   "expected": {
+    "mean": 1080,
+    "n": 1,
+    "delta": 180,
+    "deltaPct": 0.2,
+    "se": null,
+    "baseMean": 900
+   }
+  },
+  {
+   "name": "zero_baseline",
+   "values": [
+    {
+     "seed": 1,
+     "kills": 10,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 20,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 30,
+     "timeMs": 300000
+    }
+   ],
+   "baseline": [
+    {
+     "seed": 1,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 0,
+     "timeMs": 300000
+    }
+   ],
+   "expected": {
+    "mean": 240,
+    "n": 3,
+    "delta": 240,
+    "deltaPct": null,
+    "se": 69.2820323027551,
+    "baseMean": 0
+   }
+  },
+  {
+   "name": "zero_delta_on_a_zero_baseline",
+   "values": [
+    {
+     "seed": 1,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 0,
+     "timeMs": 300000
+    }
+   ],
+   "baseline": [
+    {
+     "seed": 1,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 0,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 0,
+     "timeMs": 300000
+    }
+   ],
+   "expected": {
+    "mean": 0,
+    "n": 3,
+    "delta": 0,
+    "deltaPct": 0,
+    "se": 0,
+    "baseMean": 0
+   }
+  },
+  {
+   "name": "a_missing_run",
+   "values": [
+    {
+     "seed": 1,
+     "kills": 120,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 10,
+     "timeMs": 0
+    },
+    {
+     "seed": 3,
+     "kills": 135,
+     "timeMs": 300000
+    }
+   ],
+   "baseline": [
+    {
+     "seed": 1,
+     "kills": 100,
+     "timeMs": 300000
+    },
+    {
+     "seed": 2,
+     "kills": 100,
+     "timeMs": 300000
+    },
+    {
+     "seed": 3,
+     "kills": 100,
+     "timeMs": 300000
+    }
+   ],
+   "expected": {
+    "mean": 1530,
+    "n": 2,
+    "delta": 330,
+    "deltaPct": 0.275,
+    "se": 90,
+    "baseMean": 1200
+   }
+  }
+ ]
+}

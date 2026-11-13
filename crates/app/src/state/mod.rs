@@ -61,6 +61,7 @@ use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_clamworks::Clamworks;
 use idleon_clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_cog::{CogResult, PerfectBoard};
+use idleon_combat::compare::{Comparison as CombatComparison, Plan as CombatComparePlan};
 use idleon_combat::encounter::Options as CombatEncounterOptions;
 use idleon_combat::encounter::Outcome as CombatEncounterOutcome;
 use idleon_cooking_mastery::Mastery;
@@ -340,6 +341,8 @@ pub(crate) struct AppState {
     pub(crate) combat: CombatState,
     /// The encounter run (CS-03) in flight and its stored outcome.
     pub(crate) combat_encounter: Entity<TaskRunner<CombatEncounterOutcome, CombatEncounterOptions>>,
+    /// The character, loadout and map comparison (CS-04) and its stored result.
+    pub(crate) combat_compare: Entity<TaskRunner<CombatComparison, CombatComparePlan>>,
     /// The All Stats Dashboard's calculation context, save slice and breakdowns.
     pub(crate) stats_all: StatsAllState,
     /// The shared formula tree on the All Stats breakdown card.
@@ -840,6 +843,16 @@ impl AppState {
                 ))
             },
         );
+        let combat_compare = report_run::<CombatComparison, CombatComparePlan>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Comparing the selected setups…"),
+                cancelled_kept: "Comparison cancelled; the previous comparison is unchanged.",
+                cancelled_empty: "Comparison cancelled; nothing was stored.",
+            },
+            |_, result| Some(format!("Compared {} setups.", result.rows.len())),
+        );
         let minehead_breakdown = ui::formula_tree("minehead-formula", window, cx);
         let sushi_bucks = ui::formula_tree("sushi-bucks-formula", window, cx);
         let sushi_fuel = ui::formula_tree("sushi-fuel-formula", window, cx);
@@ -1042,6 +1055,7 @@ impl AppState {
             statue,
             combat,
             combat_encounter,
+            combat_compare,
             stats_all: StatsAllState::default(),
             stats_breakdown,
             stats_explorer_search,
