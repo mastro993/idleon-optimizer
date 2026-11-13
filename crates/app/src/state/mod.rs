@@ -305,6 +305,8 @@ pub(crate) struct AppState {
     pub(crate) opal_target: Option<usize>,
     /// The opal total the optimizer distributes, seeded from the save.
     pub(crate) opal_total: f64,
+    /// The manual simulator's opal counts, seeded from and reset to the save.
+    pub(crate) opal_manual: [f64; idleon_opal::VILLAGERS],
     /// The Royal Guardian rows the loaded save carries, if it has them.
     pub(crate) royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
@@ -958,6 +960,7 @@ impl AppState {
             opal_tab: OpalTab::default(),
             opal_target: None,
             opal_total: 0.0,
+            opal_manual: [0.0; idleon_opal::VILLAGERS],
             sneaking: None,
             sneaking_state: Default::default(),
             sneaking_breakdown,

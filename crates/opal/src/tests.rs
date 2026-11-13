@@ -451,3 +451,95 @@ fn the_plan_text_lists_the_unlocked_villagers_and_the_total() {
     let explorer = best_plan(&opal, Target::Villager(0), 100.0);
     assert!(explorer.text(&opal).starts_with("Opal plan\tExplorer\t"));
 }
+
+#[test]
+fn a_typed_distribution_reads_whole_non_negative_counts() {
+    let opal = sample();
+    let simulation = opal.simulation(&[-5.0, 24.9, 7.5, f64::NAN, f64::INFINITY]);
+    assert_eq!(simulation.opals, [0.0, 24.0, 7.0, 0.0, 0.0]);
+    assert_eq!(simulation.spent(), 31.0);
+    assert_eq!(simulation.saved_spent(), opal.total_opals());
+    assert!(
+        !simulation.balanced(),
+        "31 opals do not match the save's 219"
+    );
+}
+
+#[test]
+fn the_saved_split_is_the_balanced_baseline() {
+    let opal = sample();
+    let simulation = opal.simulation(&opal.opals());
+    assert!(simulation.balanced());
+    assert_eq!(simulation.min_opals(&opal), opal.min_opals(&opal.opals()));
+    assert_eq!(
+        simulation.equal_spread(&opal),
+        opal.equal_spread(&opal.opals())
+    );
+    assert_eq!(simulation.total(&opal), opal.total_exp_rate(&opal.opals()));
+    assert_eq!(simulation.total_change(&opal), Some(0.0));
+    for villager in 0..VILLAGERS {
+        let rate = opal.exp_rate(villager, &opal.opals());
+        assert_eq!(simulation.rate(&opal, villager), rate);
+        assert_eq!(simulation.saved_rate(&opal, villager), rate);
+        // A villager without opals earned nothing, so there is no share to report.
+        assert_eq!(
+            simulation.change(&opal, villager),
+            (rate > 0.0).then_some(0.0)
+        );
+    }
+}
+
+#[test]
+fn the_typed_total_is_the_rows_added_up() {
+    let opal = sample();
+    // A balanced swap: the Explorer's ten opals move to the Librarian.
+    let typed = [90.0, 24.0, 0.0, 35.0, 70.0];
+    let simulation = opal.simulation(&typed);
+    assert!(simulation.balanced());
+    let sum: f64 = (0..VILLAGERS)
+        .map(|villager| simulation.rate(&opal, villager))
+        .sum();
+    assert!((sum - simulation.total(&opal)).abs() <= simulation.total(&opal).abs() * 1e-12);
+}
+
+#[test]
+fn the_manual_simulator_reads_the_optimizer_plan_the_same_way() {
+    let opal = sample();
+    for target in [
+        Target::Total,
+        Target::Villager(0),
+        Target::Villager(1),
+        Target::Villager(4),
+    ] {
+        let plan = opal.plan(PlanInput::saved(&opal, target));
+        let simulation = opal.simulation(&plan.opals);
+        // The plan's objective is the same rate the simulator prints for those
+        // counts, so an equal distribution reads the same in both tabs.
+        let read = match target {
+            Target::Total => simulation.total(&opal),
+            Target::Villager(villager) => simulation.rate(&opal, villager),
+        };
+        assert_eq!(read, plan.rate(&opal), "{target:?}");
+        assert!(simulation.balanced(), "{target:?}");
+        assert_eq!(simulation.spent(), plan.total);
+        let change = simulation.total_change(&opal).expect("the save earns");
+        assert!(change >= -1e-12, "{target:?}: {change}");
+    }
+}
+
+#[test]
+fn a_villager_that_earned_nothing_has_no_share_to_report() {
+    let opal = sample();
+    // The Conjuror holds no opals in the save, so a typed count has no share to
+    // compare against and the page's zero would read as "no change".
+    let simulation = opal.simulation(&[100.0, 24.0, 10.0, 35.0, 50.0]);
+    assert_eq!(simulation.saved_rate(&opal, 2), 0.0);
+    assert!(simulation.rate(&opal, 2) > 0.0);
+    assert_eq!(simulation.change(&opal, 2), None);
+
+    // Emptying a villager that did earn reads as the whole loss it is.
+    let emptied = opal.simulation(&[0.0, 24.0, 0.0, 35.0, 160.0]);
+    assert!(emptied.balanced());
+    assert_eq!(emptied.rate(&opal, 0), 0.0);
+    assert_eq!(emptied.change(&opal, 0), Some(-1.0));
+}

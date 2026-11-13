@@ -257,8 +257,13 @@ impl AppState {
         self.opal = imported.opal;
         self.opal_selected = None;
         self.opal_target = None;
-        // The plan's default total is the new save's invested opals.
+        // The plan's default total is the new save's invested opals, and the
+        // manual simulator starts on that save's own split.
         self.opal_total = self.opal.as_ref().map_or(0.0, Opal::total_opals);
+        self.opal_manual = self
+            .opal
+            .as_ref()
+            .map_or([0.0; idleon_opal::VILLAGERS], Opal::opals);
         self.royal = imported.royal;
         self.sneaking = imported.sneaking;
         self.research.selected_cell = None;

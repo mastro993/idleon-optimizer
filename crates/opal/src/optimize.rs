@@ -15,7 +15,7 @@
 //! any other split, and the saved allocation is always a candidate, so a plan
 //! is never worse than the save.
 
-use super::{Opal, VILLAGERS, name};
+use super::{Opal, VILLAGERS, name, relative, whole};
 use idleon_common::Control;
 use idleon_common::Progress;
 
@@ -107,8 +107,7 @@ impl Plan {
 
     /// The relative gain over the save, or `None` when the save earns nothing.
     pub fn improvement(&self, opal: &Opal) -> Option<f64> {
-        let before = self.saved_rate(opal);
-        (before.is_finite() && before > 0.0).then(|| (self.rate(opal) - before) / before)
+        relative(self.saved_rate(opal), self.rate(opal))
     }
 
     /// The plan as tab-separated text, for the section's copy action.
@@ -288,14 +287,6 @@ fn keep(
     let steadier = close && rate >= *best_rate && movement(&opals) < movement(best_opals);
     if better || steadier {
         *best = Some((opals, rate));
-    }
-}
-
-fn whole(value: f64) -> f64 {
-    if value.is_finite() {
-        value.max(0.0).floor()
-    } else {
-        0.0
     }
 }
 

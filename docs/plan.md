@@ -535,18 +535,24 @@ four configurations, three whole runs and nineteen rejected inputs, compared fie
 Missing: the Amber policies and the optimizer (SP-03, SP-04).
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
-The Opal Optimizer section implements OP-01 and OP-02. The `Current state` tab shows the five
-villagers, their levels, invested opals and stars, the six overview figures, the villagers table, the
-bonus terms and the shared formula tree, switchable between the total and one villager. The
-`Optimizer` tab splits a total across the unlocked villagers for the total EXP or one villager's rate:
-the plan comes off the shared task runner, prints the saved and planned rate per villager, sums to the
-total and can be copied as tab-separated text. `idleon_opal::Opal` decodes `buildExt` out of the
-save — the villager rows, the cosmo upgrades and every cross-system term through the account decoder —
-and `idleon_opal::Opal::plan` searches every lowest count with each villager on that count or the
-next multiple of ten, so the plan is never worse than the saved split and at least as good as the
-page's own greedy shapes. `script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to
-regenerate `fixtures/opal.json` (the page's rates and optimizer plans), which
-`crates/opal/tests/opal.rs` pins. Missing: the manual simulator (OP-03).
+The Opal Optimizer section implements OP-01, OP-02 and OP-03. The `Current state` tab shows the
+five villagers, their levels, invested opals and stars, the six overview figures, the villagers
+table, the bonus terms and the shared formula tree, switchable between the total and one villager.
+The `Optimizer` tab splits a total across the unlocked villagers for the total EXP or one villager's
+rate: the plan comes off the shared task runner, prints the saved and planned rate per villager, sums
+to the total and can be copied as tab-separated text. `idleon_opal::Opal` decodes `buildExt` out of
+the save — the villager rows, the cosmo upgrades and every cross-system term through the account
+decoder — and `idleon_opal::Opal::plan` searches every lowest count with each villager on that count
+or the next multiple of ten, so the plan is never worse than the saved split and at least as good as
+the page's own greedy shapes. The `Manual simulator` tab ports `renderSimulatorTab` and `recalcSim`:
+one whole, non-negative opal count per unlocked villager, the page's warning while the typed total
+leaves the save's, the lowest count and the Equal Spread it buys, and each villager's rate against
+what it earns today, with a reset back to the save's own split. `idleon_opal::Simulation` carries that
+arithmetic, so the simulator reads a distribution the optimizer planned exactly as the plan does;
+the manual counts live in `sections.opal` in the project document, so an export carries them.
+`script/opal-oracle.mjs` evaluates `opal-calc.html`'s own functions to regenerate `fixtures/opal.json`
+(the page's rates, optimizer plans and five hand-typed simulator distributions), which
+`crates/opal/tests/opal.rs` pins.
 Details: [`docs/sections/opal.md`](sections/opal.md).
 
 The Sneaking section has its loadout, inventory and formula breakdown workspaces (SN-01 and SN-02):

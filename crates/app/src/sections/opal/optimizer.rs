@@ -20,9 +20,6 @@ use idleon_opal::Opal;
 use idleon_opal::{NAMES, Plan, PlanTarget, VILLAGERS};
 use idleon_ui::format;
 
-/// The largest total the stepper offers; a save above it raises the ceiling.
-const MAX_TOTAL: f64 = 1_000_000.0;
-
 /// The optimizer pane: the run controls, the progress chrome and the plan.
 pub(crate) fn optimizer_pane(
     state: &mut AppState,
@@ -157,7 +154,7 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
 
     let total_entity = cx.entity();
     let stepper = Stepper::new("opal-total", total)
-        .range(0.0, MAX_TOTAL.max(total))
+        .range(0.0, super::MAX_OPALS.max(total))
         .step(1.0)
         .precision(0)
         .on_change(move |value, _window, cx| {

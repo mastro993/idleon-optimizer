@@ -339,3 +339,74 @@ fn the_plan_text_lists_every_unlocked_villager() {
     }
     assert!(text.contains("Total\t369\t"));
 }
+
+/// One distribution's counts out of the oracle, in save order.
+fn opals_at(entry: &Value) -> [f64; idleon_opal::VILLAGERS] {
+    let counts = entry["opals"]
+        .as_array()
+        .expect("a distribution lists opals");
+    assert_eq!(counts.len(), idleon_opal::VILLAGERS);
+    std::array::from_fn(|villager| {
+        counts[villager]
+            .as_f64()
+            .expect("an opal count is a number")
+    })
+}
+
+/// The page's `recalcSim` on typed counts: the rates, the total they add up to,
+/// the lowest count Equal Spread scales with and the change against the save.
+#[test]
+fn the_manual_simulator_matches_upstream() {
+    let opal = opal();
+    let oracle = oracle();
+    let distributions = oracle["simulator"]["distributions"]
+        .as_array()
+        .expect("the oracle lists the simulator's distributions");
+    assert_eq!(distributions.len(), 5);
+
+    for entry in distributions {
+        let label = entry["label"].as_str().unwrap_or("a distribution");
+        let simulation = opal.simulation(&opals_at(entry));
+        assert_eq!(simulation.current, opal.opals(), "{label}");
+        close(simulation.spent(), at(entry, "totalOpals"));
+        close(simulation.min_opals(&opal), at(entry, "minOpals"));
+        close(simulation.equal_spread(&opal), at(entry, "equalSpread"));
+        close_tome(simulation.total(&opal), at(entry, "total"));
+
+        let rates = entry["rates"]
+            .as_array()
+            .expect("a distribution lists rates");
+        let changes = entry["changes"]
+            .as_array()
+            .expect("a distribution lists changes");
+        for villager in 0..idleon_opal::VILLAGERS {
+            close_tome(
+                simulation.rate(&opal, villager),
+                rates[villager].as_f64().expect("a rate is a number"),
+            );
+            let expected = changes[villager].as_f64().expect("a change is a number");
+            // The page prints +0.0% where a villager earned nothing; the port
+            // reports no share at all, so the zero has to match that case.
+            match simulation.change(&opal, villager) {
+                Some(change) => close_tome(100.0 * change, expected),
+                None => assert_eq!(expected, 0.0, "{label}: villager {villager}"),
+            }
+        }
+        match simulation.total_change(&opal) {
+            Some(change) => close_tome(100.0 * change, at(entry, "totalChange")),
+            None => assert_eq!(at(entry, "totalChange"), 0.0, "{label}"),
+        }
+    }
+
+    // Typed into the simulator, the page's own plan has to read the rate the
+    // page's optimizer reported for it: both tabs run `villagerExpRate`.
+    let plan = distributions
+        .iter()
+        .find(|entry| entry["label"] == "the page's own total plan")
+        .expect("the oracle carries the optimizer's plan as a distribution");
+    within(
+        at(plan, "total"),
+        at(&oracle["optimizer"]["total"], "rate"),
+        1e-12,
+    );
+}

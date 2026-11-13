@@ -1263,6 +1263,7 @@ const INTERACTIONS = {
       throw new Error(`opal: the current state reads ${current}`);
     }
     await waitForNode(lane, 'opal-terms', 'opal: every bonus term renders');
+    const currentTotal = rateOf(labelOf(await lane.tree(), 'opal-kpi-total'));
     const total = labelOf(await lane.tree(), 'opal-formula-node-root') ?? '';
     if (!total.includes('Total EXP/hr')) {
       throw new Error(`opal: the breakdown starts at the total, not ${total}`);
@@ -1294,12 +1295,58 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('Copied the opal plan'),
       'opal: the plan copies to the clipboard',
     );
+    // The manual simulator opens on the saved split: 155 opals, no warning. It
+    // takes whole, non-negative counts, so emptying the Measurer's 15 opals by
+    // hand stops at zero and raises the page's total warning. The reset puts the
+    // save's split back, and the total reads what the current state reports.
+    await lane.call('click_element', { id: 'opal-tab-manual' });
+    await waitForNode(lane, 'opal-manual-summary', 'opal: the manual simulator opens');
+    let nodes = await lane.tree();
+    if (!(labelOf(nodes, 'opal-manual-summary') ?? '').includes('155.0 opals typed')) {
+      throw new Error(`opal: the manual split starts at ${labelOf(nodes, 'opal-manual-summary')}`);
+    }
+    if (has(nodes, 'opal-manual-warning')) {
+      throw new Error('opal: the saved split is already balanced');
+    }
+    // The Measurer holds 15 opals: fifteen presses empty it, and a sixteenth
+    // is refused because the count never goes below zero.
+    for (let press = 0; press < 15; press += 1) {
+      await lane.call('click_element', { id: 'opal-manual-3-down' });
+    }
+    let refused = false;
+    try {
+      await lane.call('click_element', { id: 'opal-manual-3-down' });
+    } catch {
+      refused = true;
+    }
+    if (!refused) throw new Error('opal: the count still steps below zero');
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'opal-manual-summary') ?? '').includes('140.0 opals typed') &&
+        (labelOf(nodes, 'opal-manual-row-3') ?? '').includes('Measurer: 0.0 opals') &&
+        has(nodes, 'opal-manual-warning'),
+      'opal: the typed split stops at zero and warns about the total',
+    );
+    await lane.call('click_element', { id: 'opal-manual-reset' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'opal-manual-summary') ?? '').includes('155.0 opals typed') &&
+        (labelOf(nodes, 'opal-manual-row-3') ?? '').includes('Measurer: 15.0 opals') &&
+        !has(nodes, 'opal-manual-warning'),
+      'opal: the reset restores the saved split',
+    );
+    // On the save's own split the simulator reads the current state's total, so
+    // an equal distribution matches the figure the section reports.
+    const manualTotal = rateOf(labelOf(await lane.tree(), 'opal-manual-total'));
+    if (!manualTotal || manualTotal !== currentTotal) {
+      throw new Error(`opal: the manual total reads ${manualTotal}, current ${currentTotal}`);
+    }
     await lane.call('click_element', { id: 'opal-tab-current' });
     await waitForNode(lane, 'opal-overview', 'opal: the current tab reopens');
   },
   sneaking: async (lane) => {
-    await lane.call('click_element', { id: 'header-import' });
-    await waitForNode(lane, 'import-drop', 'sneaking: the import dialog opens');
     await lane.call('click_element', { id: 'import-input' });
     await lane.call('keyboard', { keystroke: 'secondary-a' });
     await lane.call('type_text', { text: sneakingSave() });
@@ -3785,6 +3832,8 @@ const fail = (label, error) => {
 const has = (nodes, id) => nodes.some((node) => node.id === id);
 const labelOf = (nodes, id) => nodes.find((node) => node.id === id)?.label ?? null;
 const valueOf = (nodes, id) => nodes.find((node) => node.id === id)?.value?.value ?? null;
+/// The figure behind a `"<label>: <value>"` reading, without its caption.
+const rateOf = (label) => (label ?? '').split(': ')[1] ?? '';
 /// Scrolls a tall pane until the element sits inside the window, so a click
 /// lands on it instead of on a clipped area.
 const scrollTo = async (lane, id, { step = 400, attempts = 8 } = {}) => {
