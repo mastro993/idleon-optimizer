@@ -11,6 +11,7 @@ use crate::sections::cog::{
     PerfectRunInputs as CogPerfectInputs, RunInputs as CogRunInputs, State as CogState,
 };
 use crate::sections::coin_multi;
+use crate::sections::combat_sim::RunResult as CombatEncounterOutcome;
 use crate::sections::combat_sim::State as CombatState;
 use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
@@ -63,7 +64,6 @@ use idleon_clamworks::{Plan as ClamworksPlan, PlanInput as ClamworksPlanInput};
 use idleon_cog::{CogResult, PerfectBoard};
 use idleon_combat::compare::{Comparison as CombatComparison, Plan as CombatComparePlan};
 use idleon_combat::encounter::Options as CombatEncounterOptions;
-use idleon_combat::encounter::Outcome as CombatEncounterOutcome;
 use idleon_cooking_mastery::Mastery;
 use idleon_coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_farming::{Allocation as FarmingOutcome, Comparison as FarmingComparison, Farm};
@@ -879,8 +879,8 @@ impl AppState {
             |_, result| {
                 Some(format!(
                     "Encounter run ready: {} kills over {:.0}s.",
-                    result.kills,
-                    result.simulated_ms as f64 / 1000.0
+                    result.run.kills,
+                    result.run.simulated_ms as f64 / 1000.0
                 ))
             },
         );

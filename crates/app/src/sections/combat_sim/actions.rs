@@ -1,11 +1,13 @@
 //! What the window does when the combat sim section is edited or run.
 
-use crate::sections::combat_sim::Tab as CombatTab;
+use crate::sections::combat_sim::{ResultsTab, RunResult, Tab as CombatTab};
 use crate::state::AppState;
 use gpui::{App, ClipboardItem, Context};
 use idleon_combat::Loadout;
 use idleon_combat::compare::{self, Comparison, Plan};
-use idleon_combat::encounter::{self, Options, Outcome, Player};
+use idleon_combat::drops::{self, Inputs, Snapshot};
+use idleon_combat::encounter::{self, Options, Player};
+use idleon_combat::overrides::Entries;
 use idleon_ui::runner::TaskState;
 
 impl AppState {
@@ -198,8 +200,34 @@ impl AppState {
         cx.notify();
     }
 
+    /// Set the seed every drop roll draws from.
+    pub(crate) fn set_combat_encounter_seed(&mut self, seed: f64, cx: &mut Context<Self>) {
+        if seed.is_finite() {
+            self.combat.sim_seed = seed.max(1.0) as u64;
+        }
+        cx.notify();
+    }
+
+    /// Pick the results tab the Encounter pane shows.
+    pub(crate) fn set_combat_results_tab(&mut self, tab: ResultsTab, cx: &mut Context<Self>) {
+        self.combat.results = tab;
+        cx.notify();
+    }
+
+    /// The saved card and obol state a run's drops start from.
+    ///
+    /// The character's Drop Rate and Card Drop Chance come from the mechanics
+    /// overrides: `off` is neutral, `set` and `scale` apply, and the saved
+    /// values `scale` would need are not wired yet.
+    fn combat_drop_state(&self) -> (Snapshot, Inputs) {
+        let snapshot = self.save.as_ref().map(drops::snapshot).unwrap_or_default();
+        let overrides = self.combat.overrides.build(&Entries::new());
+        (snapshot, Inputs::from_overrides(&overrides))
+    }
+
     /// The options a run started now would read.
     pub(crate) fn combat_encounter_options(&self) -> Options {
+        let (drops, drop_inputs) = self.combat_drop_state();
         Options {
             map: self.combat.sim_map,
             player: if self.combat.sim_stand_in {
@@ -210,6 +238,9 @@ impl AppState {
                 Player::Idle
             },
             duration_ms: self.combat.sim_duration_s * 1000,
+            seed: self.combat.sim_seed,
+            drops,
+            drop_inputs,
         }
     }
 
@@ -225,11 +256,27 @@ impl AppState {
             options.map,
             options.player.label()
         );
+        // The Killroy practice re-runs the room's timer at the kill rate the
+        // encounter measures, so it reads the same save and seed.
+        let save = self.save.clone();
+        let character = self.combat.character;
         self.start_run(
             self.combat_encounter.clone(),
             line,
             options,
-            move |options, report| encounter::run(options, report).ok().flatten(),
+            move |options, report| {
+                let run = encounter::run(options.clone(), report).ok().flatten()?;
+                let killroy = save.as_ref().and_then(|save| {
+                    let seconds = run.simulated_ms as f64 / 1000.0;
+                    if run.kills == 0 || seconds <= 0.0 {
+                        return None;
+                    }
+                    let inputs =
+                        idleon_killroy::trial_inputs(save, character, run.kills as f64 / seconds);
+                    Some(idleon_killroy::trial(&inputs, options.seed))
+                });
+                Some(RunResult { run, killroy })
+            },
             cx,
         );
     }
@@ -244,7 +291,7 @@ impl AppState {
     }
 
     /// The stored encounter run and whether its options changed since the run.
-    pub(crate) fn combat_encounter(&self, cx: &App) -> TaskState<Outcome> {
+    pub(crate) fn combat_encounter(&self, cx: &App) -> TaskState<RunResult> {
         self.combat_encounter
             .read(cx)
             .state(&self.combat_encounter_options())

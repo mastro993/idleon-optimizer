@@ -2154,12 +2154,43 @@ const INTERACTIONS = {
         return (
           kills !== null &&
           Number(kills[1]) > 0 &&
-          has(nodes, 'combat-encounter-by-type') &&
           !(labelOf(nodes, 'combat-encounter-damage') ?? '').endsWith(' 0.0')
         );
       },
       'combat-sim: the encounter run reports its kills and damage',
     );
+    // CS-05: every result tab reads the one stored run.
+    await lane.call('click_element', { id: 'result-killroy' });
+    await waitForNode(lane, 'combat-killroy-kills', 'combat-sim: the Killroy tab opens');
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-killroy-skulls') && has(nodes, 'combat-killroy-spawned'),
+      'combat-sim: the Killroy practice reports its skulls and spawns',
+    );
+    await lane.call('click_element', { id: 'result-obols' });
+    await waitForNode(lane, 'combat-obols-fragments', 'combat-sim: the obols tab opens');
+    await lane.call('click_element', { id: 'result-kills' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-kills-panel') &&
+        /Green Mushroom: [\d,]+ kills/.test(labelOf(nodes, 'combat-kill-type-mushG') ?? ''),
+      'combat-sim: the kills tab names the monsters the run killed',
+    );
+    await lane.call('click_element', { id: 'result-cards' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-cards-panel') || has(nodes, 'combat-cards-empty'),
+      'combat-sim: the cards tab lists the drops or says there were none',
+    );
+    await lane.call('click_element', { id: 'result-timeline' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'combat-timeline-panel'),
+      'combat-sim: the timeline tab charts the run',
+    );
+    await lane.call('click_element', { id: 'result-summary' });
+    await waitForNode(lane, 'combat-summary-panel', 'combat-sim: the summary tab reopens');
     await lane.call('click_element', { id: 'gear' });
     await waitForNode(lane, 'combat-slot-0-0', 'combat-sim: the equipment tab reopens');
     // CS-04: two characters on the same map make a comparison with a delta per
