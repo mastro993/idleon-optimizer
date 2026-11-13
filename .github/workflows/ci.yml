@@ -12,12 +12,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Every job runs on Linux. Set the repository variable `CI_RUNNER_LINUX` to
+# another fleet (Blacksmith's `blacksmith-4vcpu-ubuntu-2404`, a self-hosted
+# label) and the whole workflow follows it; unset falls back to GitHub's
+# `ubuntu-24.04`, whose Linux minutes are the cheapest this repo has.
 jobs:
   # One cheap runner decides whether the expensive matrix has anything to look
   # at, so a change confined to the harness scripts or the workflow files does
-  # not start four macOS jobs.
+  # not start three build jobs.
   changes:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-24.04' }}
     # `paths-filter` lists the PR's changed files through the API, which the
     # default token cannot read on a private repository.
     permissions:
@@ -44,44 +48,55 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     # Everything runs at once; the first failure cancels the rest, so a broken
-    # `main` never pays for the remaining macOS jobs.
+    # `main` never pays for the remaining jobs.
     strategy:
       fail-fast: true
       matrix:
         include:
           # Formatting needs no build, no cache and no submodule: cheapest runner.
           - label: fmt
-            os: ubuntu-24.04
             submodules: false
+            deps: false
             cache: false
             command: cargo fmt --all -- --check
-          # Clippy compiles the workspace, whose GUI comes from the vendored
-          # gpui-pre snapshot (objc2/metal), so it runs where a developer does.
+          # The GUI comes from the vendored gpui-pre snapshot. Its Linux backend
+          # links the x11/wayland/font libraries, and clippy builds every target,
+          # so the compiling jobs install them with apt below.
           - label: clippy
-            os: macos-latest
             submodules: recursive
+            deps: true
             cache: true
             command: cargo clippy --workspace --all-targets -- -D warnings
           # Tests shard by test, not by crate, so one cache bucket keeps serving
           # both shards and clippy (two buckets would evict each other).
           - label: test 1/2
-            os: macos-latest
             submodules: recursive
+            deps: true
             cache: true
             nextest: true
             command: cargo nextest run --workspace --partition count:1/2
           - label: test 2/2
-            os: macos-latest
             submodules: recursive
+            deps: true
             cache: true
             nextest: true
             command: cargo nextest run --workspace --partition count:2/2
     name: ${{ matrix.label }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ vars.CI_RUNNER_LINUX || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v5
         with:
           submodules: ${{ matrix.submodules }}
+      # Only the jobs that compile need these: they are the link-time system
+      # libraries gpui-pre's Linux backend names in its manifest (wayland
+      # client_system, x11rb over libxcb, fontconfig/freetype for font-kit).
+      - if: matrix.deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libfontconfig1-dev libfreetype6-dev libexpat1-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-dev libx11-xcb-dev \
+            libxcb1-dev libwayland-dev
       # Pinned to the workspace's rust-version so a new stable clippy lint cannot
       # turn -D warnings red on a branch that changed nothing.
       - uses: dtolnay/rust-toolchain@1.96.0
@@ -93,5 +108,5 @@ jobs:
       - if: matrix.cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: macos-workspace
+          shared-key: linux-workspace
       - run: ${{ matrix.command }}
