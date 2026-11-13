@@ -105,11 +105,17 @@ impl Loadout {
     /// `twinCharmBonuses`: the equipped charms' totals, each scaled by the Gold
     /// charm-power bonus and its slot symbol.
     pub fn bonuses(&self, twin: usize) -> Bonuses {
+        self.bonuses_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::bonuses`] with the Gold inventory scan already resolved, so a
+    /// search that only moves charms reads the scan once instead of per twin.
+    pub(super) fn bonuses_with(&self, twin: usize, gold: &GoldBonuses) -> Bonuses {
         let mut bonuses = Bonuses::default();
         let Some(entry) = self.twins.get(twin) else {
             return bonuses;
         };
-        let charm_power = self.gold_bonuses().get(12);
+        let charm_power = gold.get(12);
         for charm in 0..2 {
             let item = entry.slot(SlotKind::Charm(charm));
             if item.is_blank() {
@@ -163,14 +169,20 @@ impl Loadout {
     /// The twin's stealth: `stealthValue` with the level base, the charm stealth
     /// factors, the account-wide stack, the floor allies and the flowers.
     pub fn stealth(&self, twin: usize) -> f64 {
+        self.stealth_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::stealth`] with the Gold inventory scan already resolved.
+    pub(super) fn stealth_with(&self, twin: usize, gold: &GoldBonuses) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
         };
-        let bonuses = self.bonuses(twin);
+        let bonuses = self.bonuses_with(twin, gold);
         let charm = (1.0 + bonuses.get(4) / 100.0)
             * (1.0 + bonuses.get(7) / 100.0)
             * (1.0 + bonuses.get(17) / 100.0);
-        let multi = charm * (1.0 + self.ally_stealth(twin)) * self.account_multi(twin);
+        let multi =
+            charm * (1.0 + self.ally_stealth(twin, gold)) * self.account_multi_with(twin, gold);
         stealth_value(
             f64::from(entry.level),
             &self.knowledge,
@@ -205,7 +217,7 @@ impl Loadout {
 
     /// The other twins' floor-stealth charm totals on this twin's floor:
     /// the ally bonus `computeTwinStealth` adds.
-    fn ally_stealth(&self, twin: usize) -> f64 {
+    fn ally_stealth(&self, twin: usize, gold: &GoldBonuses) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
         };
@@ -214,7 +226,7 @@ impl Loadout {
             .take(self.players.min(self.twins.len()))
             .filter(|other| other.index != twin && other.floor == entry.floor)
             .map(|other| {
-                let bonuses = self.bonuses(other.index);
+                let bonuses = self.bonuses_with(other.index, gold);
                 (bonuses.get(8) + bonuses.get(16)) / 100.0
             })
             .sum()
@@ -223,11 +235,16 @@ impl Loadout {
     /// `computeActionSpeed`: Ninja Knowledge 4, the charm speed bonus (doubled
     /// for a solo twin), the Gloves stat and the Gold inventory bonus.
     pub fn action_speed(&self, twin: usize) -> f64 {
-        let mut speed = self.bonuses(twin).get(2);
+        self.action_speed_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::action_speed`] with the Gold inventory scan already resolved.
+    pub(super) fn action_speed_with(&self, twin: usize, gold: &GoldBonuses) -> f64 {
+        let mut speed = self.bonuses_with(twin, gold).get(2);
         if self.is_solo(twin) {
             speed *= 2.0;
         }
-        let equip = speed + self.glove_speed(twin) + self.gold_bonuses().get(24);
+        let equip = speed + self.glove_speed(twin) + gold.get(24);
         action_speed(&self.knowledge, &self.omni, equip)
     }
 
@@ -242,15 +259,32 @@ impl Loadout {
 
     /// `koDuration`: the recovery before action speed, in seconds.
     pub fn ko_seconds(&self, twin: usize) -> f64 {
-        ko_duration(&self.knowledge, &self.omni, self.bonuses(twin).get(1))
+        self.ko_seconds_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::ko_seconds`] with the Gold inventory scan already resolved.
+    pub(super) fn ko_seconds_with(&self, twin: usize, gold: &GoldBonuses) -> f64 {
+        ko_duration(
+            &self.knowledge,
+            &self.omni,
+            self.bonuses_with(twin, gold).get(1),
+        )
     }
 
     /// The detection chance at the twin's saved floor.
     pub fn detection(&self, twin: usize) -> f64 {
+        self.detection_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::detection`] with the Gold inventory scan already resolved.
+    pub(super) fn detection_with(&self, twin: usize, gold: &GoldBonuses) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
         };
-        detection_chance(self.stealth(twin), self.detection_base(entry.floor))
+        detection_chance(
+            self.stealth_with(twin, gold),
+            self.detection_base(entry.floor),
+        )
     }
 
     /// The stealth a target detection chance needs on a floor.

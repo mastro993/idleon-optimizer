@@ -13,9 +13,9 @@
 use idleon_common::FormulaNode;
 use idleon_save::Save;
 use idleon_sneaking::{
-    Account, EquipError, Issue, Job, Loadout, SlotKind, action_speed, breakdown, can_equip_pair,
-    charm_stat, detection_base, detection_chance, door_hp, ko_duration, ninja_bonus,
-    stealth_for_detection, stealth_value, weapon_stat,
+    Account, EquipError, Issue, Job, Loadout, Objective, Request, SlotKind, action_speed,
+    breakdown, can_equip_pair, charm_stat, detection_base, detection_chance, door_hp, ko_duration,
+    ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
 };
 use serde_json::{Value, json};
 
@@ -650,4 +650,111 @@ fn the_modelled_account_factors_match_upstream() {
             "Companion: Smoke Devil",
         ],
     );
+}
+
+// ----- SN-03: the charm placement search -----
+
+/// Every charm the account owns, wherever it sits.
+fn charms_owned(loadout: &Loadout) -> Vec<(String, u32)> {
+    let mut owned: Vec<(String, u32)> = loadout
+        .twins()
+        .iter()
+        .flat_map(|twin| twin.charms())
+        .chain(loadout.inventory().iter().cloned())
+        .filter(|item| !item.is_blank())
+        .map(|item| (item.key.clone(), item.level))
+        .collect();
+    owned.sort();
+    owned
+}
+
+#[test]
+fn the_optimizer_beats_the_saved_placement() {
+    let loadout = loadout();
+    for objective in [Objective::Jade, Objective::Exp] {
+        let outcome = loadout.optimize(Request { objective });
+        assert!(
+            outcome.improved(),
+            "{objective}: {} → {}",
+            outcome.baseline.score,
+            outcome.winner.score
+        );
+        assert!(outcome.gain_percent() > 0.0);
+        assert_eq!(outcome.request.objective, objective);
+        assert!(outcome.evaluations > 0);
+        // The recommendation never wears a copy the account does not own.
+        let owned = charms_owned(&loadout);
+        let worn: Vec<(String, u32)> = outcome
+            .winner
+            .charms
+            .iter()
+            .flat_map(|(_, pair)| pair.clone())
+            .filter(|item| !item.is_blank())
+            .map(|item| (item.key, item.level))
+            .collect();
+        for copy in &worn {
+            let owned = owned.iter().filter(|other| *other == copy).count();
+            let used = worn.iter().filter(|other| *other == copy).count();
+            assert!(used <= owned, "{copy:?} worn {used} times, owns {owned}");
+        }
+        // The floor, the hat and the weapon are the save's, not the search's.
+        for twin in loadout.twins() {
+            let row = outcome
+                .winner
+                .twins
+                .iter()
+                .find(|row| row.twin == twin.index)
+                .expect("every twin scores");
+            assert_eq!(row.floor, twin.floor);
+        }
+    }
+}
+
+#[test]
+fn applying_a_recommendation_moves_only_charms() {
+    let loadout = loadout();
+    let outcome = loadout.optimize(Request {
+        objective: Objective::Jade,
+    });
+    let mut applied = loadout.clone();
+    assert!(applied.apply(&outcome.winner));
+    assert_eq!(
+        charms_owned(&applied),
+        charms_owned(&loadout),
+        "every owned charm is still somewhere"
+    );
+    for (before, after) in loadout.twins().iter().zip(applied.twins()) {
+        assert_eq!(before.floor, after.floor);
+        assert_eq!(before.slot(SlotKind::Hat), after.slot(SlotKind::Hat));
+        assert_eq!(before.slot(SlotKind::Weapon), after.slot(SlotKind::Weapon));
+        // A captive twin keeps its charms: the search never touches it.
+        let expected = outcome
+            .winner
+            .charms
+            .iter()
+            .find(|(index, _)| *index == before.index)
+            .map_or_else(|| before.charms(), |(_, pair)| pair.clone());
+        assert_eq!(applied.twin(before.index).unwrap().charms(), expected);
+    }
+    // The loadout then scores exactly what the recommendation promised.
+    let expected = outcome.winner.score;
+    let actual = applied.score(Objective::Jade);
+    assert!(
+        (actual - expected).abs() <= 1e-9 * expected.abs().max(1.0),
+        "applied {actual}, promised {expected}"
+    );
+}
+
+#[test]
+fn the_objective_switch_changes_what_is_measured() {
+    let loadout = loadout();
+    let jade = loadout.score(Objective::Jade);
+    let exp = loadout.score(Objective::Exp);
+    let items = loadout.score(Objective::Items);
+    assert!(jade.is_finite() && exp.is_finite() && items.is_finite());
+    assert!(jade > 0.0 && exp > 0.0 && items > 0.0);
+    assert_ne!(jade, exp);
+    // The fixture's twins wear Gloves, so no twin hits a door or frees a captive.
+    assert_eq!(loadout.score(Objective::Door), 0.0);
+    assert_eq!(loadout.score(Objective::Untie), 0.0);
 }

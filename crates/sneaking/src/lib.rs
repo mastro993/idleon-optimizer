@@ -25,6 +25,7 @@ pub mod breakdown;
 pub mod data;
 mod loadout;
 mod math;
+mod optimizer;
 mod placement;
 mod rates;
 mod save;
@@ -41,6 +42,7 @@ pub use math::{
     AllyContribution, action_speed, charm_stat, detection_base, detection_chance, ko_duration,
     ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
 };
+pub use optimizer::{Layout, Objective, Outcome, Request, TwinScore};
 pub use placement::door_hp;
 pub use rates::{
     ActionMode, DoorDamage, DoorState, ExpAction, JadeCoin, JadeHour, Runtime, UntieProgress,

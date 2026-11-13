@@ -11,7 +11,7 @@ use super::math::{
     jade_base, team_door_rates, weapon_stat,
 };
 use super::placement::door_hp;
-use super::{FLOOR_COUNT, Loadout, SlotKind};
+use super::{FLOOR_COUNT, GoldBonuses, Loadout, SlotKind};
 
 /// One twin's Jade per successful action.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -222,9 +222,14 @@ impl Loadout {
     /// The account-wide stealth multiplier, without the charm, ally and funeral
     /// factors the loadout itself applies.
     pub(super) fn account_multi(&self, twin: usize) -> f64 {
+        self.account_multi_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::account_multi`] with the Gold inventory scan already resolved.
+    pub(super) fn account_multi_with(&self, twin: usize, gold: &GoldBonuses) -> f64 {
         let account = &self.account;
         let farm = 1.0 + account.farm_rank_bonus * account.farm_level / 100.0;
-        let gold_20 = self.gold_bonuses().get(20);
+        let gold_20 = gold.get(20);
         let card = 1.0 + 4.0 * account.card_crystal5_level / 100.0;
         let achievement = 1.0 + 5.0 * account.achievement_368 / 100.0;
         let gemstone = 1.0 + self.gemstone(0) / 100.0;
@@ -304,13 +309,18 @@ impl Loadout {
 
     /// `computeJadeCoin`.
     pub(crate) fn jade_coin(&self, twin: usize) -> JadeCoin {
+        self.jade_coin_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::jade_coin`] with the Gold inventory scan already resolved.
+    pub(super) fn jade_coin_with(&self, twin: usize, gold: &GoldBonuses) -> JadeCoin {
         let Some(entry) = self.twins.get(twin) else {
             return JadeCoin::default();
         };
         let jade = self.account.jade;
-        let bonuses = self.bonuses(twin);
+        let bonuses = self.bonuses_with(twin, gold);
         let solo = self.is_solo(twin);
-        let detection = self.detection(twin);
+        let detection = self.detection_with(twin, gold);
         let charm14 = bonuses.get(14) * if solo { 3.0 } else { 1.0 };
         let charm19 = bonuses.get(19) * if solo { 3.0 } else { 1.0 };
         let charm6 = bonuses.get(6) * if detection == 0.0 { 2.0 } else { 1.0 };
@@ -410,11 +420,16 @@ impl Loadout {
 
     /// `computeSneakingExpPerAction`.
     pub(crate) fn exp_action(&self, twin: usize) -> ExpAction {
+        self.exp_action_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::exp_action`] with the Gold inventory scan already resolved.
+    pub(super) fn exp_action_with(&self, twin: usize, gold: &GoldBonuses) -> ExpAction {
         let Some(entry) = self.twins.get(twin) else {
             return ExpAction::default();
         };
         let exp = self.account.exp;
-        let bonuses = self.bonuses(twin);
+        let bonuses = self.bonuses_with(twin, gold);
         let solo = self.is_solo(twin);
         let nk2 = self.ninja_bonus(2);
         let nk19 = self.ninja_bonus(19);
@@ -529,6 +544,11 @@ impl Loadout {
 
     /// `computeDoorDamageDetailed`.
     pub(crate) fn door_damage(&self, twin: usize) -> DoorDamage {
+        self.door_damage_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::door_damage`] with the Gold inventory scan already resolved.
+    pub(super) fn door_damage_with(&self, twin: usize, gold: &GoldBonuses) -> DoorDamage {
         let Some(entry) = self.twins.get(twin) else {
             return DoorDamage::default();
         };
@@ -538,7 +558,6 @@ impl Loadout {
             .is_some_and(|def| def.kind == 1 && def.bonus_type == 1);
         let sneak_level = f64::from(entry.level);
         let sneak_tens = (sneak_level / 10.0).floor();
-        let gold = self.gold_bonuses();
         let mahjong = self.ninja_bonus(5);
         let gold_per_ten = gold.get(22);
         let gold_damage = gold.get(18);
@@ -597,32 +616,59 @@ impl Loadout {
 
     /// `computeDoorHitsPerHour`.
     pub(crate) fn door_rate(&self, twin: usize) -> DoorRate {
+        self.door_rate_with(twin, &self.gold_bonuses())
+    }
+
+    /// [`Self::door_rate`] with the Gold inventory scan already resolved.
+    pub(super) fn door_rate_with(&self, twin: usize, gold: &GoldBonuses) -> DoorRate {
         door_hits_per_hour(
-            self.action_speed(twin),
-            self.detection(twin),
-            self.ko_seconds(twin),
-            self.dodge_pct(twin),
+            self.action_speed_with(twin, gold),
+            self.detection_with(twin, gold),
+            self.ko_seconds_with(twin, gold),
+            self.bonuses_with(twin, gold).get(0),
         )
     }
 
     /// `computeTeamDoorRates` for the twins on this twin's floor.
     pub(crate) fn team_door_rates(&self, twin: usize) -> Vec<DoorRate> {
         let floor = self.twins.get(twin).map_or(0, |entry| entry.floor);
-        let members: Vec<TeamMember> = self
+        self.floor_rates(floor, &self.gold_bonuses())
+            .into_iter()
+            .map(|(_, rate)| rate)
+            .collect()
+    }
+
+    /// The team rates for every twin standing on one floor, in roster order.
+    ///
+    /// The saved floor is what groups a team, so a search that only moves charms
+    /// reads one solve per floor instead of one per twin.
+    pub(super) fn floor_rates(&self, floor: usize, gold: &GoldBonuses) -> Vec<(usize, DoorRate)> {
+        let members: Vec<usize> = self
             .twins
             .iter()
             .take(self.players.min(self.twins.len()))
             .filter(|entry| entry.floor == floor)
-            .map(|entry| TeamMember {
-                action_speed: self.action_speed(entry.index),
-                detection: self.detection(entry.index),
-                ko_time: self.ko_seconds(entry.index),
-                dodge_pct: self.dodge_pct(entry.index),
-                taunting: self.bonuses(entry.index).get(1) > 0.0,
-                flower_gain: 1.0 + self.ninja_bonus(30) / 100.0,
+            .map(|entry| entry.index)
+            .collect();
+        let team: Vec<TeamMember> = members
+            .iter()
+            .map(|index| {
+                let bonuses = self.bonuses_with(*index, gold);
+                TeamMember {
+                    action_speed: self.action_speed_with(*index, gold),
+                    detection: self.detection_with(*index, gold),
+                    ko_time: self.ko_seconds_with(*index, gold),
+                    dodge_pct: bonuses.get(0),
+                    taunting: bonuses.get(1) > 0.0,
+                    flower_gain: 1.0 + self.ninja_bonus(30) / 100.0,
+                }
             })
             .collect();
-        team_door_rates(&members)
+        team_door_rates(&team)
+            .into_iter()
+            .zip(members)
+            .map(|(rate, index)| (index, rate))
+            .collect()
     }
 
     /// The team rate for one twin, or its independent rate when no teammate.

@@ -7,26 +7,33 @@
 //! so the workspace opens where it was left.
 
 use crate::state::AppState;
-use gpui::Context;
-use idleon_sneaking::{Loadout, SlotKind};
+use gpui::{App, Context};
+use idleon_sneaking::{Loadout, Objective, Outcome, Request, SlotKind};
+use idleon_ui::runner::TaskState;
 use serde::{Deserialize, Serialize};
 
-/// The two workspaces the section shows.
+/// The three workspaces the section shows.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum Workspace {
     #[default]
     Loadout,
     Breakdowns,
+    Optimizer,
 }
 
 impl Workspace {
-    pub(crate) const ALL: [Workspace; 2] = [Workspace::Loadout, Workspace::Breakdowns];
+    pub(crate) const ALL: [Workspace; 3] = [
+        Workspace::Loadout,
+        Workspace::Breakdowns,
+        Workspace::Optimizer,
+    ];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
             Workspace::Loadout => "loadout",
             Workspace::Breakdowns => "breakdowns",
+            Workspace::Optimizer => "optimizer",
         }
     }
 
@@ -34,6 +41,7 @@ impl Workspace {
         match self {
             Workspace::Loadout => "Loadout",
             Workspace::Breakdowns => "Breakdowns",
+            Workspace::Optimizer => "Optimizer",
         }
     }
 
@@ -104,6 +112,8 @@ pub(crate) struct State {
     pub(crate) formula_tab: FormulaTab,
     /// The twin the breakdown trees read.
     pub(crate) breakdown_twin: Option<usize>,
+    /// The objective the charm optimizer maximizes.
+    pub(crate) objective: Objective,
 }
 
 impl Default for State {
@@ -115,6 +125,7 @@ impl Default for State {
             workspace: Workspace::Loadout,
             formula_tab: FormulaTab::Stealth,
             breakdown_twin: None,
+            objective: Objective::default(),
         }
     }
 }
@@ -144,6 +155,13 @@ impl State {
         self.breakdown_twin
             .filter(|index| *index < players.max(1))
             .unwrap_or_else(|| self.login(players))
+    }
+
+    /// What a charm optimizer run is asked for.
+    pub(crate) fn optimizer_request(&self) -> Request {
+        Request {
+            objective: self.objective,
+        }
     }
 }
 
@@ -235,6 +253,64 @@ impl AppState {
             self.set_status("Sneaking: the loadout is back to the save.", cx);
         }
     }
+
+    /// Pick the objective the charm optimizer maximizes.
+    pub(crate) fn sneak_objective(&mut self, objective: Objective, cx: &mut Context<Self>) {
+        self.sneaking_state.objective = objective;
+        cx.notify();
+    }
+
+    /// The charm run's progress, result and staleness for the current objective.
+    pub(crate) fn sneak_optimizer_task(&self, cx: &App) -> TaskState<Outcome> {
+        self.sneaking_opt
+            .read(cx)
+            .state(&self.sneaking_state.optimizer_request())
+    }
+
+    /// Search charm placements off the UI thread through the shared runner.
+    pub(crate) fn run_sneak_optimize(&mut self, cx: &mut Context<Self>) {
+        let Some(loadout) = self.sneaking.clone() else {
+            self.set_status("Sneaking optimizer: import a save first.", cx);
+            return;
+        };
+        let request = self.sneaking_state.optimizer_request();
+        self.start_run(
+            self.sneaking_opt.clone(),
+            "Optimizing the sneaking charm placement…",
+            request,
+            move |request, report| loadout.optimize_with(request, report),
+            cx,
+        );
+    }
+
+    /// Ask a running charm search to stop at its next twin.
+    pub(crate) fn cancel_sneak_optimize(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.sneaking_opt.clone(),
+            "Cancelling the sneaking optimizer…",
+            cx,
+        );
+    }
+
+    /// Write the stored recommendation into the loadout.
+    pub(crate) fn sneak_optimize_apply(&mut self, cx: &mut Context<Self>) {
+        let Some(outcome) = self.sneaking_opt.read(cx).result().cloned() else {
+            return;
+        };
+        let Some(loadout) = self.sneaking.as_mut() else {
+            return;
+        };
+        let message = if loadout.apply(&outcome.winner) {
+            format!(
+                "Sneaking: the recommended {} placement is in the loadout.",
+                outcome.request.objective.label()
+            )
+        } else {
+            "Sneaking: the inventory has no free row to bank the charms the recommendation replaces."
+                .to_string()
+        };
+        self.set_status(message, cx);
+    }
 }
 
 #[cfg(test)]
@@ -262,6 +338,7 @@ mod tests {
             login: Some(2),
             twin: Some(1),
             slot: Some(3),
+            objective: Objective::Door,
             ..State::default()
         };
         let text = serde_json::to_string(&state).expect("the state serializes");
