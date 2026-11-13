@@ -523,6 +523,7 @@ fn assert_plan_rules(jelly: &idleon_jelly::Jelly, plan: &Plan, name: &str) {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn the_plan_matches_upstream() {
     for name in [
         "sections-single",
@@ -538,6 +539,7 @@ fn the_plan_matches_upstream() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn a_narrow_beam_searches_different_sequences() {
     let (save, narrow_case) = jelly("sections-beam-narrow");
     let (_, wide_case) = jelly("sections-beam-wide");
@@ -559,6 +561,7 @@ fn a_narrow_beam_searches_different_sequences() {
 }
 
 #[test]
+#[ignore = "long simulation: CI runs it on main only"]
 fn the_plan_is_reproducible() {
     let (jelly, case) = jelly("sections-beam-narrow");
     let first = Plan::run(&jelly, options(&case));

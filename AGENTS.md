@@ -36,12 +36,14 @@ update `tests/fixture.rs` deliberately.
 
 ```console
 cargo test
+cargo test -- --include-ignored  # also the long simulations, when touching them
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 node script/mcp-drive.mjs        # own window + private bridge endpoint
 ```
 
 `.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates on every push to `main`
-and on every pull request; the MCP harnesses still run locally only.
+and on every pull request; the long simulations (`#[ignore = "long simulation: …"]`) run on `main`
+only. The MCP harnesses still run locally only.
 
 Harness details and per-lane isolation live in [`docs/agent-harness.md`](docs/agent-harness.md).

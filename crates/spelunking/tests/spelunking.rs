@@ -322,9 +322,11 @@ fn every_profile_matches_the_upstream_calculator() {
 #[test]
 fn every_rejection_reports_the_upstream_message() {
     let oracle = oracle();
+    // One import serves every entry: each one edits its own copy.
+    let saved = inputs(&oracle);
     for entry in oracle["rejections"].as_array().unwrap() {
         let label = entry["label"].as_str().unwrap();
-        let mut inputs = inputs(&oracle);
+        let mut inputs = saved.clone();
         match &entry["input"] {
             Value::String(kind) if kind == "controlled" => {}
             Value::String(_) => match label {
@@ -379,9 +381,10 @@ fn the_depth_range_is_bounded_like_upstream() {
 #[test]
 fn every_simulated_run_matches_the_upstream_calculator() {
     let oracle = oracle();
+    let saved = inputs(&oracle);
     for entry in oracle["runs"].as_array().unwrap() {
         let label = entry["label"].as_str().unwrap();
-        let mut inputs = inputs(&oracle);
+        let mut inputs = saved.clone();
         // The unbeaten-boss run clears the saved boss, Grand and discovery
         // state and buys the nova, potion and charge upgrades, so the run
         // exercises the branches the fixture save has already finished.

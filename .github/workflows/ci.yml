@@ -14,8 +14,8 @@ concurrency:
 
 jobs:
   # One cheap runner decides whether the expensive matrix has anything to look
-  # at, so a change confined to the harness scripts or the workflow files does
-  # not start four macOS jobs.
+  # at, so a change confined to the harness scripts does not start the macOS
+  # jobs.
   changes:
     runs-on: ubuntu-24.04
     # `paths-filter` lists the PR's changed files through the API, which the
@@ -63,22 +63,24 @@ jobs:
             cache: true
             command: cargo clippy --workspace --all-targets -- -D warnings
           # Tests shard by test, not by crate, so one cache bucket keeps serving
-          # both shards and clippy (two buckets would evict each other).
+          # both shards and clippy (two buckets would evict each other). `slice`
+          # deals tests round-robin across every binary; `count` split each
+          # binary on its own and left one shard far heavier.
           - label: test 1/2
             os: macos-latest
             submodules: recursive
             cache: true
             nextest: true
-            command: cargo nextest run --workspace --partition count:1/2
+            command: cargo nextest run --workspace --partition slice:1/2
           - label: test 2/2
             os: macos-latest
             submodules: recursive
             cache: true
             nextest: true
-            command: cargo nextest run --workspace --partition count:2/2
+            command: cargo nextest run --workspace --partition slice:2/2
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
-    steps:
+    steps: &steps
       - uses: actions/checkout@v5
         with:
           submodules: ${{ matrix.submodules }}
@@ -95,3 +97,22 @@ jobs:
         with:
           shared-key: macos-workspace
       - run: ${{ matrix.command }}
+
+  # The long simulations are `#[ignore]`d so pull requests skip them; `main`
+  # runs them beside the gates. The one-entry matrix feeds the gates' steps,
+  # reused through the anchor, so both share one toolchain and cache bucket.
+  simulations:
+    needs: changes
+    if: github.event_name == 'push' && needs.changes.outputs.rust == 'true'
+    strategy:
+      matrix:
+        include:
+          - label: simulations
+            os: macos-latest
+            submodules: recursive
+            cache: true
+            nextest: true
+            command: cargo nextest run --workspace --run-ignored only
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    steps: *steps

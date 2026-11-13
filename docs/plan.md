@@ -868,9 +868,9 @@ including the beam-dependent case and offering rows with and without a Y4 free c
   drives one core flow and saves a screenshot.
 - **Import parity:** raw save, ROv2 string, project JSON and section config round-trip; malformed
   input leaves state untouched.
-- **Gates:** `cargo test`, `cargo clippy --workspace --all-targets -- -D warnings`,
-  `cargo fmt --all -- --check`, `node script/roadmap.mjs`, `node script/mcp-drive.mjs`,
-  `node script/mcp-sections.mjs`.
+- **Gates:** `cargo test` (`-- --include-ignored` adds the long simulations),
+  `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --all -- --check`,
+  `node script/roadmap.mjs`, `node script/mcp-drive.mjs`, `node script/mcp-sections.mjs`.
 
 ## 11. Milestones and progress tracking
 
