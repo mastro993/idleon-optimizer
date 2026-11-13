@@ -23,6 +23,9 @@
 //! - [`planner`] is `planJellySections`: it screens every unpurchased board
 //!   section, completes the board around the strongest, and compares the
 //!   finalists with shared-seed trials.
+//! - [`optimizer`] is the coordinator of `js/optimizers/jelly-coordinator.js`
+//!   over the bounded layout search: independent starts trade focus and elites,
+//!   and their finalists are simulated on the saved board's own seeds.
 //! - [`upgrades`] is the upgrade list: `jellyUpgradeCost`,
 //!   `jellyUpgradeStatus` and `jellyUpgradeDisplay` over the `Research[44]`
 //!   purchase order.
@@ -44,6 +47,7 @@ pub mod estimate;
 pub mod insights;
 pub mod metrics;
 pub mod operation;
+pub mod optimizer;
 pub mod planner;
 pub mod surrogate;
 pub mod upgrades;
@@ -59,6 +63,7 @@ pub use estimate::Estimate;
 pub use insights::{ExpOutlook, Insights, ObstructionOutlook};
 pub use metrics::{Cadence, CellMetrics, MetricOptions, Metrics};
 pub use operation::{OperationOptions, Trial};
+pub use optimizer::{Optimization, Options as OptimizerOptions};
 pub use upgrades::{Row as UpgradeRow, Status as UpgradeStatus};
 
 /// The slots the board starts with (`STARTING_SLOTS`).

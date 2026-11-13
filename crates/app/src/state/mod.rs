@@ -26,8 +26,8 @@ use crate::sections::fountain::{MarblePlanInputs, SimInputs, State as FountainSt
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
-    PlannerRunInputs as JellyPlanRunInputs, RunInputs as JellyRunInputs,
-    SimulatorRunInputs as JellySimRunInputs, State as JellyState,
+    OptimizerRunInputs as JellyOptimizerRunInputs, PlannerRunInputs as JellyPlanRunInputs,
+    RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
@@ -76,6 +76,7 @@ use idleon_fountain::{
 };
 use idleon_import::Shadow;
 use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
+use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::Plan as JellySectionPlan;
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_killroy::Plan as KillroyPlan;
@@ -421,6 +422,8 @@ pub(crate) struct AppState {
     /// The shared runner for the Jelly Operator operation estimate.
     pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
     pub(crate) jelly_plan_run: Entity<TaskRunner<JellySectionPlan, JellyPlanRunInputs>>,
+    /// The shared runner for the Jelly coordinator's layout search.
+    pub(crate) jelly_optimize_run: Entity<TaskRunner<JellyOptimization, JellyOptimizerRunInputs>>,
     /// The shared runner for one simulator operation.
     pub(crate) jelly_sim_run: Entity<TaskRunner<JellyTrial, JellySimRunInputs>>,
     /// The shared formula tree on the Jelly Operator breakdowns pane.
@@ -786,6 +789,22 @@ impl AppState {
                     ),
                     None => "Jelly section plan ready: no recommendation.".to_string(),
                 })
+            },
+        );
+        let jelly_optimize_run = report_run::<JellyOptimization, JellyOptimizerRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the Jelly board…"),
+                cancelled_kept: "Jelly optimization cancelled; the previous board is unchanged.",
+                cancelled_empty: "Jelly optimization cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Jelly board optimized: {} anchor change(s), {} finalist(s) simulated.",
+                    result.moves.len(),
+                    result.finalists.len()
+                ))
             },
         );
         let jelly_sim_run = report_run::<JellyTrial, JellySimRunInputs>(
@@ -1189,6 +1208,7 @@ impl AppState {
             coral_run,
             jelly_run,
             jelly_plan_run,
+            jelly_optimize_run,
             jelly_sim_run,
             jelly_breakdown: crate::ui::formula_tree("jelly-breakdown", window, cx),
             cog_run,

@@ -883,7 +883,24 @@ breakdown the save cannot compute (Cell EXP without Cell Biology, Bloodcells wit
 Coagulation, a board the rules refuse) says what is missing instead of printing one.
 `script/jelly-oracle.mjs` also writes the three cases' upgrade rows, reward rows and six trees, and
 `crates/jelly/tests/jelly-upgrades.rs` compares every row, string and node and holds both
-invariants. The coordinator optimizer (JO-05) stays on the roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
+invariants. The optimizer tab is `idleon_jelly::optimizer`, the coordinator of `js/optimizers/jelly-coordinator.js`
+over the bounded full-board search: independent starts each build composition seeds from cell-type
+and anchor orders plus the elites the earlier starts handed on, keep a diverse beam through their
+build, saved-board and refinement rounds (placements, replacements, relocations and re-fills), and
+share their strongest, sufficiently distinct boards with the later starts. The coordinator rotates
+explore, refine, repair and measure; refine trades build rounds for saved-board rounds and repair
+sets the exact-repair budget, while the page's payoff scheduling reads `performance.now()`, so this
+port schedules from each start's own score count and a run stays deterministic. The strongest
+finalists run the save's Fever and revive policy on shared seeds (`simulateJellyTrials`), rank by
+`simulatedObjectiveScore` and carry `pairedOperationConfidence` against the board the run started
+from; the recommendation is never worse than that board, and `Use this board` puts it on the
+layout. `script/jelly-oracle.mjs` also writes the coordinator's assignments and elite selection for
+the committed save plus `proxyObjectiveScore` over five boards, and
+`crates/jelly/tests/jelly-optimizer.rs` compares them field for field and holds the search's
+invariant, determinism, cancellation and apply rules. The upstream engine's worker pooling, policy
+screening, exact enumeration and certification are not ported: the search is single-process, a
+finalist runs the save's own Fever and revive policy, and the fixture pins the coordinator and the
+ranking score rather than that engine's stochastic trajectory. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
 a save-export timing bug from the page's own local storage, and this app reads the save's shape
 overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).

@@ -41,7 +41,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M26 | Clamworks Calculator | World 7 | 4 | done | foundation, combat-sim | [clamworks](sections/clamworks.md) |
 | M27 | Royal Guardian Calculator | World 7 | 4 | done | foundation | [royal-guardian](sections/royal-guardian.md) |
 | M28 | Spelunking Simulator | World 7 | 4 | done | foundation | [spelunking](sections/spelunking.md) |
-| M29 | Jelly Operator Optimizer | World 7 | 5 | partial | foundation | [jelly-operator](sections/jelly-operator.md) |
+| M29 | Jelly Operator Optimizer | World 7 | 5 | done | foundation | [jelly-operator](sections/jelly-operator.md) |
 | M30 | BoneJoePickle Calculator | Tools | 1 | done | foundation | [pickle](sections/pickle.md) |
 
 ## Tracking

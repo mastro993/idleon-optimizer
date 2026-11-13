@@ -5,7 +5,7 @@
 //! types live here so the estimate, the insights and a future simulator share
 //! one vocabulary.
 
-mod rng;
+pub(crate) mod rng;
 mod runtime;
 
 pub use rng::projectile_hit_delay;

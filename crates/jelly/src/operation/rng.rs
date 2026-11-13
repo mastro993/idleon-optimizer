@@ -10,16 +10,16 @@ use crate::data::data;
 
 /// Mulberry32, the upstream's own seeded generator (`seededRandom`).
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct Rng {
+pub(crate) struct Rng {
     state: u32,
 }
 
 impl Rng {
-    pub(super) fn new(seed: u32) -> Self {
+    pub(crate) fn new(seed: u32) -> Self {
         Self { state: seed }
     }
 
-    pub(super) fn next(&mut self) -> f64 {
+    pub(crate) fn next(&mut self) -> f64 {
         self.state = self.state.wrapping_add(0x6D2B_79F5);
         let mut value = self.state;
         value = (value ^ (value >> 15)).wrapping_mul(value | 1);
@@ -33,7 +33,7 @@ impl Rng {
     }
 }
 
-pub(super) fn random_int(rng: &mut Rng, min: f64, max: f64) -> usize {
+pub(crate) fn random_int(rng: &mut Rng, min: f64, max: f64) -> usize {
     let min = min.ceil();
     let max = max.floor();
     (min + (rng.next() * (max - min + 1.0).max(1.0)).floor()) as usize
