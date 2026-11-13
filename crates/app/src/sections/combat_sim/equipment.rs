@@ -18,7 +18,7 @@ use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, Role,
-    SharedString, StatefulInteractiveElement, Styled, div,
+    SharedString, StatefulInteractiveElement, Styled, Window, div,
 };
 use idleon_combat::{self as combat, data, loadout::Slot};
 
@@ -26,6 +26,7 @@ use idleon_combat::{self as combat, data, loadout::Slot};
 pub(crate) fn pane(
     state: &mut AppState,
     breakpoint: Breakpoint,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let (list, detail) = {
@@ -35,7 +36,7 @@ pub(crate) fn pane(
             .selected
             .min(loadout.slots.len().saturating_sub(1));
         (
-            slot_list(&state.combat, cx),
+            slot_list(&state.combat, window, cx),
             slot_detail(&state.combat, selected, cx),
         )
     };
@@ -43,7 +44,7 @@ pub(crate) fn pane(
 }
 
 /// The slot list: armor first, then the tool row.
-fn slot_list(state: &State, cx: &mut Context<AppState>) -> AnyElement {
+fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let entity = cx.entity();
     let loadout = &state.loadout;
@@ -149,8 +150,9 @@ fn slot_list(state: &State, cx: &mut Context<AppState>) -> AnyElement {
         .child(
             ScrollArea::new("combat-slot-scroll")
                 .vertical()
-                .flex_1()
-                .min_h_0()
+                .h(layout::table_height(f32::from(
+                    window.viewport_size().height,
+                )))
                 .p_2()
                 .child(groups),
         )
