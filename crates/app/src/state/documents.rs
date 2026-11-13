@@ -142,6 +142,10 @@ impl AppState {
             &before_configs,
             &crate::project::configs(self),
         ));
+        // `_saveSnapshot`: the page records the cavern's spread once per render,
+        // so every applied document adds the snapshot that differs. It comes
+        // after the config diff: a snapshot is bookkeeping, not an edit.
+        self.record_jar_snapshot();
         if !changes.is_empty() {
             message = format!("{message} {}", crate::project::change_line(&changes));
         }

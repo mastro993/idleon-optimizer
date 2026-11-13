@@ -70,7 +70,8 @@ pub const RUPIE_COLORS: [&str; 12] = [
 /// `crates/jar/data/jar.json`; these are its page and slot counts.
 /// The collectible page two unlocks with `Advanced Collection`.
 pub(super) const PAGE_TWO_COLLECTIBLES: usize = 16;
-pub(super) const COLLECTIBLES: usize = 40;
+/// How many collectibles the cavern carries, across both pages.
+pub const COLLECTIBLES: usize = 40;
 
 /// Cells of `Holes[9]` the ten standard rupies start at.
 pub(super) const STANDARD_RUPIES: usize = 20;

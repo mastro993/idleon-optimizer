@@ -1896,7 +1896,7 @@
       "key": "jar",
       "title": "Jar Calculator",
       "group": "w5",
-      "status": "partial",
+      "status": "done",
       "summary": "Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.",
       "upstream": [
         "jar-calc.html",

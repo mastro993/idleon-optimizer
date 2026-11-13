@@ -5,7 +5,7 @@
 - Milestone: `M18`
 - Section key: `jar`
 - Group: `w5`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.

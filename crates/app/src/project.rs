@@ -17,6 +17,7 @@ use crate::sections::cooking_mastery::State as CookingMasteryState;
 use crate::sections::farming::State as FarmingState;
 use crate::sections::fishing::State as FishingState;
 use crate::sections::fountain::Tab as FountainTab;
+use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::Tab as JellyTab;
 use crate::sections::killroy::State as KillroyState;
@@ -254,12 +255,14 @@ pub(crate) struct RoyalConfig {
     currency: Option<i64>,
 }
 
-/// The Jar section's config: its tab and the tier the rupie value projects.
+/// The Jar section's config: its tab, the tier the rupie value projects and
+/// the enchant simulator's controls and history.
 #[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct JarConfig {
     tab: JarTab,
     tier: u32,
+    enchant: JarState,
 }
 
 /// The Fountain section's config: its tab, the water the upgrade table lists,
@@ -446,6 +449,7 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
         value(&JarConfig {
             tab: state.jar_tab,
             tier: state.jar_tier,
+            enchant: state.jar_state.clone(),
         }),
     );
     insert(
@@ -927,6 +931,8 @@ pub(crate) fn assign(
         Config::Jar(config) => {
             state.jar_tab = config.tab;
             state.jar_tier = config.tier.min(idleon_jar::INCOME_TIERS - 1);
+            let levels = state.jar.as_ref().map(idleon_jar::Jar::collectible_levels);
+            state.jar_state = config.enchant.normalized(levels);
         }
         Config::Spelunking(config) => {
             state.spelunking = config;
@@ -1477,6 +1483,7 @@ mod tests {
         let jar = round_trip(&JarConfig {
             tab: JarTab::Production,
             tier: 3,
+            enchant: Default::default(),
         });
         assert_eq!(jar.tab, JarTab::Production);
         assert_eq!(jar.tier, 3);
@@ -1484,9 +1491,32 @@ mod tests {
         let rupies = round_trip(&JarConfig {
             tab: JarTab::RupieValue,
             tier: 2,
+            enchant: Default::default(),
         });
         assert_eq!(rupies.tab, JarTab::RupieValue);
         assert_eq!(rupies.tier, 2);
+        // JR-04: the simulator's controls and the saved spreads live in the
+        // same config, so an export carries the history.
+        let enchant = JarState {
+            enchants: 120,
+            sims: 500,
+            strategy: idleon_jar::Strategy::Smart,
+            focus: Some(5),
+            targets: [(5, 3)].into_iter().collect(),
+            seed: 42,
+            history: vec![idleon_jar::EnchantSnapshot {
+                at: 1_700_000_000,
+                total: 4,
+                spread: vec![0, 0, 0, 0, 0, 4],
+            }],
+        };
+        let sim = round_trip(&JarConfig {
+            tab: JarTab::EnchantSim,
+            tier: 0,
+            enchant: enchant.clone(),
+        });
+        assert_eq!(sim.tab, JarTab::EnchantSim);
+        assert_eq!(sim.enchant, enchant);
         let fountain = round_trip(&FountainConfig {
             tab: FountainTab::Upgrades,
             water: 2,
@@ -1497,9 +1527,19 @@ mod tests {
         assert_eq!(fountain.water, 2);
         assert_eq!(fountain.desired, Some(5));
         assert_eq!(fountain.upgrade, Some(11));
-        // The three JR-03 tabs keep the upstream ids in a saved project.
-        for tab in [JarTab::Collectibles, JarTab::Upgrades, JarTab::NextTier] {
-            let config = JarConfig { tab, tier: 0 };
+        // The JR-03 and JR-04 tabs keep the upstream ids in a saved project.
+        for tab in [
+            JarTab::Collectibles,
+            JarTab::Upgrades,
+            JarTab::NextTier,
+            JarTab::EnchantSim,
+            JarTab::EnchantHistory,
+        ] {
+            let config = JarConfig {
+                tab,
+                tier: 0,
+                enchant: Default::default(),
+            };
             let saved = serde_json::to_value(&config).expect("the jar config saves");
             assert_eq!(saved["tab"], tab.id());
             let restored: JarConfig =

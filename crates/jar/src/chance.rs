@@ -117,6 +117,23 @@ impl Jar {
         (chance > 0.0).then(|| (1.0 / chance).log10().ceil() as u32 + 1)
     }
 
+    /// `_renderSimResults`' odds table: the hours one enchant takes on each
+    /// bought jar type, per jar tier, at `levels` total enchant levels.
+    ///
+    /// The page computes `breaksPerHr = prodHr / (req * 10^tier)` and
+    /// `enchantsPerHr = breaksPerHr * chance`, so the hours per enchant are
+    /// `timeToTier / chance`.
+    pub fn enchant_tier_hours(&self, levels: u32) -> Vec<Vec<f64>> {
+        let chance = Self::enchant_chance_at(levels, self.enchant_multi());
+        (1..=6)
+            .map(|tier| {
+                (0..self.types_purchased())
+                    .map(|jar_type| self.time_to_tier(jar_type, tier) / chance)
+                    .collect()
+            })
+            .collect()
+    }
+
     /// `expectedBreaksToEvent`: how many breaks the event takes on average.
     pub fn expected_breaks(chance: f64) -> f64 {
         if chance <= 0.0 {

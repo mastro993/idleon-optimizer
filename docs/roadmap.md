@@ -30,7 +30,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M15 | Ladle Optimizer | World 4 | 4 | partial | foundation | [ladle](sections/ladle.md) |
 | M16 | Cooking Mastery | World 4 | 3 | done | foundation | [cooking-mastery](sections/cooking-mastery.md) |
 | M17 | Fountain Calculator | World 5 | 4 | partial | foundation | [fountain](sections/fountain.md) |
-| M18 | Jar Calculator | World 5 | 4 | partial | foundation | [jar](sections/jar.md) |
+| M18 | Jar Calculator | World 5 | 4 | done | foundation | [jar](sections/jar.md) |
 | M19 | Sailing Calculator | World 5 | 4 | done | foundation | [sailing](sections/sailing.md) |
 | M20 | Cglunko Calculator | World 5 | 3 | done | foundation | [cglunko](sections/cglunko.md) |
 | M21 | Coral God Rank Planner | World 5 | 3 | done | foundation | [coral-god-rank](sections/coral-god-rank.md) |
