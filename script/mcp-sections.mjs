@@ -107,6 +107,26 @@ const researchSave = () => {
       // The thirty Depth Charge upgrade levels.
       sparse(30, { 0: 5, 1: 3, 2: 2, 6: 2, 8: 2, 9: 1, 10: 1, 16: 1, 19: 1 }),
     ]),
+    // The Sushi Station rows: six slots cooking, their slot types, the upgrade
+    // levels, the fireplace columns, the bank, twelve discovered tiers and
+    // their knowledge levels.
+    Sushi: JSON.stringify([
+      sparse(120, { 0: 0, 1: 3, 2: 5, 3: 2, 4: 7, 5: 1 }).map((tier, slot) =>
+        slot < 6 ? tier : -1
+      ),
+      sparse(120, { 0: 0, 1: 1, 2: 2, 3: 3, 4: 0, 5: 1 }).map((type, slot) =>
+        slot < 6 ? type : -1
+      ),
+      sparse(46, {
+        0: 5, 1: 2, 2: 2, 3: 1, 6: 2, 8: 3, 9: 2, 10: 1, 11: 1, 12: 1, 21: 1,
+        30: 1, 37: 2, 40: 1, 41: 1,
+      }),
+      sparse(15, { 0: 0, 1: 1, 2: 3, 3: 0, 4: 2 }),
+      sparse(20, { 1: 0, 2: 4, 3: 10000, 8: 2400 }),
+      Array.from({ length: 12 }, (_, tier) => (tier === 0 ? 1 : 0)),
+      [],
+      Array.from({ length: 12 }, (_, tier) => (tier % 3 === 0 ? 3 : 1)),
+    ]),
     Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
   });
 };
@@ -2219,6 +2239,65 @@ const INTERACTIONS = {
     await waitForNode(lane, 'mh-log-1', 'research: an insta-reveal logs its mine');
     await lane.call('click_element', { id: 'mh-play-new' });
     await waitForNode(lane, 'mh-play-attack', 'research: a new game keeps the playfield');
+
+    // RES-10: the Sushi Station tab renders from the save. Its subtabs are the
+    // same shared `Button`s the Minehead strip uses, so they are clicked at
+    // their live centres by label too.
+    const sushiSubtab = async (label) => {
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const node = (await lane.tree()).find(
+          (candidate) => candidate.parent === 'sushi-tabs' && candidate.label === label
+        );
+        if (node) {
+          return {
+            x: node.bounds.x + node.bounds.width / 2,
+            y: node.bounds.y + node.bounds.height / 2,
+          };
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      throw new Error(`research: no Sushi subtab labelled ${label}`);
+    };
+    await lane.call('click_element', { id: 'sushi' });
+    await waitForNode(lane, 'sushi-overview', 'research: the Sushi Station overview opens');
+    await waitForNode(lane, 'su-slot-0', 'research: the station grid draws its first slot');
+    await waitForNode(lane, 'su-tier-0', 'research: the tier map draws its first tier');
+    await lane.call('click_coordinates', await sushiSubtab('Upgrades'));
+    await waitForNode(lane, 'su-upg-name-0', 'research: the upgrade table lists its first row');
+    const upgradeRows = async () =>
+      (await lane.tree()).filter((node) => (node.id ?? '').startsWith('su-upg-name-')).length;
+    const beforeSpoiler = await upgradeRows();
+    await lane.call('click_element', { id: 'su-upg-spoiler' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        nodes.filter((node) => (node.id ?? '').startsWith('su-upg-name-')).length > beforeSpoiler,
+      'research: the spoiler toggle reveals the locked upgrades',
+    );
+    await lane.call('click_coordinates', await sushiSubtab('Currency/hr'));
+    await waitForNode(lane, 'sushi-bucks-tree', 'research: the bucks breakdown opens');
+    await waitForNode(lane, 'sushi-fuel-tree', 'research: the fuel generation tree renders');
+    await waitForNode(lane, 'sushi-capacity-tree', 'research: the fuel capacity tree renders');
+    await lane.call('click_coordinates', await sushiSubtab('Best Upgrade'));
+    await waitForNode(lane, 'su-path-bucks', 'research: the affordable bucks path renders');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some((node) => (node.id ?? '').startsWith('su-best-bucks-')),
+      'research: the bucks ranking lists its first upgrade',
+    );
+    await lane.call('click_coordinates', await sushiSubtab('Sushi'));
+    await waitForNode(lane, 'su-tier-row-0', 'research: the sushi tier table opens');
+    await waitForNode(lane, 'su-knowledge-0', 'research: the knowledge totals render');
+    const tierRows = async () =>
+      (await lane.tree()).filter((node) => (node.id ?? '').startsWith('su-tier-row-')).length;
+    const beforeTiered = await tierRows();
+    await lane.call('click_element', { id: 'su-rog-spoiler' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        nodes.filter((node) => (node.id ?? '').startsWith('su-tier-row-')).length > beforeTiered,
+      'research: the RoG spoiler reveals the locked tiers',
+    );
   },
   'coral-god-rank': async (lane) => {
     // Turning the assumption off makes the save-derived unlock state (or its

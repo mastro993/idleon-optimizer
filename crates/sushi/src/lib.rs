@@ -13,12 +13,8 @@ pub mod optimize;
 
 pub use data::game;
 pub use inputs::{Inputs, inputs};
-pub use math::{
-    External, Station, build_rog_array, combo_multiplier, compute_unique_sushi, currency_per_tier,
-    fuel_cost_per_tier, knowledge_bonus_next, knowledge_bonus_specific, knowledge_bonus_totals,
-    rog_bonus_qty, upg_lv_req, upgrade_qty,
-};
-pub use optimize::{Candidate, Metric, Path, Purchase, candidates, path};
+pub use math::{External, Station, combo_multiplier};
+pub use optimize::{Metric, Path, candidates, path};
 
 /// A number as the upstream `fmtNum` prints it: `1.23M`, `12.3K`, `1,235`.
 pub fn fmt_num(value: f64) -> String {

@@ -182,7 +182,8 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `computeUniqueSushi` from `js/stats/systems/w7/sushi.js`.
+    /// `computeUniqueSushi` from `js/stats/systems/w7/sushi.js`. The Sushi
+    /// Station tab reads the same count for its Ring of Glory rows.
     pub fn unique_sushi(&self) -> Option<u32> {
         let tiers = self.save.get("Sushi").and_then(|value| {
             let value = match value {
@@ -202,9 +203,6 @@ impl Decoder<'_> {
         Some(count)
     }
 
-    /// `computeRooBonus` also needs the tier count, so `uniqueSushi` stays
-    /// public: the Sushi Station tab reads it for the RoG rows.
-    ///
     /// `sushiDoublers`: the upgrade indices `Spelunk[52]` doubles.
     pub fn sushi_doublers(&self) -> Vec<usize> {
         self.spelunk_row(52)

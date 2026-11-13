@@ -564,6 +564,10 @@ pub(crate) fn apply(
                 .research
                 .minehead
                 .load(state.save.as_ref(), &state.simulation);
+            state
+                .research
+                .sushi
+                .load(state.save.as_ref(), &state.simulation);
             state.replace_context(context);
         }
     }

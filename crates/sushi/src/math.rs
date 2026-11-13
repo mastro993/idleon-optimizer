@@ -24,7 +24,7 @@ pub struct External {
     pub atom14: f64,
     /// Sailing artifact 39.
     pub sailing39: f64,
-    /// Bundles Received `ban_v`.
+    /// Bundles Received `bon_v`, which upstream's Sushi tab reads.
     pub bundle_v: bool,
     /// Gaming super bit 67 (0 or 1).
     pub super_bit67: f64,

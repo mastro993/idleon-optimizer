@@ -1,6 +1,6 @@
 # Plan: Idleon Optimizer, a native desktop suite
 
-Status: **foundation in progress, research (including the Minehead tab), statue, jar, farming, ladle,
+Status: **foundation in progress, research (including the Minehead and Sushi Station tabs), statue, jar, farming, ladle,
 Clamworks, the Prisma calculator, Cooking Mastery, Fountain, the Opal Optimizer's current state, the
 Royal Guardian overview, outpost map, resource nodes and currencies, the Coral God Rank planner, the
 Spelunking controls and depth estimates, the Sneaking loadout, inventory and formula breakdown
@@ -243,6 +243,8 @@ crates/stats-data                   static map, monster, class and equipment-set
 crates/account                      account-wide bonus decoder (`Decoder`): one view of every system
 crates/minehead                     Depth Charge upgrades, floor simulation and strategy searches;
                                     reads the account decoder, so it sits beside `stats`
+crates/sushi                        Sushi Station formulas, save inputs and upgrade ranking; reads
+                                    the account decoder and the Ring of Glory table
 crates/<domain>                     one crate per calculator, no GPUI, testable in isolation:
                                     cglunko, clamworks, cog, coin-multi, combat, cooking-mastery,
                                     coral, damage, drop-rate, endgame, farming, fishing, fountain,
@@ -319,9 +321,9 @@ target-aware engine: the run simulates to the target, spends each level's grid p
 magnifiers and shapes on the level-up events, the saved and optimized layouts are ranked by the
 target they reach, and the grid spend is scored with a forward simulation.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
-lands with the Minehead work. Missing: the six extra tabs (Insight ROI, Observation Unlocks, Shape
-Optimization, Decision Tree, Minehead, Sushi Station), strategy comparison and complete
-save-derived multipliers.
+lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
+over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs, strategy
+comparison and complete save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an
