@@ -551,3 +551,44 @@ fn the_forecast_clamps_its_horizon_and_folds_a_collect_into_a_window() {
         "only the collect outside the window commits"
     );
 }
+
+#[test]
+fn the_orblet_count_names_the_inventories_it_could_not_read() {
+    let g = blank_rows();
+    let mut save = save(json!(g), json!([]));
+    // One character, a chest and its own inventory, all carrying one Orblet.
+    save.insert("Lv0_0".into(), json!([1.0]));
+    save.insert("ChestOrder".into(), json!(["Orblet", "Blank"]));
+    save.insert("ChestQuantity".into(), json!([2.0, 1.0]));
+    save.insert("InventoryOrder_0".into(), json!(["Orblet"]));
+    save.insert("ItemQTY_0".into(), json!([3.0]));
+    let royal = RoyalGuardian::from_save(&save, None).expect("the rows read");
+    let owned = royal.orblet_owned();
+    assert_eq!(owned.value, 5.0);
+    assert!(!owned.partial, "{:?}", owned.missing);
+
+    // Without the chest the count still reads the character, and says what is
+    // missing instead of calling the roster empty.
+    let mut save = save;
+    save.remove("ChestOrder");
+    save.remove("ChestQuantity");
+    let royal = RoyalGuardian::from_save(&save, None).expect("the rows read");
+    let owned = royal.orblet_owned();
+    assert_eq!(owned.value, 3.0);
+    assert!(owned.partial);
+    assert_eq!(owned.missing, vec!["storage inventory".to_owned()]);
+}
+
+#[test]
+fn a_collect_inside_a_merged_window_is_still_ignored() {
+    let g = blank_rows();
+    let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
+    // Two overlapping windows merge, so a collect between them is covered.
+    let forecast = royal.forecast(&ForecastOptions {
+        horizon_hours: 24.0,
+        collects: vec![12.5],
+        windows: vec![(10.0, 12.0), (11.0, 14.0)],
+    });
+    assert_eq!(forecast.ignored_collects, vec![12.5]);
+    assert!(forecast.collects.is_empty());
+}

@@ -63,7 +63,16 @@ impl AppState {
 
     /// The forecast horizon, in hours.
     pub(crate) fn set_royal_forecast_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
-        self.royal_state.forecast_hours = hours.clamp(HORIZON.0, HORIZON.1);
+        let hours = hours.clamp(HORIZON.0, HORIZON.1);
+        self.royal_state.forecast_hours = hours;
+        // A shorter horizon drops the collects and windows past its end, so the
+        // agenda never lists an event the engine has filtered out.
+        self.royal_state
+            .collects
+            .retain(|collect| *collect <= hours);
+        self.royal_state
+            .windows
+            .retain(|(start, _)| *start <= hours);
         self.ensure_royal_forecast();
         cx.notify();
     }
