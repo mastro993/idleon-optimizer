@@ -360,6 +360,27 @@ pub fn cosmo_measurement() -> f64 {
     data().cosmo.measurement
 }
 
+/// `cosmoUpgBase(tier, index)`: the base one cosmo upgrade level grants.
+pub fn cosmo_base(tier: usize, index: usize) -> f64 {
+    data()
+        .cosmo
+        .base
+        .get(tier)
+        .and_then(|row| row.get(index))
+        .copied()
+        .unwrap_or(0.0)
+}
+
+/// `holesBolaiaPerLv`: the Bolaia study bonus per level.
+pub fn bolaia_per_level(index: usize) -> f64 {
+    data()
+        .holes
+        .bolaia_per_level
+        .get(index)
+        .copied()
+        .unwrap_or(0.0)
+}
+
 /// The page's `fmtNum`: whole numbers under 1000 stay whole, the rest scale.
 ///
 /// The upgrade descriptions print their saved numbers through this, so the

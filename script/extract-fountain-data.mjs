@@ -58,10 +58,12 @@ const payload = {
     bellPerLevel: Array.from({ length: 7 }, (_, index) => number(game.HolesInfo[59]?.[2 * index + 1])),
   },
   // CosmoBonus bases the value chain reads: Max Coin Stack (0,4) and the
-  // measurement multiplier (1,3).
+  // measurement multiplier (1,3), plus the whole base table the Hole gambit
+  // chain reads through the account decoder.
   cosmo: {
     maxStack: number(game.CosmoUpgrades[0]?.[4]?.[0]),
     measurement: number(game.CosmoUpgrades[1]?.[3]?.[0]),
+    base: game.CosmoUpgrades.map((row) => (row || []).map((cell) => number(cell?.[0]))),
   },
   // ArcadeShopInfo[68] "Fountain Speed": [formula, base, denominator].
   arcadeFountainSpeed: (() => {

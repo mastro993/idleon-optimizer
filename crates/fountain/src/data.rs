@@ -61,6 +61,8 @@ pub struct Holes {
 pub struct Cosmo {
     pub max_stack: f64,
     pub measurement: f64,
+    /// `CosmoUpgrades[tier][index]`: the base each level grants.
+    pub base: Vec<Vec<f64>>,
 }
 
 /// `ArcadeShopInfo[68]` "Fountain Speed": `[formula, base, denominator]`.

@@ -57,6 +57,7 @@ const customMaps = await import(join(source, 'js/stats/data/game/custommaps.js')
 const deathNote = await import(join(source, 'js/stats/data/w7/deathNote.js'));
 const gaming = await import(join(source, 'js/stats/data/w4/gaming.js'));
 const gameConstants = await import(join(source, 'js/stats/data/game-constants.js'));
+const hole = await import(join(source, 'js/stats/data/w5/hole.js'));
 
 // Equipment UQ stats: [uq1txt, uq1val, uq2txt, uq2val] for every item that has
 // one. The full ITEMS table is 400 KB; this keeps the account file small.
@@ -170,6 +171,12 @@ const payload = {
   // `StatueDouble`), as the statue deposit estimate reads it.
   vials: {
     statueDouble: vialParams('StatueDouble'),
+  },
+  // The Hole rows the Gambit point chain reads (`js/stats/systems/w5/hole.js`).
+  hole: {
+    monumentBonus: lists.HolesInfo[37].map((value) => Number(value) || 0),
+    gambitBonus: lists.HolesInfo[71].map(String),
+    jarBonusPerLevel: hole.HOLES_JAR_BONUS_PER_LV,
   },
 };
 

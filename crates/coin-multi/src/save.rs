@@ -28,6 +28,8 @@ fn coin_groups(
     let mut decoder = Decoder::new(save, root, characters, simulation, &mut warnings);
 
     let killz = vault_killz(&decoder);
+    // Gambit is account-wide, so it is decoded once for every character row.
+    let gambit = decoder.gambit_bonus7();
     let mut groups = vec![[None; GROUP_COUNT]; characters.len()];
     for (index, values) in groups.iter_mut().enumerate() {
         values[1] = Some(1.0 + decoder.companion(24).min(4.0));
@@ -42,6 +44,7 @@ fn coin_groups(
         values[10] = Some(1.0 + (decoder.grid_bonus(149) + decoder.grid_bonus(169)) / 100.0);
         values[11] = Some(1.0 + decoder.etc(100, index) / 100.0);
         values[12] = Some(1.0 + gold_set_bonus(&decoder, index) / 100.0);
+        values[13] = Some(1.0 + gambit / 100.0);
         values[14] = Some(1.0 + 2.5 * if decoder.bundle("bun_y") { 1.0 } else { 0.0 });
         // Voting pays only while the vote is the server-wide winner, which a
         // save alone does not carry, so the term reads zero on most imports.

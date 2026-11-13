@@ -118,6 +118,21 @@ pub struct AccountData {
     /// The Canteen Read vial: its `CauldronInfo[4]` slot and its curve.
     #[serde(rename = "cookingMasteryVial")]
     pub cooking_mastery_vial: Option<VialParam>,
+    /// The Hole rows the Gambit point chain reads.
+    pub hole: HoleData,
+}
+
+/// The `HolesInfo` rows and the jar bonus table `js/stats/systems/w5/hole.js`
+/// multiplies its Gambit points by.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HoleData {
+    /// `HolesInfo[37]`: each monument slot's bonus coefficient.
+    pub monument_bonus: Vec<f64>,
+    /// `HolesInfo[71]`: each Gambit bonus's `value|isLog|description` row.
+    pub gambit_bonus: Vec<String>,
+    /// `HOLES_JAR_BONUS_PER_LV`: the DR jars' bonus per level, by jar index.
+    pub jar_bonus_per_level: BTreeMap<String, f64>,
 }
 
 /// One alchemy vial's curve: its `CauldronInfo[4]` slot and the game formula
@@ -208,6 +223,29 @@ impl AccountData {
     /// A set bonus by name.
     pub fn set_bonus(&self, name: &str) -> f64 {
         self.equipment_sets.get(name).copied().unwrap_or(0.0)
+    }
+
+    /// `HolesInfo[37]`: a monument slot's bonus coefficient.
+    pub fn monument_bonus(&self, index: usize) -> f64 {
+        self.hole.monument_bonus.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `HolesInfo[71]`: one Gambit bonus's `value|isLog|description` row.
+    pub fn gambit_bonus(&self, index: usize) -> &str {
+        self.hole
+            .gambit_bonus
+            .get(index)
+            .map(String::as_str)
+            .unwrap_or("")
+    }
+
+    /// `HOLES_JAR_BONUS_PER_LV[jar]`.
+    pub fn jar_bonus_per_level(&self, jar: usize) -> f64 {
+        self.hole
+            .jar_bonus_per_level
+            .get(&jar.to_string())
+            .copied()
+            .unwrap_or(0.0)
     }
 }
 
