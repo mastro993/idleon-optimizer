@@ -13,8 +13,9 @@ use crate::data::game;
 use crate::model::{Effort, SimContext, SimOptions, Simulation, Target};
 use crate::optimize::{grid, mags, shapes};
 use crate::sim::{
-    self, Projection, Sample, TOURNAMENT_BONUS_HOURS, TOURNAMENT_INTERVAL_HOURS, advance_level,
-    first_tournament_hours, insight_exp_req, insight_rate, kalei_base, kaleidoscope_map,
+    self, Event, Projection, Sample, TOURNAMENT_BONUS_HOURS, TOURNAMENT_INTERVAL_HOURS,
+    advance_level, first_tournament_hours, insight_exp_req, insight_rate, kalei_base,
+    kaleidoscope_map,
 };
 use idleon_common::Control;
 use idleon_common::Progress;
@@ -60,7 +61,10 @@ pub fn simulate(
     let mut samples = vec![Sample {
         hours: 0.0,
         level: start_level,
+        insight: 0,
         rate: sim::exp_rate(&state, ctx).total,
+        event: Event::Start,
+        bonus: 0.0,
     }];
 
     let max_hours = match target {
@@ -140,6 +144,8 @@ pub fn simulate(
         let gained = rate * step;
         state.research_exp += gained;
         total_exp += gained;
+        let fired_tournament = options.include_tournament && hours >= next_tournament - 1e-9;
+        let mut bonus = 0.0;
 
         let level_before = state.research_level;
         advance_level(
@@ -168,10 +174,10 @@ pub fn simulate(
             }
         }
 
-        if options.include_tournament && hours >= next_tournament - 1e-9 {
+        if fired_tournament {
             // The registration injects raw research time at the current rate and
             // one insight collection for the monocle board.
-            let bonus = rate * TOURNAMENT_BONUS_HOURS;
+            bonus = rate * TOURNAMENT_BONUS_HOURS;
             state.research_exp += bonus;
             total_exp += bonus;
             insight_gained += sim::advance_insight_hours(&mut state, ctx, TOURNAMENT_BONUS_HOURS);
@@ -194,7 +200,20 @@ pub fn simulate(
         samples.push(Sample {
             hours,
             level: state.research_level,
+            insight: insight_gained,
             rate: sim::exp_rate(&state, ctx).total,
+            event: if fired_tournament {
+                Event::Tournament
+            } else if leveled && insight_leveled {
+                Event::LevelAndInsight
+            } else if leveled {
+                Event::Level
+            } else if insight_leveled {
+                Event::Insight
+            } else {
+                Event::End
+            },
+            bonus,
         });
     }
 

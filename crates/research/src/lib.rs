@@ -13,10 +13,11 @@ pub mod save;
 pub mod shape;
 pub mod sim;
 pub mod tiers;
+pub mod timeline;
 
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use model::{
-    Effort, GridState, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext,
-    Simulation, Target,
+    Effort, GridState, Lead, Mag, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext,
+    Simulation, Strategy, Target,
 };
 pub use tiers::{Tier, Tiers};

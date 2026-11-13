@@ -326,11 +326,14 @@ shared searchable EXP formula tree, target validation, the three run toggles (as
 observations unlocked, extended insight lookahead and the daily tournament +12h) and the
 target-aware engine: the run simulates to the target, spends each level's grid points and re-fits
 magnifiers and shapes on the level-up events, the saved and optimized layouts are ranked by the
-target they reach, and the grid spend is scored with a forward simulation.
+target they reach, and the grid spend is scored with a forward simulation. The Run tab's result
+reports the best and worst tested layouts, cuts the projection into a timeline of level, insight and
+tournament phases, charts the same samples' EXP/hour and lists each phase as an expandable action
+that marks its segment.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
-over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs, strategy
-comparison and complete save-derived multipliers.
+over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs and
+complete save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an

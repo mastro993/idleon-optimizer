@@ -133,6 +133,17 @@ keeps the optimized layout. `optimize::grid::spend_for_target` ranks the margina
 full grid search the same way, so a point is spent for the target it buys instead of its immediate
 bonus.
 
+The result keeps both tested layouts as its `best` and `worst` strategies, with the target they ran,
+so the Run tab's comparison names what each reached and `OptimizeResult::lead` reports the hours the
+best one saved when both reached a level target. Every projection sample marks the event that opened
+the segment after it (`sim::Event`: start, research level-up, insight level-up, both, tournament or
+the end), the insight levels collected so far and any tournament bonus. `timeline::phases` cuts those
+samples into the segments between events: the rate each held, the EXP it earned and what its closing
+event changed. A phase's EXP plus the bonuses on its opening samples adds back up to the
+projection's totals, which is the check that the Run tab's timeline and EXP/hour chart agree with the
+samples they are drawn from. Each phase is one expandable action; the first also carries the
+optimizer's own steps, and selecting one marks its timeline segment.
+
 The run has no random source, the candidates are visited in a fixed order and ties go to the first
 candidate, so the same save and options reproduce it exactly. `advanceResearchLevel` lands on the
 level curve with the upstream `1e-9` slack: an exact jump can undershoot the requirement by a

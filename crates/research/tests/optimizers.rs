@@ -487,10 +487,10 @@ fn the_extended_insight_option_changes_the_projection() {
         plain.after_rate
     );
     assert!(
-        extended.projection.hours < plain.projection.hours,
+        extended.best.projection.hours < plain.best.projection.hours,
         "extended {}h is not faster than {}h",
-        extended.projection.hours,
-        plain.projection.hours
+        extended.best.projection.hours,
+        plain.best.projection.hours
     );
 }
 
@@ -599,4 +599,50 @@ fn covers(shape: usize, cell: usize) -> bool {
             shape::cells_at(&placement).contains(&cell)
         })
     })
+}
+
+#[test]
+fn the_run_reports_the_best_and_worst_strategy_it_tested() {
+    let (simulation, ctx) = seeded(120, 3);
+    let result = run(&simulation, &ctx, Effort::Balanced);
+
+    let mut labels = [result.best.label, result.worst.label];
+    labels.sort_unstable();
+    assert_eq!(labels, ["Optimized layout", "Saved layout"]);
+    assert_eq!(result.target, Target::Level(125));
+    assert!(
+        !idleon_research::engine::better(
+            &result.worst.projection,
+            &result.best.projection,
+            result.target
+        ),
+        "the worst strategy ranks above the best"
+    );
+    match result.lead() {
+        Some(lead) => {
+            assert!(lead.hours > 0.0, "a lead of {}h", lead.hours);
+            assert!(lead.pct > 0.0 && lead.pct <= 100.0, "{}%", lead.pct);
+        }
+        None => assert!(
+            result.worst.projection.final_level < 125,
+            "both layouts reached the level with no lead to report"
+        ),
+    }
+}
+
+#[test]
+fn an_hour_target_has_no_time_to_save() {
+    let (simulation, ctx) = seeded(120, 3);
+    let request = OptimizeRequest {
+        target: Target::Hours(24.0),
+        effort: Effort::Balanced,
+        options: SimOptions::default(),
+        respec_grid: false,
+        grid_points: None,
+    };
+    let result = optimize::run(&simulation, &ctx, &request, &mut |_| Control::Continue)
+        .expect("the run was not cancelled");
+    assert_eq!(result.target, Target::Hours(24.0));
+    assert!(result.lead().is_none(), "an hour target cannot save time");
+    assert!(result.best.projection.total_exp >= result.worst.projection.total_exp);
 }

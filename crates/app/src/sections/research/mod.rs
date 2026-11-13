@@ -9,6 +9,7 @@ mod inspector;
 pub(crate) mod minehead;
 mod optimizer;
 mod rates;
+mod result;
 mod shape_opt;
 mod shape_presets;
 pub(crate) mod sushi;
@@ -124,6 +125,8 @@ pub(crate) struct State {
     pub(crate) selected_shape: Option<usize>,
     /// The observation the dashboard preview last opened.
     pub(crate) selected_observation: Option<usize>,
+    /// The action the last run's timeline marks, by index.
+    pub(crate) run_phase: Option<usize>,
     /// The named shape tier lists the project keeps.
     pub(crate) shape_presets: Vec<CustomPreset>,
     /// The preset the shape tiers were last applied from: a built-in `_id` or a
@@ -156,6 +159,7 @@ impl State {
             history: History::new(),
             selected_shape: None,
             selected_observation: None,
+            run_phase: None,
             shape_presets: Vec::new(),
             active_shape_preset: None,
             preset_name,

@@ -58,12 +58,37 @@ pub struct Projection {
     pub samples: Vec<Sample>,
 }
 
+/// What a projection sample marks: the event that opened the segment after it,
+/// as upstream `unifiedSim` labels its phases.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Event {
+    /// The layout the run started with.
+    #[default]
+    Start,
+    /// A research level-up.
+    Level,
+    /// An insight level-up.
+    Insight,
+    /// Both at once.
+    LevelAndInsight,
+    /// A tournament registration.
+    Tournament,
+    /// The run reached its target, or stopped.
+    End,
+}
+
 /// One point on the projection's rate curve.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Sample {
     pub hours: f64,
     pub level: u32,
+    /// Insight levels collected since the run's start, every observation together.
+    pub insight: u32,
     pub rate: f64,
+    /// What happened at `hours`.
+    pub event: Event,
+    /// EXP the tournament injected here without elapsed time.
+    pub bonus: f64,
 }
 
 /// Grid points earned, spent and free at the current level.
@@ -722,7 +747,7 @@ fn research_level_affordable(level: u32, exp: f64, server_var_res_xp: f64) -> bo
 }
 
 /// Upstream's daily tournament window: 12h of research time per registration.
-pub(crate) const TOURNAMENT_BONUS_HOURS: f64 = 12.0;
+pub const TOURNAMENT_BONUS_HOURS: f64 = 12.0;
 /// How many hours apart two tournament registrations are.
 pub(crate) const TOURNAMENT_INTERVAL_HOURS: f64 = 24.0;
 /// Register half an hour before the daily reset, at peak rates.
