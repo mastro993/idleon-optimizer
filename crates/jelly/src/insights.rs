@@ -114,16 +114,17 @@ impl Insights {
         };
         let total = normal_damage + critical_damage;
         let mut exp_rows = Vec::new();
-        for cell_type in 0..jelly.units_owned() {
+        for (cell_type, &mean_exp) in estimate
+            .mean_cell_exp_by_type
+            .iter()
+            .enumerate()
+            .take(jelly.units_owned())
+        {
             let current_level = jelly.cell_level(cell_type);
             let current_exp = jelly.cell_exp(cell_type);
             let requirement = jelly.cell_exp_requirement(cell_type);
             let remaining_exp = (requirement - current_exp).max(0.0);
-            let mean_exp_per_attempt = if valid {
-                estimate.mean_cell_exp_by_type[cell_type]
-            } else {
-                0.0
-            };
+            let mean_exp_per_attempt = if valid { mean_exp } else { 0.0 };
             let attempts_to_next_level = if remaining_exp <= 0.0 {
                 Some(0.0)
             } else if mean_exp_per_attempt > 0.0 {

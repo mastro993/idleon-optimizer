@@ -137,7 +137,7 @@ pub fn observations(sim: &Simulation, ctx: &SimContext) -> Vec<ObservationCard> 
     let multi = sim::exp_rate(sim, ctx).multi;
 
     let mut cards = Vec::with_capacity(to_find);
-    for obs in 0..to_find.min(game_data.observations.len()) {
+    for (obs, observation) in game_data.observations.iter().enumerate().take(to_find) {
         let mut regular = 0;
         let mut monocles = 0;
         let mut kaleidoscopes = 0;
@@ -164,7 +164,7 @@ pub fn observations(sim: &Simulation, ctx: &SimContext) -> Vec<ObservationCard> 
         };
         cards.push(ObservationCard {
             obs,
-            name: game_data.observations[obs].name.replace('_', " "),
+            name: observation.name.replace('_', " "),
             found: sim.observations.found.get(obs).copied().unwrap_or(false),
             insight_level: level,
             regular,

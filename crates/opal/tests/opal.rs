@@ -315,10 +315,10 @@ fn a_plan_is_never_worse_than_the_saved_distribution() {
             "{target:?}: the plan reads {after}, the save {before}"
         );
         close(plan.spent(), total);
-        for villager in 0..idleon_opal::VILLAGERS {
-            assert_eq!(plan.opals[villager].fract(), 0.0, "whole opals only");
+        for (villager, &opals) in plan.opals.iter().enumerate() {
+            assert_eq!(opals.fract(), 0.0, "whole opals only");
             if !opal.unlocked(villager) {
-                assert_eq!(plan.opals[villager], 0.0, "locked villagers get none");
+                assert_eq!(opals, 0.0, "locked villagers get none");
             }
         }
     }
