@@ -31,6 +31,12 @@ jobs:
             os: macos-latest
             submodules: recursive
             command: cargo clippy --workspace --all-targets -- -D warnings
+          # Same build tree as clippy: one shared cache bucket, not two that
+          # evict each other under the repository's cache limit.
+          - check: test
+            os: macos-latest
+            submodules: recursive
+            command: cargo test --workspace
     name: ${{ matrix.check }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,6 +48,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.96.0
         with:
           components: clippy, rustfmt
-      - if: matrix.check == 'clippy'
+      - if: matrix.check != 'fmt'
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: macos-workspace
       - run: ${{ matrix.command }}

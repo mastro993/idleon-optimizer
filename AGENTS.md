@@ -41,7 +41,7 @@ cargo fmt --all -- --check
 node script/mcp-drive.mjs        # own window + private bridge endpoint
 ```
 
-`.github/workflows/ci.yml` runs the `fmt` and `clippy` gates on every push to `main` and on every
-pull request; `cargo test` and the MCP harnesses run locally only.
+`.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates on every push to `main`
+and on every pull request; the MCP harnesses still run locally only.
 
 Harness details and per-lane isolation live in [`docs/agent-harness.md`](docs/agent-harness.md).
