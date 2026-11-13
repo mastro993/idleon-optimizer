@@ -10,6 +10,10 @@ use idleon_research::data::game;
 use idleon_save::fields;
 use serde_json::Value;
 
+/// `BUTTON_RATES` from `js/stats/systems/w7/minehead.js`: the percentage each
+/// of the nine button slots pays per press.
+const BUTTON_RATES: [f64; 9] = [2.0, 3.0, 2.0, 2.0, 4.0, 5.0, 4.0, 25.0, 5.0];
+
 impl Decoder<'_> {
     /// A number from `OptLacc`, the account's option list.
     pub(crate) fn ola(&self, index: usize) -> f64 {
@@ -156,7 +160,7 @@ impl Decoder<'_> {
     }
 
     /// One minehead floor bonus.
-    pub(crate) fn minehead_bonus(&self, index: usize) -> f64 {
+    pub fn minehead_bonus(&self, index: usize) -> f64 {
         self.minehead().get(index).copied().unwrap_or(0.0)
     }
 
@@ -178,8 +182,9 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `computeUniqueSushi` from `js/stats/systems/w7/sushi.js`.
-    pub(crate) fn unique_sushi(&self) -> Option<u32> {
+    /// `computeUniqueSushi` from `js/stats/systems/w7/sushi.js`. The Sushi
+    /// Station tab reads the same count for its Ring of Glory rows.
+    pub fn unique_sushi(&self) -> Option<u32> {
         let tiers = self.save.get("Sushi").and_then(|value| {
             let value = match value {
                 Value::String(_) => idleon_save::json::parsed_field(self.save, "Sushi")?,
@@ -196,6 +201,15 @@ impl Decoder<'_> {
             count += 1;
         }
         Some(count)
+    }
+
+    /// `sushiDoublers`: the upgrade indices `Spelunk[52]` doubles.
+    pub fn sushi_doublers(&self) -> Vec<usize> {
+        self.spelunk_row(52)
+            .iter()
+            .flatten()
+            .map(|value| value.round() as usize)
+            .collect()
     }
 
     /// `buildRogArray` from `js/stats/systems/w7/sushi.js`.
@@ -312,12 +326,17 @@ impl Decoder<'_> {
 
     /// `hasBundle` from `js/stats/systems/w7/menagerie.js`.
     pub fn bundle(&self, key: &str) -> bool {
-        let Some(bundles) = fields::object(self.save, "BundlesReceived") else {
+        // The save writes `BundlesReceived` as a JSON string, which upstream's
+        // `parseSaveKey` decodes before reading the keys.
+        let Some(bundles) = idleon_save::json::parsed_field(self.save, "BundlesReceived") else {
             return false;
         };
         let holder = match bundles.get("h") {
             Some(Value::Object(inner)) => inner,
-            _ => &bundles,
+            _ => match bundles.as_object() {
+                Some(inner) => inner,
+                None => return false,
+            },
         };
         holder
             .get(key)
@@ -412,6 +431,30 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
+    /// `Button_Bonuses(slot)` from `js/stats/systems/w7/minehead.js`: the hits
+    /// one of the nine button slots has banked, times its rate and the shared
+    /// companion 147 and grid 125 multiplier.
+    pub fn button_bonus(&self, slot: usize) -> f64 {
+        let presses = self.ola(594);
+        let Some(rate) = BUTTON_RATES.get(slot).copied() else {
+            return 0.0;
+        };
+        if presses <= 0.0 {
+            return 0.0;
+        }
+        self.button_hits(slot)
+            * rate
+            * (1.0 + self.companion(147) / 100.0)
+            * (1.0 + self.grid_bonus(125) / 100.0)
+    }
+
+    /// The presses one button slot has banked: five per full rotation of the
+    /// nine slots, then the digits of the partial one.
+    fn button_hits(&self, slot: usize) -> f64 {
+        let presses = self.ola(594);
+        (presses / 45.0).floor() * 5.0 + (presses % 45.0 - 5.0 * slot as f64).clamp(0.0, 5.0)
+    }
+
     /// `Button_Bonuses(0)` and the same value without grid 125, so the
     /// simulator can apply grid changes live (`recomputeDerivedBonuses`).
     pub(crate) fn button0(&self) -> (f64, f64) {
@@ -419,12 +462,12 @@ impl Decoder<'_> {
         if presses <= 0.0 {
             return (0.0, 0.0);
         }
-        let companion_147 = self.companion(147);
-        let grid_125 = self.grid_bonus(125);
-        let base_multi = 1.0 + companion_147 / 100.0;
-        let full_multi = base_multi * (1.0 + grid_125 / 100.0);
-        let slot0 = (presses / 45.0).floor() * 5.0 + (presses % 45.0).min(5.0);
-        (slot0 * 2.0 * base_multi, slot0 * 2.0 * full_multi)
+        let base_multi = 1.0 + self.companion(147) / 100.0;
+        let hits = self.button_hits(0) * BUTTON_RATES[0];
+        (
+            hits * base_multi,
+            hits * base_multi * (1.0 + self.grid_bonus(125) / 100.0),
+        )
     }
 
     /// `KillroyBonuses(5)` from `js/stats/defs/helpers.js`.

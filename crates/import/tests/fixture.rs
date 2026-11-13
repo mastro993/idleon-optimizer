@@ -95,6 +95,9 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(context.rog(54), 1.0);
     assert!((context.mastery_additive_pct - 25.0).abs() < 1e-9);
     assert!((context.mastery_exp_multi - 1.1).abs() < 1e-9);
+    // `gridPointSources` adds Ring of Glory 3 and 13 to the flat pool.
+    assert_eq!(context.rog(3), 2.0);
+    assert_eq!(context.rog(13), 1.0);
     assert_eq!(context.bonus_grid_points, 18);
     assert_eq!(context.sailing_art37, 5.0);
     assert_eq!(context.task_grid_points, 1.0);

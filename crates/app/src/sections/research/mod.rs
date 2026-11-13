@@ -11,6 +11,7 @@ mod optimizer;
 mod rates;
 mod shape_opt;
 mod shape_presets;
+pub(crate) mod sushi;
 
 pub(crate) use dashboard::Trees;
 pub(crate) use shape_presets::CustomPreset;
@@ -42,16 +43,19 @@ pub(crate) enum Tab {
     Shapes,
     /// The Depth Charge dashboard, strategy search, ranking, path and game.
     Minehead,
+    /// The Sushi Station overview, upgrades, currency, ranking and tiers.
+    Sushi,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 6] = [
+    pub(crate) const ALL: [Tab; 7] = [
         Tab::Dashboard,
         Tab::Grid,
         Tab::Rates,
         Tab::Run,
         Tab::Shapes,
         Tab::Minehead,
+        Tab::Sushi,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -62,6 +66,7 @@ impl Tab {
             Tab::Run => "run",
             Tab::Shapes => "shapes",
             Tab::Minehead => "minehead",
+            Tab::Sushi => "sushi",
         }
     }
 
@@ -73,6 +78,7 @@ impl Tab {
             Tab::Run => "Optimize",
             Tab::Shapes => "Shape Optimization",
             Tab::Minehead => "Minehead",
+            Tab::Sushi => "Sushi Station",
         }
     }
 
@@ -134,6 +140,8 @@ pub(crate) struct State {
     )>,
     /// The Minehead tab's own state.
     pub(crate) minehead: minehead::State,
+    /// The Sushi Station tab's own state.
+    pub(crate) sushi: sushi::State,
 }
 
 impl State {
@@ -153,6 +161,7 @@ impl State {
             preset_name,
             shape_values: None,
             minehead: minehead::State::new(),
+            sushi: sushi::State::new(),
         }
     }
 }
@@ -305,6 +314,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(minehead::pane(state, window, cx))
+            .into_any_element(),
+        Tab::Sushi => div()
+            .id("pane-sushi")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(sushi::pane(state, window, cx))
             .into_any_element(),
     }
 }

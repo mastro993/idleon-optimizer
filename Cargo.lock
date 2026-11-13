@@ -3676,6 +3676,7 @@ dependencies = [
  "idleon-spelunking",
  "idleon-stats",
  "idleon-statue",
+ "idleon-sushi",
  "idleon-ui",
  "idleon-worship",
  "jiff",
@@ -3805,6 +3806,19 @@ version = "0.1.0"
 dependencies = [
  "idleon-common",
  "idleon-import",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-sushi"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-common",
+ "idleon-import",
+ "idleon-research",
+ "idleon-save",
  "serde",
  "serde_json",
 ]

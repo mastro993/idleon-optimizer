@@ -400,6 +400,10 @@ pub(crate) struct AppState {
     pub(crate) breakdown: Entity<FormulaTree>,
     /// The shared formula tree on the Minehead currency pane.
     pub(crate) minehead_breakdown: Entity<FormulaTree>,
+    /// The three shared formula trees on the Sushi currency pane.
+    pub(crate) sushi_bucks: Entity<FormulaTree>,
+    pub(crate) sushi_fuel: Entity<FormulaTree>,
+    pub(crate) sushi_capacity: Entity<FormulaTree>,
     /// The Minehead strategy search.
     pub(crate) minehead_optimize:
         Entity<TaskRunner<idleon_minehead::Optimized, MineheadOptimizeInputs>>,
@@ -792,6 +796,9 @@ impl AppState {
             },
         );
         let minehead_breakdown = ui::formula_tree("minehead-formula", window, cx);
+        let sushi_bucks = ui::formula_tree("sushi-bucks-formula", window, cx);
+        let sushi_fuel = ui::formula_tree("sushi-fuel-formula", window, cx);
+        let sushi_capacity = ui::formula_tree("sushi-capacity-formula", window, cx);
         let minehead_optimize = report_run::<idleon_minehead::Optimized, MineheadOptimizeInputs>(
             cx,
             &mut subscriptions,
@@ -996,6 +1003,9 @@ impl AppState {
             farming_compare_run,
             breakdown,
             minehead_breakdown,
+            sushi_bucks,
+            sushi_fuel,
+            sushi_capacity,
             minehead_optimize,
             minehead_rank,
             minehead_path,
