@@ -2,11 +2,21 @@
   "source": "fixtures/data.json through js/save/loader.js loadSaveData",
   "descriptor": "js/stats/defs/damage.js",
   "context": "js/stats/stat-context.js createStatContext",
+  "metadata": {
+    "missing": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
+    "complete": {
+      "character": 0,
+      "map": 200,
+      "partial": false
+    }
+  },
   "cases": [
     {
       "character": 0,
       "map": 200,
       "class": 40,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 1.544328446783761e+31,
       "min": 1.235462757427009e+31,
       "mastery": 0.8,
@@ -20,6 +30,8 @@
       "character": 1,
       "map": 200,
       "class": 14,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 7.585578379892645e+30,
       "min": 6.068462703914117e+30,
       "mastery": 0.8,
@@ -33,6 +45,8 @@
       "character": 2,
       "map": 200,
       "class": 22,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 5.844959404227181e+30,
       "min": 4.675967523381745e+30,
       "mastery": 0.8,
@@ -46,6 +60,8 @@
       "character": 3,
       "map": 200,
       "class": 16,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.606256044034339e+30,
       "min": 3.6850048352274715e+30,
       "mastery": 0.8,
@@ -59,6 +75,8 @@
       "character": 4,
       "map": 200,
       "class": 29,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 5.583888037206896e+30,
       "min": 4.467110429765517e+30,
       "mastery": 0.8,
@@ -72,6 +90,8 @@
       "character": 5,
       "map": 200,
       "class": 34,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 6.848438327401632e+30,
       "min": 5.478750661921305e+30,
       "mastery": 0.8,
@@ -85,6 +105,8 @@
       "character": 6,
       "map": 200,
       "class": 16,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.8406572570692063e+30,
       "min": 3.872525805655365e+30,
       "mastery": 0.8,
@@ -98,6 +120,8 @@
       "character": 7,
       "map": 200,
       "class": 4,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 8.166503534037957e+28,
       "min": 6.533202827230365e+28,
       "mastery": 0.8,
@@ -111,6 +135,8 @@
       "character": 8,
       "map": 200,
       "class": 10,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 4.119905613126668e+30,
       "min": 3.295924490501335e+30,
       "mastery": 0.8,
@@ -124,6 +150,8 @@
       "character": 9,
       "map": 200,
       "class": 22,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 6.099107754101553e+30,
       "min": 4.8792862032812425e+30,
       "mastery": 0.8,
@@ -137,6 +165,8 @@
       "character": 10,
       "map": 200,
       "class": 1,
+      "partial": true,
+      "reason": "Partial total: the imported JSON does not include companion ownership or current server vote metadata.",
       "max": 2.904065019753113e+28,
       "min": 2.3232520158024904e+28,
       "mastery": 0.8,
@@ -171,6 +201,1316 @@
     {
       "map": 119,
       "reason": "Current-run Dungeon damage and Mastery are not stored in save JSON."
+    }
+  ],
+  "maps": [
+    {
+      "map": 0,
+      "name": "Blunder Hills"
+    },
+    {
+      "map": 1,
+      "name": "Spore Meadows"
+    },
+    {
+      "map": 2,
+      "name": "Froggy Fields"
+    },
+    {
+      "map": 3,
+      "name": "JungleZ"
+    },
+    {
+      "map": 4,
+      "name": "PlayerSelect"
+    },
+    {
+      "map": 5,
+      "name": "PlayerSelect"
+    },
+    {
+      "map": 6,
+      "name": "Tunnels Entrance"
+    },
+    {
+      "map": 7,
+      "name": "Freefall Caverns"
+    },
+    {
+      "map": 8,
+      "name": "Poopy Sewers"
+    },
+    {
+      "map": 9,
+      "name": "The Office"
+    },
+    {
+      "map": 10,
+      "name": "The Ol' Straightaway"
+    },
+    {
+      "map": 11,
+      "name": "Echoing Egress"
+    },
+    {
+      "map": 12,
+      "name": "Slip Slidy Ledges"
+    },
+    {
+      "map": 13,
+      "name": "The Base Of The Bark"
+    },
+    {
+      "map": 14,
+      "name": "Valley Of The Beans"
+    },
+    {
+      "map": 15,
+      "name": "Rats Nest"
+    },
+    {
+      "map": 16,
+      "name": "Jungle Perimeter"
+    },
+    {
+      "map": 17,
+      "name": "Birch Enclave"
+    },
+    {
+      "map": 18,
+      "name": "Hollowed Trunk"
+    },
+    {
+      "map": 19,
+      "name": "Winding Willows"
+    },
+    {
+      "map": 20,
+      "name": "TutorialA"
+    },
+    {
+      "map": 21,
+      "name": "TutorialB"
+    },
+    {
+      "map": 22,
+      "name": "TutorialC"
+    },
+    {
+      "map": 23,
+      "name": "TutorialD"
+    },
+    {
+      "map": 24,
+      "name": "Vegetable Patch"
+    },
+    {
+      "map": 25,
+      "name": "JungleX"
+    },
+    {
+      "map": 26,
+      "name": "Forest Outskirts"
+    },
+    {
+      "map": 27,
+      "name": "Encroaching Forest Villas"
+    },
+    {
+      "map": 28,
+      "name": "Tucked Away"
+    },
+    {
+      "map": 29,
+      "name": "End Of The Road"
+    },
+    {
+      "map": 30,
+      "name": "The Roots"
+    },
+    {
+      "map": 31,
+      "name": "Where the Branches End"
+    },
+    {
+      "map": 32,
+      "name": "Motherlode Pit"
+    },
+    {
+      "map": 33,
+      "name": "How Did u get here"
+    },
+    {
+      "map": 34,
+      "name": "Miningg1"
+    },
+    {
+      "map": 35,
+      "name": "Miningg2"
+    },
+    {
+      "map": 36,
+      "name": "Dewdrop Colosseum"
+    },
+    {
+      "map": 37,
+      "name": "Spike Surprise"
+    },
+    {
+      "map": 38,
+      "name": "Meel's Crypt"
+    },
+    {
+      "map": 39,
+      "name": "Grandfrog's Backyard"
+    },
+    {
+      "map": 40,
+      "name": "Grandfrog's Gazebo"
+    },
+    {
+      "map": 41,
+      "name": "Pet Park"
+    },
+    {
+      "map": 42,
+      "name": "Grand Owl Perch"
+    },
+    {
+      "map": 43,
+      "name": "The Royal Castle"
+    },
+    {
+      "map": 44,
+      "name": "Z"
+    },
+    {
+      "map": 45,
+      "name": "Z"
+    },
+    {
+      "map": 46,
+      "name": "Z"
+    },
+    {
+      "map": 47,
+      "name": "Z"
+    },
+    {
+      "map": 48,
+      "name": "Z"
+    },
+    {
+      "map": 49,
+      "name": "Z"
+    },
+    {
+      "map": 50,
+      "name": "YumYum Grotto"
+    },
+    {
+      "map": 51,
+      "name": "Jar Bridge"
+    },
+    {
+      "map": 52,
+      "name": "The Mimic Hole"
+    },
+    {
+      "map": 53,
+      "name": "Dessert Dunes"
+    },
+    {
+      "map": 54,
+      "name": "Salty Shores"
+    },
+    {
+      "map": 55,
+      "name": "Faraway Piers"
+    },
+    {
+      "map": 56,
+      "name": "Filler"
+    },
+    {
+      "map": 57,
+      "name": "The Grandioso Canyon"
+    },
+    {
+      "map": 58,
+      "name": "Shifty Sandbox"
+    },
+    {
+      "map": 59,
+      "name": "Pincer Plateau"
+    },
+    {
+      "map": 60,
+      "name": "Slamabam Straightaway"
+    },
+    {
+      "map": 61,
+      "name": "Deepwater Docks"
+    },
+    {
+      "map": 62,
+      "name": "The Ring"
+    },
+    {
+      "map": 63,
+      "name": "Up Up Down Down"
+    },
+    {
+      "map": 64,
+      "name": "Sands of Time"
+    },
+    {
+      "map": 65,
+      "name": "Djonnuttown"
+    },
+    {
+      "map": 66,
+      "name": "Efaunt's Tomb"
+    },
+    {
+      "map": 67,
+      "name": "Bandit Bob's Hideout"
+    },
+    {
+      "map": 68,
+      "name": "Sandstone Colosseum"
+    },
+    {
+      "map": 69,
+      "name": "Mummy Memorial"
+    },
+    {
+      "map": 70,
+      "name": "Heaty Hole"
+    },
+    {
+      "map": 71,
+      "name": "Gravel Tomb"
+    },
+    {
+      "map": 72,
+      "name": "YumYum Islands"
+    },
+    {
+      "map": 73,
+      "name": "The Oasis"
+    },
+    {
+      "map": 74,
+      "name": "Z"
+    },
+    {
+      "map": 75,
+      "name": "Z"
+    },
+    {
+      "map": 76,
+      "name": "Z"
+    },
+    {
+      "map": 77,
+      "name": "Z"
+    },
+    {
+      "map": 78,
+      "name": "Z"
+    },
+    {
+      "map": 79,
+      "name": "Z"
+    },
+    {
+      "map": 80,
+      "name": "Z"
+    },
+    {
+      "map": 81,
+      "name": "Z"
+    },
+    {
+      "map": 82,
+      "name": "Z"
+    },
+    {
+      "map": 83,
+      "name": "Z"
+    },
+    {
+      "map": 84,
+      "name": "Z"
+    },
+    {
+      "map": 85,
+      "name": "Z"
+    },
+    {
+      "map": 86,
+      "name": "Z"
+    },
+    {
+      "map": 87,
+      "name": "Z"
+    },
+    {
+      "map": 88,
+      "name": "Z"
+    },
+    {
+      "map": 89,
+      "name": "Z"
+    },
+    {
+      "map": 90,
+      "name": "Z"
+    },
+    {
+      "map": 91,
+      "name": "Z"
+    },
+    {
+      "map": 92,
+      "name": "Z"
+    },
+    {
+      "map": 93,
+      "name": "Z"
+    },
+    {
+      "map": 94,
+      "name": "Z"
+    },
+    {
+      "map": 95,
+      "name": "Z"
+    },
+    {
+      "map": 96,
+      "name": "Z"
+    },
+    {
+      "map": 97,
+      "name": "Z"
+    },
+    {
+      "map": 98,
+      "name": "Z"
+    },
+    {
+      "map": 99,
+      "name": "Z"
+    },
+    {
+      "map": 100,
+      "name": "Frostbite Towndra"
+    },
+    {
+      "map": 101,
+      "name": "Steep Sheep Ledge"
+    },
+    {
+      "map": 102,
+      "name": "Trappers Folley"
+    },
+    {
+      "map": 103,
+      "name": "Snowfield Outskirts"
+    },
+    {
+      "map": 104,
+      "name": "The Stache Split"
+    },
+    {
+      "map": 105,
+      "name": "Refrigeration Station"
+    },
+    {
+      "map": 106,
+      "name": "Mamooooth Mountain"
+    },
+    {
+      "map": 107,
+      "name": "Rollin' Tundra"
+    },
+    {
+      "map": 108,
+      "name": "Signature Slopes"
+    },
+    {
+      "map": 109,
+      "name": "Thermonuclear Climb"
+    },
+    {
+      "map": 110,
+      "name": "Waterlogged Entrance"
+    },
+    {
+      "map": 111,
+      "name": "Cryo Catacombs"
+    },
+    {
+      "map": 112,
+      "name": "Overpass of Sound"
+    },
+    {
+      "map": 113,
+      "name": "Crystal Basecamp"
+    },
+    {
+      "map": 114,
+      "name": "Chizoar's Cavern"
+    },
+    {
+      "map": 115,
+      "name": "Coldsnap Colosseum"
+    },
+    {
+      "map": 116,
+      "name": "Wam Wonderland"
+    },
+    {
+      "map": 117,
+      "name": "Hell Hath Frozen Over"
+    },
+    {
+      "map": 118,
+      "name": "Inside the Igloo"
+    },
+    {
+      "map": 119,
+      "name": "Igloo's Basement"
+    },
+    {
+      "map": 120,
+      "name": "Equinox Valley"
+    },
+    {
+      "map": 121,
+      "name": "Z"
+    },
+    {
+      "map": 122,
+      "name": "Z"
+    },
+    {
+      "map": 123,
+      "name": "Z"
+    },
+    {
+      "map": 124,
+      "name": "Z"
+    },
+    {
+      "map": 125,
+      "name": "Z"
+    },
+    {
+      "map": 126,
+      "name": "Z"
+    },
+    {
+      "map": 127,
+      "name": "Z"
+    },
+    {
+      "map": 128,
+      "name": "Z"
+    },
+    {
+      "map": 129,
+      "name": "Z"
+    },
+    {
+      "map": 130,
+      "name": "Z"
+    },
+    {
+      "map": 131,
+      "name": "Z"
+    },
+    {
+      "map": 132,
+      "name": "Z"
+    },
+    {
+      "map": 133,
+      "name": "Z"
+    },
+    {
+      "map": 134,
+      "name": "Z"
+    },
+    {
+      "map": 135,
+      "name": "Z"
+    },
+    {
+      "map": 136,
+      "name": "Z"
+    },
+    {
+      "map": 137,
+      "name": "Z"
+    },
+    {
+      "map": 138,
+      "name": "Z"
+    },
+    {
+      "map": 139,
+      "name": "Z"
+    },
+    {
+      "map": 140,
+      "name": "Z"
+    },
+    {
+      "map": 141,
+      "name": "Z"
+    },
+    {
+      "map": 142,
+      "name": "Z"
+    },
+    {
+      "map": 143,
+      "name": "Z"
+    },
+    {
+      "map": 144,
+      "name": "Z"
+    },
+    {
+      "map": 145,
+      "name": "Z"
+    },
+    {
+      "map": 146,
+      "name": "Z"
+    },
+    {
+      "map": 147,
+      "name": "Z"
+    },
+    {
+      "map": 148,
+      "name": "Z"
+    },
+    {
+      "map": 149,
+      "name": "Z"
+    },
+    {
+      "map": 150,
+      "name": "Outer World Town"
+    },
+    {
+      "map": 151,
+      "name": "Spaceway Raceway"
+    },
+    {
+      "map": 152,
+      "name": "TV Outpost"
+    },
+    {
+      "map": 153,
+      "name": "Donut Drive-In"
+    },
+    {
+      "map": 154,
+      "name": "Outskirts of Fallstar Isle"
+    },
+    {
+      "map": 155,
+      "name": "Mountainous Deugh"
+    },
+    {
+      "map": 156,
+      "name": "Wurm Highway"
+    },
+    {
+      "map": 157,
+      "name": "Jelly Cube Bridge"
+    },
+    {
+      "map": 158,
+      "name": "Cocoa Tunnel"
+    },
+    {
+      "map": 159,
+      "name": "Standstill Plains"
+    },
+    {
+      "map": 160,
+      "name": "Shelled Shores"
+    },
+    {
+      "map": 161,
+      "name": "The Untraveled Octopath"
+    },
+    {
+      "map": 162,
+      "name": "Flamboyant Bayou"
+    },
+    {
+      "map": 163,
+      "name": "Enclave of Eyes"
+    },
+    {
+      "map": 164,
+      "name": "Astro Colosseum"
+    },
+    {
+      "map": 165,
+      "name": "Enclave a la Troll"
+    },
+    {
+      "map": 166,
+      "name": "The Rift"
+    },
+    {
+      "map": 167,
+      "name": "Z"
+    },
+    {
+      "map": 168,
+      "name": "Z"
+    },
+    {
+      "map": 169,
+      "name": "Z"
+    },
+    {
+      "map": 170,
+      "name": "Z"
+    },
+    {
+      "map": 171,
+      "name": "Z"
+    },
+    {
+      "map": 172,
+      "name": "Z"
+    },
+    {
+      "map": 173,
+      "name": "Z"
+    },
+    {
+      "map": 174,
+      "name": "Z"
+    },
+    {
+      "map": 175,
+      "name": "Z"
+    },
+    {
+      "map": 176,
+      "name": "Z"
+    },
+    {
+      "map": 177,
+      "name": "Z"
+    },
+    {
+      "map": 178,
+      "name": "Z"
+    },
+    {
+      "map": 179,
+      "name": "Z"
+    },
+    {
+      "map": 180,
+      "name": "Z"
+    },
+    {
+      "map": 181,
+      "name": "Z"
+    },
+    {
+      "map": 182,
+      "name": "Z"
+    },
+    {
+      "map": 183,
+      "name": "Z"
+    },
+    {
+      "map": 184,
+      "name": "Z"
+    },
+    {
+      "map": 185,
+      "name": "Z"
+    },
+    {
+      "map": 186,
+      "name": "Z"
+    },
+    {
+      "map": 187,
+      "name": "Z"
+    },
+    {
+      "map": 188,
+      "name": "Z"
+    },
+    {
+      "map": 189,
+      "name": "Z"
+    },
+    {
+      "map": 190,
+      "name": "Z"
+    },
+    {
+      "map": 191,
+      "name": "Z"
+    },
+    {
+      "map": 192,
+      "name": "Z"
+    },
+    {
+      "map": 193,
+      "name": "Z"
+    },
+    {
+      "map": 194,
+      "name": "Z"
+    },
+    {
+      "map": 195,
+      "name": "Z"
+    },
+    {
+      "map": 196,
+      "name": "Z"
+    },
+    {
+      "map": 197,
+      "name": "Z"
+    },
+    {
+      "map": 198,
+      "name": "Z"
+    },
+    {
+      "map": 199,
+      "name": "Z"
+    },
+    {
+      "map": 200,
+      "name": "Magma Rivertown"
+    },
+    {
+      "map": 201,
+      "name": "Naut Sake Perimeter"
+    },
+    {
+      "map": 202,
+      "name": "Niagrilled Falls"
+    },
+    {
+      "map": 203,
+      "name": "The Killer Roundabout"
+    },
+    {
+      "map": 204,
+      "name": "Cracker Jack Lake"
+    },
+    {
+      "map": 205,
+      "name": "The Great Molehill"
+    },
+    {
+      "map": 206,
+      "name": "Erruption River"
+    },
+    {
+      "map": 207,
+      "name": "Mount Doomish"
+    },
+    {
+      "map": 208,
+      "name": "OJ Bay"
+    },
+    {
+      "map": 209,
+      "name": "Lampar Lake"
+    },
+    {
+      "map": 210,
+      "name": "Spitfire River"
+    },
+    {
+      "map": 211,
+      "name": "Miner Mole Outskirts"
+    },
+    {
+      "map": 212,
+      "name": "Crawly Catacombs"
+    },
+    {
+      "map": 213,
+      "name": "The Worm Nest"
+    },
+    {
+      "map": 214,
+      "name": "KattleKruk's Volcano"
+    },
+    {
+      "map": 215,
+      "name": "Molten Colosseum"
+    },
+    {
+      "map": 216,
+      "name": "The Hole"
+    },
+    {
+      "map": 217,
+      "name": "Z"
+    },
+    {
+      "map": 218,
+      "name": "Z"
+    },
+    {
+      "map": 219,
+      "name": "Z"
+    },
+    {
+      "map": 220,
+      "name": "Z"
+    },
+    {
+      "map": 221,
+      "name": "Z"
+    },
+    {
+      "map": 222,
+      "name": "Z"
+    },
+    {
+      "map": 223,
+      "name": "Z"
+    },
+    {
+      "map": 224,
+      "name": "Z"
+    },
+    {
+      "map": 225,
+      "name": "Z"
+    },
+    {
+      "map": 226,
+      "name": "Z"
+    },
+    {
+      "map": 227,
+      "name": "Z"
+    },
+    {
+      "map": 228,
+      "name": "Z"
+    },
+    {
+      "map": 229,
+      "name": "Z"
+    },
+    {
+      "map": 230,
+      "name": "Z"
+    },
+    {
+      "map": 231,
+      "name": "Z"
+    },
+    {
+      "map": 232,
+      "name": "Z"
+    },
+    {
+      "map": 233,
+      "name": "Z"
+    },
+    {
+      "map": 234,
+      "name": "Z"
+    },
+    {
+      "map": 235,
+      "name": "Z"
+    },
+    {
+      "map": 236,
+      "name": "Z"
+    },
+    {
+      "map": 237,
+      "name": "Z"
+    },
+    {
+      "map": 238,
+      "name": "Z"
+    },
+    {
+      "map": 239,
+      "name": "Z"
+    },
+    {
+      "map": 240,
+      "name": "Z"
+    },
+    {
+      "map": 241,
+      "name": "Z"
+    },
+    {
+      "map": 242,
+      "name": "Z"
+    },
+    {
+      "map": 243,
+      "name": "Z"
+    },
+    {
+      "map": 244,
+      "name": "Z"
+    },
+    {
+      "map": 245,
+      "name": "Z"
+    },
+    {
+      "map": 246,
+      "name": "Z"
+    },
+    {
+      "map": 247,
+      "name": "Z"
+    },
+    {
+      "map": 248,
+      "name": "Z"
+    },
+    {
+      "map": 249,
+      "name": "Z"
+    },
+    {
+      "map": 250,
+      "name": "Spirit Village"
+    },
+    {
+      "map": 251,
+      "name": "Gooble Goop Creek"
+    },
+    {
+      "map": 252,
+      "name": "Picnic Bridgeways"
+    },
+    {
+      "map": 253,
+      "name": "Irrigation Station"
+    },
+    {
+      "map": 254,
+      "name": "Troll Playground"
+    },
+    {
+      "map": 255,
+      "name": "Edge of the Valley"
+    },
+    {
+      "map": 256,
+      "name": "Bamboo Laboredge"
+    },
+    {
+      "map": 257,
+      "name": "Lightway Path"
+    },
+    {
+      "map": 258,
+      "name": "Troll Broodnest"
+    },
+    {
+      "map": 259,
+      "name": "Above the Clouds"
+    },
+    {
+      "map": 260,
+      "name": "Sleepy Skyline"
+    },
+    {
+      "map": 261,
+      "name": "Dozey Dogpark"
+    },
+    {
+      "map": 262,
+      "name": "Yolkrock Basin"
+    },
+    {
+      "map": 263,
+      "name": "Chieftain Stairway"
+    },
+    {
+      "map": 264,
+      "name": "Emperor's Castle Doorstep"
+    },
+    {
+      "map": 265,
+      "name": "Whimsical Colosseum"
+    },
+    {
+      "map": 266,
+      "name": "Emperor's Castle"
+    },
+    {
+      "map": 267,
+      "name": "Z"
+    },
+    {
+      "map": 268,
+      "name": "Z"
+    },
+    {
+      "map": 269,
+      "name": "Z"
+    },
+    {
+      "map": 270,
+      "name": "Z"
+    },
+    {
+      "map": 271,
+      "name": "Z"
+    },
+    {
+      "map": 272,
+      "name": "Z"
+    },
+    {
+      "map": 273,
+      "name": "Z"
+    },
+    {
+      "map": 274,
+      "name": "Z"
+    },
+    {
+      "map": 275,
+      "name": "Z"
+    },
+    {
+      "map": 276,
+      "name": "Z"
+    },
+    {
+      "map": 277,
+      "name": "Z"
+    },
+    {
+      "map": 278,
+      "name": "Z"
+    },
+    {
+      "map": 279,
+      "name": "Z"
+    },
+    {
+      "map": 280,
+      "name": "Z"
+    },
+    {
+      "map": 281,
+      "name": "Z"
+    },
+    {
+      "map": 282,
+      "name": "Z"
+    },
+    {
+      "map": 283,
+      "name": "Z"
+    },
+    {
+      "map": 284,
+      "name": "Z"
+    },
+    {
+      "map": 285,
+      "name": "Z"
+    },
+    {
+      "map": 286,
+      "name": "Z"
+    },
+    {
+      "map": 287,
+      "name": "Z"
+    },
+    {
+      "map": 288,
+      "name": "Z"
+    },
+    {
+      "map": 289,
+      "name": "Z"
+    },
+    {
+      "map": 290,
+      "name": "Z"
+    },
+    {
+      "map": 291,
+      "name": "Z"
+    },
+    {
+      "map": 292,
+      "name": "Z"
+    },
+    {
+      "map": 293,
+      "name": "Z"
+    },
+    {
+      "map": 294,
+      "name": "Z"
+    },
+    {
+      "map": 295,
+      "name": "Z"
+    },
+    {
+      "map": 296,
+      "name": "Z"
+    },
+    {
+      "map": 297,
+      "name": "Z"
+    },
+    {
+      "map": 298,
+      "name": "Z"
+    },
+    {
+      "map": 299,
+      "name": "Z"
+    },
+    {
+      "map": 300,
+      "name": "Shimmerfin Grove"
+    },
+    {
+      "map": 301,
+      "name": "Refraction Bend"
+    },
+    {
+      "map": 302,
+      "name": "Doodle Reef"
+    },
+    {
+      "map": 303,
+      "name": "Seaweed Street"
+    },
+    {
+      "map": 304,
+      "name": "Barnacle Curb"
+    },
+    {
+      "map": 305,
+      "name": "Balloon Bay"
+    },
+    {
+      "map": 306,
+      "name": "The Clamworks"
+    },
+    {
+      "map": 307,
+      "name": "Plastic Basin"
+    },
+    {
+      "map": 308,
+      "name": "Puffpuff Overpass"
+    },
+    {
+      "map": 309,
+      "name": "Pinpoint Summit"
+    },
+    {
+      "map": 310,
+      "name": "Middle of Nowhere"
+    },
+    {
+      "map": 311,
+      "name": "Coralcave Outskirts"
+    },
+    {
+      "map": 312,
+      "name": "Coralcave Perimeter"
+    },
+    {
+      "map": 313,
+      "name": "Unused"
+    },
+    {
+      "map": 314,
+      "name": "Unused"
+    },
+    {
+      "map": 315,
+      "name": "Deep End of the Koipond"
+    },
+    {
+      "map": 316,
+      "name": "Minefield"
+    },
+    {
+      "map": 317,
+      "name": "Pirate Upper Deck"
+    },
+    {
+      "map": 318,
+      "name": "Sushi Perimeter"
+    },
+    {
+      "map": 319,
+      "name": "Jellofish Fields"
+    },
+    {
+      "map": 320,
+      "name": "Where the Kelp Meets Trench"
+    },
+    {
+      "map": 321,
+      "name": "Trench Precipice"
+    },
+    {
+      "map": 322,
+      "name": "The Glowing Underbelly"
+    },
+    {
+      "map": 323,
+      "name": "Ancient Fissure"
+    },
+    {
+      "map": 324,
+      "name": "Molten Edge"
+    },
+    {
+      "map": 325,
+      "name": "Pirate Mess Hall"
+    },
+    {
+      "map": 326,
+      "name": "Dreadnaught Chamber"
     }
   ]
 }

@@ -51,6 +51,8 @@ for (let character = 0; character < characters; character += 1) {
     character,
     map,
     class: Number(data.charClassData?.[character]) || 0,
+    partial: Boolean(result.partial),
+    reason: String(result.reason ?? ''),
     max: layer(children, 'Max Damage'),
     min: layer(children, 'Min Damage'),
     mastery: layer(children, 'Mastery'),
@@ -72,6 +74,33 @@ const dungeonCases = [...Array(MapDispName.length).keys()]
   });
 if (dungeonCases.length === 0) throw new Error('the upstream dungeon set is empty');
 
+// `data.json` carries neither an `it.json` companion roster nor `serverVars`,
+// so the descriptor flags the same two metadata fields the page lists.
+const missing = [
+  ...new Set(cases.map((item) => item.reason).filter(Boolean)),
+];
+if (missing.length > 1) throw new Error('the cases disagree about the missing metadata');
+
+// The same save with both metadata fields present clears the flag, so the port
+// is compared on both sides of the rule and not only on the missing case.
+loadSaveData({ data: save, companion: { l: [] }, serverVars: { voteCategories: [0] } });
+const completeMap = Number(data.currentMapData?.[0]) || 0;
+const complete = resolve(0, completeMap);
+if (complete.unavailable) throw new Error('the complete-metadata case came back unavailable');
+if (complete.partial || complete.reason) {
+  throw new Error(`a complete save still flags metadata: ${complete.reason}`);
+}
+loadSaveData({ data: save });
+
+// The map selector lists every `MapDispName` entry in index order; the page's
+// `populateMapSel` marks the dungeon and current rows in the label.
+const maps = [...Array(MapDispName.length).keys()]
+  .filter((map) => Boolean(MapDispName[map]))
+  .map((map) => ({
+    map,
+    name: String(MapDispName[map]).replace(/_/g, ' '),
+  }));
+
 writeFileSync(
   join(root, 'fixtures/damage.json'),
   `${JSON.stringify(
@@ -79,11 +108,18 @@ writeFileSync(
       source: 'fixtures/data.json through js/save/loader.js loadSaveData',
       descriptor: 'js/stats/defs/damage.js',
       context: 'js/stats/stat-context.js createStatContext',
+      metadata: {
+        missing: missing[0] ?? '',
+        complete: { character: 0, map: completeMap, partial: false },
+      },
       cases,
       dungeons: dungeonCases,
+      maps,
     },
     null,
     2
   )}\n`
 );
-console.log(`wrote ${cases.length} character summaries and ${dungeonCases.length} dungeons`);
+console.log(
+  `wrote ${cases.length} character summaries, ${dungeonCases.length} dungeons and ${maps.length} map rows`
+);

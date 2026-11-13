@@ -2889,12 +2889,20 @@ const INTERACTIONS = {
       lane,
       (nodes) =>
         (labelOf(nodes, 'damage-context-note') ?? '').startsWith(
-          'Ana · Blunder Hills · The account stats engine (SA-02) is not built yet',
+          'Ana · Blunder Hills · The shared stat pipeline',
         ),
       'damage: the summary reports the missing account stats engine',
     );
     await waitForNode(lane, 'damage-game', 'damage: the summary cards render');
     await waitForNode(lane, 'damage-mastery-bar', 'damage: the mastery bar renders');
+    // A flat save carries neither the companion roster nor the server vote, so
+    // the page flags the partial import the descriptor names.
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'damage-partial') ?? '').includes('companion ownership'),
+      'damage: the page flags the metadata the import lacks',
+    );
 
     // A character switch follows that character's current map.
     await lane.call('focus_element', { id: 'damage-character' });

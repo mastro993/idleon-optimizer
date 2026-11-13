@@ -16,9 +16,15 @@
 //! damage and mastery are not stored in the save JSON. The same maps are
 //! [`is_dungeon`], so the page answers with the upstream reason instead of a
 //! number.
+//!
+//! The descriptor also flags the saved metadata an import can lack: the `it.json`
+//! companion roster and the server's active-vote row. The loader decides both
+//! (`js/save/loader.js`), the descriptor reports the pair as `partial` with one
+//! reason, and [`Metadata`] ports that rule so the page names a partial result
+//! instead of a complete one.
 
-use idleon_save::Save;
-use idleon_stats::{self as stats, Category, MapVisibility, Snapshot};
+use idleon_save::{Roster, Save};
+use idleon_stats::{self as stats, Category, Snapshot};
 use serde::{Deserialize, Serialize};
 
 /// Why a summary cannot be computed without the shared stat pipeline.
@@ -52,9 +58,33 @@ impl Context {
         }
     }
 
-    /// Every map the selector lists, in the shared map order.
-    pub fn map_options(&self, snapshot: &Snapshot) -> Vec<stats::MapOption> {
-        stats::build_options(self.character, snapshot, MapVisibility::All)
+    /// Every map the selector lists, as upstream `populateMapSel` builds it.
+    pub fn map_rows(&self, snapshot: &Snapshot) -> Vec<MapRow> {
+        // Upstream `onSaveLoaded` reads `Number(currentMapData[0]) || 0`.
+        let current = snapshot.current_map(self.character).unwrap_or(0);
+        let mut rows: Vec<MapRow> = (0..stats::map_count())
+            .filter(|map| stats::display_name(*map).is_some())
+            .map(|map| MapRow {
+                map,
+                label: map_label(map, current),
+                dungeon: is_dungeon(map),
+                current: current == map,
+            })
+            .collect();
+        // A map the character stands on that the table leaves unnamed is still
+        // listed, first, as upstream `populateMapSel` inserts it.
+        if !rows.iter().any(|row| row.current) {
+            rows.insert(
+                0,
+                MapRow {
+                    map: current,
+                    label: format!("{} (current)", map_name(current)),
+                    dungeon: is_dungeon(current),
+                    current: true,
+                },
+            );
+        }
+        rows
     }
 
     /// Point the context at `character`; the map becomes that character's
@@ -72,17 +102,127 @@ impl Context {
     /// Returns the dropped map when the selection had to move, so the caller
     /// can name it in a warning, like the shared stats context does.
     pub fn clamp_map(&mut self, snapshot: &Snapshot) -> Option<usize> {
-        let options = self.map_options(snapshot);
-        let first = options.first()?;
-        if options.iter().any(|option| option.class.map == self.map) {
+        let rows = self.map_rows(snapshot);
+        if rows.iter().any(|row| row.map == self.map) {
             return None;
         }
         let dropped = self.map;
         self.map = snapshot
             .current_map(self.character)
-            .filter(|current| options.iter().any(|option| option.class.map == *current))
-            .unwrap_or(first.class.map);
+            .or_else(|| rows.first().map(|row| row.map))?;
         Some(dropped)
+    }
+}
+
+/// One row of the damage page's map selector.
+///
+/// Upstream `populateMapSel` lists every named `MapDispName` entry in index
+/// order, marks the dungeon and the character's current map in the label, and
+/// inserts the current map first when the table leaves it unnamed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MapRow {
+    /// The map's game index.
+    pub map: usize,
+    /// The option text: the display name, then `(dungeon)` and `(current)`.
+    pub label: String,
+    /// Whether the map is a dungeon, where the page hides its summary.
+    pub dungeon: bool,
+    /// Whether the character stands on this map.
+    pub current: bool,
+}
+
+/// Upstream `_mapName`: the display name with its underscores replaced.
+fn map_name(map: usize) -> String {
+    stats::display_name(map)
+        .map(|name| name.replace('_', " "))
+        .unwrap_or_else(|| format!("Map {map}"))
+}
+
+/// The selector label for a map, as `populateMapSel` builds it.
+fn map_label(map: usize, current: usize) -> String {
+    let mut label = map_name(map);
+    if is_dungeon(map) {
+        label.push_str(" (dungeon)");
+    }
+    if current == map {
+        label.push_str(" (current)");
+    }
+    label
+}
+
+/// The saved metadata the summary reads, ported from `js/save/loader.js`.
+///
+/// The loader sets `companionDataAvailable` from the `it.json` wrapper's
+/// `companion.l` list and `activeVoteDataAvailable` from
+/// `serverVars.voteCategories[0]`; both default to unavailable (`js/state.js`),
+/// so a plain `save.json` reads as missing both.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Metadata {
+    /// Whether the import carried the companion roster.
+    pub companions: bool,
+    /// Whether it carried the server's active-vote row.
+    pub vote: bool,
+}
+
+impl Metadata {
+    /// Both fields present, for a summary built without a save.
+    pub const COMPLETE: Metadata = Metadata {
+        companions: true,
+        vote: true,
+    };
+
+    /// Read the pair from an import, wrapped or flat.
+    pub fn read(save: &Save) -> Self {
+        Self {
+            companions: Roster::read(save.root().get("companion")).available,
+            vote: save
+                .get("serverVars")
+                .and_then(|vars| vars.get("voteCategories").cloned())
+                .and_then(|categories| categories.get(0).cloned())
+                .and_then(|vote| js_number(&vote))
+                .is_some_and(f64::is_finite),
+        }
+    }
+
+    /// Whether the import carried everything the summary reads.
+    pub fn complete(&self) -> bool {
+        self.companions && self.vote
+    }
+
+    /// The descriptor's `missingMetadata` list, in its order.
+    pub fn missing(&self) -> Vec<&'static str> {
+        let mut missing = Vec::new();
+        if !self.companions {
+            missing.push("companion ownership");
+        }
+        if !self.vote {
+            missing.push("current server vote");
+        }
+        missing
+    }
+
+    /// The descriptor's `reason`, empty when nothing is missing.
+    pub fn reason(&self) -> String {
+        let missing = self.missing();
+        if missing.is_empty() {
+            return String::new();
+        }
+        format!(
+            "Partial total: the imported JSON does not include {} metadata.",
+            missing.join(" or ")
+        )
+    }
+}
+
+/// JavaScript's `Number(value)` for the saved vote row: numbers and numeric
+/// strings read as numbers, and anything else is not a value.
+fn js_number(value: &serde_json::Value) -> Option<f64> {
+    match value {
+        serde_json::Value::Number(number) => number.as_f64(),
+        serde_json::Value::String(text) => text.trim().parse().ok(),
+        serde_json::Value::Bool(flag) => Some(if *flag { 1.0 } else { 0.0 }),
+        _ => None,
     }
 }
 
@@ -105,11 +245,12 @@ pub struct Layers {
 
 /// A computed summary, or the reason the page cannot compute one.
 #[derive(Clone, Debug, Default, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Summary {
     /// Whether the three layers were resolved.
     pub available: bool,
-    /// Whether the imported JSON lacked metadata the upstream descriptor flags.
-    pub partial: bool,
+    /// The saved metadata the descriptor flags; a missing field is partial.
+    pub metadata: Metadata,
     /// The upstream reason a summary is unavailable, or the partial note.
     pub reason: String,
     /// The minimum damage; zero while unavailable.
@@ -133,12 +274,29 @@ impl Summary {
         let max = if max.is_finite() { max } else { 0.0 };
         Self {
             available: true,
-            partial: false,
+            metadata: Metadata::COMPLETE,
             reason: String::new(),
             min: max * mastery,
             max,
             mastery,
         }
+    }
+
+    /// Attach the saved metadata the descriptor reads, so a summary built from
+    /// complete metadata is not marked partial.
+    pub fn with_metadata(mut self, metadata: Metadata) -> Self {
+        self.metadata = metadata;
+        self
+    }
+
+    /// Whether the import lacked metadata, as the descriptor reports it.
+    pub fn partial(&self) -> bool {
+        !self.metadata.complete()
+    }
+
+    /// The descriptor's partial reason, or an empty string when complete.
+    pub fn partial_reason(&self) -> String {
+        self.metadata.reason()
     }
 
     /// The "Character Sheet Range" card: upstream formats the same pair as a
@@ -156,7 +314,7 @@ impl Summary {
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
             available: false,
-            partial: false,
+            metadata: Metadata::COMPLETE,
             reason: reason.into(),
             ..Self::default()
         }
@@ -172,12 +330,16 @@ pub fn is_dungeon(map: usize) -> bool {
 ///
 /// The shared stat pipeline is the missing provider. Until it lands this
 /// reports the upstream dungeon reason on a dungeon map and the missing-pipeline
-/// reason everywhere else, rather than showing a number it cannot justify.
-pub fn evaluate(_save: &Save, context: Context) -> Summary {
-    if is_dungeon(context.map) {
-        return Summary::unavailable(DUNGEON);
-    }
-    Summary::unavailable(STATS_ENGINE)
+/// reason everywhere else, rather than showing a number it cannot justify. The
+/// metadata flags are read either way, so the page can name a partial import.
+pub fn evaluate(save: &Save, context: Context) -> Summary {
+    let metadata = Metadata::read(save);
+    let reason = if is_dungeon(context.map) {
+        DUNGEON
+    } else {
+        STATS_ENGINE
+    };
+    Summary::unavailable(reason).with_metadata(metadata)
 }
 
 #[cfg(test)]
@@ -228,6 +390,93 @@ mod tests {
         for map in [0, 1, 50, 200, 306] {
             assert!(!is_dungeon(map), "map {map}");
         }
+    }
+
+    /// The flat save the loader sees when the import carries no wrapper.
+    fn flat_save() -> Save {
+        Save::new(serde_json::json!({
+            "charNames": ["Ana"],
+            "Lv0_0": "[1]",
+            "CharacterClass_0": 1,
+            "CurrentMap_0": 0,
+        }))
+    }
+
+    #[test]
+    fn missing_metadata_reads_as_partial_with_the_descriptor_reason() {
+        let summary = evaluate(&flat_save(), Context::default());
+        assert!(!summary.metadata.companions);
+        assert!(!summary.metadata.vote);
+        assert!(summary.partial());
+        assert_eq!(
+            summary.partial_reason(),
+            "Partial total: the imported JSON does not include companion ownership or current server vote metadata."
+        );
+    }
+
+    #[test]
+    fn a_wrapped_save_with_the_roster_and_the_vote_is_complete() {
+        let wrapped = Save::new(serde_json::json!({
+            "data": { "charNames": ["Ana"], "Lv0_0": "[1]", "CurrentMap_0": 0 },
+            "companion": { "l": [] },
+            "serverVars": { "voteCategories": [2] },
+        }));
+        let summary = evaluate(&wrapped, Context::default());
+        assert!(summary.metadata.complete());
+        assert!(!summary.partial());
+        assert_eq!(summary.partial_reason(), "");
+    }
+
+    #[test]
+    fn each_missing_field_is_named_on_its_own() {
+        let no_vote = Save::new(serde_json::json!({
+            "data": { "charNames": ["Ana"], "Lv0_0": "[1]" },
+            "companion": { "l": ["12,Prometheus,0,0,1"] },
+            "serverVars": { "voteCategories": [] },
+        }));
+        let summary = evaluate(&no_vote, Context::default());
+        assert!(summary.metadata.companions);
+        assert!(!summary.metadata.vote);
+        assert!(summary.partial_reason().contains("current server vote"));
+        assert!(!summary.partial_reason().contains("companion ownership"));
+    }
+
+    #[test]
+    fn the_map_selector_lists_every_named_map_in_index_order() {
+        let save = flat_save();
+        let snapshot = Snapshot::from_save(&save);
+        let rows = Context::default().map_rows(&snapshot);
+        assert!(rows.len() > 300, "{} rows", rows.len());
+        assert!(rows.windows(2).all(|pair| pair[0].map < pair[1].map));
+        let blunder = &rows[0];
+        assert_eq!(blunder.map, 0);
+        assert_eq!(blunder.label, "Blunder Hills (current)");
+        assert!(blunder.current);
+        assert!(!blunder.dungeon);
+        let dungeon = rows
+            .iter()
+            .find(|row| row.dungeon)
+            .expect("the table carries dungeons");
+        assert!(dungeon.label.ends_with(" (dungeon)"), "{}", dungeon.label);
+    }
+
+    #[test]
+    fn an_unnamed_current_map_is_inserted_first() {
+        let save = Save::new(serde_json::json!({
+            "charNames": ["Ana"],
+            "Lv0_0": "[1]",
+            "CurrentMap_0": 5_000,
+        }));
+        let snapshot = Snapshot::from_save(&save);
+        let mut context = Context {
+            character: 0,
+            map: 5_000,
+        };
+        let rows = context.map_rows(&snapshot);
+        assert_eq!(rows[0].map, 5_000);
+        assert_eq!(rows[0].label, "Map 5000 (current)");
+        assert!(rows[0].current);
+        assert_eq!(context.clamp_map(&snapshot), None);
     }
 
     #[test]

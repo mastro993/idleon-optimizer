@@ -457,12 +457,15 @@ guessing a number; the section stays partial until that engine lands.
 Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 
 The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
-selectors, their save defaults and the all-maps list from `damage-calc.html`, the summary cards and
-mastery bar, the upstream dungeon and missing-metadata states, project/session persistence, and the
+selectors, their save defaults, the map list built the way `populateMapSel` builds it (every named
+map in index order, with the dungeon and current markers), the summary cards and mastery bar, the
+upstream dungeon, missing-pipeline and missing-metadata states, project/session persistence, and the
 layer arithmetic ported from the final combine in `js/stats/defs/damage.js`.
-`script/damage-oracle.mjs` pins the combine against the upstream calculator in
-`fixtures/damage.json`: every character's three layers recombine into upstream's own minimum and
-maximum, and the descriptor's dungeon reason matches the page's. The three layers themselves need
+`script/damage-oracle.mjs` pins the combine and both selector rules against the upstream calculator
+in `fixtures/damage.json`: every character's three layers recombine into upstream's own minimum and
+maximum, the descriptor's dungeon reason matches the page's, its `partial` flag and reason match the
+loader's companion-roster and server-vote fields on both a save with them and one without, and the
+map rows match `MapDispName`. The three layers themselves need
 the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for its other
 fifty descriptors, so the page reports the missing-pipeline state instead of a guessed number.
 Details:

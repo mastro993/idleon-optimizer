@@ -117,9 +117,11 @@ Treat it as frozen for the same reason: it is the oracle's output, not this app'
 
 `damage.json` is the upstream Damage Breakdown's own output for `data.json`, from
 `js/stats/defs/damage.js` run over every character through `createStatContext`: the character's map
-and class, the maximum and minimum damage, the mastery ratio, the primary stat and the three damage
-layers, plus the descriptor's reason for all six dungeon maps. Regenerate it with
+and class, the maximum and minimum damage, the mastery ratio, the three damage layers, and the
+descriptor's `partial` flag and reason for the companion roster and server vote this save does not
+carry, followed by the same save with both fields present, the named `MapDispName` rows the map
+selector lists, and the descriptor's reason for all six dungeon maps. Regenerate it with
 `node script/damage-oracle.mjs <upstream-repo>`; `crates/damage/tests/damage.rs` recombines the
-upstream layers through the port's own summary arithmetic for every character and reports the
-missing stat pipeline until the three layers can be resolved. Treat it as frozen for the same
-reason: it is the oracle's output, not this app's.
+upstream layers through the port's own summary arithmetic for every character, matches the
+metadata flags and the map rows, and reports the missing stat pipeline until the three layers can
+be resolved. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
