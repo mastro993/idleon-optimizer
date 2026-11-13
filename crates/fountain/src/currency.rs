@@ -405,6 +405,34 @@ impl Fountain {
         rates
     }
 
+    /// `baseCurrencyPerHr`: the shared rate every currency's own base value
+    /// multiplies, as the simulator's overview card reads it.
+    pub fn base_currency_per_hr(&self) -> f64 {
+        let royal_chance = self.royal_chance();
+        let royal = self.effective_royal_multi();
+        let size = self.size_matter_bonus();
+        let stack = self.max_stack();
+        let value = 1.0 + stack * size / 100.0;
+        let royal_during_fill = if royal_chance > 0.0 {
+            1.0 - (1.0 - royal_chance).powf(stack)
+        } else {
+            0.0
+        };
+        let wait = if royal_chance > 0.0 && royal_during_fill < 1.0 {
+            (1.0 - royal_during_fill) / royal_chance
+        } else {
+            0.0
+        };
+        let fills_per_stack = stack + wait;
+        let fills_per_hr = 3600.0 * self.active_speed() / self.bar_fill_time();
+        (fills_per_hr / fills_per_stack)
+            * stack
+            * self.currency_all_multi()
+            * self.desire_multi()
+            * royal
+            * value
+    }
+
     /// The income table: one row per active currency and its totals.
     pub fn income(&self) -> Income {
         let active = self.active_currencies();

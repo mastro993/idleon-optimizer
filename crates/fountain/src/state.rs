@@ -6,6 +6,7 @@
 
 use super::saved;
 use super::*;
+use std::sync::Arc;
 
 impl Fountain {
     /// Read the cavern out of a decoded save, or `None` when it has no `Holes`.
@@ -51,7 +52,7 @@ impl Fountain {
         let upg_lvs = levels(&holes, row::UPGRADES);
         let marble_lvs = levels(&holes, row::MARBLES);
         let mut fountain = Self {
-            holes,
+            holes: Arc::new(holes),
             options,
             spelunk,
             arcade,
@@ -205,6 +206,11 @@ impl Fountain {
     /// `duckBarProgress`: the saved duck bar progress in seconds.
     pub fn duck_bar_progress(&self) -> f64 {
         self.cell(row::BARS, 2)
+    }
+
+    /// `marbleBarProgress`: the saved marble bar progress in seconds.
+    pub fn marble_bar_progress(&self) -> f64 {
+        self.cell(row::BARS, 1)
     }
 
     /// `coinStacks`: the stacks on the ground, in slot order.

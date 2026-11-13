@@ -8,25 +8,29 @@
 //! `Holes` field of an imported save, so every accessor below is a direct
 //! transcription of one upstream reader.
 //!
-//! The planner and optimizer are FN-03; the marble planner and
-//! simulation are FN-04 and are not here yet. The external bonuses the overview
-//! reports read the same account systems upstream does, and a source the save
-//! does not carry is named by [`Fountain::missing_bonuses`] instead of silently
-//! reading zero.
+//! The upgrade planner and optimizer are FN-03; the marble planner and the
+//! simulated run are FN-04. The external bonuses the overview reports read the
+//! same account systems upstream does, and a source the save does not carry is
+//! named by [`Fountain::missing_bonuses`] instead of silently reading zero.
 
 mod currency;
 mod data;
+mod marble;
 mod planner;
+mod sim;
 mod state;
 mod upgrades;
 
 pub use data::Upgrade;
+pub use marble::{MarbleGroup, MarblePlan, MarbleRequest, MarbleRow, MarbleStep};
 pub use planner::{Goal, OptimizerPlan, PlanGroup, PlanRequest, PlanStep, PlannerRow};
+pub use sim::{SimEvent, SimEventKind, SimRequest, SimResult};
 
 use data::data;
 use idleon_save::Roster;
 use idleon_save::json;
 use serde_json::{Map, Value};
+use std::sync::Arc;
 
 /// How many currencies the fountain has.
 pub const CURRENCIES: usize = 9;
@@ -263,7 +267,9 @@ pub struct UpgradeRow {
 #[derive(Clone, Debug, Default)]
 pub struct Fountain {
     /// `holesData`: the cavern's saved rows, missing cells read as zero.
-    holes: Vec<Value>,
+    ///
+    /// Shared, so simulating a cavern copies only its upgrade levels.
+    holes: Arc<Vec<Value>>,
     /// `OptionsListAccount`/`OptLacc`: ducks (`[601]`) and Cglunko (`[644]`).
     options: Vec<Value>,
     /// `Spelunk`: row 45 slot 2 scales the lamp wish.

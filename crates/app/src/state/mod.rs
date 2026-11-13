@@ -21,7 +21,7 @@ use crate::sections::farming::{
     CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
 };
 use crate::sections::fishing::State as FishingState;
-use crate::sections::fountain::State as FountainState;
+use crate::sections::fountain::{MarblePlanInputs, SimInputs, State as FountainState};
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
@@ -68,7 +68,9 @@ use idleon_cooking_mastery::Mastery;
 use idleon_coral::{Inputs as CoralInputs, Plan as CoralPlan};
 use idleon_farming::{Allocation as FarmingOutcome, Comparison as FarmingComparison, Farm};
 use idleon_fishing::FishingSave;
-use idleon_fountain::{Fountain, OptimizerPlan, PlanRequest};
+use idleon_fountain::{
+    Fountain, MarblePlan, OptimizerPlan, PlanRequest, SimResult as FountainSimResult,
+};
 use idleon_import::Shadow;
 use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
 use idleon_jelly::planner::Plan as JellySectionPlan;
@@ -299,6 +301,10 @@ pub(crate) struct AppState {
     pub(crate) fountain_state: FountainState,
     /// The shared runner for the fountain upgrade optimizer.
     pub(crate) fountain_plan: Entity<TaskRunner<OptimizerPlan, PlanRequest>>,
+    /// The shared runner for the fountain marble optimizer.
+    pub(crate) fountain_marble_plan: Entity<TaskRunner<MarblePlan, MarblePlanInputs>>,
+    /// The shared runner for the fountain simulation.
+    pub(crate) fountain_sim: Entity<TaskRunner<FountainSimResult, SimInputs>>,
     /// The Opal Optimizer's villagers and account bonuses, when the save has them.
     pub(crate) opal: Option<Opal>,
     /// The villager the opal breakdown is switched to, or the total.
@@ -616,6 +622,41 @@ impl AppState {
                     idleon_fountain::short_number(plan.start_value),
                     idleon_fountain::short_number(plan.end_value),
                     plan.gain_pct
+                ))
+            },
+        );
+        let fountain_marble_plan = report_run::<MarblePlan, MarblePlanInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Planning fountain marble upgrades…"),
+                cancelled_kept: "Marble plan cancelled; the previous plan is unchanged.",
+                cancelled_empty: "Marble plan cancelled; nothing was planned.",
+            },
+            |_, plan| {
+                Some(format!(
+                    "Marble plan ready: {} levels, {} → {} ({:+.1}%).",
+                    plan.steps.len(),
+                    idleon_fountain::short_number(plan.start_value),
+                    idleon_fountain::short_number(plan.end_value),
+                    plan.gain_pct
+                ))
+            },
+        );
+        let fountain_sim = report_run::<FountainSimResult, SimInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Simulating fountain play…"),
+                cancelled_kept: "Fountain simulation cancelled; the previous result is unchanged.",
+                cancelled_empty: "Fountain simulation cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Fountain simulation ready: {} steps, marble {} → {}/hr.",
+                    result.steps,
+                    idleon_fountain::short_number(result.start_marble_rate),
+                    idleon_fountain::short_number(result.end_marble_rate)
                 ))
             },
         );
@@ -1040,6 +1081,8 @@ impl AppState {
             fountain: None,
             fountain_state: FountainState::default(),
             fountain_plan,
+            fountain_marble_plan,
+            fountain_sim,
             opal: None,
             opal_selected: None,
             opal_tab: OpalTab::default(),

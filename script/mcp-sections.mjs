@@ -1693,6 +1693,43 @@ const INTERACTIONS = {
     }
     await waitForNode(lane, 'fountain-plan-steps', 'fountain: the plan lists its purchases', 30000);
     await waitForNode(lane, 'fountain-plan-step-list', 'fountain: the plan lists every step');
+    // The Marble tab ranks a marble level on every owned upgrade that has a
+    // marble track, and the marble optimizer spends the saved marble.
+    await lane.call('click_element', { id: 'fountain-tab-marble' });
+    await waitForNode(
+      lane,
+      'fountain-marble-planner-table',
+      'fountain: the marble planner ranks the levels'
+    );
+    await waitForNode(lane, 'fountain-marble-optimizer', 'fountain: the marble optimizer renders');
+    await scrollTo(lane, 'run-fountain-marble-plan');
+    try {
+      await lane.call('click_element', { id: 'run-fountain-marble-plan' });
+    } catch (error) {
+      if (!/frame wait timed out/i.test(error.message)) throw error;
+    }
+    await waitForNode(
+      lane,
+      'fountain-marble-plan-groups',
+      'fountain: the marble plan groups its purchases',
+      30000
+    );
+    // The Sim tab runs the same simulation the page's worker runs.
+    await lane.call('click_element', { id: 'fountain-tab-sim' });
+    await waitForNode(lane, 'fountain-sim', 'fountain: the simulation tab opens');
+    await scrollTo(lane, 'run-fountain-sim');
+    try {
+      await lane.call('click_element', { id: 'run-fountain-sim' });
+    } catch (error) {
+      if (!/frame wait timed out/i.test(error.message)) throw error;
+    }
+    await waitForNode(lane, 'fountain-sim-result', 'fountain: the simulation finishes', 60000);
+    await waitForNode(
+      lane,
+      'fountain-sim-timeline',
+      'fountain: the simulation lists its events',
+      60000
+    );
     await lane.call('click_element', { id: 'fountain-tab-overview' });
     await waitForNode(lane, 'fountain-overview', 'fountain: the overview reopens');
   },

@@ -29,7 +29,7 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M14 | Worship Tower Defense | World 3 | 4 | partial | foundation | [worship-td](sections/worship-td.md) |
 | M15 | Ladle Optimizer | World 4 | 4 | partial | foundation | [ladle](sections/ladle.md) |
 | M16 | Cooking Mastery | World 4 | 3 | done | foundation | [cooking-mastery](sections/cooking-mastery.md) |
-| M17 | Fountain Calculator | World 5 | 4 | partial | foundation | [fountain](sections/fountain.md) |
+| M17 | Fountain Calculator | World 5 | 4 | done | foundation | [fountain](sections/fountain.md) |
 | M18 | Jar Calculator | World 5 | 4 | done | foundation | [jar](sections/jar.md) |
 | M19 | Sailing Calculator | World 5 | 4 | done | foundation | [sailing](sections/sailing.md) |
 | M20 | Cglunko Calculator | World 5 | 3 | done | foundation | [cglunko](sections/cglunko.md) |

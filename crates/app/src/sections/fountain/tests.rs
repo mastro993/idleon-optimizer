@@ -3,7 +3,7 @@
 //! The numbers themselves are pinned in `crates/fountain/tests/fountain.rs` against
 //! the upstream JS; these cover what the section decides on top of them.
 
-use super::{STEP_CHOICES, State, Tab};
+use super::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, STEP_CHOICES, State, Tab};
 use idleon_fountain::{Fountain, Goal};
 use idleon_import::import;
 use serde_json::{Value, json};
@@ -26,6 +26,8 @@ fn the_tab_ids_match_the_strip() {
         assert_eq!(Tab::from_id(tab.id()), Some(tab));
     }
     assert_eq!(Tab::from_id("planner"), Some(Tab::Planner));
+    assert_eq!(Tab::from_id("marble"), Some(Tab::Marble));
+    assert_eq!(Tab::from_id("sim"), Some(Tab::Sim));
     assert_eq!(Tab::default(), Tab::Overview);
 }
 
@@ -39,6 +41,9 @@ fn adopting_a_cavern_keeps_the_selections_it_can_resolve() {
         upgrade: Some(30),
         planner_desired: Some(6),
         optimizer_steps: 3,
+        marble_desired: Some(6),
+        marble_optimizer_steps: 3,
+        sim_hours: 0.0,
         ..State::default()
     };
     state.adopt(Some(&fountain));
@@ -49,6 +54,15 @@ fn adopting_a_cavern_keeps_the_selections_it_can_resolve() {
     assert_eq!(state.upgrade, None);
     assert_eq!(state.planner_desired, None);
     assert_eq!(state.optimizer_steps, 50, "an unknown cap falls back");
+    assert_eq!(state.marble_desired, None);
+    assert_eq!(
+        state.marble_optimizer_steps, 50,
+        "an unknown cap falls back"
+    );
+    assert_eq!(
+        state.sim_hours, SIM_MIN_HOURS,
+        "a time limit below the minimum is lifted"
+    );
 
     let mut state = State {
         tab: Tab::Upgrades,
@@ -110,4 +124,46 @@ fn the_planner_and_optimizer_requests_carry_their_own_controls() {
 
     state.adopt(None);
     assert_eq!(state.optimizer_steps, 25, "no cavern keeps a valid cap");
+    assert_eq!(state.marble_optimizer_steps, 50);
+}
+
+#[test]
+fn the_marble_planner_and_simulation_requests_carry_their_controls() {
+    let mut state = State {
+        marble_goal: Goal::Fill,
+        marble_desired: Some(2),
+        marble_affordable: true,
+        marble_optimizer_goal: Goal::Royal,
+        marble_optimizer_steps: 25,
+        marble_optimizer_affordable: false,
+        sim_hours: 48.0,
+        ..State::default()
+    };
+    let planner = state.marble_planner_request();
+    assert_eq!(planner.goal, Goal::Fill);
+    assert_eq!(planner.desired, Some(2));
+    assert_eq!(planner.max_steps, 1, "the planner ranks one level per row");
+    assert!(planner.affordable);
+
+    let plan = state.marble_plan_request();
+    assert_eq!(plan.goal, Goal::Royal);
+    assert_eq!(plan.desired, None, "the optimizer reads the save's desired");
+    assert_eq!(plan.max_steps, 25);
+    assert!(!plan.affordable);
+
+    let sim = state.sim_request();
+    assert_eq!(sim.hours, 48.0);
+    assert_eq!(sim.desired, None);
+
+    let defaults = State::default();
+    assert!(!defaults.marble_affordable, "the page starts unfiltered");
+    assert!(
+        defaults.marble_optimizer_affordable,
+        "the optimizer starts affordable"
+    );
+    assert_eq!(defaults.sim_hours, SIM_DEFAULT_HOURS);
+
+    state.sim_hours = 1e9;
+    state.adopt(Some(&fountain()));
+    assert_eq!(state.sim_hours, SIM_MAX_HOURS, "a huge limit is capped");
 }

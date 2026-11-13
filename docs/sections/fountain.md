@@ -5,7 +5,7 @@
 - Milestone: `M17`
 - Section key: `fountain`
 - Group: `w5`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.
