@@ -89,6 +89,36 @@ const optimizer = {
 };
 
 const b = ext._breakdown;
+// `recalcSim`: one hand-typed distribution read against the save, with the
+// page's own `vs Current` column (no share when a villager earned nothing).
+const simulate = (counts) => {
+  const typed = Array.from({ length: 5 }, (_, v) => Math.max(0, Number(counts[v]) || 0));
+  const lowest = minOpals(typed, ext);
+  const rates = Array.from({ length: 5 }, (_, v) => page.villagerExpRate(v, typed, ext));
+  const currentRates = Array.from({ length: 5 }, (_, v) => page.villagerExpRate(v, opals, ext));
+  const total = page.totalExpRate(typed, ext);
+  const currentTotal = page.totalExpRate(opals, ext);
+  return {
+    opals: typed,
+    totalOpals: typed.reduce((sum, count) => sum + count, 0),
+    minOpals: lowest,
+    equalSpread: ext.cosmoBonus_1_5 * Math.floor(lowest / 5),
+    rates,
+    total,
+    changes: rates.map((rate, v) => (currentRates[v] > 0 ? ((rate - currentRates[v]) / currentRates[v]) * 100 : 0)),
+    totalChange: currentTotal > 0 ? ((total - currentTotal) / currentTotal) * 100 : 0,
+  };
+};
+
+const simulator = {
+  distributions: [
+    { label: 'the saved split', ...simulate(opals) },
+    { label: 'a balanced swap', ...simulate([120, 24, 100, 35, 90]) },
+    { label: "the page's own total plan", ...simulate(totalPlan) },
+    { label: 'a total above the save', ...simulate([100, 24, 100, 35, 100]) },
+    { label: 'nothing on the Explorer', ...simulate([0, 24, 100, 35, 210]) },
+  ],
+};
 // `arcadeBonus` returns a `{val, children}` node for some indices; the page
 // multiplies the value, so the fixture stores the number.
 const num = (value) => (value && typeof value === 'object' ? Number(value.val) || 0 : Number(value) || 0);
@@ -150,6 +180,7 @@ const payload = {
     bundleU: b.bundleU,
   },
   optimizer,
+  simulator,
   current: {
     minOpals: minOpals(opals, ext),
     equalSpread: ext.cosmoBonus_1_5 * Math.floor(minOpals(opals, ext) / 5),

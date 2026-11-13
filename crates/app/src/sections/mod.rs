@@ -407,7 +407,7 @@ pub(crate) const SECTIONS: [Section; 30] = [
         title: "Opal Optimizer",
         icon: "💎",
         group: Group::W5,
-        description: "Villager EXP rates, opal distribution optimizer, all bonus terms",
+        description: "Villager EXP rates, opal distribution optimizer, manual simulator, all bonus terms",
         spec: "docs/sections/opal.md",
         status: Status::Ready,
         dashboard: true,

@@ -46,13 +46,33 @@ impl AppState {
 
     /// Set the opal total the optimizer splits; whole opals only.
     pub(crate) fn set_opal_total(&mut self, total: f64, cx: &mut Context<Self>) {
-        let total = if total.is_finite() {
-            total.max(0.0).floor()
-        } else {
-            0.0
-        };
+        let total = idleon_opal::whole(total);
         if self.opal_total != total {
             self.opal_total = total;
+            cx.notify();
+        }
+    }
+
+    /// Set one villager's manual opal count; whole opals only.
+    pub(crate) fn set_opal_manual(&mut self, villager: usize, opals: f64, cx: &mut Context<Self>) {
+        let Some(count) = self.opal_manual.get_mut(villager) else {
+            return;
+        };
+        let opals = idleon_opal::whole(opals);
+        if *count != opals {
+            *count = opals;
+            cx.notify();
+        }
+    }
+
+    /// Put the manual simulator back on the save's own opal split.
+    pub(crate) fn reset_opal_manual(&mut self, cx: &mut Context<Self>) {
+        let saved = self
+            .opal
+            .as_ref()
+            .map_or([0.0; idleon_opal::VILLAGERS], Opal::opals);
+        if self.opal_manual != saved {
+            self.opal_manual = saved;
             cx.notify();
         }
     }

@@ -1,11 +1,11 @@
 //! The Opal Optimizer (W5): the current villagers, their EXP rates, the account
-//! bonuses behind them and the distribution optimizer.
+//! bonuses behind them, the distribution optimizer and the manual simulator.
 //!
 //! `Current state` is the upstream page's first tab: the villager overview and
 //! table, the current opal state and the shared formula tree, with a villager
 //! picker that switches the tree between the total and one villager. `Optimizer`
-//! splits a total across the unlocked villagers for the selected target. The
-//! manual simulator (OP-03) arrives with a later feature.
+//! splits a total across the unlocked villagers for the selected target, and
+//! `Manual simulator` reads a hand-typed split against the save.
 //!
 //! Every save-derived figure comes from the import; the section keeps only its
 //! visible selections.
@@ -15,6 +15,7 @@ mod actions;
 mod bonuses;
 mod optimizer;
 mod overview;
+mod simulate;
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -29,6 +30,10 @@ use gpui::{
 use idleon_opal::Opal;
 use idleon_ui::formula::FormulaTree;
 
+/// The largest opal count a manual or planned input takes; a save above it
+/// raises the ceiling.
+const MAX_OPALS: f64 = 1_000_000.0;
+
 /// The Opal Optimizer tabs this build implements.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -38,15 +43,18 @@ pub(crate) enum Tab {
     Current,
     /// The distribution optimizer.
     Optimizer,
+    /// A hand-typed distribution read against the save.
+    Manual,
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 2] = [Tab::Current, Tab::Optimizer];
+    pub(crate) const ALL: [Tab; 3] = [Tab::Current, Tab::Optimizer, Tab::Manual];
 
     pub(crate) fn id(self) -> &'static str {
         match self {
             Tab::Current => "opal-tab-current",
             Tab::Optimizer => "opal-tab-optimizer",
+            Tab::Manual => "opal-tab-manual",
         }
     }
 
@@ -54,6 +62,7 @@ impl Tab {
         match self {
             Tab::Current => "Current state",
             Tab::Optimizer => "Optimizer",
+            Tab::Manual => "Manual simulator",
         }
     }
 
@@ -106,6 +115,7 @@ pub(crate) fn view(
         .child(match tab {
             Tab::Current => current_pane(state, &opal, tree, cx),
             Tab::Optimizer => optimizer::optimizer_pane(state, window, cx),
+            Tab::Manual => simulate::pane(state, window, cx),
         })
         .into_any_element()
 }

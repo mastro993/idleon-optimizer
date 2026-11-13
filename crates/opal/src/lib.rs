@@ -15,6 +15,8 @@
 //!   distribution of a total that earns the most for the chosen target. The port
 //!   searches every placement the page's two greedy shapes can miss, so its plan
 //!   is never worse than the saved distribution.
+//! - [`Opal::simulation`] is the page's `recalcSim`: one hand-typed distribution
+//!   read against the save, with the total it spends and the change it makes.
 //! - [`Terms`] is the page's `_breakdown` object: every account bonus
 //!   `buildExt` reads, kept apart so the tree can show where each came from.
 //!   [`Terms::additive`] sums its additive terms and [`Terms::base_multiplier`]
@@ -26,11 +28,13 @@
 mod breakdown;
 pub mod data;
 mod optimize;
+mod simulate;
 
 #[cfg(test)]
 mod tests;
 
 pub use optimize::{Input as PlanInput, Plan, Target as PlanTarget};
+pub use simulate::Simulation;
 
 use idleon_common::formula::{FormulaNode, ValueFormat};
 
@@ -373,6 +377,22 @@ impl Opal {
 
 /// The format every rate node reads as.
 pub(crate) const RATE: ValueFormat = ValueFormat::Rate;
+
+/// A whole opal count: floored at zero, and zero for a value that is not a
+/// number. The page reads every opal input through `Math.max(0, Number(v))`.
+pub fn whole(value: f64) -> f64 {
+    if value.is_finite() {
+        value.max(0.0).floor()
+    } else {
+        0.0
+    }
+}
+
+/// The relative change from `before` to `after`, or `None` when nothing earned
+/// before: a share of nothing is no improvement to report.
+pub(crate) fn relative(before: f64, after: f64) -> Option<f64> {
+    (before.is_finite() && before > 0.0).then(|| (after - before) / before)
+}
 
 /// The villager names, in save order (`VILLAGER_NAMES`), for the tree's labels.
 pub(crate) fn name(villager: usize) -> &'static str {
