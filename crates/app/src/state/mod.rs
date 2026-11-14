@@ -387,6 +387,8 @@ pub(crate) struct AppState {
     pub(crate) damage: DamageState,
     /// The shared formula tree on the damage section's mastery breakdown card.
     pub(crate) damage_mastery: Entity<FormulaTree>,
+    /// The shared formula tree on the damage section's formula breakdown card.
+    pub(crate) damage_formula: Entity<FormulaTree>,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub(crate) coral: CoralState,
     /// The Worship TD simulator's config and live run.
@@ -1246,6 +1248,7 @@ impl AppState {
             coin_multi: sections::coin_multi::State::new(window, cx),
             damage: DamageState::default(),
             damage_mastery: crate::ui::formula_tree("damage-mastery", window, cx),
+            damage_formula: crate::ui::formula_tree("damage-formula", window, cx),
             coral: CoralState::default(),
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),

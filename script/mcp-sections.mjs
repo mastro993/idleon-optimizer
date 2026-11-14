@@ -3531,30 +3531,47 @@ const INTERACTIONS = {
     await waitFor(
       lane,
       (nodes) =>
-        (labelOf(nodes, 'damage-context-note') ?? '').startsWith(
-          'Ana · Blunder Hills · The shared stat pipeline',
-        ),
-      'damage: the summary reports the missing account stats engine',
+        (labelOf(nodes, 'damage-context-note') ?? '').startsWith('Ana · Blunder Hills'),
+      'damage: the summary resolves the imported save',
     );
     await waitForNode(lane, 'damage-game', 'damage: the summary cards render');
     await waitForNode(lane, 'damage-mastery-bar', 'damage: the mastery bar renders');
-    // The layer tabs are always there; without the shared stat pipeline the
-    // selected layer reads a dash and the descriptor's note names the gap.
+    // The shared stat engine resolves the three layers, so the selected layer
+    // reads a value and its pre-softcap note instead of a dash.
     await waitForNode(lane, 'damage-layer-tabs', 'damage: the three layer tabs render');
     await waitFor(
       lane,
       (nodes) =>
         (labelOf(nodes, 'damage-layer') ?? '').startsWith('DDL0: Base Damage: ') &&
-        (labelOf(nodes, 'damage-layer-value') ?? '') === '—' &&
-        (labelOf(nodes, 'damage-layer-note') ?? '').includes('shared stat pipeline'),
-      'damage: the base layer names the missing stat pipeline',
+        (labelOf(nodes, 'damage-layer-value') ?? '') !== '—' &&
+        (labelOf(nodes, 'damage-layer-note') ?? '').includes('before softcaps'),
+      'damage: the base layer resolves from the engine',
     );
+    await waitForNode(
+      lane,
+      'damage-mastery-breakdown',
+      'damage: the mastery breakdown renders its tree',
+    );
+    // DMG-03: the selected layer's expanded tree, searched by the shared tree.
+    await waitForNode(
+      lane,
+      'damage-formula-breakdown',
+      'damage: the formula breakdown renders its tree',
+    );
+    await bringIntoView(lane, 'damage-formula-breakdown');
+    await lane.call('click_element', { id: 'damage-formula-search' });
+    await lane.call('type_text', { text: 'Weapon Power' });
     await waitFor(
       lane,
       (nodes) =>
-        (labelOf(nodes, 'damage-mastery-gap') ?? '').includes('shared stat pipeline'),
-      'damage: the mastery breakdown names the missing stat pipeline',
+        Number(
+          ((labelOf(nodes, 'damage-formula-match-count') ?? '').match(/(\d+)/) ?? [])[1] ?? 0,
+        ) > 0,
+      'damage: the tree search highlights matching nodes',
     );
+    await lane.call('click_element', { id: 'damage-formula-search' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('keyboard', { keystroke: 'backspace' });
     // A layer switch moves the card to that layer's upstream title.
     await lane.call('click_element', { id: 'segment-1' });
     await waitFor(
@@ -3576,13 +3593,14 @@ const INTERACTIONS = {
 
     // A character switch follows that character's current map. The first Down
     // opens the list, the second walks to the next row, Enter picks it.
+    await bringIntoView(lane, 'damage-character');
     await lane.call('focus_element', { id: 'damage-character' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'damage-context-note') ?? '').startsWith('Bo · YumYum Grotto · '),
+      (nodes) => (labelOf(nodes, 'damage-context-note') ?? '').startsWith('Bo · YumYum Grotto'),
       'damage: the character selector switches to that character\'s current map',
     );
   },
