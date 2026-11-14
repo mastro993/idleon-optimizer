@@ -8,9 +8,13 @@
 //! The vault kill-count tiers follow `js/stats/systems/common/vaultKillz.js`,
 //! the equipped-set check follows `checkSetEquipped` in
 //! `js/stats/systems/w3/setBonus.js`, and the Divinity/Crop Scientist group is
-//! resolved by [`crate::divinity`].
+//! resolved by [`idleon_account::divinity`].
 
 use idleon_account::Decoder;
+use idleon_account::divinity;
+use idleon_account::sets::set_bonus;
+use idleon_account::talent;
+use idleon_account::vault_killz::vault_killz;
 use idleon_save::fields;
 use idleon_stats as stats;
 use serde_json::{Map, Value};
@@ -36,6 +40,30 @@ fn coin_groups(
     let mut rows = Vec::with_capacity(characters.len());
     for index in 0..characters.len() {
         let mut groups: Vec<Group> = (0..GROUP_COUNT).map(|i| crate::group(i, None)).collect();
+        let cash = idleon_stats_engine::cash_bubbles(
+            &idleon_save::Save::new(serde_json::Value::Object(root.clone())),
+            simulation,
+            index,
+        )
+        .unwrap_or_default();
+        if !cash.is_empty() {
+            let mut terms = Vec::new();
+            let mut total = 0.0;
+            for (stat, value, part) in &cash {
+                total += part;
+                terms.push(crate::Term::annotated(
+                    match stat {
+                        idleon_stats_engine::Stat::Str => "Bubble: CashSTR",
+                        idleon_stats_engine::Stat::Agi => "Bubble: CashAGI",
+                        idleon_stats_engine::Stat::Wis => "Bubble: CashWIS",
+                        idleon_stats_engine::Stat::Luk => "Bubble: CashLUK",
+                    },
+                    *part,
+                    format!("{} {value:.0}", stat.id()),
+                ));
+            }
+            groups[0] = crate::group(0, Some(1.0 + total / 100.0)).with_terms(terms, 100.0);
+        }
         groups[1] = crate::group(1, Some(1.0 + decoder.companion(24).min(4.0)));
         groups[2] = crate::group(2, Some(1.0 + decoder.companion(45).min(4.0)));
         groups[3] = crate::group(3, Some(1.0 + decoder.companion(159).min(4.0)));
@@ -76,7 +104,7 @@ fn coin_groups(
         // The talent pays at least one when it is unlearned, and the cooking
         // level scales it through `getLOG`. The group multiplies its two
         // factors rather than summing terms, so it expands into neither.
-        let chip433 = crate::talent::max_bonus(&decoder, 433, index);
+        let chip433 = talent::max_bonus(&decoder, 433, index);
         let cooking = idleon_common::curve::log(decoder.option(362));
         groups[15] = crate::group(15, Some(1.0 + chip433.max(1.0) * cooking / 100.0));
         // Voting pays only while the vote is the server-wide winner, which a
@@ -149,15 +177,15 @@ fn coin_groups(
             20,
             Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0),
         );
-        let div_minor = crate::divinity::minor(&decoder, 3);
-        let crop_scientist = crate::divinity::crop_scientist(&mut decoder);
+        let div_minor = divinity::minor(&decoder, 3);
+        let crop_scientist = divinity::crop_scientist(&mut decoder);
         let mut terms = Vec::new();
         push(&mut terms, "Divinity Minor: Harriep", div_minor);
         if crop_scientist > 0.0 {
             terms.push(Term::annotated(
-                crate::divinity::CROP_SCIENTIST_NAME,
+                divinity::CROP_SCIENTIST_NAME,
                 crop_scientist,
-                format!("{} crops", crate::divinity::crop_count(&decoder)),
+                format!("{} crops", divinity::crop_count(&decoder)),
             ));
         }
         groups[21] = crate::group(21, Some(1.0 + (div_minor + crop_scientist) / 100.0))
@@ -233,127 +261,4 @@ pub fn coin(
         });
     }
     crate::Snapshot { characters: rows }
-}
-
-/// `getSetBonus(name, character)`: the permanent unlock, or the equipped set.
-pub(crate) fn set_bonus(decoder: &Decoder<'_>, name: &str, character: usize) -> f64 {
-    if decoder.ola_text(379).contains(name) || set_equipped(decoder, name, character) {
-        stats::set_bonus(name)
-    } else {
-        0.0
-    }
-}
-
-/// `checkSetEquipped` from `js/stats/systems/w3/setBonus.js`.
-fn set_equipped(decoder: &Decoder<'_>, name: &str, character: usize) -> bool {
-    let Some(set) = stats::equipment_set(name) else {
-        return false;
-    };
-    let Some(order) = fields::char_field(decoder.save(), "EquipOrder", character) else {
-        return false;
-    };
-    let row = |index: usize| -> &[Value] {
-        order
-            .get(index)
-            .and_then(Value::as_array)
-            .map_or(&[], Vec::as_slice)
-    };
-    let (armor, tools) = (row(0), row(1));
-    let item = |row: &[Value], slot: usize| -> Option<String> {
-        row.get(slot).and_then(Value::as_str).map(str::to_owned)
-    };
-
-    let mut parts = 0;
-    for slot in 0..16 {
-        if item(armor, slot).is_some_and(|name| set.armor.contains(&name)) {
-            parts += 1;
-        }
-    }
-    if set.tools_cap > 0.0 {
-        let mut found = 0;
-        for slot in 0..8 {
-            if found as f64 >= set.tools_cap {
-                break;
-            }
-            if item(tools, slot).is_some_and(|name| set.tools.contains(&name)) {
-                parts += 1;
-                found += 1;
-            }
-        }
-    }
-    if set.special_cap == 1.0
-        && (0..16).any(|slot| item(armor, slot).is_some_and(|name| set.special.contains(&name)))
-    {
-        parts += 1;
-    }
-    let required = set.armor.len() as f64 + set.tools_cap + set.special_cap;
-    parts as f64 >= required
-}
-
-/// `computeVaultKillzTotal` from `js/stats/systems/common/vaultKillz.js`.
-///
-/// Indices 0..3 are the raw kills on maps 14, 24, 13 and 8; 4..7 their floored
-/// logs; 8 the completed tasks; 9 the capped bubble levels; 10 and 11 the same
-/// pair for map 101.
-fn vault_killz(decoder: &Decoder<'_>) -> [f64; 12] {
-    let mut result = [0.0; 12];
-    let kills = |map: usize| -> f64 {
-        let mut total = 0.0;
-        for character in 0..decoder.characters().len() {
-            let Some(row) = fields::char_field(decoder.save(), "KLA", character) else {
-                continue;
-            };
-            let Some(row) = fields::object_row(&row, map) else {
-                continue;
-            };
-            let left = row.first().copied().flatten().unwrap_or(0.0);
-            total += (stats::kill_requirement(map) - left).max(0.0);
-        }
-        total
-    };
-
-    for (index, map) in [14usize, 24, 13, 8].into_iter().enumerate() {
-        result[index] = kills(map);
-    }
-    for index in 0..4 {
-        result[4 + index] = floored_log(result[index]);
-    }
-
-    // `tasksGlobalData[3]` is `TaskZZ3`: its rows hold the completed flag per task.
-    let mut completed = 0.0;
-    if let Some(rows) = fields::field(decoder.save(), "TaskZZ3") {
-        for world in 0..4 {
-            let Some(tasks) = fields::object_row(&rows, world) else {
-                continue;
-            };
-            completed += tasks.iter().filter(|task| **task == Some(1.0)).count() as f64;
-        }
-    }
-    result[8] = completed;
-
-    let mut bubbles = 0.0;
-    if let Some(cauldrons) = fields::field(decoder.save(), "CauldronInfo") {
-        for cauldron in 0..4 {
-            let Some(levels) = fields::object_row(&cauldrons, cauldron) else {
-                continue;
-            };
-            for level in levels.into_iter().flatten() {
-                bubbles += level.min(100.0);
-            }
-        }
-    }
-    result[9] = bubbles;
-
-    result[10] = kills(101);
-    result[11] = floored_log(result[10]);
-    result
-}
-
-/// `getLOG(value)`: the floored base-10 log, `0` below ten.
-fn floored_log(value: f64) -> f64 {
-    if value < 10.0 {
-        0.0
-    } else {
-        value.log10().floor()
-    }
 }

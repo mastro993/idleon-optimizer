@@ -337,7 +337,7 @@ fn the_explorer_covers_every_descriptor_and_every_category() {
     let coverage = sheet.coverage();
     assert_eq!(coverage.total, sheet.descriptors().len());
     assert_eq!(coverage.computed, sheet.resolved());
-    assert_eq!(coverage.computed, 10);
+    assert_eq!(coverage.computed, 14);
     assert_eq!(
         coverage.categories.len(),
         idleon_stats::BreakdownCategory::ALL.len()

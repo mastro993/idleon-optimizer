@@ -280,7 +280,7 @@ impl Decoder<'_> {
     }
 
     /// `computeChip6Count`: chips of type 6 in a player's slots.
-    pub(crate) fn chip_count(&self, player: usize, chip: usize) -> f64 {
+    pub fn chip_count(&self, player: usize, chip: usize) -> f64 {
         fields::row(self.save, "Lab", &[1 + player])
             .map(|row| {
                 (0..7)

@@ -15,7 +15,7 @@ use serde_json::{Map, Value};
 /// The level is `UpgVault[index]`; the mastery levels that multiply every
 /// upgrade are the ones at 32, 61 and 89, and the upgrades in
 /// `VAULT_NO_MASTERY` skip them.
-pub(crate) fn vault_upgrade_bonus(save: &Map<String, Value>, index: usize) -> f64 {
+pub fn vault_upgrade_bonus(save: &Map<String, Value>, index: usize) -> f64 {
     let data = account_data();
     let vault = fields::numbers(save, "UpgVault").unwrap_or_default();
     let level = fields::number_at(&vault, index);
@@ -57,7 +57,7 @@ pub(crate) fn vault_upgrade_bonus(save: &Map<String, Value>, index: usize) -> f6
 
 impl Decoder<'_> {
     /// `RoyalGuardian("outpostROGBonus", 1)`: the research focus selection.
-    pub(crate) fn royal_research(&self) -> f64 {
+    pub fn royal_research(&self) -> f64 {
         let selected = fields::at(self.save, "RoyalG", &[3, 2])
             .unwrap_or(0.0)
             .floor();
@@ -70,7 +70,7 @@ impl Decoder<'_> {
 
     /// `TotalStatz` from `js/stats/systems/w7/royal-guardian.js`, reduced to
     /// the outpost count the research focus reads.
-    pub(crate) fn total_statz(&self) -> [f64; 5] {
+    pub fn total_statz(&self) -> [f64; 5] {
         let maps = fields::field(self.save, "RoyalMaps")
             .and_then(|value| value.as_array().cloned())
             .unwrap_or_default();
@@ -82,7 +82,7 @@ impl Decoder<'_> {
     }
 
     /// `computeMeritocBonusz` from `js/stats/systems/w7/meritoc.js`.
-    pub(crate) fn meritoc(&self, option: usize) -> f64 {
+    pub fn meritoc(&self, option: usize) -> f64 {
         let active_vote = self.ola(453);
         if option as f64 != active_vote {
             return 0.0;
@@ -218,7 +218,7 @@ impl Decoder<'_> {
     }
 
     /// `computeEmperorBon(8)` from `js/stats/systems/w6/emperor.js`.
-    pub(crate) fn emperor_8(&self) -> f64 {
+    pub fn emperor_8(&self) -> f64 {
         let count = self.ola(369) as usize;
         let value = self.data.emperor_bonus_val.get(8).copied().unwrap_or(0.0);
         let mut sum = 0.0;
@@ -251,7 +251,7 @@ impl Decoder<'_> {
     }
 
     /// Whether the save's Prisma list marks the bubble at `cauldron[index]`.
-    pub(crate) fn bubble_prismad_at(&self, cauldron: usize, index: usize) -> bool {
+    pub fn bubble_prismad_at(&self, cauldron: usize, index: usize) -> bool {
         let Some(letter) = self.data.encoding.chars().nth(cauldron) else {
             return false;
         };
@@ -279,7 +279,7 @@ impl Decoder<'_> {
     }
 
     /// `getPrismaBonusMult` from `js/stats/systems/w2/alchemy.js`.
-    pub(crate) fn prisma_bonus_multi(&self) -> f64 {
+    pub fn prisma_bonus_multi(&self) -> f64 {
         let purple_sigils = fields::row(self.save, "CauldronP2W", &[4])
             .map(|row| {
                 (0..24)
@@ -309,7 +309,7 @@ impl Decoder<'_> {
     }
 
     /// `computePaletteBonus` from `js/stats/systems/w7/spelunking.js`.
-    pub(crate) fn palette(&self, index: usize) -> f64 {
+    pub fn palette(&self, index: usize) -> f64 {
         let level = self.spelunk(9, index);
         if level <= 0.0 {
             return 0.0;
@@ -370,7 +370,7 @@ impl Decoder<'_> {
     }
 
     /// `researchGridPointsTaskLevel`: `TaskZZ2[6][3]`.
-    pub(crate) fn task_grid_points(&self) -> f64 {
+    pub fn task_grid_points(&self) -> f64 {
         self.nested("TaskZZ2", &[6, 3]).max(0.0)
     }
 

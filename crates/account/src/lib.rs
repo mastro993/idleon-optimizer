@@ -15,6 +15,7 @@
 mod bonuses;
 mod cooking;
 mod data;
+pub mod divinity;
 mod equipment;
 mod friend;
 mod hole;
@@ -23,13 +24,16 @@ mod lab;
 mod mastery;
 mod opal;
 mod prayer;
+pub mod sets;
 mod sneaking;
 mod statue;
 mod sushi;
 mod systems;
+pub mod talent;
 mod tome;
 mod tome_high;
 mod tree;
+pub mod vault_killz;
 
 use data::{AccountData, account_data};
 use idleon_research::data::game;

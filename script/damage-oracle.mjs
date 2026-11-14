@@ -58,6 +58,13 @@ const recordLayer = (children, prefix, preSoftcapKey = 'preSoftcap') => {
     // the one before the chain (the page labels it 'Base Damage Before Softcaps
     // and Food'), so the card's note compares like the other two layers.
     preSoftcap: Number(child._debug?.[preSoftcapKey] ?? 0),
+    // The descriptor's own term values, so the port is compared on every
+    // provider it reads and not only on the layer's final number.
+    debug: Object.fromEntries(
+      Object.entries(child._debug ?? {})
+        .filter(([, value]) => typeof value !== 'object')
+        .map(([key, value]) => [key, Number(value) || 0])
+    ),
   };
 };
 

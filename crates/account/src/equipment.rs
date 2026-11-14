@@ -48,7 +48,7 @@ impl Decoder<'_> {
     }
 
     /// `equipment.resolve`: every gear slot's matching UQ stat.
-    pub(crate) fn equipment_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn equipment_bonus(&self, stat: &str, character: usize) -> f64 {
         let Some(order) = fields::field(self.save, &format!("EquipOrder_{character}")) else {
             return 0.0;
         };
@@ -153,7 +153,7 @@ impl Decoder<'_> {
     }
 
     /// `obol.resolve`: personal and family obols with a matching built-in stat.
-    pub(crate) fn obol_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn obol_bonus(&self, stat: &str, character: usize) -> f64 {
         let personal = self.scan_obols(
             fields::field(self.save, &format!("ObolEqO0_{character}")),
             fields::field(self.save, &format!("ObolEqMAP_{character}")),
@@ -202,7 +202,7 @@ impl Decoder<'_> {
     }
 
     /// `nametag.resolve`: tier × gallery multiplier × UQ value.
-    fn nametag_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn nametag_bonus(&self, stat: &str, character: usize) -> f64 {
         if !self.gallery_on(character) {
             return 0.0;
         }
@@ -233,7 +233,7 @@ impl Decoder<'_> {
     }
 
     /// `trophy.resolve`: slot tier × gallery multiplier × UQ value.
-    fn trophy_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn trophy_bonus(&self, stat: &str, character: usize) -> f64 {
         if !self.gallery_on(character) {
             return 0.0;
         }
@@ -259,7 +259,7 @@ impl Decoder<'_> {
     }
 
     /// `premhat.resolve`: hatrack multiplier × UQ value.
-    fn hatrack_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn hatrack_bonus(&self, stat: &str, character: usize) -> f64 {
         if !self.premhat_on(character) {
             return 0.0;
         }
@@ -280,7 +280,7 @@ impl Decoder<'_> {
     }
 
     /// `capevine.resolve`: cape vine multiplier × UQ value.
-    fn capevine_bonus(&self, stat: &str, character: usize) -> f64 {
+    pub fn capevine_bonus(&self, stat: &str, character: usize) -> f64 {
         if !self.capevine_on(character) {
             return 0.0;
         }
@@ -300,8 +300,65 @@ impl Decoder<'_> {
         total
     }
 
+    /// `computeGalleryBaseStat(statName, character)`: the trophy, nametag,
+    /// hatrack and Cape Vine pools the stat totals add to equipment.
+    pub fn gallery_base_stat(&self, stat: &str, character: usize) -> f64 {
+        let mut total = 0.0;
+        let gallery = self.gallery_on(character);
+        let premhat = self.premhat_on(character);
+        let capevine = self.capevine_on(character);
+        if gallery {
+            total += self.trophy_bonus(stat, character);
+            total += self.nametag_bonus(stat, character);
+        }
+        let mut hatrack_total = 0.0;
+        if premhat || capevine {
+            let hats = fields::strings(self.save, "Spelunk", &[46]).unwrap_or_default();
+            let hatrack = self.hatrack_bonus_multi();
+            for name in &hats {
+                let Some(entries) = self.data.hats.get(name) else {
+                    continue;
+                };
+                for (entry_stat, value) in entries {
+                    if entry_stat == stat {
+                        hatrack_total += hatrack * value;
+                    }
+                }
+            }
+        }
+        if premhat {
+            total += hatrack_total;
+        }
+        if capevine {
+            let capes = fields::strings(self.save, "Spelunk", &[54]).unwrap_or_default();
+            if !capes.is_empty()
+                && matches!(
+                    stat,
+                    "Weapon_Power" | "STR" | "AGI" | "WIS" | "LUK" | "Defence"
+                )
+            {
+                let cape = capes.last().cloned().unwrap_or_default();
+                let base = self
+                    .data
+                    .capes
+                    .get(&cape)
+                    .map(|entries| {
+                        entries
+                            .iter()
+                            .filter(|(entry_stat, _)| entry_stat == stat)
+                            .map(|(_, value)| *value)
+                            .sum::<f64>()
+                    })
+                    .unwrap_or(0.0);
+                let multi = self.capevine_bonus_multi(capes.len() - 1);
+                total += hatrack_total + multi * base;
+            }
+        }
+        total
+    }
+
     /// `galleryBonusMulti`.
-    fn gallery_bonus_multi(&self, character: usize) -> f64 {
+    pub fn gallery_bonus_multi(&self, character: usize) -> f64 {
         let gallery_level = self.spelunk(13, 4);
         let trophy_chip = if self.chip_count(character, 16) > 0.0 {
             10.0
@@ -329,7 +386,7 @@ impl Decoder<'_> {
     }
 
     /// `HatrackBonusMulti`.
-    fn hatrack_bonus_multi(&self) -> f64 {
+    pub fn hatrack_bonus_multi(&self) -> f64 {
         let hats = fields::strings(self.save, "Spelunk", &[46])
             .map(|hats| hats.len() as f64)
             .unwrap_or(0.0);
@@ -341,7 +398,7 @@ impl Decoder<'_> {
     }
 
     /// `capevineBonusMulti`.
-    fn capevine_bonus_multi(&self, slot: usize) -> f64 {
+    pub fn capevine_bonus_multi(&self, slot: usize) -> f64 {
         let capes = fields::strings(self.save, "Spelunk", &[54])
             .map(|capes| capes.len() as f64)
             .unwrap_or(0.0);
@@ -356,7 +413,7 @@ impl Decoder<'_> {
     }
 
     /// `trophyTier`.
-    fn trophy_tier(&self, slot: usize) -> f64 {
+    pub fn trophy_tier(&self, slot: usize) -> f64 {
         if slot < 48 {
             return 0.3;
         }
@@ -416,17 +473,17 @@ impl Decoder<'_> {
     }
 
     /// `galleryBonusSystemOn`: KLA map 250 cleared.
-    fn gallery_on(&self, character: usize) -> bool {
+    pub fn gallery_on(&self, character: usize) -> bool {
         self.map_cleared(250, character)
     }
 
     /// `premHatBonusSystemOn`: KLA map 50 cleared.
-    fn premhat_on(&self, character: usize) -> bool {
+    pub fn premhat_on(&self, character: usize) -> bool {
         self.map_cleared(50, character)
     }
 
     /// `capevineBonusSystemOn`: KLA map 100 cleared.
-    fn capevine_on(&self, character: usize) -> bool {
+    pub fn capevine_on(&self, character: usize) -> bool {
         self.map_cleared(100, character)
     }
 
@@ -448,7 +505,7 @@ impl Decoder<'_> {
     }
 
     /// `charHasChip`.
-    fn char_has_chip(&self, character: usize, effect: &str) -> bool {
+    pub fn char_has_chip(&self, character: usize, effect: &str) -> bool {
         fields::row(self.save, "Lab", &[1 + character])
             .map(|chips| {
                 chips.iter().flatten().any(|chip| {

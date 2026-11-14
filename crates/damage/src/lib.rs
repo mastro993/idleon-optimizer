@@ -294,14 +294,19 @@ impl Summary {
         self
     }
 
-    /// Whether the import lacked metadata, as the descriptor reports it.
+    /// Whether the import lacked metadata or a modelled term.
     pub fn partial(&self) -> bool {
-        !self.metadata.complete()
+        !self.metadata.complete() || !self.reason.is_empty()
     }
 
     /// The descriptor's partial reason, or an empty string when complete.
     pub fn partial_reason(&self) -> String {
-        self.metadata.reason()
+        let metadata = self.metadata.reason();
+        if metadata.is_empty() {
+            self.reason.clone()
+        } else {
+            metadata
+        }
     }
 
     /// The "Character Sheet Range" card: upstream formats the same pair as a
@@ -339,12 +344,50 @@ pub fn is_dungeon(map: usize) -> bool {
 /// metadata flags are read either way, so the page can name a partial import.
 pub fn evaluate(save: &Save, context: Context) -> Summary {
     let metadata = Metadata::read(save);
-    let reason = if is_dungeon(context.map) {
-        DUNGEON
-    } else {
-        STATS_ENGINE
+    if is_dungeon(context.map) {
+        return Summary::unavailable(DUNGEON).with_metadata(metadata);
+    }
+    let simulation = idleon_research::model::Simulation::default();
+    let Some(layers) =
+        idleon_stats_engine::damage_layers(save, &simulation, context.character, context.map)
+    else {
+        return Summary::unavailable(STATS_ENGINE).with_metadata(metadata);
     };
-    Summary::unavailable(reason).with_metadata(metadata)
+    let missing = layers.missing.clone();
+    Summary {
+        available: true,
+        metadata,
+        reason: if missing.is_empty() {
+            String::new()
+        } else {
+            format!(
+                "Lower bound: {} damage term(s) are not modelled ({}).",
+                missing.len(),
+                missing.join("; ")
+            )
+        },
+        min: layers.min,
+        max: layers.max,
+        mastery: layers.mastery,
+        layers: Some(Layers {
+            base: Layer {
+                value: layers.base,
+                pre_softcap: layers.base_pre_softcap,
+            },
+            percent: Layer {
+                value: layers.percent,
+                pre_softcap: layers.percent_pre_softcap,
+            },
+            multiplier: Layer {
+                value: layers.multiplier,
+                pre_softcap: layers.multiplier_pre_softcap,
+            },
+            mastery: Mastery {
+                penalty: layers.mastery_penalty,
+                ..Mastery::default()
+            },
+        }),
+    }
 }
 
 #[cfg(test)]
@@ -496,8 +539,9 @@ mod tests {
         }));
         let summary = evaluate(&wrapped, Context::default());
         assert!(summary.metadata.complete());
-        assert!(!summary.partial());
-        assert_eq!(summary.partial_reason(), "");
+        // The metadata is complete, but the layers still leave terms out.
+        assert!(summary.partial());
+        assert!(summary.partial_reason().contains("not modelled"));
     }
 
     #[test]
