@@ -252,6 +252,25 @@ fn the_level_planner_matches_upstream() {
 }
 
 #[test]
+fn the_level_planner_stays_in_range_past_the_last_currency() {
+    // Level 45 and above pay with the "unknown" currency type (index
+    // `CURRENCIES`), which a 15-step plan reaches from level 31.
+    for level in [31.0, 44.0, 45.0, 60.0] {
+        let mut rows = holes();
+        let mut row = vec![json!(0); 30];
+        row[15] = json!(level);
+        rows[7] = json!(row);
+        let fountain = import_save(&save(rows));
+        assert_eq!(fountain.level(), level);
+        let plan = fountain.level_plan(15);
+        assert_eq!(plan.len(), 15);
+        for step in &plan {
+            assert!(step.cumulative >= step.cost);
+        }
+    }
+}
+
+#[test]
 fn the_fixture_reports_only_the_missing_companion_roster() {
     let fountain = fountain();
     assert_eq!(fountain.missing_bonuses().len(), 1);

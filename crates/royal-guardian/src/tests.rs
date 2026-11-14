@@ -591,3 +591,18 @@ fn a_collect_inside_a_merged_window_is_still_ignored() {
     assert_eq!(forecast.ignored_collects, vec![12.5]);
     assert!(forecast.collects.is_empty());
 }
+
+#[test]
+fn a_built_outpost_past_the_last_world_page_validates_without_panicking() {
+    // Map 350 is world index 7, one past `WORLDS`; a save from a newer game
+    // version can carry a built Support outpost there.
+    let mut maps = vec![json!([]); 351];
+    let mut row = vec![0.0; cell::KIND + 6];
+    row[cell::KIND] = 1.0;
+    maps[350] = json!(row);
+    let royal = RoyalGuardian::from_save(&save(json!(blank_rows()), json!(maps)), None)
+        .expect("the rows read");
+    assert!(royal.outpost(350).built);
+    // The call must return; what it reports for the unknown world is free.
+    let _ = sandbox::validate(&Sandbox::new(&royal));
+}
