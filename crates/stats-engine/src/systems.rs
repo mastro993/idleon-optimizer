@@ -18,6 +18,8 @@ pub(crate) struct Ctx<'a, 'b> {
     pub data: &'static Data,
     pub character: usize,
     pub missing: Vec<String>,
+    /// `totalTomePoints`, computed on first use.
+    pub(crate) tome: Option<f64>,
 }
 
 impl<'a, 'b> Ctx<'a, 'b> {
@@ -27,6 +29,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             data: data::data(),
             character,
             missing: Vec::new(),
+            tome: None,
         }
     }
 
@@ -48,6 +51,15 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .characters()
             .get(self.character)
             .map_or(0.0, |row| row.skill(index))
+    }
+
+    /// `Lv0_<char>[index]`: one raw row entry, for the upstream indices that
+    /// are read directly rather than through the skill numbering.
+    pub(crate) fn raw_level(&self, index: usize) -> f64 {
+        self.decoder
+            .characters()
+            .get(self.character)
+            .map_or(0.0, |row| row.raw(index).unwrap_or(0.0))
     }
 
     /// `Lv0_<char>[0]`, the class level.
@@ -155,6 +167,17 @@ impl<'a, 'b> Ctx<'a, 'b> {
             }
             total += value;
         }
+        // `BaseDmg`, `BaseHP`, `BaseAcc` and `BaseDef` stamps take the vault 16
+        // multiplier after the loop; every `Eff` key takes talent 625.
+        if matches!(kind, "BaseDmg" | "BaseHP" | "BaseAcc" | "BaseDef") {
+            let vault = self.decoder.vault(16);
+            if vault > 0.0 {
+                total *= 1.0 + vault / 100.0;
+            }
+        }
+        if kind.contains("Eff") {
+            total *= self.talent(625).max(1.0);
+        }
         total
     }
 
@@ -206,9 +229,108 @@ impl<'a, 'b> Ctx<'a, 'b> {
             + jelly50
     }
 
-    /// `bubbleValByKey(key)`, the value every descriptor reads a bubble by.
+    /// `bubbleValByKey(key)`: the value a descriptor reads a bubble by, before
+    /// the stat pipeline's slab and Tome post-passes.
     pub(crate) fn bubble(&mut self, key: &str) -> f64 {
         self.bubble_inner(key, false, false)
+    }
+
+    /// `computeAlchBubble(bonusType)`: the value `computeTotalStat` reads.
+    ///
+    /// Same bubble, then the post-passes the game applies only inside the stat
+    /// pipeline: the slab multiplier for the W2/W4 slider bubbles, the Tome
+    /// multiplier for W8/A9/M9, the class-level and family-level passes, and
+    /// the class zeroing of mismatched bubbles.
+    pub(crate) fn bubble_total(&mut self, key: &str) -> f64 {
+        let base = self.bubble_inner(key, false, true);
+        if base <= 0.0 {
+            return 0.0;
+        }
+        if class_zeroed(key, self.class()) {
+            return 0.0;
+        }
+        let mut value = base;
+        if matches!(key, "W2" | "W4" | "A2" | "A4" | "M2" | "M4") {
+            let discoveries = fields::len_of(self.save(), "Cards1");
+            value *= (discoveries / 100).max(1) as f64;
+        }
+        if matches!(key, "W8" | "A9" | "M9") {
+            let tome = self.tome_points();
+            value *= (((tome - 5000.0) / 2000.0).floor()).max(1.0);
+            let troll = if self.decoder.ola_text(379).contains("TROLL_SET") {
+                idleon_account::sets::set_bonus(self.decoder, "TROLL_SET", self.character)
+            } else {
+                0.0
+            };
+            value *= 1.0 + (self.decoder.grimoire_level(17) + troll) / 100.0;
+        }
+        if matches!(key, "W7" | "A8" | "M7") {
+            value *= (((self.class_level() - 500.0) / 10.0).floor()).max(1.0);
+        }
+        let family = match key {
+            "W9AllCharz" => Some(0usize),
+            "A7AllCharz" => Some(1),
+            "M8AllCharz" => Some(2),
+            _ => None,
+        };
+        if let Some(family) = family {
+            let levels = self.family_level_total(family);
+            value *= 1.0 + 4.0 * levels / (levels + 1000.0);
+        }
+        if let Some(big) = self
+            .data
+            .big_bubbles
+            .get(self.bubble_cauldron(key))
+            .cloned()
+            && big.key != key
+            && let Some(bubble) = self.data.bubble(key)
+            && big.indices.contains(&bubble.index)
+        {
+            value *= self.bubble(&big.key).max(1.0);
+        }
+        value
+    }
+
+    /// The `Tome` score, computed once per context.
+    pub(crate) fn tome_points(&mut self) -> f64 {
+        if let Some(points) = self.tome {
+            return points;
+        }
+        let points = self.decoder.tome_points().unwrap_or(0.0);
+        self.tome = Some(points);
+        points
+    }
+
+    fn bubble_cauldron(&self, key: &str) -> usize {
+        self.data.bubble(key).map_or(0, |bubble| bubble.cauldron)
+    }
+
+    /// `_familyLevelTotal(family)`: the summed class levels of one branch.
+    fn family_level_total(&self, family: usize) -> f64 {
+        let mut total = 0.0;
+        for character in 0..self.characters() {
+            let class = fields::char_field(self.save(), "CharacterClass", character)
+                .and_then(|value| idleon_save::json::number(&value))
+                .unwrap_or(0.0);
+            let branch = if class < 6.0 {
+                None
+            } else if class < 18.0 {
+                Some(0)
+            } else if class < 30.0 {
+                Some(1)
+            } else if class < 42.0 {
+                Some(2)
+            } else {
+                None
+            };
+            if branch == Some(family) {
+                total += fields::char_field(self.save(), "Lv0", character)
+                    .and_then(|value| idleon_save::json::index(&value, &[0]).cloned())
+                    .and_then(|value| idleon_save::json::number(&value))
+                    .unwrap_or(0.0);
+            }
+        }
+        total
     }
 
     fn bubble_inner(&mut self, key: &str, skip_class: bool, skip_big: bool) -> f64 {
@@ -243,25 +365,6 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .bubble_prismad_at(bubble.cauldron, bubble.index)
         {
             value *= self.decoder.prisma_bonus_multi().max(1.0);
-        }
-        // Slab bubbles scale by the discovered item count; Tome bubbles by the
-        // Tome score and the Grimoire 17 / Troll set chain.
-        if bubble.slab {
-            let discoveries = fields::field(self.save(), "Cards1")
-                .and_then(|value| value.as_array().map(Vec::len))
-                .unwrap_or(0);
-            value *= (discoveries / 100).max(1) as f64;
-        }
-        if bubble.tome {
-            let points = self.decoder.tome_points().unwrap_or(0.0);
-            value *= (((points - 5000.0) / 2000.0).floor()).max(1.0);
-            let troll = if self.decoder.ola_text(379).contains("TROLL_SET") {
-                idleon_account::sets::set_bonus(self.decoder, "TROLL_SET", self.character)
-            } else {
-                0.0
-            };
-            let grimoire = fields::at(self.save(), "Grimoire", &[17]).unwrap_or(0.0);
-            value *= 1.0 + (grimoire + troll) / 100.0;
         }
         let class = self.class();
         if !skip_class
@@ -874,7 +977,9 @@ impl<'a, 'b> Ctx<'a, 'b> {
             let class = fields::char_field(self.save(), "CharacterClass", character)
                 .and_then(|value| idleon_save::json::number(&value))
                 .unwrap_or(0.0) as usize;
-            if self.decoder.class_in_tree(class, 3) {
+            // Upstream tests `CLASS_TREES[class][3] === 10`: the fourth entry
+            // of the chain, which only the Death Bringer branches carry.
+            if idleon_account::class_tree(class).is_some_and(|tree| tree.get(3) == Some(&10u32)) {
                 holder = Some(character);
             }
         }
@@ -1018,19 +1123,22 @@ impl<'a, 'b> Ctx<'a, 'b> {
         }
         let mut value = level * self.data.statue(index);
         let talents: &[usize] = match index {
-            0 | 2 | 8 => &[112, 127],
+            0 | 2 => &[112, 127],
             7 => &[127],
-            1 | 11 | 9 => &[292, 307],
-            14 => &[292],
-            10 | 6 | 12 => &[487, 472],
-            13 => &[487],
+            8 => &[112],
+            1 | 11 => &[292, 307],
+            9 => &[292],
+            14 => &[307],
+            10 | 6 => &[487, 472],
+            12 => &[487],
+            13 => &[472],
             3 | 5 | 17 => &[37],
             _ => &[],
         };
         for talent in talents {
             value *= (1.0 + self.talent_here(*talent) / 100.0).max(1.0);
         }
-        let gold = fields::at(self.save(), "StatueG", &[index]).unwrap_or(0.0);
+        let gold = fields::at(self.save(), "StuG", &[index]).unwrap_or(0.0);
         if gold >= 2.0 {
             let tier = fields::at(self.save(), "Sailing", &[3, 30]).unwrap_or(0.0);
             let art = if tier > 0.0 {
@@ -1041,8 +1149,8 @@ impl<'a, 'b> Ctx<'a, 'b> {
             value *= (1.0 + (100.0 + art) / 100.0).max(1.0);
         }
         if gold >= 3.0 {
-            let zen = fields::at(self.save(), "Spelunk", &[45, 0]).unwrap_or(0.0);
-            value *= 1.0 + (50.0 + zen.floor()) / 100.0;
+            let zenith = fields::at(self.save(), "Spelunk", &[45, 0]).unwrap_or(0.0);
+            value *= (1.0 + (50.0 + (2.0 * zenith).floor()) / 100.0).max(1.0);
         }
         if [0, 1, 2, 6].contains(&index) {
             value *= (1.0 + self.decoder.vault(25) / 100.0).max(1.0);
@@ -1052,7 +1160,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         }
         let event = self.decoder.event_shop(19);
         value *= 1.0 + 0.3 * event;
-        value *= (1.0 + self.talent(56) / 100.0).max(1.0);
+        value *= (1.0 + self.talent_best(56) / 100.0).max(1.0);
         value *= 1.0 + self.decoder.meritoc(26) / 100.0;
         value
     }
@@ -1093,6 +1201,20 @@ fn class_chain(class: usize) -> Vec<usize> {
         current = parent;
     }
     chain
+}
+
+/// `_classZeroedBubble`: the bubbles a class branch never pays.
+fn class_zeroed(key: &str, class: usize) -> bool {
+    let zeroed: &[&str] = if class < 7 {
+        &["W1", "A1", "A5", "M5"]
+    } else if class < 18 {
+        &["A1", "A5", "A6", "M1", "M5", "M6"]
+    } else if class < 30 {
+        &["M1", "M5", "M6", "W1", "W5", "W6"]
+    } else {
+        &["W1", "W5", "W6", "A1", "A5", "A6"]
+    };
+    zeroed.contains(&key)
 }
 
 /// The `+N` / `+N%` effect strings the stat page parses.

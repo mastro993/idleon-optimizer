@@ -46,6 +46,8 @@ pub(crate) struct State {
     /// The damage layer the tabs show.
     pub(crate) layer: LayerId,
     save: Option<Save>,
+    /// The imported research grid, which the stat pipeline reads.
+    simulation: idleon_research::model::Simulation,
 }
 
 impl State {
@@ -61,11 +63,12 @@ impl State {
 
     /// Take a freshly imported save, opening on character one and its current
     /// map exactly like upstream `onLoad`.
-    pub(crate) fn load(&mut self, save: &Save) {
+    pub(crate) fn load(&mut self, save: &Save, simulation: &idleon_research::model::Simulation) {
         let snapshot = Snapshot::from_save(save);
         self.context = DamageContext::from_snapshot(&snapshot);
         self.snapshot = Some(snapshot);
         self.save = Some(save.clone());
+        self.simulation = simulation.clone();
         self.clamp(&mut Vec::new());
         self.refresh();
     }
@@ -106,7 +109,7 @@ impl State {
         self.summary = self
             .save
             .as_ref()
-            .map(|save| damage::evaluate(save, self.context));
+            .map(|save| damage::evaluate(save, &self.simulation, self.context));
     }
 
     /// Pick a character; the map follows its current map, as upstream `switchChar`.
@@ -572,7 +575,7 @@ mod tests {
     #[test]
     fn an_import_opens_on_character_one_and_its_current_map() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
@@ -594,7 +597,7 @@ mod tests {
     #[test]
     fn the_map_row_labels_carry_the_dungeon_and_current_markers() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         let rows = state.map_rows();
         let current: Vec<&MapRow> = rows.iter().filter(|row| row.current).collect();
         assert_eq!(current.len(), 1);
@@ -610,7 +613,7 @@ mod tests {
     #[test]
     fn a_character_switch_follows_its_current_map() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         state.select_character(1);
         assert_eq!(state.context.map, 50);
     }
@@ -618,7 +621,7 @@ mod tests {
     #[test]
     fn a_dungeon_map_reports_the_upstream_reason() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         state.select_map(39);
         let summary = state.summary.expect("the dungeon state is computed");
         assert!(!summary.available);
@@ -628,7 +631,7 @@ mod tests {
     #[test]
     fn the_layer_tabs_open_on_the_first_layer_and_switch() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         assert_eq!(state.layer, LayerId::Base);
         state.select_layer(LayerId::Multiplier);
         assert_eq!(state.layer, LayerId::Multiplier);
@@ -640,7 +643,7 @@ mod tests {
         // The engine resolves the layers, so the tabs and the mastery breakdown
         // read the summary's own values from the imported save.
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         assert!(state.mastery_tree().is_some());
         assert!(state.summary.as_ref().unwrap().layers().is_some());
 
@@ -683,7 +686,7 @@ mod tests {
     #[test]
     fn a_restored_context_outside_the_save_is_clamped_and_named() {
         let mut state = State::default();
-        state.load(&save());
+        state.load(&save(), &Default::default());
         let mut warnings = Vec::new();
         state.context = DamageContext {
             character: 12,

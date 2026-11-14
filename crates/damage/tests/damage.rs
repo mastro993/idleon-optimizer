@@ -56,7 +56,11 @@ fn normalized(reason: &str) -> String {
 }
 
 fn evaluate(save: &Save, character: usize, map: usize) -> Summary {
-    damage::evaluate(save, damage::Context { character, map })
+    damage::evaluate(
+        save,
+        &idleon_research::model::Simulation::default(),
+        damage::Context { character, map },
+    )
 }
 
 #[test]
@@ -381,6 +385,55 @@ fn the_stats_registry_still_marks_damage_unported() {
         }
         stats::Resolution::Value { .. } => {
             panic!("damage resolved in the stats registry; port its provider into this module")
+        }
+    }
+}
+
+/// The port's own layers against the descriptor's output, not the fixture's
+/// layers fed back in. The shared pipeline now resolves the statistics, the
+/// golden-food multiplier, the weapon-power chain and every DDL1/DDL2 group, so
+/// the port tracks upstream within a tenth of a percent for all eleven
+/// characters; the residual is the construction build-speed logarithm behind
+/// artifact 8 and the last few equipment rows, both still named rather than
+/// guessed.
+#[test]
+fn the_engine_layers_track_the_upstream_calculator() {
+    let imported = imported();
+    let save = imported.save;
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let character = expected["character"].as_u64().expect("an index") as usize;
+        let map = expected["map"].as_u64().expect("a map") as usize;
+        let layers =
+            idleon_stats_engine::damage_layers(&save, &imported.simulation, character, map)
+                .unwrap_or_else(|| panic!("character {character}: the engine did not resolve"));
+        for (name, got, want) in [
+            (
+                "base",
+                layers.base,
+                expected["layers"]["base"]["value"].as_f64().unwrap(),
+            ),
+            (
+                "percent",
+                layers.percent,
+                expected["layers"]["percent"]["value"].as_f64().unwrap(),
+            ),
+            (
+                "multiplier",
+                layers.multiplier,
+                expected["layers"]["multiplier"]["value"].as_f64().unwrap(),
+            ),
+            (
+                "mastery",
+                layers.mastery,
+                expected["mastery"]["value"].as_f64().unwrap(),
+            ),
+        ] {
+            let error = (got / want - 1.0).abs();
+            assert!(
+                error < 1e-3,
+                "character {character} {name}: {got} vs upstream {want} ({error:e})"
+            );
         }
     }
 }

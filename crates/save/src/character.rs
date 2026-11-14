@@ -57,7 +57,7 @@ impl Character {
         self.research_exp
     }
 
-    fn raw(&self, row: usize) -> Option<f64> {
+    pub fn raw(&self, row: usize) -> Option<f64> {
         self.levels.get(row).copied().flatten()
     }
 

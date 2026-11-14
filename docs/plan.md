@@ -530,10 +530,19 @@ minimum and maximum, each layer keeps the descriptor's name, note, format and pr
 mastery base, cap, penalty and four terms rebuild upstream's own ratio and tree, the descriptor's
 dungeon reason matches the page's, its `partial` flag and reason match the loader's
 companion-roster and server-vote fields on both a save with them and one without, and the map rows
-match `MapDispName`. The three layers themselves need
-the shared talent/stamp/bubble/card/equipment pipeline that SA-02 names as a gap for its other
-fifty descriptors, so the layer tabs show a dash, the mastery card names the same gap, and the page
-never prints a guessed number.
+match `MapDispName`. The three layers now resolve from the shared pipeline: the golden-food
+multiplier, the bubble post-passes (`computeAlchBubble`'s slab/Tome/class-level/family passes), the
+box rewards, the Lab mainframe composites and the win-bonus options were still missing from the
+engine, and with them ported every STR/AGI/WIS/LUK total matches the upstream calculator exactly for
+all eleven characters. The damage descriptor itself now ports the whole DDL0 weapon-power chain
+(Flurbo shop, food Weapon Power, W5 card level, guild 3, the Beginner talent cap, the obol misc
+multiplier), the Max HP / Max MP / Movement Speed descriptors behind the HP-, MP- and speed-scaled
+bubbles, the DDL1 talent chain and every DDL2 group from the Grudge/Slabbo rows through the
+post-softcap multipliers, with each term kept in `Layers::debug` under the descriptor's own
+`_debug` names. `crates/damage/tests/damage.rs` compares the port's own layers against
+`fixtures/damage.json` and every character tracks the calculator within a tenth of a percent; the
+residual is the construction build-speed logarithm behind artifact 8 and the last equipment rows,
+which stay named rather than guessed.
 Details:
 [`docs/sections/damage.md`](sections/damage.md).
 

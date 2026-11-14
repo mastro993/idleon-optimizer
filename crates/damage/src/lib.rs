@@ -7,11 +7,11 @@
 //! the same pair. [`layers`] carries the three layers' values and notes and the
 //! mastery terms the ratio is built from. The layers themselves come from the
 //! upstream shared stat pipeline (`js/stats/systems/common/stats.js` and the
-//! talent, stamp, bubble, card and equipment systems it reads), which this build
-//! does not decode; `crates/stats/src/breakdowns` names the same gap for its
-//! `damage` row. This module keeps the arithmetic, the dungeon rule and the
-//! missing-input state separate so the provider can land without changing the
-//! section.
+//! talent, stamp, bubble, card and equipment systems it reads), which
+//! `crates/stats-engine` ports; every term the pipeline still leaves out is
+//! named in the summary's reason instead of being guessed. This module keeps
+//! the arithmetic, the dungeon rule and the missing-input state separate from
+//! the provider.
 //!
 //! Upstream hides the summary on a dungeon map, because a dungeon's current-run
 //! damage and mastery are not stored in the save JSON. The same maps are
@@ -342,14 +342,17 @@ pub fn is_dungeon(map: usize) -> bool {
 /// upstream reason, and a save the engine cannot fully justify keeps its layers
 /// but names every term it left out, so the page shows a lower bound instead of
 /// a number presented as complete. The metadata flags are read either way.
-pub fn evaluate(save: &Save, context: Context) -> Summary {
+pub fn evaluate(
+    save: &Save,
+    simulation: &idleon_research::model::Simulation,
+    context: Context,
+) -> Summary {
     let metadata = Metadata::read(save);
     if is_dungeon(context.map) {
         return Summary::unavailable(DUNGEON).with_metadata(metadata);
     }
-    let simulation = idleon_research::model::Simulation::default();
     let Some(layers) =
-        idleon_stats_engine::damage_layers(save, &simulation, context.character, context.map)
+        idleon_stats_engine::damage_layers(save, simulation, context.character, context.map)
     else {
         return Summary::unavailable(STATS_ENGINE).with_metadata(metadata);
     };
@@ -520,7 +523,7 @@ mod tests {
 
     #[test]
     fn missing_metadata_reads_as_partial_with_the_descriptor_reason() {
-        let summary = evaluate(&flat_save(), Context::default());
+        let summary = evaluate(&flat_save(), &Default::default(), Context::default());
         assert!(!summary.metadata.companions);
         assert!(!summary.metadata.vote);
         assert!(summary.partial());
@@ -537,7 +540,7 @@ mod tests {
             "companion": { "l": [] },
             "serverVars": { "voteCategories": [2] },
         }));
-        let summary = evaluate(&wrapped, Context::default());
+        let summary = evaluate(&wrapped, &Default::default(), Context::default());
         assert!(summary.metadata.complete());
         // The metadata is complete, but the layers still leave terms out.
         assert!(summary.partial());
@@ -551,7 +554,7 @@ mod tests {
             "companion": { "l": ["12,Prometheus,0,0,1"] },
             "serverVars": { "voteCategories": [] },
         }));
-        let summary = evaluate(&no_vote, Context::default());
+        let summary = evaluate(&no_vote, &Default::default(), Context::default());
         assert!(summary.metadata.companions);
         assert!(!summary.metadata.vote);
         assert!(summary.partial_reason().contains("current server vote"));

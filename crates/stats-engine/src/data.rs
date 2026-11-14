@@ -31,6 +31,9 @@ pub struct Data {
     pub achievements: BTreeMap<String, f64>,
     pub atoms: Vec<Atom>,
     pub artifacts: Vec<f64>,
+    /// Per artifact, the tiers 2-7 whose description doubles..seventuples it.
+    #[serde(rename = "artifactTierBonus", default)]
+    pub artifact_tier_bonus: Vec<Vec<bool>>,
     #[serde(rename = "owlBase")]
     pub owl_base: Vec<f64>,
     #[serde(rename = "companionBonus")]
@@ -49,6 +52,36 @@ pub struct Data {
     pub dung_passive: Vec<Option<Curve>>,
     #[serde(rename = "classParent")]
     pub class_parent: BTreeMap<String, usize>,
+    /// `Spelunky[33]`: the Bubba RoG bonus per index.
+    #[serde(rename = "bubbaBase", default)]
+    pub bubba_base: Vec<f64>,
+    /// `ShrineInfo[t][2]`.
+    #[serde(rename = "shrineBase", default)]
+    pub shrine_base: Vec<f64>,
+    /// `ShrineInfo[t][3]`.
+    #[serde(rename = "shrinePerLevel", default)]
+    pub shrine_per_level: Vec<f64>,
+    /// `SummonUPG[t]`, reduced to the three columns the damage chain reads.
+    #[serde(rename = "summonUpg", default)]
+    pub summon_upg: Vec<SummonUpgrade>,
+    /// `GodsInfo[t][14]`: the Divinity blessing's bonus per level.
+    #[serde(rename = "godBlessBase", default)]
+    pub god_bless_base: Vec<f64>,
+    /// `ChipDesc[t][10]` and `[11]`: a lab chip's effect key and value.
+    #[serde(default)]
+    pub chips: Vec<Chip>,
+    /// `BOSS3B_CARD_PCT`.
+    #[serde(rename = "boss3bCardPct", default)]
+    pub boss3b_card_pct: f64,
+    /// `TOME_DATA`, reduced to the fields `tome.resolve` reads.
+    #[serde(rename = "tomeBonus", default)]
+    pub tome_bonus: BTreeMap<String, TomeBonus>,
+    /// `RandoListo2[13]`: each Cove upgrade's per-level value.
+    #[serde(rename = "cglunkoPerLevel", default)]
+    pub cglunko_per_level: Vec<f64>,
+    /// The Royal Guardian outpost rows `statueBonus` reads.
+    #[serde(rename = "royalOutpost", default)]
+    pub royal_outpost: RoyalOutpost,
 }
 
 /// One item's fields the weapon-power chain reads.
@@ -125,13 +158,59 @@ pub struct CardBonus {
 }
 
 /// One guild bonus's curve.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
 pub struct Curve {
     #[serde(default)]
     pub name: String,
     pub x1: f64,
     pub x2: f64,
     pub formula: String,
+}
+
+/// One `SummonUPG[t]` row.
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct SummonUpgrade {
+    #[serde(rename = "stoneType")]
+    pub stone_type: f64,
+    #[serde(rename = "perLevel")]
+    pub per_level: f64,
+    #[serde(rename = "stoneEligible")]
+    pub stone_eligible: f64,
+}
+
+/// One lab chip's effect key and value.
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Chip {
+    pub key: String,
+    pub value: f64,
+}
+
+/// One `TOME_DATA` row.
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct TomeBonus {
+    pub base: f64,
+    pub threshold: f64,
+    pub divisor: f64,
+    #[serde(rename = "exp")]
+    pub exponent: f64,
+    #[serde(rename = "unlockType")]
+    pub unlock_type: String,
+    #[serde(rename = "unlockIdx")]
+    pub unlock_index: usize,
+}
+
+/// The Royal Guardian tables `statueBonus` reads.
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct RoyalOutpost {
+    pub requirements: Vec<f64>,
+    pub costs: Vec<f64>,
+    #[serde(rename = "armoryPerLevel")]
+    pub armory_per_level: Vec<f64>,
 }
 
 /// One atom upgrade's per-level bonus (`AtomInfo[index][4]`).
@@ -210,6 +289,17 @@ impl Data {
             .map_or(0.0, |atom| atom.per_level)
     }
 
+    /// Whether one artifact's tier multiplies its main bonus.
+    pub fn artifact_tier_bonus(&self, index: usize, tier: usize) -> bool {
+        (2..=7).contains(&tier)
+            && self
+                .artifact_tier_bonus
+                .get(index)
+                .and_then(|tiers| tiers.get(tier - 2))
+                .copied()
+                .unwrap_or(false)
+    }
+
     /// `artifactBase(index)`.
     pub fn artifact(&self, index: usize) -> f64 {
         self.artifacts.get(index).copied().unwrap_or(0.0)
@@ -275,6 +365,73 @@ impl Data {
     /// `DungPassiveStats2[index]`: a Flurbo shop passive's curve.
     pub fn dung_passive(&self, index: usize) -> Option<&Curve> {
         self.dung_passive.get(index).and_then(Option::as_ref)
+    }
+
+    /// `Spelunky[33][idx]`: the Bubba RoG bonus.
+    pub fn bubba_base(&self, index: usize) -> f64 {
+        self.bubba_base.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `shrineBase(idx)`.
+    pub fn shrine_base(&self, index: usize) -> f64 {
+        self.shrine_base.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `shrinePerLevel(idx)`.
+    pub fn shrine_per_level(&self, index: usize) -> f64 {
+        self.shrine_per_level.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `SummonUPG[t]`: the per-level bonus, stone gate and stone type.
+    pub fn summon_upgrade(&self, index: usize) -> Option<&SummonUpgrade> {
+        self.summon_upg.get(index)
+    }
+
+    /// `GodsInfo[t][14]`: the Divinity blessing's bonus per level.
+    pub fn god_bless_base(&self, index: usize) -> f64 {
+        self.god_bless_base.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `computeChipBonus(key, ci)`: the summed value of every equipped chip
+    /// with this effect key.
+    pub fn chip_value(&self, key: &str) -> f64 {
+        self.chips
+            .iter()
+            .find(|chip| chip.key == key)
+            .map_or(0.0, |chip| chip.value)
+    }
+
+    /// `Cglunko_upgBon(i)`: the per-level value of one Cove upgrade.
+    pub fn cglunko_per_level(&self, index: usize) -> f64 {
+        self.cglunko_per_level.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `TOME_DATA[id]`.
+    pub fn tome_bonus(&self, index: usize) -> Option<&TomeBonus> {
+        self.tome_bonus.get(&index.to_string())
+    }
+
+    /// `OUTPOST_RANK_REQUIREMENTS[idx]`.
+    pub fn outpost_requirement(&self, index: usize) -> f64 {
+        self.royal_outpost
+            .requirements
+            .get(index)
+            .copied()
+            .unwrap_or(0.0)
+    }
+
+    /// `OUTPOST_RANK_COSTS[idx]`.
+    pub fn outpost_cost(&self, index: usize) -> f64 {
+        self.royal_outpost.costs.get(index).copied().unwrap_or(0.0)
+    }
+
+    /// `ARMORY_UPGRADES[idx].bonusPerLevel`.
+    pub fn armory_per_level(&self, index: usize) -> f64 {
+        self.royal_outpost
+            .armory_per_level
+            .get(index)
+            .copied()
+            .unwrap_or(0.0)
     }
 
     /// `ReturnClasses`' parent table.

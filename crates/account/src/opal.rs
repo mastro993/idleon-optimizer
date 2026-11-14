@@ -205,7 +205,7 @@ impl Decoder<'_> {
     }
 
     /// `grimoireUpgBonus`: a grimoire upgrade's value.
-    fn grimoire(&self, index: usize) -> f64 {
+    pub fn grimoire(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Grimoire", &[index]).unwrap_or(0.0);
         if level <= 0.0 {
             return 0.0;

@@ -36,6 +36,7 @@ const sailing = await import(join(source, 'js/stats/data/w5/sailing.js'));
 const hole = await import(join(source, 'js/stats/data/w5/hole.js'));
 const farming = await import(join(source, 'js/stats/data/w5/farming.js'));
 const promotion = (await import(join(source, 'js/stats/data/game/customlists.js'))).ClassPromotionChoices;
+const royal = await import(join(source, 'js/stats/data/w7/royal-guardian.js'));
 
 // `ITEMS[name]` fields the damage chain reads: weapon power, the food effect
 // list and the stamp description lines the type table is built from.
@@ -204,6 +205,22 @@ const data = {
     perLevel: Number(row[4]) || 0,
   })),
   artifacts: Array.from({ length: sailing.artifactCount() }, (_, index) => sailing.artifactBase(index)),
+  // The tiers whose description multiplies the artifact's main bonus.
+  artifactTierBonus: Array.from({ length: sailing.artifactCount() }, (_, index) => {
+    const row = lists.ArtifactInfo[index] || [];
+    const tiers = [];
+    const text = {
+      2: "The_artifact's_main_bonus_is_doubled!",
+      3: "The_artifact's_main_bonus_is_tripled!",
+      4: "The_artifact's_main_bonus_is_quadrupled!",
+      5: "The_artifact's_main_bonus_is_quintupled!",
+      6: "The_artifact's_main_bonus_is_sixtupled!",
+      7: "The_artifact's_main_bonus_is_seventupled!",
+    };
+    const at = { 2: 5, 3: 7, 4: 9, 5: 11, 6: 13, 7: 15 };
+    for (let tier = 2; tier <= 7; tier += 1) tiers.push(row[at[tier]] === text[tier]);
+    return tiers;
+  }),
   owlBase: constants.OWL_BASE,
   companionBonus: constants.COMPANION_BONUS,
   goldFood: { info: goldenFood.GOLD_FOOD_INFO, slots: goldenFood.EMPORIUM_FOOD_SLOTS },
@@ -240,6 +257,35 @@ const data = {
       formula: String(row[3] ?? ''),
     } : null
   ),
+  // `Cglunko_upgBon(i)`: `RandoListo2[13]`'s per-level value.
+  cglunkoPerLevel: (lists.RandoListo2[13] || []).map((value) => Number(value) || 0),
+  // `bubbaRoGBonuses(idx)` reads `Spelunky[33][idx]`.
+  bubbaBase: (lists.Spelunky[33] || []).map((value) => Number(value) || 0),
+  // `shrineBase` / `shrinePerLevel` read `ShrineInfo[idx][2]` and `[3]`.
+  shrineBase: (lists.ShrineInfo || []).map((row) => Number(row[2]) || 0),
+  shrinePerLevel: (lists.ShrineInfo || []).map((row) => Number(row[3]) || 0),
+  // `computeSummUpgBonus(t)` reads `SummonUPG[t][2]`, `[6]` and `[10]`.
+  summonUpg: (lists.SummonUPG || []).map((row) => ({
+    stoneType: Number(row[2]) || 0,
+    perLevel: Number(row[6]) || 0,
+    stoneEligible: Number(row[10]) || 0,
+  })),
+  // `computeDivinityBless(idx)` reads `GodsInfo[idx][14]`.
+  godBlessBase: (lists.GodsInfo || []).map((row) => Number(row[14]) || 0),
+  // `computeChipBonus(effectKey, ci)` reads `ChipDesc[type][10]`/`[11]`.
+  chips: (lists.ChipDesc || []).map((row) => ({
+    key: String(row[10] ?? ''),
+    value: Number(row[11]) || 0,
+  })),
+  boss3bCardPct: constants.BOSS3B_CARD_PCT,
+  // `tome.resolve(id)` reads `TOME_DATA` from game-constants.
+  tomeBonus: constants.TOME_DATA,
+  // `statueBonus(S, idx)` reads the royal outpost ranks and the armory bonus.
+  royalOutpost: {
+    requirements: (lists.Research[41] || []).map((value) => Number(value) || 0),
+    costs: (lists.Research[42] || []).map((value) => Number(value) || 0),
+    armoryPerLevel: (royal.ARMORY_UPGRADES || []).map((row) => Number(row.bonusPerLevel) || 0),
+  },
   classParent: Object.fromEntries(
     promotion.flatMap((row, parent) =>
       row && row[0] !== 'Na' ? row.map((child) => [Number(child), parent]) : []

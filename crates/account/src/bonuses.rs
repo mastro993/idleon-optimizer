@@ -146,6 +146,16 @@ impl Decoder<'_> {
         vault_upgrade_bonus(self.save, index)
     }
 
+    /// `HolesInfo[37][slot]`: the monument bonus a Hole slot pays.
+    pub fn monument_bonus(&self, slot: usize) -> f64 {
+        self.data
+            .hole
+            .monument_bonus
+            .get(slot)
+            .copied()
+            .unwrap_or(0.0)
+    }
+
     /// `grimoireUpgBonus22` from `js/stats/systems/mc/grimoire.js`.
     pub fn grimoire_22(&self) -> f64 {
         let level_22 = self.row_at("Grimoire", 22);

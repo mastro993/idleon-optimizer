@@ -23,7 +23,7 @@ mod jelly;
 mod lab;
 mod mastery;
 mod opal;
-mod prayer;
+pub mod prayer;
 pub mod sets;
 mod sneaking;
 mod statue;
@@ -221,6 +221,11 @@ impl<'a> Decoder<'a> {
         self.data.talent_tab2(index)
     }
 
+    /// `DeathNoteMobs`: the death-note mob names per world.
+    pub fn death_note_mob_names(&self) -> &'static [Vec<String>] {
+        &self.data.death_note_mob_names
+    }
+
     /// `familyBonusParams(index)`: a class family bonus curve.
     pub fn family_bonus(&self, index: usize) -> Option<&data::FamilyBonus> {
         self.data.family_bonus(index)
@@ -230,6 +235,11 @@ impl<'a> Decoder<'a> {
     pub fn class_in_tree(&self, class: usize, tab: u32) -> bool {
         self.data.class_in_tree(class, tab)
     }
+}
+
+/// `CLASS_TREES[class]`: the class id chain, parents first.
+pub fn class_tree(class: usize) -> Option<&'static [u32]> {
+    data::account_data().class_tree(class)
 }
 
 /// Decode the Cooking Mastery state the section reads.
