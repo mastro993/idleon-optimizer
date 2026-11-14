@@ -29,6 +29,14 @@ pub struct Layers {
     pub mastery: f64,
     /// Talent 113's penalty, as the mastery breakdown reads it.
     pub mastery_penalty: f64,
+    /// The `Mastery` bubble, as a share of the ratio.
+    pub mastery_bubble: f64,
+    /// `computeCardBonusByType(21)`.
+    pub mastery_cards: f64,
+    /// Talent 123.
+    pub mastery_talent: f64,
+    /// `etcBonus('21')`.
+    pub mastery_etc: f64,
     pub max: f64,
     pub min: f64,
     /// The terms this build could not justify.
@@ -118,6 +126,10 @@ fn layers(ctx: &mut Ctx<'_, '_>, map: usize) -> Layers {
         multiplier_pre_softcap: multiplier_pre,
         mastery,
         mastery_penalty: talent113 / 100.0,
+        mastery_bubble: mastery_bubble / 100.0,
+        mastery_cards: card21 / 100.0,
+        mastery_talent: talent123 / 100.0,
+        mastery_etc: etc21 / 100.0,
         max,
         min: max * mastery,
         missing: ctx.missing.clone(),
