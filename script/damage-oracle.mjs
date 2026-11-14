@@ -59,10 +59,16 @@ const recordLayer = (children, prefix, preSoftcapKey = 'preSoftcap') => {
     // and Food'), so the card's note compares like the other two layers.
     preSoftcap: Number(child._debug?.[preSoftcapKey] ?? 0),
     // The descriptor's own term values, so the port is compared on every
-    // provider it reads and not only on the layer's final number.
+    // provider it reads and not only on the layer's final number. Providers
+    // that answer with a tree result (`{ val, children }`) are recorded by
+    // their value; other objects (DDL2's `steps` list) are left out.
     debug: Object.fromEntries(
       Object.entries(child._debug ?? {})
-        .filter(([, value]) => typeof value !== 'object')
+        .map(([key, value]) => [
+          key,
+          value && typeof value === 'object' && 'val' in value ? value.val : value,
+        ])
+        .filter(([, value]) => value === null || typeof value !== 'object')
         .map(([key, value]) => [key, Number(value) || 0])
     ),
   };
