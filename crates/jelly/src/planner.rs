@@ -16,9 +16,8 @@
 use super::board::{self, Layout};
 use super::data::Plot;
 use super::estimate::{Estimate, mean, standard_error, summarize};
-use super::metrics::MetricOptions;
 use super::operation::{OperationOptions, simulate};
-use super::surrogate::{Objective as SurrogateObjective, Surrogate, SurrogateOptions};
+use super::surrogate::Objective as SurrogateObjective;
 use super::{Jelly, PROXIMITY_ANCHORS, data};
 use idleon_common::Progress;
 use std::cmp::Ordering;
@@ -84,7 +83,7 @@ impl Objective {
         }
     }
 
-    fn surrogate(self) -> SurrogateObjective {
+    pub(crate) fn surrogate(self) -> SurrogateObjective {
         match self {
             Objective::Clear => SurrogateObjective::Clear,
             Objective::Bloodcells => SurrogateObjective::Bloodcells,
@@ -708,24 +707,13 @@ fn section_geometry(jelly: &Jelly, plot_ids: &[usize]) -> Geometry {
 
 /// `proxyObjectiveScore`: the deterministic projection a layout ranks by.
 fn proxy_score(jelly: &Jelly, layout: &Layout, options: &PlanOptions) -> f64 {
-    if options.objective == Objective::Dps {
-        let metrics = jelly.layout_metrics(layout, MetricOptions::default());
-        return if metrics.valid {
-            metrics.dps
-        } else {
-            f64::NEG_INFINITY
-        };
-    }
-    Surrogate::project(
+    super::surrogate::proxy_score(
         jelly,
         layout,
-        SurrogateOptions {
-            objective: options.objective.surrogate(),
-            exp_cell_type: options.exp_cell_type,
-            ..SurrogateOptions::default()
-        },
+        options.objective.surrogate(),
+        options.exp_cell_type,
+        None,
     )
-    .score
 }
 
 /// `jellyCompleteLayout`: fill every unlocked slot with the best one-slot cell,
@@ -803,7 +791,7 @@ fn complete_layout_with(
 }
 
 /// The operation's objective value for the ranking (`operationObjectiveValue`).
-fn operation_value(
+pub(crate) fn operation_value(
     operation: &Estimate,
     objective: Objective,
     exp_cell_type: Option<usize>,
@@ -820,7 +808,7 @@ fn operation_value(
     }
 }
 
-fn exp_value(operation: &Estimate, exp_cell_type: Option<usize>) -> f64 {
+pub(crate) fn exp_value(operation: &Estimate, exp_cell_type: Option<usize>) -> f64 {
     match exp_cell_type {
         Some(cell_type) => operation
             .mean_cell_exp_by_type
@@ -856,9 +844,10 @@ fn trial_value(
 }
 
 /// One shared-seed trial set: its aggregate and each trial's objective value.
-struct TrialSet {
-    estimate: Estimate,
-    values: Vec<f64>,
+#[derive(Clone, Debug, PartialEq)]
+pub struct TrialSet {
+    pub estimate: Estimate,
+    pub values: Vec<f64>,
 }
 
 /// The run's progress and its cancel point, shared by the screens and stages.
@@ -880,7 +869,7 @@ impl Reporter<'_> {
     }
 }
 
-fn trial_set(
+pub(crate) fn trial_set(
     jelly: &Jelly,
     layout: &Layout,
     trials: u32,
@@ -910,7 +899,7 @@ fn trial_set(
 }
 
 /// `pairedOperationConfidence`.
-fn paired_confidence(candidate: &[f64], baseline: &[f64]) -> Option<Confidence> {
+pub(crate) fn paired_confidence(candidate: &[f64], baseline: &[f64]) -> Option<Confidence> {
     let count = candidate.len().min(baseline.len());
     if count == 0 {
         return None;
@@ -972,7 +961,7 @@ fn marginal_score(
 }
 
 /// `simulatedObjectiveScore`.
-fn simulated_score(
+pub(crate) fn simulated_score(
     operation: &Estimate,
     objective: Objective,
     exp_cell_type: Option<usize>,

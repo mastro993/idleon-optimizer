@@ -5,7 +5,7 @@
 - Milestone: `M29`
 - Section key: `jelly-operator`
 - Group: `w7`
-- Status: `partial`
+- Status: `done`
 - Depends on: `foundation`
 
 Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.

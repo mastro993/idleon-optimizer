@@ -281,7 +281,9 @@ const ladleSave = () => {
       [1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [2, 1, 0, 0, 0, 0, 10, 0, 0, 0, 0],
     ],
-    Meals: [[3, 2, 1, 1], [], [140, 0, 0, 0], []],
+    // The last meal is far past a day of kitchen time, so it is an NMLB target
+    // and the steering panel has a rotation to draw.
+    Meals: [[3, 2, 1, 1, 20], [], [140, 0, 0, 0, 0], []],
     Menagerie: [[0, 0, 0, 0, 0, 9], [], [0, 0, 0, 0, 0, 1], []],
     BundlesReceived: { bun_s: 1 },
   });
@@ -796,20 +798,29 @@ const jellySave = () => {
 /// carries the daily reset countdown the drain projection reads.
 const royalSave = () => {
   const row = (length, filled) => Array.from({ length }, (_, index) => filled[index] ?? 0);
-  const armory = row(83, { 21: 20, 23: 10, 70: 1 });
+  // The Armory rows the overview and the planners read: the world point bonus,
+  // the orblets and every profession, tool, outpost type and rank-bar shelf the
+  // plans need. Armory 9 also covers the outpost's point spending.
+  const armory = row(83, {
+    9: 20, 17: 1, 21: 20, 23: 10, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1, 32: 1,
+    42: 1, 44: 1, 57: 1, 70: 1, 73: 1, 74: 1, 75: 1,
+  });
   const g = Array.from({ length: 24 }, () => []);
   g[1] = row(80, { 0: 1234 });
   g[2] = armory;
   g[3] = row(20, { 0: 7200 });
   g[4] = row(80, { 7: 500 });
   g[5] = row(80, { 7: 4 });
-  g[6] = row(4, { 0: 4 });
-  g[7] = row(4, { 0: 2 });
+  // A Militia on the clearing map and a Commander on the built one, so the unit
+  // EXP plan has a Command rate to plan against.
+  g[6] = row(4, { 0: 4, 1: 5 });
+  g[7] = row(4, { 0: 2, 1: 1 });
   g[23] = row(10, { 3: 4, 8: 1 });
   const maps = Array.from({ length: 200 }, () => []);
   // A built Normal outpost on map 1: barracks, logistics, education, five rank
-  // bars, two links, the type, the packed units and the glorified flag.
-  maps[1] = [3, 20, 4, 5000, 900, 400, 200, 0, 7, -1, 0, 444111111, 0];
+  // bars, two links, the type, one Trader, one Surveyor, one Worker and a Guard
+  // past the assignable slots, and the glorified flag.
+  maps[1] = [2, 5, 1, 5000, 900, 400, 200, 0, 7, -1, 0, 352411111, 0];
   // Map 2 has progress saved and a militia assignment, so it is clearing.
   maps[2] = [120];
   const research = row(19, {}).map(() => []);
@@ -953,6 +964,41 @@ const INTERACTIONS = {
     if (!phase.includes('Amber policy')) {
       throw new Error(`spelunking: the Amber phase reads ${phase}`);
     }
+    // SP-04 screens every allowed configuration off the UI thread and leaves a
+    // copyable recommendation. Party, belt, memory and entry default fixed, so
+    // the fixture's scope stays small.
+    await bringIntoView(lane, 'spelunk-optimizer');
+    await waitForNode(lane, 'spelunk-optimizer-mode', 'spelunking: the optimizer controls render');
+    await waitForNode(lane, 'spelunk-optimizer-party', 'spelunking: the search sections render');
+    await bringIntoView(lane, 'spelunk-optimizer-start');
+    await lane.call('click_element', { id: 'spelunk-optimizer-start' });
+    await waitForNode(
+      lane,
+      'spelunk-optimizer-winner',
+      'spelunking: the optimizer stores a recommendation',
+      180000,
+    );
+    await waitForNode(lane, 'spelunk-optimizer-row-0', 'spelunking: the compared rows render');
+    const winner = labelOf(await lane.tree(), 'spelunk-optimizer-winner') ?? '';
+    if (!winner.includes('Depth')) {
+      throw new Error(`spelunking: the optimizer winner reads ${winner}`);
+    }
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'spelunk-optimizer-plan') ?? '').includes('party'),
+      'spelunking: the optimizer plan names the cave and party',
+    );
+    const plan = labelOf(await lane.tree(), 'spelunk-optimizer-plan') ?? '';
+    if (!plan.includes('Pebble Cove')) {
+      throw new Error(`spelunking: the optimizer plan reads ${plan}`);
+    }
+    await bringIntoView(lane, 'spelunk-optimizer-copy');
+    await lane.call('click_element', { id: 'spelunk-optimizer-copy' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('Copied the expedition plan'),
+      'spelunking: the optimizer plan copies',
+    );
   },
   'jelly-operator': async (lane) => {
     await lane.call('click_element', { id: 'jelly-import' });
@@ -1048,6 +1094,29 @@ const INTERACTIONS = {
     await waitForNode(lane, 'jelly-sections-final-board', 'jelly: the recommended board renders');
     await waitForNode(lane, 'jelly-sections-candidates', 'jelly: the ranked sequences render');
     await waitForNode(lane, 'jelly-sections-individual', 'jelly: every individual section renders');
+    // The coordinator optimizer searches the full board and applies its winner.
+    await lane.call('click_element', { id: 'jelly-tab-optimizer' });
+    await waitForNode(lane, 'jelly-optimizer', 'jelly: the optimizer opens');
+    await waitForNode(lane, 'jelly-optimizer-objective', 'jelly: the objective select renders');
+    await waitForNode(lane, 'jelly-optimizer-starts', 'jelly: the start count renders');
+    await waitForNode(lane, 'jelly-optimizer-beam', 'jelly: the beam input renders');
+    await waitForNode(lane, 'jelly-optimizer-iterations', 'jelly: the build rounds render');
+    await waitForNode(lane, 'jelly-optimizer-finalists', 'jelly: the finalist count renders');
+    await waitForNode(lane, 'jelly-optimizer-trials', 'jelly: the trial count renders');
+    await waitForNode(lane, 'jelly-optimizer-seed', 'jelly: the seed input renders');
+    await lane.call('click_element', { id: 'jelly-optimizer-run' });
+    await waitForNode(lane, 'jelly-optimizer-result', 'jelly: the search stores a board', 300000);
+    await waitForNode(lane, 'jelly-optimizer-score', 'jelly: the board score card renders');
+    await waitForNode(lane, 'jelly-optimizer-final-board', 'jelly: the optimized board renders');
+    await waitForNode(lane, 'jelly-optimizer-ranked', 'jelly: the ranked finalists render');
+    await waitForNode(lane, 'jelly-timeline', 'jelly: the critical target timeline renders');
+    await bringIntoView(lane, 'jelly-optimizer-apply', await wheelPoint(lane, 'jelly-scroll'));
+    await lane.call('click_element', { id: 'jelly-optimizer-apply' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'jelly-optimizer-message') ?? '').includes('Board replaced'),
+      'jelly: the recommendation applies to the layout',
+    );
   },
   'royal-guardian': async (lane) => {
     await lane.call('click_element', { id: 'header-import' });
@@ -1109,13 +1178,17 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'royal-tab-upgrades' });
     await waitForNode(lane, 'royal-upgrade-armory', 'royal-guardian: the upgrade list renders');
     await waitForNode(lane, 'royal-armory-table', 'royal-guardian: every shelf is listed');
-    // The save's 31 Armory levels reach the first seven shelves.
+    // The save's 64 Armory levels reach the first ten shelves.
     const shelves = labelOf(await lane.tree(), 'royal-kpi-armory-shelves-figure') ?? '';
-    if (!shelves.includes('7')) throw new Error(`royal-guardian: the shelf KPI reads ${shelves}`);
+    if (!shelves.includes('10')) {
+      throw new Error(`royal-guardian: the shelf KPI reads ${shelves}`);
+    }
     const plan = labelOf(await lane.tree(), 'royal-armory-plan') ?? '';
     if (!plan.includes('level')) throw new Error(`royal-guardian: the cost plan reads ${plan}`);
-    await bringIntoView(lane, 'royal-armory-row-0');
-    await lane.call('click_element', { id: 'royal-armory-row-0' });
+    // The first shelf this save can still buy is order 1 (its order-0 shelf is
+    // already maxed).
+    await bringIntoView(lane, 'royal-armory-row-1');
+    await lane.call('click_element', { id: 'royal-armory-row-1' });
     await waitForNode(lane, 'royal-armory-plan-table', 'royal-guardian: a shelf prices its next levels');
     // The Orblet list switches in and counts what the save owns.
     await lane.call('focus_element', { id: 'royal-upgrade-view' });
@@ -1161,6 +1234,45 @@ const INTERACTIONS = {
     if (!refills.includes('Refills')) {
       throw new Error(`royal-guardian: the forecast refill card reads ${refills}`);
     }
+    // RG-04: the optimizer scores the saved kingdom and stores a recommendation
+    // with its moves.
+    await lane.call('click_element', { id: 'royal-tab-optimizer' });
+    await waitForNode(lane, 'royal-optimizer', 'royal-guardian: the optimizer renders');
+    await lane.call('click_element', { id: 'royal-optimizer-run' });
+    await waitForNode(
+      lane,
+      'royal-optimizer-result',
+      'royal-guardian: the optimizer stores a recommendation',
+      180000,
+    );
+    await waitForNode(lane, 'royal-optimizer-moves', 'royal-guardian: the moves render');
+    // RG-04: a Command target plans the trader split, and the shelf plan lists
+    // the steps toward the next Armory shelf.
+    await lane.call('click_element', { id: 'royal-tab-unit-exp' });
+    await waitForNode(lane, 'royal-unit-exp', 'royal-guardian: the unit EXP pane renders');
+    await lane.call('click_element', { id: 'royal-unit-exp-target-command-more' });
+    await bringIntoView(lane, 'royal-unit-exp-run');
+    await lane.call('click_element', { id: 'royal-unit-exp-run' });
+    await waitForNode(
+      lane,
+      'royal-unit-exp-result',
+      'royal-guardian: the unit EXP plan stores a result',
+      180000,
+    );
+    await waitForNode(lane, 'royal-unit-exp-steps', 'royal-guardian: the split steps render');
+    const status = labelOf(await lane.tree(), 'royal-unit-exp-status') ?? '';
+    if (!status.includes('reached')) {
+      throw new Error(`royal-guardian: the unit EXP status reads ${status}`);
+    }
+    await bringIntoView(lane, 'royal-shelf-run');
+    await lane.call('click_element', { id: 'royal-shelf-run' });
+    await waitForNode(
+      lane,
+      'royal-shelf-result',
+      'royal-guardian: the shelf plan stores a result',
+      180000,
+    );
+    await waitForNode(lane, 'royal-shelf-steps', 'royal-guardian: the shelf steps render');
     await lane.call('click_element', { id: 'royal-tab-overview' });
     await waitForNode(lane, 'royal-overview', 'royal-guardian: the overview reopens');
   },
@@ -2254,7 +2366,7 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'combat-talent-0-more' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('6 talent points'),
+      (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('8 talent points'),
       'combat-sim: a talent edit updates the summed points',
     );
     // The working loadout saves as a named preset.
@@ -2824,6 +2936,40 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'kitchens-day-header-1' });
     await waitForNode(lane, 'kitchens-day-body-1', 'ladle: expanding a reset shows its instructions');
     await waitForNode(lane, 'kitchens-day-copy-1', 'ladle: the reset instructions are copyable');
+
+    // The steering panel reads the split, the floor and the rotation the floor
+    // holding predicts.
+    await bringIntoView(lane, 'ladle-steer-targets');
+    await waitForNode(lane, 'ladle-steer-targets', 'ladle: the NMLB targets render');
+    await waitForNode(lane, 'ladle-steer-rotation', 'ladle: the predicted rotation renders');
+    // The donation search runs off the UI thread. A cancel keeps the previous
+    // recommendation, and either click can lose a race with a finished run, so
+    // the cancel is only taken while its progress card is still up.
+    await bringIntoView(lane, 'ladle-plan-start');
+    await lane.call('click_element', { id: 'ladle-plan-start' });
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'ladle-plan-run-progress') || has(nodes, 'ladle-plan-result'),
+      'ladle: the donation search starts',
+      120000
+    );
+    await waitForNode(
+      lane,
+      'ladle-plan-result',
+      'ladle: the donation search recommends a schedule',
+      120000
+    );
+    await waitForNode(lane, 'ladle-plan-schedule', 'ladle: the recommendation lists its donations');
+    // Either click can lose a race with a finished run, so both are advisory:
+    // the assertion below reads the recommendation the cancel must keep.
+    await lane.call('click_element', { id: 'ladle-plan-start' }).catch(() => {});
+    await lane.call('click_element', { id: 'ladle-plan-run-cancel' }).catch(() => {});
+    await waitForNode(
+      lane,
+      'ladle-plan-result',
+      'ladle: cancelling keeps the recommendation',
+      120000
+    );
 
     // The target objective without a target refuses the forecast but keeps its
     // target inputs on screen, so the missing input can be fixed from the tab.

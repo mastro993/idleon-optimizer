@@ -241,6 +241,9 @@ impl AppState {
         }
         self.ladle_state
             .adopt(&imported.ladle.clone().unwrap_or_default());
+        // A donation search from the previous save answers inputs this one no
+        // longer has.
+        discard_run(&self.ladle_plan, cx);
         self.ladle = imported.ladle;
         self.mastery = imported.mastery;
         self.yellow = imported.yellow;
@@ -268,6 +271,10 @@ impl AppState {
         // A forecast from the previous save describes rows this one no longer has.
         self.royal_forecast = None;
         self.royal_forecast_key = None;
+        // The plans describe outposts and levels this save may not carry.
+        discard_run(&self.royal_optimizer, cx);
+        discard_run(&self.royal_unit_exp, cx);
+        discard_run(&self.royal_shelf, cx);
         self.sneaking = imported.sneaking;
         // A recommendation from the previous save describes slots this one no longer has.
         discard_run(&self.sneaking_opt, cx);

@@ -312,6 +312,13 @@ impl RoyalGuardian {
     /// One outpost's collection rate with every input supplied.
     pub fn outpost_collection_rate_with(&self, map: usize, inputs: &CollectionInputs) -> Rate {
         let global = self.global_collection_rate_with(inputs);
+        self.outpost_collection_rate_given(map, &global)
+    }
+
+    /// One outpost's collection rate with the account-wide rate already
+    /// computed, which a search over many layouts evaluates once per state.
+    pub(crate) fn outpost_collection_rate_given(&self, map: usize, global: &Rate) -> Rate {
+        let global = global.clone();
         if !self.outpost(map).built {
             let mut missing = global.missing.clone();
             missing.push(format!("map {map} outpost"));
@@ -378,7 +385,8 @@ impl RoyalGuardian {
         resource: usize,
         inputs: &CollectionInputs,
     ) -> Rate {
-        let mut rate = self.outpost_collection_rate_with(map, inputs);
+        let global = self.global_collection_rate_with(inputs);
+        let mut rate = self.outpost_collection_rate_given(map, &global);
         let grade = self.resource_grade(resource);
         rate.factors.push(Factor {
             name: "resourceGrade",

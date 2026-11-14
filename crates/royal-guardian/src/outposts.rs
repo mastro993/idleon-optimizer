@@ -190,12 +190,18 @@ impl RoyalGuardian {
 
     /// A rank bar's EXP per hour, for one outpost: upstream `barExpRate`.
     pub fn bar_exp_rate(&self, bar: usize, map: usize) -> f64 {
+        self.bar_exp_rate_given(bar, map, self.support_count(map))
+    }
+
+    /// The same rate with the outpost's Support count already known, which a
+    /// search over many layouts counts once per state.
+    pub(crate) fn bar_exp_rate_given(&self, bar: usize, map: usize, support: usize) -> f64 {
         let education = 1.0 + 10.0 * self.map_cell(map, 2) / 100.0;
         self.bar_exp_rate_base(bar)
             * education
             * if self.glorified(map) { 2.0 } else { 1.0 }
             * if self.purified(map) { 3.0 } else { 1.0 }
             * (1.0 + self.rank(map, 1) * self.armory_bonus(72) / 100.0)
-            * (1.0 + self.support_collection() * self.support_count(map) as f64 / 100.0)
+            * (1.0 + self.support_collection() * support as f64 / 100.0)
     }
 }

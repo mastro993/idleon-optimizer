@@ -112,9 +112,7 @@ mod tests {
     #[test]
     fn the_value_cap_counts_every_capped_plot() {
         let mut farm = Farm::default();
-        for index in 0..PLOTS {
-            farm.plots[index] = planted(0, 0);
-        }
+        farm.plots.fill(planted(0, 0));
         let mut snapshot = farm.snapshot();
         let uncapped = farm.diagnostics(&snapshot);
         assert_eq!(uncapped.capped_plots, 0);

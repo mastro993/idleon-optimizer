@@ -269,6 +269,11 @@ pub(crate) struct RoyalConfig {
     forecast_hours: f64,
     collects: Vec<f64>,
     windows: Vec<(f64, f64)>,
+    optimizer: idleon_royal_guardian::Objective,
+    unit_exp_map: Option<usize>,
+    unit_exp_targets: idleon_royal_guardian::UnitTargets,
+    unit_exp_move_transients: bool,
+    shelf_purchases: usize,
 }
 
 /// The Jar section's config: its tab, the tier the rupie value projects and
@@ -497,6 +502,11 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             forecast_hours: state.royal_state.forecast_hours,
             collects: state.royal_state.collects.clone(),
             windows: state.royal_state.windows.clone(),
+            optimizer: state.royal_state.optimizer,
+            unit_exp_map: state.royal_state.unit_exp_map,
+            unit_exp_targets: state.royal_state.unit_exp_targets,
+            unit_exp_move_transients: state.royal_state.unit_exp_move_transients,
+            shelf_purchases: state.royal_state.shelf_purchases,
         }),
     );
     insert(
@@ -1000,6 +1010,11 @@ pub(crate) fn assign(
                 forecast_hours: config.forecast_hours,
                 collects: config.collects,
                 windows: config.windows,
+                optimizer: config.optimizer,
+                unit_exp_map: config.unit_exp_map,
+                unit_exp_targets: config.unit_exp_targets,
+                unit_exp_move_transients: config.unit_exp_move_transients,
+                shelf_purchases: config.shelf_purchases,
             };
             state.royal_forecast = None;
             state.royal_forecast_key = None;
@@ -1454,6 +1469,15 @@ mod tests {
             forecast_hours: 168.0,
             collects: vec![6.0, 30.0],
             windows: vec![(20.0, 22.0)],
+            optimizer: idleon_royal_guardian::Objective::Rank,
+            unit_exp_map: Some(51),
+            unit_exp_targets: idleon_royal_guardian::UnitTargets {
+                trading: Some(4),
+                command: None,
+                military: Some(2),
+            },
+            unit_exp_move_transients: true,
+            shelf_purchases: 4,
         });
         assert_eq!(royal.tab, RoyalTab::Forecast);
         assert_eq!(royal.world, 2);
@@ -1468,6 +1492,11 @@ mod tests {
         assert_eq!(royal.breakdown, idleon_royal_guardian::Category::Savage);
         assert_eq!(royal.forecast_hours, 168.0);
         assert_eq!(royal.collects, vec![6.0, 30.0]);
+        assert_eq!(royal.optimizer, idleon_royal_guardian::Objective::Rank);
+        assert_eq!(royal.unit_exp_map, Some(51));
+        assert_eq!(royal.unit_exp_targets.trading, Some(4));
+        assert!(royal.unit_exp_move_transients);
+        assert_eq!(royal.shelf_purchases, 4);
         assert_eq!(royal.windows, vec![(20.0, 22.0)]);
         let pickle = round_trip(&PickleState {
             dps: 5.5e7,

@@ -1,5 +1,6 @@
 // Writes the upstream Spelunking figures for the committed synthetic save, so
-// `crates/spelunking/tests/spelunking.rs` compares the Rust port against the JS.
+// `crates/spelunking/tests/spelunking.rs` and `tests/planner.rs` compare the
+// Rust port against the JS.
 //
 // Usage: node script/spelunking-oracle.mjs <path-to-idleon-research-optimizer>
 //
@@ -9,7 +10,9 @@
 // as the app's account-input panel supplies them. The save-derived half — party,
 // caves, tools, elixirs, shop upgrades and records — is built by the upstream
 // `buildSpelunkInputs`, so the decode and the depth maths both come from the
-// source of truth.
+// source of truth. The optimizer section drives `spelunk-planner.js` through its
+// generator with the same simulation, so both searches are pinned to the
+// upstream candidate order and fresh-seed arithmetic.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
@@ -31,6 +34,9 @@ const expedition = await import(
   join(source, 'js/stats/systems/w7/spelunk-expedition.js')
 );
 const depth = await import(join(source, 'js/stats/systems/w7/spelunk-depth.js'));
+const planner = await import(
+  join(source, 'js/stats/systems/w7/spelunk-planner.js')
+);
 
 const save = JSON.parse(
   readFileSync(new URL('../fixtures/data.json', import.meta.url), 'utf8'),
@@ -439,6 +445,129 @@ const parties = [
   },
 ];
 
+
+
+/** The optimizer baseline and search scope the Rust parity test replays. */
+const OPTIMIZER_BASELINE = {
+  cave: 0,
+  party: [0, 1],
+  policy: 'auto',
+  speed: 4,
+  elixirs: controlled.savedElixirs,
+  memorized: [7],
+  fullClear: false,
+  entry: 'shortcut',
+  tool: 'adaptive',
+  reactionMs: 350,
+  stamina: 'saved',
+};
+const OPTIMIZER_SCOPE = {
+  enabled: { party: false, elixirs: false, memorized: false, entry: false },
+  modes: ['auto', 'manual'],
+  clears: [false, true, 'fifth'],
+  speeds: [0, 1, 2, 3, 4],
+};
+const OPTIMIZER_OPTIONS = {
+  objective: 'depth',
+  screening: 1,
+  trials: 2,
+  scope: OPTIMIZER_SCOPE,
+  seed: 1,
+};
+const AMBER_OPTIONS = {
+  objective: 'amber',
+  screening: 1,
+  trials: 2,
+  maxTrials: 2,
+  minRopePct: 0,
+  from: 6,
+  to: 10,
+  seed: 1,
+};
+
+/** Drive one planner generator to completion with the upstream run. */
+function drive(iterator) {
+  let next = iterator.next();
+  while (!next.done) {
+    const request = next.value;
+    const measure = (entry) =>
+      expedition.simulateSpelunkExpedition(controlled, entry.config, {
+        seed: entry.seed,
+      });
+    const result = request.requests
+      ? request.requests.map(measure)
+      : measure(request);
+    next = iterator.next(result);
+  }
+  return next.value;
+}
+
+/** One compact optimizer row: the means and the paired final runs. */
+function optimizerRow(row) {
+  return {
+    label: row.label,
+    referenceOnly: row.referenceOnly ?? false,
+    riskEligible: row.riskEligible ?? true,
+    matchingStrategies: row.matchingStrategies ?? 0,
+    score: row.score,
+    se: row.se,
+    depth: row.depth,
+    startDepth: row.startDepth,
+    amber: row.amber,
+    seconds: row.seconds,
+    settled: row.settled,
+    total: row.total,
+    rope: row.rope,
+    toll: row.toll,
+    blocked: row.blocked,
+    recoveryHours: row.recoveryHours,
+    config: row.config,
+    runs: row.runs.map((run) => ({
+      seed: run.seed,
+      status: run.status,
+      settled: run.settled,
+      depth: run.depth,
+      startDepth: run.startDepth,
+      seconds: run.seconds,
+      spent: run.spent,
+      rewards: run.rewards,
+      grands: run.grands,
+      stamina: run.stamina,
+      exit: run.exit,
+      amber: run.amber ?? null,
+    })),
+    partyAnalysis: row.partyAnalysis
+      ? {
+          objective: row.partyAnalysis.objective,
+          retention: row.partyAnalysis.retention,
+          recommendedSize: row.partyAnalysis.recommendedSize,
+          trials: row.partyAnalysis.trials,
+          rows: row.partyAnalysis.rows.map((party) => ({
+            config: party.config,
+            score: party.score,
+            depth: party.depth,
+            amber: party.amber,
+            settled: party.settled,
+            allowed: party.allowed,
+            marginal: party.marginal,
+          })),
+        }
+      : null,
+  };
+}
+
+const searchSpace = planner.spelunkSearchSpace(
+  controlled,
+  OPTIMIZER_BASELINE,
+  OPTIMIZER_SCOPE,
+);
+const search = drive(
+  planner.createSpelunkSearch(controlled, OPTIMIZER_BASELINE, OPTIMIZER_OPTIONS),
+);
+const amber = drive(
+  planner.createSpelunkAmberSearch(controlled, OPTIMIZER_BASELINE, AMBER_OPTIONS),
+);
+
 const payload = {
   account: ACCOUNT,
   characters: built.characters,
@@ -475,6 +604,36 @@ const payload = {
   prisma: built.prisma,
   exalt: built.exalt,
   shortcut: built.shortcut === 1,
+  optimizerSearchSpace: {
+    configurations: String(searchSpace.configurations),
+    scope: searchSpace.scope,
+    baseline: OPTIMIZER_BASELINE,
+    options: OPTIMIZER_OPTIONS,
+  },
+  optimizerSearch: {
+    kind: search.kind,
+    objective: search.objective,
+    screened: String(search.screened),
+    configurations: String(search.configurations),
+    exhaustive: search.exhaustive,
+    delta: search.delta,
+    interval: search.interval,
+    winner: search.winner ? optimizerRow(search.winner) : null,
+    baseline: optimizerRow(search.baseline),
+    rows: search.rows.map(optimizerRow),
+  },
+  optimizerAmber: {
+    kind: amber.kind,
+    objective: amber.objective,
+    screened: String(amber.screened),
+    exhaustive: amber.exhaustive,
+    delta: amber.delta,
+    interval: amber.interval,
+    winner: amber.winner ? optimizerRow(amber.winner) : null,
+    baseline: optimizerRow(amber.baseline),
+    rows: amber.rows.map(optimizerRow),
+    info: amber.amberSearch,
+  },
   configs: CONFIGS.map(profile),
   runs: RUNS.map(run),
   rejections: parties.map((entry) => ({
@@ -489,5 +648,6 @@ const out = new URL('../fixtures/spelunking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
 console.log(
   `wrote ${payload.configs.length} profiles, ${payload.rejections.length} rejections, ` +
-    `${payload.runs.length} runs, ${payload.characters.length} characters`,
+    `${payload.runs.length} runs, ${payload.characters.length} characters, ` +
+    `${payload.optimizerSearch.rows.length} search rows and ${payload.optimizerAmber.rows.length} amber rows`,
 );

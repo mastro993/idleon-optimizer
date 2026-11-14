@@ -1553,6 +1553,5566 @@
  "prisma": 23,
  "exalt": 6,
  "shortcut": true,
+ "optimizerSearchSpace": {
+  "configurations": "34",
+  "scope": {
+   "partyMin": 2,
+   "partyMax": 2,
+   "characters": [
+    0,
+    1
+   ],
+   "ignoreOrder": false,
+   "modes": [
+    "auto",
+    "manual"
+   ],
+   "clears": [
+    false,
+    true,
+    "fifth"
+   ],
+   "speeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "elixirs": [
+    6,
+    2,
+    0,
+    5,
+    3
+   ],
+   "memorized": [
+    7
+   ],
+   "enabled": {
+    "party": false,
+    "elixirs": false,
+    "memorized": false,
+    "entry": false
+   }
+  },
+  "baseline": {
+   "cave": 0,
+   "party": [
+    0,
+    1
+   ],
+   "policy": "auto",
+   "speed": 4,
+   "elixirs": [
+    6,
+    2,
+    0,
+    5,
+    3
+   ],
+   "memorized": [
+    7
+   ],
+   "fullClear": false,
+   "entry": "shortcut",
+   "tool": "adaptive",
+   "reactionMs": 350,
+   "stamina": "saved"
+  },
+  "options": {
+   "objective": "depth",
+   "screening": 1,
+   "trials": 2,
+   "scope": {
+    "enabled": {
+     "party": false,
+     "elixirs": false,
+     "memorized": false,
+     "entry": false
+    },
+    "modes": [
+     "auto",
+     "manual"
+    ],
+    "clears": [
+     false,
+     true,
+     "fifth"
+    ],
+    "speeds": [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "seed": 1
+  }
+ },
+ "optimizerSearch": {
+  "kind": "search",
+  "objective": "depth",
+  "screened": "34",
+  "configurations": "34",
+  "exhaustive": true,
+  "delta": 8,
+  "interval": [
+   8,
+   8
+  ],
+  "winner": {
+   "label": "Screened strategy",
+   "referenceOnly": false,
+   "riskEligible": true,
+   "matchingStrategies": 0,
+   "score": 38,
+   "se": 2.9999999999999996,
+   "depth": 38,
+   "startDepth": 1,
+   "amber": 4.4809560245966926e+26,
+   "seconds": 167.04000000000002,
+   "settled": 2,
+   "total": 2,
+   "rope": 0,
+   "toll": 2,
+   "blocked": 0,
+   "recoveryHours": 76.1659150441001,
+   "config": {
+    "cave": 0,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "dive",
+    "speed": 4,
+    "elixirs": [
+     6,
+     2,
+     0,
+     5,
+     3
+    ],
+    "memorized": [
+     7
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": false,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "runs": [
+    {
+     "seed": 3981653654,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 35,
+     "startDepth": 1,
+     "seconds": 166.74,
+     "spent": 14760,
+     "rewards": [
+      3.2733776443252825e+26,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      11279,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 3,
+        "gross": 3,
+        "expected": 2.7,
+        "chance": 0.7000000000000002,
+        "roundedUp": false,
+        "collected": 2
+       },
+       {
+        "reward": 0,
+        "gross": 3.637086271472536e+26,
+        "expected": 3.2733776443252825e+26,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 3.2733776443252825e+26
+       },
+       {
+        "reward": 5,
+        "gross": 1,
+        "expected": 0.9,
+        "chance": 0.9,
+        "roundedUp": false,
+        "collected": 0
+       },
+       {
+        "reward": 8,
+        "gross": 12532,
+        "expected": 11278.800000000001,
+        "chance": 0.8000000000010914,
+        "roundedUp": true,
+        "collected": 11279
+       }
+      ]
+     },
+     "amber": null
+    },
+    {
+     "seed": 2341122127,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 41,
+     "startDepth": 1,
+     "seconds": 167.34,
+     "spent": 13230,
+     "rewards": [
+      5.6885344048681034e+26,
+      0,
+      0,
+      2,
+      0,
+      1,
+      0,
+      0,
+      18173,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 0,
+        "gross": 6.320593783186782e+26,
+        "expected": 5.6885344048681034e+26,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 5.6885344048681034e+26
+       },
+       {
+        "reward": 5,
+        "gross": 1,
+        "expected": 0.9,
+        "chance": 0.9,
+        "roundedUp": true,
+        "collected": 1
+       },
+       {
+        "reward": 8,
+        "gross": 20192,
+        "expected": 18172.8,
+        "chance": 0.7999999999992724,
+        "roundedUp": true,
+        "collected": 18173
+       },
+       {
+        "reward": 3,
+        "gross": 3,
+        "expected": 2.7,
+        "chance": 0.7000000000000002,
+        "roundedUp": false,
+        "collected": 2
+       }
+      ]
+     },
+     "amber": null
+    }
+   ],
+   "partyAnalysis": {
+    "objective": "depth",
+    "retention": 0.99,
+    "recommendedSize": 2,
+    "trials": 2,
+    "rows": [
+     {
+      "config": {
+       "cave": 0,
+       "party": [
+        0
+       ],
+       "manic": true,
+       "policy": "dive",
+       "speed": 4,
+       "elixirs": [
+        6,
+        2,
+        0,
+        5,
+        3
+       ],
+       "memorized": [
+        7
+       ],
+       "tool": "adaptive",
+       "entry": "shortcut",
+       "fullClear": false,
+       "reactionMs": 350,
+       "stamina": "saved"
+      },
+      "score": 28.5,
+      "depth": 28.5,
+      "amber": 2.5186514193320848e+26,
+      "settled": 2,
+      "allowed": false,
+      "marginal": null
+     },
+     {
+      "config": {
+       "cave": 0,
+       "party": [
+        0,
+        1
+       ],
+       "manic": true,
+       "policy": "dive",
+       "speed": 4,
+       "elixirs": [
+        6,
+        2,
+        0,
+        5,
+        3
+       ],
+       "memorized": [
+        7
+       ],
+       "tool": "adaptive",
+       "entry": "shortcut",
+       "fullClear": false,
+       "reactionMs": 350,
+       "stamina": "saved"
+      },
+      "score": 38,
+      "depth": 38,
+      "amber": 4.4809560245966926e+26,
+      "settled": 2,
+      "allowed": true,
+      "marginal": {
+       "objective": 9.5,
+       "interval": [
+        8.52,
+        10.48
+       ],
+       "depth": 9.5,
+       "amber": 1.9623046052646078e+26,
+       "grands": 0,
+       "extraDepth": 2,
+       "total": 2,
+       "rewards": [
+        1.9623046052646085e+26,
+        0,
+        0,
+        0,
+        0,
+        -0.5,
+        0,
+        0,
+        8505,
+        0,
+        0,
+        0
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "baseline": {
+   "label": "Selected baseline",
+   "referenceOnly": false,
+   "riskEligible": true,
+   "matchingStrategies": 0,
+   "score": 30,
+   "se": 2.9999999999999996,
+   "depth": 30,
+   "startDepth": 1,
+   "amber": 1.3271320995912854e+27,
+   "seconds": 67.97,
+   "settled": 2,
+   "total": 2,
+   "rope": 0,
+   "toll": 2,
+   "blocked": 0,
+   "recoveryHours": 76.1659150441001,
+   "config": {
+    "cave": 0,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "auto",
+    "speed": 4,
+    "elixirs": [
+     6,
+     2,
+     0,
+     5,
+     3
+    ],
+    "memorized": [
+     7
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": false,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "runs": [
+    {
+     "seed": 3981653654,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 27,
+     "startDepth": 1,
+     "seconds": 60.86,
+     "spent": 13380,
+     "rewards": [
+      6.047410101782485e+26,
+      0,
+      0,
+      4,
+      0,
+      3,
+      0,
+      0,
+      3352,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 0,
+        "gross": 6.719344557536095e+26,
+        "expected": 6.047410101782485e+26,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 6.047410101782485e+26
+       },
+       {
+        "reward": 3,
+        "gross": 4,
+        "expected": 3.6,
+        "chance": 0.6000000000000001,
+        "roundedUp": true,
+        "collected": 4
+       },
+       {
+        "reward": 8,
+        "gross": 3724,
+        "expected": 3351.6,
+        "chance": 0.599999999999909,
+        "roundedUp": true,
+        "collected": 3352
+       },
+       {
+        "reward": 5,
+        "gross": 3,
+        "expected": 2.7,
+        "chance": 0.7000000000000002,
+        "roundedUp": true,
+        "collected": 3
+       }
+      ]
+     },
+     "amber": null
+    },
+    {
+     "seed": 2341122127,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 33,
+     "startDepth": 1,
+     "seconds": 75.08,
+     "spent": 18420,
+     "rewards": [
+      2.0495231890043224e+27,
+      0,
+      0,
+      3,
+      0,
+      2,
+      0,
+      0,
+      6745,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 3,
+        "gross": 4,
+        "expected": 3.6,
+        "chance": 0.6000000000000001,
+        "roundedUp": false,
+        "collected": 3
+       },
+       {
+        "reward": 0,
+        "gross": 2.2772479877825802e+27,
+        "expected": 2.0495231890043224e+27,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 2.0495231890043224e+27
+       },
+       {
+        "reward": 8,
+        "gross": 7495,
+        "expected": 6745.5,
+        "chance": 0.5,
+        "roundedUp": false,
+        "collected": 6745
+       },
+       {
+        "reward": 5,
+        "gross": 2,
+        "expected": 1.8,
+        "chance": 0.8,
+        "roundedUp": true,
+        "collected": 2
+       }
+      ]
+     },
+     "amber": null
+    }
+   ],
+   "partyAnalysis": {
+    "objective": "depth",
+    "retention": 0.99,
+    "recommendedSize": 2,
+    "trials": 2,
+    "rows": [
+     {
+      "config": {
+       "cave": 0,
+       "party": [
+        0
+       ],
+       "manic": true,
+       "policy": "auto",
+       "speed": 4,
+       "elixirs": [
+        6,
+        2,
+        0,
+        5,
+        3
+       ],
+       "memorized": [
+        7
+       ],
+       "tool": "adaptive",
+       "entry": "shortcut",
+       "fullClear": false,
+       "reactionMs": 350,
+       "stamina": "saved"
+      },
+      "score": 17,
+      "depth": 17,
+      "amber": 6.427998796976898e+25,
+      "settled": 2,
+      "allowed": false,
+      "marginal": null
+     },
+     {
+      "config": {
+       "cave": 0,
+       "party": [
+        0,
+        1
+       ],
+       "manic": true,
+       "policy": "auto",
+       "speed": 4,
+       "elixirs": [
+        6,
+        2,
+        0,
+        5,
+        3
+       ],
+       "memorized": [
+        7
+       ],
+       "tool": "adaptive",
+       "entry": "shortcut",
+       "fullClear": false,
+       "reactionMs": 350,
+       "stamina": "saved"
+      },
+      "score": 30,
+      "depth": 30,
+      "amber": 1.3271320995912854e+27,
+      "settled": 2,
+      "allowed": true,
+      "marginal": {
+       "objective": 13,
+       "interval": [
+        11.04,
+        14.96
+       ],
+       "depth": 13,
+       "amber": 1.2628521116215164e+27,
+       "grands": 0,
+       "extraDepth": 2,
+       "total": 2,
+       "rewards": [
+        1.2628521116215164e+27,
+        0,
+        0,
+        3.5,
+        0,
+        2.5,
+        0,
+        0,
+        4774.5,
+        0,
+        0,
+        0
+       ]
+      }
+     }
+    ]
+   }
+  },
+  "rows": [
+   {
+    "label": "Selected baseline",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 30,
+    "se": 2.9999999999999996,
+    "depth": 30,
+    "startDepth": 1,
+    "amber": 1.3271320995912854e+27,
+    "seconds": 67.97,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "auto",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 27,
+      "startDepth": 1,
+      "seconds": 60.86,
+      "spent": 13380,
+      "rewards": [
+       6.047410101782485e+26,
+       0,
+       0,
+       4,
+       0,
+       3,
+       0,
+       0,
+       3352,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 6.719344557536095e+26,
+         "expected": 6.047410101782485e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 6.047410101782485e+26
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": true,
+         "collected": 4
+        },
+        {
+         "reward": 8,
+         "gross": 3724,
+         "expected": 3351.6,
+         "chance": 0.599999999999909,
+         "roundedUp": true,
+         "collected": 3352
+        },
+        {
+         "reward": 5,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": true,
+         "collected": 3
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 33,
+      "startDepth": 1,
+      "seconds": 75.08,
+      "spent": 18420,
+      "rewards": [
+       2.0495231890043224e+27,
+       0,
+       0,
+       3,
+       0,
+       2,
+       0,
+       0,
+       6745,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": false,
+         "collected": 3
+        },
+        {
+         "reward": 0,
+         "gross": 2.2772479877825802e+27,
+         "expected": 2.0495231890043224e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 2.0495231890043224e+27
+        },
+        {
+         "reward": 8,
+         "gross": 7495,
+         "expected": 6745.5,
+         "chance": 0.5,
+         "roundedUp": false,
+         "collected": 6745
+        },
+        {
+         "reward": 5,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "auto",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 17,
+       "depth": 17,
+       "amber": 6.427998796976898e+25,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "auto",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 30,
+       "depth": 30,
+       "amber": 1.3271320995912854e+27,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 13,
+        "interval": [
+         11.04,
+         14.96
+        ],
+        "depth": 13,
+        "amber": 1.2628521116215164e+27,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         1.2628521116215164e+27,
+         0,
+         0,
+         3.5,
+         0,
+         2.5,
+         0,
+         0,
+         4774.5,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "label": "Screened strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 38,
+    "se": 2.9999999999999996,
+    "depth": 38,
+    "startDepth": 1,
+    "amber": 4.4809560245966926e+26,
+    "seconds": 167.04000000000002,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "dive",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 35,
+      "startDepth": 1,
+      "seconds": 166.74,
+      "spent": 14760,
+      "rewards": [
+       3.2733776443252825e+26,
+       0,
+       0,
+       2,
+       0,
+       0,
+       0,
+       0,
+       11279,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": false,
+         "collected": 2
+        },
+        {
+         "reward": 0,
+         "gross": 3.637086271472536e+26,
+         "expected": 3.2733776443252825e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 3.2733776443252825e+26
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": false,
+         "collected": 0
+        },
+        {
+         "reward": 8,
+         "gross": 12532,
+         "expected": 11278.800000000001,
+         "chance": 0.8000000000010914,
+         "roundedUp": true,
+         "collected": 11279
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 41,
+      "startDepth": 1,
+      "seconds": 167.34,
+      "spent": 13230,
+      "rewards": [
+       5.6885344048681034e+26,
+       0,
+       0,
+       2,
+       0,
+       1,
+       0,
+       0,
+       18173,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 6.320593783186782e+26,
+         "expected": 5.6885344048681034e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 5.6885344048681034e+26
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        },
+        {
+         "reward": 8,
+         "gross": 20192,
+         "expected": 18172.8,
+         "chance": 0.7999999999992724,
+         "roundedUp": true,
+         "collected": 18173
+        },
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": false,
+         "collected": 2
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "dive",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 28.5,
+       "depth": 28.5,
+       "amber": 2.5186514193320848e+26,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "dive",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 38,
+       "depth": 38,
+       "amber": 4.4809560245966926e+26,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 9.5,
+        "interval": [
+         8.52,
+         10.48
+        ],
+        "depth": 9.5,
+        "amber": 1.9623046052646078e+26,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         1.9623046052646085e+26,
+         0,
+         0,
+         0,
+         0,
+         -0.5,
+         0,
+         0,
+         8505,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "label": "Screened strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 33.5,
+    "se": 0.5,
+    "depth": 33.5,
+    "startDepth": 1,
+    "amber": 8.308501594023833e+26,
+    "seconds": 119.515,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "efficient",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": 2,
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 34,
+      "startDepth": 1,
+      "seconds": 118.69,
+      "spent": 10080,
+      "rewards": [
+       1.351594240848673e+27,
+       0,
+       0,
+       2,
+       0,
+       1,
+       0,
+       0,
+       7789,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        },
+        {
+         "reward": 0,
+         "gross": 1.5017713787207478e+27,
+         "expected": 1.351594240848673e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.351594240848673e+27
+        },
+        {
+         "reward": 8,
+         "gross": 8654,
+         "expected": 7788.6,
+         "chance": 0.6000000000003638,
+         "roundedUp": true,
+         "collected": 7789
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 33,
+      "startDepth": 1,
+      "seconds": 120.34,
+      "spent": 11610,
+      "rewards": [
+       3.101060779560936e+26,
+       0,
+       0,
+       0,
+       0,
+       3,
+       0,
+       0,
+       9754,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 3.44562308840104e+26,
+         "expected": 3.101060779560936e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 3.101060779560936e+26
+        },
+        {
+         "reward": 8,
+         "gross": 10838,
+         "expected": 9754.2,
+         "chance": 0.2000000000007276,
+         "roundedUp": false,
+         "collected": 9754
+        },
+        {
+         "reward": 5,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": true,
+         "collected": 3
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 2,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 28,
+       "depth": 28,
+       "amber": 3.382636732118877e+26,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 2,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 33.5,
+       "depth": 33.5,
+       "amber": 8.308501594023833e+26,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 5.5,
+        "interval": [
+         2.56,
+         8.44
+        ],
+        "depth": 5.5,
+        "amber": 4.925864861904956e+26,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         4.925864861904957e+26,
+         0,
+         0,
+         0,
+         0,
+         1.5,
+         0,
+         -0.5,
+         4678.5,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "label": "Screened strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 36.5,
+    "se": 3.4999999999999996,
+    "depth": 36.5,
+    "startDepth": 1,
+    "amber": 9.966580512072341e+26,
+    "seconds": 137.49,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "efficient",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 33,
+      "startDepth": 1,
+      "seconds": 135.39,
+      "spent": 10140,
+      "rewards": [
+       9.091880148574786e+26,
+       0,
+       0,
+       4,
+       0,
+       1,
+       0,
+       0,
+       11048,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": true,
+         "collected": 4
+        },
+        {
+         "reward": 0,
+         "gross": 1.0102089053971984e+27,
+         "expected": 9.091880148574786e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 9.091880148574786e+26
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        },
+        {
+         "reward": 8,
+         "gross": 12276,
+         "expected": 11048.4,
+         "chance": 0.3999999999996362,
+         "roundedUp": false,
+         "collected": 11048
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 40,
+      "startDepth": 1,
+      "seconds": 139.59,
+      "spent": 10140,
+      "rewards": [
+       1.0841280875569898e+27,
+       0,
+       0,
+       2,
+       0,
+       1,
+       0,
+       0,
+       16663,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 1.2045867639522109e+27,
+         "expected": 1.0841280875569898e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.0841280875569898e+27
+        },
+        {
+         "reward": 8,
+         "gross": 18514,
+         "expected": 16662.600000000002,
+         "chance": 0.6000000000021828,
+         "roundedUp": true,
+         "collected": 16663
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        },
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 25.5,
+       "depth": 25.5,
+       "amber": 3.3442758902573134e+26,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": "adaptive",
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 36.5,
+       "depth": 36.5,
+       "amber": 9.966580512072341e+26,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 11,
+        "interval": [
+         7.08,
+         14.92
+        ],
+        "depth": 11,
+        "amber": 6.622304621815027e+26,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         6.62230462181503e+26,
+         0,
+         0,
+         0.5,
+         0,
+         0.5,
+         0,
+         0,
+         10448,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "label": "Screened strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 35,
+    "se": 1,
+    "depth": 35,
+    "startDepth": 1,
+    "amber": 4.682148764477804e+26,
+    "seconds": 139.965,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "dive",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": 1,
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 36,
+      "startDepth": 1,
+      "seconds": 142.69,
+      "spent": 10080,
+      "rewards": [
+       4.587399728257547e+26,
+       0,
+       0,
+       4,
+       0,
+       2,
+       0,
+       0,
+       7945,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 5.097110809175052e+26,
+         "expected": 4.587399728257547e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4.587399728257547e+26
+        },
+        {
+         "reward": 8,
+         "gross": 8828,
+         "expected": 7945.2,
+         "chance": 0.1999999999998181,
+         "roundedUp": false,
+         "collected": 7945
+        },
+        {
+         "reward": 5,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": false,
+         "collected": 2
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": true,
+         "collected": 4
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 34,
+      "startDepth": 1,
+      "seconds": 137.24,
+      "spent": 10080,
+      "rewards": [
+       4.776897800698061e+26,
+       0,
+       0,
+       1,
+       0,
+       2,
+       0,
+       0,
+       7624,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 5.3076642229978454e+26,
+         "expected": 4.776897800698061e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4.776897800698061e+26
+        },
+        {
+         "reward": 8,
+         "gross": 8471,
+         "expected": 7623.900000000001,
+         "chance": 0.9000000000005457,
+         "roundedUp": true,
+         "collected": 7624
+        },
+        {
+         "reward": 5,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": false,
+         "collected": 2
+        },
+        {
+         "reward": 3,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "dive",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 1,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 25.5,
+       "depth": 25.5,
+       "amber": 8.756329850683255e+25,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "dive",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 1,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 35,
+       "depth": 35,
+       "amber": 4.682148764477804e+26,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 9.5,
+        "interval": [
+         6.5600000000000005,
+         12.44
+        ],
+        "depth": 9.5,
+        "amber": 3.806515779409479e+26,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         3.806515779409479e+26,
+         0,
+         0,
+         1.5,
+         0,
+         0.5,
+         0,
+         0,
+         5608,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "label": "Screened strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 27,
+    "se": 2.9999999999999996,
+    "depth": 27,
+    "startDepth": 1,
+    "amber": 9.137637888738765e+26,
+    "seconds": 81.24000000000001,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "efficient",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": 4,
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 24,
+      "startDepth": 1,
+      "seconds": 71.84,
+      "spent": 10080,
+      "rewards": [
+       7.563287117003458e+26,
+       0,
+       0,
+       3,
+       0,
+       1,
+       0,
+       2,
+       1453,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 8.403652352226064e+26,
+         "expected": 7.563287117003458e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 7.563287117003458e+26
+        },
+        {
+         "reward": 7,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        },
+        {
+         "reward": 8,
+         "gross": 1615,
+         "expected": 1453.5,
+         "chance": 0.5,
+         "roundedUp": false,
+         "collected": 1453
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": false,
+         "collected": 3
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 30,
+      "startDepth": 1,
+      "seconds": 90.64,
+      "spent": 11760,
+      "rewards": [
+       1.071198866047407e+27,
+       0,
+       0,
+       3,
+       0,
+       1,
+       0,
+       0,
+       6330,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 1.1902209622748967e+27,
+         "expected": 1.071198866047407e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.071198866047407e+27
+        },
+        {
+         "reward": 8,
+         "gross": 7033,
+         "expected": 6329.7,
+         "chance": 0.6999999999998181,
+         "roundedUp": true,
+         "collected": 6330
+        },
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": true,
+         "collected": 3
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": {
+     "objective": "depth",
+     "retention": 0.99,
+     "recommendedSize": 2,
+     "trials": 2,
+     "rows": [
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 4,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 18,
+       "depth": 18,
+       "amber": 1.0438443348058024e+26,
+       "settled": 2,
+       "allowed": false,
+       "marginal": null
+      },
+      {
+       "config": {
+        "cave": 0,
+        "party": [
+         0,
+         1
+        ],
+        "manic": true,
+        "policy": "efficient",
+        "speed": 4,
+        "elixirs": [
+         6,
+         2,
+         0,
+         5,
+         3
+        ],
+        "memorized": [
+         7
+        ],
+        "tool": 4,
+        "entry": "shortcut",
+        "fullClear": false,
+        "reactionMs": 350,
+        "stamina": "saved"
+       },
+       "score": 27,
+       "depth": 27,
+       "amber": 9.137637888738765e+26,
+       "settled": 2,
+       "allowed": true,
+       "marginal": {
+        "objective": 9,
+        "interval": [
+         5.08,
+         12.92
+        ],
+        "depth": 9,
+        "amber": 8.093793553932963e+26,
+        "grands": 0,
+        "extraDepth": 2,
+        "total": 2,
+        "rewards": [
+         8.093793553932961e+26,
+         0,
+         0,
+         2,
+         0,
+         1,
+         0,
+         0.5,
+         3325.5,
+         0,
+         0,
+         0
+        ]
+       }
+      }
+     ]
+    }
+   }
+  ]
+ },
+ "optimizerAmber": {
+  "kind": "amber-search",
+  "objective": "amber",
+  "screened": "236",
+  "exhaustive": false,
+  "delta": 3.320453001468885e+28,
+  "interval": [
+   2.050497683401184e+26,
+   6.620401026103758e+28
+  ],
+  "winner": {
+   "label": "Phased Amber strategy",
+   "referenceOnly": false,
+   "riskEligible": true,
+   "matchingStrategies": 0,
+   "score": 3.453166211428013e+28,
+   "se": 1.7558860602856265e+28,
+   "depth": 23,
+   "startDepth": 1,
+   "amber": 3.453166211428013e+28,
+   "seconds": 148.925,
+   "settled": 2,
+   "total": 2,
+   "rope": 0,
+   "toll": 2,
+   "blocked": 0,
+   "recoveryHours": 76.1659150441001,
+   "config": {
+    "cave": 0,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "amber-farm",
+    "speed": 4,
+    "elixirs": [
+     6,
+     2,
+     0,
+     5,
+     3
+    ],
+    "memorized": [
+     7
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": true,
+    "amber": {
+     "dumpDepth": 9,
+     "finishers": 1,
+     "reservePct": 85,
+     "harvestDepths": 3,
+     "ropeReservePct": 50
+    },
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "runs": [
+    {
+     "seed": 3981653654,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 24,
+     "startDepth": 1,
+     "seconds": 171.25,
+     "spent": 14910,
+     "rewards": [
+      1.6972801511423865e+28,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      3361,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 3,
+        "gross": 2,
+        "expected": 1.8,
+        "chance": 0.8,
+        "roundedUp": true,
+        "collected": 2
+       },
+       {
+        "reward": 0,
+        "gross": 1.8858668346026516e+28,
+        "expected": 1.6972801511423865e+28,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 1.6972801511423865e+28
+       },
+       {
+        "reward": 8,
+        "gross": 3734,
+        "expected": 3360.6,
+        "chance": 0.599999999999909,
+        "roundedUp": true,
+        "collected": 3361
+       }
+      ]
+     },
+     "amber": {
+      "phase": "rope-search",
+      "transitions": [
+       {
+        "phase": "dump",
+        "reason": "Burn on visible objects unlikely to break with this character",
+        "depth": 14,
+        "spent": 5010,
+        "time": 61.03
+       },
+       {
+        "phase": "activate",
+        "reason": "Next dig would consume finishing reserve",
+        "depth": 18,
+        "spent": 8880,
+        "time": 104.48
+       },
+       {
+        "phase": "harvest",
+        "reason": "Available oranges consumed after stamina burn",
+        "depth": 18,
+        "spent": 8880,
+        "time": 105.19
+       },
+       {
+        "phase": "rope-search",
+        "reason": "Low finishing stamina",
+        "depth": 19,
+        "spent": 10650,
+        "time": 124.54
+       }
+      ],
+      "activations": [
+       {
+        "depth": 18,
+        "spent": 8880,
+        "effect": 8880,
+        "time": 104.84,
+        "slot": 4
+       }
+      ],
+      "dumpSpent": 240,
+      "dumpDigs": 5,
+      "activationDepth": 18
+     }
+    },
+    {
+     "seed": 2341122127,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 22,
+     "startDepth": 1,
+     "seconds": 126.6,
+     "spent": 11850,
+     "rewards": [
+      5.20905227171364e+28,
+      0,
+      0,
+      3,
+      0,
+      1,
+      0,
+      0,
+      2547,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 0,
+        "gross": 5.7878358574596e+28,
+        "expected": 5.20905227171364e+28,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 5.20905227171364e+28
+       },
+       {
+        "reward": 8,
+        "gross": 2830,
+        "expected": 2547,
+        "chance": 0,
+        "roundedUp": false,
+        "collected": 2547
+       },
+       {
+        "reward": 3,
+        "gross": 3,
+        "expected": 2.7,
+        "chance": 0.7000000000000002,
+        "roundedUp": true,
+        "collected": 3
+       },
+       {
+        "reward": 5,
+        "gross": 1,
+        "expected": 0.9,
+        "chance": 0.9,
+        "roundedUp": true,
+        "collected": 1
+       }
+      ]
+     },
+     "amber": {
+      "phase": "rope-search",
+      "transitions": [
+       {
+        "phase": "activate",
+        "reason": "Next dig would consume finishing reserve",
+        "depth": 14,
+        "spent": 5790,
+        "time": 61.73
+       },
+       {
+        "phase": "harvest",
+        "reason": "Available oranges consumed after stamina burn",
+        "depth": 14,
+        "spent": 5790,
+        "time": 63.14
+       },
+       {
+        "phase": "rope-search",
+        "reason": "Low finishing stamina",
+        "depth": 16,
+        "spent": 7560,
+        "time": 79.44
+       }
+      ],
+      "activations": [
+       {
+        "depth": 14,
+        "spent": 5790,
+        "effect": 5790,
+        "time": 62.09,
+        "slot": 4
+       },
+       {
+        "depth": 14,
+        "spent": 5790,
+        "effect": 11580,
+        "time": 62.44,
+        "slot": 4
+       },
+       {
+        "depth": 14,
+        "spent": 5790,
+        "effect": 17370,
+        "time": 62.79,
+        "slot": 4
+       },
+       {
+        "depth": 15,
+        "spent": 6360,
+        "effect": 23730,
+        "time": 68.14,
+        "slot": 4
+       },
+       {
+        "depth": 15,
+        "spent": 6360,
+        "effect": 30090,
+        "time": 68.49,
+        "slot": 4
+       }
+      ],
+      "dumpSpent": 0,
+      "dumpDigs": 0,
+      "activationDepth": 14
+     }
+    }
+   ],
+   "partyAnalysis": null
+  },
+  "baseline": {
+   "label": "Selected baseline",
+   "referenceOnly": true,
+   "riskEligible": true,
+   "matchingStrategies": 0,
+   "score": 1.3271320995912854e+27,
+   "se": 7.223910894130368e+26,
+   "depth": 30,
+   "startDepth": 1,
+   "amber": 1.3271320995912854e+27,
+   "seconds": 67.97,
+   "settled": 2,
+   "total": 2,
+   "rope": 0,
+   "toll": 2,
+   "blocked": 0,
+   "recoveryHours": 76.1659150441001,
+   "config": {
+    "cave": 0,
+    "party": [
+     0,
+     1
+    ],
+    "manic": true,
+    "policy": "auto",
+    "speed": 4,
+    "elixirs": [
+     6,
+     2,
+     0,
+     5,
+     3
+    ],
+    "memorized": [
+     7
+    ],
+    "tool": "adaptive",
+    "entry": "shortcut",
+    "fullClear": false,
+    "reactionMs": 350,
+    "stamina": "saved"
+   },
+   "runs": [
+    {
+     "seed": 3981653654,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 27,
+     "startDepth": 1,
+     "seconds": 60.86,
+     "spent": 13380,
+     "rewards": [
+      6.047410101782485e+26,
+      0,
+      0,
+      4,
+      0,
+      3,
+      0,
+      0,
+      3352,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 0,
+        "gross": 6.719344557536095e+26,
+        "expected": 6.047410101782485e+26,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 6.047410101782485e+26
+       },
+       {
+        "reward": 3,
+        "gross": 4,
+        "expected": 3.6,
+        "chance": 0.6000000000000001,
+        "roundedUp": true,
+        "collected": 4
+       },
+       {
+        "reward": 8,
+        "gross": 3724,
+        "expected": 3351.6,
+        "chance": 0.599999999999909,
+        "roundedUp": true,
+        "collected": 3352
+       },
+       {
+        "reward": 5,
+        "gross": 3,
+        "expected": 2.7,
+        "chance": 0.7000000000000002,
+        "roundedUp": true,
+        "collected": 3
+       }
+      ]
+     },
+     "amber": null
+    },
+    {
+     "seed": 2341122127,
+     "status": "exhausted",
+     "settled": true,
+     "depth": 33,
+     "startDepth": 1,
+     "seconds": 75.08,
+     "spent": 18420,
+     "rewards": [
+      2.0495231890043224e+27,
+      0,
+      0,
+      3,
+      0,
+      2,
+      0,
+      0,
+      6745,
+      0,
+      0,
+      0
+     ],
+     "grands": 0,
+     "stamina": [
+      {
+       "id": 0,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      },
+      {
+       "id": 1,
+       "start": 3522,
+       "end": 0,
+       "max": 3522
+      }
+     ],
+     "exit": {
+      "type": "toll",
+      "retained": 0.9,
+      "items": [
+       {
+        "reward": 3,
+        "gross": 4,
+        "expected": 3.6,
+        "chance": 0.6000000000000001,
+        "roundedUp": false,
+        "collected": 3
+       },
+       {
+        "reward": 0,
+        "gross": 2.2772479877825802e+27,
+        "expected": 2.0495231890043224e+27,
+        "chance": null,
+        "roundedUp": null,
+        "collected": 2.0495231890043224e+27
+       },
+       {
+        "reward": 8,
+        "gross": 7495,
+        "expected": 6745.5,
+        "chance": 0.5,
+        "roundedUp": false,
+        "collected": 6745
+       },
+       {
+        "reward": 5,
+        "gross": 2,
+        "expected": 1.8,
+        "chance": 0.8,
+        "roundedUp": true,
+        "collected": 2
+       }
+      ]
+     },
+     "amber": null
+    }
+   ],
+   "partyAnalysis": null
+  },
+  "rows": [
+   {
+    "label": "Selected baseline",
+    "referenceOnly": true,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 1.3271320995912854e+27,
+    "se": 7.223910894130368e+26,
+    "depth": 30,
+    "startDepth": 1,
+    "amber": 1.3271320995912854e+27,
+    "seconds": 67.97,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "auto",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": false,
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 27,
+      "startDepth": 1,
+      "seconds": 60.86,
+      "spent": 13380,
+      "rewards": [
+       6.047410101782485e+26,
+       0,
+       0,
+       4,
+       0,
+       3,
+       0,
+       0,
+       3352,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 6.719344557536095e+26,
+         "expected": 6.047410101782485e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 6.047410101782485e+26
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": true,
+         "collected": 4
+        },
+        {
+         "reward": 8,
+         "gross": 3724,
+         "expected": 3351.6,
+         "chance": 0.599999999999909,
+         "roundedUp": true,
+         "collected": 3352
+        },
+        {
+         "reward": 5,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": true,
+         "collected": 3
+        }
+       ]
+      },
+      "amber": null
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 33,
+      "startDepth": 1,
+      "seconds": 75.08,
+      "spent": 18420,
+      "rewards": [
+       2.0495231890043224e+27,
+       0,
+       0,
+       3,
+       0,
+       2,
+       0,
+       0,
+       6745,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 3.6,
+         "chance": 0.6000000000000001,
+         "roundedUp": false,
+         "collected": 3
+        },
+        {
+         "reward": 0,
+         "gross": 2.2772479877825802e+27,
+         "expected": 2.0495231890043224e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 2.0495231890043224e+27
+        },
+        {
+         "reward": 8,
+         "gross": 7495,
+         "expected": 6745.5,
+         "chance": 0.5,
+         "roundedUp": false,
+         "collected": 6745
+        },
+        {
+         "reward": 5,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        }
+       ]
+      },
+      "amber": null
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 2.0358869996647937e+28,
+    "se": 4.6723364163005736e+27,
+    "depth": 21,
+    "startDepth": 1,
+    "amber": 2.0358869996647937e+28,
+    "seconds": 130.695,
+    "settled": 2,
+    "total": 2,
+    "rope": 1,
+    "toll": 1,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 9,
+      "finishers": 1,
+      "reservePct": 75,
+      "harvestDepths": 3,
+      "ropeReservePct": 50
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 22,
+      "startDepth": 1,
+      "seconds": 153.55,
+      "spent": 13230,
+      "rewards": [
+       1.5686533580347364e+28,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1849,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": false,
+         "collected": 1
+        },
+        {
+         "reward": 0,
+         "gross": 1.7429481755941515e+28,
+         "expected": 1.5686533580347364e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.5686533580347364e+28
+        },
+        {
+         "reward": 8,
+         "gross": 2054,
+         "expected": 1848.6000000000001,
+         "chance": 0.6000000000001364,
+         "roundedUp": true,
+         "collected": 1849
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "dump",
+         "reason": "Burn on visible objects unlikely to break with this character",
+         "depth": 14,
+         "spent": 5010,
+         "time": 61.03
+        },
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 18,
+         "spent": 9360,
+         "time": 110.08
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 18,
+         "spent": 9360,
+         "time": 111.14
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 19,
+         "spent": 10650,
+         "time": 123.14
+        }
+       ],
+       "activations": [
+        {
+         "depth": 18,
+         "spent": 9360,
+         "effect": 9360,
+         "time": 110.44,
+         "slot": 4
+        },
+        {
+         "depth": 18,
+         "spent": 9360,
+         "effect": 18720,
+         "time": 110.79,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 240,
+       "dumpDigs": 5,
+       "activationDepth": 18
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 20,
+      "startDepth": 1,
+      "seconds": 107.84,
+      "spent": 9960,
+      "rewards": [
+       2.5031206412948512e+28,
+       0,
+       0,
+       5,
+       0,
+       1,
+       0,
+       0,
+       1608,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 78,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 1.2330643553176607e+28,
+         "expected": 2.5031206412948512e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 2.5031206412948512e+28
+        },
+        {
+         "reward": 8,
+         "gross": 1608,
+         "expected": 1608,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1608
+        },
+        {
+         "reward": 3,
+         "gross": 5,
+         "expected": 5,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 5
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 15,
+         "spent": 6270,
+         "time": 67.78
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 15,
+         "spent": 6270,
+         "time": 68.84
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 17,
+         "spent": 7560,
+         "time": 79.89
+        }
+       ],
+       "activations": [
+        {
+         "depth": 15,
+         "spent": 6270,
+         "effect": 6270,
+         "time": 68.14,
+         "slot": 4
+        },
+        {
+         "depth": 15,
+         "spent": 6270,
+         "effect": 12540,
+         "time": 68.49,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 15
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 2.0358869996647937e+28,
+    "se": 4.6723364163005736e+27,
+    "depth": 21,
+    "startDepth": 1,
+    "amber": 2.0358869996647937e+28,
+    "seconds": 130.695,
+    "settled": 2,
+    "total": 2,
+    "rope": 1,
+    "toll": 1,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 6,
+      "finishers": 1,
+      "reservePct": 75,
+      "harvestDepths": 3,
+      "ropeReservePct": 40
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 22,
+      "startDepth": 1,
+      "seconds": 153.55,
+      "spent": 13230,
+      "rewards": [
+       1.5686533580347364e+28,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       1849,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": false,
+         "collected": 1
+        },
+        {
+         "reward": 0,
+         "gross": 1.7429481755941515e+28,
+         "expected": 1.5686533580347364e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.5686533580347364e+28
+        },
+        {
+         "reward": 8,
+         "gross": 2054,
+         "expected": 1848.6000000000001,
+         "chance": 0.6000000000001364,
+         "roundedUp": true,
+         "collected": 1849
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "dump",
+         "reason": "Burn on visible objects unlikely to break with this character",
+         "depth": 14,
+         "spent": 5010,
+         "time": 61.03
+        },
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 18,
+         "spent": 9360,
+         "time": 110.08
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 18,
+         "spent": 9360,
+         "time": 111.14
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 20,
+         "spent": 11220,
+         "time": 130.24
+        }
+       ],
+       "activations": [
+        {
+         "depth": 18,
+         "spent": 9360,
+         "effect": 9360,
+         "time": 110.44,
+         "slot": 4
+        },
+        {
+         "depth": 18,
+         "spent": 9360,
+         "effect": 18720,
+         "time": 110.79,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 240,
+       "dumpDigs": 5,
+       "activationDepth": 18
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 20,
+      "startDepth": 1,
+      "seconds": 107.84,
+      "spent": 9960,
+      "rewards": [
+       2.5031206412948512e+28,
+       0,
+       0,
+       5,
+       0,
+       1,
+       0,
+       0,
+       1608,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 78,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 1.2330643553176607e+28,
+         "expected": 2.5031206412948512e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 2.5031206412948512e+28
+        },
+        {
+         "reward": 8,
+         "gross": 1608,
+         "expected": 1608,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1608
+        },
+        {
+         "reward": 3,
+         "gross": 5,
+         "expected": 5,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 5
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 15,
+         "spent": 6270,
+         "time": 67.78
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 15,
+         "spent": 6270,
+         "time": 68.84
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 17,
+         "spent": 8070,
+         "time": 85.84
+        }
+       ],
+       "activations": [
+        {
+         "depth": 15,
+         "spent": 6270,
+         "effect": 6270,
+         "time": 68.14,
+         "slot": 4
+        },
+        {
+         "depth": 15,
+         "spent": 6270,
+         "effect": 12540,
+         "time": 68.49,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 15
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 3.453166211428013e+28,
+    "se": 1.7558860602856265e+28,
+    "depth": 23,
+    "startDepth": 1,
+    "amber": 3.453166211428013e+28,
+    "seconds": 148.925,
+    "settled": 2,
+    "total": 2,
+    "rope": 0,
+    "toll": 2,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 9,
+      "finishers": 1,
+      "reservePct": 85,
+      "harvestDepths": 3,
+      "ropeReservePct": 50
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 24,
+      "startDepth": 1,
+      "seconds": 171.25,
+      "spent": 14910,
+      "rewards": [
+       1.6972801511423865e+28,
+       0,
+       0,
+       2,
+       0,
+       0,
+       0,
+       0,
+       3361,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": true,
+         "collected": 2
+        },
+        {
+         "reward": 0,
+         "gross": 1.8858668346026516e+28,
+         "expected": 1.6972801511423865e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.6972801511423865e+28
+        },
+        {
+         "reward": 8,
+         "gross": 3734,
+         "expected": 3360.6,
+         "chance": 0.599999999999909,
+         "roundedUp": true,
+         "collected": 3361
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "dump",
+         "reason": "Burn on visible objects unlikely to break with this character",
+         "depth": 14,
+         "spent": 5010,
+         "time": 61.03
+        },
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 18,
+         "spent": 8880,
+         "time": 104.48
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 18,
+         "spent": 8880,
+         "time": 105.19
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 19,
+         "spent": 10650,
+         "time": 124.54
+        }
+       ],
+       "activations": [
+        {
+         "depth": 18,
+         "spent": 8880,
+         "effect": 8880,
+         "time": 104.84,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 240,
+       "dumpDigs": 5,
+       "activationDepth": 18
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 22,
+      "startDepth": 1,
+      "seconds": 126.6,
+      "spent": 11850,
+      "rewards": [
+       5.20905227171364e+28,
+       0,
+       0,
+       3,
+       0,
+       1,
+       0,
+       0,
+       2547,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 5.7878358574596e+28,
+         "expected": 5.20905227171364e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 5.20905227171364e+28
+        },
+        {
+         "reward": 8,
+         "gross": 2830,
+         "expected": 2547,
+         "chance": 0,
+         "roundedUp": false,
+         "collected": 2547
+        },
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": true,
+         "collected": 3
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 14,
+         "spent": 5790,
+         "time": 61.73
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 14,
+         "spent": 5790,
+         "time": 63.14
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 16,
+         "spent": 7560,
+         "time": 79.44
+        }
+       ],
+       "activations": [
+        {
+         "depth": 14,
+         "spent": 5790,
+         "effect": 5790,
+         "time": 62.09,
+         "slot": 4
+        },
+        {
+         "depth": 14,
+         "spent": 5790,
+         "effect": 11580,
+         "time": 62.44,
+         "slot": 4
+        },
+        {
+         "depth": 14,
+         "spent": 5790,
+         "effect": 17370,
+         "time": 62.79,
+         "slot": 4
+        },
+        {
+         "depth": 15,
+         "spent": 6360,
+         "effect": 23730,
+         "time": 68.14,
+         "slot": 4
+        },
+        {
+         "depth": 15,
+         "spent": 6360,
+         "effect": 30090,
+         "time": 68.49,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 14
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 6.174377961868949e+27,
+    "se": 2.1950310286644727e+27,
+    "depth": 16.5,
+    "startDepth": 1,
+    "amber": 6.174377961868949e+27,
+    "seconds": 73.89,
+    "settled": 2,
+    "total": 2,
+    "rope": 2,
+    "toll": 0,
+    "blocked": 0,
+    "recoveryHours": 74.73212737589344,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 10,
+      "finishers": 2,
+      "reservePct": 50,
+      "harvestDepths": 1,
+      "ropeReservePct": 10
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "rope",
+      "settled": true,
+      "depth": 18,
+      "startDepth": 1,
+      "seconds": 82.44,
+      "spent": 6750,
+      "rewards": [
+       3.9793469332044766e+27,
+       0,
+       0,
+       4,
+       0,
+       1,
+       0,
+       0,
+       692,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 2346,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 4,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4
+        },
+        {
+         "reward": 0,
+         "gross": 1.9602694252238798e+27,
+         "expected": 3.9793469332044766e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 3.9793469332044766e+27
+        },
+        {
+         "reward": 8,
+         "gross": 692,
+         "expected": 692,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 692
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 9,
+         "spent": 2490,
+         "time": 36.38
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 9,
+         "spent": 2490,
+         "time": 37.09
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 10,
+         "spent": 2520,
+         "time": 39.64
+        }
+       ],
+       "activations": [
+        {
+         "depth": 9,
+         "spent": 2490,
+         "effect": 2490,
+         "time": 36.74,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 9
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 15,
+      "startDepth": 1,
+      "seconds": 65.34,
+      "spent": 6420,
+      "rewards": [
+       8.369408990533422e+27,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       352,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 132.5999999999999,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 3522,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 4.1228615716913406e+27,
+         "expected": 8.369408990533422e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 8.369408990533422e+27
+        },
+        {
+         "reward": 8,
+         "gross": 352,
+         "expected": 352,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 352
+        },
+        {
+         "reward": 3,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 7,
+         "spent": 2490,
+         "time": 26.73
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 7,
+         "spent": 2490,
+         "time": 28.14
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 8,
+         "spent": 2940,
+         "time": 32.79
+        }
+       ],
+       "activations": [
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 2490,
+         "time": 27.09,
+         "slot": 4
+        },
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 4980,
+         "time": 27.44,
+         "slot": 4
+        },
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 7470,
+         "time": 27.79,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 7
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 1.5022783236369157e+28,
+    "se": 2.9209344343163367e+27,
+    "depth": 21,
+    "startDepth": 1,
+    "amber": 1.5022783236369157e+28,
+    "seconds": 118.97,
+    "settled": 2,
+    "total": 2,
+    "rope": 1,
+    "toll": 1,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 6,
+      "finishers": 2,
+      "reservePct": 25,
+      "harvestDepths": 0,
+      "ropeReservePct": 25
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 23,
+      "startDepth": 1,
+      "seconds": 143.15,
+      "spent": 11790,
+      "rewards": [
+       1.210184880205282e+28,
+       0,
+       0,
+       2,
+       0,
+       0,
+       0,
+       0,
+       2262,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 2.7,
+         "chance": 0.7000000000000002,
+         "roundedUp": false,
+         "collected": 2
+        },
+        {
+         "reward": 0,
+         "gross": 1.3446498668947576e+28,
+         "expected": 1.210184880205282e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.210184880205282e+28
+        },
+        {
+         "reward": 8,
+         "gross": 2513,
+         "expected": 2261.7000000000003,
+         "chance": 0.7000000000002728,
+         "roundedUp": true,
+         "collected": 2262
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 12,
+         "spent": 3750,
+         "time": 49.63
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 12,
+         "spent": 3750,
+         "time": 50.34
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 12,
+         "spent": 3750,
+         "time": 50.34
+        }
+       ],
+       "activations": [
+        {
+         "depth": 12,
+         "spent": 3750,
+         "effect": 3750,
+         "time": 49.99,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 12
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 19,
+      "startDepth": 1,
+      "seconds": 94.79,
+      "spent": 8880,
+      "rewards": [
+       1.7943717670685494e+28,
+       0,
+       0,
+       3,
+       0,
+       0,
+       0,
+       0,
+       1074,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 855,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 8.83926978851502e+27,
+         "expected": 1.7943717670685494e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.7943717670685494e+28
+        },
+        {
+         "reward": 8,
+         "gross": 1074,
+         "expected": 1074,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1074
+        },
+        {
+         "reward": 3,
+         "gross": 3,
+         "expected": 3,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 3
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 10,
+         "spent": 3750,
+         "time": 39.63
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 10,
+         "spent": 3750,
+         "time": 40.69
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 10,
+         "spent": 3750,
+         "time": 40.69
+        }
+       ],
+       "activations": [
+        {
+         "depth": 10,
+         "spent": 3750,
+         "effect": 3750,
+         "time": 39.99,
+         "slot": 4
+        },
+        {
+         "depth": 10,
+         "spent": 3750,
+         "effect": 7500,
+         "time": 40.34,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 10
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 3.7100687023295753e+27,
+    "se": 3.556070299911293e+27,
+    "depth": 13.5,
+    "startDepth": 1,
+    "amber": 3.7100687023295753e+27,
+    "seconds": 55.55499999999999,
+    "settled": 2,
+    "total": 2,
+    "rope": 2,
+    "toll": 0,
+    "blocked": 0,
+    "recoveryHours": 65.94125728349519,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 10,
+      "finishers": 2,
+      "reservePct": 100,
+      "harvestDepths": 8,
+      "ropeReservePct": 80
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "rope",
+      "settled": true,
+      "depth": 12,
+      "startDepth": 1,
+      "seconds": 46.48,
+      "spent": 4140,
+      "rewards": [
+       1.5399840241828233e+26,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       75,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 624,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 3522,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 7.586128197944941e+25,
+         "expected": 1.5399840241828233e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.5399840241828233e+26
+        },
+        {
+         "reward": 3,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        },
+        {
+         "reward": 8,
+         "gross": 75,
+         "expected": 75,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 75
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Finishing stamina reserve reached",
+         "depth": 1,
+         "spent": 0,
+         "time": 1.28
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 1,
+         "spent": 0,
+         "time": 2.68
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 7,
+         "spent": 2070,
+         "time": 25.68
+        }
+       ],
+       "activations": [
+        {
+         "depth": 1,
+         "spent": 0,
+         "effect": 0,
+         "time": 2.33,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 1
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 15,
+      "startDepth": 1,
+      "seconds": 64.63,
+      "spent": 6180,
+      "rewards": [
+       7.266139002240868e+27,
+       0,
+       0,
+       4,
+       0,
+       0,
+       0,
+       0,
+       305,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 321.5999999999999,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 3522,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 3.579378818837866e+27,
+         "expected": 7.266139002240868e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 7.266139002240868e+27
+        },
+        {
+         "reward": 8,
+         "gross": 305,
+         "expected": 305,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 305
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 4,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Finishing stamina reserve reached",
+         "depth": 1,
+         "spent": 0,
+         "time": 1.28
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 1,
+         "spent": 0,
+         "time": 2.68
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 6,
+         "spent": 2040,
+         "time": 24.18
+        }
+       ],
+       "activations": [
+        {
+         "depth": 1,
+         "spent": 0,
+         "effect": 0,
+         "time": 2.33,
+         "slot": 4
+        },
+        {
+         "depth": 10,
+         "spent": 3780,
+         "effect": 3780,
+         "time": 40.33,
+         "slot": 4
+        },
+        {
+         "depth": 10,
+         "spent": 3780,
+         "effect": 7560,
+         "time": 40.68,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 1
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 1.6634832666604148e+28,
+    "se": 1.2655485733399671e+28,
+    "depth": 21.5,
+    "startDepth": 1,
+    "amber": 1.6634832666604148e+28,
+    "seconds": 113.77,
+    "settled": 2,
+    "total": 2,
+    "rope": 1,
+    "toll": 1,
+    "blocked": 0,
+    "recoveryHours": 76.1659150441001,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 7,
+      "finishers": 2,
+      "reservePct": 50,
+      "harvestDepths": 16,
+      "ropeReservePct": 50
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "rope",
+      "settled": true,
+      "depth": 18,
+      "startDepth": 1,
+      "seconds": 82.44,
+      "spent": 6750,
+      "rewards": [
+       3.9793469332044766e+27,
+       0,
+       0,
+       4,
+       0,
+       1,
+       0,
+       0,
+       692,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 2346,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 4,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4
+        },
+        {
+         "reward": 0,
+         "gross": 1.9602694252238798e+27,
+         "expected": 3.9793469332044766e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 3.9793469332044766e+27
+        },
+        {
+         "reward": 8,
+         "gross": 692,
+         "expected": 692,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 692
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 9,
+         "spent": 2490,
+         "time": 36.38
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 9,
+         "spent": 2490,
+         "time": 37.09
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 14,
+         "spent": 5070,
+         "time": 59.64
+        }
+       ],
+       "activations": [
+        {
+         "depth": 9,
+         "spent": 2490,
+         "effect": 2490,
+         "time": 36.74,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 9
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "exhausted",
+      "settled": true,
+      "depth": 25,
+      "startDepth": 1,
+      "seconds": 145.1,
+      "spent": 13380,
+      "rewards": [
+       2.929031840000382e+28,
+       0,
+       0,
+       1,
+       0,
+       1,
+       0,
+       1,
+       4109,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 0,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "toll",
+       "retained": 0.9,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 3.254479822222647e+28,
+         "expected": 2.929031840000382e+28,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 2.929031840000382e+28
+        },
+        {
+         "reward": 8,
+         "gross": 4566,
+         "expected": 4109.400000000001,
+         "chance": 0.4000000000005457,
+         "roundedUp": false,
+         "collected": 4109
+        },
+        {
+         "reward": 3,
+         "gross": 2,
+         "expected": 1.8,
+         "chance": 0.8,
+         "roundedUp": false,
+         "collected": 1
+        },
+        {
+         "reward": 5,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        },
+        {
+         "reward": 7,
+         "gross": 1,
+         "expected": 0.9,
+         "chance": 0.9,
+         "roundedUp": true,
+         "collected": 1
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Next dig would consume finishing reserve",
+         "depth": 7,
+         "spent": 2490,
+         "time": 26.73
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 7,
+         "spent": 2490,
+         "time": 28.14
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Low finishing stamina",
+         "depth": 16,
+         "spent": 6690,
+         "time": 69.29
+        }
+       ],
+       "activations": [
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 2490,
+         "time": 27.09,
+         "slot": 4
+        },
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 4980,
+         "time": 27.44,
+         "slot": 4
+        },
+        {
+         "depth": 7,
+         "spent": 2490,
+         "effect": 7470,
+         "time": 27.79,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 7
+      }
+     }
+    ],
+    "partyAnalysis": null
+   },
+   {
+    "label": "Phased Amber strategy",
+    "referenceOnly": false,
+    "riskEligible": true,
+    "matchingStrategies": 0,
+    "score": 3.7100687023295753e+27,
+    "se": 3.556070299911293e+27,
+    "depth": 13.5,
+    "startDepth": 1,
+    "amber": 3.7100687023295753e+27,
+    "seconds": 55.55499999999999,
+    "settled": 2,
+    "total": 2,
+    "rope": 2,
+    "toll": 0,
+    "blocked": 0,
+    "recoveryHours": 65.94125728349519,
+    "config": {
+     "cave": 0,
+     "party": [
+      0,
+      1
+     ],
+     "manic": true,
+     "policy": "amber-farm",
+     "speed": 4,
+     "elixirs": [
+      6,
+      2,
+      0,
+      5,
+      3
+     ],
+     "memorized": [
+      7
+     ],
+     "tool": "adaptive",
+     "entry": "shortcut",
+     "fullClear": true,
+     "amber": {
+      "dumpDepth": 8,
+      "finishers": 2,
+      "reservePct": 100,
+      "harvestDepths": 3,
+      "ropeReservePct": 25
+     },
+     "reactionMs": 350,
+     "stamina": "saved"
+    },
+    "runs": [
+     {
+      "seed": 3981653654,
+      "status": "rope",
+      "settled": true,
+      "depth": 12,
+      "startDepth": 1,
+      "seconds": 46.48,
+      "spent": 4140,
+      "rewards": [
+       1.5399840241828233e+26,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       75,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 624,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 3522,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 7.586128197944941e+25,
+         "expected": 1.5399840241828233e+26,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1.5399840241828233e+26
+        },
+        {
+         "reward": 3,
+         "gross": 1,
+         "expected": 1,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 1
+        },
+        {
+         "reward": 8,
+         "gross": 75,
+         "expected": 75,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 75
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Finishing stamina reserve reached",
+         "depth": 1,
+         "spent": 0,
+         "time": 1.28
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 1,
+         "spent": 0,
+         "time": 2.68
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 4,
+         "spent": 870,
+         "time": 13.13
+        }
+       ],
+       "activations": [
+        {
+         "depth": 1,
+         "spent": 0,
+         "effect": 0,
+         "time": 2.33,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 1
+      }
+     },
+     {
+      "seed": 2341122127,
+      "status": "rope",
+      "settled": true,
+      "depth": 15,
+      "startDepth": 1,
+      "seconds": 64.63,
+      "spent": 6180,
+      "rewards": [
+       7.266139002240868e+27,
+       0,
+       0,
+       4,
+       0,
+       0,
+       0,
+       0,
+       305,
+       0,
+       0,
+       0
+      ],
+      "grands": 0,
+      "stamina": [
+       {
+        "id": 0,
+        "start": 3522,
+        "end": 321.5999999999999,
+        "max": 3522
+       },
+       {
+        "id": 1,
+        "start": 3522,
+        "end": 3522,
+        "max": 3522
+       }
+      ],
+      "exit": {
+       "type": "rope",
+       "retained": 1,
+       "amberMultiplier": 2.0300000000000002,
+       "items": [
+        {
+         "reward": 0,
+         "gross": 3.579378818837866e+27,
+         "expected": 7.266139002240868e+27,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 7.266139002240868e+27
+        },
+        {
+         "reward": 8,
+         "gross": 305,
+         "expected": 305,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 305
+        },
+        {
+         "reward": 3,
+         "gross": 4,
+         "expected": 4,
+         "chance": null,
+         "roundedUp": null,
+         "collected": 4
+        }
+       ]
+      },
+      "amber": {
+       "phase": "rope-search",
+       "transitions": [
+        {
+         "phase": "activate",
+         "reason": "Finishing stamina reserve reached",
+         "depth": 1,
+         "spent": 0,
+         "time": 1.28
+        },
+        {
+         "phase": "harvest",
+         "reason": "Available oranges consumed after stamina burn",
+         "depth": 1,
+         "spent": 0,
+         "time": 2.68
+        },
+        {
+         "phase": "rope-search",
+         "reason": "Harvest depth target reached",
+         "depth": 4,
+         "spent": 900,
+         "time": 14.18
+        }
+       ],
+       "activations": [
+        {
+         "depth": 1,
+         "spent": 0,
+         "effect": 0,
+         "time": 2.33,
+         "slot": 4
+        },
+        {
+         "depth": 10,
+         "spent": 3780,
+         "effect": 3780,
+         "time": 40.33,
+         "slot": 4
+        },
+        {
+         "depth": 10,
+         "spent": 3780,
+         "effect": 7560,
+         "time": 40.68,
+         "slot": 4
+        }
+       ],
+       "dumpSpent": 0,
+       "dumpDigs": 0,
+       "activationDepth": 1
+      }
+     }
+    ],
+    "partyAnalysis": null
+   }
+  ],
+  "info": {
+   "from": 6,
+   "to": 10,
+   "effectiveFrom": 6,
+   "depths": [
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "minRopePct": 0,
+   "screening": 1,
+   "trials": 2,
+   "initialTrials": 2,
+   "maxTrials": 2,
+   "coarse": 170,
+   "refined": 66,
+   "racingTrials": 8,
+   "adaptiveRounds": 0,
+   "observedBehaviors": 28,
+   "finalistStrategies": 9,
+   "unresolved": true,
+   "riskUncertain": false
+  }
+ },
  "configs": [
   {
    "label": "saved defaults",

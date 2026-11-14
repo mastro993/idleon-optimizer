@@ -498,11 +498,11 @@ impl Ledger {
 
     /// Fold a full layout into the ledger, keeping only the points it adds.
     fn record(&mut self, from: &GridState, to: &GridState) {
-        for cell in 0..game().cells() {
+        for (cell, points) in self.points.iter_mut().enumerate().take(game().cells()) {
             let before = from.level(cell);
             let after = to.level(cell);
             if after > before {
-                self.points[cell] += after - before;
+                *points += after - before;
             }
         }
     }

@@ -81,6 +81,8 @@ pub(crate) fn pane(
                         .child(controls(state, cx))
                         .child(cards(state, &inputs, plan))
                         .child(cost_inputs(state, cx))
+                        .child(super::planner::pane(state, &reset, &inputs, cx))
+                        .child(super::planner::steering(&reset, &inputs, cx))
                         .child(super::outcomes::comparison(state, forecast, cx))
                         .child(super::forecast::pane(state, &reset, plan, cx))
                         .child(super::outcomes::meal_outcomes(
@@ -188,9 +190,11 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                     .on_change(move |value, _window, cx| {
                         let chosen = parse_policy(value.as_ref());
                         policy.update(cx, |state, cx| {
-                            state
-                                .ladle_state
-                                .set_kitchen(|inputs| inputs.policy = chosen);
+                            state.ladle_state.set_kitchen(|inputs| {
+                                inputs.policy = chosen;
+                                // The policy and an applied schedule are alternatives.
+                                inputs.donations = None;
+                            });
                             cx.notify();
                         });
                     }),
@@ -207,6 +211,7 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                         share.update(cx, |state, cx| {
                             state.ladle_state.set_kitchen(|inputs| {
                                 inputs.income_fraction = (value / 100.0).clamp(0.0, 1.0);
+                                inputs.donations = None;
                             });
                             cx.notify();
                         });
@@ -225,6 +230,7 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                         fixed.update(cx, |state, cx| {
                             state.ladle_state.set_kitchen(|inputs| {
                                 inputs.donation_per_day = value.max(0.0);
+                                inputs.donations = None;
                             });
                             cx.notify();
                         });
@@ -243,6 +249,7 @@ fn controls(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                         owned.update(cx, |state, cx| {
                             state.ladle_state.set_kitchen(|inputs| {
                                 inputs.owned_fraction = (value / 100.0).clamp(0.0, 1.0);
+                                inputs.donations = None;
                             });
                             cx.notify();
                         });

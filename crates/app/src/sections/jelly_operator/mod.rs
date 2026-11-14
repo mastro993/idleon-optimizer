@@ -23,12 +23,14 @@ mod breakdowns;
 mod estimate;
 mod grid;
 mod layout_editor;
+mod optimizer;
 mod outlook;
 mod overview;
 mod planner;
 mod simulator;
 mod upgrades;
 
+pub(crate) use optimizer::{Optimizer, RunInputs as OptimizerRunInputs};
 pub(crate) use planner::{Planner, RunInputs as PlannerRunInputs};
 pub(crate) use simulator::RunInputs as SimulatorRunInputs;
 pub(crate) use simulator::Simulator;
@@ -57,6 +59,7 @@ pub(crate) enum Tab {
     Bonuses,
     Breakdowns,
     Sections,
+    Optimizer,
 }
 
 impl Tab {
@@ -69,6 +72,7 @@ impl Tab {
             Tab::Bonuses => "bonuses",
             Tab::Breakdowns => "breakdowns",
             Tab::Sections => "sections",
+            Tab::Optimizer => "optimizer",
         }
     }
 
@@ -81,6 +85,7 @@ impl Tab {
             Tab::Bonuses => "Bonuses",
             Tab::Breakdowns => "Breakdowns",
             Tab::Sections => "Sections",
+            Tab::Optimizer => "Optimizer",
         }
     }
 }
@@ -110,6 +115,9 @@ pub(crate) struct State {
     pub(crate) simulator: simulator::Simulator,
     /// The Sections tab's planner controls.
     pub(crate) planner: Planner,
+    /// The Optimizer tab's controls and the last applied-board message.
+    pub(crate) optimizer: optimizer::Optimizer,
+    pub(crate) optimizer_message: String,
     /// Which formula tree the Breakdowns tab shows.
     pub(crate) breakdown: idleon_jelly::BreakdownCategory,
 }
@@ -125,6 +133,8 @@ impl Default for State {
             seed: 1,
             simulator: simulator::Simulator::default(),
             planner: Planner::default(),
+            optimizer: optimizer::Optimizer::default(),
+            optimizer_message: String::new(),
             breakdown: idleon_jelly::BreakdownCategory::default(),
         }
     }
@@ -138,6 +148,8 @@ impl State {
         self.message = String::new();
         self.simulator = simulator::Simulator::new(jelly);
         self.planner.adopt(jelly);
+        self.optimizer.adopt(jelly);
+        self.optimizer_message = String::new();
     }
 
     /// Put the board back to the save's own layout.
@@ -212,6 +224,7 @@ pub(crate) fn view(
             Tab::Bonuses,
             Tab::Breakdowns,
             Tab::Sections,
+            Tab::Optimizer,
         ]
         .map(|tab| {
             let entity = entity.clone();
@@ -237,6 +250,7 @@ pub(crate) fn view(
         Tab::Bonuses => bonuses::pane(&jelly, cx),
         Tab::Breakdowns => breakdowns::pane(state, cx, &jelly),
         Tab::Sections => planner::pane(state, window, cx, &jelly),
+        Tab::Optimizer => optimizer::pane(state, window, cx, &jelly),
     };
     div()
         .id("jelly-operator")
@@ -446,6 +460,33 @@ mod tests {
         let exp = jelly.exp_breakdown(None);
         assert!(!exp.available);
         assert!(exp.reason.contains("Cell Biology"));
+    }
+
+    #[test]
+    fn the_optimizer_adopts_the_save_and_its_inputs_follow_the_controls() {
+        let imported = idleon_import::import(&save()).expect("the save imports");
+        let jelly = imported.jelly.expect("the save carries a board");
+        let mut state = State::default();
+        state.adopt(&jelly);
+        assert_eq!(
+            state.optimizer,
+            crate::sections::jelly_operator::Optimizer::default()
+        );
+
+        // The save has not unlocked Bloodcells, so the objective falls back.
+        state.optimizer.objective = Objective::Bloodcells;
+        state.optimizer.exp_cell_type = Some(99);
+        state.optimizer.adopt(&jelly);
+        assert_eq!(state.optimizer.objective, Objective::Clear);
+        assert_eq!(state.optimizer.exp_cell_type, Some(7));
+
+        // The runner inputs follow every control the search reads.
+        let before = state.optimizer.inputs(Some(&jelly), &state.layout);
+        state.optimizer.beam_width = 16;
+        let after = state.optimizer.inputs(Some(&jelly), &state.layout);
+        assert_ne!(before, after, "an edit marks a stored board stale");
+        assert_eq!(after.options().layout, Some(state.layout.clone()));
+        assert_eq!(after.options().beam_width, 16);
     }
 
     #[test]

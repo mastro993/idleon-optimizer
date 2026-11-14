@@ -361,8 +361,8 @@ impl Loadout {
                 }
             }
         }
-        for row in 0..INVENTORY_SLOTS.min(self.inventory.len()) {
-            tally(&mut pool, &self.inventory[row]);
+        for item in self.inventory.iter().take(INVENTORY_SLOTS) {
+            tally(&mut pool, item);
         }
         pool
     }
@@ -389,8 +389,8 @@ impl Loadout {
                 tally(&mut owned, entry.slot(SlotKind::Charm(charm)));
             }
         }
-        for row in 0..INVENTORY_SLOTS.min(self.inventory.len()) {
-            tally(&mut owned, &self.inventory[row]);
+        for item in self.inventory.iter().take(INVENTORY_SLOTS) {
+            tally(&mut owned, item);
         }
         owned
     }

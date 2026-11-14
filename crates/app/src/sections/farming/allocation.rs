@@ -250,11 +250,10 @@ fn rows_table(state: &AppState, allocation: &Allocation, muted: gpui::Hsla) -> A
         "Target bonus",
         "Status",
     ]);
-    for index in 0..RANK_UPGRADES {
+    for (index, &after) in allocation.levels.iter().enumerate().take(RANK_UPGRADES) {
         // The saved levels, not the allocation's baseline: a reallocation can
         // take a row below what the save carries.
         let before = state.farm.rank_levels.get(index).copied().unwrap_or(0);
-        let after = allocation.levels[index];
         let delta = i64::from(after) - i64::from(before);
         let unlocked = total >= data.rank_unlocks.get(index).copied().unwrap_or(0);
         let capped = index % 5 == 4 && after >= fifth_max;

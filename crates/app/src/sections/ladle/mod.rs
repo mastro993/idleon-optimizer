@@ -3,9 +3,10 @@
 //!
 //! Ported from `ladle-calc.html` and `js/stats/systems/w4/cooking-ladle.js`. LD-01
 //! builds the Ladles and Cooking EXP tabs; LD-02 adds the Kitchens & Jellyfish
-//! reset, with each reset's layout and its copyable instructions. The forecast
-//! comparison and the NMLB planner arrive with LD-03 and LD-04 and join
-//! [`Tab::ALL`] then, so the strip never offers a tab with nothing behind it.
+//! reset, with each reset's layout and its copyable instructions. LD-03 adds the
+//! forecast comparison and the meal outcomes, and LD-04 the Blue Jellyfish
+//! donation planner and the No Meal Left Behind steering panel, both on the same
+//! tab.
 //!
 //! The four values a ladle rate needs and a save cannot answer (Cooking
 //! efficiency, AFK gain rate, EXP multiplier and skill prowess) are the panel
@@ -18,6 +19,7 @@ pub(crate) mod exp;
 pub(crate) mod forecast;
 pub(crate) mod kitchens;
 pub(crate) mod outcomes;
+pub(crate) mod planner;
 pub(crate) mod summary;
 #[cfg(test)]
 mod tests;
@@ -164,9 +166,11 @@ impl State {
 
     /// Adopt a new roster: keep the selections the save still carries and, when
     /// nothing is checked yet, count the characters AFK-ing Cooking like upstream.
+    /// A schedule applied from the previous save no longer describes this one.
     pub(crate) fn adopt(&mut self, ladle: &idleon_ladle::Ladle) {
         let characters = ladle.characters.len();
         adopt(&mut self.assigned, ladle);
+        self.kitchen.donations = None;
         self.ladle_character = self.ladle_character.min(characters.saturating_sub(1));
         self.breakdown_character = self.breakdown_character.min(characters.saturating_sub(1));
     }

@@ -7,9 +7,36 @@
 //! records and saved selections; everything else stays as the user left it.
 
 use idleon_spelunking::{
-    Account, AmberPolicy, Config, ConfigError, DepthRange, Entry, Inputs, Policy, Preset,
-    PresetKind, ReferenceTool, Requested, StaminaMode, ToolChoice, normalize,
+    Account, AmberPolicy, Config, ConfigError, DepthRange, Enabled, Entry, Inputs, Objective,
+    Policy, Preset, PresetKind, ReferenceTool, Requested, ScopeRequest, StaminaMode, ToolChoice,
+    normalize,
 };
+
+/// Which optimizer search the section runs.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum OptimizerMode {
+    #[default]
+    Configuration,
+    Amber,
+}
+
+impl OptimizerMode {
+    pub(crate) fn id(self) -> &'static str {
+        match self {
+            OptimizerMode::Configuration => "configuration",
+            OptimizerMode::Amber => "amber",
+        }
+    }
+
+    pub(crate) fn from_id(id: &str) -> Option<Self> {
+        match id {
+            "configuration" => Some(OptimizerMode::Configuration),
+            "amber" => Some(OptimizerMode::Amber),
+            _ => None,
+        }
+    }
+}
 
 /// The section's visible state, saved with the project.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -47,6 +74,19 @@ pub(crate) struct State {
     pub(crate) sim_entry: Entry,
     /// The phased Amber policy's limits, read only by `amber-farm`.
     pub(crate) amber: AmberPolicy,
+    /// The optimizer's search mode and objective.
+    pub(crate) optimizer_mode: OptimizerMode,
+    pub(crate) optimizer_objective: Objective,
+    pub(crate) optimizer_screening: usize,
+    pub(crate) optimizer_trials: usize,
+    pub(crate) optimizer_seed: u32,
+    /// Which dimensions the configuration search may change.
+    pub(crate) optimizer_scope: Enabled,
+    /// The Amber search's dump-depth window and rope filter.
+    pub(crate) optimizer_from: usize,
+    pub(crate) optimizer_to: usize,
+    pub(crate) optimizer_min_rope: usize,
+    pub(crate) optimizer_max_trials: usize,
 }
 
 impl Default for State {
@@ -72,6 +112,25 @@ impl Default for State {
             sim_tool: ToolChoice::Adaptive,
             sim_entry: Entry::Shortcut,
             amber: AmberPolicy::default(),
+            optimizer_mode: OptimizerMode::Configuration,
+            optimizer_objective: Objective::Depth,
+            optimizer_screening: 1,
+            optimizer_trials: 2,
+            optimizer_seed: idleon_spelunking::DEFAULT_SEED,
+            optimizer_scope: Enabled {
+                party: false,
+                modes: true,
+                clears: true,
+                speeds: false,
+                elixirs: false,
+                memorized: false,
+                tools: false,
+                entry: false,
+            },
+            optimizer_from: 1,
+            optimizer_to: 100,
+            optimizer_min_rope: 0,
+            optimizer_max_trials: 32,
         }
     }
 }
@@ -147,6 +206,12 @@ impl State {
         }
         self.sim_reaction_ms = self.sim_reaction_ms.clamp(100.0, 5_000.0);
         self.set_amber_policy(self.amber);
+        self.optimizer_screening = self.optimizer_screening.clamp(1, 8);
+        self.optimizer_trials = self.optimizer_trials.clamp(2, 64);
+        self.optimizer_max_trials = self.optimizer_max_trials.clamp(self.optimizer_trials, 256);
+        self.optimizer_from = self.optimizer_from.clamp(1, 10_000);
+        self.optimizer_to = self.optimizer_to.clamp(self.optimizer_from, 10_000);
+        self.optimizer_min_rope = self.optimizer_min_rope.min(100);
         self.clamp_range();
     }
 
@@ -184,6 +249,46 @@ impl State {
     /// The normalised configuration, or the reason the controls cannot run.
     pub(crate) fn config(&self, inputs: &Inputs) -> Result<Config, ConfigError> {
         normalize(inputs, &self.requested())
+    }
+
+    /// The configuration search's request: the run's fields with the selected
+    /// dimensions left to the search.
+    pub(crate) fn optimizer_requested(&self) -> ScopeRequest {
+        ScopeRequest {
+            enabled: Some(self.optimizer_scope),
+            ..ScopeRequest::default()
+        }
+    }
+
+    /// Apply a recommendation to the controls.
+    pub(crate) fn apply_config(&mut self, config: &Config, inputs: &Inputs) {
+        self.cave = config.cave.min(inputs.caves.len().saturating_sub(1));
+        self.manic = config.manic;
+        self.policy = config.policy;
+        self.speed = config.speed;
+        self.full_clear = config.full_clear;
+        self.starting = config.stamina;
+        self.party = config.party.iter().map(|id| *id as i32).collect();
+        let capacity = inputs.caves.get(self.cave).map_or(0, |cave| cave.capacity);
+        self.party.resize(capacity, -1);
+        self.elixirs = pad(&config.elixirs, inputs.slots);
+        self.memorized = pad(
+            &config
+                .memorized
+                .iter()
+                .map(|id| *id as i32)
+                .collect::<Vec<_>>(),
+            inputs.memory_slots,
+        );
+        self.sim_tool = config.tool;
+        self.sim_entry = config.entry;
+        self.sim_reaction_ms = config.reaction_ms;
+        if let Some(amber) = config.amber {
+            self.set_amber_policy(amber);
+        }
+        if let Some(character) = config.party.first() {
+            self.character = *character;
+        }
     }
 
     /// The depth window the estimate covers.
@@ -501,6 +606,62 @@ mod tests {
         let text = serde_json::to_string(&state).expect("the state serialises");
         let restored: State = serde_json::from_str(&text).expect("the state decodes");
         assert_eq!(restored, state);
+    }
+
+    #[test]
+    fn the_optimizer_controls_survive_a_project_round_trip_and_clamp() {
+        let state = State {
+            optimizer_mode: OptimizerMode::Amber,
+            optimizer_objective: Objective::SustainableAmber,
+            optimizer_screening: 3,
+            optimizer_trials: 9,
+            optimizer_seed: 77,
+            optimizer_scope: Enabled {
+                party: true,
+                entry: true,
+                ..Enabled::default()
+            },
+            optimizer_from: 6,
+            optimizer_to: 40,
+            optimizer_min_rope: 25,
+            optimizer_max_trials: 64,
+            ..State::default()
+        };
+        let text = serde_json::to_string(&state).expect("the state serialises");
+        let restored: State = serde_json::from_str(&text).expect("the state decodes");
+        assert_eq!(restored, state);
+        let mut clamped = State {
+            optimizer_screening: 0,
+            optimizer_trials: 0,
+            optimizer_max_trials: 0,
+            optimizer_from: 0,
+            optimizer_to: 0,
+            optimizer_min_rope: 200,
+            ..State::default()
+        };
+        let inputs = inputs();
+        clamped.clamp(&inputs);
+        assert_eq!(clamped.optimizer_screening, 1);
+        assert_eq!(clamped.optimizer_trials, 2);
+        assert_eq!(clamped.optimizer_max_trials, 2);
+        assert_eq!(clamped.optimizer_from, 1);
+        assert_eq!(clamped.optimizer_to, 1);
+        assert_eq!(clamped.optimizer_min_rope, 100);
+    }
+
+    #[test]
+    fn a_recommendation_fills_the_controls() {
+        let inputs = inputs();
+        let mut state = State::default();
+        state.adopt(&inputs);
+        let config = state.config(&inputs).expect("the fixture defaults run");
+        state.apply_config(&config, &inputs);
+        assert_eq!(state.party_ids(), config.party);
+        assert_eq!(state.policy, config.policy);
+        assert_eq!(state.cave, config.cave);
+        assert_eq!(state.manic, config.manic);
+        assert_eq!(state.speed, config.speed);
+        assert_eq!(state.sim_tool, config.tool);
     }
 
     #[test]

@@ -7,6 +7,7 @@ use idleon_research::engine::{self, Refit, TargetRun};
 use idleon_research::model::{
     Effort, GridState, Mag, MagKind, Observations, SimContext, SimOptions, Simulation, Target,
 };
+use idleon_research::sim::Event;
 use idleon_research::{game, optimize, sim};
 
 /// A legal starting state: one glass on the first observation the level unlocks.
@@ -363,4 +364,72 @@ fn the_tournament_option_adds_twelve_hours_a_day() {
         "{}",
         tournament.projection.hours
     );
+}
+
+#[test]
+fn every_sample_marks_the_event_that_opened_it() {
+    let (simulation, ctx) = filled();
+    let tournament = simulate(
+        &simulation,
+        &ctx,
+        Target::Hours(50.0),
+        SimOptions {
+            include_tournament: true,
+            ..SimOptions::default()
+        },
+        Refit::Fixed,
+    );
+    let (insight_simulation, insight_ctx) = insight_state();
+    let insight = simulate(
+        &insight_simulation,
+        &insight_ctx,
+        Target::Hours(3.0),
+        SimOptions::default(),
+        Refit::Fixed,
+    );
+
+    let (level_simulation, level_ctx) = start(10, GridState::empty());
+    let level = simulate(
+        &level_simulation,
+        &level_ctx,
+        Target::Level(14),
+        SimOptions::default(),
+        Refit::Level,
+    );
+
+    let mut seen = Vec::new();
+    for (run, last) in [
+        (&tournament, Event::End),
+        (&insight, Event::End),
+        (&level, Event::Level),
+    ] {
+        let samples = &run.projection.samples;
+        assert_eq!(samples[0].event, Event::Start);
+        assert_eq!(samples.last().expect("a sample").event, last);
+        for pair in samples.windows(2) {
+            let (before, after) = (pair[0], pair[1]);
+            seen.push(after.event);
+            assert!(after.insight >= before.insight, "insight went backwards");
+            match after.event {
+                Event::Level => assert!(after.level > before.level),
+                Event::Insight => assert!(after.insight > before.insight),
+                Event::LevelAndInsight => {
+                    assert!(after.level > before.level);
+                    assert!(after.insight > before.insight);
+                }
+                Event::Tournament => assert!(after.bonus > 0.0, "a tournament added nothing"),
+                Event::Start | Event::End => {}
+            }
+        }
+        assert_eq!(
+            samples.last().expect("a sample").insight,
+            run.projection.insight_gained
+        );
+    }
+    for event in [Event::Level, Event::Insight, Event::Tournament] {
+        assert!(
+            seen.contains(&event),
+            "{event:?} never marked a sample: {seen:?}"
+        );
+    }
 }

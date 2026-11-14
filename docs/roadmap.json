@@ -1620,7 +1620,7 @@
       "key": "ladle",
       "title": "Ladle Optimizer",
       "group": "w4",
-      "status": "partial",
+      "status": "done",
       "summary": "Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.",
       "upstream": [
         "ladle-calc.html",
@@ -2770,7 +2770,7 @@
       "key": "royal-guardian",
       "title": "Royal Guardian Calculator",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.",
       "upstream": [
         "royal-guardian-calc.html",
@@ -2872,7 +2872,7 @@
       "key": "spelunking",
       "title": "Spelunking Simulator",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.",
       "upstream": [
         "spelunking-calc.html",
@@ -2972,7 +2972,7 @@
       "key": "jelly-operator",
       "title": "Jelly Operator Optimizer",
       "group": "w7",
-      "status": "partial",
+      "status": "done",
       "summary": "Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.",
       "upstream": [
         "jelly-operator-calc.html",

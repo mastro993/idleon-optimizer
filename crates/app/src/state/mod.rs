@@ -26,11 +26,12 @@ use crate::sections::fountain::{MarblePlanInputs, SimInputs, State as FountainSt
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
-    PlannerRunInputs as JellyPlanRunInputs, RunInputs as JellyRunInputs,
-    SimulatorRunInputs as JellySimRunInputs, State as JellyState,
+    OptimizerRunInputs as JellyOptimizerRunInputs, PlannerRunInputs as JellyPlanRunInputs,
+    RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
 };
 use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
+use crate::sections::ladle::planner::{LadleDonation, LadlePlanRequest};
 use crate::sections::monument::State as MonumentState;
 use crate::sections::opal::Tab as OpalTab;
 use crate::sections::pickle::State as PickleState;
@@ -44,6 +45,7 @@ use crate::sections::royal_guardian::forecast::Inputs as RoyalForecastInputs;
 use crate::sections::sailing::State as SailingState;
 use crate::sections::sailing::Trees as SailingTrees;
 use crate::sections::sailing::simulation::RunInputs as SailingSimInputs;
+use crate::sections::spelunking::OptimizerInputs as SpelunkOptimizerInputs;
 use crate::sections::spelunking::RunInputs as SpelunkRunInputs;
 use crate::sections::spelunking::State as SpelunkingState;
 use crate::sections::stats_all::State as StatsAllState;
@@ -55,7 +57,7 @@ use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{Context, Entity, FocusHandle, Subscription, Window};
+use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
 use gpui_mcp::BridgeHandle;
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
@@ -74,6 +76,7 @@ use idleon_fountain::{
 };
 use idleon_import::Shadow;
 use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
+use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::Plan as JellySectionPlan;
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_killroy::Plan as KillroyPlan;
@@ -92,6 +95,7 @@ use idleon_royal_guardian::RoyalGuardian;
 use idleon_sailing::{Fleet, RouteContext, SimResult};
 use idleon_save::Save;
 use idleon_spelunking::RunResult as SpelunkRunResult;
+use idleon_spelunking::SearchResult as SpelunkSearchResult;
 use idleon_ui::formula::FormulaTree;
 use idleon_ui::runner::TaskRunner;
 use idleon_worship::Inputs as WorshipInputs;
@@ -287,10 +291,14 @@ pub(crate) struct AppState {
     pub(crate) spelunking_save: Option<idleon_spelunking::Save>,
     /// The shared runner for the Spelunking expedition run.
     pub(crate) spelunk_sim: Entity<TaskRunner<SpelunkRunResult, SpelunkRunInputs>>,
+    /// The shared runner for the Spelunking optimizer.
+    pub(crate) spelunk_opt: Entity<TaskRunner<SpelunkSearchResult, SpelunkOptimizerInputs>>,
     /// The ladle optimizer's save-derived roster and counts.
     pub(crate) ladle: Option<Ladle>,
     /// The ladle section's selectors, panel inputs and formula trees.
     pub(crate) ladle_state: LadleSectionState,
+    /// The shared runner for the Blue Jellyfish donation search.
+    pub(crate) ladle_plan: Entity<TaskRunner<LadleDonation, LadlePlanRequest>>,
     /// The Cooking Mastery state the last imported save carried.
     pub(crate) mastery: Option<Mastery>,
     /// The yellow point allocator's meal state, from the same save section.
@@ -332,6 +340,16 @@ pub(crate) struct AppState {
     pub(crate) royal_forecast: Option<idleon_royal_guardian::Forecast>,
     /// The inputs `royal_forecast` was computed from.
     pub(crate) royal_forecast_key: Option<idleon_royal_guardian::ForecastOptions>,
+    /// The shared runner for the Royal Guardian outpost optimizer.
+    pub(crate) royal_optimizer:
+        Entity<TaskRunner<idleon_royal_guardian::Outcome, idleon_royal_guardian::Request>>,
+    /// The shared runner for the unit EXP plan.
+    pub(crate) royal_unit_exp: Entity<
+        TaskRunner<idleon_royal_guardian::UnitExpPlan, idleon_royal_guardian::UnitExpRequest>,
+    >,
+    /// The shared runner for the next-shelf plan.
+    pub(crate) royal_shelf:
+        Entity<TaskRunner<idleon_royal_guardian::ShelfPlan, idleon_royal_guardian::ShelfRequest>>,
     /// The ninja loadout and inventory the loaded save carries, if it has any.
     pub(crate) sneaking: Option<idleon_sneaking::Loadout>,
     /// The sneaking workspace's login context and selected slot.
@@ -404,6 +422,8 @@ pub(crate) struct AppState {
     /// The shared runner for the Jelly Operator operation estimate.
     pub(crate) jelly_run: Entity<TaskRunner<JellyEstimate, JellyRunInputs>>,
     pub(crate) jelly_plan_run: Entity<TaskRunner<JellySectionPlan, JellyPlanRunInputs>>,
+    /// The shared runner for the Jelly coordinator's layout search.
+    pub(crate) jelly_optimize_run: Entity<TaskRunner<JellyOptimization, JellyOptimizerRunInputs>>,
     /// The shared runner for one simulator operation.
     pub(crate) jelly_sim_run: Entity<TaskRunner<JellyTrial, JellySimRunInputs>>,
     /// The shared formula tree on the Jelly Operator breakdowns pane.
@@ -771,6 +791,22 @@ impl AppState {
                 })
             },
         );
+        let jelly_optimize_run = report_run::<JellyOptimization, JellyOptimizerRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the Jelly board…"),
+                cancelled_kept: "Jelly optimization cancelled; the previous board is unchanged.",
+                cancelled_empty: "Jelly optimization cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Jelly board optimized: {} anchor change(s), {} finalist(s) simulated.",
+                    result.moves.len(),
+                    result.finalists.len()
+                ))
+            },
+        );
         let jelly_sim_run = report_run::<JellyTrial, JellySimRunInputs>(
             cx,
             &mut subscriptions,
@@ -971,7 +1007,43 @@ impl AppState {
                 ))
             },
         );
+        let spelunk_opt = report_run::<SpelunkSearchResult, SpelunkOptimizerInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Optimizing the expedition…"),
+                cancelled_kept: "Expedition optimization cancelled; the previous recommendation is unchanged.",
+                cancelled_empty: "Expedition optimization cancelled; no recommendation was stored.",
+            },
+            |_, result| {
+                Some(match &result.winner {
+                    Some(winner) => format!(
+                        "Expedition optimization ready: {} {} against a baseline of {}.",
+                        result.objective.label(),
+                        winner.summary.score,
+                        result.baseline.summary.score
+                    ),
+                    None => "Expedition optimization finished without a recommendation.".into(),
+                })
+            },
+        );
         let ladle_state = LadleSectionState::new(window, cx);
+        let ladle_plan = report_run::<LadleDonation, LadlePlanRequest>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Comparing donation schedules…"),
+                cancelled_kept: "Donation search cancelled; the previous recommendation is unchanged.",
+                cancelled_empty: "Donation search cancelled; nothing was stored.",
+            },
+            |_, donation| {
+                Some(format!(
+                    "Donation plan ready: {} ladles over the plan, {} schedules compared.",
+                    idleon_ui::format::number(donation.plan.jelly.donated),
+                    donation.evaluated
+                ))
+            },
+        );
         let cglunko_breakdown = ui::formula_tree("cglunko-formula", window, cx);
         let clamworks_breakdown = ui::formula_tree("clamworks-formula", window, cx);
         let fishing_breakdown = ui::formula_tree("fishing-formula", window, cx);
@@ -1047,6 +1119,9 @@ impl AppState {
             royal_forecast_inputs: RoyalForecastInputs::new(window, cx),
             royal_forecast: None,
             royal_forecast_key: None,
+            royal_optimizer: cx.new(|_| TaskRunner::new()),
+            royal_unit_exp: cx.new(|_| TaskRunner::new()),
+            royal_shelf: cx.new(|_| TaskRunner::new()),
             sailing_trees,
             sailing_sim,
             farm: Farm::default(),
@@ -1079,8 +1154,10 @@ impl AppState {
             spelunking: SpelunkingState::default(),
             spelunking_save: None,
             spelunk_sim,
+            spelunk_opt,
             ladle: None,
             ladle_state,
+            ladle_plan,
             mastery: None,
             yellow: None,
             mastery_plan: MasteryPlanState::default(),
@@ -1131,6 +1208,7 @@ impl AppState {
             coral_run,
             jelly_run,
             jelly_plan_run,
+            jelly_optimize_run,
             jelly_sim_run,
             jelly_breakdown: crate::ui::formula_tree("jelly-breakdown", window, cx),
             cog_run,

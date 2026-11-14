@@ -328,11 +328,14 @@ shared searchable EXP formula tree, target validation, the three run toggles (as
 observations unlocked, extended insight lookahead and the daily tournament +12h) and the
 target-aware engine: the run simulates to the target, spends each level's grid points and re-fits
 magnifiers and shapes on the level-up events, the saved and optimized layouts are ranked by the
-target they reach, and the grid spend is scored with a forward simulation.
+target they reach, and the grid spend is scored with a forward simulation. The Run tab's result
+reports the best and worst tested layouts, cuts the projection into a timeline of level, insight and
+tournament phases, charts the same samples' EXP/hour and lists each phase as an expandable action
+that marks its segment.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
-over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs, strategy
-comparison and complete save-derived multipliers.
+over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs and
+complete save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an
@@ -531,7 +534,7 @@ keeps the newest 200, and the tab clears it. Missing: the sparkline the page dra
 history tile, which reads as the current-spread and recent-snapshot tables instead.
 Details: [`docs/sections/jar.md`](sections/jar.md).
 
-The Royal Guardian section implements RG-01, RG-02 and RG-03: the overview with the counters (built
+The Royal Guardian section implements RG-01 to RG-04: the overview with the counters (built
 outposts, worlds unlocked, Armory levels, stationed units, militia clearing), the world progress
 cards, the raw clearing values every unbuilt outpost reports (progress, requirement, remaining,
 militia, rate, ETA) and the range target behind an outpost's Advanced Logistics plan; the outpost map
@@ -555,11 +558,27 @@ leaves the W14 alchemy bubble and the `it.json` companion roster out, so the rat
 sources instead of guessing. The shelf descriptions upstream prints read systems this build does not
 decode, so the upgrade list shows each shelf's own bonus instead. The forecast's upstream timeline
 chart is not drawn: the agenda lists the same events with their hours, and the sleep block and the
-collect suggestions are not carried. Missing: the optimizer, unit EXP and shelf steps (RG-04).
+collect suggestions are not carried.
+The optimizer runs a bounded, deterministic beam search over the legal moves (outpost upgrades,
+adjacent type switches, resource and Support links, profession changes), scored by the currency the
+linked nodes pay, the rank EXP the units and militia earn, or the balanced score that sums both with
+the outposts' reach. Every accepted move is re-validated, so a recommendation is a layout the game
+accepts and its moves replay to it. Upstream's fourteen objectives include several this build does
+not model (an Armory purchase target, a currency portfolio and the reset-collection objectives), so
+the picker offers the three the kingdom metrics carry on their own. The unit EXP planner ports the
+trading/surveyor split search with its switch points and the same-world Militia, Commander and
+Knight moves; its steps only retarget slots the outpost already fields, and the port sets no Purity
+target the way upstream does. The shelf planner alternates a layout step (minimum Guards for reach,
+the rest Workers, the focused currency first, Trader/Surveyor rank fallback for outposts with nothing
+left) with the purchase step it spends the balance on, advancing through node depletions and the
+daily reset; upstream's multi-currency portfolio scoring and profession beam are not carried, so the
+plan is deterministic but not the portfolio optimum. Both planners run through the shared task
+runner, so they report progress and cancel like every other long run.
+`fixtures/royal-guardian-plan.json` is the small plan save the oracle and the RG-04 tests share.
 Details: [`docs/sections/royal-guardian.md`](sections/royal-guardian.md).
 
-The Spelunking section has its controls, party, elixir belt, depth estimates and expedition run
-(SP-01, SP-02), with the phased Amber policy (SP-03). `idleon_spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
+The Spelunking section has its controls, party, elixir belt, depth estimates, expedition run and
+depth optimizer (SP-01 to SP-04), with the phased Amber policy (SP-03). `idleon_spelunking` reads the tunnel rows, saved stamina, shop upgrades, elixir
 unlocks and depth records from the save, normalises the party, belt, mode and policy with the
 upstream `normalizeSpelunkConfig` rules and its rejection messages, and computes the Depth limits
 profile from `spelunk-depth.js`. The four account multipliers upstream derives from its whole stat
@@ -576,11 +595,20 @@ phased Amber policy ports the upstream `amber` object: full-clear buildup, the s
 dump depth, the orange activation at the finisher reserve, the boosted harvest and the rope search,
 with a rope exit keeping every reward whole. Its five limits — dump depth, finishers, reserve,
 harvest depths and rope reserve — normalise with the upstream rejection messages, and every phase
-change, its reason and each orange snapshot land in the result and the event log. `fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
-five configurations, seven whole runs (three of them amber farming) and twenty-four rejected inputs,
-compared field for field by `crates/spelunking/tests/spelunking.rs`; regenerate it with
+change, its reason and each orange snapshot land in the result and the event log. `idleon_spelunking::planner` ports `spelunk-planner.js`: the search scope and its
+configuration count, the exhaustive configuration search (parties, policies, clears, Auto speeds,
+belts, memorized subsets, manual tools and entry) with its fresh-seed finalist comparison and the
+paired shorter-party advice, and the bounded Amber phase search (a diverse grid, two local
+refinement rounds and an adaptive fresh-seed comparison with the rope-exit filter). Both searches
+run off the UI thread through the shared task runner with progress and cancel, score the upstream
+objectives, keep the winner against the selected baseline and write a copyable plan; the result
+shows every compared row, its depth, Amber, settled count and rope/toll/blocked split.
+`fixtures/spelunking.json` is the upstream calculator's own output for the committed save:
+five configurations, seven whole runs (three of them amber farming), twenty-four rejected inputs,
+one configuration search and one Amber phase search, compared field for field by
+`crates/spelunking/tests/spelunking.rs` and `crates/spelunking/tests/planner.rs`; regenerate it with
 `script/spelunking-oracle.mjs`, and `script/extract-spelunk-data.mjs` extracts the cave, rock, tool,
-elixir, chapter and sprite tables. Missing: the optimizer (SP-04).
+elixir, chapter and sprite tables.
 Details: [`docs/sections/spelunking.md`](sections/spelunking.md).
 
 The Opal Optimizer section implements OP-01, OP-02 and OP-03. The `Current state` tab shows the
@@ -786,12 +814,21 @@ Speed Lv 0 and the meal max level stand in for the Cooking speed model, and the 
 Upstream's `speed` objective is left out on purpose: it ranks by the meal-level
 `kitchenSpeedEvaluator`, which this build does not have, so the select offers only the two
 objectives it can compute rather than a constant ordering.
+The NMLB panel splits every meal into ladleable meals (the next level fits in a day of kitchen
+time) and targets, then holds the floor: the lowest target level, with the ladleable blockers that
+must rise first and the rotation NMLB walks while the floor is held. The Blue Jellyfish donation
+planner compares an up-front share of the owned ladles and a share of the guaranteed income until a
+cutoff reset, refines the best split and shows the whole-ladle schedule; it runs through the shared
+task runner, so cancelling keeps the recommendation the tab already shows, and an improved schedule
+can be applied to the meal plan. Upstream ranks that search by the kitchen speed the horizon
+reaches; because speed is a fixed entered rate here, the search ranks by the section objective
+instead, with every other search rule the upstream one.
 `script/ladle-kitchen-oracle.mjs` regenerates `crates/ladle/tests/ladle-kitchen-oracle.json` from the
 upstream module, with a model whose account multipliers are neutral so every rate is the port's
 `base × (1 + Speed Lv / 10) × (1 + gem doubler)`; `script/extract-cooking-data.mjs` extracts
 `MealINFO` and the `N2L` encoding. The fixture covers the target objective's batches and plans, the
-per-meal outcomes and the three forecast scenarios. The Blue Jellyfish donation planner with its
-task runner (LD-04) stays on the roadmap.
+per-meal outcomes, the three forecast scenarios, the NMLB floor plans and rotations and the donation
+search's schedule and both plans.
 Details: [`docs/sections/ladle.md`](sections/ladle.md).
 
 The Jelly Operator section implements JO-01, JO-02, JO-03 and JO-04: the overview, the layout
@@ -848,7 +885,24 @@ breakdown the save cannot compute (Cell EXP without Cell Biology, Bloodcells wit
 Coagulation, a board the rules refuse) says what is missing instead of printing one.
 `script/jelly-oracle.mjs` also writes the three cases' upgrade rows, reward rows and six trees, and
 `crates/jelly/tests/jelly-upgrades.rs` compares every row, string and node and holds both
-invariants. The coordinator optimizer (JO-05) stays on the roadmap. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
+invariants. The optimizer tab is `idleon_jelly::optimizer`, the coordinator of `js/optimizers/jelly-coordinator.js`
+over the bounded full-board search: independent starts each build composition seeds from cell-type
+and anchor orders plus the elites the earlier starts handed on, keep a diverse beam through their
+build, saved-board and refinement rounds (placements, replacements, relocations and re-fills), and
+share their strongest, sufficiently distinct boards with the later starts. The coordinator rotates
+explore, refine, repair and measure; refine trades build rounds for saved-board rounds and repair
+sets the exact-repair budget, while the page's payoff scheduling reads `performance.now()`, so this
+port schedules from each start's own score count and a run stays deterministic. The strongest
+finalists run the save's Fever and revive policy on shared seeds (`simulateJellyTrials`), rank by
+`simulatedObjectiveScore` and carry `pairedOperationConfidence` against the board the run started
+from; the recommendation is never worse than that board, and `Use this board` puts it on the
+layout. `script/jelly-oracle.mjs` also writes the coordinator's assignments and elite selection for
+the committed save plus `proxyObjectiveScore` over five boards, and
+`crates/jelly/tests/jelly-optimizer.rs` compares them field for field and holds the search's
+invariant, determinism, cancellation and apply rules. The upstream engine's worker pooling, policy
+screening, exact enumeration and certification are not ported: the search is single-process, a
+finalist runs the save's own Fever and revive policy, and the fixture pins the coordinator and the
+ranking score rather than that engine's stochastic trajectory. The upstream page's shape overrides for grid nodes 185 and 187 are not ported: they correct
 a save-export timing bug from the page's own local storage, and this app reads the save's shape
 overlay. Details:
 [`docs/sections/jelly-operator.md`](sections/jelly-operator.md).
