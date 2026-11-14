@@ -625,10 +625,27 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `getBuffBonus(id, tab)`: the buff rows an import does not carry are 0,
-    /// exactly as `buffsActiveData` is empty for a plain save.
-    pub(crate) fn buff(&self, _id: usize) -> f64 {
-        0.0
+    /// `getBuffBonus(id, tab)`: the talent's value on `tab` while the
+    /// character has it among its active buffs (`BuffsActive_{character}`,
+    /// rows of `[id, remaining, duration]`), otherwise 0.
+    pub(crate) fn buff(&mut self, id: usize, tab: usize) -> f64 {
+        let active = fields::char_field(self.save(), "BuffsActive", self.character)
+            .and_then(|value| value.as_array().cloned())
+            .unwrap_or_default()
+            .iter()
+            .any(|row| {
+                let first = match row {
+                    serde_json::Value::Array(cells) => cells.first(),
+                    serde_json::Value::Object(cells) => cells.get("0"),
+                    _ => None,
+                };
+                first.and_then(idleon_save::json::number) == Some(id as f64)
+            });
+        if active {
+            self.talent_tab(id, tab)
+        } else {
+            0.0
+        }
     }
 
     /// `weeklyBossData.g`.
@@ -771,7 +788,7 @@ impl Ctx<'_, '_> {
         if gf > 0.0 {
             list1 *= 1.0 + gf / 100.0;
         }
-        list1 *= 1.0 - self.buff(108) / 100.0;
+        list1 *= 1.0 - self.buff(108, 1) / 100.0;
         list1 *= 1.0 + self.box_reward("pctHP") / 100.0;
         list1 *= 1.0 + (self.family(18) + self.card_bonus(8)) / 100.0;
         list1 *= 1.0 + self.star_sign_bonus("TotalHP") / 100.0;
@@ -803,8 +820,11 @@ impl Ctx<'_, '_> {
         } else {
             (agi - 1000.0) / (agi + 2500.0) * 0.5 + 0.371
         };
-        let pct =
-            food + self.talent(266) + self.stamp("PctMoveSpd") + self.option(438) + self.buff(273);
+        let pct = food
+            + self.talent(266)
+            + self.stamp("PctMoveSpd")
+            + self.option(438)
+            + self.buff(273, 1);
         let mut speed = (pct
             + self.statue_bonus(1)
             + self.star_sign_bonus("MoveSpd")
@@ -904,7 +924,8 @@ impl Ctx<'_, '_> {
         total
     }
 
-    /// `computePlayerBuildSpd(character)`.
+    /// `computePlayerBuildSpd(character, { noArt32: true })`, the only way
+    /// artifact 8 reads it.
     fn player_build_spd(&mut self, character: usize) -> f64 {
         let level = fields::char_field(self.save(), "Lv0", character)
             .and_then(|value| idleon_save::json::index(&value, &[8]).cloned())
@@ -931,9 +952,9 @@ impl Ctx<'_, '_> {
             + self.vial("Contspd")
             + self.decoder.arcade(44)
             + self.decoder.voting(18)
-            + self.summ_upg(48) * idleon_account::vault_killz::vault_killz(self.decoder)[11]
+            + self.decoder.vault(48) * idleon_account::vault_killz::vault_killz(self.decoder)[11]
             + self.bubba_rog(1);
-        let win = self.decoder.win_bonus_without_options(13);
+        let win = self.decoder.win_bonus_without_artifact32(13);
         let true_multi = (1.0 + win / 100.0)
             * (1.0 + self.decoder.palette(25) / 100.0)
             * (1.0 + self.vial("6turtle") / 100.0);

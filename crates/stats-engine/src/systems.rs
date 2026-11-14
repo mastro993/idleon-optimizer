@@ -127,18 +127,6 @@ impl<'a, 'b> Ctx<'a, 'b> {
         idleon_account::talent::max_bonus(self.decoder, index, self.character)
     }
 
-    /// A talent's value on the active character (`GetTalentNumber(1, id)`).
-    pub(crate) fn talent_here(&mut self, index: usize) -> f64 {
-        let level = self.decoder.talent_level(self.character, index);
-        if level <= 0.0 {
-            return 0.0;
-        }
-        let Some(param) = self.decoder.talent_param(index) else {
-            return 0.0;
-        };
-        curve::eval(&param.formula, param.x1, param.x2, level)
-    }
-
     /// `computeStampBonusOfTypeX(type)`, with the exalted doubler chain.
     pub(crate) fn stamp(&mut self, kind: &str) -> f64 {
         let doubler = self.stamp_doubler();
@@ -1136,7 +1124,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             _ => &[],
         };
         for talent in talents {
-            value *= (1.0 + self.talent_here(*talent) / 100.0).max(1.0);
+            value *= (1.0 + self.talent(*talent) / 100.0).max(1.0);
         }
         let gold = fields::at(self.save(), "StuG", &[index]).unwrap_or(0.0);
         if gold >= 2.0 {
