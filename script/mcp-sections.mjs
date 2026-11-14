@@ -3060,8 +3060,9 @@ const INTERACTIONS = {
     if (unranked.some((node) => node.label === 'Best' || node.label === 'Good')) {
       throw new Error('research: a row is ranked without the roll data');
     }
-    // Put the account save back and leave the lane on the Sushi tab, so the
-    // section screenshot keeps the state it captured before this check.
+    // Put the account save back, then drive the Decision Tree (RES-08) and
+    // leave the lane on its tab, so the section screenshot keeps the state it
+    // captured before this check.
     await lane.call('click_element', { id: 'header-import' });
     await waitForNode(lane, 'import-input', 'research: the import dialog reopens for the restore');
     await lane.call('click_element', { id: 'import-input' });
@@ -3070,8 +3071,78 @@ const INTERACTIONS = {
     await waitForNode(lane, 'import-format', 'research: the account save previews again');
     await new Promise((resolve) => setTimeout(resolve, 400));
     await lane.call('click_element', { id: 'import-apply' });
-    await lane.call('click_element', { id: 'sushi' });
-    await waitForNode(lane, 'su-tier-row-0', 'research: the sushi tier table reopens for the capture');
+    await lane.call('click_element', { id: 'tree' });
+    await waitForNode(lane, 'dt-viewport', 'research: the Decision Tree opens on the loaded save');
+    await waitForNode(lane, 'dt-node-1', 'research: the tree draws its start node');
+    // Level-ups-only hides insight events; it round-trips from the toolbar.
+    await lane.call('click_element', { id: 'dt-level-ups-only' });
+    await lane.call('click_element', { id: 'dt-level-ups-only' });
+    await waitForNode(lane, 'dt-viewport', 'research: the level-ups toggle round-trips');
+    // A glass gives the node a rate, then saving steps it to the next event.
+    await lane.call('click_element', { id: 'dt-mag-add-Glass' });
+    await waitFor(
+      lane,
+      (nodes) => !(labelOf(nodes, 'dt-node-1') ?? '').includes('· 0/hr'),
+      'research: the node earns EXP after a glass is assigned',
+    );
+    await lane.call('click_element', { id: 'dt-save' });
+    await waitForNode(lane, 'dt-node-2', 'research: saving steps the node to its first event', 120000);
+    // A long level gap spreads the columns, so Fit brings both nodes on screen.
+    await lane.call('click_element', { id: 'dt-fit' });
+    // Branch comparison: two nodes picked, the second measured against the first.
+    await lane.call('click_element', { id: 'dt-compare-1' });
+    await lane.call('click_element', { id: 'dt-compare-2' });
+    await waitForNode(lane, 'dt-compare-row-2', 'research: the branch comparison lists the event');
+    const compared = labelOf(await lane.tree(), 'dt-compare-row-2') ?? '';
+    if (!compared.includes('Node #2') || !compared.includes('level')) {
+      throw new Error(`research: the comparison row reads ${compared}`);
+    }
+    // Branch forks a copy and steps it; deleting the fork leaves the original.
+    await lane.call('click_element', { id: 'dt-fit' });
+    await lane.call('click_element', { id: 'dt-branch' });
+    await waitFor(
+      lane,
+      (nodes) => nodes.filter((node) => /^dt-node-\d+$/.test(node.id ?? '')).length >= 3,
+      'research: branching adds the copied node and its event',
+      120000,
+    );
+    await lane.call('click_element', { id: 'dt-delete' });
+    await waitFor(
+      lane,
+      (nodes) => nodes.filter((node) => /^dt-node-\d+$/.test(node.id ?? '')).length >= 2,
+      'research: deleting the selected node removes it',
+    );
+    // Auto magnifiers and shapes fit the selected node through the task runner.
+    await lane.call('click_element', { id: 'dt-auto-mags' });
+    await waitFor(
+      lane,
+      (nodes) => !has(nodes, 'dt-run'),
+      'research: Auto Magnifiers finishes before the next action',
+      120000,
+    );
+    await lane.call('click_element', { id: 'segment-1' });
+    await lane.call('click_element', { id: 'dt-auto-shapes' });
+    await waitForNode(lane, 'dt-shape-0', 'research: Auto Shapes places a node shape', 120000);
+    // Auto Insight skips insight level-ups and lands on the next research level.
+    const beforeAuto = (await lane.tree()).filter((node) =>
+      /^dt-node-\d+$/.test(node.id ?? '')
+    ).length;
+    await lane.call('click_element', { id: 'dt-node-2' });
+    await lane.call('click_element', { id: 'dt-auto-insight' });
+    await lane.call('click_element', { id: 'dt-save' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        nodes.filter((node) => /^dt-node-\d+$/.test(node.id ?? '')).length > beforeAuto,
+      'research: Auto Insight advances to a research level-up',
+      180000,
+    );
+    const levels = (await lane.tree()).filter(
+      (node) => /^dt-node-\d+$/.test(node.id ?? '') && /Level up|Both/.test(node.label ?? '')
+    );
+    if (levels.length === 0) {
+      throw new Error('research: Auto Insight landed on no research level-up');
+    }
   },
   'coral-god-rank': async (lane) => {
     // Turning the assumption off makes the save-derived unlock state (or its

@@ -40,6 +40,7 @@ use crate::sections::research::State as ResearchState;
 use crate::sections::research::minehead::{
     OptimizeInputs as MineheadOptimizeInputs, RunInputs as MineheadRunInputs,
 };
+use crate::sections::research::tree::{Outcome as TreeOutcome, RunInputs as TreeRunInputs};
 use crate::sections::royal_guardian::State as RoyalState;
 use crate::sections::royal_guardian::forecast::Inputs as RoyalForecastInputs;
 use crate::sections::sailing::State as SailingState;
@@ -421,6 +422,8 @@ pub(crate) struct AppState {
     /// The shared runner for the Observation Unlocks ranking; it takes the same
     /// simulation, context and effort.
     pub(crate) unlock_run: Entity<TaskRunner<idleon_research::unlock::Outcome, ShapeRunInputs>>,
+    /// The shared runner for the Decision Tree's steps, branches and auto fits.
+    pub(crate) tree_run: Entity<TaskRunner<TreeOutcome, TreeRunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for the coral god rank beam search.
@@ -595,6 +598,20 @@ impl AppState {
                     "Ranked {} observations by insight ROI.",
                     result.rows.len()
                 ))
+            },
+        );
+        let tree_run = report_run::<TreeOutcome, TreeRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Stepping the tree…"),
+                cancelled_kept: "Tree step cancelled; the tree is unchanged.",
+                cancelled_empty: "Tree step cancelled; nothing changed.",
+            },
+            |state, outcome: &TreeOutcome| {
+                state.research.tree.tree = Some(outcome.tree.clone());
+                state.research.tree.selected = outcome.select.or(state.research.tree.selected);
+                Some(outcome.message.clone())
             },
         );
         let unlock_run = report_run::<idleon_research::unlock::Outcome, ShapeRunInputs>(
@@ -1281,6 +1298,7 @@ impl AppState {
             shape_run,
             insight_run,
             unlock_run,
+            tree_run,
             insight_breakdown,
             _subscriptions: subscriptions,
             session_save_pending: false,

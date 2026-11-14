@@ -14,6 +14,7 @@ mod result;
 mod shape_opt;
 mod shape_presets;
 pub(crate) mod sushi;
+pub(crate) mod tree;
 mod unlocks;
 
 pub(crate) use dashboard::Trees;
@@ -48,6 +49,8 @@ pub(crate) enum Tab {
     Unlocks,
     /// Shape priority tiers, presets and the optimized placement.
     Shapes,
+    /// The research-event tree: branch, save, compare and edit a layout.
+    DecisionTree,
     /// The Depth Charge dashboard, strategy search, ranking, path and game.
     Minehead,
     /// The Sushi Station overview, upgrades, currency, ranking and tiers.
@@ -55,7 +58,7 @@ pub(crate) enum Tab {
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 9] = [
+    pub(crate) const ALL: [Tab; 10] = [
         Tab::Dashboard,
         Tab::Grid,
         Tab::Rates,
@@ -63,6 +66,7 @@ impl Tab {
         Tab::InsightRoi,
         Tab::Unlocks,
         Tab::Shapes,
+        Tab::DecisionTree,
         Tab::Minehead,
         Tab::Sushi,
     ];
@@ -76,6 +80,7 @@ impl Tab {
             Tab::InsightRoi => "insight",
             Tab::Unlocks => "unlocks",
             Tab::Shapes => "shapes",
+            Tab::DecisionTree => "tree",
             Tab::Minehead => "minehead",
             Tab::Sushi => "sushi",
         }
@@ -90,6 +95,7 @@ impl Tab {
             Tab::InsightRoi => "Insight ROI",
             Tab::Unlocks => "Unlocks",
             Tab::Shapes => "Shape Optimization",
+            Tab::DecisionTree => "Decision Tree",
             Tab::Minehead => "Minehead",
             Tab::Sushi => "Sushi Station",
         }
@@ -157,6 +163,8 @@ pub(crate) struct State {
     pub(crate) minehead: minehead::State,
     /// The Sushi Station tab's own state.
     pub(crate) sushi: sushi::State,
+    /// The Decision Tree sandbox: its tree, selection, pan and zoom.
+    pub(crate) tree: tree::State,
     /// The Insight ROI table's sort mode.
     pub(crate) insight_sort: idleon_research::insight::Sort,
     /// Whether the Insight ROI table hides rows that lose no EXP. Upstream
@@ -199,6 +207,7 @@ impl State {
             shape_values: None,
             minehead: minehead::State::new(),
             sushi: sushi::State::new(),
+            tree: tree::State::new(),
             insight_sort: idleon_research::insight::Sort::default(),
             insight_hide_free: false,
             unlock_filter: idleon_research::unlock::Filter::default(),
@@ -364,6 +373,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(shape_opt::pane(state, window, cx))
+            .into_any_element(),
+        Tab::DecisionTree => div()
+            .id("pane-tree")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(tree::pane(state, window, cx))
             .into_any_element(),
         Tab::Minehead => div()
             .id("pane-minehead")

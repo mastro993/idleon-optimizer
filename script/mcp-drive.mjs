@@ -8,6 +8,8 @@
 // Usage: node script/mcp-drive.mjs [--attach] [--keep] [--app-bin PATH]
 //   --attach    drive a window you already started (shared discovery directory)
 //   --keep      leave the spawned window running for a look
+//   --shot      where to write the closing window screenshot
+//   --dt-shot   where to write a Decision Tree tab screenshot (RES-08 evidence)
 import { writeFileSync } from 'node:fs';
 import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
 
@@ -83,6 +85,29 @@ const waitFor = async (predicate, label, timeoutMs = 15000) => {
   return false;
 };
 
+/// Wait for one element id, with the same deadline as `waitFor`.
+const waitForNode = (id, label, timeoutMs) =>
+  waitFor((current) => has(current, id), label, timeoutMs);
+
+/// Scroll the page until `id` sits inside the window, so a click lands on it.
+/// The wheel goes to the page's margin: a card's own scroll area would swallow
+/// it, and the dashboard's cards own one each.
+const bringIntoView = async (id, pageId = 'dashboard-scroll') => {
+  for (let step = 0; step < 8; step += 1) {
+    const node = (await tree()).find((candidate) => candidate.id === id);
+    const top = node?.bounds?.y ?? 0;
+    if (top > 160 && top < 700) return;
+    const page = (await tree()).find((candidate) => candidate.id === pageId);
+    const bounds = page?.bounds ?? { x: 0, width: 600 };
+    await call('scroll', {
+      x: bounds.x + bounds.width - 6,
+      y: 300,
+      delta_y: top > 700 ? 300 : -300,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+};
+
 try {
   lane = await McpLane.start({
     appBin,
@@ -144,6 +169,7 @@ try {
     String(labelOf(nodes, 'dash-kpis')),
   );
   // The grid preview links to the editor and selects the square it was clicked on.
+  await bringIntoView('dash-cell-129');
   await call('click_element', { id: 'dash-cell-129' });
   await waitFor(
     (current) => (labelOf(current, 'square-name') ?? '').includes('J6'),
@@ -152,6 +178,7 @@ try {
   // The observation preview links to the rates editor and names its selection.
   await call('click_element', { id: 'dashboard' });
   await waitFor((current) => has(current, 'research-dashboard'), 'the dashboard tab reopens');
+  await bringIntoView('dash-obs-0');
   await call('click_element', { id: 'dash-obs-0' });
   await waitFor(
     (current) => (labelOf(current, 'observations-selected') ?? '').startsWith('Selected:'),
@@ -284,6 +311,53 @@ try {
     (current) => !has(current, 'apply-result'),
     'applying the result clears it',
   );
+
+  // The Decision Tree grows a branch, shows the comparison deltas and fits the
+  // node's magnifiers and shapes (RES-08). A node whose next level-up is past
+  // the stepper's horizon reports that instead of growing a branch.
+  await call('click_element', { id: 'tree' });
+  await waitFor((current) => has(current, 'dt-viewport'), 'the Decision Tree opens on the save');
+  check('the tree draws the loaded state as its root', has(await tree(), 'dt-node-1'));
+  await call('click_element', { id: 'dt-save' });
+  await waitFor(
+    (current) =>
+      has(current, 'dt-node-2') ||
+      (labelOf(current, 'status-status') ?? '').includes('No next event'),
+    'saving the root steps it or explains why it cannot',
+    120000,
+  );
+  if (has(await tree(), 'dt-node-2')) {
+    await call('click_element', { id: 'dt-fit' });
+    await call('click_element', { id: 'dt-compare-1' });
+    await call('click_element', { id: 'dt-compare-2' });
+    await waitFor(
+      (current) => has(current, 'dt-compare-row-2'),
+      'the branch comparison lists both nodes',
+    );
+    const row = labelOf(await tree(), 'dt-compare-row-2') ?? '';
+    check(
+      'the comparison row carries level, rate and time deltas',
+      (row.match(/[+−]/g) ?? []).length >= 2,
+      row,
+    );
+    await call('click_element', { id: 'dt-auto-mags' });
+    await waitFor(
+      (current) => !has(current, 'dt-run'),
+      'Auto Magnifiers finishes on the node',
+      120000,
+    );
+  } else {
+    check(
+      'a node past the horizon explains the missing step',
+      (labelOf(await tree(), 'status-status') ?? '').includes('centuries away'),
+      String(labelOf(await tree(), 'status-status')),
+    );
+  }
+  const dtShot = flag('--dt-shot', null);
+  if (dtShot) {
+    writeFileSync(dtShot, await lane.screenshot());
+    console.log(`decision tree screenshot: ${dtShot}`);
+  }
 
   // End on the grid so the screenshot shows the optimized layout.
   if (has(await tree(), 'grid')) {
@@ -425,8 +499,12 @@ try {
   await call('type_text', { text: 'research' });
   await waitFor((current) => has(current, 'card-research'), 'search finds research again');
   await call('click_element', { id: 'card-research' });
-  await waitFor((current) => has(current, 'research-dashboard'), 'research reopens on its dashboard');
-  await call('click_element', { id: 'rates' });
+  // The section comes back on the tab it was left on; the checks below need the
+  // rates pane, so switch to it when another tab is showing.
+  await waitFor((current) => has(current, 'section-research'), 'research reopens on its last tab');
+  if (!has(await tree(), 'kpi-row')) {
+    await call('click_element', { id: 'rates' });
+  }
   await waitFor((current) => has(current, 'kpi-row'), 'the research rates pane reopens');
 
   // A paste that cannot parse only replaces the message: no Apply, run untouched.

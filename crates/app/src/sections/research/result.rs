@@ -12,7 +12,7 @@ use ely_gpui_component::charts::{LineChart, Series};
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::feedback::Banner;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{Disclosure, Severity};
+use ely_gpui_component::primitives::{Disclosure, IconName, Severity};
 use ely_gpui_component::theme::{ActiveTheme as _, Palette};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
@@ -88,6 +88,7 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
 
     let apply = entity.clone();
     let dismiss = entity.clone();
+    let open_tree = entity.clone();
 
     let mut trailing = div().flex().items_center().gap_2();
     if stale {
@@ -163,6 +164,15 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
                                 .disabled(stale)
                                 .on_click(move |_event, _window, cx| {
                                     apply.update(cx, |state, cx| state.apply_result(cx));
+                                }),
+                        )
+                        .child(
+                            Button::new("open-decision-tree", "Open in Decision Tree")
+                                .icon(IconName::GitBranch)
+                                .on_click(move |_event, _window, cx| {
+                                    open_tree.update(cx, |state, cx| {
+                                        state.open_in_decision_tree(cx);
+                                    });
                                 }),
                         )
                         .child(Button::new("dismiss-result", "Dismiss").on_click(
