@@ -81,6 +81,11 @@ impl<'a, 'b> Ctx<'a, 'b> {
 
     /// `getTalentNumber(1, index)`: the active character's talent value.
     pub(crate) fn talent(&mut self, index: usize) -> f64 {
+        self.talent_tab(index, 1)
+    }
+
+    /// `getTalentNumber(1, index)` on one talent tab.
+    pub(crate) fn talent_tab(&mut self, index: usize, tab: usize) -> f64 {
         let raw = self.decoder.talent_level(self.character, index);
         if raw <= 0.0 {
             return 0.0;
@@ -94,7 +99,12 @@ impl<'a, 'b> Ctx<'a, 'b> {
                 false,
                 false,
             );
-        let Some(param) = self.decoder.talent_param(index) else {
+        let param = if tab == 2 {
+            self.decoder.talent_param2(index)
+        } else {
+            self.decoder.talent_param(index)
+        };
+        let Some(param) = param else {
             return 0.0;
         };
         curve::eval(&param.formula, param.x1, param.x2, level)
@@ -233,6 +243,25 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .bubble_prismad_at(bubble.cauldron, bubble.index)
         {
             value *= self.decoder.prisma_bonus_multi().max(1.0);
+        }
+        // Slab bubbles scale by the discovered item count; Tome bubbles by the
+        // Tome score and the Grimoire 17 / Troll set chain.
+        if bubble.slab {
+            let discoveries = fields::field(self.save(), "Cards1")
+                .and_then(|value| value.as_array().map(Vec::len))
+                .unwrap_or(0);
+            value *= (discoveries / 100).max(1) as f64;
+        }
+        if bubble.tome {
+            let points = self.decoder.tome_points().unwrap_or(0.0);
+            value *= (((points - 5000.0) / 2000.0).floor()).max(1.0);
+            let troll = if self.decoder.ola_text(379).contains("TROLL_SET") {
+                idleon_account::sets::set_bonus(self.decoder, "TROLL_SET", self.character)
+            } else {
+                0.0
+            };
+            let grimoire = fields::at(self.save(), "Grimoire", &[17]).unwrap_or(0.0);
+            value *= 1.0 + (grimoire + troll) / 100.0;
         }
         let class = self.class();
         if !skip_class
@@ -544,22 +573,48 @@ impl<'a, 'b> Ctx<'a, 'b> {
                 let mut points =
                     fields::number_at(&fields::values(&points).unwrap_or_default(), index).round();
                 if slot == 1 {
-                    points -= row.get(13).and_then(|v| v.as_f64()).unwrap_or(0.0).round();
+                    points -= row
+                        .get(13)
+                        .and_then(idleon_save::json::number)
+                        .unwrap_or(0.0)
+                        .round();
                 }
                 if slot == 2 {
-                    points -= row.get(14).and_then(|v| v.as_f64()).unwrap_or(0.0).round();
+                    points -= row
+                        .get(14)
+                        .and_then(idleon_save::json::number)
+                        .unwrap_or(0.0)
+                        .round();
                 }
                 if points <= 0.0 {
                     return 0.0;
                 }
                 let base = 1 + slot * 4;
-                let x1 = row.get(base).and_then(|v| v.as_f64()).unwrap_or(0.0);
-                let x2 = row.get(base + 1).and_then(|v| v.as_f64()).unwrap_or(0.0);
+                let x1 = row
+                    .get(base)
+                    .and_then(idleon_save::json::number)
+                    .unwrap_or(0.0);
+                let x2 = row
+                    .get(base + 1)
+                    .and_then(idleon_save::json::number)
+                    .unwrap_or(0.0);
                 let formula = row.get(base + 2).and_then(|v| v.as_str()).unwrap_or("");
                 return curve::eval(formula, x1, x2, points);
             }
         }
         0.0
+    }
+
+    /// `computeFlurboShop(index)` from `js/stats/systems/w2/dungeon.js`.
+    pub(crate) fn flurbo_shop(&mut self, index: usize) -> f64 {
+        let level = fields::at(self.save(), "DungUpg", &[5, index]).unwrap_or(0.0);
+        if level <= 0.0 {
+            return 0.0;
+        }
+        let Some(param) = self.data.dung_passive(index) else {
+            return 0.0;
+        };
+        curve::eval(&param.formula, param.x1, param.x2, level)
     }
 
     /// `guildBonusParams(index)` evaluated at the save's guild points.
@@ -595,23 +650,6 @@ impl<'a, 'b> Ctx<'a, 'b> {
     pub(crate) fn family_bonuses(&mut self) -> std::collections::BTreeMap<usize, f64> {
         let mut result = std::collections::BTreeMap::new();
         let raw_144 = self.decoder.talent_level(self.character, 144);
-        let mut talent_144 = 0.0;
-        if raw_144 > 0.0 {
-            let levels = raw_144
-                + idleon_account::talent::bonus_levels(
-                    self.decoder,
-                    144,
-                    self.character,
-                    self.character,
-                    true,
-                    false,
-                );
-            if let Some(param) = self.decoder.talent_param(144) {
-                talent_144 = curve::eval(&param.formula, param.x1, param.x2, levels);
-            }
-        }
-        let mut winners: std::collections::BTreeMap<usize, usize> =
-            std::collections::BTreeMap::new();
         for character in 0..self.characters() {
             let class = fields::char_field(self.save(), "CharacterClass", character)
                 .and_then(|value| idleon_save::json::number(&value))
@@ -634,29 +672,35 @@ impl<'a, 'b> Ctx<'a, 'b> {
                 for kind in 0..2 {
                     let bonus = curve::eval(&family.formula, family.x1, family.x2, effective);
                     let key = 2 * class + kind;
-                    let stored = result.entry(key).or_insert(0.0);
-                    if bonus > *stored {
-                        *stored = bonus;
-                        winners.insert(key, character);
+                    if result.get(&key).is_some_and(|stored| bonus <= *stored) {
+                        continue;
                     }
+                    let mut value = bonus;
+                    if key == 24 || key == 44 {
+                        let best =
+                            idleon_account::talent::max_bonus(self.decoder, 144, self.character);
+                        value = bonus * (1.0 + best / 100.0);
+                    } else if raw_144 > 0.0 && character == self.character {
+                        // The game computes this lazily, reading FamBonusQTYs[68]
+                        // as far as the loop has built it.
+                        let family68 = Some(result.get(&68).copied().unwrap_or(0.0));
+                        let levels = raw_144
+                            + idleon_account::talent::bonus_levels_with_family68(
+                                self.decoder,
+                                144,
+                                self.character,
+                                self.character,
+                                false,
+                                false,
+                                family68,
+                            );
+                        if let Some(param) = self.decoder.talent_param(144) {
+                            let talent = curve::eval(&param.formula, param.x1, param.x2, levels);
+                            value = bonus * (1.0 + talent / 100.0);
+                        }
+                    }
+                    result.insert(key, value);
                 }
-            }
-        }
-        if talent_144 > 0.0 {
-            for (key, winner) in winners {
-                if winner == self.character
-                    && key != 24
-                    && key != 44
-                    && let Some(value) = result.get_mut(&key)
-                {
-                    *value *= 1.0 + talent_144 / 100.0;
-                }
-            }
-        }
-        for key in [24usize, 44] {
-            if let Some(value) = result.get_mut(&key) {
-                let best = self.talent(144);
-                *value *= 1.0 + best / 100.0;
             }
         }
         result
@@ -708,8 +752,8 @@ impl<'a, 'b> Ctx<'a, 'b> {
         sum += self.stamp("AllStatPct");
         // 5. Cards: All Stats.
         sum += self.card_bonus(82);
-        // 6. Summoning win bonus 18.
-        sum += self.decoder.win_bonus(18);
+        // 6. Summoning win bonus 18, with no endless-win options.
+        sum += self.decoder.win_bonus_without_options(18);
         // 7. Family bonus 72.
         sum += self.family_bonuses().get(&72).copied().unwrap_or(0.0);
         // 8. Sailing artifact 28.
@@ -734,13 +778,8 @@ impl<'a, 'b> Ctx<'a, 'b> {
         sum += 10.0 * ((98.0 + self.option(232)) / 100.0).floor();
         // 14. Farming rank 19.
         sum += self.farm_rank(19);
-        // 15. Voting 2.
-        if self.option(425) <= 0.0 {
-            self.miss(
-                "Voting: All Stats",
-                "js/stats/defs/voting-multi.js · the server vote is not in the save",
-            );
-        }
+        // 15. Voting 2. A save alone has no server vote, so `votingBonusz`
+        // reads zero exactly as upstream does without `serverVars`.
         sum += self.decoder.voting(2);
         // 16. The Marbiglass set.
         sum += idleon_account::sets::set_bonus(self.decoder, "MARBIGLASS_SET", self.character);
@@ -754,7 +793,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         if per_level <= 0.0 || level <= 0.0 {
             return 0.0;
         }
-        let talent = self.talent(207).max(1.0);
+        let talent = self.talent_best(207).max(1.0);
         let exotic = 1.0 + self.decoder.exotic(14) / 100.0;
         talent * exotic * per_level * level
     }
@@ -770,10 +809,6 @@ impl<'a, 'b> Ctx<'a, 'b> {
     /// descriptor and the `calcTalentMAP209` map scan; this build models the
     /// save-derived terms and reports the rest.
     pub(crate) fn gold_food_multi(&mut self) -> f64 {
-        self.miss(
-            "Golden food multiplier",
-            "js/stats/systems/common/goldenFood.js · gfoodBonusMULTI",
-        );
         let companion174 = self.decoder.companion(174);
         let set = 1.0
             + (idleon_account::sets::set_bonus(self.decoder, "SECRET_SET", self.character)
@@ -789,12 +824,12 @@ impl<'a, 'b> Ctx<'a, 'b> {
         let stamp = self.stamp("GFood");
         let bubble = self.bubble("O18");
         let sigil = self.sigil(14);
-        let meal = self.meal_bonus("ZGoldFood");
+        let meal = self.meal_bonus("zGoldFood");
         let stars = self.star_sign_bonus("GFood");
         let bribe = self.bribe(36);
         let pristine = self.decoder.pristine(14);
         let voting = self.decoder.voting(26);
-        let talent209 = self.talent(209) * self.map209();
+        let talent209 = self.talent_best(209) * self.map209();
         let companion48 = self.decoder.companion(48);
         let legend25 = self.decoder.legend(25);
         let crop_card = (4.0 * self.decoder.card_level("cropfallEvent1")).min(50.0);
@@ -849,14 +884,15 @@ impl<'a, 'b> Ctx<'a, 'b> {
         let Some(kla) = fields::char_field(self.save(), "KLA", holder) else {
             return 0.0;
         };
-        let Some(rows) = kla.as_object() else {
-            return 0.0;
+        let maps: Vec<usize> = match &kla {
+            serde_json::Value::Array(rows) => (0..rows.len()).collect(),
+            serde_json::Value::Object(rows) => {
+                rows.keys().filter_map(|map| map.parse().ok()).collect()
+            }
+            _ => return 0.0,
         };
         let mut count = 0.0;
-        for (map, _) in rows {
-            let Ok(map) = map.parse::<usize>() else {
-                continue;
-            };
+        for map in maps {
             if !crate::is_fighting_map(map) {
                 continue;
             }
@@ -886,12 +922,10 @@ impl<'a, 'b> Ctx<'a, 'b> {
         let Some(order) = fields::char_field(self.save(), "EquipOrder", self.character) else {
             return 0.0;
         };
-        let qtys = fields::char_field(self.save(), "EquipQty", self.character)
+        let qtys = fields::char_field(self.save(), "EquipQTY", self.character)
             .and_then(|value| fields::object_row(&value, 2))
             .unwrap_or_default();
-        let names = field_row(&order, 2)
-            .and_then(|value| value.as_array().cloned())
-            .unwrap_or_default();
+        let names = field_row(&order, 2).map(value_cells).unwrap_or_default();
         let mut total = 0.0;
         for index in 0..slots {
             let Some(name) = names.get(index).and_then(|value| value.as_str()) else {
@@ -1030,6 +1064,22 @@ fn field_row(value: &serde_json::Value, index: usize) -> Option<&serde_json::Val
         serde_json::Value::Array(rows) => rows.get(index),
         serde_json::Value::Object(rows) => rows.get(&index.to_string()),
         _ => None,
+    }
+}
+
+/// A row's cells, whichever shape the save wrote them in.
+fn value_cells(row: &serde_json::Value) -> Vec<serde_json::Value> {
+    match row {
+        serde_json::Value::Array(cells) => cells.clone(),
+        serde_json::Value::Object(cells) => {
+            let mut keys: Vec<(usize, &serde_json::Value)> = cells
+                .iter()
+                .filter_map(|(key, value)| Some((key.parse().ok()?, value)))
+                .collect();
+            keys.sort_by_key(|(index, _)| *index);
+            keys.into_iter().map(|(_, value)| value.clone()).collect()
+        }
+        _ => Vec::new(),
     }
 }
 

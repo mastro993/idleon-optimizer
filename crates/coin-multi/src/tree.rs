@@ -19,10 +19,13 @@ pub fn tree(evaluation: &Evaluation) -> FormulaNode {
     FormulaNode::new("Coin Multiplier", evaluation.total)
         .with_format(ValueFormat::Multiplier)
         .with_source(COMBINE)
-        .with_note(
+        .with_note(if evaluation.complete {
+            "The 23 groups the descriptor multiplies, each 1 + bonus / 100; every group resolves \
+             for this save."
+        } else {
             "The 23 groups the descriptor multiplies, each 1 + bonus / 100; a group this build \
-             cannot resolve is neutral, so the total is a lower bound.",
-        )
+             cannot resolve is neutral, so the total is a lower bound."
+        })
         .with_children(evaluation.groups.iter().map(group_node))
 }
 
@@ -55,7 +58,7 @@ fn recombined(sum: f64, divisor: f64) -> String {
 
 /// One additive term of a group.
 fn term_node(term: &Term) -> FormulaNode {
-    let node = FormulaNode::leaf(term.name, term.value, ValueFormat::Raw);
+    let node = FormulaNode::leaf(term.name.clone(), term.value, ValueFormat::Raw);
     match &term.note {
         Some(note) => node.with_note(note.clone()),
         None => node,

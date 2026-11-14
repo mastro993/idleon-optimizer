@@ -68,7 +68,7 @@ impl Group {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Term {
     /// The upstream node's name, e.g. `Vault: Recipe for Profit`.
-    pub name: &'static str,
+    pub name: String,
     pub value: f64,
     /// Upstream's annotation, e.g. `104 completed tasks`.
     pub note: Option<String>,
@@ -76,18 +76,18 @@ pub struct Term {
 
 impl Term {
     /// A term as upstream shows it, without an annotation.
-    pub(crate) fn new(name: &'static str, value: f64) -> Self {
+    pub(crate) fn new(name: impl Into<String>, value: f64) -> Self {
         Self {
-            name,
+            name: name.into(),
             value,
             note: None,
         }
     }
 
     /// An annotated term, e.g. a vault tier and the count it scales with.
-    pub(crate) fn annotated(name: &'static str, value: f64, note: impl Into<String>) -> Self {
+    pub(crate) fn annotated(name: impl Into<String>, value: f64, note: impl Into<String>) -> Self {
         Self {
-            name,
+            name: name.into(),
             value,
             note: Some(note.into()),
         }
@@ -266,6 +266,9 @@ pub struct Character {
     pub highest_damage: f64,
     /// The 23 groups, in upstream's order.
     pub groups: Vec<Group>,
+    /// The systems behind group 22, kept so [`evaluate`] can apply the
+    /// overkill tier the inputs carry.
+    pub(crate) other: Option<idleon_stats_engine::OtherSources>,
 }
 
 /// Every character's save-derived coin data from one import.
@@ -374,7 +377,12 @@ pub fn evaluate(snapshot: &Snapshot, inputs: &Inputs) -> Result<Evaluation, Stri
         ));
     }
 
-    let groups = character.groups.clone();
+    let mut groups = character.groups.clone();
+    if let Some(other) = &character.other
+        && let Some(slot) = groups.get_mut(22)
+    {
+        *slot = save::other_group(other, overkill.tier as f64);
+    }
     let mut total = 1.0;
     let mut excluded = Vec::new();
     for group in &groups {
@@ -423,6 +431,7 @@ mod tests {
             monster_hp: overkill::target_hp(target),
             highest_damage: 0.0,
             groups: (0..23).map(|index| group(index, Some(2.0))).collect(),
+            other: None,
         }
     }
 

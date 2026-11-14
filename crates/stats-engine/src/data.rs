@@ -45,6 +45,8 @@ pub struct Data {
     pub stamps: Vec<Stamp>,
     #[serde(rename = "farmRankPerLevel")]
     pub farm_rank_per_level: Vec<f64>,
+    #[serde(rename = "dungPassive")]
+    pub dung_passive: Vec<Option<Curve>>,
     #[serde(rename = "classParent")]
     pub class_parent: BTreeMap<String, usize>,
 }
@@ -80,6 +82,12 @@ pub struct Bubble {
     pub x1: f64,
     pub x2: f64,
     pub formula: String,
+    /// `BUBBLE_KEYS[key].slab`: the bubble scales by discovered items / 100.
+    #[serde(default)]
+    pub slab: bool,
+    /// `BUBBLE_KEYS[key].tome`: the bubble scales by Tome points.
+    #[serde(default)]
+    pub tome: bool,
 }
 
 /// The bubble a cauldron's slab and tome bubbles multiply by.
@@ -119,6 +127,7 @@ pub struct CardBonus {
 /// One guild bonus's curve.
 #[derive(Clone, Debug, Deserialize)]
 pub struct Curve {
+    #[serde(default)]
     pub name: String,
     pub x1: f64,
     pub x2: f64,
@@ -261,6 +270,11 @@ impl Data {
     /// `ninjaInfo(36)[rank]`: the Land Rank bonus per level.
     pub fn farm_rank_per_level(&self, rank: usize) -> f64 {
         self.farm_rank_per_level.get(rank).copied().unwrap_or(0.0)
+    }
+
+    /// `DungPassiveStats2[index]`: a Flurbo shop passive's curve.
+    pub fn dung_passive(&self, index: usize) -> Option<&Curve> {
+        self.dung_passive.get(index).and_then(Option::as_ref)
     }
 
     /// `ReturnClasses`' parent table.

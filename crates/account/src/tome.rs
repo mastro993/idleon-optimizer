@@ -13,7 +13,7 @@ use serde_json::Value;
 
 impl Decoder<'_> {
     /// `computeTomeScore`, phase 1.
-    pub(crate) fn tome_points(&mut self) -> Option<f64> {
+    pub fn tome_points(&mut self) -> Option<f64> {
         if fields::field(self.save, "Cards0").is_none()
             && fields::field(self.save, "Cards1").is_none()
             && fields::field(self.save, "StampLv").is_none()
@@ -358,22 +358,22 @@ impl Decoder<'_> {
         max_per_skill.values().sum()
     }
 
-    fn quest_total(&self) -> f64 {
-        let mut unique: std::collections::BTreeSet<String> = Default::default();
-        for character in 0..self.characters.len() {
-            let Some(row) = fields::char_field(self.save, "QuestComplete", character) else {
-                continue;
-            };
-            let Some(fields) = row.as_object() else {
-                continue;
-            };
-            for (quest, status) in fields {
-                if idleon_save::json::number(status) == Some(1.0) {
-                    unique.insert(quest.clone());
-                }
+    /// `saveData.totalQuestsComplete`: the quests in `SceneNPCquestOrder` that
+    /// at least one character has completed.
+    pub fn quest_total(&self) -> f64 {
+        let mut total = 0.0;
+        for quest in &self.data.quest_order {
+            let done = (0..self.characters.len()).any(|character| {
+                fields::char_field(self.save, "QuestComplete", character)
+                    .and_then(|row| row.get(quest).cloned())
+                    .and_then(|status| idleon_save::json::number(&status))
+                    == Some(1.0)
+            });
+            if done {
+                total += 1.0;
             }
         }
-        unique.len() as f64
+        total
     }
 
     pub(crate) fn cards1_prefix(&self, prefix: &str) -> f64 {

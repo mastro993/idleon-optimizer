@@ -125,6 +125,10 @@ pub struct AccountData {
     pub hole: HoleData,
     /// `TalentDescriptions[id][1][0..2]`: each talent's first-tab curve.
     pub talents: BTreeMap<String, TalentParam>,
+    #[serde(rename = "talentTab2")]
+    pub talent_tab2: BTreeMap<String, TalentParam>,
+    #[serde(rename = "questOrder")]
+    pub quest_order: Vec<String>,
     /// `ClassFamilyBonuses` rows with the `ClassAccountBonus` level offset.
     #[serde(rename = "familyBonuses")]
     pub family_bonuses: BTreeMap<String, FamilyBonus>,
@@ -289,6 +293,11 @@ impl AccountData {
     /// `talentParams(index)`: the talent's curve, when the game data has one.
     pub fn talent(&self, index: usize) -> Option<&TalentParam> {
         self.talents.get(&index.to_string())
+    }
+
+    /// `talentParams(index, 2)`: a talent's second-tab curve.
+    pub fn talent_tab2(&self, index: usize) -> Option<&TalentParam> {
+        self.talent_tab2.get(&index.to_string())
     }
 
     /// `familyBonusParams(index)`.

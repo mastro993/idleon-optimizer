@@ -75,6 +75,28 @@ pub fn bonus_levels(
     all_presets: bool,
     skip_talent_144: bool,
 ) -> f64 {
+    bonus_levels_with_family68(
+        decoder,
+        talent,
+        slot,
+        context,
+        all_presets,
+        skip_talent_144,
+        None,
+    )
+}
+
+/// [`bonus_levels`] with the family-bonus-68 term read from a partially built
+/// map, as the game does while it iterates the family bonuses themselves.
+pub fn bonus_levels_with_family68(
+    decoder: &Decoder<'_>,
+    talent: usize,
+    slot: usize,
+    context: usize,
+    all_presets: bool,
+    skip_talent_144: bool,
+    family68: Option<f64>,
+) -> f64 {
     if excluded(talent) {
         return 0.0;
     }
@@ -90,7 +112,9 @@ pub fn bonus_levels(
     if decoder.achievement(291) > 0.0 {
         ordinary += 1.0;
     }
-    ordinary += family_bonus_68(decoder, context, slot, skip_talent_144).floor();
+    ordinary += family68
+        .unwrap_or_else(|| family_bonus_68(decoder, context, slot, skip_talent_144))
+        .floor();
     ordinary += decoder.companion(1);
     ordinary += crate::divinity::minor_for(decoder, context, 2).ceil();
     ordinary += number(decoder, "Dream", 12);

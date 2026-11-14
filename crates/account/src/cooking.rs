@@ -101,7 +101,7 @@ impl Decoder<'_> {
 
     /// `computeWinBonus` when the caller passes no account options: the endless
     /// wins are left out, as `computeSummWinBonus(save, null)` reads it.
-    pub(crate) fn win_bonus_without_options(&self, index: usize) -> f64 {
+    pub fn win_bonus_without_options(&self, index: usize) -> f64 {
         self.win_bonus_from(index, self.summon_wins(0))
     }
 
