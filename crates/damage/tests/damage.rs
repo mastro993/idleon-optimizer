@@ -7,8 +7,8 @@
 //! dungeon reason. Every expected number here is upstream's output.
 //!
 //! The shared stat engine resolves the three layers, so every case below has
-//! real minimum and maximum damage; the terms the port still leaves out are
-//! named in the summary's partial reason rather than presented as complete.
+//! the calculator's own minimum and maximum damage, term for term; the only
+//! partial note left is the descriptor's missing-metadata flag.
 
 use idleon_damage::{self as damage, DUNGEON, Layer, LayerId, Layers, Mastery, Metadata, Summary};
 use idleon_import::{Imported, import};
@@ -227,39 +227,39 @@ fn the_mastery_ratio_is_the_formula_tree() {
 }
 
 #[test]
-fn the_summary_resolves_the_upstream_layers_and_names_its_gaps() {
-    let save = fixture();
+fn the_summary_matches_the_upstream_calculator() {
+    let imported = imported();
     let oracle = oracle();
     for expected in cases(&oracle) {
         let character = expected["character"].as_u64().expect("an index") as usize;
         let map = expected["map"].as_u64().expect("a map") as usize;
-        let summary = evaluate(&save, character, map);
+        let summary = damage::evaluate(
+            &imported.save,
+            &imported.simulation,
+            damage::Context { character, map },
+        );
         // The engine answers with real layers for every character.
         assert!(
             summary.available,
             "character {character}: the engine did not resolve"
         );
-        let layers = summary
-            .layers()
-            .unwrap_or_else(|| panic!("character {character}: no layers"));
-        assert!(layers.max().is_finite() && layers.max() > 0.0);
-        assert!(summary.max.is_finite() && summary.max > 0.0);
-        assert!(summary.min >= 0.0 && summary.min <= summary.max);
-        assert!(
-            (0.0..=0.8).contains(&summary.mastery),
-            "character {character}: mastery {}",
-            summary.mastery
-        );
-        // The terms this port leaves out are named, so a value is never
-        // presented as complete.
-        assert!(
-            summary.partial(),
-            "character {character}: a partial port reported a complete summary"
-        );
-        let reason = summary.partial_reason();
-        assert!(
-            reason.contains("not modelled") || reason.contains("companion ownership"),
-            "character {character}: {reason}"
+        for (name, got, key) in [("max", summary.max, "max"), ("min", summary.min, "min")] {
+            let want = expected[key].as_f64().expect("a value");
+            assert!(
+                close(got, want),
+                "character {character} {name}: {got} vs upstream {want}"
+            );
+        }
+        assert!(close(
+            summary.mastery,
+            expected["mastery"]["value"].as_f64().unwrap()
+        ));
+        // Every provider is ported, so the only partial note is the
+        // descriptor's own missing-metadata flag.
+        assert_eq!(
+            summary.partial_reason(),
+            oracle["metadata"]["missing"].as_str().unwrap(),
+            "character {character}"
         );
     }
 }
@@ -390,14 +390,10 @@ fn the_stats_registry_still_marks_damage_unported() {
 }
 
 /// The port's own layers against the descriptor's output, not the fixture's
-/// layers fed back in. The shared pipeline now resolves the statistics, the
-/// golden-food multiplier, the weapon-power chain and every DDL1/DDL2 group, so
-/// the port tracks upstream within a tenth of a percent for all eleven
-/// characters; the residual is the construction build-speed logarithm behind
-/// artifact 8 and the last few equipment rows, both still named rather than
-/// guessed.
+/// layers fed back in: every layer, and every `_debug` term the descriptor
+/// records, matches the calculator for all eleven characters.
 #[test]
-fn the_engine_layers_track_the_upstream_calculator() {
+fn the_engine_layers_match_the_upstream_calculator() {
     let imported = imported();
     let save = imported.save;
     let oracle = oracle();
@@ -429,11 +425,37 @@ fn the_engine_layers_track_the_upstream_calculator() {
                 expected["mastery"]["value"].as_f64().unwrap(),
             ),
         ] {
-            let error = (got / want - 1.0).abs();
             assert!(
-                error < 1e-3,
-                "character {character} {name}: {got} vs upstream {want} ({error:e})"
+                close(got, want),
+                "character {character} {name}: {got} vs upstream {want}"
             );
+        }
+        assert!(
+            layers.is_complete(),
+            "character {character}: {:?}",
+            layers.missing
+        );
+        for layer in ["base", "percent", "multiplier"] {
+            let terms = expected["layers"][layer]["debug"]
+                .as_object()
+                .expect("the fixture records the layer's terms");
+            for (term, want) in terms {
+                let want = want.as_f64().expect("a term value");
+                let got = layers.debug.get(&format!("{layer}.{term}")).copied();
+                // A term the port does not record has to be one upstream
+                // leaves at zero.
+                let got = got.unwrap_or_else(|| {
+                    assert_eq!(
+                        want, 0.0,
+                        "character {character}: {layer}.{term} is not ported"
+                    );
+                    0.0
+                });
+                assert!(
+                    close(got, want),
+                    "character {character} {layer}.{term}: {got} vs upstream {want}"
+                );
+            }
         }
     }
 }
@@ -472,9 +494,7 @@ fn every_engine_layer_is_present_and_recombines_into_the_summary() {
                 layer.value
             );
             assert!(
-                close(layer.pre_softcap, upstream["preSoftcap"].as_f64().unwrap())
-                    || (layer.pre_softcap / upstream["preSoftcap"].as_f64().unwrap() - 1.0).abs()
-                        < 2e-3,
+                close(layer.pre_softcap, upstream["preSoftcap"].as_f64().unwrap()),
                 "character {character} {}: pre-softcap {} vs {}",
                 id.id(),
                 layer.pre_softcap,

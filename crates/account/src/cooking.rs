@@ -96,16 +96,24 @@ impl Decoder<'_> {
 
     /// `computeWinBonus`.
     pub fn win_bonus(&self, index: usize) -> f64 {
-        self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize))
+        self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize), true)
     }
 
     /// `computeWinBonus` when the caller passes no account options: the endless
     /// wins are left out, as `computeSummWinBonus(save, null)` reads it.
     pub fn win_bonus_without_options(&self, index: usize) -> f64 {
-        self.win_bonus_from(index, self.summon_wins(0))
+        self.win_bonus_from(index, self.summon_wins(0), true)
     }
 
-    fn win_bonus_from(&self, index: usize, wins: Vec<f64>) -> f64 {
+    /// `computeWinBonus(index, { charIdx, noArt32: true })`: artifact 32 is
+    /// left out of the winner sum. An options object without `accountOptions`
+    /// still reads the endless wins (only a `null` one drops them); the
+    /// build-speed sum behind artifact 8 reads it this way.
+    pub fn win_bonus_without_artifact32(&self, index: usize) -> f64 {
+        self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize), false)
+    }
+
+    fn win_bonus_from(&self, index: usize, wins: Vec<f64>, artifact32: bool) -> f64 {
         let raw = wins.get(index).copied().unwrap_or(0.0);
         if raw <= 0.0 {
             return 0.0;
@@ -120,7 +128,7 @@ impl Decoder<'_> {
         };
         let gems = self.row_at("GemItemsPurchased", 11);
         let rarity = self.nested("Sailing", &[3, 32]);
-        let artifact = if rarity > 0.0 {
+        let artifact = if artifact32 && rarity > 0.0 {
             self.data.artifacts.get(32).copied().unwrap_or(0.0) * rarity
         } else {
             0.0

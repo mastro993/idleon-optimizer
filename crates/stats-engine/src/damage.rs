@@ -421,8 +421,7 @@ fn talent_chain(ctx: &mut Ctx<'_, '_>, speed: f64, debug: &mut BTreeMap<String, 
     let gtn2_110 = ctx.talent_tab(110, 2);
     let mut monsters_over = 0.0f64;
     if gtn1_110 > 0.0 {
-        let holder = death_bringer(ctx);
-        let kla = idleon_save::fields::char_field(ctx.save(), "KLA", holder);
+        let kla = idleon_save::fields::char_field(ctx.save(), "KLA", ctx.character);
         for map in 0..idleon_stats_data::map_count() {
             // `TalentCalc(110)` skips the filler rows as well, so it counts a
             // few fewer maps than `isFightingMap` does.
@@ -456,8 +455,7 @@ fn talent_chain(ctx: &mut Ctx<'_, '_>, speed: f64, debug: &mut BTreeMap<String, 
         .map(|row| row.iter().filter(|cell| cell.unwrap_or(0.0) > 3.0).count() as f64)
         .unwrap_or(0.0);
     let tc485 = ctx.talent(485) * vials_above;
-    let card_count = fields::len_of(ctx.save(), "Cards1") as f64;
-    let tc305 = ctx.talent(305) * card_count / 50.0;
+    let tc305 = ctx.talent(305) * slab_entries(ctx) / 50.0;
     let stamp_count = fields::field(ctx.save(), "StampLv")
         .map(|value| {
             let mut count = 0.0;
@@ -570,7 +568,7 @@ fn multiplier_layer(
     // Friends, star signs and Divinity.
     let div25 = fields_number(ctx, "Divinity", &[25]);
     let class_level = ctx.class_level();
-    let group1 = ctx.buff(108)
+    let group1 = ctx.buff(108, 2)
         + ctx.decoder.friend(0)
         + ctx.star_sign_bonus("PctDmg")
         + (div25 - 10.0).max(0.0) * ctx.talent_best(507)
@@ -681,7 +679,7 @@ fn multiplier_layer(
 
     // Penalties.
     let penalty = ((1.0 - ctx.talent(24) / 100.0)
-        * (1.0 - ctx.buff(124) / 100.0)
+        * (1.0 - ctx.buff(124, 2) / 100.0)
         * (1.0
             - (idleon_account::prayer::prayer(ctx.save(), ctx.character, 6, true)
                 + idleon_account::prayer::prayer(ctx.save(), ctx.character, 13, true))
@@ -833,8 +831,8 @@ fn multiplier_layer(
         ("comp168", comp168),
         ("comp170", comp170),
         ("cglunkoDmg", ctx.cglunko_dmg()),
-        ("buff108", ctx.buff(108)),
-        ("buff124", ctx.buff(124)),
+        ("buff108", ctx.buff(108, 2)),
+        ("buff124", ctx.buff(124, 2)),
         ("fountainDmg", fountain),
         ("stickerDmg", sticker),
         ("ola232", ola232),
@@ -914,18 +912,38 @@ fn fields_number(ctx: &Ctx<'_, '_>, key: &str, path: &[usize]) -> f64 {
 
 use idleon_save::fields;
 
-/// The character whose KLA row the ten Slabbo rows read: the Death Bringer.
-fn death_bringer(ctx: &Ctx<'_, '_>) -> usize {
-    let mut holder = 0;
-    for character in 0..ctx.characters() {
-        let class = fields::char_field(ctx.save(), "CharacterClass", character)
-            .and_then(|value| idleon_save::json::number(&value))
-            .unwrap_or(0.0) as usize;
-        if idleon_account::class_tree(class).is_some_and(|tree| tree.get(3) == Some(&10u32)) {
-            holder = character;
-        }
+/// `TalentCalc(305)`'s slab count: `Cards[1]` plus the entries the game ensures
+/// at load, less the `Gem…` and `Cards…` rows.
+fn slab_entries(ctx: &Ctx<'_, '_>) -> f64 {
+    let slab = fields::string_row(ctx.save(), "Cards1", &[]).unwrap_or_default();
+    let has = |name: &str| slab.iter().any(|entry| entry == name);
+    let mut ensured: Vec<String> = [
+        "MaxCapBagT1",
+        "MaxCapBag6",
+        "MaxCapBagT2",
+        "MaxCapBagM1",
+        "EquipmentTools1",
+        "OilBarrel4",
+    ]
+    .map(String::from)
+    .to_vec();
+    if has("Trophy6") {
+        ensured.extend(
+            (1..16)
+                .filter(|npc| *npc != 8)
+                .map(|npc| format!("NPCtoken{npc}")),
+        );
+        ensured.extend(
+            ["G1", "G2", "G3", "D1", "D2", "D3", "I1", "I2", "I3"]
+                .map(|badge| format!("Badge{badge}")),
+        );
     }
-    holder
+    let missing = ensured.iter().filter(|name| !has(name)).count();
+    let excluded = slab
+        .iter()
+        .filter(|entry| entry.starts_with("Gem") || entry.starts_with("Cards"))
+        .count();
+    (slab.len() + missing - excluded) as f64
 }
 
 fn weapon_power(ctx: &mut Ctx<'_, '_>) -> f64 {
