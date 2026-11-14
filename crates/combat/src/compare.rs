@@ -42,6 +42,10 @@ pub struct Plan {
     pub player: Player,
     pub duration_ms: u64,
     pub rows: Vec<RowSpec>,
+    /// The saved furnace and account progress every row advances.
+    pub progress: crate::progress::Config,
+    /// How a kill credits the Coral Kid, the Scurge and Omega Arcade.
+    pub grants: crate::progress::Grants,
 }
 
 impl Plan {
@@ -272,7 +276,14 @@ pub fn run(
         let outcome = match outcomes.get(&spec.map) {
             Some(outcome) => outcome.clone(),
             None => {
-                let options = encounter::Options::basic(spec.map, plan.player, plan.duration_ms);
+                let mut options =
+                    encounter::Options::basic(spec.map, plan.player, plan.duration_ms);
+                options.progress = plan.progress.clone();
+                options.grants = plan.grants.clone();
+                options.grants.map = spec.map;
+                options.grants.scene = encounter::map(spec.map)
+                    .map(|map| map.scene.clone())
+                    .unwrap_or_default();
                 let offset = index as f32 / total as f32;
                 let span = 1.0 / total as f32;
                 let result = encounter::run(options, &mut |inner| {
@@ -354,6 +365,15 @@ pub fn document(comparison: &Comparison) -> Value {
                     "simulatedMs": outcome.simulated_ms,
                     "steps": outcome.steps,
                     "frames": outcome.frames,
+                    "progress": {
+                        "forgeSeconds": outcome.progress.forge_seconds,
+                        "petSeconds": outcome.progress.pet_seconds,
+                        "alchemySeconds": outcome.progress.alchemy_seconds,
+                        "scurgeExp": outcome.progress.scurge_exp,
+                        "coralKills": outcome.progress.coral_kills,
+                        "omegaBalls": outcome.progress.omega_balls,
+                        "bars": outcome.progress.bars_named(),
+                    },
                 },
                 "totals": {
                     "weaponPower": totals.weapon_power,
@@ -425,6 +445,7 @@ mod tests {
             seed: 1,
             timeline: Vec::new(),
             drops: crate::drops::Summary::default(),
+            progress: crate::progress::Summary::default(),
         };
         outcome.damage = kills as f64;
         Row {
@@ -477,6 +498,8 @@ mod tests {
             plan: Plan {
                 player: Player::Idle,
                 duration_ms: 10_000,
+                progress: crate::progress::Config::default(),
+                grants: crate::progress::Grants::default(),
                 rows: vec![first.spec.clone(), second.spec.clone()],
             },
             rows: vec![first, second],

@@ -12,11 +12,13 @@
 
 pub mod compare;
 pub mod data;
+pub mod den;
 pub mod drops;
 pub mod encounter;
 pub mod loadout;
 pub mod overrides;
 pub mod preset;
+pub mod progress;
 
 pub use data::{CombatData, ItemDef, SLOT_COUNT, item, item_name, options, slot_name};
 pub use loadout::{Character, Issue, IssueKind, IssueTarget, Loadout, Slot, Talent, Totals};

@@ -315,7 +315,7 @@ impl Decoder<'_> {
     }
 
     /// `menagerieUnlockOwned` from `js/stats/systems/w7/menagerie.js`.
-    pub(crate) fn menagerie_unlock(&self, index: usize) -> f64 {
+    pub fn menagerie_unlock(&self, index: usize) -> f64 {
         let row = self.nested_row("Menagerie", &[2]);
         if row.is_empty() {
             return 0.0;
@@ -333,7 +333,7 @@ impl Decoder<'_> {
     }
 
     /// `menagerieBoostQTY`.
-    pub(crate) fn menagerie_boost_qty(&self, index: usize) -> f64 {
+    pub fn menagerie_boost_qty(&self, index: usize) -> f64 {
         if self.nested_row("Menagerie", &[3]).is_empty() {
             return 0.0;
         }

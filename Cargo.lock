@@ -3787,6 +3787,7 @@ name = "idleon-stats"
 version = "0.1.0"
 dependencies = [
  "idleon-account",
+ "idleon-combat",
  "idleon-common",
  "idleon-import",
  "idleon-research",

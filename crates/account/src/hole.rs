@@ -180,7 +180,7 @@ impl Decoder<'_> {
     }
 
     /// `cosmoBonus(tier, index)`: the bonus one cosmo upgrade level grants.
-    fn cosmo_bonus(&self, tier: usize, index: usize) -> f64 {
+    pub fn cosmo_bonus(&self, tier: usize, index: usize) -> f64 {
         let level = self.nested("Holes", &[4 + tier, index]);
         (idleon_fountain::cosmo_base(tier, index) * level).floor()
     }

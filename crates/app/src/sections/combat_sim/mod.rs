@@ -55,16 +55,22 @@ pub(crate) enum ResultsTab {
     Kills,
     Cards,
     Timeline,
+    Den,
+    Progress,
+    Smelting,
 }
 
 impl ResultsTab {
-    pub(crate) const ALL: [ResultsTab; 6] = [
+    pub(crate) const ALL: [ResultsTab; 9] = [
         ResultsTab::Summary,
         ResultsTab::Killroy,
         ResultsTab::Obols,
         ResultsTab::Kills,
         ResultsTab::Cards,
         ResultsTab::Timeline,
+        ResultsTab::Den,
+        ResultsTab::Progress,
+        ResultsTab::Smelting,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -75,6 +81,9 @@ impl ResultsTab {
             ResultsTab::Kills => "result-kills",
             ResultsTab::Cards => "result-cards",
             ResultsTab::Timeline => "result-timeline",
+            ResultsTab::Den => "result-den",
+            ResultsTab::Progress => "result-progress",
+            ResultsTab::Smelting => "result-smelting",
         }
     }
 
@@ -86,6 +95,9 @@ impl ResultsTab {
             ResultsTab::Kills => "Kills",
             ResultsTab::Cards => "Cards",
             ResultsTab::Timeline => "Timeline",
+            ResultsTab::Den => "The Den",
+            ResultsTab::Progress => "Progress",
+            ResultsTab::Smelting => "Smelting",
         }
     }
 
@@ -182,6 +194,12 @@ pub(crate) struct State {
     pub(crate) compare_loadouts: BTreeMap<usize, Vec<String>>,
     /// The maps the comparison runs, ascending.
     pub(crate) compare_maps: Vec<usize>,
+    /// The saved furnace and the account progress a run advances.
+    pub(crate) progress: idleon_combat::progress::Config,
+    /// The config terms this build cannot decode, named for the panel.
+    pub(crate) progress_warnings: Vec<String>,
+    /// The Den attempt's inputs, when the save carries its `Holes` rows.
+    pub(crate) den: Option<idleon_combat::den::Config>,
 }
 
 impl State {
@@ -217,6 +235,9 @@ impl State {
                     .first()
                     .map_or(1, |map| map.index),
             ],
+            progress: idleon_combat::progress::Config::default(),
+            progress_warnings: Vec::new(),
+            den: None,
         }
     }
 
@@ -227,6 +248,10 @@ impl State {
     pub(crate) fn load(&mut self, save: &Save, character: usize) {
         self.character = character;
         self.loadout = Loadout::from_save(save, character);
+        let (progress, warnings) = idleon_stats::combat::progress(save, character);
+        self.progress = progress;
+        self.progress_warnings = warnings;
+        self.den = idleon_stats::combat::den(save, character);
         if self.selected >= self.loadout.slots.len() {
             self.selected = 0;
         }

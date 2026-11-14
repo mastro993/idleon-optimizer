@@ -452,6 +452,24 @@ const combatSave = () => {
   const other = Array(16).fill('');
   other[0] = 'EquipmentHats15';
   other[1] = 'EquipmentPunching1';
+  // CS-06: a furnace with one ore row and the Den's saved Hole rows, so the
+  // Smelting and Den tabs have real inputs to report.
+  const forgeOrder = Array(48).fill('Blank');
+  forgeOrder[0] = 'Copper';
+  forgeOrder[1] = 'OilBarrel1';
+  forgeOrder[2] = 'CopperBar';
+  const forgeQty = Array(48).fill(0);
+  forgeQty[0] = 4000;
+  forgeQty[1] = 800;
+  const holes = Array.from({ length: 33 }, () => []);
+  holes[0] = [2];
+  holes[7] = [0, 0, 0];
+  holes[11] = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  holes[12] = [1, 0, 0, 0, 0, 0, 0, 0];
+  holes[13] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
+  holes[26] = [0, 0, 5];
+  const lab = Array.from({ length: 17 }, () => []);
+  lab[16] = [1, 0, 0, 0];
   return JSON.stringify({
     Research: '[]',
     charNames: ['Ana', 'Bo'],
@@ -467,6 +485,12 @@ const combatSave = () => {
     EquipOrder_1: JSON.stringify([other, Array(7).fill(''), []]),
     SL_1: JSON.stringify({ 0: 3 }),
     SM_1: JSON.stringify({ 0: 10 }),
+    ForgeLV: JSON.stringify([16, 50, 90, 60, 30]),
+    ForgeItemOrder: JSON.stringify(forgeOrder),
+    ForgeItemQty: JSON.stringify(forgeQty),
+    ForgeIntProg: JSON.stringify(Array(16).fill(0)),
+    Lab: JSON.stringify(lab),
+    Holes: JSON.stringify(holes),
   });
 };
 
@@ -2301,6 +2325,34 @@ const INTERACTIONS = {
       lane,
       (nodes) => has(nodes, 'combat-timeline-panel'),
       'combat-sim: the timeline tab charts the run',
+    );
+    // CS-06: The Den projection, the combat progress and the smelting output
+    // all read the one stored run.
+    await lane.call('click_element', { id: 'result-den' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-den-panel') &&
+        /Den score [\d.]+/.test(labelOf(nodes, 'combat-den-score') ?? '') &&
+        has(nodes, 'combat-den-fear'),
+      'combat-sim: the Den tab projects the attempt at the run\'s kill rate',
+    );
+    await lane.call('click_element', { id: 'result-progress' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-progress-panel') && has(nodes, 'combat-progress-forge-time'),
+      'combat-sim: the progress tab reports the forge and Scurge credit',
+    );
+    await lane.call('click_element', { id: 'result-smelting' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-smelting-panel') &&
+        (has(nodes, 'combat-smelting-CopperBar') ||
+          has(nodes, 'combat-smelting-empty') ||
+          has(nodes, 'combat-smelting-unavailable')),
+      'combat-sim: the smelting tab lists the bars or says why there are none',
     );
     await lane.call('click_element', { id: 'result-summary' });
     await waitForNode(lane, 'combat-summary-panel', 'combat-sim: the summary tab reopens');

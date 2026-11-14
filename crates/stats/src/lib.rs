@@ -10,6 +10,7 @@
 
 mod access;
 pub mod breakdowns;
+pub mod combat;
 pub mod context;
 pub mod edits;
 pub mod explorer;

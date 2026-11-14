@@ -12,7 +12,7 @@
 //! `js/stats/systems/common/carry-capacity.js`), [`research`] the two research
 //! descriptors the simulator already computes.
 
-mod capacity;
+pub(crate) mod capacity;
 mod research;
 
 use idleon_common::formula::FormulaNode;

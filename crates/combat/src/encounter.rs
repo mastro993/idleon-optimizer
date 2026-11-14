@@ -13,7 +13,9 @@
 //!
 //! Since CS-05 the run also rolls the kill's card and obol drops through
 //! [`drops`], the extracted half of the reward tables, and samples its kills on
-//! the upstream 10-second timeline.
+//! the upstream 10-second timeline. Since CS-06 it advances the saved furnace on
+//! its 250 ms clock ([`crate::progress`]), banks the kills' Scurge, Coral and
+//! Omega credits and reports the furnace and the bars it produced.
 //!
 //! Not modelled, and listed by [`unsupported`]:
 //!
@@ -36,6 +38,7 @@
 //! monster tuning.
 
 use crate::drops::{self, Inputs, Snapshot};
+use crate::progress::{self, Config as ProgressConfig, Grants, Summary as ProgressSummary};
 use idleon_common::{Control, Progress, Rng};
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -151,6 +154,10 @@ pub struct Options {
     pub drops: Snapshot,
     /// The stat multipliers the drop rolls read.
     pub drop_inputs: Inputs,
+    /// The saved furnace and the account progress a run advances.
+    pub progress: ProgressConfig,
+    /// How a kill credits the Coral Kid, the Scurge and Omega Arcade.
+    pub grants: Grants,
 }
 
 impl Options {
@@ -164,6 +171,8 @@ impl Options {
             seed: 1,
             drops: Snapshot::default(),
             drop_inputs: Inputs::default(),
+            progress: ProgressConfig::default(),
+            grants: Grants::default(),
         }
     }
 
@@ -216,6 +225,8 @@ pub struct Outcome {
     pub timeline: Vec<Sample>,
     /// The cards and obol fragments the kills dropped.
     pub drops: drops::Summary,
+    /// The furnace and the combat-driven progress the run banked.
+    pub progress: ProgressSummary,
 }
 
 impl Outcome {
@@ -258,8 +269,11 @@ pub fn unsupported() -> &'static [&'static str] {
         "Crystals, giants and Plunder spawns, which the reward engine creates on a kill.",
         "Account monster tuning (W7 tasks, achievements, Death Note): the run uses the base \
          monster HP and respawn time.",
-        "Killroy, The Den, the Rift, caverns, Clam Work and dungeons, which need saved state or \
-         runtime-only enemy data.",
+        "The per-kill forge, pet and alchemy time (talents 280, 362 and 490) and the shiny-pet \
+         speed's star-sign term, which need the talent and star-sign formulas: the furnace still \
+         advances with the run's own clock.",
+        "Killroy, the Rift, caverns other than the Den, Clam Work and dungeons, which need saved \
+         state or runtime-only enemy data. The Den runs as its own projection on the results tab.",
         "Replays and the combat assets, which arrive with CS-07.",
     ]
 }
@@ -303,6 +317,8 @@ struct Timer {
 enum TimerKind {
     /// The stand-in's kill tick (`scriptedPlayer`).
     Kill,
+    /// `_forgeTick`: the saved furnace advances every 250 ms.
+    Forge,
     /// `_event_1second`: every live respawn counter drops by one.
     Respawn,
 }
@@ -375,6 +391,8 @@ struct Sim {
     idle_ticks: u64,
     rng: Rng,
     drops: drops::State,
+    progress: progress::State,
+    grants: Grants,
     timeline: Vec<Sample>,
 }
 
@@ -392,6 +410,12 @@ impl Sim {
                 kind: TimerKind::Kill,
             });
         }
+        // `initCombatProgress` registers the furnace before the scene starts.
+        timers.push(Timer {
+            remaining: 250,
+            interval: 250,
+            kind: TimerKind::Forge,
+        });
         timers.push(Timer {
             remaining: 1000,
             interval: 1000,
@@ -411,6 +435,8 @@ impl Sim {
             idle_ticks: 0,
             rng: Rng::new(options.seed),
             drops: drops::State::new(options.drops.clone(), options.drop_inputs),
+            progress: progress::State::new(options.progress.clone()),
+            grants: options.grants.clone(),
             timeline: Vec::new(),
         }
     }
@@ -420,6 +446,8 @@ impl Sim {
     fn step(&mut self) {
         self.begin_frame();
         self.fire_timers();
+        // `initCombatProgress`'s scene updater spends banked pet time.
+        self.progress.pet_batch();
         self.time_ms += STEP_MS;
         self.steps += 1;
         if self.time_ms.is_multiple_of(TIMELINE_MS) {
@@ -463,12 +491,14 @@ impl Sim {
     /// step, fire at or below zero and re-arm a repeating task.
     fn fire_timers(&mut self) {
         let mut kill_tick = false;
+        let mut forge_tick = false;
         let mut respawn_tick = false;
         for timer in &mut self.timers {
             timer.remaining -= STEP_MS as i64;
             if timer.remaining <= 0 {
                 match timer.kind {
                     TimerKind::Kill => kill_tick = true,
+                    TimerKind::Forge => forge_tick = true,
                     TimerKind::Respawn => respawn_tick = true,
                 }
                 timer.remaining += timer.interval;
@@ -476,6 +506,9 @@ impl Sim {
         }
         if kill_tick {
             self.stand_in_kill();
+        }
+        if forge_tick {
+            self.progress.tick(&mut self.rng);
         }
         if respawn_tick {
             for mob in &mut self.mobs {
@@ -539,9 +572,11 @@ impl Sim {
         self.kills += 1;
         self.damage += mob.hit;
         *self.kills_by_type.entry(kind.clone()).or_insert(0) += 1;
-        // The reward gate's drop branch runs inside the kill handler; only the
-        // card and obol rows are modelled.
+        // The reward gate's `monsterKill` and drop branch run inside the kill
+        // handler; the progress credits and the card and obol rows are modelled.
         if drops::rolls(&kind) {
+            let grants = self.grants.clone();
+            self.progress.kill(&mut self.rng, &grants, &kind);
             self.drops.kill(&mut self.rng, &kind);
         }
     }
@@ -572,6 +607,7 @@ impl Sim {
             seed: options.seed,
             timeline: self.timeline,
             drops: self.drops.summary(),
+            progress: self.progress.summary(),
         }
     }
 }
