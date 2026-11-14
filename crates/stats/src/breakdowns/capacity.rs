@@ -473,7 +473,7 @@ fn legend_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
 }
 
 /// `computeShinyBonusS(cat)`: the Breeding shiny levels that raise a category.
-fn shiny_bonus(save: &Save, category: u64) -> f64 {
+pub(crate) fn shiny_bonus(save: &Save, category: u64) -> f64 {
     let table = data::capacity();
     let unlock = save
         .get("Menagerie")
@@ -515,7 +515,7 @@ fn shiny_bonus(save: &Save, category: u64) -> f64 {
 }
 
 /// `shinyPetLevel`: the level a shiny EXP value reaches on the game's curve.
-fn shiny_pet_level(exp: f64, thresholds: usize) -> f64 {
+pub(crate) fn shiny_pet_level(exp: f64, thresholds: usize) -> f64 {
     let mut level = 1.0;
     for step in 0..thresholds {
         let e = step as f64;
@@ -524,6 +524,15 @@ fn shiny_pet_level(exp: f64, thresholds: usize) -> f64 {
         }
     }
     level
+}
+
+/// The number of shiny pets in each Breeding world, in `PET_STATS` order.
+pub(crate) fn shiny_pet_worlds() -> Vec<usize> {
+    data::capacity()
+        .pet_shiny_type
+        .iter()
+        .map(Vec::len)
+        .collect()
 }
 
 /// `rogBonusQTY(idx, uniqueSushi)`: the Ring of Glory bonus once its tier is met.
@@ -848,7 +857,7 @@ fn prayer(save: &Save, character: usize, index: usize, curse_column: bool) -> f6
 }
 
 /// `getBribeBonus(idx)`: the bribe's flat percentage when it is active.
-fn bribe_bonus(save: &Save, index: usize) -> f64 {
+pub(crate) fn bribe_bonus(save: &Save, index: usize) -> f64 {
     if row_number(save, "BribeStatus", index).unwrap_or(0.0) != 1.0 {
         return 0.0;
     }

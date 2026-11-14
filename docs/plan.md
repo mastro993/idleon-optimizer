@@ -399,13 +399,19 @@ The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the 
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
 tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
 
-The Combat Simulator's loadout editor is built (CS-01): the character picker, the 16 armor and 7 tool
-slots with their saved `EMm` upgrade deltas, the talent table from `SL_<n>`/`SM_<n>`, and named
-loadout presets in the project JSON. The item catalog is extracted from the upstream `ITEMS` table by
-`script/extract-combat-data.mjs`, and every edit recomputes the gear totals the header shows. Missing
-or invalid items are flagged: an unknown key, the wrong slot family, a level or class requirement the
-character misses, and a saved talent above its maximum. Mechanics overrides (CS-02), the encounter run
-and its results (CS-03 to CS-06) and replays (CS-07) stay on the roadmap.
+The Combat Simulator is built through CS-06. The loadout editor (CS-01) has the character picker, the
+16 armor and 7 tool slots with their saved `EMm` upgrade deltas, the talent table from
+`SL_<n>`/`SM_<n>` and named loadout presets in the project JSON; the item catalog is extracted from
+the upstream `ITEMS` table by `script/extract-combat-data.mjs`, every edit recomputes the gear totals,
+and unknown or invalid items are flagged. The mechanics overrides (CS-02) carry the upstream
+`COMBAT_TOGGLES` catalog. The encounter run (CS-03) replays the game's 10 ms tick and its
+spawn/respawn/kill handlers; the comparison (CS-04) runs it per setup with deltas and a JSON export;
+the results (CS-05) cover Killroy practice, obols, cards, kills by monster and the kills timeline.
+CS-06 adds combat-driven progress and smelting — the saved furnace advances on the run's own clock and
+is reported by bar, with the Scurge, Coral Kid and Omega credits and their notices — and The Den as an
+own projection of the cavern's hound waves at the run's kill rate. The two terms this build cannot
+decode (the shiny speed's star-sign term and the per-kill forge/pet/alchemy talent grants) are named
+as warnings instead of guessed. Replays (CS-07) stay on the roadmap.
 Details: [`docs/sections/combat-sim.md`](sections/combat-sim.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or

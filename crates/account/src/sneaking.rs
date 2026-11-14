@@ -269,7 +269,7 @@ impl Decoder<'_> {
     }
 
     /// `computeLampBonus(t, 1)`.
-    fn lamp(&self, row: usize, column: usize) -> f64 {
+    pub fn lamp(&self, row: usize, column: usize) -> f64 {
         const GRID: [[f64; 3]; 5] = [
             [25.0, 10.0, 8.0],
             [15.0, 40.0, 10.0],
@@ -438,7 +438,7 @@ impl Decoder<'_> {
     }
 
     /// `computeStampBonusOfTypeX(type)`.
-    fn stamp(&mut self, kind: &str) -> f64 {
+    pub fn stamp(&mut self, kind: &str) -> f64 {
         let Some(stamps) = data::data().account.stamp_types.get(kind) else {
             return 0.0;
         };
@@ -520,7 +520,7 @@ impl Decoder<'_> {
     }
 
     /// `computeCropSC(idx)`.
-    fn crop_scientist(&mut self, index: usize) -> f64 {
+    pub fn crop_scientist(&mut self, index: usize) -> f64 {
         const GATES: [usize; 10] = [27, 24, 25, 26, 23, 28, 29, 38, 40, 44];
         let gate = GATES.get(index).copied().unwrap_or(usize::MAX);
         if self.emporium(gate) == 0.0 {
@@ -620,7 +620,7 @@ impl Decoder<'_> {
     }
 
     /// `computeRiftSkillBonus(skillIdx, threshold)`'s rank ladder.
-    fn rift_skill_rank(&self, skill: usize) -> i32 {
+    pub fn rift_skill_rank(&self, skill: usize) -> i32 {
         if self.row_at("Rift", 0) < 15.0 {
             return 0;
         }

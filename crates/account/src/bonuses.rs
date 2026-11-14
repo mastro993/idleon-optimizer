@@ -200,7 +200,7 @@ impl Decoder<'_> {
     }
 
     /// `achieveStatus` from `js/stats/systems/common/achievement.js`.
-    pub(crate) fn achievement(&self, index: usize) -> f64 {
+    pub fn achievement(&self, index: usize) -> f64 {
         let completed = fields::field(self.save, "AchieveReg").and_then(|value| {
             idleon_save::json::index(&value, &[index]).and_then(idleon_save::json::number)
         }) == Some(-1.0);
@@ -479,7 +479,7 @@ impl Decoder<'_> {
     }
 
     /// `computeCardLv` from `js/stats/systems/common/cards.js`.
-    pub(crate) fn card_level(&self, key: &str) -> f64 {
+    pub fn card_level(&self, key: &str) -> f64 {
         let Some(cards) = fields::object(self.save, "Cards0") else {
             return 0.0;
         };

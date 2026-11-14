@@ -89,7 +89,7 @@ function vialParams(key) {
 const payload = {
   encoding: encoding.N2L,
   arcade: Object.fromEntries(
-    [27, 35, 38, 51, 52, 54, 59, 62, 63, 67, 69, 72].map((idx) => [idx, arcade.arcadeShopParams(idx)])
+    [26, 27, 35, 38, 51, 52, 54, 59, 62, 63, 67, 69, 72].map((idx) => [idx, arcade.arcadeShopParams(idx)])
   ),
   rogBonus: sushi.ROG_BONUS_QTY,
   mineheadBonus: minehead.MINEHEAD_BONUS_QTY,

@@ -1,0 +1,789 @@
+{
+ "source": "js/stats/systems/common/combat-sim-special.js through script/combat-den-oracle.mjs",
+ "hound": {
+  "name": "Demon Hound",
+  "hp": 25000000
+ },
+ "cases": [
+  {
+   "note": "the saved amplifiers at a 2 s kill interval",
+   "killEveryMs": 2000,
+   "seconds": 60,
+   "seed": 1,
+   "config": {
+    "amps": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "bUpg23": 1,
+    "bolaiaLevel": 27,
+    "bestScore": 46350370.7949937,
+    "opalLevel": 21,
+    "houndHp": 25000000
+   },
+   "expected": {
+    "den": {
+     "active": 1,
+     "fear": 8,
+     "fearMax": 50,
+     "score": 7511.860319255002,
+     "kills": 30,
+     "wave": 37,
+     "tokens": 3,
+     "ampMulti": 1,
+     "chain": 20,
+     "runs": 1,
+     "opals": 0
+    },
+    "totals": {
+     "runs": 1,
+     "houndsSpawned": 37,
+     "houndsKilled": 30,
+     "opals": 0,
+     "fearGained": 8,
+     "playerKills": 0
+    },
+    "marks": [
+     {
+      "tMs": 10000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 198.7433474589847,
+      "kills": 5,
+      "wave": 6,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 5,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 20000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 806.8167708245719,
+      "kills": 10,
+      "wave": 11,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 10,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 30000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 1890.145335899545,
+      "kills": 15,
+      "wave": 16,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 15,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 40000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 3476.3542449356073,
+      "kills": 20,
+      "wave": 23,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 18,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 50000,
+      "active": 1,
+      "fear": 1,
+      "fearMax": 50,
+      "score": 5369.6080579148,
+      "kills": 25,
+      "wave": 29,
+      "tokens": 2,
+      "ampMulti": 1,
+      "chain": 19,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 60000,
+      "active": 1,
+      "fear": 8,
+      "fearMax": 50,
+      "score": 7511.860319255002,
+      "kills": 30,
+      "wave": 37,
+      "tokens": 3,
+      "ampMulti": 1,
+      "chain": 20,
+      "runs": 1,
+      "opals": 0
+     }
+    ]
+   }
+  },
+  {
+   "note": "a slow stand-in lets the hounds reach their fear tokens",
+   "killEveryMs": 5000,
+   "seconds": 180,
+   "seed": 3,
+   "config": {
+    "amps": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "bUpg23": 1,
+    "bolaiaLevel": 27,
+    "bestScore": 46350370.7949937,
+    "opalLevel": 21,
+    "houndHp": 25000000
+   },
+   "expected": {
+    "den": {
+     "active": 0,
+     "fear": 50,
+     "fearMax": 50,
+     "score": 402.255809496116,
+     "kills": 10,
+     "wave": 26,
+     "tokens": 0,
+     "ampMulti": 1,
+     "chain": 3,
+     "runs": 1,
+     "opals": 0
+    },
+    "totals": {
+     "runs": 1,
+     "houndsSpawned": 26,
+     "houndsKilled": 10,
+     "opals": 0,
+     "fearGained": 50,
+     "playerKills": 1
+    },
+    "marks": [
+     {
+      "tMs": 10000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 34.63792395229521,
+      "kills": 2,
+      "wave": 4,
+      "tokens": 1,
+      "ampMulti": 1,
+      "chain": 1,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 20000,
+      "active": 1,
+      "fear": 3,
+      "fearMax": 50,
+      "score": 99.49191377565381,
+      "kills": 4,
+      "wave": 8,
+      "tokens": 2,
+      "ampMulti": 1,
+      "chain": 2,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 30000,
+      "active": 1,
+      "fear": 12,
+      "fearMax": 50,
+      "score": 181.58702470213473,
+      "kills": 6,
+      "wave": 13,
+      "tokens": 2,
+      "ampMulti": 1,
+      "chain": 2,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 40000,
+      "active": 1,
+      "fear": 23,
+      "fearMax": 50,
+      "score": 282.2468897736185,
+      "kills": 8,
+      "wave": 18,
+      "tokens": 4,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 50000,
+      "active": 1,
+      "fear": 41,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 24,
+      "tokens": 6,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 60000,
+      "active": 0.5,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 70000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 80000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 90000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 100000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 110000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 120000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 130000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 140000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 150000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 160000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 170000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 180000,
+      "active": 0,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 402.255809496116,
+      "kills": 10,
+      "wave": 26,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 3,
+      "runs": 1,
+      "opals": 0
+     }
+    ]
+   }
+  },
+  {
+   "note": "a one-second stand-in fills the score faster",
+   "killEveryMs": 1000,
+   "seconds": 120,
+   "seed": 7,
+   "config": {
+    "amps": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "bUpg23": 1,
+    "bolaiaLevel": 27,
+    "bestScore": 46350370.7949937,
+    "opalLevel": 21,
+    "houndHp": 25000000
+   },
+   "expected": {
+    "den": {
+     "active": 0.5,
+     "fear": 50,
+     "fearMax": 50,
+     "score": 187187.68013301262,
+     "kills": 116,
+     "wave": 136,
+     "tokens": 0,
+     "ampMulti": 1,
+     "chain": 72,
+     "runs": 1,
+     "opals": 0
+    },
+    "totals": {
+     "runs": 1,
+     "houndsSpawned": 136,
+     "houndsKilled": 116,
+     "opals": 0,
+     "fearGained": 50,
+     "playerKills": 1
+    },
+    "marks": [
+     {
+      "tMs": 10000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 806.8167708245719,
+      "kills": 10,
+      "wave": 11,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 10,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 20000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 3513.682709982077,
+      "kills": 20,
+      "wave": 21,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 20,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 30000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 8636.45504812038,
+      "kills": 30,
+      "wave": 31,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 30,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 40000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 16676.04538549492,
+      "kills": 40,
+      "wave": 41,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 40,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 50000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 28118.991521926688,
+      "kills": 50,
+      "wave": 51,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 50,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 60000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 43438.00219741917,
+      "kills": 60,
+      "wave": 61,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 60,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 70000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 62875.98552198821,
+      "kills": 70,
+      "wave": 73,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 67,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 80000,
+      "active": 1,
+      "fear": 0,
+      "fearMax": 50,
+      "score": 85090.35151324043,
+      "kills": 80,
+      "wave": 86,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 69,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 90000,
+      "active": 1,
+      "fear": 1,
+      "fearMax": 50,
+      "score": 109512.37830996007,
+      "kills": 90,
+      "wave": 99,
+      "tokens": 4,
+      "ampMulti": 1,
+      "chain": 70,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 100000,
+      "active": 1,
+      "fear": 14,
+      "fearMax": 50,
+      "score": 136246.1223115384,
+      "kills": 100,
+      "wave": 113,
+      "tokens": 6,
+      "ampMulti": 1,
+      "chain": 71,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 110000,
+      "active": 1,
+      "fear": 32,
+      "fearMax": 50,
+      "score": 167494.06964837745,
+      "kills": 110,
+      "wave": 127,
+      "tokens": 8,
+      "ampMulti": 1,
+      "chain": 72,
+      "runs": 1,
+      "opals": 0
+     },
+     {
+      "tMs": 120000,
+      "active": 0.5,
+      "fear": 50,
+      "fearMax": 50,
+      "score": 187187.68013301262,
+      "kills": 116,
+      "wave": 136,
+      "tokens": 0,
+      "ampMulti": 1,
+      "chain": 72,
+      "runs": 1,
+      "opals": 0
+     }
+    ]
+   }
+  }
+ ],
+ "formulaCases": [
+  {
+   "amps": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "debuff": [
+    5000,
+    6000,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0
+   ],
+   "multi": [
+    {
+     "bUpg": 0,
+     "value": 1
+    },
+    {
+     "bUpg": 1,
+     "value": 1
+    },
+    {
+     "bUpg": 3,
+     "value": 1
+    }
+   ]
+  },
+  {
+   "amps": [
+    3,
+    1,
+    4,
+    2,
+    0,
+    5,
+    7,
+    6
+   ],
+   "debuff": [
+    14453.125,
+    13000,
+    20,
+    3.3075,
+    1,
+    6,
+    28,
+    0.6
+   ],
+   "multi": [
+    {
+     "bUpg": 0,
+     "value": 3.41
+    },
+    {
+     "bUpg": 1,
+     "value": 4.41
+    },
+    {
+     "bUpg": 3,
+     "value": 6.41
+    }
+   ]
+  },
+  {
+   "amps": [
+    10,
+    8,
+    2,
+    0,
+    9,
+    1,
+    3,
+    4
+   ],
+   "debuff": [
+    121071.9347000122,
+    309977.6739800001,
+    10,
+    1,
+    18.384592124201554,
+    2,
+    12,
+    0.4
+   ],
+   "multi": [
+    {
+     "bUpg": 0,
+     "value": 4.35
+    },
+    {
+     "bUpg": 1,
+     "value": 5.85
+    },
+    {
+     "bUpg": 3,
+     "value": 8.85
+    }
+   ]
+  }
+ ],
+ "opalCases": [
+  {
+   "level": 0,
+   "requirement": 1800
+  },
+  {
+   "level": 1,
+   "requirement": 3258
+  },
+  {
+   "level": 7,
+   "requirement": 83857.78125
+  },
+  {
+   "level": 21,
+   "requirement": 73082492.41369057
+  },
+  {
+   "level": 45,
+   "requirement": 3551787912303.4463
+  }
+ ]
+}

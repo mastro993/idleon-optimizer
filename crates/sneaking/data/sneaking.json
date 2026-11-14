@@ -2711,6 +2711,15 @@
      "x2": 0,
      "formula": "add"
     }
+   ],
+   "ForgeCap": [
+    {
+     "cat": 2,
+     "idx": 9,
+     "x1": 120,
+     "x2": 250,
+     "formula": "decay"
+    }
    ]
   },
   "riftRanks": [

@@ -42,6 +42,8 @@ fn plan() -> Plan {
             kill_every_ms: 1_500,
         },
         duration_ms: 120_000,
+        progress: idleon_combat::progress::Config::default(),
+        grants: idleon_combat::progress::Grants::default(),
         rows: vec![
             spec(0, "Imported save", 1, 0.0),
             spec(0, "Working edits", 1, 10.0),
@@ -130,6 +132,8 @@ fn the_interval_metric_has_no_value_for_a_run_without_kills() {
     let idle = Plan {
         player: Player::Idle,
         duration_ms: 60_000,
+        progress: idleon_combat::progress::Config::default(),
+        grants: idleon_combat::progress::Grants::default(),
         rows: vec![
             spec(0, "Imported save", 1, 0.0),
             spec(0, "Imported save", 2, 0.0),
@@ -166,6 +170,8 @@ fn the_document_carries_every_row_and_its_delta() {
     assert_eq!(rows[1]["metrics"]["weaponPower"]["delta"], 10.0);
     assert_eq!(rows[2]["map"], 2);
     assert!(rows[2]["outcome"]["kills"].as_u64().expect("kills") > 0);
+    assert!(rows[1]["outcome"]["progress"]["forgeSeconds"].is_number());
+    assert!(rows[1]["outcome"]["progress"]["bars"].is_object());
     assert!(
         document["metrics"]
             .as_array()

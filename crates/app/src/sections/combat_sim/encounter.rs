@@ -273,6 +273,10 @@ fn options_card(
 pub(crate) struct RunResult {
     pub(crate) run: Outcome,
     pub(crate) killroy: Option<idleon_killroy::Record>,
+    /// The Den attempt projected at this run's kill rate.
+    pub(crate) den: Option<idleon_combat::den::Outcome>,
+    /// The config terms the save decoder could not read.
+    pub(crate) progress_warnings: Vec<String>,
 }
 
 /// The results: a tab bar over the one stored run and the picked tab's panel.
@@ -326,6 +330,9 @@ fn results_card(
         ResultsTab::Kills => kills_panel(run, muted),
         ResultsTab::Cards => cards_panel(run, muted),
         ResultsTab::Timeline => timeline_panel(run, muted),
+        ResultsTab::Den => den_panel(result, muted),
+        ResultsTab::Progress => progress_panel(result, muted),
+        ResultsTab::Smelting => smelting_panel(run, muted),
     };
     card.child(panel).into_any_element()
 }
@@ -530,6 +537,282 @@ fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
             ))
             .text_color(muted),
         );
+    }
+    panel.into_any_element()
+}
+
+/// The Den attempt: the hound waves replayed at this run's kill rate.
+fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+    let Some(den) = result.den else {
+        return empty_panel(
+            "combat-den-empty",
+            "The Den attempt is projected from a kill rate: pick the fixed kill interval player and \
+             run again.",
+            muted,
+        );
+    };
+    let snapshot = den.snapshot;
+    let totals = den.totals;
+    let kpis = div()
+        .id("combat-den-kpis")
+        .flex()
+        .flex_wrap()
+        .items_stretch()
+        .gap_2()
+        .child(kpi(
+            "combat-den-score",
+            "Den score",
+            &format::value(snapshot.score),
+            den.status(),
+            muted,
+        ))
+        .child(kpi(
+            "combat-den-kills",
+            "Hounds killed",
+            &format::count(snapshot.kills as u64),
+            &format!(
+                "{} across {} attempt(s)",
+                format::count(totals.hounds_killed as u64),
+                format::count(totals.runs as u64)
+            ),
+            muted,
+        ))
+        .child(kpi(
+            "combat-den-spawned",
+            "Hounds spawned",
+            &format::count(totals.hounds_spawned as u64),
+            &format!("Wave {}", format::count(snapshot.wave as u64)),
+            muted,
+        ))
+        .child(kpi(
+            "combat-den-fear",
+            "Fear",
+            &format!(
+                "{} / {}",
+                format::value(snapshot.fear),
+                format::value(snapshot.fear_max)
+            ),
+            &format!("{} incoming fear tokens", format::value(snapshot.tokens)),
+            muted,
+        ))
+        .child(kpi(
+            "combat-den-chain",
+            "Skull chain",
+            &format::count(snapshot.chain as u64),
+            "Skull hounds killed this attempt",
+            muted,
+        ))
+        .child(kpi(
+            "combat-den-opals",
+            "Opals earned",
+            &format::count(totals.opals as u64),
+            "Awarded after the attempt ends",
+            muted,
+        ));
+    div()
+        .id("combat-den-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(kpis)
+        .child(
+            Caption::new(format!(
+                "Amplifier multiplier ×{} · the projection replays the cavern's hound waves at this \
+                 run's kill rate; the map's other monsters and the player's movement are not part of \
+                 the attempt.",
+                format::value(snapshot.amp_multi),
+            ))
+            .text_color(muted),
+        )
+        .into_any_element()
+}
+
+/// The combat-driven account progress the run banked.
+fn progress_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+    let progress = &result.run.progress;
+    let kpis = div()
+        .id("combat-progress-kpis")
+        .flex()
+        .flex_wrap()
+        .items_stretch()
+        .gap_2()
+        .child(kpi(
+            "combat-progress-forge-time",
+            "Forge time from kills",
+            &format!("{} s", format::value(progress.forge_seconds)),
+            "Extra smelting time; not hours",
+            muted,
+        ))
+        .child(kpi(
+            "combat-progress-pet-time",
+            "Pet time from kills",
+            &format!("{} s", format::value(progress.pet_seconds)),
+            &format!(
+                "{} s awaiting the greater-than-10-second batch",
+                format::value(progress.pet_pending_seconds)
+            ),
+            muted,
+        ))
+        .child(kpi(
+            "combat-progress-alchemy-time",
+            "Alchemy time from kills",
+            &format!("{} s", format::value(progress.alchemy_seconds)),
+            "Credited time only; production is not simulated",
+            muted,
+        ))
+        .child(kpi(
+            "combat-progress-scurge",
+            "Scurge EXP",
+            &format::value(progress.scurge_exp),
+            if progress.scurge.is_some() {
+                "Banked; the Scurge menu processes levels"
+            } else {
+                "Scurge not unlocked"
+            },
+            muted,
+        ));
+    let mut panel = div()
+        .id("combat-progress-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(kpis);
+    if let Some(scurge) = progress.scurge {
+        panel = panel.child(
+            Caption::new(format!(
+                "Scurge level {}: {} / {} EXP. Menu-gated levels are not auto-claimed.",
+                format::value(scurge.level),
+                format::value(scurge.exp),
+                format::value(scurge.requirement),
+            ))
+            .text_color(muted),
+        );
+    }
+    if let Some(coral) = &progress.coral {
+        panel = panel.child(
+            Caption::new(format!(
+                "Coral Kid Singularity: {} kills banked this run ({} total).",
+                format::value(progress.coral_kills),
+                format::value(coral.kills),
+            ))
+            .text_color(muted),
+        );
+    }
+    if progress.omega_balls > 0.0 {
+        panel = panel.child(
+            Caption::new(format!(
+                "Omega Arcade balls earned: {}.",
+                format::count(progress.omega_balls as u64)
+            ))
+            .text_color(muted),
+        );
+    }
+    if !progress.pets.is_empty() {
+        let mut table = Table::new(["Pet", "Shiny days gained", "Level", "World"]);
+        for pet in &progress.pets {
+            table = table.row([
+                div()
+                    .id(SharedString::from(format!(
+                        "combat-progress-pet-{}-{}",
+                        pet.world, pet.index
+                    )))
+                    .role(Role::Label)
+                    .aria_label(format!("{}: {} shiny days", pet.name, pet.gained))
+                    .child(SharedString::from(pet.name.clone()))
+                    .into_any_element(),
+                div().child(format::value(pet.gained)).into_any_element(),
+                div()
+                    .child(format!(
+                        "{} → {}",
+                        format::value(pet.start_level),
+                        format::value(pet.level)
+                    ))
+                    .into_any_element(),
+                div().child(format!("{}", pet.world + 1)).into_any_element(),
+            ]);
+        }
+        panel = panel.child(Caption::new("Shiny-pet progress from kills").text_color(muted));
+        panel = panel.child(table);
+    }
+    for notice in &progress.notices {
+        panel = panel.child(Caption::new(notice.text.clone()).text_color(muted));
+    }
+    for warning in &result.progress_warnings {
+        panel = panel.child(Caption::new(warning.clone()).text_color(muted));
+    }
+    panel.into_any_element()
+}
+
+/// The bars the saved furnace produced during the run.
+fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+    let progress = &run.progress;
+    let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
+    if !progress.forge_available {
+        return div()
+            .id("combat-smelting-panel")
+            .p_3()
+            .flex()
+            .flex_col()
+            .gap_2()
+            .child(
+                Banner::new(
+                    "combat-smelting-unavailable",
+                    Severity::Warning,
+                    "Forge contents are unavailable; only earned smelting time is reported.",
+                )
+                .into_any_element(),
+            )
+            .child(
+                Caption::new(format!(
+                    "{} s of forge time from kills. The saved furnace contents are needed to \
+                     produce bars.",
+                    format::value(progress.forge_seconds),
+                ))
+                .text_color(muted),
+            )
+            .into_any_element();
+    }
+    let mut rows: Vec<(&String, &f64)> = progress.bars.iter().collect();
+    rows.sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
+    let mut table = Table::new(["Bar", "Produced", "Per hour"]);
+    for (bar, qty) in &rows {
+        let name = idleon_combat::progress::item_name(bar);
+        table = table.row([
+            div()
+                .id(SharedString::from(format!("combat-smelting-{bar}")))
+                .role(Role::Label)
+                .aria_label(format!("{name}: {qty} produced"))
+                .text_size(px(12.0))
+                .child(SharedString::from(name))
+                .into_any_element(),
+            div().child(format::value(**qty)).into_any_element(),
+            div().child(format::value(**qty / hours)).into_any_element(),
+        ]);
+    }
+    let mut panel = div()
+        .id("combat-smelting-panel")
+        .p_3()
+        .flex()
+        .flex_col()
+        .gap_2()
+        .child(
+            Caption::new(
+                "Ordinary online smelting plus the forge time the kills granted. Ore, oil, storage \
+                 refills, gem slots and fractional-output rolls advance during the run; bars remain \
+                 in the furnace, not the drop inventory.",
+            )
+            .text_color(muted),
+        );
+    if rows.is_empty() {
+        panel = panel.child(empty_panel(
+            "combat-smelting-empty",
+            "No completed bars: the saved furnace had no ore it could smelt during this run.",
+            muted,
+        ));
+    } else {
+        panel = panel.child(table);
     }
     panel.into_any_element()
 }

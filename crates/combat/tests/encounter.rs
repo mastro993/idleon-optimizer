@@ -288,10 +288,64 @@ fn the_fixture_accounts_drops_are_reproducible() {
             card_chance: 17.875_638_048_625_472,
             talent29: 0.0,
         },
+        progress: idleon_combat::progress::Config::default(),
+        grants: idleon_combat::progress::Grants::default(),
     };
     let outcome = run(options.clone());
     assert!(outcome.kills > 0);
     assert!(!outcome.drops.cards.is_empty(), "the run finds cards");
     let again = run(options);
     assert_eq!(outcome.drops, again.drops, "a seed reproduces the rolls");
+}
+
+#[test]
+fn a_run_advances_the_saved_furnace_and_its_progress() {
+    // One ore, one oil and one bar with a one-second interval and four bars'
+    // worth of ore: the run's own 250 ms clock produces while it replays.
+    let mut forge = idleon_combat::progress::Forge {
+        available: true,
+        order: vec!["Blank".to_string(); 48],
+        qty: vec![0.0; 48],
+        progress: vec![0.0; 16],
+        slots: 16.0,
+        cap: 1e6,
+        speed: 1.0,
+        bars: 1.0,
+        oil_use: 1.0,
+        ..idleon_combat::progress::Forge::default()
+    };
+    forge.order[0] = "Copper".into();
+    forge.order[2] = "CopperBar".into();
+    forge.qty[0] = 8.0;
+    let mut options = Options::basic(1, Player::StandIn { kill_every_ms: 500 }, 60_000);
+    options.progress = idleon_combat::progress::Config {
+        forge,
+        coral: idleon_combat::progress::Coral {
+            unlocked: true,
+            kills: 10.0,
+        },
+        ..idleon_combat::progress::Config::default()
+    };
+    options.grants = idleon_combat::progress::Grants {
+        kill_credit: 2.5,
+        ..idleon_combat::progress::Grants::default()
+    };
+    let outcome = run(options.clone());
+    assert!(outcome.progress.forge_available);
+    let forge = outcome.progress.forge.as_ref().expect("the furnace state");
+    let produced: f64 = outcome.progress.bars.values().sum();
+    assert!(produced >= 1.0, "the run smelts: {produced}");
+    assert!(forge.qty[0] < 8.0, "the run spends ore: {}", forge.qty[0]);
+    let credited: u64 = outcome
+        .kills_by_type
+        .iter()
+        .filter(|(kind, _)| idleon_combat::drops::rolls(kind))
+        .map(|(_, kills)| *kills)
+        .sum();
+    assert_eq!(outcome.progress.coral_kills, credited as f64 * 2.5);
+    let again = run(options);
+    assert_eq!(
+        outcome.progress, again.progress,
+        "a seed reproduces the furnace"
+    );
 }

@@ -95,7 +95,7 @@ impl Decoder<'_> {
     }
 
     /// `computeWinBonus`.
-    pub(crate) fn win_bonus(&self, index: usize) -> f64 {
+    pub fn win_bonus(&self, index: usize) -> f64 {
         self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize))
     }
 

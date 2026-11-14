@@ -228,8 +228,14 @@ impl AppState {
     /// The options a run started now would read.
     pub(crate) fn combat_encounter_options(&self) -> Options {
         let (drops, drop_inputs) = self.combat_drop_state();
+        let overrides = self.combat.overrides.build(&Entries::new());
+        let read = |key: &str, neutral: f64| match overrides.get(key) {
+            Some(idleon_combat::overrides::Value::Number(value)) => *value,
+            _ => neutral,
+        };
+        let map = self.combat.sim_map;
         Options {
-            map: self.combat.sim_map,
+            map,
             player: if self.combat.sim_stand_in {
                 Player::StandIn {
                     kill_every_ms: self.combat.sim_kill_every_ms,
@@ -241,6 +247,15 @@ impl AppState {
             seed: self.combat.sim_seed,
             drops,
             drop_inputs,
+            progress: self.combat.progress.clone(),
+            grants: idleon_combat::progress::Grants {
+                drop_rate: drop_inputs.drop_rate,
+                kill_credit: read("killPerKill", 1.0) + read("multiKillPlay", 0.0) / 100.0,
+                map,
+                scene: idleon_combat::encounter::map(map)
+                    .map(|map| map.scene.clone())
+                    .unwrap_or_default(),
+            },
         }
     }
 
@@ -257,9 +272,12 @@ impl AppState {
             options.player.label()
         );
         // The Killroy practice re-runs the room's timer at the kill rate the
-        // encounter measures, so it reads the same save and seed.
+        // encounter measures, and the Den projects its hound waves at the same
+        // rate, so both read the same save and seed.
         let save = self.save.clone();
         let character = self.combat.character;
+        let den = self.combat.den.clone();
+        let progress_warnings = self.combat.progress_warnings.clone();
         self.start_run(
             self.combat_encounter.clone(),
             line,
@@ -275,7 +293,23 @@ impl AppState {
                         idleon_killroy::trial_inputs(save, character, run.kills as f64 / seconds);
                     Some(idleon_killroy::trial(&inputs, options.seed))
                 });
-                Some(RunResult { run, killroy })
+                let den = match (den, options.player) {
+                    (Some(config), Player::StandIn { kill_every_ms }) => {
+                        Some(idleon_combat::den::project(
+                            &config,
+                            kill_every_ms,
+                            options.duration_ms,
+                            options.seed,
+                        ))
+                    }
+                    _ => None,
+                };
+                Some(RunResult {
+                    run,
+                    killroy,
+                    den,
+                    progress_warnings,
+                })
             },
             cx,
         );
@@ -421,6 +455,8 @@ impl AppState {
         Plan {
             player: options.player,
             duration_ms: options.duration_ms,
+            progress: options.progress,
+            grants: options.grants,
             rows,
         }
     }

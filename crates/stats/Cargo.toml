@@ -8,6 +8,7 @@ license.workspace = true
 
 [dependencies]
 idleon-account = { workspace = true }
+idleon-combat = { workspace = true }
 idleon-common = { workspace = true }
 idleon-research = { workspace = true }
 idleon-save = { workspace = true }

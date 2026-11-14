@@ -155,14 +155,15 @@ const payload = {
       Jade: { 75: 10 },
       SneakExp: { 74: 15 },
     },
-    // `buildStampTypeMap` for the two stamp effects the trees read.
+    // `buildStampTypeMap` for the stamp effects the trees and the combat
+    // progress cap read.
     stampTypes: (() => {
       const map = {};
       for (const [key, item] of Object.entries(itemsData.ITEMS)) {
         if (!key.startsWith('Stamp') || key.length < 7) continue;
         const parts = String(item.desc_line1 || '').split(',');
         const type = parts[0];
-        if (type !== 'JadeCoin' && type !== 'SneakExp') continue;
+        if (type !== 'JadeCoin' && type !== 'SneakExp' && type !== 'ForgeCap') continue;
         const catLetter = key[5];
         const cat = catLetter === 'A' ? 0 : catLetter === 'B' ? 1 : 2;
         const idx = Number(item.ID) - cat * 1000;
