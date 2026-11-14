@@ -339,6 +339,13 @@ pub(crate) struct StatueConfig {
     breakdown_statue: usize,
 }
 
+/// The save as a project document embeds it: the top-level value, `it.json`
+/// wrapper included, so `charNames`, `companion` and `serverVars` survive an
+/// export and the next session restore.
+fn save_document(save: &idleon_save::Save) -> Value {
+    save.root().clone()
+}
+
 /// The whole window state as a project document.
 pub(crate) fn export(state: &AppState) -> String {
     project::write(&project::Project {
@@ -346,7 +353,7 @@ pub(crate) fn export(state: &AppState) -> String {
         section: state
             .current_section()
             .map(|section| section.id.to_string()),
-        save: state.save.as_ref().map(|save| (**save).clone()),
+        save: state.save.as_ref().map(save_document),
         simulation: state.simulation.clone(),
         context: state.context.clone(),
         sections: configs(state),
@@ -2144,5 +2151,30 @@ mod tests {
             let covered = configured || derived.contains(&id);
             assert!(covered, "{id} has no project config");
         }
+    }
+
+    #[test]
+    fn an_exported_save_keeps_its_it_json_wrapper() {
+        let save = idleon_save::Save::new(json!({
+            "data": { "Lv0_0": "[]" },
+            "charNames": ["Ana"],
+            "companion": { "l": [] },
+            "serverVars": { "KillroySwap": 7 },
+        }));
+        let document = save_document(&save);
+        assert_eq!(document["charNames"], json!(["Ana"]));
+        assert_eq!(document["serverVars"]["KillroySwap"], json!(7));
+        assert!(document["companion"].is_object());
+        assert!(document["data"]["Lv0_0"].is_string());
+        // Reading the document back gives the same save, names included.
+        let back = idleon_save::Save::new(document);
+        assert_eq!(back.character_name(0), "Ana");
+        assert_eq!(back.character_count(), 1);
+    }
+
+    #[test]
+    fn an_exported_flat_save_stays_flat() {
+        let save = idleon_save::Save::new(json!({ "Lv0_0": "[]" }));
+        assert_eq!(save_document(&save), json!({ "Lv0_0": "[]" }));
     }
 }
