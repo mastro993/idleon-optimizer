@@ -539,10 +539,14 @@ all eleven characters. The damage descriptor itself now ports the whole DDL0 wea
 multiplier), the Max HP / Max MP / Movement Speed descriptors behind the HP-, MP- and speed-scaled
 bubbles, the DDL1 talent chain and every DDL2 group from the Grudge/Slabbo rows through the
 post-softcap multipliers, with each term kept in `Layers::debug` under the descriptor's own
-`_debug` names. `crates/damage/tests/damage.rs` compares the port's own layers against
-`fixtures/damage.json` and every character tracks the calculator within a tenth of a percent; the
-residual is the construction build-speed logarithm behind artifact 8 and the last equipment rows,
-which stay named rather than guessed.
+`_debug` names. `crates/damage/tests/damage.rs` compares the port's own layers, minimum, maximum
+and every recorded `_debug` term (tree-result providers such as `statue0` included) against
+`fixtures/damage.json`, and all eleven characters match the calculator exactly. The last gaps were
+artifact 8's build-speed logarithm (`computePlayerBuildSpd` reads Vault upgrade 48 and the win
+bonus with `noArt32`, whose options object still counts the endless wins), the per-character
+talent levels behind the statue multipliers, the active-buff talents (`getBuffBonus`),
+`TalentCalc(110)`'s kill counts on the active character and `TalentCalc(305)`'s ensured slab
+entries.
 Details:
 [`docs/sections/damage.md`](sections/damage.md).
 
