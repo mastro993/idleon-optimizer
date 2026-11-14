@@ -3188,8 +3188,10 @@ const INTERACTIONS = {
       'damage: the page flags the metadata the import lacks',
     );
 
-    // A character switch follows that character's current map.
+    // A character switch follows that character's current map. The first Down
+    // opens the list, the second walks to the next row, Enter picks it.
     await lane.call('focus_element', { id: 'damage-character' });
+    await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'down' });
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
