@@ -3,14 +3,28 @@ name: CI
 on:
   push:
     branches: [main]
-    # Docs and assets change no code the gates can see: no run at all.
-    paths-ignore: ["**/*.md", "docs/**", "assets/**"]
+    # Docs and assets are skipped, except the files a Rust test reads: the
+    # roadmap and section specs (the registry tests) and the asset manifest
+    # (the combat replay test). Later patterns override earlier ones.
+    paths: &paths
+      - '**'
+      - '!**/*.md'
+      - '!docs/**'
+      - '!assets/**'
+      - 'docs/roadmap.json'
+      - 'docs/sections/**'
+      - 'assets/upstream/manifest.json'
   pull_request:
-    paths-ignore: ["**/*.md", "docs/**", "assets/**"]
+    paths: *paths
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Every job reads the repository and nothing else; `changes` adds the one
+# extra read scope its filter needs.
+permissions:
+  contents: read
 
 jobs:
   # One cheap runner decides whether the expensive matrix has anything to look
@@ -26,8 +40,10 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3
         id: filter
         with:
           filters: |
@@ -39,6 +55,12 @@ jobs:
               - 'crates/**/data/**'
               - 'fixtures/**'
               - '.github/workflows/**'
+              - 'docs/roadmap.json'
+              - 'docs/sections/**'
+              - 'assets/upstream/manifest.json'
+              # The bridge submodule: a bump changes only the gitlink.
+              - 'vendor/gpui-mcp'
+              - '.gitmodules'
 
   static:
     needs: changes
@@ -73,16 +95,21 @@ jobs:
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.os }}
     steps: &steps
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: ${{ matrix.submodules }}
+          persist-credentials: false
       # Pinned to the workspace's rust-version so a new stable clippy lint cannot
-      # turn -D warnings red on a branch that changed nothing.
-      - uses: dtolnay/rust-toolchain@1.100.0
+      # turn -D warnings red on a branch that changed nothing. The action is
+      # pinned by commit; `toolchain` names the version.
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
+          toolchain: 1.100.0
           components: clippy, rustfmt
       - if: matrix.nextest
-        uses: taiki-e/install-action@nextest
+        uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2
+        with:
+          tool: nextest
       # Clippy keeps check metadata and tests keep `test`-profile libraries, so
       # one shared bucket held only whichever saved first and the other rebuilt
       # every dependency. Only `main` saves: pull requests restore its caches
@@ -90,7 +117,7 @@ jobs:
       # `[profile]` tables are not part of the key, so rename a bucket when they
       # change.
       - if: matrix.cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           shared-key: ${{ matrix.cache }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
