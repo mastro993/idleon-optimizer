@@ -335,9 +335,9 @@ impl<'a, 'b> Ctx<'a, 'b> {
 
     fn bubble_inner(&mut self, key: &str, skip_class: bool, skip_big: bool) -> f64 {
         let Some(bubble) = self.data.bubble(key).cloned() else {
-            if !key.is_empty() {
-                self.miss(&format!("Bubble: {key}"), "js/stats/systems/w2/alchemy.js");
-            }
+            // Upstream's `bubbleValByKey` returns 0 for a key no cauldron row
+            // carries (the Max HP/MP descriptors read `BaseHP`/`BaseMP`, which
+            // the game does not define), so this is a value, not a gap.
             return 0.0;
         };
         let level = fields::field(self.save(), "CauldronInfo")

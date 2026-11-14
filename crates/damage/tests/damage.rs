@@ -530,3 +530,63 @@ fn every_engine_layer_is_present_and_recombines_into_the_summary() {
         }
     }
 }
+
+/// DMG-03: one expandable tree per layer. Every node carries the upstream source
+/// the search looks at, the roots are the layer values the summary multiplies,
+/// and the term text the page searches ("Weapon Power", "softcap") finds nodes.
+#[test]
+fn every_layer_has_a_formula_tree_rooted_at_its_value() {
+    use idleon_common::formula::FormulaNode;
+
+    fn every_node_has_a_source(node: &FormulaNode) -> bool {
+        node.source
+            .as_deref()
+            .is_some_and(|source| !source.is_empty())
+            && node.children.iter().all(every_node_has_a_source)
+    }
+
+    fn has_multiplier(node: &FormulaNode) -> bool {
+        node.multiplier.is_some() || node.children.iter().any(has_multiplier)
+    }
+
+    fn has_input(node: &FormulaNode) -> bool {
+        node.input.is_some() || node.children.iter().any(has_input)
+    }
+
+    let imported = imported();
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let character = expected["character"].as_u64().expect("an index") as usize;
+        let map = expected["map"].as_u64().expect("a map") as usize;
+        let summary = damage::evaluate(
+            &imported.save,
+            &imported.simulation,
+            damage::Context { character, map },
+        );
+        let layers = summary.layers().expect("the layers resolve");
+        for id in LayerId::ALL {
+            let tree = summary
+                .layer_tree(id)
+                .unwrap_or_else(|| panic!("character {character} {}: no tree", id.id()));
+            assert_eq!(
+                tree.value,
+                layers.get(id).value,
+                "character {character} {}",
+                id.id()
+            );
+            assert!(tree.node_count() > 8, "character {character} {}", id.id());
+            assert!(
+                every_node_has_a_source(&tree),
+                "character {character} {}: a node lost its source",
+                id.id()
+            );
+            assert!(has_input(&tree) || has_multiplier(&tree));
+        }
+        let base = summary.layer_tree(LayerId::Base).expect("base tree");
+        assert!(base.match_count("weapon power") > 0);
+        let multiplier = summary
+            .layer_tree(LayerId::Multiplier)
+            .expect("multiplier tree");
+        assert!(multiplier.match_count("softcap") > 0);
+    }
+}

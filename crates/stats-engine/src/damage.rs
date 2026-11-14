@@ -549,6 +549,15 @@ fn multiplier_layer(
         multi = 1.0;
     }
     debug.insert("wb".to_string(), multi);
+    debug.insert("vial7dmg".to_string(), ctx.vial("7dmg"));
+    debug.insert("palette34".to_string(), ctx.decoder.palette(34));
+    debug.insert(
+        "dream6".to_string(),
+        fields_number(ctx, "Dream", &[6]) / 10.0,
+    );
+    debug.insert("pristine0".to_string(), ctx.decoder.pristine(0));
+    debug.insert("summUpg79".to_string(), ctx.summ_upg(79));
+    debug.insert("eclipse".to_string(), ctx.eclipse_skulls());
 
     multi *= 1.0 + ctx.vial("7dmg") / 100.0;
     multi *= 1.0 + ctx.eclipse_skulls() / 100.0;
@@ -843,6 +852,8 @@ fn multiplier_layer(
         ("scurgeLevel", scurge),
         ("scurgeDivisor", 100f64.powf(scurge)),
         ("bundleApplied", if bundle { 1.0 } else { 0.0 }),
+        ("killroy", killroy),
+        ("green", green),
         ("group1", group1),
         ("group2", group2),
         ("group3", group3),

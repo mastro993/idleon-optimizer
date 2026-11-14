@@ -56,6 +56,13 @@ impl State {
         self.summary.as_ref().and_then(Summary::mastery_tree)
     }
 
+    /// The selected layer's formula tree, or nothing while it has no terms.
+    pub(crate) fn layer_tree(&self) -> Option<FormulaNode> {
+        self.summary
+            .as_ref()
+            .and_then(|summary| summary.layer_tree(self.layer))
+    }
+
     /// Open one of the three layer tabs.
     pub(crate) fn select_layer(&mut self, layer: LayerId) {
         self.layer = layer;
@@ -149,6 +156,10 @@ pub(crate) fn view(
     if let Some(root) = state.damage.mastery_tree() {
         tree.update(cx, |tree, cx| tree.set_root(root, cx));
     }
+    let formula = state.damage_formula.clone();
+    if let Some(root) = state.damage.layer_tree() {
+        formula.update(cx, |tree, cx| tree.set_root(root, cx));
+    }
     let damage = &state.damage;
     let context = damage.context;
     let snapshot = damage.snapshot.as_ref();
@@ -230,6 +241,9 @@ pub(crate) fn view(
     let layers = summary
         .as_ref()
         .map(|summary| layers_card(summary, damage.layer, muted, entity.clone()));
+    let formula = summary
+        .as_ref()
+        .map(|summary| formula_breakdown(summary, damage.layer, formula, muted));
     let mastery = summary
         .as_ref()
         .map(|summary| mastery_breakdown(summary, tree, muted));
@@ -271,6 +285,7 @@ pub(crate) fn view(
                         )
                         .child(summary_cards)
                         .children(layers)
+                        .children(formula)
                         .children(mastery),
                 ),
         )
@@ -351,6 +366,44 @@ fn layers_card(
                 ),
         )
         .into_any_element()
+}
+
+/// The `Formula Breakdown` card: the selected layer's expanded tree, with each
+/// term's input, multiplier and upstream source; the shared tree's search
+/// highlights the matching nodes.
+fn formula_breakdown(
+    summary: &Summary,
+    layer: LayerId,
+    tree: Entity<FormulaTree>,
+    muted: Hsla,
+) -> AnyElement {
+    let card = Card::new().header(
+        CardHeader::new("Formula Breakdown")
+            .description("The selected layer, term by term, with each term's source"),
+    );
+    match summary.layer_tree(layer) {
+        Some(_) => card
+            .child(
+                div()
+                    .id("damage-formula-breakdown")
+                    .h(px(320.0))
+                    .min_h_0()
+                    .child(tree),
+            )
+            .into_any_element(),
+        None => card
+            .child(
+                div()
+                    .id("damage-formula-gap")
+                    .role(Role::Label)
+                    .aria_label(summary.reason.clone())
+                    .p_3()
+                    .text_size(px(12.0))
+                    .text_color(muted)
+                    .child(summary.reason.clone()),
+            )
+            .into_any_element(),
+    }
 }
 
 /// The `Mastery Breakdown` card: the shared formula tree over the mastery terms,
@@ -636,6 +689,29 @@ mod tests {
         state.select_layer(LayerId::Multiplier);
         assert_eq!(state.layer, LayerId::Multiplier);
         assert_eq!(LayerId::from_id("ddl2"), Some(state.layer));
+    }
+
+    #[test]
+    fn the_formula_tree_follows_the_selected_layer() {
+        let mut state = State::default();
+        state.load(&save(), &Default::default());
+        let expected = |state: &State, layer| {
+            state
+                .summary
+                .as_ref()
+                .expect("the summary resolves")
+                .layers()
+                .expect("the layers resolve")
+                .get(layer)
+                .value
+        };
+        let base = state.layer_tree().expect("the base tree resolves");
+        assert_eq!(base.value, expected(&state, LayerId::Base));
+        assert!(base.node_count() > 8);
+        state.select_layer(LayerId::Multiplier);
+        let multiplier = state.layer_tree().expect("the multiplier tree resolves");
+        assert_eq!(multiplier.value, expected(&state, LayerId::Multiplier));
+        assert_ne!(base.value, multiplier.value);
     }
 
     #[test]

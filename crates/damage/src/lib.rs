@@ -25,6 +25,7 @@
 //! instead of a complete one.
 
 mod layers;
+mod tree;
 
 use idleon_common::formula::FormulaNode;
 use idleon_save::{Roster, Save};
@@ -252,6 +253,9 @@ pub struct Summary {
     /// mastery breakdown; `None` while they cannot be resolved.
     #[serde(skip)]
     layers: Option<Layers>,
+    /// The three formula trees, one per layer, built from the engine's terms.
+    #[serde(skip)]
+    trees: Option<Vec<FormulaNode>>,
 }
 
 impl Summary {
@@ -273,6 +277,7 @@ impl Summary {
             max,
             mastery,
             layers: Some(layers),
+            trees: None,
         }
     }
 
@@ -285,6 +290,16 @@ impl Summary {
     /// The mastery breakdown's root, or nothing while the layers are unresolved.
     pub fn mastery_tree(&self) -> Option<FormulaNode> {
         self.layers.as_ref().map(|layers| layers.mastery.tree())
+    }
+
+    /// The selected layer's formula tree: every term the engine recorded, with
+    /// its input, multiplier and upstream source.
+    pub fn layer_tree(&self, layer: LayerId) -> Option<FormulaNode> {
+        self.trees.as_ref().and_then(|trees| {
+            trees
+                .get(LayerId::ALL.iter().position(|id| *id == layer)?)
+                .cloned()
+        })
     }
 
     /// Attach the saved metadata the descriptor reads, so a summary built from
@@ -357,6 +372,7 @@ pub fn evaluate(
         return Summary::unavailable(STATS_ENGINE).with_metadata(metadata);
     };
     let missing = layers.missing.clone();
+    let trees = LayerId::ALL.map(|id| tree::build(&layers, id)).to_vec();
     Summary {
         available: true,
         metadata,
@@ -393,6 +409,7 @@ pub fn evaluate(
                 etc: layers.mastery_etc,
             },
         }),
+        trees: Some(trees),
     }
 }
 
@@ -545,9 +562,10 @@ mod tests {
         }));
         let summary = evaluate(&wrapped, &Default::default(), Context::default());
         assert!(summary.metadata.complete());
-        // The metadata is complete, but the layers still leave terms out.
-        assert!(summary.partial());
-        assert!(summary.partial_reason().contains("not modelled"));
+        // Both metadata fields and every damage term resolve, so the summary
+        // is complete rather than a lower bound.
+        assert!(!summary.partial());
+        assert_eq!(summary.partial_reason(), "");
     }
 
     #[test]
