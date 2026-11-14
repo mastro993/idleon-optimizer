@@ -338,10 +338,10 @@ pub fn is_dungeon(map: usize) -> bool {
 
 /// Resolve the summary for a save and context.
 ///
-/// The shared stat pipeline is the missing provider. Until it lands this
-/// reports the upstream dungeon reason on a dungeon map and the missing-pipeline
-/// reason everywhere else, rather than showing a number it cannot justify. The
-/// metadata flags are read either way, so the page can name a partial import.
+/// The shared stat engine resolves the three layers. A dungeon map keeps the
+/// upstream reason, and a save the engine cannot fully justify keeps its layers
+/// but names every term it left out, so the page shows a lower bound instead of
+/// a number presented as complete. The metadata flags are read either way.
 pub fn evaluate(save: &Save, context: Context) -> Summary {
     let metadata = Metadata::read(save);
     if is_dungeon(context.map) {
