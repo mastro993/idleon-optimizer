@@ -88,16 +88,20 @@ pub fn grid_levels(save: &Map<String, Value>, rows: &[Vec<Value>]) -> Option<Vec
 
 /// The save's own per-cell shape overlay: the decoded `shapeOverlay`, else
 /// `Research` row 1. The game's grid bonuses read this row, not the shape
-/// positions, so an importer must keep it.
+/// positions, so an importer must keep it. A short row is padded with `-1` and
+/// a long one trimmed, so the result always has one entry per cell.
 pub fn shape_overlay(save: &Map<String, Value>, rows: &[Vec<Value>]) -> Option<Vec<i32>> {
     let values = field_array(save, "shapeOverlay", rows, 1)?;
-    Some(
-        values
-            .iter()
-            .take(game().cells())
-            .map(|value| value.map(|index| index.round() as i32).unwrap_or(-1))
-            .collect(),
-    )
+    let cells = game().cells();
+    let mut overlay: Vec<i32> = values
+        .iter()
+        .take(cells)
+        .map(|value| value.map(|index| index.round() as i32).unwrap_or(-1))
+        .collect();
+    // Every reader indexes the overlay by cell, so a short row is padded with
+    // "no shape" instead of being stored short.
+    overlay.resize(cells, -1);
+    Some(overlay)
 }
 
 /// Build the grid, padding short arrays and trimming long ones.
@@ -372,4 +376,28 @@ fn field_array(
             .map(|cells| cells.iter().map(json::number).collect())
     })?;
     (!values.is_empty()).then_some(values)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn a_short_shape_overlay_is_padded_to_every_cell() {
+        let save = json!({ "shapeOverlay": [2, 0] });
+        let overlay = shape_overlay(save.as_object().expect("an object"), &[])
+            .expect("the save carries an overlay");
+        assert_eq!(overlay.len(), game().cells());
+        assert_eq!(&overlay[..3], &[2, 0, -1]);
+        assert!(overlay[2..].iter().all(|shape| *shape == -1));
+    }
+
+    #[test]
+    fn a_long_shape_overlay_is_trimmed_to_every_cell() {
+        let save = json!({ "shapeOverlay": vec![1; game().cells() + 5] });
+        let overlay = shape_overlay(save.as_object().expect("an object"), &[])
+            .expect("the save carries an overlay");
+        assert_eq!(overlay.len(), game().cells());
+    }
 }
