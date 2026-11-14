@@ -496,6 +496,7 @@ fn summary_card(
 
 /// The mastery card: the ratio, its note and the upstream bar.
 fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla) -> AnyElement {
+    let ratio = value.clone();
     div()
         .id("damage-mastery-card")
         .role(Role::Label)
@@ -518,7 +519,15 @@ fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla)
                             .child(value),
                     )
                     .child(Caption::new(note).text_color(muted))
-                    .child(ProgressBar::new("damage-mastery-bar", fill)),
+                    // The shared bar draws no label of its own, so the card names
+                    // the ratio it fills to.
+                    .child(
+                        div()
+                            .id("damage-mastery-bar")
+                            .role(Role::ProgressIndicator)
+                            .aria_label(format!("Mastery bar: {ratio}"))
+                            .child(ProgressBar::new("damage-mastery-bar-fill", fill)),
+                    ),
             ),
         )
         .into_any_element()
