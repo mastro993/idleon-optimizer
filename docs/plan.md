@@ -346,8 +346,12 @@ The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole m
 lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
 over its own crate. The Insight ROI tab ports `computeInsightROI` and `buildConcentratedLayout`
 ([`docs/insight-roi.md`](insight-roi.md)); the Observation Unlocks tab ports
-`computeObsUnlockPriority` ([`docs/observation-unlocks.md`](observation-unlocks.md)). Missing: the
-Decision Tree tab and complete save-derived multipliers.
+`computeObsUnlockPriority` ([`docs/observation-unlocks.md`](observation-unlocks.md)). The Decision
+Tree tab opens a run or the loaded save as a root node, steps it to the next research or insight
+level-up (`dtStepSim`), branches, re-simulates, deletes, compares branches by rate, level and time,
+edits each node's grid, shapes and magnifiers, and runs Auto Insight with upstream
+`chooseMonoTargets` ([`docs/decision-tree.md`](decision-tree.md)). Missing: complete save-derived
+multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an

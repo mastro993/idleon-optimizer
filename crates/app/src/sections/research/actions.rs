@@ -1,9 +1,12 @@
 //! What the window does when the research section is edited or run.
 
+use crate::sections::research::tree::{
+    Job, Mode, Outcome as TreeOutcome, RunInputs as TreeRunInputs,
+};
 use crate::sections::research::{ShapeDrag, ShapeRotate, Tab};
 use crate::state::{AppState, RunInputs, ShapeRunInputs};
 use gpui::{App, Context, Window};
-use idleon_common::Control;
+use idleon_common::{Control, Progress};
 use idleon_research::edit::Snapshot;
 use idleon_research::model::{
     Effort, MagKind, OptimizeRequest, OptimizeResult, Placement, SimContext, SimOptions,
@@ -931,6 +934,361 @@ impl AppState {
             ),
             cx,
         );
+    }
+
+    /// Whether a tree job is in flight.
+    fn tree_busy(&self, cx: &App) -> bool {
+        self.tree_run.read(cx).running()
+    }
+
+    /// Open the last optimizer result in the sandbox, or the current save.
+    pub(crate) fn open_in_decision_tree(&mut self, cx: &mut Context<Self>) {
+        let after = self
+            .optimizer
+            .read(cx)
+            .result()
+            .map(|result| result.after.clone());
+        let state = after.clone().unwrap_or_else(|| self.simulation.clone());
+        let tree = idleon_research::tree::Tree::from_state(&state);
+        self.research.tree.tree = Some(tree);
+        self.research.tree.selected = Some(1);
+        self.research.tree.observation = None;
+        self.research.tree.pan = (0.0, 0.0);
+        self.research.tree.zoom = 1.0;
+        self.research.tab = Tab::DecisionTree;
+        self.set_status(
+            if after.is_some() {
+                "Opened the optimized layout in the Decision Tree."
+            } else {
+                "Opened the loaded save in the Decision Tree."
+            },
+            cx,
+        );
+    }
+
+    /// Start the tree over from the loaded save.
+    pub(crate) fn reset_tree(&mut self, cx: &mut Context<Self>) {
+        self.research.tree.tree = Some(idleon_research::tree::Tree::from_state(&self.simulation));
+        self.research.tree.selected = Some(1);
+        self.research.tree.observation = None;
+        self.set_status("Started a new tree from the loaded save.", cx);
+    }
+
+    /// Select a node for the editor; the release of a pan drag is not a click.
+    pub(crate) fn tree_select(&mut self, id: u64, window: &mut Window, cx: &mut Context<Self>) {
+        if self.research.tree.panned {
+            return;
+        }
+        self.research.tree.selected = Some(id);
+        self.research.tree.observation = None;
+        window.focus(&self.focus, cx);
+        cx.notify();
+    }
+
+    pub(crate) fn tree_delete(&mut self, cx: &mut Context<Self>) {
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let Some(tree) = self.research.tree.tree.as_mut() else {
+            return;
+        };
+        match tree.delete(id) {
+            Some(parent) => {
+                self.research.tree.selected = Some(parent);
+                self.set_status(format!("Deleted node #{id} and its branches."), cx);
+            }
+            None => self.set_status("The root node cannot be deleted.", cx),
+        }
+    }
+
+    pub(crate) fn tree_toggle_compare(&mut self, id: u64, cx: &mut Context<Self>) {
+        if let Some(tree) = self.research.tree.tree.as_mut() {
+            tree.toggle_compare(id);
+        }
+        cx.notify();
+    }
+
+    pub(crate) fn tree_clear_compare(&mut self, cx: &mut Context<Self>) {
+        if let Some(tree) = self.research.tree.tree.as_mut() {
+            tree.clear_compare();
+        }
+        cx.notify();
+    }
+
+    pub(crate) fn tree_level_ups_only(&mut self, on: bool, cx: &mut Context<Self>) {
+        if let Some(tree) = self.research.tree.tree.as_mut() {
+            tree.level_ups_only = on;
+        }
+        cx.notify();
+    }
+
+    pub(crate) fn tree_set_auto_insight(&mut self, id: u64, on: bool, cx: &mut Context<Self>) {
+        if self.tree_busy(cx) {
+            return;
+        }
+        if let Some(tree) = self.research.tree.tree.as_mut()
+            && let Some(node) = tree.node_mut(id)
+        {
+            node.auto_insight = on;
+        }
+        cx.notify();
+    }
+
+    pub(crate) fn tree_pick_observation(&mut self, obs: usize, cx: &mut Context<Self>) {
+        self.research.tree.observation = Some(obs);
+        cx.notify();
+    }
+
+    pub(crate) fn set_tree_mode(&mut self, mode: Mode) {
+        self.research.tree.mode = mode;
+    }
+
+    pub(crate) fn tree_zoom(&mut self, delta: f32, cx: &mut Context<Self>) {
+        self.research.tree.zoom = (self.research.tree.zoom + delta).clamp(0.4, 2.0);
+        cx.notify();
+    }
+
+    /// Zoom the whole tree into the viewport, so a long time gap stays on screen.
+    pub(crate) fn tree_fit(
+        &mut self,
+        viewport_width: f32,
+        layout_width: f32,
+        cx: &mut Context<Self>,
+    ) {
+        self.research.tree.zoom = (viewport_width / layout_width.max(1.0)).clamp(0.2, 2.0);
+        self.research.tree.pan = (0.0, 0.0);
+        cx.notify();
+    }
+
+    pub(crate) fn tree_zoom_reset(&mut self, cx: &mut Context<Self>) {
+        self.research.tree.zoom = 1.0;
+        self.research.tree.pan = (0.0, 0.0);
+        cx.notify();
+    }
+
+    pub(crate) fn begin_tree_pan(&mut self, pointer: (f32, f32), cx: &mut Context<Self>) {
+        self.research.tree.panned = false;
+        self.research.tree.drag = Some(crate::sections::research::tree::Pan {
+            start: pointer,
+            pan: self.research.tree.pan,
+        });
+        cx.notify();
+    }
+
+    pub(crate) fn drag_tree_pan(&mut self, pointer: (f32, f32), cx: &mut Context<Self>) {
+        let Some(drag) = self.research.tree.drag else {
+            return;
+        };
+        let dx = pointer.0 - drag.start.0;
+        let dy = pointer.1 - drag.start.1;
+        if dx.abs() > 3.0 || dy.abs() > 3.0 {
+            self.research.tree.panned = true;
+        }
+        self.research.tree.pan = (drag.pan.0 + dx, drag.pan.1 + dy);
+        cx.notify();
+    }
+
+    pub(crate) fn end_tree_pan(&mut self, cx: &mut Context<Self>) {
+        if self.research.tree.drag.take().is_some() {
+            cx.notify();
+        }
+    }
+
+    /// Spend one grid level on the selected node.
+    pub(crate) fn tree_bump_grid(&mut self, cell: usize, delta: i64, cx: &mut Context<Self>) {
+        if self.tree_busy(cx) {
+            return;
+        }
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let changed = self
+            .research
+            .tree
+            .tree
+            .as_mut()
+            .is_some_and(|tree| tree.bump_grid(id, cell, delta));
+        if changed {
+            cx.notify();
+        }
+    }
+
+    /// Assign one magnifier to the selected node's picked observation.
+    pub(crate) fn tree_assign_mag(&mut self, kind: MagKind, obs: usize, cx: &mut Context<Self>) {
+        if self.tree_busy(cx) {
+            return;
+        }
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let context = self.context.clone();
+        let placed = self
+            .research
+            .tree
+            .tree
+            .as_mut()
+            .is_some_and(|tree| tree.assign_mag(id, kind, obs, &context));
+        if placed {
+            cx.notify();
+        }
+    }
+
+    /// Lift the selected node's magnifiers off one observation.
+    pub(crate) fn tree_lift_mag(&mut self, obs: usize, cx: &mut Context<Self>) {
+        if self.tree_busy(cx) {
+            return;
+        }
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let lifted = self
+            .research
+            .tree
+            .tree
+            .as_mut()
+            .is_some_and(|tree| tree.lift_mag(id, obs));
+        if lifted {
+            cx.notify();
+        }
+    }
+
+    /// Nudge a shape on the selected node's board.
+    pub(crate) fn tree_nudge_shape(
+        &mut self,
+        index: usize,
+        dx: f64,
+        dy: f64,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let Some(tree) = self.research.tree.tree.as_mut() else {
+            return;
+        };
+        let Some(node) = tree.node_mut(id) else {
+            return;
+        };
+        let Some(placement) = node.state.placements.get_mut(index) else {
+            return;
+        };
+        placement.x = idleon_research::shape::snap(placement.x + dx);
+        placement.y = idleon_research::shape::snap(placement.y + dy);
+        node.state.saved_overlay = None;
+        cx.notify();
+    }
+
+    /// Turn a shape on the selected node's board by one step.
+    pub(crate) fn tree_turn_shape(&mut self, index: usize, cx: &mut Context<Self>) {
+        if self.tree_busy(cx) {
+            return;
+        }
+        let Some(id) = self.research.tree.selected else {
+            return;
+        };
+        let Some(tree) = self.research.tree.tree.as_mut() else {
+            return;
+        };
+        let Some(node) = tree.node_mut(id) else {
+            return;
+        };
+        let Some(placement) = node.state.placements.get_mut(index) else {
+            return;
+        };
+        let next = placement.rot + idleon_research::shape::ROT_STEP;
+        idleon_research::shape::set_rotation(placement, next);
+        node.state.saved_overlay = None;
+        cx.notify();
+    }
+
+    /// Run one tree job off the UI thread through the shared task runner.
+    pub(crate) fn start_tree_job(&mut self, job: Job, cx: &mut Context<Self>) {
+        let Some(node) = self.research.tree.selected else {
+            return;
+        };
+        let Some(tree) = self.research.tree.tree.clone() else {
+            return;
+        };
+        let context = self.context.clone();
+        let inputs = TreeRunInputs { node, job };
+        self.start_run(
+            self.tree_run.clone(),
+            job.line(),
+            inputs,
+            move |inputs, report| {
+                let mut tree = tree;
+                let mut stopped = false;
+                let mut watched = |progress: Progress| {
+                    let control = report(progress);
+                    stopped |= control == Control::Stop;
+                    control
+                };
+                let stepped = match inputs.job {
+                    Job::Save => tree.save(inputs.node, &context, &mut watched).map(|id| {
+                        (
+                            Some(id),
+                            format!("Stepped node #{} to its next event.", inputs.node),
+                        )
+                    }),
+                    Job::Branch => tree.branch(inputs.node, &context, &mut watched).map(|id| {
+                        (
+                            Some(id),
+                            format!("Branched from node #{} and stepped the copy.", inputs.node),
+                        )
+                    }),
+                    Job::Mags => {
+                        if watched(Progress {
+                            fraction: 0.2,
+                            message: "Fitting the magnifiers to the node…".into(),
+                        }) == Control::Stop
+                        {
+                            return None;
+                        }
+                        let placed = tree.auto_mags(inputs.node, &context);
+                        return Some(TreeOutcome {
+                            tree,
+                            select: Some(inputs.node),
+                            message: format!("Placed {placed} magnifiers on the node."),
+                        });
+                    }
+                    Job::Shapes => {
+                        tree.auto_shapes(inputs.node, &context, &mut watched)?;
+                        let message = format!(
+                            "Placed {} shapes on the node.",
+                            tree.node(inputs.node)
+                                .map(|node| node.state.placements.len())
+                                .unwrap_or(0)
+                        );
+                        return Some(TreeOutcome {
+                            tree,
+                            select: Some(inputs.node),
+                            message,
+                        });
+                    }
+                };
+                match stepped {
+                    Some((select, message)) => Some(TreeOutcome {
+                        tree,
+                        select,
+                        message,
+                    }),
+                    // A cancel stores nothing; a dead end keeps the tree and says why.
+                    None if stopped => None,
+                    None => Some(TreeOutcome {
+                        tree,
+                        select: Some(inputs.node),
+                        message: "No next event within the horizon: the node earns no EXP, or its next level-up is centuries away."
+                            .into(),
+                    }),
+                }
+            },
+            cx,
+        );
+    }
+
+    /// Stop the tree job at its next report; the tree keeps its current shape.
+    pub(crate) fn cancel_tree_job(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(self.tree_run.clone(), "Cancelling the tree step…", cx);
     }
 }
 

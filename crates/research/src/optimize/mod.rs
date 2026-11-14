@@ -9,6 +9,7 @@
 
 pub mod grid;
 pub mod mags;
+pub mod monos;
 pub mod shapes;
 
 use crate::engine::{self, Refit, TargetRun};
