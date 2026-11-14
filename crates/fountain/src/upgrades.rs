@@ -490,7 +490,9 @@ impl Fountain {
     /// The next `count` fountain levels, as the overview's planner lists them.
     pub fn level_plan(&self, count: usize) -> Vec<LevelStep> {
         let level = self.level().max(0.0) as usize;
-        let mut cumulative: [f64; CURRENCIES] = [0.0; CURRENCIES];
+        // One slot past the last currency: `level_currency` returns
+        // `CURRENCIES` for the levels no currency type pays for.
+        let mut cumulative = [0.0_f64; CURRENCIES + 1];
         (level..level + count)
             .map(|level| {
                 let cost = Self::opal_cost(level as f64);
