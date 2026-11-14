@@ -115,7 +115,9 @@ fn observations_unlock_at_their_research_requirement() {
     assert!(level >= 40.0);
 
     for (obs, found) in run.state.observations.found.iter().enumerate() {
-        let expected = obs == 0 || game().observations[obs].roll_req <= level;
+        // Upstream `sim-engine` unlocks at `OCC_DATA[oi].roll`, the level the
+        // observation unlocks at; `rollReq` is the roll it takes to find it.
+        let expected = obs == 0 || game().observations[obs].roll <= level;
         assert_eq!(*found, expected, "observation {obs} at level {level}");
     }
 }

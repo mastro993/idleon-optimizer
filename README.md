@@ -16,9 +16,9 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 
 ![The research grid with shapes placed](docs/grid.png)
 
-| Rates | Optimize |
-| --- | --- |
-| ![Rate breakdown and observations](docs/rates.png) | ![A finished run](docs/result.png) |
+| Rates | Optimize | Insight ROI |
+| --- | --- | --- |
+| ![Rate breakdown and observations](docs/rates.png) | ![A finished run](docs/result.png) | ![Insight ROI table](docs/insight-roi.png) |
 
 ## What it does
 

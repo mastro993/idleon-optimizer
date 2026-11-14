@@ -605,7 +605,8 @@ fn insight_roi(
     kal_base: f64,
 ) -> f64 {
     let level = sim.observations.insight_level[obs];
-    let missing = (sim::insight_exp_req(obs, level) - sim.observations.insight_exp[obs]).max(1.0);
+    let missing =
+        (sim::insight_exp_required(obs, level) - sim.observations.insight_exp[obs]).max(1.0);
     let bonus =
         sim::grid_bonus(&sim.grid, overlay, 91, ctx) + sim::grid_bonus(&sim.grid, overlay, 92, ctx);
     let kaleido = 1.0 + kal_map.get(obs).copied().unwrap_or(0) as f64 * kal_base;

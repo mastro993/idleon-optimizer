@@ -806,6 +806,60 @@ impl AppState {
         );
     }
 
+    /// The Insight ROI analysis: running, progress, result and staleness.
+    pub(crate) fn insight_state(&self, cx: &App) -> TaskState<idleon_research::insight::Outcome> {
+        self.insight_run.read(cx).state(&self.insight_inputs())
+    }
+
+    /// The inputs an insight analysis started now would use.
+    pub(crate) fn insight_inputs(&self) -> ShapeRunInputs {
+        self.shape_inputs()
+    }
+
+    /// Run the insight ROI analysis off the UI thread through the shared runner.
+    pub(crate) fn run_insight_roi(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.insight_inputs();
+        self.start_run(
+            self.insight_run.clone(),
+            "Computing insight ROI…",
+            inputs,
+            move |inputs, report| {
+                idleon_research::insight::analyze(
+                    &inputs.simulation,
+                    &inputs.context,
+                    inputs.effort,
+                    report,
+                )
+            },
+            cx,
+        );
+    }
+
+    /// Stop the insight analysis at its next report; the previous table stays.
+    pub(crate) fn cancel_insight_roi(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.insight_run.clone(),
+            "Cancelling the insight analysis…",
+            cx,
+        );
+    }
+
+    /// The Insight ROI sort mode, as the table's segmented control names it.
+    pub(crate) fn set_insight_sort(
+        &mut self,
+        sort: idleon_research::insight::Sort,
+        cx: &mut Context<Self>,
+    ) {
+        self.research.insight_sort = sort;
+        cx.notify();
+    }
+
+    /// Whether the Insight ROI table hides observations that lose no EXP.
+    pub(crate) fn set_insight_hide_free(&mut self, hide: bool, cx: &mut Context<Self>) {
+        self.research.insight_hide_free = hide;
+        cx.notify();
+    }
+
     /// Write the stored placement to the grid editor, so the shapes the tab
     /// previewed are the ones the rest of the section reads.
     pub(crate) fn apply_shape_layout(&mut self, cx: &mut Context<Self>) {

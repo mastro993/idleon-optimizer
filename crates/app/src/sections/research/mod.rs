@@ -5,6 +5,7 @@ pub(crate) mod colors;
 
 pub(crate) mod dashboard;
 pub(crate) mod grid;
+mod insight_roi;
 mod inspector;
 pub(crate) mod minehead;
 mod optimizer;
@@ -40,6 +41,8 @@ pub(crate) enum Tab {
     Rates,
     /// Target, effort and the last result.
     Run,
+    /// Per-observation insight levelling: time, EXP lost and break-even.
+    InsightRoi,
     /// Shape priority tiers, presets and the optimized placement.
     Shapes,
     /// The Depth Charge dashboard, strategy search, ranking, path and game.
@@ -49,11 +52,12 @@ pub(crate) enum Tab {
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 7] = [
+    pub(crate) const ALL: [Tab; 8] = [
         Tab::Dashboard,
         Tab::Grid,
         Tab::Rates,
         Tab::Run,
+        Tab::InsightRoi,
         Tab::Shapes,
         Tab::Minehead,
         Tab::Sushi,
@@ -65,6 +69,7 @@ impl Tab {
             Tab::Grid => "grid",
             Tab::Rates => "rates",
             Tab::Run => "run",
+            Tab::InsightRoi => "insight",
             Tab::Shapes => "shapes",
             Tab::Minehead => "minehead",
             Tab::Sushi => "sushi",
@@ -77,6 +82,7 @@ impl Tab {
             Tab::Grid => "Grid",
             Tab::Rates => "Rates",
             Tab::Run => "Optimize",
+            Tab::InsightRoi => "Insight ROI",
             Tab::Shapes => "Shape Optimization",
             Tab::Minehead => "Minehead",
             Tab::Sushi => "Sushi Station",
@@ -145,6 +151,12 @@ pub(crate) struct State {
     pub(crate) minehead: minehead::State,
     /// The Sushi Station tab's own state.
     pub(crate) sushi: sushi::State,
+    /// The Insight ROI table's sort mode.
+    pub(crate) insight_sort: idleon_research::insight::Sort,
+    /// Whether the Insight ROI table hides rows that lose no EXP. Upstream
+    /// starts hidden; a first run here would then show an empty table, so this
+    /// build starts with every usable observation listed.
+    pub(crate) insight_hide_free: bool,
 }
 
 impl State {
@@ -166,6 +178,8 @@ impl State {
             shape_values: None,
             minehead: minehead::State::new(),
             sushi: sushi::State::new(),
+            insight_sort: idleon_research::insight::Sort::default(),
+            insight_hide_free: false,
         }
     }
 }
@@ -302,6 +316,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(optimizer::optimizer_pane(state, window, cx))
+            .into_any_element(),
+        Tab::InsightRoi => div()
+            .id("pane-insight")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(insight_roi::pane(state, window, cx))
             .into_any_element(),
         Tab::Shapes => div()
             .id("pane-shapes")

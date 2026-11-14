@@ -14,7 +14,7 @@ use crate::model::{Effort, SimContext, SimOptions, Simulation, Target};
 use crate::optimize::{grid, mags, shapes};
 use crate::sim::{
     self, Event, Projection, Sample, TOURNAMENT_BONUS_HOURS, TOURNAMENT_INTERVAL_HOURS,
-    advance_level, first_tournament_hours, insight_exp_req, insight_rate, kalei_base,
+    advance_level, first_tournament_hours, insight_exp_required, insight_rate, kalei_base,
     kaleidoscope_map,
 };
 use idleon_common::Control;
@@ -119,7 +119,7 @@ pub fn simulate(
             if rate <= 0.0 {
                 continue;
             }
-            let req = insight_exp_req(obs, state.observations.insight_level[obs]);
+            let req = insight_exp_required(obs, state.observations.insight_level[obs]);
             let left = ((req - state.observations.insight_exp[obs]) / rate).max(0.0);
             if left < to_insight {
                 to_insight = left;

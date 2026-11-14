@@ -34,6 +34,21 @@ struct Weights {
 
 impl Weights {
     fn build(sim: &Simulation, ctx: &SimContext) -> Self {
+        Self::from_tiers(sim, sim::bare_cell_values(sim, ctx))
+    }
+
+    /// The same weights with the per-cell values the caller supplies, and no
+    /// tiers: the insight ROI scores grind shapes on insight alone, as upstream
+    /// `optimizeShapePlacement` does when it is handed `precomputedCellValues`.
+    fn from_values(value: Vec<f64>) -> Self {
+        Self {
+            above: vec![0.0; game().cells()],
+            below: vec![0.0; game().cells()],
+            value,
+        }
+    }
+
+    fn from_tiers(sim: &Simulation, value: Vec<f64>) -> Self {
         let game = game();
         let mut above = vec![0.0; game.cells()];
         let mut below = vec![0.0; game.cells()];
@@ -54,7 +69,7 @@ impl Weights {
         Self {
             above,
             below,
-            value: sim::bare_cell_values(sim, ctx),
+            value,
         }
     }
 
@@ -101,6 +116,31 @@ pub fn optimize(
     effort: Effort,
     report: &mut dyn FnMut(Progress) -> Control,
 ) -> ShapesOutcome {
+    run(sim, ctx, effort, Weights::build(sim, ctx), false, report)
+}
+
+/// Greedy placement scored by explicit per-cell values, with no EXP local
+/// search: how the insight ROI places the shapes it grinds with.
+pub fn optimize_for_values(
+    sim: &Simulation,
+    ctx: &SimContext,
+    values: &[f64],
+    report: &mut dyn FnMut(Progress) -> Control,
+) -> ShapesOutcome {
+    let weights = Weights::from_values(values.to_vec());
+    run(sim, ctx, Effort::Quick, weights, true, report)
+}
+
+/// The placement pass. `scored_by_values` skips the incumbent comparison: a
+/// grind layout is chosen by break-even outside, not by the EXP it keeps.
+fn run(
+    sim: &Simulation,
+    ctx: &SimContext,
+    effort: Effort,
+    weights: Weights,
+    scored_by_values: bool,
+    report: &mut dyn FnMut(Progress) -> Control,
+) -> ShapesOutcome {
     let game = game();
     let before = sim::exp_rate(sim, ctx).total;
     // Whatever the search does, it may not do worse than the layout it started
@@ -126,7 +166,6 @@ pub fn optimize(
     {
         return outcome;
     }
-    let weights = Weights::build(sim, ctx);
     let anchors = weights.primary_anchors();
     let below = weights.below_anchors();
     if anchors.is_empty() && below.is_empty() {
@@ -218,7 +257,7 @@ pub fn optimize(
     // Ties adopt the greedy layout: a tier preset can be worth exactly the
     // current EXP and still move shapes the user asked onto another node.
     let greedy_rate = score(sim, ctx, &greedy);
-    if greedy_rate >= outcome.rate {
+    if scored_by_values || greedy_rate >= outcome.rate {
         outcome.rate = greedy_rate;
         outcome.placements = greedy;
     }

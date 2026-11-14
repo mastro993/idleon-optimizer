@@ -331,11 +331,14 @@ magnifiers and shapes on the level-up events, the saved and optimized layouts ar
 target they reach, and the grid spend is scored with a forward simulation. The Run tab's result
 reports the best and worst tested layouts, cuts the projection into a timeline of level, insight and
 tournament phases, charts the same samples' EXP/hour and lists each phase as an expandable action
-that marks its segment.
+that marks its segment. The Insight ROI tab prices each observation's next insight levels against the
+research EXP the grind gives up, with the concentrated grind layout, the re-optimized post-grind
+layout, the recoup and break-even columns, four sort modes and the hide-free filter.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
-over its own crate. Missing: the Insight ROI, Observation Unlocks and Decision Tree tabs and
-complete save-derived multipliers.
+over its own crate. The Insight ROI tab ports `computeInsightROI` and `buildConcentratedLayout`
+([`docs/insight-roi.md`](insight-roi.md)). Missing: the Observation Unlocks and Decision Tree tabs
+and complete save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an
