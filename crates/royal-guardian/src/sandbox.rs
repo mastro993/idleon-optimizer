@@ -393,9 +393,12 @@ pub fn validate(state: &Sandbox) -> Vec<String> {
         if !allowed.contains(&kind) {
             errors.push(format!("map {map}: type {kind} is locked"));
         }
+        // A map past the last world page counts against the last world, the
+        // same clamp `points_left` applies.
+        let world = RoyalGuardian::world_of(map).min(WORLDS - 1);
         match kind {
-            1 => support[RoyalGuardian::world_of(map)] += 1,
-            2 => savage[RoyalGuardian::world_of(map)] += 1,
+            1 => support[world] += 1,
+            2 => savage[world] += 1,
             _ => {}
         }
         if royal.points_left(map) < 0.0 {
