@@ -136,7 +136,10 @@ the fixed default point can land on an inner table that swallows the wheel.
 
 The research check also puts a monocle in the pool and runs the Insight ROI table (`RES-05`): it
 opens the tab, computes the analysis, sorts it through the segmented control and checks the summary
-totals against the rows. It then opens every Minehead subtab and plays one insta-reveal (`RES-09`),
+totals against the rows. It then drives the Decision Tree (`RES-08`): assigns a glass, saves the
+root to its first event, compares two branches, branches and deletes a fork, runs Auto Magnifiers and
+Auto Shapes, and lets Auto Insight land on a research level-up. A segmented control that sits inside
+a scroll body cannot take a click, so the tree's mode strip stays outside its scroll area. It then opens every Minehead subtab and plays one insta-reveal (`RES-09`),
 and every Sushi Station subtab and both spoiler toggles (`RES-10`), which reveal rows the save's
 level has not unlocked. A subtab
 strip built from shared buttons can rewrite one button's semantic id for a render, so the check finds
