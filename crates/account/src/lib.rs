@@ -39,6 +39,7 @@ use idleon_save::Save;
 use idleon_save::fields;
 use serde_json::{Map, Value};
 
+pub use data::{FamilyBonus, TalentParam};
 pub use prayer::prayer;
 
 /// One line of the save-derived multiplier tree.
@@ -198,6 +199,21 @@ impl<'a> Decoder<'a> {
             value *= 1.0 + shape.bonus_pct / 100.0;
         }
         value * self.all_bonus_multi()
+    }
+
+    /// `talentParams(index)`: the talent's curve from the game data.
+    pub fn talent_param(&self, index: usize) -> Option<&data::TalentParam> {
+        self.data.talent(index)
+    }
+
+    /// `familyBonusParams(index)`: a class family bonus curve.
+    pub fn family_bonus(&self, index: usize) -> Option<&data::FamilyBonus> {
+        self.data.family_bonus(index)
+    }
+
+    /// Whether a character class's talent chain inherits `tab`.
+    pub fn class_in_tree(&self, class: usize, tab: u32) -> bool {
+        self.data.class_in_tree(class, tab)
     }
 }
 

@@ -60,7 +60,10 @@ fn coin_groups(
         let mut terms = Vec::new();
         push(&mut terms, "Combined Item Sources: EXTRA MONEY", etc100);
         groups[11] = crate::group(11, Some(1.0 + etc100 / 100.0)).with_terms(terms, 100.0);
-        groups[12] = crate::group(12, Some(1.0 + gold_set_bonus(&decoder, index) / 100.0));
+        groups[12] = crate::group(
+            12,
+            Some(1.0 + set_bonus(&decoder, "GOLD_SET", index) / 100.0),
+        );
         groups[13] = crate::group(13, Some(1.0 + gambit / 100.0)).with_note(if gambit > 0.0 {
             format!("{gambit:.1}%")
         } else {
@@ -70,6 +73,12 @@ fn coin_groups(
             14,
             Some(1.0 + 2.5 * if decoder.bundle("bun_y") { 1.0 } else { 0.0 }),
         );
+        // The talent pays at least one when it is unlearned, and the cooking
+        // level scales it through `getLOG`. The group multiplies its two
+        // factors rather than summing terms, so it expands into neither.
+        let chip433 = crate::talent::max_bonus(&decoder, 433, index);
+        let cooking = idleon_common::curve::log(decoder.option(362));
+        groups[15] = crate::group(15, Some(1.0 + chip433.max(1.0) * cooking / 100.0));
         // Voting pays only while the vote is the server-wide winner, which a
         // save alone does not carry, so the term reads zero on most imports.
         let (meal, maneki, poppy, vote) = (
@@ -226,10 +235,10 @@ pub fn coin(
     crate::Snapshot { characters: rows }
 }
 
-/// `getSetBonus('GOLD_SET', ci)`: the permanent unlock, or the equipped set.
-fn gold_set_bonus(decoder: &Decoder<'_>, character: usize) -> f64 {
-    if decoder.ola_text(379).contains("GOLD_SET") || set_equipped(decoder, "GOLD_SET", character) {
-        stats::set_bonus("GOLD_SET")
+/// `getSetBonus(name, character)`: the permanent unlock, or the equipped set.
+pub(crate) fn set_bonus(decoder: &Decoder<'_>, name: &str, character: usize) -> f64 {
+    if decoder.ola_text(379).contains(name) || set_equipped(decoder, name, character) {
+        stats::set_bonus(name)
     } else {
         0.0
     }

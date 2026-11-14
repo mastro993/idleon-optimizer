@@ -79,10 +79,15 @@ function evaluate(label, rawSave, charIdx) {
     total: Number(tree.val) || 0,
     partial: Boolean(tree.partial),
     reason: String(tree.reason || ''),
-    // The 23 multiplicative groups, in the order `coin-multi.js` multiplies them.
+    // The 23 multiplicative groups, in the order `coin-multi.js` multiplies them,
+    // with the additive terms each group's own breakdown sums.
     groups: (tree.children || []).map((child) => ({
       name: String(child.name),
       value: Number(child.val) || 0,
+      terms: (child.children || []).map((term) => ({
+        name: String(term.name),
+        value: typeof term.val === 'object' ? Number(term.val?.val) || 0 : Number(term.val) || 0,
+      })),
     })),
   };
 }

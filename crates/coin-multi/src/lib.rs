@@ -10,12 +10,14 @@
 //!
 //! [`save`] decodes the save-derived groups through the account view; this
 //! module owns the card inputs, their validation and the overkill tier the
-//! damage-scaled talent reads. [`tree`] turns the evaluated groups into the
-//! shared formula tree's expansion of the total.
+//! damage-scaled talent reads. [`talent`] resolves a talent's value at its best
+//! character. [`tree`] turns the evaluated groups into the shared formula
+//! tree's expansion of the total.
 
 mod divinity;
 pub mod overkill;
 mod save;
+mod talent;
 pub mod tree;
 
 use idleon_stats as stats;
@@ -198,7 +200,7 @@ const GROUPS: [Spec; 23] = [
     Spec {
         name: "Talent: Dustwalker and Cooking Level",
         source: "js/stats/systems/common/talent.js · talent(433) × getLOG(OLA[362])",
-        reason: "needs the talent system (js/stats/systems/common/talent.js)",
+        reason: "",
         note: "",
     },
     Spec {

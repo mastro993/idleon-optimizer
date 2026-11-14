@@ -37,13 +37,7 @@ pub(crate) fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
     let save = decoder.save();
     let y2 = y2_bubble(decoder, 0);
     let coral_kid = decoder.option(430).round();
-    let universal = decoder.companion(0) == 1.0;
-    let pocket = POCKETS.iter().any(|column| {
-        fields::at(save, "Holes", &[POCKET_ROW, *column])
-            .is_some_and(|god| god >= 0.0 && decoder.god_type(god) == style as f64)
-    });
-    let account_wide = (style == 3 || style == 5)
-        && (universal || pocket || decoder.option(425) == f64::from(style + 1));
+    let account_wide = account_wide(decoder, style);
 
     let linked = fields::numbers(save, "Divinity").unwrap_or_default();
     let mut total = 0.0;
@@ -60,6 +54,73 @@ pub(crate) fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
         total += minor_link(decoder, character, god, y2, coral_kid);
     }
     total
+}
+
+/// `computeDivinityMinor(character, style, saveData)`: one character's own
+/// link. This is the share the talent system's AllTalentLVz reads for Arctis
+/// (style 2).
+///
+/// A link the save has not assigned is `-1` upstream, not zero, so an absent
+/// row never pays.
+pub(crate) fn minor_for(decoder: &Decoder<'_>, character: usize, style: i32) -> f64 {
+    let Some(target) =
+        (0..decoder.god_count()).find(|god| decoder.god_type(*god as f64) == style as f64)
+    else {
+        return 0.0;
+    };
+    let save = decoder.save();
+    let linked = fields::numbers(save, "Divinity").unwrap_or_default();
+    let y2 = y2_bubble(decoder, character);
+    let coral_kid = decoder.option(430).round();
+    // The per-character branch shares the link through the universal
+    // companion or a pocket, and the game's own unlock gates for Arctis
+    // (research grid 173) and Nobis (gem item 9).
+    let shared = decoder.companion(0) == 1.0
+        || pocketed(decoder, style)
+        || (fields::at(save, "Research", &[0, 173]).unwrap_or(0.0) >= 1.0 && style == 2)
+        || (fields::at(save, "GemItemsPurchased", &[9]).unwrap_or(0.0) == 1.0 && style == 0);
+    if shared {
+        return minor_link(decoder, character, target, y2, coral_kid);
+    }
+
+    let mut god = linked
+        .get(character + 12)
+        .copied()
+        .flatten()
+        .unwrap_or(-1.0);
+    if god < 0.0 {
+        return 0.0;
+    }
+    if decoder.god_type(god) != style as f64 {
+        // Talent 505 lets a link carry one extra god, named by its worth.
+        let talent = decoder.talent_level(character, 505);
+        let extra = talent - 10.0 * (talent / 10.0).floor();
+        if !(talent > 0.0
+            && fields::number_at(&linked, 25) > extra
+            && decoder.god_type(extra) == style as f64)
+        {
+            return 0.0;
+        }
+        god = extra;
+    }
+    minor_link(decoder, character, god as usize, y2, coral_kid)
+}
+
+/// The link is account-wide when the universal companion is owned, a Cavern
+/// pocket holds the deity (styles 3 and 5), or an option selects it.
+fn account_wide(decoder: &Decoder<'_>, style: i32) -> bool {
+    (style == 3 || style == 5)
+        && (decoder.companion(0) == 1.0
+            || pocketed(decoder, style)
+            || decoder.option(425) == f64::from(style + 1))
+}
+
+/// Whether one of the Cavern pockets holds a deity of `style`.
+fn pocketed(decoder: &Decoder<'_>, style: i32) -> bool {
+    POCKETS.iter().any(|column| {
+        fields::at(decoder.save(), "Holes", &[POCKET_ROW, *column])
+            .is_some_and(|god| god >= 0.0 && decoder.god_type(god) == style as f64)
+    })
 }
 
 /// One character's share: `div Lv / (60 + div Lv)` times the account terms.

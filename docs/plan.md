@@ -142,17 +142,22 @@ order. Sections that share combat or save systems (M2, M26, M27) can reuse the c
 that share a tree renderer reuse the formula-tree component.
 
 The Coin Multiplier Calculator (M6) is partial: the character selector, the map/target/HP/damage
-cards, the overkill tier and 20 of the 23 multiplicative groups are ported and compared against the
+cards, the overkill tier and 21 of the 23 multiplicative groups are ported and compared against the
 upstream oracle. The formula breakdown renders through the shared formula tree: the total's 23
 group factors, in upstream's order and with upstream's names, each carrying the source that owns it
 and, where the save already resolves the group's sources, the additive terms it sums back to. Every
 group multiplies back to the total card, a group this build cannot resolve is neutral and names what
 it needs, and the shared search reaches group names, term names and sources. The Divinity and Crop
 Scientist group resolves from `computeDivinityMinor` and `computeCropSC`, including the Big P bubble
-and the mainframe/Grimoire/exotic/Vault multiplier. The other three groups need systems this build
-does not carry: the shared stat pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses;
-the section names each missing group and marks the total partial, so the figure is a lower bound
-until those systems land.
+and the mainframe/Grimoire/exotic/Vault multiplier. The Dustwalker and Cooking Level group resolves
+through the talent system (`getbonus2` plus `AllTalentLVz`: the Spelunk super talent, talents
+149/374/539, achievement 291, the mage family bonus with talent 144, the Rift Slug companion,
+Arctis' Divinity minor, Dream 12, sneaking completions, Grimoire 39, the Kattlekruk set, Arcane 57
+and Super Bit 47) multiplied by `getLOG` of the cooking level. The other two groups need systems this
+build does not carry: the shared stat pipeline's total STR/AGI/WIS for the Cash Bubbles group, and
+the cards, golden food (with its GFood multiplier chain), flurbo shop, box rewards, guild curve and
+the talents 657/22/643/644 for Other Additive Sources; the section names each missing group and
+marks the total partial, so the figure is a lower bound until those systems land.
 
 ## 5. Shared data and JSON import
 

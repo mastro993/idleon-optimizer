@@ -58,6 +58,7 @@ const deathNote = await import(join(source, 'js/stats/data/w7/deathNote.js'));
 const gaming = await import(join(source, 'js/stats/data/w4/gaming.js'));
 const gameConstants = await import(join(source, 'js/stats/data/game-constants.js'));
 const hole = await import(join(source, 'js/stats/data/w5/hole.js'));
+const talent = await import(join(source, 'js/stats/data/common/talent.js'));
 
 // Equipment UQ stats: [uq1txt, uq1val, uq2txt, uq2val] for every item that has
 // one. The full ITEMS table is 400 KB; this keeps the account file small.
@@ -86,8 +87,33 @@ function vialParams(key) {
   };
 }
 
+// `TalentDescriptions[t][1][0..2]`: each talent's first-tab curve.
+const talents = {};
+for (const [id, row] of Object.entries(lists.TalentDescriptions)) {
+  const params = row && row[1];
+  if (!params) continue;
+  talents[id] = { x1: Number(params[0]) || 0, x2: Number(params[1]) || 0, formula: String(params[2]) };
+}
+
+// `familyBonusParams(idx)`: the family bonus curve and the level offset the
+// matching `ClassAccountBonus` row subtracts.
+const familyBonuses = Object.fromEntries(
+  Object.entries(lists.ClassFamilyBonuses).map(([id, row]) => [
+    id,
+    {
+      x1: Number(row[1]) || 0,
+      x2: Number(row[2]) || 0,
+      formula: String(row[3]),
+      lvOffset: Number(lists.ClassAccountBonus[id] && lists.ClassAccountBonus[id][1]) || 0,
+    },
+  ])
+);
+
 const payload = {
   encoding: encoding.N2L,
+  talents,
+  familyBonuses,
+  classTrees: talent.CLASS_TREES,
   arcade: Object.fromEntries(
     [26, 27, 35, 38, 51, 52, 54, 59, 62, 63, 67, 69, 72].map((idx) => [idx, arcade.arcadeShopParams(idx)])
   ),
