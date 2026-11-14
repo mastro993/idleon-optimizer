@@ -683,6 +683,17 @@ enum Decoded {
 /// already read: a malformed config fails the import instead of leaving the
 /// window half-changed, and each unknown-field warning is counted once.
 pub(crate) fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, String> {
+    decode_all(document, true)
+}
+
+/// The session's own restore: a config that no longer fits this build's shape
+/// becomes a warning and that section keeps its defaults, so one bad section
+/// never costs the save and every other section's state.
+pub(crate) fn prepare_lenient(document: &mut pipeline::Document) -> Vec<Config> {
+    decode_all(document, false).unwrap_or_default()
+}
+
+fn decode_all(document: &mut pipeline::Document, strict: bool) -> Result<Vec<Config>, String> {
     let configs: Vec<(String, Value)> = match document {
         pipeline::Document::Project(project) => project
             .document
@@ -701,7 +712,10 @@ pub(crate) fn prepare(document: &mut pipeline::Document) -> Result<Vec<Config>, 
         match decode(id, config, warnings) {
             Decoded::Config(config) => decoded.push(*config),
             Decoded::Unknown => {}
-            Decoded::Malformed(detail) => return Err(detail),
+            Decoded::Malformed(detail) if strict => return Err(detail),
+            Decoded::Malformed(detail) => {
+                warnings.push(format!("{detail}; the section keeps its defaults"));
+            }
         }
     }
     Ok(decoded)
@@ -2151,6 +2165,42 @@ mod tests {
             let covered = configured || derived.contains(&id);
             assert!(covered, "{id} has no project config");
         }
+    }
+
+    #[test]
+    fn a_strict_prepare_still_refuses_a_malformed_config() {
+        let text = json!({
+            "format": idleon_project::FORMAT,
+            "version": idleon_project::VERSION,
+            "sections": {
+                "killroy": { "weeks": 20 },
+                "clamworks": { "hours": null },
+            },
+        })
+        .to_string();
+        let mut strict = pipeline::read(&text).expect("the project reads");
+        let error = prepare(&mut strict).expect_err("the malformed config fails the import");
+        assert!(error.contains("clamworks"), "{error}");
+
+        let mut lenient = pipeline::read(&text).expect("the project reads");
+        let configs = prepare_lenient(&mut lenient);
+        assert!(matches!(
+            configs.as_slice(),
+            [Config::Killroy(KillroyState { weeks: 20, .. })]
+        ));
+        let pipeline::Document::Project(project) = lenient else {
+            panic!("the document stays a project")
+        };
+        assert!(
+            project
+                .document
+                .warnings
+                .iter()
+                .any(|warning| warning.contains("clamworks")
+                    && warning.contains("keeps its defaults")),
+            "{:?}",
+            project.document.warnings
+        );
     }
 
     #[test]
