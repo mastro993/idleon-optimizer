@@ -20,6 +20,8 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 | --- | --- | --- |
 | ![Rate breakdown and observations](docs/rates.png) | ![A finished run](docs/result.png) | ![Insight ROI table](docs/insight-roi.png) |
 
+![The Observation Unlock Priority table](docs/observation-unlocks.png)
+
 ## What it does
 
 - **The dashboard** — the 25 upstream calculators as a card grid grouped General through World 7,

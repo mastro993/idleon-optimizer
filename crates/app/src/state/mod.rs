@@ -418,6 +418,9 @@ pub(crate) struct AppState {
     /// The shared runner for the Insight ROI analysis; it takes the same
     /// simulation, context and effort a shape placement does.
     pub(crate) insight_run: Entity<TaskRunner<idleon_research::insight::Outcome, ShapeRunInputs>>,
+    /// The shared runner for the Observation Unlocks ranking; it takes the same
+    /// simulation, context and effort.
+    pub(crate) unlock_run: Entity<TaskRunner<idleon_research::unlock::Outcome, ShapeRunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for the coral god rank beam search.
@@ -590,6 +593,21 @@ impl AppState {
             |_, result| {
                 Some(format!(
                     "Ranked {} observations by insight ROI.",
+                    result.rows.len()
+                ))
+            },
+        );
+        let unlock_run = report_run::<idleon_research::unlock::Outcome, ShapeRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Ranking observation unlocks…"),
+                cancelled_kept: "Unlock ranking cancelled; the previous table is unchanged.",
+                cancelled_empty: "Unlock ranking cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Ranked {} undiscovered observations.",
                     result.rows.len()
                 ))
             },
@@ -1262,6 +1280,7 @@ impl AppState {
             _bridge: bridge,
             shape_run,
             insight_run,
+            unlock_run,
             insight_breakdown,
             _subscriptions: subscriptions,
             session_save_pending: false,

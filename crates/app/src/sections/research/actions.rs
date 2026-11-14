@@ -844,6 +844,49 @@ impl AppState {
         );
     }
 
+    /// The Observation Unlocks analysis: running, progress, result and staleness.
+    pub(crate) fn unlock_state(&self, cx: &App) -> TaskState<idleon_research::unlock::Outcome> {
+        self.unlock_run.read(cx).state(&self.shape_inputs())
+    }
+
+    /// Run the unlock ranking off the UI thread through the shared runner.
+    pub(crate) fn run_unlocks(&mut self, cx: &mut Context<Self>) {
+        let inputs = self.shape_inputs();
+        self.start_run(
+            self.unlock_run.clone(),
+            "Ranking observation unlocks…",
+            inputs,
+            move |inputs, report| {
+                idleon_research::unlock::analyze(
+                    &inputs.simulation,
+                    &inputs.context,
+                    inputs.effort,
+                    report,
+                )
+            },
+            cx,
+        );
+    }
+
+    /// Stop the unlock ranking at its next report; the previous table stays.
+    pub(crate) fn cancel_unlocks(&mut self, cx: &mut Context<Self>) {
+        self.cancel_run(
+            self.unlock_run.clone(),
+            "Cancelling the unlock ranking…",
+            cx,
+        );
+    }
+
+    /// Which undiscovered observations the Unlocks table lists.
+    pub(crate) fn set_unlock_filter(
+        &mut self,
+        filter: idleon_research::unlock::Filter,
+        cx: &mut Context<Self>,
+    ) {
+        self.research.unlock_filter = filter;
+        cx.notify();
+    }
+
     /// The Insight ROI sort mode, as the table's segmented control names it.
     pub(crate) fn set_insight_sort(
         &mut self,

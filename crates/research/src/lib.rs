@@ -15,6 +15,7 @@ pub mod shape;
 pub mod sim;
 pub mod tiers;
 pub mod timeline;
+pub mod unlock;
 
 pub use data::{GameData, GridNode, Observation, Preset, ShapeDef, game};
 pub use model::{

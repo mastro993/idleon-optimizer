@@ -196,6 +196,8 @@ impl Decoder<'_> {
             additive: 10.0 * reached(150.0) + 15.0 * reached(400.0),
             exp_multi: 1.0 + 10.0 * reached(750.0) / 100.0,
             grid_points: (reached(300.0) + reached(500.0)) as u32,
+            min_roll: reached(200.0),
+            max_roll: reached(1000.0),
         }
     }
 
@@ -573,4 +575,8 @@ pub(crate) struct Mastery {
     pub additive: f64,
     pub exp_multi: f64,
     pub grid_points: u32,
+    /// `minRoll`: one more minimum observation roll past 200 total levels.
+    pub min_roll: f64,
+    /// `maxRoll`: one more maximum observation roll past 1000.
+    pub max_roll: f64,
 }
