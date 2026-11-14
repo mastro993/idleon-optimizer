@@ -24,7 +24,9 @@ use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
+};
 use idleon_combat::encounter::{self, Outcome};
 use idleon_ui::format;
 
@@ -32,7 +34,11 @@ use idleon_ui::format;
 const DURATIONS: [u64; 8] = [60, 300, 600, 1800, 3600, 21_600, 43_200, 86_400];
 
 /// The encounter pane: options, the run in flight and its result.
-pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+pub(crate) fn pane(
+    state: &mut AppState,
+    window: &Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let task = state.combat_encounter(cx);
     let results = state.combat.results;
@@ -73,7 +79,11 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         ));
     }
     match task.result.clone() {
-        Some(result) => body = body.child(results_card(&result, task.stale, results, cx)),
+        Some(result) => {
+            body = body.child(results_card(
+                &result, task.stale, results, state, window, cx,
+            ));
+        }
         None if !task.running && !task.cancelled => {
             body = body.child(
                 Banner::new(
@@ -277,6 +287,8 @@ pub(crate) struct RunResult {
     pub(crate) den: Option<idleon_combat::den::Outcome>,
     /// The config terms the save decoder could not read.
     pub(crate) progress_warnings: Vec<String>,
+    /// The captured Killroy replay this run answered, when it was opened from one.
+    pub(crate) source: Option<idleon_combat::replay::KillroyReplay>,
 }
 
 /// The results: a tab bar over the one stored run and the picked tab's panel.
@@ -284,6 +296,8 @@ fn results_card(
     result: &RunResult,
     stale: bool,
     current: ResultsTab,
+    state: &AppState,
+    window: &Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -333,6 +347,7 @@ fn results_card(
         ResultsTab::Den => den_panel(result, muted),
         ResultsTab::Progress => progress_panel(result, muted),
         ResultsTab::Smelting => smelting_panel(run, muted),
+        ResultsTab::Replay => super::replay::pane(state, result, window, cx),
     };
     card.child(panel).into_any_element()
 }
@@ -543,7 +558,7 @@ fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
 
 /// The Den attempt: the hound waves replayed at this run's kill rate.
 fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
-    let Some(den) = result.den else {
+    let Some(den) = result.den.as_ref() else {
         return empty_panel(
             "combat-den-empty",
             "The Den attempt is projected from a kill rate: pick the fixed kill interval player and \
@@ -935,7 +950,7 @@ fn timeline_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// A results tab with nothing to show yet, and why.
-fn empty_panel(id: &'static str, message: &str, muted: gpui::Hsla) -> AnyElement {
+pub(crate) fn empty_panel(id: &'static str, message: &str, muted: gpui::Hsla) -> AnyElement {
     div()
         .id(id)
         .p_3()

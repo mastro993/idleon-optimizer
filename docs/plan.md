@@ -408,7 +408,7 @@ The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the 
 minibosses, max pickles, effective HP and kill time, ported from `pickle-calc.html` with formula
 tests and a section-harness interaction. Details: [`docs/sections/pickle.md`](sections/pickle.md).
 
-The Combat Simulator is built through CS-06. The loadout editor (CS-01) has the character picker, the
+The Combat Simulator is built through CS-07. The loadout editor (CS-01) has the character picker, the
 16 armor and 7 tool slots with their saved `EMm` upgrade deltas, the talent table from
 `SL_<n>`/`SM_<n>` and named loadout presets in the project JSON; the item catalog is extracted from
 the upstream `ITEMS` table by `script/extract-combat-data.mjs`, every edit recomputes the gear totals,
@@ -420,7 +420,11 @@ CS-06 adds combat-driven progress and smelting — the saved furnace advances on
 is reported by bar, with the Scurge, Coral Kid and Omega credits and their notices — and The Den as an
 own projection of the cavern's hound waves at the run's kill rate. The two terms this build cannot
 decode (the shiny speed's star-sign term and the per-kill forge/pet/alchemy talent grants) are named
-as warnings instead of guessed. Replays (CS-07) stay on the roadmap.
+as warnings instead of guessed. CS-07 adds the replays: the encounter run records its own frames
+through a delta codec ported from `combat-sim-replay.js`, the Replay tab draws them with the map,
+platform and monster art resolved through the asset manifest (a labelled placeholder when a file is
+missing) and offers play/pause, scrub, the upstream speeds and Den wave jumps, and a Killroy practice
+captures as a version-1 replay document that re-opens and re-runs it.
 Details: [`docs/sections/combat-sim.md`](sections/combat-sim.md).
 
 The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or

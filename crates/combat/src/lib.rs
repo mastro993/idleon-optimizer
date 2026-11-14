@@ -8,7 +8,9 @@
 //! simulator input overrides. The encounter run (CS-03) replays the game's
 //! spawn, respawn and kill loop over one map's roster in [`encounter`], and the
 //! comparison (CS-04) runs that loop for character, loadout and map setups in
-//! [`compare`].
+//! [`compare`]. The replay codec (CS-07) records that loop's frames in
+//! [`replay`], and a Killroy handoff re-opens a practice run with the same map,
+//! duration and seed.
 
 pub mod compare;
 pub mod data;
@@ -19,6 +21,7 @@ pub mod loadout;
 pub mod overrides;
 pub mod preset;
 pub mod progress;
+pub mod replay;
 
 pub use data::{CombatData, ItemDef, SLOT_COUNT, item, item_name, options, slot_name};
 pub use loadout::{Character, Issue, IssueKind, IssueTarget, Loadout, Slot, Talent, Totals};

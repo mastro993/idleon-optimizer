@@ -174,11 +174,22 @@ pub struct Totals {
     pub player_kills: f64,
 }
 
+/// When one hound wave started, on the run's own clock.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Wave {
+    /// `den.wave`: the wave number, from one.
+    pub wave: u32,
+    /// The simulated milliseconds the wave spawned at.
+    pub t_ms: u64,
+}
+
 /// What the panel shows for one projected attempt.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Outcome {
     pub snapshot: Snapshot,
     pub totals: Totals,
+    /// Every wave's start, so a replay can step between them.
+    pub waves: Vec<Wave>,
 }
 
 impl Outcome {
@@ -249,8 +260,9 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
     let mut reset_in: Option<u64> = None;
     let mut player_kill_in: Option<u64> = None;
     let mut player_kills = 0.0;
+    let mut waves: Vec<Wave> = Vec::new();
 
-    for _ in 0..steps {
+    for step in 0..steps {
         // The scheduler's due tasks, in creation order: the stand-in's kill
         // tick first, then the hounds' 100 ms timers, then the attempt's tail.
         kill_in -= STEP_MS as i64;
@@ -366,6 +378,10 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
                 0.0
             };
             snapshot.wave += 1.0;
+            waves.push(Wave {
+                wave: snapshot.wave as u32,
+                t_ms: step * STEP_MS,
+            });
             countdown = (snapshot.wave + 200.0) / (5.0 * snapshot.wave + 80.0) * 150.0;
             let hp = config.hound_hp * (amp(3) * amped).max(1.0) * 1.08f64.powf(snapshot.wave);
             // `createMonster(sim, 'caveA', 1, randomInt(99, 861), 'CaveHound')`:
@@ -412,5 +428,9 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
         snapshot.tokens = tokens.len() as f64;
     }
     totals.player_kills = player_kills;
-    Outcome { snapshot, totals }
+    Outcome {
+        snapshot,
+        totals,
+        waves,
+    }
 }

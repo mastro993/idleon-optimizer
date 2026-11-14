@@ -9,6 +9,10 @@ use idleon_combat::drops::{self, Inputs, Snapshot};
 use idleon_combat::encounter::{self, Options, Player};
 use idleon_combat::overrides::Entries;
 use idleon_ui::runner::TaskState;
+use std::time::{Duration, Instant};
+
+/// How often the replay loop advances the playhead.
+const REPLAY_FRAME: Duration = Duration::from_millis(16);
 
 impl AppState {
     /// Pick the loadout editor's tab.
@@ -234,6 +238,7 @@ impl AppState {
             _ => neutral,
         };
         let map = self.combat.sim_map;
+        let duration_ms = self.combat.sim_duration_s * 1000;
         Options {
             map,
             player: if self.combat.sim_stand_in {
@@ -243,7 +248,7 @@ impl AppState {
             } else {
                 Player::Idle
             },
-            duration_ms: self.combat.sim_duration_s * 1000,
+            duration_ms,
             seed: self.combat.sim_seed,
             drops,
             drop_inputs,
@@ -256,6 +261,8 @@ impl AppState {
                     .map(|map| map.scene.clone())
                     .unwrap_or_default(),
             },
+            // Every run records its frames, so a replay never needs a rerun.
+            replay: Some(idleon_combat::replay::interval_for(duration_ms)),
         }
     }
 
@@ -278,6 +285,7 @@ impl AppState {
         let character = self.combat.character;
         let den = self.combat.den.clone();
         let progress_warnings = self.combat.progress_warnings.clone();
+        let source = self.combat.pending_source.take();
         self.start_run(
             self.combat_encounter.clone(),
             line,
@@ -309,6 +317,7 @@ impl AppState {
                     killroy,
                     den,
                     progress_warnings,
+                    source,
                 })
             },
             cx,
@@ -509,5 +518,209 @@ impl AppState {
             ),
             cx,
         );
+    }
+
+    /// The stored run's replay size and frame interval, when it has one.
+    fn combat_replay_info(&self, cx: &App) -> Option<(usize, u64)> {
+        let runner = self.combat_encounter.read(cx);
+        let replay = runner.result()?.run.replay.as_ref()?;
+        Some((replay.len(), replay.interval_ms()))
+    }
+
+    /// Start or pause the replay. Playing from the last frame restarts it.
+    pub(crate) fn combat_replay_set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
+        let Some((len, _)) = self.combat_replay_info(cx) else {
+            self.set_status("Run the encounter before playing its replay.", cx);
+            return;
+        };
+        let last = len.saturating_sub(1) as f64;
+        if playing && self.combat.replay_pos >= last {
+            self.combat.replay_pos = 0.0;
+        }
+        self.combat.replay_playing = playing;
+        self.combat.replay_generation += 1;
+        self.combat.replay_pumping = false;
+        self.combat.replay_at = None;
+        if playing {
+            self.combat_replay_pump(cx);
+        }
+        cx.notify();
+    }
+
+    /// Move the scrubber to a frame, pausing the loop.
+    pub(crate) fn combat_replay_seek(&mut self, frame: f64, cx: &mut Context<Self>) {
+        let Some((len, _)) = self.combat_replay_info(cx) else {
+            return;
+        };
+        self.combat.replay_playing = false;
+        self.combat.replay_generation += 1;
+        self.combat.replay_pumping = false;
+        self.combat.replay_at = None;
+        self.combat.replay_pos = frame.clamp(0.0, len.saturating_sub(1) as f64);
+        cx.notify();
+    }
+
+    /// Move the playhead to the first frame at or after `t_ms`; the Den's wave
+    /// controls read their boundaries from the projected attempt.
+    pub(crate) fn combat_replay_seek_time(&mut self, t_ms: u64, cx: &mut Context<Self>) {
+        let index = {
+            let runner = self.combat_encounter.read(cx);
+            runner
+                .result()
+                .and_then(|result| result.run.replay.as_ref())
+                .map(|replay| replay.index_at(t_ms as f64))
+        };
+        if let Some(index) = index {
+            self.combat_replay_seek(index as f64, cx);
+        }
+    }
+
+    /// Pick a playback speed; it applies from the current playhead.
+    pub(crate) fn combat_replay_set_speed(&mut self, speed: f64, cx: &mut Context<Self>) {
+        if speed.is_finite() && speed > 0.0 {
+            self.combat.replay_speed = speed;
+        }
+        cx.notify();
+    }
+
+    /// The playback loop: advance the playhead by the elapsed wall time scaled
+    /// by the speed, and stop on the last frame.
+    pub(crate) fn combat_replay_pump(&mut self, cx: &mut Context<Self>) {
+        if !self.combat.replay_playing || self.combat.replay_pumping {
+            return;
+        }
+        self.combat.replay_pumping = true;
+        self.combat.replay_at = None;
+        let generation = self.combat.replay_generation;
+        cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor().timer(REPLAY_FRAME).await;
+                let keep = this
+                    .update(cx, |state, cx| state.combat_replay_frame(generation, cx))
+                    .unwrap_or(false);
+                if !keep {
+                    return;
+                }
+            }
+        })
+        .detach();
+    }
+
+    /// One playback frame; false once the loop should stop.
+    fn combat_replay_frame(&mut self, generation: u64, cx: &mut Context<Self>) -> bool {
+        if generation != self.combat.replay_generation || !self.combat.replay_playing {
+            self.combat.replay_pumping = false;
+            return false;
+        }
+        let Some((len, interval)) = self.combat_replay_info(cx) else {
+            self.combat.replay_playing = false;
+            self.combat.replay_pumping = false;
+            return false;
+        };
+        let last = len.saturating_sub(1) as f64;
+        let now = Instant::now();
+        let elapsed = self
+            .combat
+            .replay_at
+            .replace(now)
+            .map(|last| now.duration_since(last).as_secs_f64())
+            .unwrap_or(0.0)
+            .min(0.25);
+        // Speed is simulated seconds per second: a frame covers `interval` ms.
+        self.combat.replay_pos +=
+            elapsed * self.combat.replay_speed * 1000.0 / interval.max(1) as f64;
+        if self.combat.replay_pos >= last {
+            self.combat.replay_pos = last;
+            self.combat.replay_playing = false;
+            self.combat.replay_pumping = false;
+        }
+        cx.notify();
+        self.combat.replay_playing
+    }
+
+    /// Capture the stored Killroy practice as a replay document: the imported
+    /// save's map, duration and seed, ready to be opened again.
+    pub(crate) fn capture_combat_killroy_replay(&mut self, cx: &mut Context<Self>) {
+        let Some(save) = self.save.as_ref() else {
+            self.set_status("Import a save before capturing a Killroy replay.", cx);
+            return;
+        };
+        let raw = save.root().clone();
+        let character = self.combat.character;
+        let run = {
+            let runner = self.combat_encounter.read(cx);
+            match runner.result() {
+                Some(result) if result.killroy.is_some() => Some(result.run.clone()),
+                _ => None,
+            }
+        };
+        let Some(run) = run else {
+            self.set_status(
+                "A Killroy replay needs a finished practice: run a map with kills first.",
+                cx,
+            );
+            return;
+        };
+        let label = format!(
+            "Killroy practice · {}",
+            idleon_combat::encounter::map(run.map)
+                .map(idleon_combat::encounter::map_name)
+                .unwrap_or_else(|| format!("Map {}", run.map))
+        );
+        // A practice reads the run's kill rate, not its loadout, so a capture
+        // carries no setup patches: the imported save is exactly what it ran.
+        let replay = idleon_combat::replay::KillroyReplay::capture(
+            raw,
+            character,
+            run.map,
+            run.simulated_ms as f64 / 1000.0,
+            run.seed as i64,
+            label,
+            false,
+            false,
+            serde_json::json!({}),
+            serde_json::json!({}),
+        );
+        if let Err(error) = replay.validate() {
+            self.set_status(error, cx);
+            return;
+        }
+        self.combat.killroy_replay = Some(replay);
+        self.set_status("Captured the Killroy replay.", cx);
+        cx.notify();
+    }
+
+    /// Open the captured Killroy replay: restore its character, map, duration
+    /// and seed, then run it through the encounter.
+    pub(crate) fn open_combat_killroy_replay(&mut self, cx: &mut Context<Self>) {
+        let Some(replay) = self.combat.killroy_replay.clone() else {
+            return;
+        };
+        if let Err(error) = replay.validate() {
+            self.set_status(error, cx);
+            return;
+        }
+        let character = replay.char_idx.max(0) as usize;
+        let count = self.save.as_ref().map_or(0, |save| save.character_count());
+        if character < count && character != self.combat.character {
+            let save = self.save.clone();
+            if let Some(save) = save {
+                self.combat.load(&save, character);
+            }
+        }
+        self.combat.sim_map = replay.map_idx.max(0) as usize;
+        self.combat.sim_duration_s = replay.seconds.round().clamp(1.0, 86_400.0) as u64;
+        self.combat.sim_seed = replay.seed.max(1) as u64;
+        self.combat.sim_stand_in = true;
+        self.combat.replay_pos = 0.0;
+        self.combat.pending_source = Some(replay);
+        self.run_combat_encounter(cx);
+    }
+
+    /// Drop the captured Killroy replay.
+    pub(crate) fn forget_combat_killroy_replay(&mut self, cx: &mut Context<Self>) {
+        self.combat.killroy_replay = None;
+        self.set_status("Forgot the captured Killroy replay.", cx);
+        cx.notify();
     }
 }

@@ -2453,6 +2453,69 @@ const INTERACTIONS = {
       (nodes) => (labelOf(nodes, 'combat-preset-0') ?? '').includes('Bossing'),
       'combat-sim: the preset is saved',
     );
+    // CS-07: the run records its frames, and the Replay tab draws them with the
+    // map art and monster sheets, then plays, scrubs and steps between the Den's
+    // waves. The section screenshot ends here, on the recorded replay.
+    await lane.call('click_element', { id: 'encounter' });
+    await waitForNode(lane, 'combat-encounter-run', 'combat-sim: the encounter tab reopens');
+    await scrollTo(lane, 'result-replay');
+    await lane.call('click_element', { id: 'result-replay' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        has(nodes, 'combat-replay-scene') &&
+        has(nodes, 'combat-replay-player') &&
+        /Replay frame \d+ of \d+/.test(labelOf(nodes, 'combat-replay-position') ?? ''),
+      'combat-sim: the replay tab draws the run\'s recorded frames',
+    );
+    await scrollTo(lane, 'combat-replay-play');
+    await lane.call('click_element', { id: 'combat-replay-speed-200' });
+    await lane.call('click_element', { id: 'combat-replay-play' });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const start = labelOf(await lane.tree(), 'combat-replay-position') ?? '';
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'combat-replay-position') ?? '') !== start,
+      'combat-sim: play advances the replay at the picked speed',
+    );
+    await scrollTo(lane, 'combat-replay-play');
+    await lane.call('click_element', { id: 'combat-replay-play' });
+    // A wave jump moves the playhead to the Den boundary.
+    await waitForNode(lane, 'combat-replay-waves', 'combat-sim: the wave controls read the Den attempt');
+    if (has(await lane.tree(), 'combat-replay-wave-next')) {
+      await scrollTo(lane, 'combat-replay-wave-next');
+      await lane.call('click_element', { id: 'combat-replay-wave-next' });
+      await waitFor(
+        lane,
+        (nodes) => /Den wave [1-9]/.test(labelOf(nodes, 'combat-replay-wave') ?? ''),
+        'combat-sim: a wave jump lands on the next Den wave',
+      );
+    }
+    // The practice captures as a replay document, and opening it re-runs it.
+    await scrollTo(lane, 'combat-replay-capture');
+    await lane.call('click_element', { id: 'combat-replay-capture' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'combat-replay-captured') ?? '').includes('Captured Killroy replay'),
+      'combat-sim: the Killroy practice captures as a replay',
+    );
+    await lane.call('click_element', { id: 'combat-replay-open' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        (labelOf(nodes, 'combat-replay-source') ?? '').includes('Killroy replay') &&
+        has(nodes, 'combat-replay-scene'),
+      'combat-sim: opening the captured Killroy replay re-runs and replays it',
+    );
+    // Lift the card to the top of the pane so the section screenshot shows the
+    // whole replay: its controls, the scene and the capture row.
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const node = (await lane.tree()).find((candidate) => candidate.id === 'combat-result-tabs');
+      const y = node?.bounds?.y ?? 0;
+      if (!node || (y >= 150 && y <= 300)) break;
+      await lane.call('scroll', { x: 600, y: 500, delta_y: y < 150 ? -300 : 300 });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
   },
   'cooking-mastery': async (lane) => {
     // The empty state is the import action: a save without the mastery rows

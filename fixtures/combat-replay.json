@@ -1,0 +1,1561 @@
+{
+ "source": "js/stats/systems/common/combat-sim-replay.js and js/ui/killroy-replay.js through script/combat-replay-oracle.mjs",
+ "codec": {
+  "keyframeEvery": 3,
+  "batch": 3,
+  "dictionary": [
+   "big",
+   "den",
+   "active",
+   "fear",
+   "score",
+   "wave",
+   "empty",
+   "flag",
+   "frac",
+   "items",
+   "monsters",
+   "m",
+   "alive",
+   "hp",
+   "id",
+   "type",
+   "mushG",
+   "x",
+   "y",
+   "neg",
+   "note",
+   "spawn",
+   "player",
+   "anim",
+   "0",
+   "equip",
+   "vx",
+   "vy",
+   "projectiles",
+   "b",
+   "1",
+   "safe",
+   "tags",
+   "a",
+   "chain",
+   "i",
+   "qty",
+   "status",
+   "COIN",
+   "kill",
+   "helmet",
+   "B",
+   "weapon",
+   "C",
+   "10",
+   "end",
+   "2_",
+   "mushW",
+   "c",
+   "respawn",
+   "WT8",
+   "z"
+  ],
+  "bytes": 908,
+  "frames": [
+   "ARANAAIDgICAgBABAAQCEQMFAAAAAAAA4D8EHAURBgIABwIBCAIFAAAAAAAA0D8JAQAACgEBCwsBBgwRDUIOEQ8GEBEJ0A8SCfAuABMCBP////////8PFAIGFRYACAwCFwYYGQANBQAAAAAAIFlAGgkAGwkAEQkAEgkAHAEBCx0BAxcGHhEJnhESCagvAB8CA4Dg99uZ+v8PIAIHAgYhBh0=",
+   "AHQIAQABIhAHAgIIAgUAAAAAAADgPwkBAQsjAQUkEyUQDwYmEQn6ARIJkAMACgECCwsBAg0FAAAAAAAgREARCkQNAgYMEQ1CDhIPBhARCfoVEgnwLgAUAgYnFgAEFwYeGQgCKAYpKgYrGgoDEQpEHAEAAQsdAQ==",
+   "ANgMAAIRAQAEAwUAAAAAAADoPwQuBRIiDAcCAQgCBQAAAAAAAARACQEDCyMBASURDQIFJBQlEA8GJhEJ+gESCZADDQIBJBUACgEBCwsCAQ0kAQ0BEwIEARQCBhUWAAINcxEKRBwBAQsdAgMXBiwRCbgXEgnULwAfAjogAgcBBh0=",
+   "AQOsAg0AAhEBAAQCBQAAAAAAAOA/AwUAAAAAAMBIQAQuBRIGAgAHAgEIAgUAAAAAAAAEQAkBAAAKAQAAEwIEARQCBi0WAAgMAhcGLhkIAigGKSoGKw1zGgkAGwkAEQnMARIJABwBAgsdAgMXBiwRCYAZEgnULw0CAREK0gEAHwI6IAEAAA==",
+   "AAOQAwYHAgIJAQELIwkFJHQlEg8GJhEJABIJAAAKAQELCwMGDBENVg4TDwYvEQmwCRIJgDIAFgABDAEcAQACCx0CDQIgAgcDBiEGHQYw",
+   "AAP0AwcBAAQCEANCBC4FEgcCAQkBAAELIwkKAQILCwQGDBENVg4UDwYvEQnECRIJgDINAgIOFREKFAAUAgYxFgACDAISCjEcAQELI6UJAxcGMhEJABIJAAA=",
+   "AQPYBAwAAhEGAgAHAgEIAgUAAAAAAAAEQAkBAAAKAQQLCwMGDBENVg4TDwYvEQmwCRIJgDINAgIOFBEKFA0CAg4VEQoUDQICDhYRChQAEwIEARQCBjEWAAgMAhcGLhkIAigGKSoGKw1zGgkAGwkAEQnMARIJMRwBAgsjpQkDFwYyEQkAEgkADQIBEQoUAB8COiACBwEGMw==",
+   "AAO8BQUKAQACCwsEDQIUAgYVFgABGQAcAQELHQcDFwYyEQkoEgkAAgsjpQkNAiABAAA="
+  ],
+  "batches": [
+   {
+    "keysFrom": 0,
+    "keys": [
+     "big",
+     "den",
+     "active",
+     "fear",
+     "score",
+     "wave",
+     "empty",
+     "flag",
+     "frac",
+     "items",
+     "monsters",
+     "m",
+     "alive",
+     "hp",
+     "id",
+     "type",
+     "mushG",
+     "x",
+     "y",
+     "neg",
+     "note",
+     "spawn",
+     "player",
+     "anim",
+     "0",
+     "equip",
+     "vx",
+     "vy",
+     "projectiles",
+     "b",
+     "1",
+     "safe",
+     "tags",
+     "a",
+     "chain",
+     "i",
+     "qty",
+     "status",
+     "COIN",
+     "kill",
+     "helmet",
+     "B",
+     "weapon",
+     "C",
+     "10"
+    ],
+    "frames": [
+     "ARANAAIDgICAgBABAAQCEQMFAAAAAAAA4D8EHAURBgIABwIBCAIFAAAAAAAA0D8JAQAACgEBCwsBBgwRDUIOEQ8GEBEJ0A8SCfAuABMCBP////////8PFAIGFRYACAwCFwYYGQANBQAAAAAAIFlAGgkAGwkAEQkAEgkAHAEBCx0BAxcGHhEJnhESCagvAB8CA4Dg99uZ+v8PIAIHAgYhBh0=",
+     "AHQIAQABIhAHAgIIAgUAAAAAAADgPwkBAQsjAQUkEyUQDwYmEQn6ARIJkAMACgECCwsBAg0FAAAAAAAgREARCkQNAgYMEQ1CDhIPBhARCfoVEgnwLgAUAgYnFgAEFwYeGQgCKAYpKgYrGgoDEQpEHAEAAQsdAQ==",
+     "ANgMAAIRAQAEAwUAAAAAAADoPwQuBRIiDAcCAQgCBQAAAAAAAARACQEDCyMBASURDQIFJBQlEA8GJhEJ+gESCZADDQIBJBUACgEBCwsCAQ0kAQ0BEwIEARQCBhUWAAINcxEKRBwBAQsdAgMXBiwRCbgXEgnULwAfAjogAgcBBh0="
+    ]
+   },
+   {
+    "keysFrom": 45,
+    "keys": [
+     "end",
+     "2_",
+     "mushW",
+     "c",
+     "respawn",
+     "WT8"
+    ],
+    "frames": [
+     "AQOsAg0AAhEBAAQCBQAAAAAAAOA/AwUAAAAAAMBIQAQuBRIGAgAHAgEIAgUAAAAAAAAEQAkBAAAKAQAAEwIEARQCBi0WAAgMAhcGLhkIAigGKSoGKw1zGgkAGwkAEQnMARIJABwBAgsdAgMXBiwRCYAZEgnULw0CAREK0gEAHwI6IAEAAA==",
+     "AAOQAwYHAgIJAQELIwkFJHQlEg8GJhEJABIJAAAKAQELCwMGDBENVg4TDwYvEQmwCRIJgDIAFgABDAEcAQACCx0CDQIgAgcDBiEGHQYw",
+     "AAP0AwcBAAQCEANCBC4FEgcCAQkBAAELIwkKAQILCwQGDBENVg4UDwYvEQnECRIJgDINAgIOFREKFAAUAgYxFgACDAISCjEcAQELI6UJAxcGMhEJABIJAAA="
+    ]
+   },
+   {
+    "keysFrom": 51,
+    "keys": [
+     "z"
+    ],
+    "frames": [
+     "AQPYBAwAAhEGAgAHAgEIAgUAAAAAAAAEQAkBAAAKAQQLCwMGDBENVg4TDwYvEQmwCRIJgDINAgIOFBEKFA0CAg4VEQoUDQICDhYRChQAEwIEARQCBjEWAAgMAhcGLhkIAigGKSoGKw1zGgkAGwkAEQnMARIJMRwBAgsjpQkDFwYyEQkAEgkADQIBEQoUAB8COiACBwEGMw==",
+     "AAO8BQUKAQACCwsEDQIUAgYVFgABGQAcAQELHQcDFwYyEQkoEgkAAgsjpQkNAiABAAA="
+    ]
+   }
+  ],
+  "decoded": [
+   {
+    "big": 4294967296,
+    "den": {
+     "active": 1,
+     "fear": 0.5,
+     "score": 12,
+     "wave": 1
+    },
+    "empty": null,
+    "flag": false,
+    "frac": 0.25,
+    "items": [],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 50,
+      "id": 1,
+      "type": "mushG",
+      "uid": "m1",
+      "x": 100,
+      "y": 300
+     }
+    ],
+    "neg": -9007199254740991,
+    "note": "spawn",
+    "player": {
+     "alive": true,
+     "anim": "0",
+     "equip": null,
+     "hp": 100.5,
+     "vx": 0,
+     "vy": 0,
+     "x": 0,
+     "y": 0
+    },
+    "projectiles": [
+     {
+      "anim": "1",
+      "uid": "b1",
+      "x": 110.3,
+      "y": 302.8
+     }
+    ],
+    "safe": 9007000000000000,
+    "t": 0,
+    "tags": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "big": 4294967296,
+    "den": {
+     "active": 1,
+     "chain": 0,
+     "fear": 0.5,
+     "score": 12,
+     "wave": 1
+    },
+    "empty": null,
+    "flag": true,
+    "frac": 0.5,
+    "items": [
+     {
+      "qty": 3,
+      "status": 0,
+      "type": "COIN",
+      "uid": "i1",
+      "x": 12.5,
+      "y": 20
+     }
+    ],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 40.25,
+      "id": 1,
+      "type": "mushG",
+      "uid": "m1",
+      "x": 103.4,
+      "y": 300
+     },
+     {
+      "alive": 1,
+      "hp": 50,
+      "id": 2,
+      "type": "mushG",
+      "uid": "m2",
+      "x": 140.5,
+      "y": 300
+     }
+    ],
+    "neg": -9007199254740991,
+    "note": "kill",
+    "player": {
+     "alive": true,
+     "anim": "1",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 100.5,
+     "vx": -0.2,
+     "vy": 0,
+     "x": 3.4,
+     "y": 0
+    },
+    "projectiles": [],
+    "safe": 9007000000000000,
+    "t": 100,
+    "tags": [
+     "a",
+     "b"
+    ]
+   },
+   {
+    "big": 1,
+    "den": {
+     "active": 1,
+     "fear": 0.75,
+     "score": 30,
+     "wave": 2
+    },
+    "empty": null,
+    "flag": false,
+    "frac": 2.5,
+    "items": [
+     {
+      "qty": 3,
+      "status": 1,
+      "type": "COIN",
+      "uid": "i1",
+      "x": 12.5,
+      "y": 20
+     },
+     {
+      "qty": 4,
+      "status": 0,
+      "type": "COIN",
+      "uid": "i2",
+      "x": 12.5,
+      "y": 20
+     },
+     {
+      "qty": 5,
+      "status": 0,
+      "type": "COIN",
+      "uid": "i3",
+      "x": 12.5,
+      "y": 20
+     }
+    ],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 20,
+      "id": 2,
+      "type": "mushG",
+      "uid": "m2",
+      "x": 140.5,
+      "y": 300
+     }
+    ],
+    "neg": -1,
+    "note": "spawn",
+    "player": {
+     "alive": true,
+     "anim": "1",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 99,
+     "vx": -0.2,
+     "vy": 0,
+     "x": 6.8,
+     "y": 0
+    },
+    "projectiles": [
+     {
+      "anim": "10",
+      "uid": "b2",
+      "x": 150,
+      "y": 305
+     }
+    ],
+    "safe": 42,
+    "t": 200,
+    "tags": [
+     "b"
+    ]
+   },
+   {
+    "big": 1,
+    "den": {
+     "active": 0.5,
+     "fear": 49.5,
+     "score": 30,
+     "wave": 2
+    },
+    "empty": null,
+    "flag": false,
+    "frac": 2.5,
+    "items": [],
+    "monsters": [],
+    "neg": -1,
+    "note": "end",
+    "player": {
+     "alive": true,
+     "anim": "2_",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 99,
+     "vx": 0,
+     "vy": 0,
+     "x": 10.2,
+     "y": 0
+    },
+    "projectiles": [
+     {
+      "anim": "10",
+      "uid": "b2",
+      "x": 160,
+      "y": 305
+     },
+     {
+      "anim": "10",
+      "uid": "b3",
+      "x": 170.5,
+      "y": 305
+     }
+    ],
+    "safe": 42,
+    "t": 300,
+    "tags": []
+   },
+   {
+    "big": 1,
+    "den": {
+     "active": 0.5,
+     "fear": 49.5,
+     "score": 30,
+     "wave": 2
+    },
+    "empty": null,
+    "flag": true,
+    "frac": 2.5,
+    "items": [
+     {
+      "qty": 100,
+      "status": 2,
+      "type": "COIN",
+      "uid": "i9",
+      "x": 0,
+      "y": 0
+     }
+    ],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 3,
+      "type": "mushW",
+      "uid": "m3",
+      "x": 60,
+      "y": 320
+     }
+    ],
+    "neg": -1,
+    "note": "end",
+    "player": {
+     "alive": false,
+     "anim": "2_",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 99,
+     "vx": 0,
+     "vy": 0,
+     "x": 10.2,
+     "y": 0
+    },
+    "projectiles": [],
+    "safe": 42,
+    "t": 400,
+    "tags": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   {
+    "big": 1,
+    "den": {
+     "active": 0,
+     "fear": 50,
+     "score": 30,
+     "wave": 2
+    },
+    "empty": null,
+    "flag": false,
+    "frac": 2.5,
+    "items": [],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 3,
+      "type": "mushW",
+      "uid": "m3",
+      "x": 60,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 4,
+      "type": "mushW",
+      "uid": "m4",
+      "x": 61,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 5,
+      "type": "mushW",
+      "uid": "m5",
+      "x": 62,
+      "y": 320
+     }
+    ],
+    "neg": -1,
+    "note": "respawn",
+    "player": {
+     "alive": true,
+     "anim": "2_",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 99,
+     "vx": 0,
+     "vy": 0,
+     "x": 10.2,
+     "y": -2.5
+    },
+    "projectiles": [
+     {
+      "anim": "WT8",
+      "uid": "i1189",
+      "x": 0,
+      "y": 0
+     }
+    ],
+    "safe": 42,
+    "t": 500,
+    "tags": [
+     "a",
+     "b",
+     "c"
+    ]
+   },
+   {
+    "big": 1,
+    "empty": null,
+    "flag": false,
+    "frac": 2.5,
+    "items": [],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 3,
+      "type": "mushW",
+      "uid": "m3",
+      "x": 60,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 4,
+      "type": "mushW",
+      "uid": "m4",
+      "x": 61,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 5,
+      "type": "mushW",
+      "uid": "m5",
+      "x": 62,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 6,
+      "type": "mushW",
+      "uid": "m6",
+      "x": 63,
+      "y": 320
+     }
+    ],
+    "neg": -1,
+    "note": "respawn",
+    "player": {
+     "alive": true,
+     "anim": "2_",
+     "equip": {
+      "helmet": "B",
+      "weapon": "C"
+     },
+     "hp": 99,
+     "vx": 0,
+     "vy": 0,
+     "x": 10.2,
+     "y": -2.5
+    },
+    "projectiles": [
+     {
+      "anim": "WT8",
+      "uid": "i1189",
+      "x": 0,
+      "y": 0
+     },
+     {
+      "anim": "WT8",
+      "uid": "i1190",
+      "x": 1,
+      "y": 0
+     }
+    ],
+    "safe": 42,
+    "t": 600,
+    "tags": [
+     "z"
+    ]
+   },
+   {
+    "big": 1,
+    "empty": null,
+    "flag": false,
+    "frac": 2.5,
+    "items": [],
+    "monsters": [
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 3,
+      "type": "mushW",
+      "uid": "m3",
+      "x": 60,
+      "y": 320
+     },
+     {
+      "alive": 1,
+      "hp": 70,
+      "id": 6,
+      "type": "mushW",
+      "uid": "m6",
+      "x": 63,
+      "y": 320
+     }
+    ],
+    "neg": -1,
+    "note": "spawn",
+    "player": {
+     "alive": true,
+     "anim": "2_",
+     "equip": null,
+     "hp": 99,
+     "vx": 0,
+     "vy": 0,
+     "x": 10.2,
+     "y": -2.5
+    },
+    "projectiles": [
+     {
+      "anim": "WT8",
+      "uid": "b7",
+      "x": 2,
+      "y": 0
+     }
+    ],
+    "safe": 42,
+    "t": 700,
+    "tags": []
+   }
+  ]
+ },
+ "snapshots": [
+  {
+   "big": 4294967296,
+   "den": {
+    "active": 1,
+    "fear": 0.5,
+    "score": 12,
+    "wave": 1
+   },
+   "empty": null,
+   "flag": false,
+   "frac": 0.25,
+   "items": [],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 50,
+     "id": 1,
+     "type": "mushG",
+     "uid": "m1",
+     "x": 100,
+     "y": 300
+    }
+   ],
+   "neg": -9007199254740991,
+   "note": "spawn",
+   "player": {
+    "alive": true,
+    "anim": "0",
+    "equip": null,
+    "hp": 100.5,
+    "vx": 0,
+    "vy": 0,
+    "x": 0,
+    "y": 0
+   },
+   "projectiles": [
+    {
+     "anim": "1",
+     "uid": "b1",
+     "x": 110.25,
+     "y": 302.75
+    }
+   ],
+   "safe": 9007000000000000,
+   "t": 0,
+   "tags": [
+    "a",
+    "b"
+   ]
+  },
+  {
+   "big": 4294967296,
+   "den": {
+    "active": 1,
+    "chain": 0,
+    "fear": 0.5,
+    "score": 12,
+    "wave": 1
+   },
+   "empty": null,
+   "flag": true,
+   "frac": 0.5,
+   "items": [
+    {
+     "qty": 3,
+     "status": 0,
+     "type": "COIN",
+     "uid": "i1",
+     "x": 12.5,
+     "y": 20
+    }
+   ],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 40.25,
+     "id": 1,
+     "type": "mushG",
+     "uid": "m1",
+     "x": 103.4,
+     "y": 300
+    },
+    {
+     "alive": 1,
+     "hp": 50,
+     "id": 2,
+     "type": "mushG",
+     "uid": "m2",
+     "x": 140.5,
+     "y": 300
+    }
+   ],
+   "neg": -9007199254740991,
+   "note": "kill",
+   "player": {
+    "alive": true,
+    "anim": "1",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 100.5,
+    "vx": -0.2,
+    "vy": 0,
+    "x": 3.4,
+    "y": 0
+   },
+   "projectiles": [],
+   "safe": 9007000000000000,
+   "t": 100,
+   "tags": [
+    "a",
+    "b"
+   ]
+  },
+  {
+   "big": 1,
+   "den": {
+    "active": 1,
+    "fear": 0.75,
+    "score": 30,
+    "wave": 2
+   },
+   "empty": null,
+   "flag": false,
+   "frac": 2.5,
+   "items": [
+    {
+     "qty": 3,
+     "status": 1,
+     "type": "COIN",
+     "uid": "i1",
+     "x": 12.5,
+     "y": 20
+    },
+    {
+     "qty": 4,
+     "status": 0,
+     "type": "COIN",
+     "uid": "i2",
+     "x": 12.5,
+     "y": 20
+    },
+    {
+     "qty": 5,
+     "status": 0,
+     "type": "COIN",
+     "uid": "i3",
+     "x": 12.5,
+     "y": 20
+    }
+   ],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 20,
+     "id": 2,
+     "type": "mushG",
+     "uid": "m2",
+     "x": 140.5,
+     "y": 300
+    }
+   ],
+   "neg": -1,
+   "note": "spawn",
+   "player": {
+    "alive": true,
+    "anim": "1",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 99,
+    "vx": -0.2,
+    "vy": 0,
+    "x": 6.8,
+    "y": 0
+   },
+   "projectiles": [
+    {
+     "anim": "10",
+     "uid": "b2",
+     "x": 150,
+     "y": 305
+    }
+   ],
+   "safe": 42,
+   "t": 200,
+   "tags": [
+    "b"
+   ]
+  },
+  {
+   "big": 1,
+   "den": {
+    "active": 0.5,
+    "fear": 49.5,
+    "score": 30,
+    "wave": 2
+   },
+   "empty": null,
+   "flag": false,
+   "frac": 2.5,
+   "items": [],
+   "monsters": [],
+   "neg": -1,
+   "note": "end",
+   "player": {
+    "alive": true,
+    "anim": "2_",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 99,
+    "vx": 0,
+    "vy": 0,
+    "x": 10.2,
+    "y": 0
+   },
+   "projectiles": [
+    {
+     "anim": "10",
+     "uid": "b2",
+     "x": 160,
+     "y": 305
+    },
+    {
+     "anim": "10",
+     "uid": "b3",
+     "x": 170.5,
+     "y": 305
+    }
+   ],
+   "safe": 42,
+   "t": 300,
+   "tags": []
+  },
+  {
+   "big": 1,
+   "empty": null,
+   "flag": true,
+   "frac": 2.5,
+   "items": [
+    {
+     "qty": 100,
+     "status": 2,
+     "type": "COIN",
+     "uid": "i9",
+     "x": 0,
+     "y": 0
+    }
+   ],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 3,
+     "type": "mushW",
+     "uid": "m3",
+     "x": 60,
+     "y": 320
+    }
+   ],
+   "neg": -1,
+   "note": "end",
+   "player": {
+    "alive": false,
+    "anim": "2_",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 99,
+    "vx": 0,
+    "vy": 0,
+    "x": 10.2,
+    "y": 0
+   },
+   "projectiles": [],
+   "safe": 42,
+   "t": 400,
+   "tags": [
+    "a",
+    "b",
+    "c"
+   ]
+  },
+  {
+   "big": 1,
+   "den": {
+    "active": 0,
+    "fear": 50,
+    "score": 30,
+    "wave": 2
+   },
+   "empty": null,
+   "flag": false,
+   "frac": 2.5,
+   "items": [],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 3,
+     "type": "mushW",
+     "uid": "m3",
+     "x": 60,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 4,
+     "type": "mushW",
+     "uid": "m4",
+     "x": 61,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 5,
+     "type": "mushW",
+     "uid": "m5",
+     "x": 62,
+     "y": 320
+    }
+   ],
+   "neg": -1,
+   "note": "respawn",
+   "player": {
+    "alive": true,
+    "anim": "2_",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 99,
+    "vx": 0,
+    "vy": 0,
+    "x": 10.2,
+    "y": -2.5
+   },
+   "projectiles": [
+    {
+     "anim": "WT8",
+     "uid": "i1189",
+     "x": 0,
+     "y": 0
+    }
+   ],
+   "safe": 42,
+   "t": 500
+  },
+  {
+   "big": 1,
+   "empty": null,
+   "flag": false,
+   "frac": 2.5,
+   "items": [],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 3,
+     "type": "mushW",
+     "uid": "m3",
+     "x": 60,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 4,
+     "type": "mushW",
+     "uid": "m4",
+     "x": 61,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 5,
+     "type": "mushW",
+     "uid": "m5",
+     "x": 62,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 6,
+     "type": "mushW",
+     "uid": "m6",
+     "x": 63,
+     "y": 320
+    }
+   ],
+   "neg": -1,
+   "note": "respawn",
+   "player": {
+    "alive": true,
+    "anim": "2_",
+    "equip": {
+     "helmet": "B",
+     "weapon": "C"
+    },
+    "hp": 99,
+    "vx": 0,
+    "vy": 0,
+    "x": 10.2,
+    "y": -2.5
+   },
+   "projectiles": [
+    {
+     "anim": "WT8",
+     "uid": "i1189",
+     "x": 0,
+     "y": 0
+    },
+    {
+     "anim": "WT8",
+     "uid": "i1190",
+     "x": 1,
+     "y": 0
+    }
+   ],
+   "safe": 42,
+   "t": 600,
+   "tags": [
+    "z"
+   ]
+  },
+  {
+   "big": 1,
+   "empty": null,
+   "flag": false,
+   "frac": 2.5,
+   "items": [],
+   "monsters": [
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 3,
+     "type": "mushW",
+     "uid": "m3",
+     "x": 60,
+     "y": 320
+    },
+    {
+     "alive": 1,
+     "hp": 70,
+     "id": 6,
+     "type": "mushW",
+     "uid": "m6",
+     "x": 63,
+     "y": 320
+    }
+   ],
+   "neg": -1,
+   "note": "spawn",
+   "player": {
+    "alive": true,
+    "anim": "2_",
+    "equip": null,
+    "hp": 99,
+    "vx": 0,
+    "vy": 0,
+    "x": 10.2,
+    "y": -2.5
+   },
+   "projectiles": [
+    {
+     "anim": "WT8",
+     "uid": "b7",
+     "x": 2,
+     "y": 0
+    }
+   ],
+   "safe": 42,
+   "t": 700,
+   "tags": []
+  }
+ ],
+ "killroy": {
+  "roomMaps": [
+   1,
+   2,
+   8,
+   13,
+   14,
+   15,
+   16,
+   17,
+   18,
+   19,
+   24,
+   26,
+   27,
+   28,
+   31,
+   51,
+   52,
+   53,
+   57,
+   58,
+   59,
+   60,
+   62,
+   63,
+   64,
+   65,
+   101,
+   103,
+   104,
+   105,
+   106,
+   107,
+   108,
+   109,
+   110,
+   111,
+   112,
+   113,
+   116,
+   151,
+   152,
+   153,
+   154,
+   155,
+   156,
+   157,
+   158,
+   159,
+   160,
+   161,
+   162,
+   163,
+   201,
+   202,
+   203,
+   204,
+   205,
+   206,
+   207,
+   208,
+   209,
+   210,
+   211,
+   212,
+   213,
+   251,
+   252,
+   253,
+   254,
+   255,
+   256,
+   257,
+   258,
+   259,
+   260,
+   261,
+   262,
+   263,
+   264
+  ],
+  "captured": {
+   "charIdx": 0,
+   "keepBuffs": true,
+   "label": "Room practice",
+   "mapIdx": 1,
+   "raw": {
+    "CharacterClass_0": 7,
+    "CharacterClass_1": 1,
+    "Lv0_0": "[120]",
+    "Lv0_1": "[80]",
+    "Research": "[[],[],[],[],[],[],[],[],[]]",
+    "charNames": [
+     "Ana",
+     "Bo"
+    ]
+   },
+   "seconds": 300,
+   "seed": 20260101,
+   "terms": {},
+   "toggles": {},
+   "unlimitedInventory": false,
+   "version": 1
+  },
+  "readBack": true,
+  "cases": [
+   {
+    "note": "the captured payload",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": null
+   },
+   {
+    "note": "a version this build does not read",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 2
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "no save to replay",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": null,
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a label that is not text",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": 7,
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a character the save does not carry",
+    "payload": {
+     "charIdx": 99,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a fractional character index",
+    "payload": {
+     "charIdx": 0.5,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a map that is not a Killroy room",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 3,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a run shorter than a second",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 0,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a run longer than a day",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 86401,
+     "seed": 20260101,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a seed outside the game range",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 0,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a seed past 32 bits",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 4294967296,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   },
+   {
+    "note": "a fractional seed",
+    "payload": {
+     "charIdx": 0,
+     "keepBuffs": true,
+     "label": "Room practice",
+     "mapIdx": 1,
+     "raw": {
+      "CharacterClass_0": 7,
+      "CharacterClass_1": 1,
+      "Lv0_0": "[120]",
+      "Lv0_1": "[80]",
+      "Research": "[[],[],[],[],[],[],[],[],[]]",
+      "charNames": [
+       "Ana",
+       "Bo"
+      ]
+     },
+     "seconds": 300,
+     "seed": 1.5,
+     "terms": {},
+     "toggles": {},
+     "unlimitedInventory": false,
+     "version": 1
+    },
+    "error": "Invalid captured Killroy replay"
+   }
+  ]
+ }
+}

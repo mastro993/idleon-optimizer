@@ -446,6 +446,7 @@ mod tests {
             timeline: Vec::new(),
             drops: crate::drops::Summary::default(),
             progress: crate::progress::Summary::default(),
+            replay: None,
         };
         outcome.damage = kills as f64;
         Row {

@@ -35,6 +35,9 @@ if (spawnSync('node', ['-e', '1']).status !== 0) throw new Error('node is requir
 writeFileSync(join(source, 'package.json'), JSON.stringify({ type: 'module' }));
 
 const scenes = await import(join(source, 'js/stats/data/game/scenes.js'));
+const { MAP_SCENES, MOB_SPRITES } = await import(
+  join(source, 'js/stats/data/game/combat-sprites.js')
+);
 const { MONSTERS } = await import(join(source, 'js/stats/data/game/monsters.js'));
 const lists = await import(join(source, 'js/stats/data/game/customlists.js'));
 const loader = await import(join(source, 'js/save/loader.js'));
@@ -68,15 +71,53 @@ for (const key of Object.keys(scenes.SCENE_SPAWNS)) {
     EXCLUDED[idx] = `The scene spawns ${missing.join(', ')}, which has no extracted monster row.`;
     continue;
   }
+  const geometry = scenes.SCENE_GEOMETRY[key];
+  const art = MAP_SCENES[idx];
+  const sprite = (type) => {
+    const row = MOB_SPRITES[type];
+    if (!row) return null;
+    return {
+      file: String(row.file ?? ''),
+      across: Number(row.across) || 1,
+      down: Number(row.down) || 1,
+      frames: Number(row.frames) || 1,
+      fw: Number(row.fw) || 50,
+      fh: Number(row.fh) || 50,
+      ox: Number(row.ox) || 0,
+      oy: Number(row.oy) || 0,
+      movingFrame: Number(row.movingFrame) || 0,
+      deathFrame: Number(row.deathFrame) || 0,
+    };
+  };
   maps.push({
     index: idx,
     name: String(lists.MapDispName[idx] ?? ''),
     scene: String(spawns.scene ?? ''),
+    // The replay draws the map's own background and platform art and stages
+    // each monster on its spawn node; the run never moves them, so their x
+    // within the platform is the platform's centre.
+    art: {
+      name: String(art?.sceneName ?? ''),
+      width: Number(art?.w) || 960,
+      height: Number(art?.h) || 540,
+      bg: art?.bg ?? null,
+      plat: art?.plat ?? null,
+      sky: art?.sky ? (art.sky.color ? [String(art.sky.color)] : [String(art.sky.top), String(art.sky.bottom)]) : null,
+      playerNode: world.defaultPlayerNode(idx),
+      nodes: geometry.nodes.map((node) => ({
+        x: Number(node.x) || 0,
+        y: Number(node.y) || 0,
+        length: Number(node.length) || 0,
+      })),
+    },
     mobs: spawns.mobs.map(([type, node]) => ({
       type,
       node: Number(node) || 0,
       hp: Number(MONSTERS[type].MonsterHPTotal) || 0,
       respawn: Number(MONSTERS[type].RespawnTime) || 0,
+      height: Number(MONSTERS[type].HeightOfMonster) || 0,
+      monType: String(MONSTERS[type].Type ?? ''),
+      sprite: sprite(type),
     })),
   });
 }

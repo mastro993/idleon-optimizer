@@ -39,6 +39,7 @@
 
 use crate::drops::{self, Inputs, Snapshot};
 use crate::progress::{self, Config as ProgressConfig, Grants, Summary as ProgressSummary};
+use crate::replay;
 use idleon_common::{Control, Progress, Rng};
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -60,7 +61,7 @@ struct EncounterData {
     maps: Vec<Map>,
 }
 
-/// One map's spawn roster.
+/// One map's spawn roster and the art the replay draws it with.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Map {
@@ -70,12 +71,43 @@ pub struct Map {
     pub name: String,
     /// The scene script that spawns the roster.
     pub scene: String,
+    /// The extracted scene: art, size, platforms and player node.
+    pub art: Art,
     /// The scene's monsters, in spawn order.
     pub mobs: Vec<Monster>,
 }
 
+/// One map's scene art and geometry, the replay's backdrop.
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Art {
+    /// `sceneName`, the readable scene.
+    pub name: String,
+    pub width: f64,
+    pub height: f64,
+    /// The `…bg.png` background, relative to the combat asset folder.
+    pub bg: Option<String>,
+    /// The `Plat*.png` platform art.
+    pub plat: Option<String>,
+    /// The scene's sky: a solid colour, or the gradient's top and bottom.
+    pub sky: Option<Vec<String>>,
+    /// The node the game creates the player on (`defaultPlayerNode`).
+    pub player_node: usize,
+    /// The scene's platforms, in node order.
+    pub nodes: Vec<Node>,
+}
+
+/// One platform: `x` to `length` at `y`, in scene pixels.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+pub struct Node {
+    pub x: f64,
+    pub y: f64,
+    pub length: f64,
+}
+
 /// One spawned monster: the def a kill and its respawn read.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct Monster {
     /// The `MonsterDefinitionsGET` key, such as `mushG`.
     #[serde(rename = "type")]
@@ -86,6 +118,33 @@ pub struct Monster {
     pub hp: f64,
     /// `RespawnTime`; `0` is a resource that respawns after the kill delay.
     pub respawn: f64,
+    /// `HeightOfMonster`, the spawn y's term.
+    pub height: f64,
+    /// `Type`: `Monster`, `Tree`, `Fish` or `Ore`.
+    pub mon_type: String,
+    /// The monster's extracted animation sheet, when it has one.
+    pub sprite: Option<Sprite>,
+}
+
+/// A monster's animation sheet and frame layout (`MOB_SPRITES`).
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Sprite {
+    /// The sheet, relative to the combat asset folder.
+    pub file: String,
+    pub across: usize,
+    pub down: usize,
+    pub frames: usize,
+    /// One frame's size.
+    pub fw: f64,
+    pub fh: f64,
+    /// The frame's pivot inside the sheet, in frame pixels.
+    pub ox: f64,
+    pub oy: f64,
+    /// The last idle frame before walking starts.
+    pub moving_frame: usize,
+    /// The first death frame.
+    pub death_frame: usize,
 }
 
 /// The tables the encounter run reads, written by
@@ -158,6 +217,8 @@ pub struct Options {
     pub progress: ProgressConfig,
     /// How a kill credits the Coral Kid, the Scurge and Omega Arcade.
     pub grants: Grants,
+    /// Record the run's frames for the replay, at this interval.
+    pub replay: Option<u64>,
 }
 
 impl Options {
@@ -173,6 +234,7 @@ impl Options {
             drop_inputs: Inputs::default(),
             progress: ProgressConfig::default(),
             grants: Grants::default(),
+            replay: None,
         }
     }
 
@@ -227,6 +289,8 @@ pub struct Outcome {
     pub drops: drops::Summary,
     /// The furnace and the combat-driven progress the run banked.
     pub progress: ProgressSummary,
+    /// The run's recorded frames, when the run asked for a replay.
+    pub replay: Option<replay::Recording>,
 }
 
 impl Outcome {
@@ -274,13 +338,23 @@ pub fn unsupported() -> &'static [&'static str] {
          advances with the run's own clock.",
         "Killroy, the Rift, caverns other than the Den, Clam Work and dungeons, which need saved \
          state or runtime-only enemy data. The Den runs as its own projection on the results tab.",
-        "Replays and the combat assets, which arrive with CS-07.",
+        "The replay records the run's own state: the player's attacks, projectiles, damage numbers \
+         and the scene's decorations are not part of it.",
     ]
 }
 
 /// One roster entry's live state.
 struct Live {
     kind: String,
+    /// `m.id`, the roster's spawn-order index plus one.
+    id: usize,
+    /// The node the scene stages it on.
+    node: usize,
+    /// The actor's top-left, from the spawn node and the def's height.
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
     hp_tot: f64,
     hp: f64,
     respawn: f64,
@@ -293,9 +367,35 @@ struct Live {
 }
 
 impl Live {
-    fn new(monster: &Monster) -> Self {
+    /// `w` is the sprite's frame width; `on_node` is this monster's place in the
+    /// node's spawn order, out of `node_count`, so the replay spreads a
+    /// platform's monsters instead of stacking them at its centre.
+    fn new(monster: &Monster, index: usize, map: &Map, on_node: usize, node_count: usize) -> Self {
+        // `_spawnY` plus the node's platform. The spawn's x draw is not part of
+        // this run, so the actor takes its even share of the platform.
+        let node = map.art.nodes.get(monster.node).copied().unwrap_or(Node {
+            x: 0.0,
+            y: 0.0,
+            length: 0.0,
+        });
+        let (w, h) = monster
+            .sprite
+            .as_ref()
+            .map_or((50.0, 50.0), |sprite| (sprite.fw, sprite.fh));
+        let y = match monster.mon_type.as_str() {
+            "Tree" => node.y - 100.0 + (monster.height - 50.0) / 2.0,
+            "Fish" => node.y + 60.0,
+            _ => node.y - monster.height + (monster.height - 50.0) / 2.0,
+        };
         Self {
             kind: monster.kind.clone(),
+            id: index + 1,
+            node: monster.node,
+            x: node.x + (node.length - node.x) * (on_node as f64 + 1.0) / (node_count as f64 + 1.0)
+                - w / 2.0,
+            y,
+            w,
+            h: monster.height.max(h),
             hp_tot: monster.hp,
             hp: monster.hp,
             respawn: monster.respawn,
@@ -394,6 +494,17 @@ struct Sim {
     progress: progress::State,
     grants: Grants,
     timeline: Vec<Sample>,
+    /// The replay's frames, when the run records them.
+    replay: Option<Recorder>,
+}
+
+/// The replay recorder: the run's frames, the encoder that writes them and the
+/// simulated time of the next frame.
+struct Recorder {
+    recording: replay::Recording,
+    encoder: replay::Encoder,
+    interval_ms: u64,
+    next_ms: u64,
 }
 
 impl Sim {
@@ -421,8 +532,33 @@ impl Sim {
             interval: 1000,
             kind: TimerKind::Respawn,
         });
-        Self {
-            mobs: map.mobs.iter().map(Live::new).collect(),
+        // A node's spawns share its platform, so the replay places each at its
+        // even share of the node's span.
+        let mut seen: BTreeMap<usize, usize> = BTreeMap::new();
+        let counts: BTreeMap<usize, usize> =
+            map.mobs.iter().fold(BTreeMap::new(), |mut counts, mob| {
+                *counts.entry(mob.node).or_insert(0) += 1;
+                counts
+            });
+        let mobs = map
+            .mobs
+            .iter()
+            .enumerate()
+            .map(|(index, monster)| {
+                let on_node = seen.entry(monster.node).or_insert(0);
+                let position = *on_node;
+                *on_node += 1;
+                Live::new(
+                    monster,
+                    index,
+                    map,
+                    position,
+                    counts.get(&monster.node).copied().unwrap_or(1),
+                )
+            })
+            .collect();
+        let mut sim = Self {
+            mobs,
             timers,
             time_ms: 0,
             steps: 0,
@@ -438,6 +574,53 @@ impl Sim {
             progress: progress::State::new(options.progress.clone()),
             grants: options.grants.clone(),
             timeline: Vec::new(),
+            replay: None,
+        };
+        if let Some(interval) = options.replay {
+            sim.replay = Some(Recorder {
+                recording: replay::Recording::new(interval),
+                encoder: replay::Encoder::new(replay::keyframe_every()),
+                interval_ms: interval.max(1),
+                next_ms: 0,
+            });
+            // A replay starts at t=0, before the first step.
+            sim.record();
+            if let Some(recorder) = sim.replay.as_mut() {
+                recorder.next_ms = recorder.interval_ms;
+            }
+        }
+        sim
+    }
+
+    /// Push one frame of the run's monsters.
+    fn record(&mut self) {
+        if self.replay.is_none() {
+            return;
+        }
+        let time = self.time_ms;
+        let monsters: Vec<serde_json::Value> = self
+            .mobs
+            .iter()
+            .map(|mob| {
+                serde_json::json!({
+                    "uid": format!("m{}", mob.id),
+                    "id": mob.id,
+                    "type": mob.kind,
+                    "node": mob.node,
+                    "x": mob.x,
+                    "y": mob.y,
+                    "w": mob.w,
+                    "h": mob.h,
+                    "hp": mob.hp.max(0.0),
+                    "hpTot": mob.hp_tot,
+                    "alive": if mob.alive { 1 } else { 0 },
+                    "respawn": mob.counter,
+                })
+            })
+            .collect();
+        let snapshot = serde_json::json!({ "t": time, "monsters": monsters });
+        if let Some(recorder) = self.replay.as_mut() {
+            recorder.recording.push(&mut recorder.encoder, &snapshot);
         }
     }
 
@@ -452,6 +635,12 @@ impl Sim {
         self.steps += 1;
         if self.time_ms.is_multiple_of(TIMELINE_MS) {
             self.sample();
+        }
+        if let Some(recorder) = self.replay.as_mut()
+            && self.time_ms >= recorder.next_ms
+        {
+            recorder.next_ms += recorder.interval_ms;
+            self.record();
         }
         self.frame_steps_left -= 1;
         if self.frame_steps_left == 0 {
@@ -582,6 +771,13 @@ impl Sim {
     }
 
     fn outcome(mut self, options: Options, map: &Map) -> Outcome {
+        // The replay ends on the run's own clock, like the chart.
+        if let Some(recorder) = self.replay.as_ref()
+            && recorder.recording.last_ms() != Some(self.time_ms as f64)
+        {
+            self.record();
+        }
+        let replay = self.replay.take().map(|recorder| recorder.recording);
         // The chart always ends on the run's own numbers, even when the
         // duration is not a whole ten-second mark.
         if self
@@ -608,6 +804,7 @@ impl Sim {
             timeline: self.timeline,
             drops: self.drops.summary(),
             progress: self.progress.summary(),
+            replay,
         }
     }
 }
