@@ -387,7 +387,10 @@ pub fn evaluate(
             },
             mastery: Mastery {
                 penalty: layers.mastery_penalty,
-                ..Mastery::default()
+                bubble: layers.mastery_bubble,
+                cards: layers.mastery_cards,
+                talent: layers.mastery_talent,
+                etc: layers.mastery_etc,
             },
         }),
     }

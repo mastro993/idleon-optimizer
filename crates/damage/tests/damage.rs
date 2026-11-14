@@ -437,3 +437,96 @@ fn the_engine_layers_track_the_upstream_calculator() {
         }
     }
 }
+
+/// DMG-02's acceptance, on the engine's own layers: every descriptor layer is
+/// present with its card text, the three values recombine into the summary the
+/// cards show, and the mastery tree is the ratio the bar reads.
+#[test]
+fn every_engine_layer_is_present_and_recombines_into_the_summary() {
+    let imported = imported();
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let character = expected["character"].as_u64().expect("an index") as usize;
+        let map = expected["map"].as_u64().expect("a map") as usize;
+        let summary = damage::evaluate(
+            &imported.save,
+            &imported.simulation,
+            damage::Context { character, map },
+        );
+        let layers = summary
+            .layers()
+            .unwrap_or_else(|| panic!("character {character}: no layers"));
+
+        // Every upstream layer is present, with the descriptor's own text.
+        for id in LayerId::ALL {
+            let layer = layers.get(id);
+            let upstream = &expected["layers"][match id {
+                LayerId::Base => "base",
+                LayerId::Percent => "percent",
+                LayerId::Multiplier => "multiplier",
+            }];
+            assert!(
+                layer.value.is_finite() && layer.value > 0.0,
+                "character {character} {}: {}",
+                id.id(),
+                layer.value
+            );
+            assert!(
+                close(layer.pre_softcap, upstream["preSoftcap"].as_f64().unwrap())
+                    || (layer.pre_softcap / upstream["preSoftcap"].as_f64().unwrap() - 1.0).abs()
+                        < 2e-3,
+                "character {character} {}: pre-softcap {} vs {}",
+                id.id(),
+                layer.pre_softcap,
+                upstream["preSoftcap"]
+            );
+            assert_eq!(id.note(), upstream["note"].as_str().unwrap());
+            assert_eq!(
+                match id.format() {
+                    idleon_common::ValueFormat::Raw => "raw",
+                    idleon_common::ValueFormat::Multiplier => "x",
+                    _ => "other",
+                },
+                upstream["format"].as_str().unwrap()
+            );
+        }
+
+        // Layer sum matches the summary: the three values are the maximum, and
+        // the minimum is that maximum times the ratio.
+        assert!(
+            close(layers.max(), summary.max),
+            "character {character}: {} != {}",
+            layers.max(),
+            summary.max
+        );
+        assert!(
+            close(summary.min, summary.max * summary.mastery),
+            "character {character}: {} != {} × {}",
+            summary.min,
+            summary.max,
+            summary.mastery
+        );
+
+        // Mastery matches the formula tree: the root is the ratio the bar
+        // reads and every term is the descriptor's own.
+        let tree = summary
+            .mastery_tree()
+            .unwrap_or_else(|| panic!("character {character}: no mastery tree"));
+        assert!(close(tree.value, summary.mastery));
+        let upstream = &expected["mastery"];
+        assert_eq!(tree.label, upstream["name"].as_str().unwrap());
+        let terms = upstream["terms"].as_array().expect("the terms");
+        let nodes: Vec<_> = tree.children.iter().skip(1).collect();
+        assert_eq!(nodes.len(), terms.len());
+        for (node, term) in nodes.into_iter().zip(terms) {
+            assert_eq!(node.label, term["name"].as_str().unwrap());
+            assert!(
+                close(node.value, term["value"].as_f64().unwrap()),
+                "character {character} {}: {} vs {}",
+                node.label,
+                node.value,
+                term["value"]
+            );
+        }
+    }
+}
