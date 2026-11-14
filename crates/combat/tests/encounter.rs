@@ -211,7 +211,7 @@ fn the_unsupported_list_names_the_unported_halves() {
         "crystals, giants",
         "account monster tuning",
         "killroy",
-        "replays",
+        "the replay records",
     ] {
         assert!(
             unsupported.contains(part),
@@ -290,6 +290,7 @@ fn the_fixture_accounts_drops_are_reproducible() {
         },
         progress: idleon_combat::progress::Config::default(),
         grants: idleon_combat::progress::Grants::default(),
+        replay: Some(idleon_combat::replay::snapshot_ms()),
     };
     let outcome = run(options.clone());
     assert!(outcome.kills > 0);
@@ -347,5 +348,95 @@ fn a_run_advances_the_saved_furnace_and_its_progress() {
     assert_eq!(
         outcome.progress, again.progress,
         "a seed reproduces the furnace"
+    );
+}
+
+#[test]
+fn a_recorded_run_keeps_frames_on_its_own_clock() {
+    use idleon_combat::replay;
+
+    let mut options = Options::basic(1, Player::StandIn { kill_every_ms: 500 }, 120_000);
+    options.replay = Some(replay::snapshot_ms());
+    let outcome = run(options);
+    let replay = outcome.replay.as_ref().expect("the run records a replay");
+    assert_eq!(replay.interval_ms(), replay::snapshot_ms());
+    assert_eq!(replay.time_ms(0), Some(0.0), "the replay starts at t=0");
+    assert_eq!(
+        replay.last_ms(),
+        Some(outcome.simulated_ms as f64),
+        "the replay ends on the run's clock"
+    );
+    assert_eq!(
+        replay.len() as u64,
+        outcome.simulated_ms / replay::snapshot_ms() + 1,
+        "one frame per interval, plus both ends"
+    );
+    let first = replay.frame(0).expect("the first frame decodes");
+    let monsters = first["monsters"].as_array().expect("the roster");
+    let map = encounter::map(1).expect("map 1");
+    assert_eq!(monsters.len(), map.mobs.len(), "the whole roster is drawn");
+    // Every monster sits on its spawn platform: the x is inside the node and
+    // the y above it, because this run never moves them.
+    for monster in monsters {
+        let node = &map.art.nodes[monster["node"].as_u64().expect("a node") as usize];
+        let x = monster["x"].as_f64().expect("an x");
+        let y = monster["y"].as_f64().expect("a y");
+        assert!(
+            x >= node.x && x <= node.length,
+            "monster x {x} is off node {}..{}",
+            node.x,
+            node.length
+        );
+        assert!(y <= node.y, "monster y {y} is below its platform");
+    }
+    let last = replay
+        .frame(replay.len() - 1)
+        .expect("the last frame decodes");
+    assert_ne!(
+        first["monsters"], last["monsters"],
+        "the run's kills and respawns reach the frames"
+    );
+    assert!(replay.bytes() > 0, "the frames are encoded");
+    assert!(
+        run(Options::basic(1, Player::Idle, 1_000)).replay.is_none(),
+        "a run that asks for no replay keeps no frames"
+    );
+    // The idle player changes nothing but the clock and the respawn counters.
+    let mut idle = Options::basic(1, Player::Idle, 1_000);
+    idle.replay = Some(replay::snapshot_ms());
+    let idle = run(idle);
+    let replay = idle.replay.as_ref().expect("the idle run records");
+    let state = |frame: &serde_json::Value| {
+        frame["monsters"]
+            .as_array()
+            .expect("the roster")
+            .iter()
+            .map(|monster| {
+                (
+                    monster["uid"].clone(),
+                    monster["hp"].clone(),
+                    monster["alive"].clone(),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    let first = replay.frame(0).expect("the first frame");
+    let last = replay.frame(replay.len() - 1).expect("the last frame");
+    assert_eq!(state(&first), state(&last), "nothing took damage or died");
+}
+
+#[test]
+fn a_long_run_records_at_a_coarser_interval() {
+    use idleon_combat::replay;
+    assert_eq!(replay::interval_for(120_000), 100, "a short run at 100 ms");
+    assert_eq!(replay::interval_for(3_600_000), 400, "an hour at 400 ms");
+    assert_eq!(
+        replay::interval_for(86_400_000),
+        8_700,
+        "a day fits the frame cap"
+    );
+    assert!(
+        86_400_000 / replay::interval_for(86_400_000) <= replay::MAX_FRAMES,
+        "the interval keeps the run under the cap"
     );
 }

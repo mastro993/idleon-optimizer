@@ -302,6 +302,46 @@ mod tests {
     }
 
     #[test]
+    fn every_combat_replay_reference_is_in_the_manifest() {
+        // The replay resolves map art and monster sheets by the reference the
+        // extracted table carries; a file the manifest cannot resolve draws a
+        // placeholder, so the committed set must cover every reference.
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join(DEFAULT_DIR);
+        let manifest = Manifest::load(dir);
+        assert_eq!(
+            manifest.status,
+            Status::Ready,
+            "the upstream assets are committed"
+        );
+        let mut missing = Vec::new();
+        for map in idleon_combat::encounter::maps() {
+            for reference in map.art.bg.iter().chain(map.art.plat.iter()) {
+                let path = format!("combat-sim/{reference}");
+                if manifest.artwork(&path) == Artwork::Missing {
+                    missing.push(path);
+                }
+            }
+            for monster in &map.mobs {
+                let Some(sprite) = &monster.sprite else {
+                    continue;
+                };
+                let path = format!("combat-sim/{}", sprite.file);
+                if manifest.artwork(&path) == Artwork::Missing {
+                    missing.push(path);
+                }
+            }
+        }
+        missing.sort_unstable();
+        missing.dedup();
+        assert!(
+            missing.is_empty(),
+            "replay files not in the manifest: {missing:?}"
+        );
+    }
+
+    #[test]
     fn a_manifest_without_a_files_array_is_invalid() {
         let dir = scratch("no-files");
         fs::write(dir.join(MANIFEST_FILE), r#"{"version":1}"#).expect("manifest file");

@@ -142,7 +142,38 @@ fn the_projected_attempt_matches_upstream() {
             outcome.totals.player_kills,
             "{note}"
         );
+        // Every wave is on the run's own clock, in order, and the count at each
+        // ten-second mark is the one the module's snapshot reports there.
+        assert_eq!(
+            outcome.waves.len() as f64,
+            outcome.snapshot.wave,
+            "{note}: one entry per wave"
+        );
+        let mut previous = 0;
+        for (index, wave) in outcome.waves.iter().enumerate() {
+            assert_eq!(wave.wave as usize, index + 1, "{note}: wave numbers");
+            assert!(
+                wave.t_ms < debug_duration(case),
+                "{note}: wave {} after the run",
+                wave.wave
+            );
+            assert!(wave.t_ms >= previous, "{note}: waves out of order");
+            previous = wave.t_ms;
+        }
+        for mark in expected["marks"].as_array().expect("marks") {
+            let at = mark["tMs"].as_u64().expect("a mark");
+            let started = outcome.waves.iter().filter(|wave| wave.t_ms < at).count() as f64;
+            assert_eq!(
+                started,
+                number(&mark["wave"]),
+                "{note}: waves started by {at} ms"
+            );
+        }
     }
+}
+
+fn debug_duration(case: &serde_json::Value) -> u64 {
+    case["seconds"].as_u64().unwrap_or(0) * 1000
 }
 
 #[test]

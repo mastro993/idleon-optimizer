@@ -22,6 +22,7 @@ pub(crate) mod encounter;
 pub(crate) mod equipment;
 pub(crate) mod overrides;
 pub(crate) mod presets;
+pub(crate) mod replay;
 pub(crate) mod talents;
 
 pub(crate) use encounter::RunResult;
@@ -58,10 +59,11 @@ pub(crate) enum ResultsTab {
     Den,
     Progress,
     Smelting,
+    Replay,
 }
 
 impl ResultsTab {
-    pub(crate) const ALL: [ResultsTab; 9] = [
+    pub(crate) const ALL: [ResultsTab; 10] = [
         ResultsTab::Summary,
         ResultsTab::Killroy,
         ResultsTab::Obols,
@@ -71,6 +73,7 @@ impl ResultsTab {
         ResultsTab::Den,
         ResultsTab::Progress,
         ResultsTab::Smelting,
+        ResultsTab::Replay,
     ];
 
     pub(crate) fn id(self) -> &'static str {
@@ -84,6 +87,7 @@ impl ResultsTab {
             ResultsTab::Den => "result-den",
             ResultsTab::Progress => "result-progress",
             ResultsTab::Smelting => "result-smelting",
+            ResultsTab::Replay => "result-replay",
         }
     }
 
@@ -98,6 +102,7 @@ impl ResultsTab {
             ResultsTab::Den => "The Den",
             ResultsTab::Progress => "Progress",
             ResultsTab::Smelting => "Smelting",
+            ResultsTab::Replay => "Replay",
         }
     }
 
@@ -200,6 +205,21 @@ pub(crate) struct State {
     pub(crate) progress_warnings: Vec<String>,
     /// The Den attempt's inputs, when the save carries its `Holes` rows.
     pub(crate) den: Option<idleon_combat::den::Config>,
+    /// The replay playhead, in frames; fractional while playing.
+    pub(crate) replay_pos: f64,
+    /// Playback speed in frames per second, from the upstream speeds.
+    pub(crate) replay_speed: f64,
+    pub(crate) replay_playing: bool,
+    /// Whether a playback loop is already pumping frames.
+    pub(crate) replay_pumping: bool,
+    /// Bumped to stop a playback loop that outlived its run.
+    pub(crate) replay_generation: u64,
+    /// When the last playback frame ticked, for the elapsed advance.
+    pub(crate) replay_at: Option<std::time::Instant>,
+    /// A captured Killroy replay, kept for this session like the upstream token.
+    pub(crate) killroy_replay: Option<idleon_combat::replay::KillroyReplay>,
+    /// The captured replay the next run answers, stamped onto its result.
+    pub(crate) pending_source: Option<idleon_combat::replay::KillroyReplay>,
 }
 
 impl State {
@@ -238,6 +258,14 @@ impl State {
             progress: idleon_combat::progress::Config::default(),
             progress_warnings: Vec::new(),
             den: None,
+            replay_pos: 0.0,
+            replay_speed: 1.0,
+            replay_playing: false,
+            replay_pumping: false,
+            replay_generation: 0,
+            replay_at: None,
+            killroy_replay: None,
+            pending_source: None,
         }
     }
 
@@ -438,7 +466,7 @@ pub(crate) fn view(
             Tab::Gear => equipment::pane(state, breakpoint, window, cx),
             Tab::Talents => talents::pane(state, window, cx),
             Tab::Mechanics => overrides::pane(state, window, cx),
-            Tab::Encounter => encounter::pane(state, cx),
+            Tab::Encounter => encounter::pane(state, window, cx),
             Tab::Compare => compare::pane(state, cx),
         })
         .into_any_element()
