@@ -37,6 +37,23 @@ impl Decoder<'_> {
         self.ola(index)
     }
 
+    /// How many gods `GodsInfo` carries.
+    pub fn god_count(&self) -> usize {
+        self.data.god_types.len()
+    }
+
+    /// `GodsInfo[index][3]`: a god's minor-link base bonus.
+    pub fn god_base(&self, index: usize) -> f64 {
+        self.data.god_base(index)
+    }
+
+    /// `finalBubbleValByKey('Y2ACTIVE')` at `level`: the Big P bubble's own
+    /// curve. It is a large bubble, so no big-bubble or Prisma pass applies.
+    pub fn y2_bubble(&self, level: f64) -> f64 {
+        let bubble = &self.data.bubbles.y2;
+        idleon_common::curve::eval(&bubble.formula, bubble.x1, bubble.x2, level)
+    }
+
     /// `OptLacc` as a string, as the game sometimes writes lists there.
     pub fn ola_text(&self, index: usize) -> String {
         fields::field(self.save, "OptLacc")

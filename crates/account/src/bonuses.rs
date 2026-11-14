@@ -147,14 +147,14 @@ impl Decoder<'_> {
     }
 
     /// `grimoireUpgBonus22` from `js/stats/systems/mc/grimoire.js`.
-    pub(crate) fn grimoire_22(&self) -> f64 {
+    pub fn grimoire_22(&self) -> f64 {
         let level_22 = self.row_at("Grimoire", 22);
         let level_36 = self.row_at("Grimoire", 36);
         level_22 * (1.0 + level_36 / 100.0)
     }
 
     /// `computeExoticBonus(idx)` from `js/stats/systems/w6/farming.js`.
-    pub(crate) fn exotic(&self, index: usize) -> f64 {
+    pub fn exotic(&self, index: usize) -> f64 {
         let Some(param) = self.data.exotic(index) else {
             return 0.0;
         };

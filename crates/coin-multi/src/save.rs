@@ -6,8 +6,9 @@
 //! left `None`; the caller reports it as not modelled instead of guessing.
 //!
 //! The vault kill-count tiers follow `js/stats/systems/common/vaultKillz.js`,
-//! and the equipped-set check follows `checkSetEquipped` in
-//! `js/stats/systems/w3/setBonus.js`.
+//! the equipped-set check follows `checkSetEquipped` in
+//! `js/stats/systems/w3/setBonus.js`, and the Divinity/Crop Scientist group is
+//! resolved by [`crate::divinity`].
 
 use idleon_account::Decoder;
 use idleon_save::fields;
@@ -139,6 +140,19 @@ fn coin_groups(
             20,
             Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0),
         );
+        let div_minor = crate::divinity::minor(&decoder, 3);
+        let crop_scientist = crate::divinity::crop_scientist(&mut decoder);
+        let mut terms = Vec::new();
+        push(&mut terms, "Divinity Minor: Harriep", div_minor);
+        if crop_scientist > 0.0 {
+            terms.push(Term::annotated(
+                crate::divinity::CROP_SCIENTIST_NAME,
+                crop_scientist,
+                format!("{} crops", crate::divinity::crop_count(&decoder)),
+            ));
+        }
+        groups[21] = crate::group(21, Some(1.0 + (div_minor + crop_scientist) / 100.0))
+            .with_terms(terms, 100.0);
         rows.push(groups);
     }
 

@@ -111,9 +111,9 @@ overkill tier and the 23 multiplicative groups' upstream names and values, so th
 overkill tier, every resolved group and the formula tree's group rows are compared against upstream,
 and the simple save's total is compared end to end. Regenerate it with
 `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/coin-multi/tests/coin_multi.rs`
-compares the port field for field. Four groups still need systems this build does not carry (the
-shared stat pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses, and Divinity's bubble
-chain); the port reports them as not modelled instead of guessing.
+compares the port field for field. Three groups still need systems this build does not carry (the
+shared stat pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses); the port reports
+them as not modelled instead of guessing.
 Treat it as frozen for the same reason: it is the oracle's output, not this app's.
 
 `damage.json` is the upstream Damage Breakdown's own output for `data.json`, from
