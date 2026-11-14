@@ -70,6 +70,10 @@ for (let cauldron = 0; cauldron < 4; cauldron += 1) {
         x1: Number(row[1]) || 0,
         x2: Number(row[2]) || 0,
         formula: String(row[3] ?? ''),
+        // `BUBBLE_KEYS` in `js/stats/systems/common/stats.js`: the slab and
+        // tome bubbles scale by discovered items and Tome points.
+        slab: ['W4', 'A4', 'M4'].includes(row[15]),
+        tome: ['W8', 'A9', 'M9'].includes(row[15]),
       };
     }
   }
@@ -228,6 +232,14 @@ const data = {
     }];
   }),
   farmRankPerLevel: farming.ninjaInfo(36),
+  // `DungPassiveStats2[idx]`: the Flurbo shop's passive curves.
+  dungPassive: (lists.DungPassiveStats2 || []).map((row) =>
+    row ? {
+      x1: Number(row[1]) || 0,
+      x2: Number(row[2]) || 0,
+      formula: String(row[3] ?? ''),
+    } : null
+  ),
   classParent: Object.fromEntries(
     promotion.flatMap((row, parent) =>
       row && row[0] !== 'Na' ? row.map((child) => [Number(child), parent]) : []

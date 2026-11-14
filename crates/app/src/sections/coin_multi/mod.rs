@@ -3,12 +3,12 @@
 //!
 //! Ported from `coin-multi-calc.html`: the character select, the six cards, the
 //! partial badge and the `#tree` breakdown. The cards read the save through
-//! [`idleon_coin_multi`], which resolves the groups this build ports and names
-//! the ones it does not, so the badge always explains itself and the breakdown
-//! lists all 23 terms. The damage card is the one editable value: upstream
-//! resolves it through the damage descriptor, which this build does not carry
-//! yet, so the field opens on the save's highest recorded hit and the overkill
-//! tier follows what it holds.
+//! [`idleon_coin_multi`], which resolves all 23 groups for a full save and names
+//! any group it cannot resolve, so a partial badge always explains itself and
+//! the breakdown lists every term. The damage card is the one editable value:
+//! upstream resolves it through the damage descriptor, which this build does not
+//! carry yet, so the field opens on the save's highest recorded hit and the
+//! overkill tier follows what it holds.
 
 mod actions;
 
@@ -390,11 +390,15 @@ fn cards(
         .filter(|_| !snapshot_missing);
     let caption = evaluation
         .map(|evaluation| {
-            format!(
-                "Lower bound: {} of {} sources resolved",
-                evaluation.groups.len() - evaluation.excluded.len(),
-                evaluation.groups.len()
-            )
+            if evaluation.complete {
+                format!("All {} sources resolved", evaluation.groups.len())
+            } else {
+                format!(
+                    "Lower bound: {} of {} sources resolved",
+                    evaluation.groups.len() - evaluation.excluded.len(),
+                    evaluation.groups.len()
+                )
+            }
         })
         .unwrap_or_default();
     let total_text = total

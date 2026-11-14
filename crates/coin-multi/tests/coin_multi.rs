@@ -28,11 +28,11 @@ fn oracle() -> Value {
 }
 
 /// The group indices `crates/coin-multi/src/save.rs` resolves from the save: the
-/// Dustwalker talent, the companions, event shop, equipment, RoG, grid, set,
-/// gambit, meal, pet, bundle, vault, pristine, prayer and Divinity/Crop
-/// Scientist groups.
-const MODELLED: [usize; 21] = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+/// cash bubbles, companions, event shop, equipment, RoG, grid, set, gambit, meal,
+/// pet, bundle, vault, pristine, prayer, Divinity/Crop Scientist and Other
+/// Additive Sources groups.
+const MODELLED: [usize; 23] = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 ];
 
 fn close(left: f64, right: f64) -> bool {
@@ -149,7 +149,7 @@ fn check_trees(label: &str, snapshot: &coin_multi::Snapshot, expected: &Value) {
         for group in &evaluation.groups {
             for term in &group.terms {
                 assert!(
-                    tree.match_count(term.name) >= 1,
+                    tree.match_count(&term.name) >= 1,
                     "{label}: term {} is searchable",
                     term.name
                 );
@@ -305,11 +305,8 @@ fn the_modelled_sources_produce_the_upstream_total_when_the_rest_are_neutral() {
         "got {}, upstream {total}",
         evaluation.total
     );
-    assert!(
-        !evaluation.complete,
-        "two groups still need the shared stat pipeline"
-    );
-    assert_eq!(evaluation.excluded.len(), 2);
+    assert!(evaluation.complete, "every group is modelled");
+    assert!(evaluation.excluded.is_empty());
 }
 
 #[test]
@@ -349,6 +346,30 @@ fn the_wrapper_supplies_the_names_and_the_winning_vote() {
         .value
         .expect("the group is modelled");
     assert!(close(without_vote, 1.0), "got {without_vote}");
+}
+
+#[test]
+fn the_other_sources_talent_scales_with_the_overkill_tier() {
+    let imported = import(&fixture()).expect("the fixture imports");
+    let mut first = imported.coin.inputs(0).expect("the inputs exist");
+    first.overkill = Some(1);
+    let mut second = imported.coin.inputs(0).expect("the inputs exist");
+    second.overkill = Some(2);
+    let one = coin_multi::evaluate(&imported.coin, &first).expect("the evaluation runs");
+    let two = coin_multi::evaluate(&imported.coin, &second).expect("the evaluation runs");
+    let term = |evaluation: &coin_multi::Evaluation| {
+        evaluation.groups[22]
+            .terms
+            .iter()
+            .find(|term| term.name == "Talent: Coins For Charon")
+            .map(|term| term.value)
+            .expect("the talent is active on the fixture")
+    };
+    assert!(close(term(&two), term(&one) * 2.0));
+    assert!(close(
+        two.groups[22].value.unwrap() - one.groups[22].value.unwrap(),
+        term(&one) / 100.0
+    ));
 }
 
 #[test]

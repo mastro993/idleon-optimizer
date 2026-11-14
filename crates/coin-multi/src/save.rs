@@ -40,24 +40,26 @@ fn coin_groups(
     let mut rows = Vec::with_capacity(characters.len());
     for index in 0..characters.len() {
         let mut groups: Vec<Group> = (0..GROUP_COUNT).map(|i| crate::group(i, None)).collect();
-        let cash = idleon_stats_engine::cash_bubbles(
+        if let Some(cash) = idleon_stats_engine::cash_bubbles(
             &idleon_save::Save::new(serde_json::Value::Object(root.clone())),
             simulation,
             index,
-        )
-        .unwrap_or_default();
-        if !cash.is_empty() {
+        ) {
             let mut terms = Vec::new();
             let mut total = 0.0;
             for (stat, value, part) in &cash {
                 total += part;
+                let key = match stat {
+                    idleon_stats_engine::Stat::Str => "CashSTR",
+                    idleon_stats_engine::Stat::Agi => "CashAGI",
+                    idleon_stats_engine::Stat::Wis => "CashWIS",
+                    idleon_stats_engine::Stat::Luk => "CashLUK",
+                };
+                let name = idleon_stats_engine::bubble_label(key)
+                    .map(|name| format!("Bubble: {name}"))
+                    .unwrap_or_else(|| format!("Bubble: {key}"));
                 terms.push(crate::Term::annotated(
-                    match stat {
-                        idleon_stats_engine::Stat::Str => "Bubble: CashSTR",
-                        idleon_stats_engine::Stat::Agi => "Bubble: CashAGI",
-                        idleon_stats_engine::Stat::Wis => "Bubble: CashWIS",
-                        idleon_stats_engine::Stat::Luk => "Bubble: CashLUK",
-                    },
+                    name,
                     *part,
                     format!("{} {value:.0}", stat.id()),
                 ));
@@ -196,6 +198,41 @@ fn coin_groups(
     rows
 }
 
+/// The "Other Additive Sources" group, at one overkill tier.
+pub(crate) fn other_group(other: &idleon_stats_engine::OtherSources, tier: f64) -> Group {
+    let mut terms = Vec::new();
+    push(&mut terms, "Talent: Cash Money", other.talent657);
+    push(&mut terms, "Vial: Monster Cash", other.vial);
+    push(&mut terms, "Combined Item Sources: MONEY", other.etc3);
+    push(&mut terms, "Cards: Monster Cash", other.cards);
+    push(&mut terms, "Card: Molti", other.card_w5b1);
+    push(&mut terms, "Talent: Chaching!", other.talent22);
+    push(&mut terms, "Flurbo Shop: Monster Cash", other.flurbo);
+    push(&mut terms, "Arcade: Cash from Mobs", other.arcade);
+    push(&mut terms, "Box Rewards: Monster Cash", other.box_reward);
+    push(&mut terms, "Guild: Coin Supercharger x map", other.guild);
+    push(
+        &mut terms,
+        "Talent: Coins For Charon",
+        other.talent643 * tier,
+    );
+    push(&mut terms, "Talent: American Tipper", other.talent644);
+    push(&mut terms, "Golden Food: Monster Cash", other.gold_food);
+    push(&mut terms, "Vault: Mining Payday$", other.vault17);
+    push(&mut terms, "Achievements", other.achievements);
+    push(&mut terms, "Vault: Monster Tax", other.vault2);
+    push(&mut terms, "Vault: Bored to Death", other.vault14);
+    push(&mut terms, "Vault: Dirty Money", other.vault31);
+    push(&mut terms, "Ola: Monster Cash Bonus", other.ola420);
+    push(
+        &mut terms,
+        "Vault: Collection Cashout x Cards",
+        other.vault70,
+    );
+    let sum: f64 = terms.iter().map(|term| term.value).sum();
+    crate::group(22, Some(1.0 + sum / 100.0)).with_terms(terms, 100.0)
+}
+
 /// Adds a term the way upstream draws it: only when the value is above zero.
 fn push(terms: &mut Vec<Term>, name: &'static str, value: f64) {
     if value > 0.0 {
@@ -244,6 +281,17 @@ pub fn coin(
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_owned();
+        let mut groups = decoded.get(index).cloned().unwrap_or_default();
+        let other = idleon_stats_engine::other_sources(
+            &idleon_save::Save::new(serde_json::Value::Object(root.clone())),
+            simulation,
+            index,
+        );
+        if let Some(other) = &other
+            && let Some(slot) = groups.get_mut(22)
+        {
+            *slot = other_group(other, 1.0);
+        }
         rows.push(crate::Character {
             name: names
                 .get(index)
@@ -257,7 +305,8 @@ pub fn coin(
             target_name: stats::target_name(&target),
             highest_damage,
             target,
-            groups: decoded.get(index).cloned().unwrap_or_default(),
+            groups,
+            other,
         });
     }
     crate::Snapshot { characters: rows }

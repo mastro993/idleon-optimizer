@@ -4038,8 +4038,8 @@ const INTERACTIONS = {
     if (!(labelOf(await lane.tree(), 'coin-total') ?? '').includes('x')) {
       throw new Error('coin-multi: the total card has no multiplier');
     }
-    if (!has(await lane.tree(), 'coin-partial')) {
-      throw new Error('coin-multi: the partial badge has no explanation');
+    if (has(await lane.tree(), 'coin-partial')) {
+      throw new Error('coin-multi: a fully resolved total still shows the partial badge');
     }
 
     // Character two follows its own target, which the monster table lacks.

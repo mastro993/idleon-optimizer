@@ -87,12 +87,17 @@ function vialParams(key) {
   };
 }
 
-// `TalentDescriptions[t][1][0..2]`: each talent's first-tab curve.
+// `TalentDescriptions[t][1][0..2]`: each talent's first-tab curve, and
+// `[3..5]` the second-tab curve when the talent has one.
 const talents = {};
+const talentTab2 = {};
 for (const [id, row] of Object.entries(lists.TalentDescriptions)) {
   const params = row && row[1];
   if (!params) continue;
   talents[id] = { x1: Number(params[0]) || 0, x2: Number(params[1]) || 0, formula: String(params[2]) };
+  if (params[3] && params[5] && params[5] !== '_') {
+    talentTab2[id] = { x1: Number(params[3]) || 0, x2: Number(params[4]) || 0, formula: String(params[5]) };
+  }
 }
 
 // `familyBonusParams(idx)`: the family bonus curve and the level offset the
@@ -112,10 +117,12 @@ const familyBonuses = Object.fromEntries(
 const payload = {
   encoding: encoding.N2L,
   talents,
+  talentTab2,
   familyBonuses,
+  questOrder: lists.SceneNPCquestOrder,
   classTrees: talent.CLASS_TREES,
   arcade: Object.fromEntries(
-    [26, 27, 35, 38, 51, 52, 54, 59, 62, 63, 67, 69, 72].map((idx) => [idx, arcade.arcadeShopParams(idx)])
+    lists.ArcadeShopInfo.map((_, idx) => [idx, arcade.arcadeShopParams(idx)]).filter(([, row]) => row)
   ),
   rogBonus: sushi.ROG_BONUS_QTY,
   mineheadBonus: minehead.MINEHEAD_BONUS_QTY,

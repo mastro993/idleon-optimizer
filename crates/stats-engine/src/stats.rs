@@ -251,7 +251,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
         extras += ctx.talent(*talent);
     }
     if let Some(talent) = config.extra_tab2 {
-        extras += ctx.talent(talent);
+        extras += ctx.talent_tab(talent, 2);
     }
     let buff = config.buff.map_or(0.0, |(id, _)| {
         let active = fields_active(ctx, id);
@@ -264,9 +264,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
         .copied()
         .unwrap_or(0.0);
     let quests_618 = if config.quests_618 {
-        let quests = fields_number(ctx, "totalQuestsComplete")
-            .or_else(|| ctx.option(0).is_nan().then_some(0.0));
-        quests.unwrap_or(0.0).min(ctx.talent(618))
+        ctx.decoder.quest_total().min(ctx.talent(618))
     } else {
         0.0
     };
@@ -423,11 +421,9 @@ fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
             }
             let base = ctx.data.item_stat(name, stat);
             let stone = emm
-                .and_then(|value| at_index(value, row))
-                .and_then(|value| value.as_array())
-                .and_then(|row| row.get(slot))
+                .and_then(|row| at_index(row, slot))
                 .and_then(|value| value.get(stat))
-                .and_then(serde_json::Value::as_f64)
+                .and_then(idleon_save::json::number)
                 .unwrap_or(0.0);
             total += base + stone;
         }
@@ -612,10 +608,6 @@ fn bubble_name(ctx: &Ctx<'_, '_>, key: &str) -> String {
 
 fn fields_json(ctx: &Ctx<'_, '_>, key: &str) -> Option<serde_json::Value> {
     idleon_save::fields::field(ctx.save(), key)
-}
-
-fn fields_number(ctx: &Ctx<'_, '_>, key: &str) -> Option<f64> {
-    idleon_save::fields::field(ctx.save(), key).and_then(|value| idleon_save::json::number(&value))
 }
 
 /// Whether `BuffsActive_<char>` lists the buff id.

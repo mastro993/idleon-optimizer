@@ -216,6 +216,11 @@ impl<'a> Decoder<'a> {
         self.data.talent(index)
     }
 
+    /// `talentParams(index, 2)`: the talent's second-tab curve.
+    pub fn talent_param2(&self, index: usize) -> Option<&data::TalentParam> {
+        self.data.talent_tab2(index)
+    }
+
     /// `familyBonusParams(index)`: a class family bonus curve.
     pub fn family_bonus(&self, index: usize) -> Option<&data::FamilyBonus> {
         self.data.family_bonus(index)
