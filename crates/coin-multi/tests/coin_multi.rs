@@ -28,10 +28,11 @@ fn oracle() -> Value {
 }
 
 /// The group indices `crates/coin-multi/src/save.rs` resolves from the save: the
-/// companions, event shop, equipment, RoG, grid, set, gambit, meal, pet, bundle,
-/// vault, pristine, prayer and Divinity/Crop Scientist groups.
-const MODELLED: [usize; 20] = [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21,
+/// Dustwalker talent, the companions, event shop, equipment, RoG, grid, set,
+/// gambit, meal, pet, bundle, vault, pristine, prayer and Divinity/Crop
+/// Scientist groups.
+const MODELLED: [usize; 21] = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
 ];
 
 fn close(left: f64, right: f64) -> bool {
@@ -225,6 +226,38 @@ fn every_character_matches_the_upstream_groups_and_overkill() {
                     index + 1,
                     group.name
                 );
+                // Every group this build expands lists exactly the terms
+                // upstream's own breakdown lists, at the same values. Group 15
+                // multiplies its two factors and group 20's prayer children are
+                // the formula tree's (CM-02), so neither expands here.
+                let terms = groups[group_index]["terms"]
+                    .as_array()
+                    .expect("the oracle lists the group's terms");
+                if group.terms.is_empty() {
+                    continue;
+                }
+                assert_eq!(
+                    group.terms.len(),
+                    terms.len(),
+                    "character {} group {group_index}: term count",
+                    index + 1
+                );
+                for (term, expected) in group.terms.iter().zip(terms) {
+                    assert_eq!(
+                        term.name,
+                        expected["name"].as_str().unwrap(),
+                        "character {} group {group_index}: term name",
+                        index + 1
+                    );
+                    let expected = expected["value"].as_f64().unwrap();
+                    assert!(
+                        close(term.value, expected),
+                        "character {} group {group_index} term {}: got {}, upstream {expected}",
+                        index + 1,
+                        term.name,
+                        term.value
+                    );
+                }
             } else {
                 assert!(
                     !group.is_modelled(),
@@ -274,9 +307,9 @@ fn the_modelled_sources_produce_the_upstream_total_when_the_rest_are_neutral() {
     );
     assert!(
         !evaluation.complete,
-        "three groups still need the shared stat pipeline"
+        "two groups still need the shared stat pipeline"
     );
-    assert_eq!(evaluation.excluded.len(), 3);
+    assert_eq!(evaluation.excluded.len(), 2);
 }
 
 #[test]

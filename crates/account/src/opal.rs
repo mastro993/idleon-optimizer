@@ -273,7 +273,7 @@ impl Decoder<'_> {
 
     /// A talent level: `SL_<char>[talent]`, written as an array or a keyed
     /// object.
-    pub(crate) fn talent_level(&self, character: usize, talent: usize) -> f64 {
+    pub fn talent_level(&self, character: usize, talent: usize) -> f64 {
         let key = format!("SL_{character}");
         let Some(value) = fields::field(self.save, &key) else {
             return 0.0;
@@ -289,7 +289,7 @@ impl Decoder<'_> {
     }
 
     /// How many characters the save's talent rows cover.
-    pub(crate) fn save_character_count(&self) -> usize {
+    pub fn save_character_count(&self) -> usize {
         self.save
             .keys()
             .filter_map(|key| key.strip_prefix("SL_"))

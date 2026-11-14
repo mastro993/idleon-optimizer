@@ -22,95 +22,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 98118.55507307505
+            "value": 98118.55507307505,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 487492.30111124495
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 435780.35613544396
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 8888482.850060817
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.3087198747102375
+            "value": 2.3087198747102375,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 130.87198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.25290701065978
+            "value": 5.25290701065978,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.331436699857754
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 297.74168173485515
+            "value": 297.74168173485515,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1292.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 479.35260115606934
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3529.208598061675
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -134,95 +331,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 105119.68792721917
+            "value": 105119.68792721917,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 9625517.3017977
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 443372.0048735501
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 442979.4860506698
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.3087198747102375
+            "value": 2.3087198747102375,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 130.87198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.25290701065978
+            "value": 5.25290701065978,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.331436699857754
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 290.2020682211264
+            "value": 290.2020682211264,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1292.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 472.60115606936415
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 2781.9986917755027
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -246,95 +640,297 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 79070.95506988776
+            "value": 79070.95506988776,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 477189.3492523866
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 7004524.16061207
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 425281.9971243188
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 5.515
+            "value": 5.515,
+            "terms": [
+              {
+                "name": "Combined Item Sources: EXTRA MONEY",
+                "value": 451.49999999999994
+              }
+            ]
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.2462106371242445
+            "value": 5.2462106371242445,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.300998573466476
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 296.67235726129616
+            "value": 296.67235726129616,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1242.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 475.9768786127167
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3475.6518732491277
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -358,95 +954,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 96661.33327552059
+            "value": 96661.33327552059,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 8761294.232038515
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 452245.3605414664
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 452493.7349720786
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.208686683102291
+            "value": 5.208686683102291,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.130434782608695
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 302.5096372840718
+            "value": 302.5096372840718,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1232.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 469.2254335260115
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 4076.1313206133937
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -470,95 +1263,288 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 81186.65816136477
+            "value": 81186.65816136477,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 474083.67476861586
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 7219150.847617007
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 425331.29375085456
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.2495635933888325
+            "value": 5.2495635933888325,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.316239316239315
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 291.76261303151136
+            "value": 291.76261303151136,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1227.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3475.6543288833645
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -582,95 +1568,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 84046.64097251995
+            "value": 84046.64097251995,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 477041.45999125467
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 425625.29353771755
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 7501897.343723022
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.269482426791172
+            "value": 5.269482426791172,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.406779661016948
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 294.4970943124827
+            "value": 294.4970943124827,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1227.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 273.4335260115607
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3475.6689309689364
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -694,95 +1877,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 90833.91003430597
+            "value": 90833.91003430597,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 8211334.096737216
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 436026.8382373305
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 435930.0684560509
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.222469387723402
+            "value": 5.222469387723402,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.19308357348703
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 300.70658721959643
+            "value": 300.70658721959643,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1247.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 273.4335260115607
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 4076.618221680308
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -806,95 +2186,296 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 13263.726731850964
+            "value": 13263.726731850964,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 475759.7530614445
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 425033.7364931898
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 425479.183630462
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.3087198747102375
+            "value": 2.3087198747102375,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 130.87198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.155546699729788
+            "value": 5.155546699729788,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 18.88888888888889
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 297.96719505942144
+            "value": 297.96719505942144,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1342.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Talent: Chaching!",
+                "value": 36.3013698630137
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 469.2254335260115
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3475.5857282853462
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -918,95 +2499,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 90660.11907814123
+            "value": 90660.11907814123,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 8191490.174329437
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 437111.3594856314
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 437310.3739990532
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.3087198747102375
+            "value": 2.3087198747102375,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 130.87198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.2462106371242445
+            "value": 5.2462106371242445,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.300998573466476
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 303.1831607564635
+            "value": 303.1831607564635,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1292.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 475.9768786127167
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 4076.7322227658606
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -1030,95 +2808,288 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 76675.5177358321
+            "value": 76675.5177358321,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 476104.8280040857
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 6766410.024840555
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 424936.9207385682
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.25290701065978
+            "value": 5.25290701065978,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 19.331436699857754
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 291.6626375247269
+            "value": 291.6626375247269,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1217.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 3475.656778204915
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       },
@@ -1142,95 +3113,292 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 12057.934767972281
+            "value": 12057.934767972281,
+            "terms": [
+              {
+                "name": "Bubble: Penny Of Strength",
+                "value": 427695.74319356465
+              },
+              {
+                "name": "Bubble: Dollar Of Agility",
+                "value": 388899.4603566196
+              },
+              {
+                "name": "Bubble: Nickel Of Wisdom",
+                "value": 389098.27324704395
+              }
+            ]
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1.6
+            "value": 1.6,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 2.271219874710238
+            "value": 2.271219874710238,
+            "terms": [
+              {
+                "name": "Combined Item Sources: BONUS MONEY",
+                "value": 127.12198747102377
+              }
+            ]
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1.2
+            "value": 1.2,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1.3535
+            "value": 1.3535,
+            "terms": [
+              {
+                "name": "Grid: J5 Glimbo Linguistics",
+                "value": 15.15
+              },
+              {
+                "name": "Grid: J4 Glimbo BOGO Offer",
+                "value": 20.2
+              }
+            ]
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1.683425526689029
+            "value": 1.683425526689029,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 5.151919935285967
+            "value": 5.151919935285967,
+            "terms": [
+              {
+                "name": "Talent: Dustwalker",
+                "value": 18.87240356083086
+              },
+              {
+                "name": "Cooking Level Scaling",
+                "value": 21.999953116216524
+              }
+            ]
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 469.05718731136005
+            "value": 469.05718731136005,
+            "terms": [
+              {
+                "name": "Meals: Monster Cash",
+                "value": 28861.968731136003
+              },
+              {
+                "name": "Artifact: Maneki Kat",
+                "value": 16236
+              },
+              {
+                "name": "Poppy: Monster Cash",
+                "value": 1707.75
+              }
+            ]
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 597.0095563500603
+            "value": 597.0095563500603,
+            "terms": [
+              {
+                "name": "Pet Arena: Cash I",
+                "value": 0.5
+              },
+              {
+                "name": "Pet Arena: Cash II",
+                "value": 1
+              },
+              {
+                "name": "Statue: Pecunia",
+                "value": 594.5095563500603
+              }
+            ]
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 10702.132
+            "value": 10702.132,
+            "terms": [
+              {
+                "name": "Mainframe: Fungi Finger Pocketer",
+                "value": 473569.2
+              },
+              {
+                "name": "Vault: Recipe for Profit",
+                "value": 14144
+              },
+              {
+                "name": "Vault: Bubble Money",
+                "value": 582400
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1.4
+            "value": 1.4,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 2.42
+            "value": 2.42,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 50
+              },
+              {
+                "name": "Level Scaling",
+                "value": 5.9
+              },
+              {
+                "name": "No-Prayer Passive",
+                "value": 0.6000000000000001
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 184.28433228432203
+            "value": 184.28433228432203,
+            "terms": [
+              {
+                "name": "Divinity Minor: Harriep",
+                "value": 2863.8315805104457
+              },
+              {
+                "name": "Crop Scientist: Cash",
+                "value": 15464.60164792176
+              }
+            ]
           },
           {
             "name": "Other Additive Sources",
-            "value": 280.4353986813105
+            "value": 280.4353986813105,
+            "terms": [
+              {
+                "name": "Talent: Cash Money",
+                "value": 46.666666666666664
+              },
+              {
+                "name": "Vial: Monster Cash",
+                "value": 104.51999999999998
+              },
+              {
+                "name": "Combined Item Sources: MONEY",
+                "value": 1217.9897494204756
+              },
+              {
+                "name": "Card: Molti",
+                "value": 42
+              },
+              {
+                "name": "Flurbo Shop: Monster Cash",
+                "value": 25
+              },
+              {
+                "name": "Arcade: Cash from Mobs",
+                "value": 18.870038412291933
+              },
+              {
+                "name": "Box Rewards: Monster Cash",
+                "value": 23.4
+              },
+              {
+                "name": "Guild: Coin Supercharger x map",
+                "value": 78.02197802197801
+              },
+              {
+                "name": "Talent: Coins For Charon",
+                "value": 830.232558139535
+              },
+              {
+                "name": "Talent: American Tipper",
+                "value": 3.375722543352601
+              },
+              {
+                "name": "Golden Food: Monster Cash",
+                "value": 2349.557171319924
+              },
+              {
+                "name": "Vault: Mining Payday$",
+                "value": 5424.8659836068255
+              },
+              {
+                "name": "Achievements",
+                "value": 35
+              },
+              {
+                "name": "Vault: Monster Tax",
+                "value": 6044.04
+              },
+              {
+                "name": "Vault: Bored to Death",
+                "value": 2060
+              },
+              {
+                "name": "Vault: Dirty Money",
+                "value": 1442.0000000000002
+              },
+              {
+                "name": "Ola: Monster Cash Bonus",
+                "value": 8
+              },
+              {
+                "name": "Vault: Collection Cashout x Cards",
+                "value": 8190
+              }
+            ]
           }
         ]
       }
@@ -1259,95 +3427,140 @@
         "groups": [
           {
             "name": "Cash Bubbles from Main Stats",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Companion: Cool Bird",
-            "value": 4
+            "value": 4,
+            "terms": []
           },
           {
             "name": "Companion: Equinox Broadbass",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Companion: Potluck",
-            "value": 2.5
+            "value": 2.5,
+            "terms": []
           },
           {
             "name": "Companion: Balloonfish",
-            "value": 4
+            "value": 4,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash I",
-            "value": 1.5
+            "value": 1.5,
+            "terms": []
           },
           {
             "name": "Event Shop: Monster Cash II",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Equip Bonus Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters I",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Ring of Glory: extra coins dropped by monsters II",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Grid Bonus",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Equip Extra Money",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gold Equipment Set",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Gambit: Coins from monsters",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Bundle: Monster Cash",
-            "value": 3.5
+            "value": 3.5,
+            "terms": []
           },
           {
             "name": "Talent: Dustwalker and Cooking Level",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Meals, Maneki Kat, Poppy, and Voting",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Pet Arena, Friends, and Pecunia",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Mainframe and Vault Progress",
-            "value": 16.5
+            "value": 16.5,
+            "terms": [
+              {
+                "name": "Vault: Bubble Money",
+                "value": 1550
+              }
+            ]
           },
           {
             "name": "Pristine: Gumball Necklace",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Prayer: Jawbreaker",
-            "value": 1
+            "value": 1,
+            "terms": [
+              {
+                "name": "Base Bonus",
+                "value": 40
+              },
+              {
+                "name": "Prayer Level",
+                "value": 0
+              },
+              {
+                "name": "Level Scaling",
+                "value": 1
+              },
+              {
+                "name": "Not Active",
+                "value": 0
+              }
+            ]
           },
           {
             "name": "Divinity and Crop Scientist",
-            "value": 1
+            "value": 1,
+            "terms": []
           },
           {
             "name": "Other Additive Sources",
-            "value": 1
+            "value": 1,
+            "terms": []
           }
         ]
       }

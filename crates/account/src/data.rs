@@ -123,6 +123,14 @@ pub struct AccountData {
     pub cooking_mastery_vial: Option<VialParam>,
     /// The Hole rows the Gambit point chain reads.
     pub hole: HoleData,
+    /// `TalentDescriptions[id][1][0..2]`: each talent's first-tab curve.
+    pub talents: BTreeMap<String, TalentParam>,
+    /// `ClassFamilyBonuses` rows with the `ClassAccountBonus` level offset.
+    #[serde(rename = "familyBonuses")]
+    pub family_bonuses: BTreeMap<String, FamilyBonus>,
+    /// `CLASS_TREES`: the talent-tab chain each class tier inherits.
+    #[serde(rename = "classTrees")]
+    pub class_trees: BTreeMap<String, Vec<u32>>,
 }
 
 /// The `HolesInfo` rows and the jar bonus table `js/stats/systems/w5/hole.js`
@@ -193,6 +201,25 @@ pub struct Vials {
     pub statue_double: VialParam,
 }
 
+/// `talentParams(idx)`: one talent's curve, `formula(x1, x2, level)`.
+#[derive(Debug, Deserialize)]
+pub struct TalentParam {
+    pub x1: f64,
+    pub x2: f64,
+    pub formula: String,
+}
+
+/// `familyBonusParams(idx)`: a class family bonus and the level offset it
+/// starts from.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FamilyBonus {
+    pub x1: f64,
+    pub x2: f64,
+    pub formula: String,
+    pub lv_offset: f64,
+}
+
 impl AccountData {
     /// Arcade shop parameters at an upgrade index.
     pub fn arcade(&self, index: usize) -> Option<(&str, f64, f64)> {
@@ -258,6 +285,23 @@ impl AccountData {
             .copied()
             .unwrap_or(0.0)
     }
+
+    /// `talentParams(index)`: the talent's curve, when the game data has one.
+    pub fn talent(&self, index: usize) -> Option<&TalentParam> {
+        self.talents.get(&index.to_string())
+    }
+
+    /// `familyBonusParams(index)`.
+    pub fn family_bonus(&self, index: usize) -> Option<&FamilyBonus> {
+        self.family_bonuses.get(&index.to_string())
+    }
+
+    /// Whether `class`'s talent chain inherits `tab`.
+    pub fn class_in_tree(&self, class: usize, tab: u32) -> bool {
+        self.class_trees
+            .get(&class.to_string())
+            .is_some_and(|chain| chain.contains(&tab))
+    }
 }
 
 /// The account tables, parsed once.
@@ -296,5 +340,14 @@ mod tests {
             .expect("the Canteen Read vial is extracted");
         assert_eq!(vial.index, 85);
         assert_eq!(vial.kind, "add");
+        let dustwalker = data
+            .talent(433)
+            .expect("the Dustwalker talent is extracted");
+        assert_eq!((dustwalker.x1, dustwalker.x2), (30.0, 250.0));
+        assert_eq!(dustwalker.formula, "decay");
+        let mage = data.family_bonus(34).expect("family bonus 34 is extracted");
+        assert_eq!((mage.x1, mage.x2, mage.lv_offset), (20.0, 350.0, 69.0));
+        assert!(data.class_in_tree(41, 34), "a bubonic conjuror is a mage");
+        assert!(!data.class_in_tree(8, 34), "a barbarian is not");
     }
 }
