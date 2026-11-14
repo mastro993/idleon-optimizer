@@ -88,15 +88,15 @@ const shadowSave = () => {
 };
 
 /// A small flat save at research level 42 with every square at level 1, no saved
-/// shape overlay and one found observation holding a magnifier: enough for the
-/// grid, shape and magnifier editors, whatever save the previous section left.
+/// shape overlay and four found observations: enough for the grid, shape,
+/// magnifier and insight editors, whatever save the previous section left.
 const researchSave = () => {
   const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
   return JSON.stringify({
     Research: JSON.stringify([
       Array(240).fill(1),
       Array(240).fill(-1),
-      sparse(80, { 0: 1 }),
+      sparse(80, { 0: 1, 1: 1, 2: 1, 3: 1 }),
       sparse(80, {}),
       sparse(80, {}),
       [0, 0],
@@ -2722,6 +2722,57 @@ const INTERACTIONS = {
     const shapeSummary = labelOf(await lane.tree(), 'shape-summary') ?? '';
     if (!shapeSummary.includes('shapes placed')) {
       throw new Error(`research: the shape summary reads ${shapeSummary}`);
+    }
+
+    // RES-05: the Insight ROI tab ranks the usable observations. One monocle
+    // goes into the pool by hand so there is an insight grind to price.
+    await lane.call('click_element', { id: 'grid' });
+    await waitForNode(lane, 'mag-add-Monocle', 'research: the magnifier pool offers a monocle');
+    const freeMonocle = labelOf(await lane.tree(), 'mag-free-Monocle') ?? '';
+    await lane.call('click_element', { id: 'mag-add-Monocle' });
+    await waitFor(
+      lane,
+      (nodes) => (labelOf(nodes, 'mag-free-Monocle') ?? '') !== freeMonocle,
+      'research: placing a monocle takes it out of the pool',
+    );
+    await lane.call('click_element', { id: 'insight' });
+    await waitForNode(lane, 'insight-roi', 'research: the Insight ROI tab opens');
+    await lane.call('click_element', { id: 'insight-run' });
+    await waitForNode(lane, 'insight-table', 'research: the insight analysis stores a table', 120000);
+    // The table wraps its first cell, so the observation id keeps the full
+    // element path in front of it.
+    const insightRow = (node) => /\.insight-obs-\d+#\d+$/.test(node.id ?? '');
+    await waitFor(
+      lane,
+      (nodes) => nodes.some(insightRow),
+      'research: the insight table lists its first observation',
+    );
+    const monocles = labelOf(await lane.tree(), 'insight-monocles') ?? '';
+    if (!monocles.includes('Monocles: 1')) throw new Error(`research: the insight summary reads ${monocles}`);
+    const insightOrder = (nodes) =>
+      nodes
+        .filter(insightRow)
+        .sort((left, right) => left.bounds.y - right.bounds.y)
+        .map((node) => node.id);
+    const beforeSort = insightOrder(await lane.tree());
+    if (beforeSort.length < 2) throw new Error(`research: the insight table lists ${beforeSort.length} rows`);
+    // Sorting runs through the shared segmented control; its segments keep the
+    // control's id as a prefix.
+    await lane.call('click_element', { id: 'insight-sort.segment-1' });
+    await waitFor(
+      lane,
+      (nodes) => insightOrder(nodes).join() !== beforeSort.join(),
+      'research: sorting the insight table reorders its rows',
+    );
+    // The summary totals agree with the rows the table lists.
+    const totals = labelOf(await lane.tree(), 'insight-kpis') ?? '';
+    const tableSummary = labelOf(await lane.tree(), 'insight-table') ?? '';
+    const shown = insightOrder(await lane.tree()).length;
+    if (!totals.includes('Baseline') || !totals.includes('observations')) {
+      throw new Error(`research: the insight summary reads ${totals}`);
+    }
+    if (!tableSummary.startsWith(`${shown} of`)) {
+      throw new Error(`research: the insight table reads ${tableSummary} for ${shown} rows`);
     }
 
     // RES-09: the Minehead tab's six subtabs render from the save. The subtab

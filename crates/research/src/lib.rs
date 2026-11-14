@@ -7,6 +7,7 @@ pub mod dashboard;
 pub mod data;
 pub mod edit;
 pub mod engine;
+pub mod insight;
 pub mod model;
 pub mod optimize;
 pub mod save;

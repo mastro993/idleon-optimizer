@@ -120,7 +120,7 @@ pub fn obs_base_exp(obs: usize) -> f64 {
 }
 
 /// Insight EXP needed to take an observation from `level` to `level + 1`.
-pub(crate) fn insight_exp_req(obs: usize, level: u32) -> f64 {
+pub fn insight_exp_required(obs: usize, level: u32) -> f64 {
     let t = obs as f64;
     (2.0 + 0.7 * t) * (1.75 + t / 200.0).powi(level as i32) * (1.0 + t * t / 100.0) + level as f64
 }
@@ -158,9 +158,21 @@ pub fn observations_to_find(research_level: u32, found: &[bool]) -> usize {
 }
 
 /// Is an observation usable: found, and the research level high enough for it.
+///
+/// The gate is `roll`, the level that unlocks the observation; `rollReq` is the
+/// roll to beat when hunting for it (`computeObsUnlockPriority`), not a level.
 pub fn observation_usable(obs: usize, research_level: u32, observations: &Observations) -> bool {
     let data = &game().observations[obs];
-    observations.found.get(obs).copied().unwrap_or(false) && research_level as f64 >= data.roll_req
+    observations.found.get(obs).copied().unwrap_or(false) && research_level as f64 >= data.roll
+}
+
+/// The observations a magnifier can be placed on: usable, and among the ones
+/// the research level has unlocked (upstream `getAvailableSlots`).
+pub fn available_slots(research_level: u32, observations: &Observations) -> Vec<usize> {
+    let to_find = observations_to_find(research_level, &observations.found);
+    (0..to_find.min(game().observations.len()))
+        .filter(|obs| observation_usable(*obs, research_level, observations))
+        .collect()
 }
 
 /// Grid bonus of one cell, with the shapes covering it and the all-bonus multiplier.
@@ -783,7 +795,7 @@ pub(crate) fn first_tournament_hours(ctx: &SimContext) -> f64 {
 pub(crate) fn unlock_observations(state: &mut Simulation) {
     let level = state.research_level as f64;
     for (obs, found) in state.observations.found.iter_mut().enumerate() {
-        if !*found && level >= game().observations[obs].roll_req {
+        if !*found && level >= game().observations[obs].roll {
             *found = true;
         }
     }
@@ -804,7 +816,7 @@ pub(crate) fn advance_insight_hours(state: &mut Simulation, ctx: &SimContext, ho
             continue;
         }
         state.observations.insight_exp[obs] += rate * hours;
-        let req = insight_exp_req(obs, state.observations.insight_level[obs]);
+        let req = insight_exp_required(obs, state.observations.insight_level[obs]);
         if state.observations.insight_exp[obs] >= req - 1e-9 {
             state.observations.insight_exp[obs] =
                 (state.observations.insight_exp[obs] - req).max(0.0);

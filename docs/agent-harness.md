@@ -134,9 +134,11 @@ A page whose cards own their own scroll areas needs a wheel point on the page's 
 card: `bringIntoView(lane, id, await wheelPoint(lane, '<page-scroll-id>'))` scrolls the page, while
 the fixed default point can land on an inner table that swallows the wheel.
 
-The research check also opens every Minehead subtab and plays one insta-reveal (`RES-09`), then
-every Sushi Station subtab and both spoiler toggles (`RES-10`), which reveal rows the save's level
-has not unlocked. A subtab
+The research check also puts a monocle in the pool and runs the Insight ROI table (`RES-05`): it
+opens the tab, computes the analysis, sorts it through the segmented control and checks the summary
+totals against the rows. It then opens every Minehead subtab and plays one insta-reveal (`RES-09`),
+and every Sushi Station subtab and both spoiler toggles (`RES-10`), which reveal rows the save's
+level has not unlocked. A subtab
 strip built from shared buttons can rewrite one button's semantic id for a render, so the check finds
 the button by its `minehead-tabs` or `sushi-tabs` parent and label and clicks its live centre with
 `click_coordinates` instead of `click_element`.

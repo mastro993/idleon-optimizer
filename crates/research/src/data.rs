@@ -52,7 +52,9 @@ pub struct ShapeDef {
 pub struct Observation {
     pub id: usize,
     pub name: String,
+    /// The research level that unlocks the observation (`isObsUsable`).
     pub roll: f64,
+    /// The roll to beat when hunting for it (`computeObsUnlockPriority`).
     #[serde(rename = "rollReq")]
     pub roll_req: f64,
 }

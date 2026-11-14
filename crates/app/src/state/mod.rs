@@ -415,6 +415,9 @@ pub(crate) struct AppState {
     pub(crate) optimizer: Entity<TaskRunner<OptimizeResult, RunInputs>>,
     /// The shared runner for the Shape Optimization tab's placement.
     pub(crate) shape_run: Entity<TaskRunner<ShapesOutcome, ShapeRunInputs>>,
+    /// The shared runner for the Insight ROI analysis; it takes the same
+    /// simulation, context and effort a shape placement does.
+    pub(crate) insight_run: Entity<TaskRunner<idleon_research::insight::Outcome, ShapeRunInputs>>,
     /// The shared runner for the Killroy comparison's trials.
     pub(crate) killroy_run: Entity<TaskRunner<KillroyOutcome, KillroyPlan>>,
     /// The shared runner for the coral god rank beam search.
@@ -450,6 +453,8 @@ pub(crate) struct AppState {
     pub(crate) farming_compare_run: Entity<TaskRunner<FarmingComparison, FarmingCompareInputs>>,
     /// The shared EXP formula tree on the research Rates pane.
     pub(crate) breakdown: Entity<FormulaTree>,
+    /// The shared EXP formula tree on the Insight ROI baseline.
+    pub(crate) insight_breakdown: Entity<FormulaTree>,
     /// The shared formula tree on the Minehead currency pane.
     pub(crate) minehead_breakdown: Entity<FormulaTree>,
     /// The three shared formula trees on the Sushi currency pane.
@@ -572,6 +577,21 @@ impl AppState {
                         .cloned()
                         .unwrap_or_else(|| "Shape placement finished.".into()),
                 )
+            },
+        );
+        let insight_run = report_run::<idleon_research::insight::Outcome, ShapeRunInputs>(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                progress: ProgressLine::Message("Computing insight ROI…"),
+                cancelled_kept: "Insight analysis cancelled; the previous table is unchanged.",
+                cancelled_empty: "Insight analysis cancelled; nothing was stored.",
+            },
+            |_, result| {
+                Some(format!(
+                    "Ranked {} observations by insight ROI.",
+                    result.rows.len()
+                ))
             },
         );
         // A finished cog run opens its walkthrough, which reads the stored
@@ -976,6 +996,7 @@ impl AppState {
             |_, result| Some(format!("Path ready: {} upgrades.", result.steps.len())),
         );
         let research_trees = crate::sections::research::Trees::new(window, cx);
+        let insight_breakdown = ui::formula_tree("insight-formula", window, cx);
         let sailing_trees = SailingTrees::new(window, cx);
         let sailing_sim = report_run::<SimResult, SailingSimInputs>(
             cx,
@@ -1240,6 +1261,8 @@ impl AppState {
             focus,
             _bridge: bridge,
             shape_run,
+            insight_run,
+            insight_breakdown,
             _subscriptions: subscriptions,
             session_save_pending: false,
         };
