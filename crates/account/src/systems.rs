@@ -91,6 +91,16 @@ impl Decoder<'_> {
         fields::number_at(&self.row(key), index)
     }
 
+    /// One `Grimoire` upgrade's saved level.
+    pub fn grimoire_level(&self, index: usize) -> f64 {
+        self.row_at("Grimoire", index)
+    }
+
+    /// The discovered-item slab count (`Cards1.length`).
+    pub fn slab_count(&self) -> f64 {
+        self.array_len("Cards1") as f64
+    }
+
     /// A row inside a nested field.
     pub(crate) fn nested_row(&self, key: &str, path: &[usize]) -> Vec<Option<f64>> {
         fields::row(self.save, key, path).unwrap_or_default()

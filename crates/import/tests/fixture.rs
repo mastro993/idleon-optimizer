@@ -250,9 +250,10 @@ fn the_synthetic_account_imports_into_a_usable_run() {
         imported.warnings
     );
 
-    // The terms the save cannot supply are named instead of guessed.
+    // The terms the save cannot supply are named instead of guessed. The star
+    // talent tome slot now resolves, so its `SL_<char>` warning is gone.
     assert!(
-        imported
+        !imported
             .warnings
             .iter()
             .any(|warning| warning.starts_with("SL_<char>")),

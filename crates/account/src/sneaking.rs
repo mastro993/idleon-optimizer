@@ -213,6 +213,37 @@ impl Decoder<'_> {
         talent * exotic * per_level * level
     }
 
+    /// `sigilBonus(index)` from `js/stats/systems/w2/alchemy.js`.
+    pub fn sigil(&self, index: usize) -> f64 {
+        let level = fields::at(self.save, "CauldronP2W", &[4, 1 + 2 * index]).unwrap_or(0.0);
+        if level < -0.1 {
+            return 0.0;
+        }
+        let Some(tiers) = data::data()
+            .account
+            .sigils
+            .get(index)
+            .and_then(Option::as_ref)
+        else {
+            return 0.0;
+        };
+        let base = if level < 0.5 {
+            tiers[0]
+        } else if level < 1.5 {
+            tiers[1]
+        } else if level < 2.5 {
+            tiers[2]
+        } else if level < 3.5 {
+            tiers[3]
+        } else {
+            tiers.get(4).copied().unwrap_or(tiers[3])
+        };
+        let tier16 = fields::at(self.save, "Sailing", &[3, 16]).unwrap_or(0.0);
+        let artifact = 1.0 + if tier16 == 0.0 { 0.0 } else { tier16.max(1.0) };
+        let meritoc = 1.0 + self.meritoc(21) / 100.0;
+        base * artifact * meritoc
+    }
+
     /// `votingBonusz(idx, votingMulti)`: the vote's bonus while it is the
     /// server-wide winner.
     pub fn voting(&self, index: usize) -> f64 {
@@ -583,40 +614,6 @@ impl Decoder<'_> {
             .map(|row| row.iter().map(|cell| cell.unwrap_or(0.0)).sum())
             .unwrap_or(0.0);
         config.mult * ((stars - config.offset) / 10.0).floor().max(0.0)
-    }
-
-    /// `sigilBonus(idx)`.
-    fn sigil(&mut self, index: usize) -> f64 {
-        let Some(sigil) = fields::row(self.save, "CauldronP2W", &[4]) else {
-            return 0.0;
-        };
-        let level = fields::number_at(&sigil, 1 + 2 * index);
-        if level < -0.1 {
-            return 0.0;
-        }
-        let Some(tiers) = data::data()
-            .account
-            .sigils
-            .get(index)
-            .and_then(Option::as_ref)
-        else {
-            return 0.0;
-        };
-        let base = if level < 0.5 {
-            tiers[0]
-        } else if level < 1.5 {
-            tiers[1]
-        } else if level < 2.5 {
-            tiers[2]
-        } else if level < 3.5 {
-            tiers[3]
-        } else {
-            tiers.get(4).copied().unwrap_or(tiers[3])
-        };
-        let tier16 = self.nested("Sailing", &[3, 16]);
-        let artifact = 1.0 + if tier16 == 0.0 { 0.0 } else { tier16.max(1.0) };
-        let meritoc = 1.0 + self.meritoc(21) / 100.0;
-        base * artifact * meritoc
     }
 
     /// `computeRiftSkillBonus(skillIdx, threshold)`'s rank ladder.

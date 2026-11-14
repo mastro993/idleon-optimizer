@@ -9,12 +9,18 @@
 
 mod damage;
 mod data;
+mod extra;
 pub mod stats;
 mod systems;
 
 use idleon_save::Save;
 
 pub use damage::{Layers, evaluate as damage_layers, is_dungeon_map};
+
+/// `primaryStatForClass`: the class branch's stat.
+pub(crate) fn primary_stat_for_class(class: usize) -> Stat {
+    extra::primary_stat_index(class)
+}
 pub use data::data;
 pub use stats::{Total, total_stat};
 

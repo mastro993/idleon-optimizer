@@ -204,7 +204,8 @@ impl AppState {
         self.stats_all
             .load(&imported.save, &self.simulation, &self.context);
         self.drop_rate.load(&imported.save);
-        self.damage.load(&imported.save);
+        let simulation = self.simulation.clone();
+        self.damage.load(&imported.save, &simulation);
         self.save = Some(imported.save);
         self.research
             .minehead

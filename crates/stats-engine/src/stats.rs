@@ -229,7 +229,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
     let all_stat = ctx.all_stat_pct();
     let pristine = ctx.decoder.pristine(config.pristine);
     let (star_flat, star_pct) = ctx.star_sign_stat(name);
-    let pct_bubble = config.pct_bubble.map_or(0.0, |key| ctx.bubble(key));
+    let pct_bubble = config.pct_bubble.map_or(0.0, |key| ctx.bubble_total(key));
     let pct_sum = pct_talent + etc_pct + etc_46 + all_stat + pristine + star_pct + pct_bubble;
     let pct_mult = 1.0 + pct_sum / 100.0;
 
@@ -288,7 +288,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
     let stamp_all = ctx.stamp("BaseAllStat");
     let shared = (ctx.box_reward("20a") + ctx.guild(1)).floor();
     let sigil = ctx.sigil(config.sigil);
-    let a4 = ctx.bubble(config.a4_bubble);
+    let a4 = ctx.bubble_total(config.a4_bubble);
     let shiny = ctx.decoder.shiny_bonus(config.shiny as u32);
     let arcade = ctx.decoder.arcade(config.arcade);
     let owl = ctx.owl(5);
@@ -315,7 +315,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
     }
 
     // Top level.
-    let total_bubble = ctx.bubble(config.total_bubble);
+    let total_bubble = ctx.bubble_total(config.total_bubble);
     let tal652 = ctx.talent(652);
     let comp8 = ctx.decoder.companion(8);
     let top = total_bubble + tal652 + comp8;
@@ -399,6 +399,7 @@ fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
         let Some(order) = at_index(&order, row) else {
             continue;
         };
+        // `EMm<row>_<char>` is the row's flat slot map, indexed by slot.
         let emm = match row {
             0 => gear.as_ref(),
             _ => tools.as_ref(),
@@ -420,6 +421,7 @@ fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
                 continue;
             }
             let base = ctx.data.item_stat(name, stat);
+            // The affix rows are written as arrays or numeric-keyed objects.
             let stone = emm
                 .and_then(|row| at_index(row, slot))
                 .and_then(|value| value.get(stat))
@@ -432,6 +434,10 @@ fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
 }
 
 /// `computeGalleryBaseStat`: the trophy, nametag, hatrack and Cape Vine pools.
+pub(crate) fn gallery_base_here(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
+    gallery_base(ctx, stat)
+}
+
 fn gallery_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
     let character = ctx.character;
     let gallery = ctx.decoder.gallery_on(character);

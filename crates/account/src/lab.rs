@@ -46,7 +46,45 @@ impl Decoder<'_> {
                 },
             );
         }
+        let value = match index {
+            0 => {
+                let territories = self.ola(117).max(3.0) as usize;
+                let pets = fields::row(self.save, "Breeding", &[1]).unwrap_or_default();
+                let total: f64 = pets
+                    .iter()
+                    .take(territories)
+                    .map(|pet| pet.unwrap_or(0.0))
+                    .sum();
+                (value + self.mainframe(101).unwrap_or(0.0)) * total
+            }
+            3 => value + self.mainframe(107).unwrap_or(0.0),
+            11 => (value + self.mainframe(117).unwrap_or(0.0)) * self.green_stacks(),
+            _ => value,
+        };
         Some(value)
+    }
+
+    /// `_greenStackCount`: the chest items stacked past ten million.
+    fn green_stacks(&self) -> f64 {
+        if let Some(stacks) =
+            fields::field(self.save, "GreenStacks").and_then(|value| value.as_array().map(Vec::len))
+            && stacks > 0
+        {
+            return stacks as f64;
+        }
+        let order = fields::field(self.save, "ChestOrder")
+            .and_then(|value| value.as_array().cloned())
+            .unwrap_or_default();
+        let qty = fields::row(self.save, "ChestQuantity", &[]).unwrap_or_default();
+        let mut seen = std::collections::BTreeSet::new();
+        for (index, item) in order.iter().enumerate() {
+            if fields::number_at(&qty, index) >= 1e7
+                && let Some(name) = item.as_str()
+            {
+                seen.insert(name.to_string());
+            }
+        }
+        seen.len() as f64
     }
 
     /// `_totalMushGKills`: every character's kills on the map that fights `mushG`.
@@ -424,7 +462,15 @@ fn lab_mainframe(
     if index == 119 {
         return row.2;
     }
-    row.2 * lab_mainframe(bonuses, connected, jewels, jewel_rows, 8)
+    let active = |bonus: usize| lab_mainframe(bonuses, connected, jewels, jewel_rows, bonus);
+    let doubler = match index {
+        100 => active(101) > 0.0 && active(102) > 0.0,
+        103 => active(104) > 0.0 && active(105) > 0.0 && active(106) > 0.0,
+        110 => active(107) > 0.0 && active(108) > 0.0 && active(109) > 0.0,
+        _ => false,
+    };
+    let doubler = if doubler { 2.0 } else { 1.0 };
+    row.2 * doubler * lab_mainframe(bonuses, connected, jewels, jewel_rows, 8)
 }
 
 /// The game's fast distance: an octagonal approximation.

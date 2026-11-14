@@ -76,6 +76,42 @@ pub fn object_row(value: &Value, index: usize) -> Option<Vec<Option<f64>>> {
     Some(cells)
 }
 
+/// A row as numbers when the value is an array or a numeric-keyed object.
+pub fn objects_row(value: &Value) -> Option<Vec<Option<f64>>> {
+    match value {
+        Value::Array(_) => values(value),
+        Value::Object(_) => object_row(value, 0),
+        _ => None,
+    }
+}
+
+/// A row of string entries, accepting the numeric-keyed object rows older
+/// exports write.
+pub fn string_row(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<Vec<String>> {
+    let value = field(save, key)?;
+    let row = json::index(&value, path)?;
+    let cells: Vec<Value> = match row {
+        Value::Array(cells) => cells.clone(),
+        Value::Object(fields) => {
+            let mut keys: Vec<(usize, &String)> = fields
+                .keys()
+                .filter_map(|key| key.parse::<usize>().ok().map(|index| (index, key)))
+                .collect();
+            keys.sort_by_key(|(index, _)| *index);
+            keys.into_iter()
+                .filter_map(|(_, key)| fields.get(key).cloned())
+                .collect()
+        }
+        _ => return None,
+    };
+    Some(
+        cells
+            .iter()
+            .map(|cell| cell.as_str().map(str::to_owned).unwrap_or_default())
+            .collect(),
+    )
+}
+
 /// A row of string entries, as gallery hats and capes are stored.
 pub fn strings(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<Vec<String>> {
     let value = field(save, key)?;

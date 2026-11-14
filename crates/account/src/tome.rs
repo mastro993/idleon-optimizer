@@ -27,11 +27,7 @@ impl Decoder<'_> {
         let mut total = 0.0;
         for (slot, (half, mode, points)) in self.data.tome.iter().copied().enumerate() {
             let qty = if slot == 15 {
-                self.warn(
-                    "SL_<char>",
-                    "the star talent tome slot needs the talent system; left at 0",
-                );
-                0.0
+                self.star_talent_points()
             } else {
                 self.tome_qty(slot)
             };
@@ -42,6 +38,129 @@ impl Decoder<'_> {
             "the live drop-rate refresh of the tome score is not recomputed; the saved value is used",
         );
         Some(total)
+    }
+
+    /// `_starTalentPoints`: `TotalTalentPoints()[5]`, the star-talent slot's
+    /// quantity, at its best character.
+    pub fn star_talent_points(&mut self) -> f64 {
+        use idleon_common::curve;
+        let guild_points = fields::at(self.save, "Guild", &[0, 11]).unwrap_or(0.0);
+        let guild = idleon_stats_data::capacity()
+            .guilds
+            .get(11)
+            .map(|curve| curve::eval(&curve.formula, curve.x1, curve.x2, guild_points))
+            .unwrap_or(0.0)
+            .floor();
+        let stamp = self.stamp("TalentS");
+        let card1 = (5.0 * self.card_level("w4b2")).min(50.0);
+        let card2 = (15.0 * self.card_level("Boss2C")).min(100.0);
+        let card3 = (4.0 * self.card_level("fallEvent1")).min(100.0);
+        let ach = 10.0 * self.achievement(212)
+            + 20.0 * self.achievement(289)
+            + 20.0 * self.achievement(305);
+        let shiny = self.shiny_bonus(14);
+        let bribe = idleon_stats_data::capacity()
+            .bribes
+            .get(32)
+            .copied()
+            .unwrap_or(0.0)
+            * if fields::at(self.save, "BribeStatus", &[32]) == Some(1.0) {
+                1.0
+            } else {
+                0.0
+            };
+        let vault = crate::bonuses::vault_upgrade_bonus(self.save, 53);
+        let companion = self.companion(20);
+        let flurbo = fields::at(self.save, "DungUpg", &[5, 1]).unwrap_or(0.0);
+        let sigil = self.sigil(9);
+        let cy5 = fields::number_at(
+            &fields::row(self.save, "CYTalentPoints", &[]).unwrap_or_default(),
+            5,
+        );
+        let fractal = if self.ola(184) >= 20_000.0 {
+            100.0
+        } else {
+            0.0
+        };
+        // `_famBonus64`: family 32, at classes 32/34/35, with talent 144 on the
+        // active character.
+        let family = self
+            .family_bonus(32)
+            .cloned()
+            .map(|bonus| {
+                let mut best: f64 = 0.0;
+                for character in 0..self.characters.len() {
+                    let class = idleon_save::json::number(
+                        &fields::char_field(self.save, "CharacterClass", character)
+                            .unwrap_or_default(),
+                    )
+                    .unwrap_or(0.0);
+                    if ![32.0, 34.0, 35.0].contains(&class) {
+                        continue;
+                    }
+                    let level = fields::char_field(self.save, "Lv0", character)
+                        .and_then(|value| idleon_save::json::index(&value, &[0]).cloned())
+                        .and_then(|value| idleon_save::json::number(&value))
+                        .unwrap_or(0.0);
+                    let effective = (level - bonus.lv_offset).round().max(0.0);
+                    let mut value = curve::eval(&bonus.formula, bonus.x1, bonus.x2, effective);
+                    if character == 0 {
+                        value *= 1.0 + self.tome_talent_value(144, 0, 0) / 100.0;
+                    }
+                    best = best.max(value);
+                }
+                best
+            })
+            .unwrap_or(0.0);
+        let mut best: f64 = 0.0;
+        for character in 0..self.characters.len() {
+            let row = &self.characters[character];
+            let level = row.class_level();
+            let mut dn4 = -3.0;
+            for skill in 1..=9 {
+                dn4 += row.skill(skill - 1).max(0.0);
+            }
+            dn4 += self.tome_talent_value(275, character, character).round();
+            let t8 = self.tome_talent_value(8, character, character);
+            let t622 = self.tome_talent_value(622, character, character);
+            let t17 = self.tome_talent_value(17, character, character);
+            let total = (level - 1.0
+                + dn4
+                + t8
+                + cy5
+                + family
+                + t622
+                + stamp
+                + t17
+                + guild
+                + flurbo
+                + card1
+                + card2
+                + card3
+                + sigil
+                + ach
+                + shiny
+                + bribe
+                + fractal
+                + vault
+                + companion)
+                .floor();
+            best = best.max(total);
+        }
+        best
+    }
+
+    /// `getTalentNumber(1, index)`: one character's talent value.
+    fn tome_talent_value(&mut self, talent: usize, character: usize, context: usize) -> f64 {
+        let raw = self.talent_level(character, talent);
+        if raw <= 0.0 {
+            return 0.0;
+        }
+        let levels =
+            raw + crate::talent::bonus_levels(self, talent, character, context, false, false);
+        self.talent_param(talent).map_or(0.0, |param| {
+            idleon_common::curve::eval(&param.formula, param.x1, param.x2, levels)
+        })
     }
 
     /// `tomeQTY`: the raw quantity behind one slot.

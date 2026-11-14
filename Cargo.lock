@@ -3816,6 +3816,7 @@ version = "0.1.0"
 dependencies = [
  "idleon-account",
  "idleon-common",
+ "idleon-fountain",
  "idleon-import",
  "idleon-research",
  "idleon-save",

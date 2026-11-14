@@ -215,7 +215,7 @@ pub struct TalentParam {
 
 /// `familyBonusParams(idx)`: a class family bonus and the level offset it
 /// starts from.
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FamilyBonus {
     pub x1: f64,
@@ -303,6 +303,11 @@ impl AccountData {
     /// `familyBonusParams(index)`.
     pub fn family_bonus(&self, index: usize) -> Option<&FamilyBonus> {
         self.family_bonuses.get(&index.to_string())
+    }
+
+    /// `CLASS_TREES[class]`: the class id chain, parents first.
+    pub fn class_tree(&self, class: usize) -> Option<&[u32]> {
+        self.class_trees.get(&class.to_string()).map(Vec::as_slice)
     }
 
     /// Whether `class`'s talent chain inherits `tab`.
