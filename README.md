@@ -41,7 +41,7 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **The last session comes back** — the active section, the decoded save, the research state and
   every section config are written to one app-data session file after a short debounce, then
   restored on the next launch. The import dialog lists the recent imports with their format and
-  local time. A file that cannot be read is renamed to `session.json.corrupt-<timestamp>` and the
+  local time. A file that cannot be read is renamed to `session.corrupt-<timestamp>.json` and the
   app starts on a clean dashboard; `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR` moves the file for
   tests and separate profiles.
 - **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
