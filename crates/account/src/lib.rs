@@ -42,6 +42,12 @@ use serde_json::{Map, Value};
 pub use data::{FamilyBonus, TalentParam};
 pub use prayer::prayer;
 
+/// The Jelly Operator reward that raises the maximum observation roll.
+const OBSERVATION_MAX_ROLL: usize = 12;
+
+/// `OptLacc[514]`, the consecutive failed observation rolls.
+const OBSERVATION_FAILED_ROLLS: usize = 514;
+
 /// One line of the save-derived multiplier tree.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BonusTerm {
@@ -399,6 +405,26 @@ impl Decoder<'_> {
         let mastery = self.mastery();
         context.mastery_additive_pct = mastery.additive;
         context.mastery_exp_multi = mastery.exp_multi;
+        context.mastery_min_roll = mastery.min_roll;
+        context.mastery_max_roll = mastery.max_roll;
+        context.jelly_observation_max_roll = self.jelly(OBSERVATION_MAX_ROLL);
+        context.observation_rolls_remaining = fields::at(self.save, "Research", &[7, 2]);
+        context.observation_failed_rolls =
+            fields::at(self.save, "OptLacc", &[OBSERVATION_FAILED_ROLLS]);
+        if context.observation_rolls_remaining.is_none() {
+            self.warn(
+                "Research[7][2]",
+                "the rolls left today are not in the save; the Observation Unlocks tab reports them \
+                 missing instead of guessing",
+            );
+        }
+        if context.observation_failed_rolls.is_none() {
+            self.warn(
+                "OptLacc[514]",
+                "the failed-roll streak is not in the save; the Observation Unlocks tab reports it \
+                 missing instead of guessing",
+            );
+        }
         context.spellunky_upg7 = self.spelunk(0, 7);
         context.save_global_time = self.save_global_time();
         context.tournament_last_day = self.ola(511);

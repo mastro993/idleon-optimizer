@@ -102,11 +102,14 @@ const researchSave = () => {
       [0, 0],
       [],
       // stateR7: floor 4 with currency and a best hit, so the Minehead tab has
-      // its boss, balance and farm term.
-      [0, 0, 0, 0, 4, 123456, 5000],
+      // its boss, balance and farm term. Cell 2 is the rolls left today, which
+      // the Observation Unlocks tab needs to price a day of hunting.
+      [0, 0, 10, 0, 4, 123456, 5000],
       // The thirty Depth Charge upgrade levels.
       sparse(30, { 0: 5, 1: 3, 2: 2, 6: 2, 8: 2, 9: 1, 10: 1, 16: 1, 19: 1 }),
     ]),
+    // OptLacc[514]: the failed-roll streak the unlock pity reads.
+    OptLacc: sparse(600, { 514: 3 }),
     // The Sushi Station rows: six slots cooking, their slot types, the upgrade
     // levels, the fireplace columns, the bank, twelve discovered tiers and
     // their knowledge levels.
@@ -126,6 +129,26 @@ const researchSave = () => {
       Array.from({ length: 12 }, (_, tier) => (tier === 0 ? 1 : 0)),
       [],
       Array.from({ length: 12 }, (_, tier) => (tier % 3 === 0 ? 3 : 1)),
+    ]),
+    Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
+  });
+};
+
+/// The research save without the roll fields the unlock estimate reads: no
+/// `Research[7][2]` and no `OptLacc`, so the tab has to report them missing
+/// instead of assuming a full day of rolls and a fresh streak.
+const researchNoRollSave = () => {
+  const sparse = (length, filled = {}) => Array.from({ length }, (_, index) => filled[index] ?? 0);
+  return JSON.stringify({
+    Research: JSON.stringify([
+      Array(240).fill(1),
+      Array(240).fill(-1),
+      sparse(80, { 0: 1, 1: 1, 2: 1, 3: 1 }),
+      sparse(80, {}),
+      sparse(80, {}),
+      [0, 0],
+      [],
+      [0, 0],
     ]),
     Lv0_0: JSON.stringify(sparse(30, { 20: 42 })),
   });
@@ -2827,6 +2850,89 @@ const INTERACTIONS = {
       throw new Error(`research: the insight table reads ${tableSummary} for ${shown} rows`);
     }
 
+    // RES-06: the Observation Unlocks tab ranks what is left to find. The run
+    // reads the save's roll rows, so the summary names the roll range and the
+    // streaks, and the filters split the usable rows from the waiting ones.
+    await lane.call('click_element', { id: 'unlocks' });
+    await waitForNode(lane, 'unlock-scroll', 'research: the Observation Unlocks tab opens');
+    await lane.call('click_element', { id: 'unlock-run' });
+    await waitForNode(lane, 'unlock-table', 'research: the unlock ranking stores a table', 120000);
+    const unlockRow = (node) => /^unlock-obs-\d+$/.test(node.id ?? '');
+    const unlockRows = async () =>
+      (await lane.tree()).filter(unlockRow).sort((left, right) => left.bounds.y - right.bounds.y);
+    const firstRows = await unlockRows();
+    if (firstRows.length < 2) throw new Error(`research: the unlock table lists ${firstRows.length} rows`);
+    const rolls = labelOf(await lane.tree(), 'unlock-rolls') ?? '';
+    if (!rolls.includes('Roll range:') || !rolls.includes('Rolls/day:') || !rolls.includes('Failed streak:')) {
+      throw new Error(`research: the unlock summary reads ${rolls}`);
+    }
+    const kpis = labelOf(await lane.tree(), 'unlock-kpis') ?? '';
+    if (!kpis.includes('undiscovered') || !kpis.includes('rolls a day')) {
+      throw new Error(`research: the unlock KPIs read ${kpis}`);
+    }
+    if (has(await lane.tree(), 'unlock-missing-0')) {
+      throw new Error('research: the unlock tab reports missing roll data for a save that carries it');
+    }
+    // The rows the save can already use come first, as upstream orders them.
+    const priorityOf = (nodes) =>
+      nodes
+        .filter((node) => /^unlock-priority-\d+$/.test(node.id ?? ''))
+        .sort((left, right) => left.bounds.y - right.bounds.y)
+        .map((node) => node.label);
+    const priorities = priorityOf(await lane.tree());
+    const usableRows = priorities.filter((label) => label !== 'Wait').length;
+    if (usableRows === 0) throw new Error('research: no row is ranked usable');
+    if (priorities.slice(0, usableRows).includes('Wait')) {
+      throw new Error(`research: the waiting rows are not last: ${priorities.join()}`);
+    }
+
+    // Availability filter: the waiting rows are a strict subset.
+    const rowCount = (nodes) => nodes.filter(unlockRow).length;
+    await lane.call('click_element', { id: 'unlock-filter.segment-2' });
+    await waitFor(
+      lane,
+      (nodes) => rowCount(nodes) !== firstRows.length,
+      'research: the waiting filter drops the usable rows'
+    );
+    const waitingRows = await unlockRows();
+    if (waitingRows.length >= firstRows.length) {
+      throw new Error(`research: the waiting filter lists ${waitingRows.length} of ${firstRows.length} rows`);
+    }
+    await lane.call('click_element', { id: 'unlock-filter.segment-1' });
+    await waitFor(
+      lane,
+      (nodes) => rowCount(nodes) !== waitingRows.length,
+      'research: the usable filter lists the other half'
+    );
+    const usableOnly = await unlockRows();
+    if (usableOnly.length + waitingRows.length !== firstRows.length) {
+      throw new Error(
+        `research: the filters list ${usableOnly.length} usable and ${waitingRows.length} waiting of ${firstRows.length}`
+      );
+    }
+    await lane.call('click_element', { id: 'unlock-filter.segment-0' });
+    await waitFor(
+      lane,
+      (nodes) => rowCount(nodes) === firstRows.length,
+      'research: the All filter restores every row'
+    );
+
+    // Name search narrows the table; a name nothing carries empties it.
+    await lane.call('click_element', { id: 'unlock-search' });
+    await lane.call('type_text', { text: 'zz-no-such-observation' });
+    await waitFor(
+      lane,
+      (nodes) => rowCount(nodes) === 0,
+      'research: searching the unlock table drops the rows that do not match'
+    );
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('keyboard', { keystroke: 'backspace' });
+    await waitFor(
+      lane,
+      (nodes) => rowCount(nodes) === firstRows.length,
+      'research: clearing the search restores the table'
+    );
+
     // RES-09: the Minehead tab's six subtabs render from the save. The subtab
     // buttons are shared `Button`s whose semantic id a render can rewrite
     // mid-frame, so they are clicked at their live centres by label.
@@ -2923,6 +3029,49 @@ const INTERACTIONS = {
         nodes.filter((node) => (node.id ?? '').startsWith('su-tier-row-')).length > beforeTiered,
       'research: the RoG spoiler reveals the locked tiers',
     );
+
+    // A save without the roll rows has to be reported, not guessed: the tab
+    // says which fields are missing and shows no probability for any row.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'research: the import dialog reopens');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: researchNoRollSave() });
+    await waitForNode(lane, 'import-format', 'research: the roll-less save previews');
+    await lane.call('click_element', { id: 'import-apply' });
+    await lane.call('click_element', { id: 'unlocks' });
+    await waitForNode(lane, 'unlock-scroll', 'research: the unlock tab reopens on the new save');
+    await lane.call('click_element', { id: 'unlock-run' });
+    await waitForNode(lane, 'unlock-missing-0', 'research: the missing roll rows are reported', 120000);
+    await waitForNode(lane, 'unlock-missing-1', 'research: both missing roll fields are named');
+    const missing = `${labelOf(await lane.tree(), 'unlock-missing-0')} ${labelOf(await lane.tree(), 'unlock-missing-1')}`;
+    if (!missing.includes('Research[7][2]') || !missing.includes('OptLacc[514]')) {
+      throw new Error(`research: the missing roll report reads ${missing}`);
+    }
+    const chances = (await lane.tree()).filter((node) =>
+      /^unlock-chance-\d+$/.test(node.id ?? '')
+    );
+    if (chances.length === 0 || chances.some((node) => node.label !== '—')) {
+      throw new Error('research: a row shows a probability without the roll data');
+    }
+    const unranked = (await lane.tree()).filter((node) =>
+      /^unlock-priority-\d+$/.test(node.id ?? '')
+    );
+    if (unranked.some((node) => node.label === 'Best' || node.label === 'Good')) {
+      throw new Error('research: a row is ranked without the roll data');
+    }
+    // Put the account save back and leave the lane on the Sushi tab, so the
+    // section screenshot keeps the state it captured before this check.
+    await lane.call('click_element', { id: 'header-import' });
+    await waitForNode(lane, 'import-input', 'research: the import dialog reopens for the restore');
+    await lane.call('click_element', { id: 'import-input' });
+    await lane.call('keyboard', { keystroke: 'secondary-a' });
+    await lane.call('type_text', { text: researchSave() });
+    await waitForNode(lane, 'import-format', 'research: the account save previews again');
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await lane.call('click_element', { id: 'import-apply' });
+    await lane.call('click_element', { id: 'sushi' });
+    await waitForNode(lane, 'su-tier-row-0', 'research: the sushi tier table reopens for the capture');
   },
   'coral-god-rank': async (lane) => {
     // Turning the assumption off makes the save-derived unlock state (or its

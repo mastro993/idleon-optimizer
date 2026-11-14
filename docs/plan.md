@@ -338,12 +338,16 @@ reports the best and worst tested layouts, cuts the projection into a timeline o
 tournament phases, charts the same samples' EXP/hour and lists each phase as an expandable action
 that marks its segment. The Insight ROI tab prices each observation's next insight levels against the
 research EXP the grind gives up, with the concentrated grind layout, the re-optimized post-grind
-layout, the recoup and break-even columns, four sort modes and the hide-free filter.
+layout, the recoup and break-even columns, four sort modes and the hide-free filter. The
+Observation Unlocks tab ranks the observations the save has not found by the EXP/hour each adds per
+expected day of rolls, with the roll bounds, the failed-roll pity, the usability filter and the name
+search, and it reports the roll fields a save does not carry instead of assuming them.
 The dashboard's AFK rate reports Gambit Milestone 15 as not modelled; its Hole measurement chain
 lands with the Minehead work. The Minehead and Sushi Station tabs are built, each as a subtab strip
 over its own crate. The Insight ROI tab ports `computeInsightROI` and `buildConcentratedLayout`
-([`docs/insight-roi.md`](insight-roi.md)). Missing: the Observation Unlocks and Decision Tree tabs
-and complete save-derived multipliers.
+([`docs/insight-roi.md`](insight-roi.md)); the Observation Unlocks tab ports
+`computeObsUnlockPriority` ([`docs/observation-unlocks.md`](observation-unlocks.md)). Missing: the
+Decision Tree tab and complete save-derived multipliers.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an

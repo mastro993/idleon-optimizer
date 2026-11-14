@@ -14,6 +14,7 @@ mod result;
 mod shape_opt;
 mod shape_presets;
 pub(crate) mod sushi;
+mod unlocks;
 
 pub(crate) use dashboard::Trees;
 pub(crate) use shape_presets::CustomPreset;
@@ -43,6 +44,8 @@ pub(crate) enum Tab {
     Run,
     /// Per-observation insight levelling: time, EXP lost and break-even.
     InsightRoi,
+    /// Undiscovered observations, ranked by the EXP they add per day of rolls.
+    Unlocks,
     /// Shape priority tiers, presets and the optimized placement.
     Shapes,
     /// The Depth Charge dashboard, strategy search, ranking, path and game.
@@ -52,12 +55,13 @@ pub(crate) enum Tab {
 }
 
 impl Tab {
-    pub(crate) const ALL: [Tab; 8] = [
+    pub(crate) const ALL: [Tab; 9] = [
         Tab::Dashboard,
         Tab::Grid,
         Tab::Rates,
         Tab::Run,
         Tab::InsightRoi,
+        Tab::Unlocks,
         Tab::Shapes,
         Tab::Minehead,
         Tab::Sushi,
@@ -70,6 +74,7 @@ impl Tab {
             Tab::Rates => "rates",
             Tab::Run => "run",
             Tab::InsightRoi => "insight",
+            Tab::Unlocks => "unlocks",
             Tab::Shapes => "shapes",
             Tab::Minehead => "minehead",
             Tab::Sushi => "sushi",
@@ -83,6 +88,7 @@ impl Tab {
             Tab::Rates => "Rates",
             Tab::Run => "Optimize",
             Tab::InsightRoi => "Insight ROI",
+            Tab::Unlocks => "Unlocks",
             Tab::Shapes => "Shape Optimization",
             Tab::Minehead => "Minehead",
             Tab::Sushi => "Sushi Station",
@@ -157,12 +163,27 @@ pub(crate) struct State {
     /// starts hidden; a first run here would then show an empty table, so this
     /// build starts with every usable observation listed.
     pub(crate) insight_hide_free: bool,
+    /// Which undiscovered observations the Unlocks table lists.
+    pub(crate) unlock_filter: idleon_research::unlock::Filter,
+    /// The Observation Unlocks name filter.
+    pub(crate) unlock_search: Entity<TextInput>,
+    _unlock_search_subscription: gpui::Subscription,
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let preset_name =
             crate::ui::text_input("Shape preset name", "Shape preset name", window, cx);
+        let unlock_search =
+            crate::ui::text_input("Observation name", "Find an observation", window, cx);
+        let search_subscription = cx.subscribe(
+            &unlock_search,
+            |_state, _input, event: &ely_gpui_component::forms::InputEvent, cx| {
+                if *event == ely_gpui_component::forms::InputEvent::Changed {
+                    cx.notify();
+                }
+            },
+        );
         Self {
             tab: Tab::default(),
             selected_cell: None,
@@ -180,6 +201,9 @@ impl State {
             sushi: sushi::State::new(),
             insight_sort: idleon_research::insight::Sort::default(),
             insight_hide_free: false,
+            unlock_filter: idleon_research::unlock::Filter::default(),
+            unlock_search,
+            _unlock_search_subscription: search_subscription,
         }
     }
 }
@@ -324,6 +348,14 @@ fn pane(
             .flex_1()
             .min_h_0()
             .child(insight_roi::pane(state, window, cx))
+            .into_any_element(),
+        Tab::Unlocks => div()
+            .id("pane-unlocks")
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_h_0()
+            .child(unlocks::pane(state, window, cx))
             .into_any_element(),
         Tab::Shapes => div()
             .id("pane-shapes")

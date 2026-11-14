@@ -28,6 +28,24 @@ pub fn optimize(
     effort: Effort,
     options: SimOptions,
 ) -> MagsOutcome {
+    place_all(sim, ctx, effort, options, true)
+}
+
+/// The EXP-only assignment the analysis tabs optimize with: `optimizeMagsFor`
+/// places glasses and kaleidoscopes for the research rate and leaves the
+/// monocles off the grid, so a candidate layout's rate is the exp they do not
+/// earn. Unlocking an observation is priced against that layout.
+pub fn optimize_exp(sim: &Simulation, ctx: &SimContext, effort: Effort) -> MagsOutcome {
+    place_all(sim, ctx, effort, SimOptions::default(), false)
+}
+
+fn place_all(
+    sim: &Simulation,
+    ctx: &SimContext,
+    effort: Effort,
+    options: SimOptions,
+    monocle_targets: bool,
+) -> MagsOutcome {
     let game = game();
     let owned = sim::magnifiers_owned(sim, ctx) as usize;
     let cap = sim::mag_cap(sim.research_level) as usize;
@@ -59,8 +77,9 @@ pub fn optimize(
         ],
     ];
     let mut best: Option<(f64, Vec<Mag>)> = None;
+    let placed_monocles = if monocle_targets { monocles } else { 0 };
     for plan in &orders {
-        let mags = assign(sim, ctx, plan, monocles, &room, options);
+        let mags = assign(sim, ctx, plan, placed_monocles, &room, options);
         let rate = assignment_rate(sim, ctx, &mags);
         if best.as_ref().is_none_or(|(current, _)| rate > *current) {
             best = Some((rate, mags));

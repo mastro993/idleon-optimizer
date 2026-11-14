@@ -190,6 +190,19 @@ pub struct SimContext {
     pub mastery_additive_pct: f64,
     /// Research skill mastery's multiplier.
     pub mastery_exp_multi: f64,
+    /// Research skill mastery's `minRoll`: one more minimum roll past 200
+    /// total mastery levels.
+    pub mastery_min_roll: f64,
+    /// Research skill mastery's `maxRoll`: one more maximum roll past 1000.
+    pub mastery_max_roll: f64,
+    /// Rolls left today, `Research[7][2]`; `None` when the save lacks the row,
+    /// so the unlock estimate reports it instead of assuming a full day.
+    pub observation_rolls_remaining: Option<f64>,
+    /// Consecutive failed observation rolls, `OptLacc[514]`; `None` when the
+    /// save lacks the entry.
+    pub observation_failed_rolls: Option<f64>,
+    /// Jelly reward 12's extra maximum roll (`jellyObservationMaxRoll`).
+    pub jelly_observation_max_roll: f64,
     /// Event shop items owned, by index.
     pub event_shop: Vec<u8>,
     /// Superbits owned, by index.
@@ -266,6 +279,11 @@ impl Default for SimContext {
             rog: Vec::new(),
             mastery_additive_pct: 0.0,
             mastery_exp_multi: 1.0,
+            mastery_min_roll: 0.0,
+            mastery_max_roll: 0.0,
+            observation_rolls_remaining: None,
+            observation_failed_rolls: None,
+            jelly_observation_max_roll: 0.0,
             event_shop: Vec::new(),
             superbits: Vec::new(),
             emporium: Vec::new(),

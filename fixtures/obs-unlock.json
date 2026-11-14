@@ -1,0 +1,167 @@
+{
+  "source": "js/analysis.js (computeObsUnlockPriority), js/save/context.js",
+  "save": "fixtures/data.json",
+  "state": {
+    "researchLevel": 122,
+    "magnifiersOwned": 17,
+    "magMaxPerSlot": 4,
+    "found": 31,
+    "masteryTotal": 1342
+  },
+  "summary": {
+    "currentTotal": 14315743085.962536,
+    "minRoll": 2,
+    "maxRoll": 107,
+    "rollsPerDay": 12,
+    "rollsRemaining": 12,
+    "failedRolls": 0,
+    "smartEyeLv": 3,
+    "smartEyeCap": 75
+  },
+  "results": [
+    {
+      "idx": 13,
+      "name": "Meenie Cactus",
+      "rollThreshold": 94,
+      "requiredRLv": 27,
+      "canUseNow": true,
+      "pUnlockToday": 0.8744178064538205,
+      "expectedDays": 1.1282551442196636,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 13045313577.007442
+    },
+    {
+      "idx": 14,
+      "name": "Coraltree Branch",
+      "rollThreshold": 95,
+      "requiredRLv": 30,
+      "canUseNow": true,
+      "pUnlockToday": 0.8524907889892349,
+      "expectedDays": 1.1518395485289108,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 12778205237.018599
+    },
+    {
+      "idx": 17,
+      "name": "Spadespire",
+      "rollThreshold": 96,
+      "requiredRLv": 37,
+      "canUseNow": true,
+      "pUnlockToday": 0.8271108148276844,
+      "expectedDays": 1.1798182147186418,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 12475177927.921091
+    },
+    {
+      "idx": 19,
+      "name": "Tetrino Stones",
+      "rollThreshold": 97,
+      "requiredRLv": 42,
+      "canUseNow": true,
+      "pUnlockToday": 0.7977913832731008,
+      "expectedDays": 1.2131577602509316,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 12132339777.617117
+    },
+    {
+      "idx": 20,
+      "name": "Stalagtite",
+      "rollThreshold": 97,
+      "requiredRLv": 45,
+      "canUseNow": true,
+      "pUnlockToday": 0.7977913832731008,
+      "expectedDays": 1.2131577602509316,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 12132339777.617117
+    },
+    {
+      "idx": 22,
+      "name": "Happy Piggy",
+      "rollThreshold": 98,
+      "requiredRLv": 50,
+      "canUseNow": true,
+      "pUnlockToday": 0.7639852623827759,
+      "expectedDays": 1.2535509549245134,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 11741399177.589542
+    },
+    {
+      "idx": 23,
+      "name": "Treeception",
+      "rollThreshold": 99,
+      "requiredRLv": 52,
+      "canUseNow": true,
+      "pUnlockToday": 0.7250778530866459,
+      "expectedDays": 1.302389690361206,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 11301104623.405949
+    },
+    {
+      "idx": 24,
+      "name": "Keymaster",
+      "rollThreshold": 100,
+      "requiredRLv": 55,
+      "canUseNow": true,
+      "pUnlockToday": 0.6803799283994174,
+      "expectedDays": 1.3624033680048337,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 10803292546.737925
+    },
+    {
+      "idx": 25,
+      "name": "Space Drip",
+      "rollThreshold": 100,
+      "requiredRLv": 57,
+      "canUseNow": true,
+      "pUnlockToday": 0.6803799283994174,
+      "expectedDays": 1.3624033680048337,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 10803292546.737925
+    },
+    {
+      "idx": 36,
+      "name": "Ancient Chainrope",
+      "rollThreshold": 103,
+      "requiredRLv": 84,
+      "canUseNow": true,
+      "pUnlockToday": 0.5033595810514027,
+      "expectedDays": 1.6619623341961172,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 8856062407.898373
+    },
+    {
+      "idx": 38,
+      "name": "Unreachable Grate",
+      "rollThreshold": 104,
+      "requiredRLv": 90,
+      "canUseNow": true,
+      "pUnlockToday": 0.4268213515010273,
+      "expectedDays": 1.8410405175843036,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 7994632388.932901
+    },
+    {
+      "idx": 41,
+      "name": "Pirate Flag",
+      "rollThreshold": 105,
+      "requiredRLv": 97,
+      "canUseNow": true,
+      "pUnlockToday": 0.3396226415094339,
+      "expectedDays": 2.1159794137314285,
+      "expGain": 14718442151.217266,
+      "newRate": 29034185237.179802,
+      "score": 6955853188.222657
+    }
+  ]
+}
