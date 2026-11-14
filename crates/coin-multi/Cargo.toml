@@ -12,6 +12,7 @@ idleon-common = { workspace = true }
 idleon-research = { workspace = true }
 idleon-save = { workspace = true }
 idleon-stats = { workspace = true }
+idleon-stats-engine = { workspace = true }
 serde_json = { workspace = true }
 
 [dev-dependencies]

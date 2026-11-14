@@ -577,14 +577,14 @@ mod tests {
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
         assert_eq!(state.map_rows().first().map(|row| row.map), Some(0));
-        let summary = state
-            .summary
-            .expect("the missing-pipeline state is computed");
-        assert!(!summary.available);
-        assert!(
-            summary.reason.contains("shared stat pipeline"),
-            "{summary:?}"
-        );
+        let summary = state.summary.expect("the summary is computed");
+        // The shared stat engine resolves the three layers, so the page opens
+        // on real values instead of the missing-pipeline state.
+        assert!(summary.available, "{summary:?}");
+        assert!(summary.layers().is_some(), "{summary:?}");
+        assert!(summary.max.is_finite() && summary.max >= 0.0);
+        assert!(summary.min <= summary.max);
+        assert!((0.0..=0.8).contains(&summary.mastery), "{summary:?}");
         // A flat save carries neither the companion roster nor the vote row, so
         // the page names the partial import as the descriptor does.
         assert!(summary.partial());
@@ -637,12 +637,12 @@ mod tests {
 
     #[test]
     fn the_layer_tabs_and_the_mastery_breakdown_read_the_summary() {
-        // The provider has not landed, so the page has no layers to tab through
-        // and no mastery terms to break down; it names the gap instead.
+        // The engine resolves the layers, so the tabs and the mastery breakdown
+        // read the summary's own values from the imported save.
         let mut state = State::default();
         state.load(&save());
-        assert_eq!(state.mastery_tree(), None);
-        assert!(state.summary.as_ref().unwrap().layers().is_none());
+        assert!(state.mastery_tree().is_some());
+        assert!(state.summary.as_ref().unwrap().layers().is_some());
 
         // The same page once the layers resolve: all three tabs, and the mastery
         // tree's root is the ratio the mastery card prints.

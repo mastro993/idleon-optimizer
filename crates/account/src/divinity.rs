@@ -15,7 +15,7 @@
 //! the equipped check. It is a large bubble, so Prisma and the big-bubble pass
 //! never apply to it.
 
-use idleon_account::Decoder;
+use crate::Decoder;
 use idleon_save::fields;
 
 /// `Divinity` row 11 pockets, the two gods the Cavern keeps linked.
@@ -28,7 +28,7 @@ const CROP_SCIENTIST_EMPORIUM: usize = 23;
 const CROP_SCIENTIST_CROPS: f64 = 15.0;
 
 /// `computeDivinityMinor(-1, style, saveData)`: the total minor-link bonus.
-pub(crate) fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
+pub fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
     let Some(target) =
         (0..decoder.god_count()).find(|god| decoder.god_type(*god as f64) == style as f64)
     else {
@@ -62,7 +62,7 @@ pub(crate) fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
 ///
 /// A link the save has not assigned is `-1` upstream, not zero, so an absent
 /// row never pays.
-pub(crate) fn minor_for(decoder: &Decoder<'_>, character: usize, style: i32) -> f64 {
+pub fn minor_for(decoder: &Decoder<'_>, character: usize, style: i32) -> f64 {
     let Some(target) =
         (0..decoder.god_count()).find(|god| decoder.god_type(*god as f64) == style as f64)
     else {
@@ -157,7 +157,7 @@ fn y2_bubble(decoder: &Decoder<'_>, character: usize) -> f64 {
 }
 
 /// `computeCropSC(4, saveData)`: Coins from Monsters.
-pub(crate) fn crop_scientist(decoder: &mut Decoder<'_>) -> f64 {
+pub fn crop_scientist(decoder: &mut Decoder<'_>) -> f64 {
     if decoder.emporium(CROP_SCIENTIST_EMPORIUM) <= 0.0 {
         return 0.0;
     }
@@ -167,7 +167,7 @@ pub(crate) fn crop_scientist(decoder: &mut Decoder<'_>) -> f64 {
 }
 
 /// `farmCropCount`: `Object.keys(FarmCrop).length`.
-pub(crate) fn crop_count(decoder: &Decoder<'_>) -> usize {
+pub fn crop_count(decoder: &Decoder<'_>) -> usize {
     match fields::field(decoder.save(), "FarmCrop") {
         Some(serde_json::Value::Object(crops)) => crops.len(),
         Some(serde_json::Value::Array(crops)) => crops.len(),
@@ -176,7 +176,7 @@ pub(crate) fn crop_count(decoder: &Decoder<'_>) -> usize {
 }
 
 /// The Crop Scientist row's display name, for the group's term.
-pub(crate) const CROP_SCIENTIST_NAME: &str = "Crop Scientist: Cash";
+pub const CROP_SCIENTIST_NAME: &str = "Crop Scientist: Cash";
 
 #[cfg(test)]
 mod tests {

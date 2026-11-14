@@ -188,7 +188,7 @@ impl Decoder<'_> {
     }
 
     /// `computeCompassBonus`: a compass upgrade's value.
-    pub(crate) fn compass(&self, index: usize) -> f64 {
+    pub fn compass(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Compass", &[0, index]).unwrap_or(0.0);
         if level <= 0.0 {
             return 0.0;

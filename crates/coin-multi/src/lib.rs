@@ -14,10 +14,8 @@
 //! character. [`tree`] turns the evaluated groups into the shared formula
 //! tree's expansion of the total.
 
-mod divinity;
 pub mod overkill;
 mod save;
-mod talent;
 pub mod tree;
 
 use idleon_stats as stats;

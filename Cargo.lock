@@ -3428,6 +3428,7 @@ dependencies = [
  "idleon-research",
  "idleon-save",
  "idleon-stats",
+ "idleon-stats-engine",
  "serde_json",
 ]
 
@@ -3473,8 +3474,10 @@ version = "0.1.0"
 dependencies = [
  "idleon-common",
  "idleon-import",
+ "idleon-research",
  "idleon-save",
  "idleon-stats",
+ "idleon-stats-engine",
  "serde",
  "serde_json",
 ]
@@ -3794,6 +3797,7 @@ dependencies = [
  "idleon-research",
  "idleon-save",
  "idleon-stats-data",
+ "idleon-stats-engine",
  "serde",
  "serde_json",
 ]
@@ -3802,6 +3806,20 @@ dependencies = [
 name = "idleon-stats-data"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "idleon-stats-engine"
+version = "0.1.0"
+dependencies = [
+ "idleon-account",
+ "idleon-common",
+ "idleon-import",
+ "idleon-research",
+ "idleon-save",
+ "idleon-stats-data",
  "serde",
  "serde_json",
 ]

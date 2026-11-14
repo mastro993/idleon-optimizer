@@ -37,7 +37,7 @@ impl Decoder<'_> {
     }
 
     /// `computeShinyBonusS`.
-    pub(crate) fn shiny_bonus(&self, category: u32) -> f64 {
+    pub fn shiny_bonus(&self, category: u32) -> f64 {
         let mut total = 0.0;
         for world in 0..4 {
             let Some(types) = self.data.pet_shiny_type.get(world) else {

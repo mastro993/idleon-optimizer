@@ -44,6 +44,7 @@ idleon-drop-rate = { path = "crates/drop-rate" }
 idleon-damage = { path = "crates/damage" }
 idleon-coin-multi = { path = "crates/coin-multi" }
 idleon-stats = { path = "crates/stats" }
+idleon-stats-engine = { path = "crates/stats-engine" }
 idleon-research = { path = "crates/research" }
 idleon-stats-data = { path = "crates/stats-data" }
 idleon-account = { path = "crates/account" }

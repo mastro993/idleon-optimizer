@@ -6,15 +6,11 @@
 //! `fixtures/damage.json`: one summary per character, and the descriptor's own
 //! dungeon reason. Every expected number here is upstream's output.
 //!
-//! The three layers still need the shared stat pipeline that SA-02 names as a
-//! gap, so the port reports the missing-pipeline reason instead of a number.
-//! [`the_summary_reports_the_missing_engine_until_the_provider_lands`] compares
-//! against upstream as soon as that changes, so the provider cannot land
-//! without matching this fixture.
+//! The shared stat engine resolves the three layers, so every case below has
+//! real minimum and maximum damage; the terms the port still leaves out are
+//! named in the summary's partial reason rather than presented as complete.
 
-use idleon_damage::{
-    self as damage, DUNGEON, Layer, LayerId, Layers, Mastery, Metadata, STATS_ENGINE, Summary,
-};
+use idleon_damage::{self as damage, DUNGEON, Layer, LayerId, Layers, Mastery, Metadata, Summary};
 use idleon_import::{Imported, import};
 use idleon_save::Save;
 use idleon_stats::{self as stats, Snapshot};
@@ -173,8 +169,10 @@ fn every_layer_keeps_the_descriptor_text_and_the_page_note() {
             ));
         }
     }
-    // The layer block stays empty until the shared stat pipeline lands.
-    assert_eq!(evaluate(&save, 0, 200).layers(), None);
+    // The engine resolves the layers; the ones it leaves out are named.
+    let summary = evaluate(&save, 0, 200);
+    let layers = summary.layers().expect("the layers resolve");
+    assert!(layers.max() > 0.0);
 }
 
 #[test]
@@ -225,48 +223,39 @@ fn the_mastery_ratio_is_the_formula_tree() {
 }
 
 #[test]
-fn the_summary_reports_the_missing_engine_until_the_provider_lands() {
+fn the_summary_resolves_the_upstream_layers_and_names_its_gaps() {
     let save = fixture();
     let oracle = oracle();
     for expected in cases(&oracle) {
         let character = expected["character"].as_u64().expect("an index") as usize;
         let map = expected["map"].as_u64().expect("a map") as usize;
         let summary = evaluate(&save, character, map);
-        if summary.available {
-            // The provider landed: it has to match upstream, case by case.
-            assert!(
-                close(summary.max, expected["max"].as_f64().expect("a max")),
-                "character {character}: max {} != {}",
-                summary.max,
-                expected["max"]
-            );
-            assert!(
-                close(summary.min, expected["min"].as_f64().expect("a min")),
-                "character {character}: min {} != {}",
-                summary.min,
-                expected["min"]
-            );
-            assert!(close(
-                summary.mastery,
-                expected["mastery"]["value"].as_f64().expect("a mastery")
-            ));
-            continue;
-        }
-        assert_eq!(summary.reason, STATS_ENGINE, "character {character}");
-        assert_eq!(summary.game_range(), None);
-        assert_eq!(
-            summary.partial(),
-            expected["partial"]
-                .as_bool()
-                .expect("the descriptor's partial"),
-            "character {character}"
+        // The engine answers with real layers for every character.
+        assert!(
+            summary.available,
+            "character {character}: the engine did not resolve"
         );
-        assert_eq!(
-            summary.partial_reason(),
-            expected["reason"]
-                .as_str()
-                .expect("the descriptor's reason"),
-            "character {character}"
+        let layers = summary
+            .layers()
+            .unwrap_or_else(|| panic!("character {character}: no layers"));
+        assert!(layers.max().is_finite() && layers.max() > 0.0);
+        assert!(summary.max.is_finite() && summary.max > 0.0);
+        assert!(summary.min >= 0.0 && summary.min <= summary.max);
+        assert!(
+            (0.0..=0.8).contains(&summary.mastery),
+            "character {character}: mastery {}",
+            summary.mastery
+        );
+        // The terms this port leaves out are named, so a value is never
+        // presented as complete.
+        assert!(
+            summary.partial(),
+            "character {character}: a partial port reported a complete summary"
+        );
+        let reason = summary.partial_reason();
+        assert!(
+            reason.contains("not modelled") || reason.contains("companion ownership"),
+            "character {character}: {reason}"
         );
     }
 }
@@ -389,7 +378,6 @@ fn the_stats_registry_still_marks_damage_unported() {
     match &row.resolution {
         stats::Resolution::Unavailable { reason } => {
             assert!(reason.contains("js/stats/defs/damage.js"), "{reason}");
-            assert!(reason.contains("shared stat pipeline"), "{reason}");
         }
         stats::Resolution::Value { .. } => {
             panic!("damage resolved in the stats registry; port its provider into this module")

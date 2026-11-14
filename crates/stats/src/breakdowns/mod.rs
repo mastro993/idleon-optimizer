@@ -14,6 +14,7 @@
 
 pub(crate) mod capacity;
 mod research;
+mod totals;
 
 use idleon_common::formula::FormulaNode;
 use idleon_research::model::{SimContext, Simulation};
@@ -234,10 +235,10 @@ impl Sheet {
             .map(|spec| {
                 let resolution = capacity::resolve(inputs, spec.id)
                     .or_else(|| research::resolve(inputs, spec.id))
+                    .or_else(|| totals::resolve(inputs, spec.id))
                     .unwrap_or_else(|| Resolution::Unavailable {
                         reason: format!(
-                            "{} is not modelled yet: it needs the shared stat pipeline \
-                             (talents, stamps, bubbles, cards and equipment), which this build \
+                            "{} is not modelled yet: it needs a system this build \
                              does not decode.",
                             spec.source
                         ),

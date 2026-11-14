@@ -243,7 +243,7 @@ impl Decoder<'_> {
     }
 
     /// The `voting-multi` descriptor.
-    fn voting_multi(&self) -> f64 {
+    pub fn voting_multi(&self) -> f64 {
         let inner = self.companion(41)
             + self.row_at("Dream", 13)
             + self.cosmo(2, 3)
@@ -742,7 +742,7 @@ impl Decoder<'_> {
     }
 
     /// `pristineCharmBonus(idx)`.
-    fn pristine(&self, index: usize) -> f64 {
+    pub fn pristine(&self, index: usize) -> f64 {
         idleon_opal::data::pristine(index)
     }
 

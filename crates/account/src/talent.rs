@@ -13,18 +13,18 @@
 //! The game only adds those levels to talents at index 100 and above; the set
 //! in [`excluded`] is what `AllTalentLVz` returns zero for.
 
-use idleon_account::Decoder;
+use crate::Decoder;
 use idleon_common::curve;
 use idleon_save::fields;
 
-use crate::save::set_bonus;
+use crate::sets::set_bonus;
 
 /// `getbonus2(talent, …)`: the talent's value at the best character.
 ///
 /// `context` is the active character: its skill row, Divinity link and level
 /// are the ones the bonus-level terms read, exactly as `getbonus2` passes
 /// `ctx.charIdx` down.
-pub(crate) fn max_bonus(decoder: &Decoder<'_>, talent: usize, context: usize) -> f64 {
+pub fn max_bonus(decoder: &Decoder<'_>, talent: usize, context: usize) -> f64 {
     let Some(param) = decoder.talent_param(talent) else {
         return 0.0;
     };
@@ -67,7 +67,7 @@ fn excluded(talent: usize) -> bool {
 ///
 /// `skip_talent_144` mirrors `skipTal144FamMult`: the talent-144 multiplier on
 /// the family bonus is skipped while talent 144's own levels are resolved.
-fn bonus_levels(
+pub fn bonus_levels(
     decoder: &Decoder<'_>,
     talent: usize,
     slot: usize,

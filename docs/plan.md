@@ -451,6 +451,18 @@ The endgame check is complete: the joke verdict plus the 177-metric leaderboard 
 save-backed metrics ported and the 21 account-stat metrics named instead of guessed.
 Details: [`docs/sections/endgame.md`](sections/endgame.md).
 
+The shared stat engine is `crates/stats-engine` (`idleon-stats-engine`), a port of
+`js/stats/systems/common/stats.js` and `js/stats/defs/damage.js`. It owns `computeTotalStat` for STR, AGI,
+WIS and LUK — the equipment, gallery, obol, stamp, star-sign, sigil, family, card, meal, guild, talent,
+bubble and account pools — and the damage descriptor's three layers on top of them. Every provider is
+read from the same `idleon_account::Decoder` the other sections use; a term whose upstream formula is
+not ported is named by source and makes the result a lower bound, never a silently wrong number. The
+four `total-*` rows of the All Stats breakdowns resolve through it with their partial reason, and the
+Damage Breakdown's summary, layer tabs and mastery bar read the real layers instead of the missing-pipeline
+state. `fixtures/stats.json` and the `debug` map now carried by `fixtures/damage.json` are written by
+`script/stats-oracle.mjs` and `script/damage-oracle.mjs`; `crates/stats-engine/tests/stats.rs` fails if any
+total disagrees with upstream without naming the terms it left out.
+
 The All Stats Dashboard has its calculation context (SA-01), its category breakdowns (SA-02) and its
 system formula explorer (SA-03). The
 context is the character, map, map-list, skill and construction-mode selectors with their save
