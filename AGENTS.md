@@ -43,10 +43,11 @@ cargo fmt --all -- --check
 node script/mcp-drive.mjs        # own window + private bridge endpoint
 ```
 
-`.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates on every push to `main`
-and on every pull request that changes code or a file a test reads (`docs/roadmap.json`,
-`docs/sections/**`, `assets/upstream/manifest.json`, the `vendor/gpui-mcp` pin); other docs and
-asset changes skip it. The long simulations (`#[ignore = "long simulation: …"]`) run on `main`
-only. The MCP harnesses still run locally only.
+`.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates when a push to `main` or
+a pull request changes Rust code or a file a test reads (`docs/roadmap.json`, `docs/sections/**`,
+`assets/upstream/manifest.json`, the `vendor/gpui-mcp` pin). Every pull request reports the three
+required checks: when nothing Rust-relevant changed (docs, assets, scripts) their steps are skipped
+and the checks pass in seconds, so such a PR can still merge. The long simulations
+(`#[ignore = "long simulation: …"]`) run on `main` only. The MCP harnesses still run locally only.
 
 Harness details and per-lane isolation live in [`docs/agent-harness.md`](docs/agent-harness.md).
