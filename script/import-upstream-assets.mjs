@@ -19,7 +19,6 @@
 // manifest cannot resolve renders a labelled placeholder instead of a broken
 // image.
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   existsSync,
@@ -31,6 +30,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { provenance } from './lib/provenance.mjs';
 
 const argv = process.argv.slice(2);
 const flag = (name, fallback = null) => {
@@ -144,25 +144,6 @@ function references(root) {
     missing: missing.sort(),
     dynamic: [...dynamic].sort(),
   };
-}
-
-/** `remote@commit` when the source is a git checkout, else its absolute path. */
-function provenance(root) {
-  try {
-    const commit = execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
-    const remote = execFileSync('git', ['-C', root, 'config', '--get', 'remote.origin.url'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    })
-      .trim()
-      .replace(/\.git$/, '');
-    return remote ? `${remote}@${commit}` : commit;
-  } catch {
-    return resolve(root);
-  }
 }
 
 /** Credit note committed next to the manifest. */

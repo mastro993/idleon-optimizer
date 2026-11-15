@@ -133,3 +133,15 @@ changes, unspent points and EXP per kill. Regenerate it with
 `node script/clamworks-scurge-oracle.mjs <upstream-repo>`; `crates/clamworks/tests/clamworks_scurge.rs`
 compares the port field for field. Treat it as frozen for the same reason: it is the oracle's output,
 not this app's.
+
+## Provenance
+
+`PROVENANCE.json` records, for every generated file, the script that wrote it and the upstream
+commit it was generated from (`remote@commit`, plus `dirty: true` when the checkout had local
+changes). Each oracle and extract script updates its own entries through
+`script/lib/provenance.mjs` when it runs; nothing else writes the file. An entry appears the next
+time its fixture is regenerated, so a file with no entry predates the ledger.
+
+Regenerate a crate's data table and its oracle fixtures from the **same** upstream checkout: two
+entries of one crate naming different commits is the first thing to check when a parity test fails
+after a refresh.
