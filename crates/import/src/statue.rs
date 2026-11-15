@@ -23,6 +23,7 @@ pub(crate) fn read(
         let Some(index) = key
             .strip_prefix("StatueLevels_")
             .and_then(|tail| tail.parse::<usize>().ok())
+            .filter(|index| *index < idleon_save::MAX_CHARACTERS)
         else {
             continue;
         };

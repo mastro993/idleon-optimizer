@@ -26,10 +26,31 @@ pub fn index<'a>(value: &'a Value, path: &[usize]) -> Option<&'a Value> {
 }
 
 /// A number, or a string holding one; the game writes some values as strings.
+/// A non-finite value (`"NaN"`, `"inf"`, an overflowing literal) is `None`,
+/// as the sibling [`crate::number`] already treats it.
 pub fn number(value: &Value) -> Option<f64> {
     match value {
-        Value::Number(number) => number.as_f64(),
-        Value::String(text) => text.trim().parse().ok(),
+        Value::Number(number) => number.as_f64().filter(|value| value.is_finite()),
+        Value::String(text) => text
+            .trim()
+            .parse::<f64>()
+            .ok()
+            .filter(|value| value.is_finite()),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn a_non_finite_number_reads_as_missing() {
+        for text in ["NaN", "inf", "-inf", "infinity", "1e999"] {
+            assert_eq!(number(&json!(text)), None, "{text}");
+        }
+        assert_eq!(number(&json!(" 12 ")), Some(12.0));
+        assert_eq!(number(&json!(3.5)), Some(3.5));
     }
 }
