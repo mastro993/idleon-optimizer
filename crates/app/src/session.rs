@@ -10,7 +10,7 @@
 //! The file lives in the platform app-data directory, or wherever
 //! `--state-dir`/`IDLEON_OPTIMIZER_STATE_DIR` points, and is written
 //! atomically through a temporary sibling. A file that cannot be read back as a
-//! session is renamed to `session.json.corrupt-<timestamp>` and the app starts
+//! session is renamed to `session.corrupt-<timestamp>.json` and the app starts
 //! clean instead of refusing to open.
 //!
 //! Ported from the browser persistence the upstream spreads over
@@ -115,8 +115,8 @@ impl Session {
             restore: None,
             notice: None,
         };
-        let text = match fs::read_to_string(&session.path) {
-            Ok(text) => text,
+        let bytes = match fs::read(&session.path) {
+            Ok(bytes) => bytes,
             Err(error) if error.kind() == io::ErrorKind::NotFound => return session,
             Err(error) => {
                 session.notice = Some(format!(
@@ -125,7 +125,10 @@ impl Session {
                 return session;
             }
         };
-        match parse(&text) {
+        let parsed = String::from_utf8(bytes)
+            .map_err(|error| error.to_string())
+            .and_then(|text| parse(&text));
+        match parsed {
             Ok((restore, recent)) => {
                 session.restore = Some(restore);
                 session.recent = recent;
@@ -203,14 +206,16 @@ fn parse(text: &str) -> Result<(SessionRestore, Vec<RecentImport>), String> {
     Ok((restore(project)?, recent(object.get("recentImports"))))
 }
 
-/// Decode the embedded project and every section config it carries.
+/// Decode the embedded project and every section config it carries; a config
+/// that cannot be read is dropped with a warning instead of failing the
+/// restore.
 fn restore(value: &Value) -> Result<SessionRestore, String> {
     let mut document =
         pipeline::read(&value.to_string()).map_err(|error| format!("project: {error}"))?;
     if !matches!(document, pipeline::Document::Project(_)) {
         return Err("the session's project is not a project document".into());
     }
-    let configs = project::prepare(&mut document).map_err(|error| format!("project: {error}"))?;
+    let configs = project::prepare_lenient(&mut document);
     let pipeline::Document::Project(project) = document else {
         unreachable!("the document was just checked to be a project")
     };
@@ -429,6 +434,61 @@ mod tests {
         let notice = session.notice.expect("the broken project is reported");
         assert!(notice.contains("project"), "{notice}");
         assert!(!path.exists());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn a_malformed_section_config_costs_only_that_section() {
+        let dir = scratch("bad-section");
+        let path = dir.join(FILE);
+        let mut project = project_value();
+        project["sections"]["clamworks"] = json!({ "hours": null });
+        let session = Session::load(path.clone());
+        session.save(&project).expect("the session saves");
+
+        let restored = Session::load(path.clone());
+        assert!(restored.notice.is_none());
+        let restore = restored.restore.expect("the project reads back");
+        assert!(matches!(
+            restore.configs.as_slice(),
+            [Config::Killroy(crate::sections::killroy::State {
+                weeks: 20,
+                ..
+            })]
+        ));
+        let warnings = &restore.project.document.warnings;
+        assert!(
+            warnings
+                .iter()
+                .any(|warning| warning.contains("clamworks")
+                    && warning.contains("keeps its defaults")),
+            "{warnings:?}"
+        );
+        assert!(path.exists(), "the session file stays put");
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn a_session_that_is_not_utf8_is_backed_up() {
+        let dir = scratch("not-utf8");
+        let path = dir.join(FILE);
+        fs::write(&path, [0xff, 0xfe, 0x00]).expect("the invalid file");
+        let session = Session::load(path.clone());
+        assert!(session.restore.is_none());
+        let notice = session.notice.expect("the backup is reported");
+        assert!(notice.contains("corrupt"), "{notice}");
+        assert!(!path.exists(), "the invalid file moved aside");
+        let files: Vec<PathBuf> = fs::read_dir(&dir)
+            .expect("the scratch directory")
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.path())
+            .collect();
+        assert_eq!(files.len(), 1, "{files:?}");
+        let name = files[0]
+            .file_name()
+            .and_then(|name| name.to_str())
+            .expect("a file name");
+        assert!(name.contains(".corrupt-"), "{name}");
         let _ = fs::remove_dir_all(dir);
     }
 

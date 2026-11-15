@@ -14,7 +14,11 @@ impl AppState {
     }
 
     pub(crate) fn set_clamworks_multikill(&mut self, multikill: f64, cx: &mut Context<Self>) {
-        self.clamworks_multikill = multikill.max(0.0);
+        self.clamworks_multikill = if multikill.is_finite() {
+            multikill.max(0.0)
+        } else {
+            0.0
+        };
         cx.notify();
     }
 

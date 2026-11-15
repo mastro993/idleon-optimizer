@@ -105,11 +105,12 @@ impl State {
     /// claim's own refusal, so it stays here until a later entry is accepted.
     pub(crate) fn commit_hours(&mut self, text: &str) {
         match text.trim().parse::<f64>() {
-            Ok(hours) => {
+            // `inf` and `nan` parse as numbers; neither is an amount of hours.
+            Ok(hours) if hours.is_finite() => {
                 self.hours = hours;
                 self.error = None;
             }
-            Err(_) => self.error = Some(ClaimError::Hours),
+            _ => self.error = Some(ClaimError::Hours),
         }
     }
 

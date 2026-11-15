@@ -168,7 +168,7 @@ remaining account effects.
   recent imports and UI preferences. The app writes it to the platform app-data directory as
   `session.json` (override with `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR`): the project document
   plus the last applied imports. A corrupt file is renamed to
-  `session.json.corrupt-<timestamp>` and the app starts clean.
+  `session.corrupt-<timestamp>.json` and the app starts clean.
 - `SectionState`: serializable state owned by one section (targets, filters, custom presets, replay
   seeds, plans).
 

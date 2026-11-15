@@ -1307,7 +1307,7 @@ impl AppState {
             session_save_pending: false,
         };
         if let Some(restore) = state.session.restore.take() {
-            let mut warnings = Vec::new();
+            let mut warnings = restore.project.document.warnings.clone();
             let mut changes = Vec::new();
             crate::project::apply(
                 &mut state,
@@ -1318,7 +1318,17 @@ impl AppState {
                 cx,
             );
             state.save_partial |= !warnings.is_empty();
-            state.status = "Restored the last session.".into();
+            state.status = match warnings.first() {
+                None => "Restored the last session.".into(),
+                Some(first) if warnings.len() == 1 => {
+                    format!("Restored the last session with 1 warning: {first}")
+                }
+                Some(first) => format!(
+                    "Restored the last session with {} warnings: {first} (and {} more)",
+                    warnings.len(),
+                    warnings.len() - 1
+                ),
+            };
         }
         if let Some(notice) = state.session.notice.clone() {
             state.status = notice;
@@ -1348,6 +1358,9 @@ impl AppState {
         };
         if let Err(error) = self.session.save(&project) {
             eprintln!("idleon-optimizer: could not save the session: {error}");
+            self.status = format!(
+                "Could not save the session ({error}); this window's state will not survive a restart."
+            );
         }
     }
 
