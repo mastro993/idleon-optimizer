@@ -2154,12 +2154,45 @@ mod tests {
         assert!(text.contains("\"beamWidth\":12"), "{text}");
     }
 
+    /// Every section id that stores a config, in the order `decode` lists
+    /// them. `configs` writes exactly these ids and `decode` reads exactly
+    /// these ids; the tests below keep the three in step.
+    const CONFIG_IDS: [&str; 26] = [
+        "research",
+        "killroy",
+        "sailing",
+        "farming",
+        "fishing",
+        "statue",
+        "combat-sim",
+        "monument",
+        "pickle",
+        "prisma",
+        "clamworks",
+        "cog",
+        "jelly-operator",
+        "jar",
+        "fountain",
+        "royal-guardian",
+        "opal",
+        "sneaking",
+        "ladle",
+        "spelunking",
+        "coral-god-rank",
+        "cooking-mastery",
+        "stats-all",
+        "drop-rate",
+        "damage",
+        "worship-td",
+    ];
+
     #[test]
     fn every_built_section_is_a_config_id_or_a_page_the_save_alone_fills() {
         for section in sections::SECTIONS.iter() {
             let id = section.id;
             let mut warnings = Vec::new();
             let decoded = decode(id, &json!({}), &mut warnings);
+            assert!(warnings.is_empty(), "{id}: {warnings:?}");
             if STATELESS.contains(&id) {
                 assert!(
                     matches!(decoded, Decoded::Unknown),
@@ -2170,13 +2203,138 @@ mod tests {
                     matches!(decoded, Decoded::Config(_)),
                     "{id} has no project config and is not listed as stateless"
                 );
+                assert!(CONFIG_IDS.contains(&id), "{id} is missing from CONFIG_IDS");
             }
         }
-        for id in STATELESS {
+        for id in STATELESS.iter().chain(&CONFIG_IDS) {
             assert!(
                 sections::find(id).is_some(),
                 "{id} is not a registered section"
             );
+        }
+        for id in CONFIG_IDS {
+            assert!(
+                !STATELESS.contains(&id),
+                "{id} is both stateless and a config id"
+            );
+        }
+    }
+
+    /// A window state built under GPUI's test platform, its session and
+    /// automation endpoint kept in a private directory. Ely's `init_for_tests`
+    /// stands in for `init`, which needs the bundled fonts the test platform
+    /// has no asset source for; without an endpoint directory the bridge would
+    /// register in the user's real one.
+    fn headless_state(
+        cx: &mut gpui::TestAppContext,
+        dir: &std::path::Path,
+    ) -> gpui::WindowHandle<AppState> {
+        cx.update(ely_gpui_component::init_for_tests);
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        cx.add_window(|window, cx| AppState::new(window, Some(endpoint), None, Some(state_dir), cx))
+    }
+
+    #[test]
+    fn an_export_writes_every_config_id_and_reads_back_into_the_same_configs() {
+        let dir =
+            std::env::temp_dir().join(format!("idleon-project-export-{}", std::process::id()));
+        let mut cx = gpui::TestAppContext::single();
+        let window = headless_state(&mut cx, &dir);
+        let text = window
+            .update(&mut cx, |state, _, _| export(state))
+            .expect("the window is open");
+
+        let mut document = pipeline::read(&text).expect("the export reads back");
+        let pipeline::Document::Project(project) = &document else {
+            panic!("an export is a project")
+        };
+        let mut written: Vec<&str> = project
+            .document
+            .sections
+            .keys()
+            .map(String::as_str)
+            .collect();
+        written.sort_unstable();
+        let mut expected = CONFIG_IDS.to_vec();
+        expected.sort_unstable();
+        assert_eq!(
+            written, expected,
+            "configs and CONFIG_IDS name different sections"
+        );
+        let sections = project.document.sections.clone();
+
+        let decoded = prepare(&mut document).expect("every exported config decodes");
+        assert_eq!(decoded.len(), CONFIG_IDS.len());
+        assert!(
+            document.warnings_mut().is_empty(),
+            "{:?}",
+            document.warnings_mut()
+        );
+        let mut warnings = Vec::new();
+        let again = window
+            .update(&mut cx, |state, _, cx| {
+                for config in decoded {
+                    assign(state, config, &mut warnings, cx);
+                }
+                configs(state)
+            })
+            .expect("the window is open");
+        // Without a save, `assign` notes the save-bound fields it keeps (the
+        // statue character, the jelly board), so its warnings are not checked.
+        assert_eq!(
+            again, sections,
+            "assigning an export changes what the next export writes"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// The JSON `configs` would write for one decoded config.
+    fn config_value(config: &Config) -> Value {
+        match config {
+            Config::Research(config) => value(config),
+            Config::Killroy(config) => value(config),
+            Config::Sailing(config) => value(config),
+            Config::Farming(config) => value(config),
+            Config::Fishing(config) => value(config),
+            Config::Statue(config) => value(config),
+            Config::Combat(config) => value(config),
+            Config::Monument(config) => value(config),
+            Config::Pickle(config) => value(config),
+            Config::Prisma(config) => value(config),
+            Config::Clamworks(config) => value(config),
+            Config::Cog(config) => value(config),
+            Config::Jelly(config) => value(config),
+            Config::Jar(config) => value(config),
+            Config::Fountain(config) => value(config),
+            Config::Royal(config) => value(config),
+            Config::Opal(config) => value(config),
+            Config::Sneaking(config) => value(config),
+            Config::Ladle(config) => value(config),
+            Config::Spelunking(config) => value(config),
+            Config::Coral(config) => value(config),
+            Config::CookingMastery(config) => value(config),
+            Config::Worship(config) => value(config),
+            Config::StatsAll(config) => value(config),
+            Config::DropRate(config) => value(config),
+            Config::Damage(config) => value(config),
+        }
+    }
+
+    #[test]
+    fn every_default_config_decodes_from_its_own_serialisation() {
+        for id in CONFIG_IDS {
+            let mut warnings = Vec::new();
+            let Decoded::Config(config) = decode(id, &json!({}), &mut warnings) else {
+                panic!("{id} decodes");
+            };
+            let written = config_value(&config);
+            assert!(written.is_object(), "{id} writes {written}");
+            let mut warnings = Vec::new();
+            assert!(
+                matches!(decode(id, &written, &mut warnings), Decoded::Config(_)),
+                "{id} does not read back its own default"
+            );
+            assert!(warnings.is_empty(), "{id}: {warnings:?}");
         }
     }
 
