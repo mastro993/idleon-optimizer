@@ -163,6 +163,7 @@ fn character_count(save: &Save, named: usize) -> usize {
                         .then(|| index.parse::<usize>().ok())
                         .flatten()
                 })
+                .filter(|index| *index < idleon_save::MAX_CHARACTERS)
                 .map(|index| index + 1)
                 .max()
                 .unwrap_or(0)

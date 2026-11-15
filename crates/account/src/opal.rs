@@ -294,6 +294,7 @@ impl Decoder<'_> {
             .keys()
             .filter_map(|key| key.strip_prefix("SL_"))
             .filter_map(|index| index.parse::<usize>().ok())
+            .filter(|index| *index < idleon_save::MAX_CHARACTERS)
             .map(|index| index + 1)
             .max()
             .unwrap_or(0)

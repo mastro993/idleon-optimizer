@@ -65,6 +65,7 @@ pub fn object_row(value: &Value, index: usize) -> Option<Vec<Option<f64>>> {
     let mut keys: Vec<(usize, &String)> = fields
         .keys()
         .filter_map(|key| key.parse::<usize>().ok().map(|index| (index, key)))
+        .filter(|(index, _)| *index < crate::MAX_ROW_CELLS)
         .collect();
     keys.sort_by_key(|(index, _)| *index);
     for (index, key) in keys {

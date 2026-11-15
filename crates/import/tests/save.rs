@@ -566,3 +566,16 @@ fn imported_rate_matches_a_hand_built_simulation() {
     );
     assert!((actual.multi - wanted.multi).abs() < 1e-9);
 }
+
+#[test]
+fn an_absurd_character_index_does_not_size_the_import() {
+    let save = json!({
+        "Research": "[]",
+        "Lv0_0": "[]",
+        "Lv0_99999999999": "[]",
+        "StatueLevels_99999999999": "[]",
+    });
+    let imported = import(&save.to_string()).expect("the save still imports");
+    assert_eq!(imported.characters, 1);
+    assert!(imported.statues.character_indices().count() <= idleon_save::MAX_CHARACTERS);
+}

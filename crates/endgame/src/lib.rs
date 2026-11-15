@@ -313,6 +313,7 @@ fn character_count(data: &Map<String, Value>, char_names: usize) -> usize {
                     .and_then(|index| index.parse::<usize>().ok())
             })
         })
+        .filter(|index| *index < idleon_save::MAX_CHARACTERS)
         .map(|index| index + 1)
         .max()
         .unwrap_or(0);
