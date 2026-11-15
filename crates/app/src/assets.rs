@@ -79,8 +79,9 @@ impl Manifest {
     /// Load the first candidate folder that has a manifest.
     ///
     /// `IDLEON_ASSETS_DIR` wins when set, so a packaged build can point at its
-    /// own copy. Otherwise the folder next to the executable, the working
-    /// directory and the repository root are tried in that order.
+    /// own copy. Otherwise the folder next to the executable (on macOS, the
+    /// app bundle's `Contents/Resources` first) and the working directory are
+    /// tried in that order; a debug build also tries the repository root.
     pub(crate) fn load_default() -> Self {
         if let Some(dir) = std::env::var_os(ENV_DIR) {
             return Self::load(dir);
@@ -89,11 +90,18 @@ impl Manifest {
         if let Ok(executable) = std::env::current_exe()
             && let Some(parent) = executable.parent()
         {
+            // `Contents/MacOS` holds only code: data there is signed as nested
+            // code and breaks the seal when unpacked without its xattrs.
+            #[cfg(target_os = "macos")]
+            candidates.push(parent.join("../Resources").join(DEFAULT_DIR));
             candidates.push(parent.join(DEFAULT_DIR));
         }
         if let Ok(cwd) = std::env::current_dir() {
             candidates.push(cwd.join(DEFAULT_DIR));
         }
+        // The repository root is a development convenience; a release build
+        // must not carry the builder's checkout path.
+        #[cfg(debug_assertions)]
         candidates.push(
             Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../..")

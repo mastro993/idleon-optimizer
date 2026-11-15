@@ -1,5 +1,12 @@
 //! Desktop calculator suite for Legends of Idleon.
 
+// A Windows release build is a GUI program: no console window opens beside it.
+// Debug builds keep the console so `eprintln!` and `--list-sections` stay visible.
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+
 mod assets;
 mod diagnostics;
 mod project;

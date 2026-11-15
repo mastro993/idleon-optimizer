@@ -1,0 +1,117 @@
+name: Build
+
+# The release archives for macOS, Linux and Windows, without the automation
+# bridge (`--no-default-features`). `release.yml` and `nightly.yml` call it
+# with the version to stamp and hand the archives to their publish job; a pull
+# request that touches the packaging runs it unstamped, so a broken platform
+# shows up before a release needs it. See docs/release.md.
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version to stamp into Cargo.toml before building
+        type: string
+        required: true
+      ref:
+        description: Commit to build
+        type: string
+        required: true
+  pull_request:
+    paths:
+      - '.github/workflows/build.yml'
+      - '.github/workflows/nightly.yml'
+      - '.github/workflows/release.yml'
+      - 'script/package.mjs'
+      - 'script/version.mjs'
+      - 'script/lib/cargo-version.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Both Darwin targets, combined into one universal binary below.
+          - os: macos-latest
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+          # A binary links against the build machine's glibc: the older
+          # runner's runs on more distributions.
+          - os: ubuntu-22.04
+            targets: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            targets: x86_64-pc-windows-msvc
+    name: package (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: recursive
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+        with:
+          toolchain: 1.100.0
+          targets: ${{ matrix.targets }}
+      # GPUI's X11/Wayland/Vulkan backends and the bridge-vendored screen
+      # capture (PipeWire, through bindgen) link against these.
+      - if: runner.os == 'Linux'
+        run: >-
+          sudo apt-get update &&
+          sudo apt-get install -y --no-install-recommends
+          pkg-config libclang-dev libfontconfig-dev libfreetype-dev
+          libxkbcommon-dev libxkbcommon-x11-dev libwayland-dev
+          libx11-xcb-dev libxcb1-dev libvulkan-dev libdbus-1-dev
+          libpipewire-0.3-dev libspa-0.2-dev libegl-dev libgbm-dev
+      # Only `main` saves, as in ci.yml: pull requests restore its cache.
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          shared-key: release-${{ runner.os }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - if: inputs.version
+        run: node script/version.mjs set "$VERSION"
+        env:
+          VERSION: ${{ inputs.version }}
+      - run: |
+          for target in ${TARGETS//,/ }; do
+            cargo build --release --locked -p idleon-optimizer --no-default-features --target "$target"
+          done
+        env:
+          TARGETS: ${{ matrix.targets }}
+      - if: runner.os == 'macOS'
+        run: |
+          mkdir -p target/release
+          lipo -create -output target/release/idleon-optimizer \
+            target/aarch64-apple-darwin/release/idleon-optimizer \
+            target/x86_64-apple-darwin/release/idleon-optimizer
+          node script/package.mjs --arch universal
+      - if: runner.os != 'macOS'
+        run: node script/package.mjs --target "$TARGETS"
+        env:
+          TARGETS: ${{ matrix.targets }}
+      # What a user's machine must provide at run time.
+      - if: runner.os == 'Linux'
+        run: |
+          {
+            echo '<details><summary>Linux runtime libraries (ldd)</summary>'
+            echo
+            echo '```'
+            ldd target/x86_64-unknown-linux-gnu/release/idleon-optimizer
+            echo '```'
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+      # The hand-off to the caller's publish job, not a distribution channel.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist-${{ runner.os }}
+          path: |
+            target/dist/*.zip
+            target/dist/*.tar.gz
+            target/dist/*.sha256
+          if-no-files-found: error
+          retention-days: 3

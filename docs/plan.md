@@ -55,6 +55,14 @@ reserves every other right.
 - Reusing upstream code still needs written permission; keep ports as rewrites with source
   references rather than copies.
 
+**Distribution decision (2026-11-14).** The app is distributed through GitHub only: unsigned
+builds for macOS, Linux and Windows are attached to this repository's GitHub Releases, and there
+is no other channel. A release bundles the game artwork under `assets/upstream/` with its credit
+note (`assets/upstream/README.md`). No written permission is sought from the upstream
+calculator's author, who is another community tool author and not the game's owner; ports stay
+fresh rewrites with source references, as above. How releases are built and cut:
+[`release.md`](release.md).
+
 ## 3. Dashboard and navigation
 
 Landing page:

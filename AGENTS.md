@@ -51,3 +51,7 @@ and the checks pass in seconds, so such a PR can still merge. The long simulatio
 (`#[ignore = "long simulation: …"]`) run on `main` only. The MCP harnesses still run locally only.
 
 Harness details and per-lane isolation live in [`docs/agent-harness.md`](docs/agent-harness.md).
+
+Releases and nightly betas are cut by `release.yml` and `nightly.yml`, which build through
+`build.yml`; see [`docs/release.md`](docs/release.md). Never edit the workspace version by hand
+and never dispatch a release unless asked: `release.yml` owns the version bump.
