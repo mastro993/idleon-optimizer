@@ -10,6 +10,10 @@
 
 Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.
 
+## Known gaps
+
+- `CW-G1` Kills per hour, drop rate and multikill are typed stand-ins — blocked by `combat:auto-player` (absent)
+
 ## Upstream sources
 
 - clamworks-calc.html

@@ -10,6 +10,11 @@
 
 Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.
 
+## Known gaps
+
+- `RG-G1` Talent rates read the purchased level only, without the All-Talent bonus levels — blocked by `wire:all-talent` (landed)
+- `RG-G2` 11 of the 14 upstream optimizer objectives are not offered — blocked by `port:royal-objectives` (absent)
+
 ## Upstream sources
 
 - royal-guardian-calc.html

@@ -10,6 +10,11 @@
 
 Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.
 
+## Known gaps
+
+- `SN-G1` All-Talent terms and the Gambit point chain are explicit inputs — blocked by `wire:all-talent` (landed), `wire:gambit` (landed)
+- `SN-G2` Monte-Carlo claim simulation for the Items objective — blocked by `port:sneaking-flower-pass` (absent)
+
 ## Upstream sources
 
 - sneaking-calc.html

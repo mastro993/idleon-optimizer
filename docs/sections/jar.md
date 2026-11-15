@@ -10,6 +10,10 @@
 
 Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.
 
+## Known gaps
+
+- `JR-G1` History sparklines — blocked by `ui:jar-sparkline` (absent)
+
 ## Upstream sources
 
 - jar-calc.html

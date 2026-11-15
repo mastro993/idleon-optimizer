@@ -10,6 +10,10 @@
 
 Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.
 
+## Known gaps
+
+- `SP-G1` Spelunking Power, amber multiplier, stamina regeneration and Grand Discovery chance are explicit inputs — blocked by `stats:spelunking-descriptors` (absent)
+
 ## Upstream sources
 
 - spelunking-calc.html

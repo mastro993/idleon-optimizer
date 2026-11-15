@@ -10,6 +10,10 @@
 
 Finish the Research section so all eight upstream tabs and the shared save/supplement tools are present, including the Decision Tree, Insight ROI, Observation Unlocks and full save-derived multipliers.
 
+## Known gaps
+
+- `RES-G1` Gambit Milestone 15 is not modelled in the AFK rate — blocked by `wire:gambit` (landed)
+
 ## Upstream sources
 
 - research-optimizer-v2.html

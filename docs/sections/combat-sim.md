@@ -44,6 +44,10 @@ Port the active combat simulator: loadout editor, mechanics overrides, component
 - A Killroy practice captures as a version-1 replay document (`captureKillroyReplay`, `readKillroyReplay` and `_validate` in `js/ui/killroy-replay.js`): the imported save, the character, the map, duration and seed, checked with the upstream rules (a character the save carries, a Killroy room, 1 s to a day, a 32-bit seed). Opening it restores those options and re-simulates the run. Like the upstream handoff token it lives in the session, not the project.
 - The replay never draws what the run does not have: the player's attacks, projectiles, damage numbers and the scene's decorations are named on the tab instead of faked.
 
+## Known gaps
+
+- `CS-G1` No character DPS or survival — blocked by `combat:auto-player` (absent)
+
 ## Upstream sources
 
 - combat-sim-calc.html

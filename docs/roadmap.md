@@ -44,6 +44,25 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | M29 | Jelly Operator Optimizer | World 7 | 5 | done | foundation | [jelly-operator](sections/jelly-operator.md) |
 | M30 | BoneJoePickle Calculator | Tools | 1 | done | foundation | [pickle](sections/pickle.md) |
 
+## Parity backlog
+
+| Blocker | Status | Gaps it blocks |
+| --- | --- | --- |
+| `wire:all-talent` All-Talent bonus levels (idleon_account::talent::bonus_levels) passed to the sections that read talents | landed | SN-G1, RG-G1 |
+| `wire:gambit` Gambit point chain from the account decoder (idleon_account hole.rs) passed to Sneaking and Research | landed | RES-G1, SN-G1 |
+| `wire:stats-engine` Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps | landed | SA-G2, EG-G1 |
+| `stats:descriptors` Remaining All Stats descriptors (14 of 60 computed) | partial | SA-G1, EG-G1, PR-G1 |
+| `combat:auto-player` Combat simulator auto-mode player (movement, attacks, skills), the source of a character's kill rate and DPS | absent | CS-G1, ST-G1, KL-G1, CW-G1 |
+| `stats:level-tables` Upstream LEVEL_TABLES catalogue and the applyCombatSetupDetailed save writer behind the per-node formula editor | absent | SA-G3 |
+| `stats:drop-rate-descriptor` The drop-rate pool chain descriptor in the shared stat engine | absent | DR-G1 |
+| `stats:skill-descriptors` Fishing skill descriptors (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed, prowess, equipment depths) | absent | FI-G1 |
+| `stats:spelunking-descriptors` Spelunking stat context: Spelunking Power, amber multiplier, stamina regeneration, Grand Discovery chance | absent | SP-G1 |
+| `port:royal-objectives` Royal Guardian optimizer objectives beyond the three the kingdom metrics carry (Armory target, currency portfolio, reset collection) | absent | RG-G2 |
+| `port:sneaking-flower-pass` Sneaking flower pass behind the Monte-Carlo claim simulation | absent | SN-G2 |
+| `ui:jar-sparkline` Sparkline chart behind each Jar history tile | absent | JR-G1 |
+
+A `landed` blocker means its gaps can be closed now.
+
 ## Tracking
 
 `docs/roadmap.json` is the source of truth: one milestone per section and one issue per feature.

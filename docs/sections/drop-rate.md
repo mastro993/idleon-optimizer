@@ -10,6 +10,10 @@
 
 Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.
 
+## Known gaps
+
+- `DR-G1` No total for non-dungeon maps — blocked by `stats:drop-rate-descriptor` (absent)
+
 ## Upstream sources
 
 - drop-rate-calc.html
