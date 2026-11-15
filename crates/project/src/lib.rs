@@ -60,6 +60,10 @@ pub const SECTION_FORMAT: &str = "idleon-optimizer-section";
 /// The prefix the upstream state string carries.
 const STATE_PREFIX: &str = "ROv2:";
 
+/// The most an `ROv2:` payload may inflate to. A real state is a few
+/// kilobytes; the cap only stops a crafted string from exhausting memory.
+const MAX_STATE_BYTES: u64 = 64 * 1024 * 1024;
+
 /// The upstream state's format marker.
 const UPSTREAM_FORMAT: &str = "research-optimizer-state";
 /// The upstream schema version [`write_state`] writes.
@@ -499,6 +503,22 @@ fn version(object: &Map<String, Value>, kind: &str) -> Result<u32, Error> {
     Ok(version)
 }
 
+/// Gunzip `bytes`, refusing a payload that inflates past `limit`.
+fn inflate(bytes: &[u8], limit: u64) -> Result<String, Error> {
+    let mut text = String::new();
+    GzDecoder::new(bytes)
+        .take(limit + 1)
+        .read_to_string(&mut text)
+        .map_err(|error| Error::Gzip(error.to_string()))?;
+    if text.len() as u64 > limit {
+        return Err(Error::Gzip(format!(
+            "the payload inflates past {} MB",
+            limit / (1024 * 1024)
+        )));
+    }
+    Ok(text)
+}
+
 /// An upstream `ROv2:` payload: base64, then gzip, then the state object.
 fn upstream_state(payload: &str) -> Result<Project, Error> {
     let compact: String = payload.chars().filter(|ch| !ch.is_whitespace()).collect();
@@ -506,10 +526,7 @@ fn upstream_state(payload: &str) -> Result<Project, Error> {
         .decode(&compact)
         .or_else(|_| base64::engine::general_purpose::STANDARD_NO_PAD.decode(&compact))
         .map_err(|error| Error::Base64(error.to_string()))?;
-    let mut text = String::new();
-    GzDecoder::new(&bytes[..])
-        .read_to_string(&mut text)
-        .map_err(|error| Error::Gzip(error.to_string()))?;
+    let text = inflate(&bytes, MAX_STATE_BYTES)?;
     let parsed: Value =
         serde_json::from_str(&text).map_err(|error| Error::NotJson(error.to_string()))?;
     let object = parsed
@@ -996,5 +1013,20 @@ mod tests {
                 .iter()
                 .any(|warning| warning.contains("research"))
         );
+    }
+
+    #[test]
+    fn a_state_that_inflates_past_the_limit_is_refused() {
+        use flate2::{Compression, write::GzEncoder};
+        use std::io::Write as _;
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder
+            .write_all(&[b' '; 1000])
+            .expect("the payload compresses");
+        let bytes = encoder.finish().expect("the payload compresses");
+        assert!(
+            matches!(inflate(&bytes, 16), Err(Error::Gzip(detail)) if detail.contains("inflates past"))
+        );
+        assert_eq!(inflate(&bytes, 1000).map(|text| text.len()), Ok(1000));
     }
 }
