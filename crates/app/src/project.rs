@@ -2220,18 +2220,39 @@ mod tests {
         }
     }
 
+    /// A window state built under GPUI's test platform, its session and
+    /// automation endpoint kept in a private directory. Ely's `init_for_tests`
+    /// stands in for `init`, which needs the bundled fonts the test platform
+    /// has no asset source for; without an endpoint directory the bridge would
+    /// register in the user's real one.
+    fn headless_state(
+        cx: &mut gpui::TestAppContext,
+        dir: &std::path::Path,
+    ) -> gpui::WindowHandle<AppState> {
+        cx.update(ely_gpui_component::init_for_tests);
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        cx.add_window(|window, cx| AppState::new(window, Some(endpoint), None, Some(state_dir), cx))
+    }
+
     #[test]
-    fn configs_writes_exactly_the_config_ids() {
-        // `configs` needs a window, so its ids are read from the source: every
-        // `insert("<id>", …)` between `fn configs` and the next top-level item.
-        let source = include_str!("project.rs");
-        let start = source.find("pub(crate) fn configs(").expect("fn configs");
-        let body = &source[start..];
-        let end = body.find("\n}\n").expect("the end of fn configs");
-        let mut written: Vec<&str> = body[..end]
-            .split("insert(")
-            .skip(1)
-            .filter_map(|rest| rest.trim_start().strip_prefix('"')?.split('"').next())
+    fn an_export_writes_every_config_id_and_reads_back_into_the_same_configs() {
+        let dir =
+            std::env::temp_dir().join(format!("idleon-project-export-{}", std::process::id()));
+        let mut cx = gpui::TestAppContext::single();
+        let window = headless_state(&mut cx, &dir);
+        let text = window
+            .update(&mut cx, |state, _, _| export(state))
+            .expect("the window is open");
+
+        let mut document = pipeline::read(&text).expect("the export reads back");
+        let pipeline::Document::Project(project) = &document else {
+            panic!("an export is a project")
+        };
+        let mut written: Vec<&str> = project
+            .document
+            .sections
+            .keys()
+            .map(String::as_str)
             .collect();
         written.sort_unstable();
         let mut expected = CONFIG_IDS.to_vec();
@@ -2240,6 +2261,31 @@ mod tests {
             written, expected,
             "configs and CONFIG_IDS name different sections"
         );
+        let sections = project.document.sections.clone();
+
+        let decoded = prepare(&mut document).expect("every exported config decodes");
+        assert_eq!(decoded.len(), CONFIG_IDS.len());
+        assert!(
+            document.warnings_mut().is_empty(),
+            "{:?}",
+            document.warnings_mut()
+        );
+        let mut warnings = Vec::new();
+        let again = window
+            .update(&mut cx, |state, _, cx| {
+                for config in decoded {
+                    assign(state, config, &mut warnings, cx);
+                }
+                configs(state)
+            })
+            .expect("the window is open");
+        // Without a save, `assign` notes the save-bound fields it keeps (the
+        // statue character, the jelly board), so its warnings are not checked.
+        assert_eq!(
+            again, sections,
+            "assigning an export changes what the next export writes"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// The JSON `configs` would write for one decoded config.
