@@ -1,0 +1,86 @@
+name: Nightly
+
+# A beta of `main` every night: the next patch version with a `-beta.<run>`
+# suffix, stamped into the build only (nothing is committed), tagged on the
+# built commit and published as a GitHub prerelease. A night with nothing new
+# since the last release or beta is skipped, and only the newest betas are
+# kept. See docs/release.md.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+# One release at a time, manual releases included: they all create tags.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.next.outputs.version }}
+    steps:
+      - if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Betas are cut from main, not $GITHUB_REF"
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # A tag on this commit means a release or beta already ships it.
+      - id: next
+        run: |
+          tagged=$(git ls-remote --tags origin 'v*' | awk -v head="$GITHUB_SHA" '$1 == head { print $2 }')
+          if [ -n "$tagged" ]; then
+            echo "Skipped: $GITHUB_SHA is already tagged ($tagged)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          version="$(node script/version.mjs next patch)-beta.$GITHUB_RUN_NUMBER"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$version" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: version
+    if: needs.version.outputs.version
+    uses: ./.github/workflows/build.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+      ref: ${{ github.sha }}
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+      # The release API creates the tag on the built commit.
+      - run: |
+          cat dist/*.sha256 > dist/SHA256SUMS
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --prerelease \
+            --title "Idleon Optimizer v$VERSION (beta)" \
+            --notes-file .github/release-notes.md --generate-notes \
+            dist/*.zip dist/*.tar.gz dist/SHA256SUMS
+      # Keep the five newest betas; stable releases are never touched.
+      - run: |
+          gh release list --limit 200 --exclude-drafts --json tagName,isPrerelease \
+            --jq '[.[] | select(.isPrerelease)] | .[5:] | .[].tagName' |
+            while read -r tag; do
+              gh release delete "$tag" --yes --cleanup-tag
+            done
