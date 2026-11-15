@@ -6,7 +6,7 @@ on:
     # Docs and assets are skipped, except the files a Rust test reads: the
     # roadmap and section specs (the registry tests) and the asset manifest
     # (the combat replay test). Later patterns override earlier ones.
-    paths: &paths
+    paths:
       - '**'
       - '!**/*.md'
       - '!docs/**'
@@ -14,8 +14,10 @@ on:
       - 'docs/roadmap.json'
       - 'docs/sections/**'
       - 'assets/upstream/manifest.json'
+  # Every pull request runs: `fmt`, `clippy` and `test` are required checks, and
+  # a workflow that never starts never reports them. The `changes` job decides
+  # whether the gates have anything to build.
   pull_request:
-    paths: *paths
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -62,11 +64,14 @@ jobs:
               - 'vendor/gpui-mcp'
               - '.gitmodules'
 
+  # The gates always run so their checks report: with no Rust change every
+  # step is skipped on a Linux runner, which reports success in seconds instead
+  # of starting a macOS job. A job-level `if` would skip the whole matrix, which
+  # then never reports the `fmt`, `clippy` and `test` names the ruleset requires.
+  # Everything runs at once; the first failure cancels the rest, so a broken
+  # `main` never pays for the remaining macOS jobs.
   static:
     needs: changes
-    if: needs.changes.outputs.rust == 'true'
-    # Everything runs at once; the first failure cancels the rest, so a broken
-    # `main` never pays for the remaining macOS jobs.
     strategy:
       fail-fast: true
       matrix:
@@ -97,20 +102,22 @@ jobs:
             nextest: true
             command: cargo nextest run --workspace
     name: ${{ matrix.label }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ needs.changes.outputs.rust == 'true' && matrix.os || 'ubuntu-24.04' }}
     steps: &steps
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: needs.changes.outputs.rust == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: ${{ matrix.submodules }}
           persist-credentials: false
       # Pinned to the workspace's rust-version so a new stable clippy lint cannot
       # turn -D warnings red on a branch that changed nothing. The action is
       # pinned by commit; `toolchain` names the version.
-      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
+      - if: needs.changes.outputs.rust == 'true'
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
           toolchain: 1.100.0
           components: clippy, rustfmt
-      - if: matrix.nextest
+      - if: needs.changes.outputs.rust == 'true' && matrix.nextest
         uses: taiki-e/install-action@4a76afe23f9e08d2d9550fb56e556444e8611d21 # v2
         with:
           tool: nextest
@@ -120,12 +127,13 @@ jobs:
       # instead of filling the quota with their own. The root manifest's
       # `[profile]` tables are not part of the key, so rename a bucket when they
       # change.
-      - if: matrix.cache
+      - if: needs.changes.outputs.rust == 'true' && matrix.cache
         uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
         with:
           shared-key: ${{ matrix.cache }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: ${{ matrix.command }}
+      - if: needs.changes.outputs.rust == 'true'
+        run: ${{ matrix.command }}
 
   # The long simulations are `#[ignore]`d so pull requests skip them; `main`
   # runs them beside the gates. The one-entry matrix feeds the gates' steps,
