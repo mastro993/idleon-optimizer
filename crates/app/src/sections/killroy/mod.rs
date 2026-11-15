@@ -180,57 +180,60 @@ pub(crate) fn view(
             .text_color(cx.theme().colors.fg_muted),
         );
 
+    state.ensure_killroy_forecast();
+    // Taken out for the render so the views below can borrow `state`; put back
+    // at the end of this function. A clone of the save is a reference-count bump.
+    let cached = state.killroy_forecast.take();
     let save = state.save.clone();
-    let body = match save.as_ref() {
-        None => forecast_view::empty_state(window, cx),
-        Some(save) => match killroy::forecast(save, state.killroy.weeks) {
-            Err(error) => forecast_view::error_state(error.to_string(), window, cx),
-            Ok(forecast) => {
-                let primary = match mode {
-                    Mode::Baseline => forecast_view::forecast_card(state, &forecast, window, cx),
-                    Mode::Upgrades => comparison::upgrade_card(state, save, cx),
-                };
-                let primary = div()
-                    .id("killroy-primary")
-                    .flex()
-                    .flex_col()
-                    .flex_1()
-                    .min_h_0()
-                    .gap_3()
-                    .child(primary)
-                    .child(comparison::results_card(state, window, cx))
-                    .child(comparison::buffs_card(state, save, cx));
-                let mut side = div()
-                    .id("killroy-rail")
-                    .flex()
-                    .flex_col()
-                    .flex_1()
-                    .min_h_0()
-                    .gap_3()
-                    .child(comparison::run_card(state, cx));
-                if mode == Mode::Baseline {
-                    side = side.child(forecast_view::rotation_card(
-                        &forecast,
-                        crate::ui::layout::table_height(f32::from(window.viewport_size().height)),
-                        cx,
-                    ));
-                }
-                div()
-                    .id("killroy-pane")
-                    .flex()
-                    .size_full()
-                    .min_h_0()
-                    .child(crate::ui::layout::split_pane(
-                        "killroy-body",
-                        crate::ui::layout::Breakpoint::of(window),
-                        primary,
-                        side,
-                        gpui::px(360.0),
-                    ))
-                    .into_any_element()
+    let body = match (cached.as_ref(), save.as_ref()) {
+        (Some(Err(error)), _) => forecast_view::error_state(error.to_string(), window, cx),
+        (Some(Ok(forecast)), Some(save)) => {
+            let primary = match mode {
+                Mode::Baseline => forecast_view::forecast_card(state, forecast, window, cx),
+                Mode::Upgrades => comparison::upgrade_card(state, save, cx),
+            };
+            let primary = div()
+                .id("killroy-primary")
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .gap_3()
+                .child(primary)
+                .child(comparison::results_card(state, window, cx))
+                .child(comparison::buffs_card(state, save, cx));
+            let mut side = div()
+                .id("killroy-rail")
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .gap_3()
+                .child(comparison::run_card(state, cx));
+            if mode == Mode::Baseline {
+                side = side.child(forecast_view::rotation_card(
+                    forecast,
+                    crate::ui::layout::table_height(f32::from(window.viewport_size().height)),
+                    cx,
+                ));
             }
-        },
+            div()
+                .id("killroy-pane")
+                .flex()
+                .size_full()
+                .min_h_0()
+                .child(crate::ui::layout::split_pane(
+                    "killroy-body",
+                    crate::ui::layout::Breakpoint::of(window),
+                    primary,
+                    side,
+                    gpui::px(360.0),
+                ))
+                .into_any_element()
+        }
+        _ => forecast_view::empty_state(window, cx),
     };
+    state.killroy_forecast = cached;
 
     div()
         .id("killroy-section")
