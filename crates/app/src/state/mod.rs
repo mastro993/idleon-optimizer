@@ -1353,9 +1353,7 @@ impl AppState {
 
     /// Save the session now, for a route change, an applied import or a close.
     pub(crate) fn flush_session(&mut self) {
-        let Some(project) = session::project_value(self) else {
-            return;
-        };
+        let project = session::project_value(self);
         if let Err(error) = self.session.save(&project) {
             eprintln!("idleon-optimizer: could not save the session: {error}");
             self.status = format!(
