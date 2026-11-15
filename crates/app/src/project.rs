@@ -347,8 +347,8 @@ fn save_document(save: &idleon_save::Save) -> Value {
 }
 
 /// The whole window state as a project document.
-pub(crate) fn export(state: &AppState) -> String {
-    project::write(&project::Project {
+fn document(state: &AppState) -> project::Project {
+    project::Project {
         version: project::VERSION,
         section: state
             .current_section()
@@ -359,7 +359,17 @@ pub(crate) fn export(state: &AppState) -> String {
         sections: configs(state),
         warnings: Vec::new(),
         origin: project::Origin::Project,
-    })
+    }
+}
+
+/// The whole window state as project JSON text, for the Export dialog.
+pub(crate) fn export(state: &AppState) -> String {
+    project::write(&document(state))
+}
+
+/// The same document as a JSON value, for the session file.
+pub(crate) fn export_value(state: &AppState) -> Value {
+    project::value(&document(state))
 }
 
 /// Every section's config object, keyed by registry id.

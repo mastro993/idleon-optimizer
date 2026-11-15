@@ -24,6 +24,7 @@ use idleon_import::pipeline;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -103,6 +104,9 @@ pub(crate) struct Session {
     pub(crate) restore: Option<SessionRestore>,
     /// Why the file was backed up or skipped, for the first status line.
     pub(crate) notice: Option<String>,
+    /// A hash of the text last written, so an unchanged session is not
+    /// written again; `None` until the first save.
+    written: Option<u64>,
 }
 
 impl Session {
@@ -114,6 +118,7 @@ impl Session {
             recent: Vec::new(),
             restore: None,
             notice: None,
+            written: None,
         };
         let bytes = match fs::read(&session.path) {
             Ok(bytes) => bytes,
@@ -168,7 +173,11 @@ impl Session {
     }
 
     /// Write the whole session: the project document plus the recent imports.
-    pub(crate) fn save(&self, project: &Value) -> io::Result<()> {
+    ///
+    /// The window notifies far more often than its persistent state changes
+    /// (every progress tick of a run does), so a session whose text matches
+    /// the last one written is left alone.
+    pub(crate) fn save(&mut self, project: &Value) -> io::Result<()> {
         let text = serde_json::json!({
             "format": FORMAT,
             "version": VERSION,
@@ -176,7 +185,15 @@ impl Session {
             "recentImports": self.recent,
         });
         let text = serde_json::to_string(&text).map_err(io::Error::other)?;
-        write_atomic(&self.path, &text)
+        let mut hasher = DefaultHasher::new();
+        text.hash(&mut hasher);
+        let hash = hasher.finish();
+        if self.written == Some(hash) {
+            return Ok(());
+        }
+        write_atomic(&self.path, &text)?;
+        self.written = Some(hash);
+        Ok(())
     }
 }
 
@@ -292,8 +309,8 @@ pub(crate) fn time_label(at: i64) -> String {
 }
 
 /// The project a window state exports, as the session stores it.
-pub(crate) fn project_value(state: &AppState) -> Option<Value> {
-    serde_json::from_str(&project::export(state)).ok()
+pub(crate) fn project_value(state: &AppState) -> Value {
+    project::export_value(state)
 }
 
 #[cfg(test)]
@@ -327,7 +344,7 @@ mod tests {
             warnings: Vec::new(),
             origin: core_project::Origin::Project,
         };
-        serde_json::from_str(&core_project::write(&project)).expect("the project writes JSON")
+        core_project::value(&project)
     }
 
     #[test]
@@ -443,7 +460,7 @@ mod tests {
         let path = dir.join(FILE);
         let mut project = project_value();
         project["sections"]["clamworks"] = json!({ "hours": null });
-        let session = Session::load(path.clone());
+        let mut session = Session::load(path.clone());
         session.save(&project).expect("the session saves");
 
         let restored = Session::load(path.clone());
@@ -465,6 +482,24 @@ mod tests {
             "{warnings:?}"
         );
         assert!(path.exists(), "the session file stays put");
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn an_unchanged_session_is_not_written_again() {
+        let dir = scratch("unchanged");
+        let path = dir.join(FILE);
+        let mut session = Session::load(path.clone());
+        session.save(&project_value()).expect("the session saves");
+        assert!(path.exists());
+        // A second save of the same content must not bring the removed file
+        // back, which proves no write happened.
+        fs::remove_file(&path).expect("the file is removed");
+        session.save(&project_value()).expect("the session saves");
+        assert!(!path.exists(), "an identical session was rewritten");
+        session.record(RecentImport::new("save.json", "it.json", Some(1), None, 0));
+        session.save(&project_value()).expect("the session saves");
+        assert!(path.exists(), "a changed session is written");
         let _ = fs::remove_dir_all(dir);
     }
 

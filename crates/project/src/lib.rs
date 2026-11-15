@@ -187,8 +187,8 @@ pub fn read(text: &str) -> Result<Document, Error> {
     }
 }
 
-/// Write a project document, pretty-printed so a human can read and edit it.
-pub fn write(project: &Project) -> String {
+/// The project document as a JSON value: what [`write`] prints.
+pub fn value(project: &Project) -> Value {
     let mut object = Map::new();
     object.insert("format".into(), Value::from(FORMAT));
     object.insert("version".into(), Value::from(project.version));
@@ -204,7 +204,12 @@ pub fn write(project: &Project) -> String {
         serde_json::to_value(&project.context).unwrap_or(Value::Null),
     );
     object.insert("sections".into(), Value::Object(project.sections.clone()));
-    serde_json::to_string_pretty(&Value::Object(object)).unwrap_or_default()
+    Value::Object(object)
+}
+
+/// Write a project document, pretty-printed so a human can read and edit it.
+pub fn write(project: &Project) -> String {
+    serde_json::to_string_pretty(&value(project)).unwrap_or_default()
 }
 
 /// Write the research state as the upstream `ROv2:` string: the state object,
@@ -711,6 +716,13 @@ mod tests {
         assert_eq!(back.context, project.context);
         assert_eq!(back.sections, project.sections);
         assert!(back.warnings.is_empty(), "{:?}", back.warnings);
+    }
+
+    #[test]
+    fn the_value_is_what_write_prints() {
+        let project = project_fixture();
+        let printed: Value = serde_json::from_str(&write(&project)).expect("the export is JSON");
+        assert_eq!(value(&project), printed);
     }
 
     #[test]
