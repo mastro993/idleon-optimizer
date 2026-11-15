@@ -5,6 +5,8 @@
 //! label, the category tab a breakdown lands in (SA-02), and the context note's
 //! warning; the access walk decides which maps a character has proven.
 
+use idleon_common::curve::log as game_log;
+
 use super::access::{access, is_visited};
 use super::context::MapVisibility;
 use super::data::{data, map_count};
@@ -158,13 +160,6 @@ pub fn arcane_multi(kills: f64) -> f64 {
     (2.0 * (lg - 3.5).max(0.0) + (lg2 - 12.0).max(0.0)) * (lg / 2.5)
         + (kills / 1000.0).min(2.0)
         + (5.0 * (lg - 5.0)).max(0.0)
-}
-
-/// The upstream `_getLOG`: a base-10 log pinned at one and rounded the same way.
-/// The divisor is upstream's own literal, not `LN_10`, so the values match.
-#[allow(clippy::approx_constant)]
-fn game_log(value: f64) -> f64 {
-    value.max(1.0).ln() / 2.30259
 }
 
 /// One map's classification, ported from upstream `classifyMap`.

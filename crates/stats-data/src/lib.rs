@@ -169,6 +169,12 @@ pub fn class_name(id: usize) -> &'static str {
         .unwrap_or("Unknown Class")
 }
 
+/// A class id's name as a page prints it: the upstream name with its
+/// underscores as spaces.
+pub fn class_label(id: usize) -> String {
+    class_name(id).replace('_', " ")
+}
+
 /// One monster's static row, by the key the maps and saves name it with.
 pub fn monster(key: &str) -> Option<&'static Monster> {
     data().monsters.get(key)
@@ -237,6 +243,9 @@ mod tests {
         assert_eq!(class_name(1), "BEGINNER");
         assert_eq!(class_name(53), "LABORATORY");
         assert_eq!(class_name(9_999), "Unknown Class");
+        assert_eq!(class_label(1), "BEGINNER");
+        assert_eq!(class_label(9_999), "Unknown Class");
+        assert!(!class_label(53).contains('_'));
     }
 
     #[test]

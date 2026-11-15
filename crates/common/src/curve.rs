@@ -46,9 +46,24 @@ pub fn log(value: f64) -> f64 {
     value.max(1.0).ln() / 2.30259
 }
 
+/// JavaScript's `Math.round`: halves go towards positive infinity (`-0.5`
+/// rounds to `0`), unlike Rust's `f64::round`, which rounds them away from zero.
+pub fn js_round(value: f64) -> f64 {
+    (value + 0.5).floor()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn js_round_sends_halves_up() {
+        assert_eq!(js_round(0.5), 1.0);
+        assert_eq!(js_round(-0.5), 0.0);
+        assert_eq!(js_round(-1.5), -1.0);
+        assert_eq!(js_round(2.4), 2.0);
+        assert_eq!(js_round(2.6), 3.0);
+    }
 
     #[test]
     fn decay_matches_the_game_curve() {

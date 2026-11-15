@@ -33,6 +33,7 @@ pub use codec::{Encoder, Keys, pack_frames};
 pub use killroy::{KillroyReplay, read_killroy_replay};
 pub use store::{Batch, Store};
 
+use idleon_common::curve::js_round;
 use serde_json::Value;
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -82,12 +83,6 @@ pub fn killroy_maps() -> &'static [i64] {
 // ---------------------------------------------------------------------------
 // Shared value helpers
 // ---------------------------------------------------------------------------
-/// JavaScript's `Math.round`: halves go towards positive infinity, unlike Rust's
-/// `f64::round`.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
-}
-
 fn number(value: f64) -> Value {
     serde_json::Number::from_f64(value).map_or(Value::Null, Value::Number)
 }
