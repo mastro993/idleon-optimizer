@@ -1,5 +1,5 @@
-> Third-party GPUI fork, checked out as a submodule at the pinned bridge commit.
-/vendor/gpui-mcp/
+# vendor/gpui-mcp is a git submodule (see .gitmodules); it is tracked as a
+# gitlink, so it needs no ignore rule.
 
 /target/
 .DS_Store

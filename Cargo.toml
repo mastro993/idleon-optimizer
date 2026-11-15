@@ -30,7 +30,10 @@ anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 # Correctly rounded float parsing: a save or project read back from its own
 # export keeps every f64 bit, instead of drifting by an ULP on long decimals.
-serde_json = { version = "1", features = ["float_roundtrip"] }
+# `preserve_order` is what GPUI and Ely already turn on for the whole graph;
+# naming it here makes a single-crate build (`cargo test -p <crate>`) order
+# JSON objects the same way the workspace build and the shipped app do.
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 rayon = "1"
 jiff = "0.2"
 directories = "6"

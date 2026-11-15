@@ -1,0 +1,6 @@
+# The toolchain CI gates with (.github/workflows/ci.yml). Pinned so a newer
+# stable's clippy lints cannot differ between a contributor and CI; bump it
+# together with `rust-version` in Cargo.toml and the CI action.
+[toolchain]
+channel = "1.100.0"
+components = ["clippy", "rustfmt"]

@@ -182,11 +182,19 @@ The sync is idempotent: milestones match by title, issues by feature-id prefix. 
 
 ## Run
 
+Requirements: Rust 1.100 (`rust-toolchain.toml` selects it), a C toolchain (Xcode Command Line
+Tools on macOS — the only platform CI builds), and Node 20.11 or newer for the scripts under
+`script/`.
+
 ```console
 git clone --recurse-submodules https://github.com/mastro993/idleon-optimizer
 cd idleon-optimizer
 cargo run --release
 ```
+
+In an existing clone or a new `git worktree`, fetch the GPUI submodule first:
+`git submodule update --init --recursive`. Without it every cargo command fails with a missing
+manifest under `vendor/gpui-mcp/`.
 
 The first build compiles GPUI from source; expect a few minutes. `cargo run` opens the dashboard; the
 Research Optimizer card opens the research section with a legal starter layout at research level
