@@ -35,6 +35,7 @@ update `tests/fixture.rs` deliberately.
 ## Checks
 
 ```console
+git submodule update --init --recursive   # once per clone or worktree; cargo fails without it
 cargo test
 cargo test -- --include-ignored  # also the long simulations, when touching them
 cargo clippy --workspace --all-targets -- -D warnings
