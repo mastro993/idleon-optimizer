@@ -6,7 +6,6 @@
 //! warns through [`Decoder::omission`] where the term matters.
 
 use super::Decoder;
-use idleon_research::data::game;
 use idleon_save::fields;
 use serde_json::Value;
 
@@ -548,11 +547,3 @@ fn encoded_flags(text: &str, encoding: &str) -> Vec<u8> {
         })
         .collect()
 }
-
-/// The grid node list, used by tests to name nodes.
-#[allow(dead_code)]
-fn node_name(cell: usize) -> Option<&'static str> {
-    game().node_at(cell).map(|node| node.name.as_str())
-}
-
-impl Decoder<'_> {}

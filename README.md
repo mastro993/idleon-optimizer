@@ -7,12 +7,10 @@ A native desktop rebuild of
 runs them in a local Rust core, so a shape, magnifier and grid-point pass costs milliseconds and can
 afford a real search instead of a heuristic.
 
-The current build opens on the dashboard and implements the research section, the Killroy weekly
-forecast, the statue table, the farming field, the Clamworks overview, upgrades, AFK claim,
-optimizer and promotion tracker, the shadow-ban and endgame checks, the hidden BoneJoePickle
-calculator and the Bravery, Justice and Wisdom tabs of the Monument calculator. The plan covers the
-full upstream suite: a dashboard that opens every calculator, with one milestone per section and
-one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
+The current build opens on the dashboard and has a page for every one of the 30 upstream
+calculators. Most are complete; the rest are partial and name what they still need.
+[`docs/roadmap.md`](docs/roadmap.md) is the live status table, with one milestone per section
+and one issue per feature.
 
 ![The research grid with shapes placed](docs/grid.png)
 
@@ -30,9 +28,9 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **One section registry** — `src/sections/` declares every upstream page once: id, title, group,
   icon, description, spec link, status, dashboard card and the module that renders it. The shell
   routes to that module, keeps each section's own state alive across dashboard visits, and offers to
-  resume the last section. Escape or Cmd/Ctrl+Left leaves any section; planned sections and unknown
-  ids land on a named empty state instead of a panic. The five hidden upstream tools (All Stats,
-  Damage, Drop Rate, Coin Multiplier, BoneJoePickle) are registered without cards and open with
+  resume the last section. Escape or Cmd/Ctrl+Left leaves any section; an unknown id lands on a
+  named empty state instead of a panic. The five hidden upstream tools (All Stats, Damage,
+  Drop Rate, Coin Multiplier, BoneJoePickle) are registered without cards and open with
   `--section <id>`.
 - **One shell for every section** — the shared page header (back, title, world badge, save status,
   export, import), Ely tab strip, cards, tables and form controls, with the upstream dark palette.
@@ -88,7 +86,7 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
 - **Killroy weekly forecast** — the server's Killroy rotation, every saved character's three
   encounter slots for the next 1–52 weeks, family and room frequency, class eligibility, unlock
   reasons and the save's monster records. The rotation, unlocks and records stay at the imported
-  snapshot; kills and skulls belong to the combat runs in later issues.
+  snapshot; the comparison tab's trials roll the kills and skulls.
 - **Save import** — the header's Import button opens one dialog from the dashboard or any section:
   drop a file, browse for one, or paste the JSON, a project file, an upstream `ROv2:` state string or
   one section's config. It previews the detected format, research level, sections, farm plots,
@@ -148,12 +146,14 @@ one issue per feature ([`docs/roadmap.md`](docs/roadmap.md)).
   shared task runner. Applying the plan previews its levels across the section until the saved
   levels are shown again. The Promotion tab tracks the saved worker-class level, the next attempt's
   cost and odds, and all twelve worker-class rewards with their unlock state. Multi-Scalping takes a
-  multikill total as input until the combat simulator lands.
+  multikill total as input: the combat simulator's auto-mode player, which would derive it, is not
+  ported.
 - **The Clamworks AFK claim** — one trip at the entered hours: the expected pearl currency, the pure
   pearl chance, both drop rows with their expected quantity, chance of at least one and guaranteed
   minimum, and a `+1` comparison per character that ranks every unlocked upgrade by payback. Hours
   outside the credited range are refused with the upstream message. The character's kills per hour
-  and drop rate are entries until the combat simulator derives them.
+  and drop rate are entries: the combat simulator's auto-mode player, which would derive them, is
+  not ported.
 - **BoneJoePickle calculator** — the hidden upstream DPS/TTK page: enter your DPS and a
   max-time-to-kill budget to see how many pickles each of the nine Death Note minibosses can stack,
   with effective HP and kill time.
@@ -215,7 +215,7 @@ the intersection. Bumping any one means moving all three together; the smoke scr
 cargo test                                  # core maths, geometry and optimizer invariants
 cargo build -p idleon-optimizer
 node script/mcp-smoke.mjs --spawn --shot /tmp/ui.png  # own instance, tree + screenshot
-node script/mcp-smoke.mjs --spawn --section damage     # a planned section's empty state
+node script/mcp-smoke.mjs --spawn --section damage     # a hidden tool, opened by id
 node script/mcp-smoke.mjs --spawn --section nope       # the unknown-section empty state
 node script/mcp-drive.mjs                   # own instance, drives every flow end to end
 node script/mcp-sections.mjs                # own instance, every section + screenshots
@@ -257,8 +257,8 @@ If background subagent launches fail with a missing `@earendil-works/chord`, run
 `node script/install-pi-chord.mjs` (idempotent, re-run after a Pi upgrade) — see
 [`docs/agent-harness.md`](docs/agent-harness.md).
 
-To let an agent drive the window itself, the repo ships `.pi/mcp.json` registering the same server as
-`gpui`; `get_ui_tree`, `click_element`, `type_text`, `screenshot` and `wait_for_element` then work
+To let an agent drive the window itself, the repo ships `.mcp.json` registering the same server as
+`gpui-idleon-optimizer`; `get_ui_tree`, `click_element`, `type_text`, `screenshot` and `wait_for_element` then work
 against this app. Every control in the UI carries a stable id for that purpose (`cell-129`,
 `shape-add`, `shape-rotate-right`, `run-optimize`, `apply-result`, …).
 
@@ -347,14 +347,9 @@ source references and the credit note stays with the images.
 
 ## Scope
 
-The current build covers the dashboard, the research grid and its optimizers, the statue table, the
-sailing fleet assignment, the farming field, the Clamworks overview, upgrades, AFK claim, optimizer
-and promotion tracker, save import, project and section-config export/import, the shadow-ban and
-endgame checks, the hidden BoneJoePickle calculator, the Monument Bravery, Justice and Wisdom tabs
-and the Coral God Rank planner's inputs and current-state summary. The rest of the statue milestone
-(batch set/apply and the statue-farming breakdown) and the remaining upstream sections (combat sim,
-cooking, royal guardian, …) are planned; their cards open planned-section placeholders until those
-milestones land.
+Every upstream page has a built section; [`docs/roadmap.md`](docs/roadmap.md) lists which are
+complete and which are partial, and each partial section names the upstream systems it still
+needs instead of guessing a number.
 
 Sailing routes model the captain-dependent factors exactly — captain bonuses, boat levels, trip
 cadence, chest tiers and artifact odds — so the one-captain-per-boat assignment matches upstream.
@@ -366,7 +361,6 @@ are ports of `js/stats/systems/w7/clamworks.js`, and `script/clamworks-oracle.mj
 promotion tracker, the rewards and the upgrade plans against that module; the AFK claim adds
 `js/stats/systems/w7/clamworks-afk.js` with the pearl rows of
 `js/stats/systems/common/combat-afk.js`. The Coral God Rank data and formulas follow
-`js/stats/systems/w5/coral-god-rank.js`; the beam-search plan and offering fit are the remaining
-features of that milestone. Save-specific multipliers collapse into
+`js/stats/systems/w5/coral-god-rank.js`. Save-specific multipliers collapse into
 `SimContext::{extra_pct, extra_multiplier, all_bonus_multi}`; the presets use their static target
 lists rather than the save-dependent `build` functions.
