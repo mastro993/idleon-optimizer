@@ -1086,9 +1086,14 @@ mod tests {
                 .unwrap_or_default()
                 .contains("MaxCarryCap_0")
         );
-        // Combat rows are not modelled yet and name their upstream source.
-        let damage = sheet.get("damage").expect("the row");
-        assert!(damage.warning().unwrap_or_default().contains("damage.js"));
+        // A row this build does not model names its upstream source.
+        let crit = sheet.get("crit-damage").expect("the row");
+        assert!(crit.display_value().is_none());
+        assert!(
+            crit.warning()
+                .unwrap_or_default()
+                .contains("crit-damage.js")
+        );
     }
 
     #[test]

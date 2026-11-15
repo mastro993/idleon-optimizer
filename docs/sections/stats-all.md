@@ -12,15 +12,14 @@ Port the map-aware character/account stat dashboard with category breakdowns and
 
 ## Current build
 
-- SA-01 to SA-03 ship the calculation context (character, map, map list, skill and construction mode with their save defaults), the 60-descriptor registry grouped by the nine upstream categories, and the formula explorer whose ledger counts every category. Eight carry-capacity rows and the two research rows are ported; the other fifty name their upstream def instead of guessing.
+- SA-01 to SA-03 ship the calculation context (character, map, map list, skill and construction mode with their save defaults), the 60-descriptor registry grouped by the nine upstream categories, and the formula explorer whose ledger counts every category. Eight carry-capacity rows, the two research rows, the four base-stat totals and the damage row are computed; the other forty-five name their upstream def instead of guessing.
 - SA-04 ships the game-input sandbox: the vault, gem-shop, talent, guild and stamp levels the ported capacity rows read are editable, each edit is spliced into a clone of the save (`crates/stats/src/edits.rs`), and both the baseline and the hypothetical save resolve, so a row never shows a stale value.
 - The change ledger marks an edited input with the saved value it replaced and resets one input or every input; the affected-formula list reports each descriptor the edit moved with its saved and hypothetical value, the delta and the percentage (`formulaDifference` in `js/stats/formula-comparison.js`), and clicking a row selects its descriptor. A descriptor row and its detail card keep the saved value beside the hypothetical one.
 - Missing: upstream's per-node editor inside the formula inspector, which needs its `LEVEL_TABLES` catalogue and the `applyCombatSetupDetailed` save writer, so equipment, obol, companion and bubble/prisma cells are not editable yet. The sandbox offers the saved cells the ported formulas actually read, and an edit to a cell the current character no longer lists is dropped so the ledger and the applied save always agree.
 
 ## Known gaps
 
-- `SA-G1` Descriptors not modelled: 46 of 60 report unavailable (14 computed) — blocked by `stats:descriptors` (partial)
-- `SA-G2` The damage row is not resolved although the stat engine computes the damage layers — blocked by `wire:stats-engine` (landed)
+- `SA-G1` Descriptors not modelled: 45 of 60 report unavailable (15 computed) — blocked by `stats:descriptors` (partial)
 - `SA-G3` Per-node formula editor for equipment, obol, companion and bubble/prisma cells — blocked by `stats:level-tables` (absent)
 
 ## Upstream sources

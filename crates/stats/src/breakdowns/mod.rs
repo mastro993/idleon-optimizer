@@ -10,9 +10,11 @@
 //! The ported formulas live beside this module: [`capacity`] carries the eight
 //! carry-capacity descriptors (`js/stats/defs/carry-capacity.js` and
 //! `js/stats/systems/common/carry-capacity.js`), [`research`] the two research
-//! descriptors the simulator already computes.
+//! descriptors the simulator already computes, [`totals`] the four base-stat
+//! totals and [`damage`] the maximum damage, both from `idleon-stats-engine`.
 
 pub(crate) mod capacity;
+pub mod damage;
 mod research;
 mod totals;
 
@@ -236,6 +238,7 @@ impl Sheet {
                 let resolution = capacity::resolve(inputs, spec.id)
                     .or_else(|| research::resolve(inputs, spec.id))
                     .or_else(|| totals::resolve(inputs, spec.id))
+                    .or_else(|| damage::resolve(inputs, spec.id))
                     .unwrap_or_else(|| Resolution::Unavailable {
                         reason: format!(
                             "{} is not modelled yet: it needs a system this build \

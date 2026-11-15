@@ -365,27 +365,41 @@ fn every_upstream_dungeon_map_reports_the_descriptor_reason() {
     }
 }
 
+/// The All Stats `damage` row and this page read the same engine, so the row's
+/// value is the page's maximum and its partial note names the same metadata.
 #[test]
-fn the_stats_registry_still_marks_damage_unported() {
+fn the_stats_registry_row_is_the_summary_maximum() {
     let imported = imported();
-    let inputs = stats::BreakdownInputs {
-        save: &imported.save,
-        simulation: &imported.simulation,
-        sim_context: &imported.context,
-        character: 0,
-        map: 200,
-    };
-    let sheet = stats::Sheet::build(&inputs);
-    let row = sheet
-        .get("damage")
-        .expect("the stats registry lists damage");
-    match &row.resolution {
-        stats::Resolution::Unavailable { reason } => {
-            assert!(reason.contains("js/stats/defs/damage.js"), "{reason}");
-        }
-        stats::Resolution::Value { .. } => {
-            panic!("damage resolved in the stats registry; port its provider into this module")
-        }
+    let oracle = oracle();
+    for expected in cases(&oracle) {
+        let character = expected["character"].as_u64().expect("an index") as usize;
+        let map = expected["map"].as_u64().expect("a map") as usize;
+        let inputs = stats::BreakdownInputs {
+            save: &imported.save,
+            simulation: &imported.simulation,
+            sim_context: &imported.context,
+            character,
+            map,
+        };
+        let sheet = stats::Sheet::build(&inputs);
+        let row = sheet
+            .get("damage")
+            .expect("the stats registry lists damage");
+        let summary = damage::evaluate(
+            &imported.save,
+            &imported.simulation,
+            damage::Context { character, map },
+        );
+        assert_eq!(
+            row.resolution.value(),
+            Some(summary.max),
+            "character {character}"
+        );
+        assert_eq!(
+            row.warning(),
+            Some(summary.partial_reason().as_str()),
+            "character {character}"
+        );
     }
 }
 

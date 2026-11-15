@@ -47,7 +47,18 @@ fn trimmed(value: f64, precision: usize) -> String {
     if value == 0.0 {
         return "0".into();
     }
-    let value = if value.abs() >= 1e9 {
+    // The tiers above a billion follow upstream `fmtVal` (`js/renderers/format.js`).
+    let value = if value.abs() >= 1e24 {
+        return exponent(value);
+    } else if value.abs() >= 1e21 {
+        format!("{:.2}QQQ", value / 1e21)
+    } else if value.abs() >= 1e18 {
+        format!("{:.2}QQ", value / 1e18)
+    } else if value.abs() >= 1e15 {
+        format!("{:.2}Q", value / 1e15)
+    } else if value.abs() >= 1e12 {
+        format!("{:.2}T", value / 1e12)
+    } else if value.abs() >= 1e9 {
         format!("{:.2}B", value / 1e9)
     } else if value.abs() >= 1e6 {
         format!("{:.2}M", value / 1e6)
@@ -56,7 +67,7 @@ fn trimmed(value: f64, precision: usize) -> String {
     } else {
         format!("{value:.precision$}")
     };
-    if value.contains(['B', 'M', 'K']) {
+    if value.contains(|c: char| c.is_ascii_alphabetic()) {
         return value;
     }
     let value = value.trim_end_matches('0').trim_end_matches('.');
@@ -64,6 +75,16 @@ fn trimmed(value: f64, precision: usize) -> String {
         "0".into()
     } else {
         value.to_string()
+    }
+}
+
+/// JavaScript's `toExponential(2)`, e.g. `1.54e+31`.
+fn exponent(value: f64) -> String {
+    let text = format!("{value:.2e}");
+    match text.split_once('e') {
+        Some((mantissa, power)) if !power.starts_with('-') => format!("{mantissa}e+{power}"),
+        Some((mantissa, power)) => format!("{mantissa}e{power}"),
+        None => text,
     }
 }
 
@@ -330,6 +351,10 @@ mod tests {
         assert_eq!(ValueFormat::Rate.format(2.5e15), "2.5Q/hr");
         assert_eq!(ValueFormat::Raw.format(1652.1), "1652.1");
         assert_eq!(ValueFormat::Raw.format(f64::INFINITY), "—");
+        assert_eq!(ValueFormat::Raw.format(2.5e12), "2.50T");
+        assert_eq!(ValueFormat::Raw.format(1.544e22), "15.44QQQ");
+        assert_eq!(ValueFormat::Raw.format(1.544_328e31), "1.54e+31");
+        assert_eq!(ValueFormat::Multiplier.format(1.913e16), "×19.13Q");
     }
 
     #[test]
