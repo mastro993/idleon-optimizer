@@ -3786,7 +3786,8 @@ const INTERACTIONS = {
     await lane.call('keyboard', { keystroke: 'enter' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'stats-explorer-count') ?? '').startsWith('10 of 60'),
+      // Pinned by crates/stats/tests/stats.rs (coverage.computed); update both together.
+      (nodes) => (labelOf(nodes, 'stats-explorer-count') ?? '').startsWith('14 of 60'),
       'stats-all: the status filter keeps the computed formulas',
     );
 
