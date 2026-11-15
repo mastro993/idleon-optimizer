@@ -493,6 +493,12 @@ fn a_slot_refuses_an_item_that_does_not_fit() {
         loadout.equip(9, SlotKind::Hat, 0),
         Err(EquipError::UnknownTwin)
     );
+    // The inventory's fit check asks about twins by position too.
+    let charm = loadout.twin(0).unwrap().slot(SlotKind::Charm(0)).clone();
+    assert_eq!(
+        loadout.check_slot(9, SlotKind::Charm(1), &charm),
+        Err(EquipError::UnknownTwin)
+    );
     assert_eq!(
         loadout.equip(0, SlotKind::Charm(0), 99),
         Err(EquipError::UnknownInventory)
