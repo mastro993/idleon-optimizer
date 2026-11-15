@@ -22,7 +22,7 @@ pub(crate) fn redraw_on_edit(
 
 /// What the status line says while a run reports progress.
 #[derive(Clone, Copy)]
-pub(super) enum ProgressLine {
+pub(crate) enum ProgressLine {
     /// `"<label> 42%"` from the report's fraction.
     Percent(&'static str),
     /// `"<label> <message>"` from the report's own line.
@@ -40,7 +40,7 @@ impl ProgressLine {
 
 /// The status lines one run reports: its progress, and what a cancel left in
 /// place, depending on whether an earlier result is kept.
-pub(super) struct RunStatus {
+pub(crate) struct RunStatus {
     pub(crate) progress: ProgressLine,
     pub(crate) cancelled_kept: &'static str,
     pub(crate) cancelled_empty: &'static str,
@@ -49,7 +49,7 @@ pub(super) struct RunStatus {
 /// A new runner mirrored in the status line. `finished` turns a stored result
 /// into the closing line (and may update the state it belongs to); `None`
 /// keeps the current line.
-pub(super) fn report_run<R: 'static, I: 'static>(
+pub(crate) fn report_run<R: 'static, I: 'static>(
     cx: &mut Context<AppState>,
     subscriptions: &mut Vec<Subscription>,
     status: RunStatus,

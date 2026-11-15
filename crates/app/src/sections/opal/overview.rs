@@ -113,7 +113,7 @@ pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState
         let saved = opal.villagers[villager];
         let rate = opal.exp_rate(villager, &opals);
         let share = opal.share(villager);
-        let selected = state.opal_selected == Some(villager);
+        let selected = state.opal.selected == Some(villager);
         let mut label = div().child(*name);
         if !opal.unlocked(villager) {
             label = label.child(div().pl_2().child(Badge::new("Locked").tone(Tone::Neutral)));
@@ -129,7 +129,7 @@ pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState
                 .aria_label(format!("{}: break the tree down for this villager", name))
                 .cursor_pointer()
                 .on_click(move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.set_opal_villager(Some(villager), cx));
+                    entity.update(cx, |state, cx| state.opal.set_villager(Some(villager), cx));
                 })
                 .flex()
                 .items_center()
@@ -161,13 +161,13 @@ pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState
         .action(
             Button::new("opal-villager-all", "Show total")
                 .size(ControlSize::Sm)
-                .variant(if state.opal_selected.is_some() {
+                .variant(if state.opal.selected.is_some() {
                     ButtonVariant::Secondary
                 } else {
                     ButtonVariant::Ghost
                 })
                 .on_click(move |_event, _window, cx| {
-                    entity.update(cx, |state, cx| state.set_opal_villager(None, cx));
+                    entity.update(cx, |state, cx| state.opal.set_villager(None, cx));
                 }),
         );
     Card::new()
@@ -195,7 +195,7 @@ pub(crate) fn villagers(state: &AppState, opal: &Opal, cx: &mut Context<AppState
 
 /// What the formula tree is currently rooted at.
 fn selection(state: &AppState) -> String {
-    match state.opal_selected {
+    match state.opal.selected {
         Some(villager) => format!(
             "{}'s own rate",
             NAMES.get(villager).copied().unwrap_or("Villager")

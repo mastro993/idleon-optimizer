@@ -8,7 +8,7 @@
 //! `Manual simulator` reads a hand-typed split against the save.
 //!
 //! Every save-derived figure comes from the import; the section keeps only its
-//! visible selections.
+//! visible selections, on its own [`State`].
 
 mod actions;
 
@@ -16,6 +16,9 @@ mod bonuses;
 mod optimizer;
 mod overview;
 mod simulate;
+mod state;
+
+pub(crate) use state::{Config, State};
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -77,13 +80,13 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(opal) = state.opal.clone() else {
+    let Some(opal) = state.opal.save.clone() else {
         return prompt(cx);
     };
-    let tab = state.opal_tab;
-    let tree = state.opal_breakdown.clone();
+    let tab = state.opal.tab;
+    let tree = state.opal.breakdown.clone();
     tree.update(cx, |tree, cx| {
-        tree.set_root(opal.breakdown(state.opal_selected), cx)
+        tree.set_root(opal.breakdown(state.opal.selected), cx)
     });
     let entity = cx.entity();
     let mut tabs = TabBar::new("opal-tabs").selected(SharedString::from(tab.id()));
@@ -92,7 +95,7 @@ pub(crate) fn view(
     }
     let tabs = tabs.on_select(move |id, _window, cx| {
         if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_opal_tab(tab, cx));
+            entity.update(cx, |state, cx| state.opal.set_tab(tab, cx));
         }
     });
     div()

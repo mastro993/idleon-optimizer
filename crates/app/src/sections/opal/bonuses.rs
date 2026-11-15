@@ -70,7 +70,7 @@ pub(crate) fn terms(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
 
 /// The shared formula tree, rooted at the selector's villager or the total.
 pub(crate) fn formula(state: &AppState, tree: Entity<FormulaTree>) -> AnyElement {
-    let title = match state.opal_selected {
+    let title = match state.opal.selected {
         Some(villager) => format!(
             "{} EXP Rate Breakdown",
             idleon_opal::NAMES

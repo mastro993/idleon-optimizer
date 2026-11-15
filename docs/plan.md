@@ -80,8 +80,10 @@ Section registry (`crates/app/src/sections/mod.rs`): one entry per section with 
 icon, description, spec link, status, dashboard card flag, view factory and key bindings. The
 dashboard, router, shortcuts and harness read it, and a test keeps its ids in step with
 `docs/roadmap.json` and checks every spec file exists. Adding a section is one registry entry plus
-one module under `sections/` (and one `AppState` state field when it needs its own state). The five
-hidden upstream tools are registered without a dashboard card and open by id.
+one module under `sections/` that owns its state, import step and config (see
+[`docs/section-state.md`](section-state.md)); the shared core gains one `AppState` field and one line
+each in `load_imported`, `configs`, `Config`, `decode` and `assign`, and the harness one interaction.
+The five hidden upstream tools are registered without a dashboard card and open by id.
 
 Routing: `Route` is `Dashboard`, `Section(&Section)` or `Missing(id)`. Opening a section resolves
 the id against the registry, remembers it as the last section and focuses the page so the shortcuts
@@ -285,6 +287,7 @@ crates/ui                           GPUI building blocks: TaskRunner, run chrome
 crates/app                          GPUI + Ely binary
   sections/                         the registry and one module per section
     mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
+    <section>/state.rs              the section's own state, import step and project config
     <section>/actions.rs            what the section's controls do to `AppState`
   ui/                               shell (window, router, shortcuts), dashboard, section states
   state/                            AppState, Route, run/subscription helpers, import/export
@@ -320,7 +323,8 @@ script/sneaking-oracle.mjs          regenerate the loadout formula oracle fixtur
 
 Rules: core never depends on GPUI; a section UI reads state only through its state methods; files
 stay under about 500 lines and split by feature; one section cannot reach into another section's
-private state.
+private state; a section owns its state, its import step and its config in its own module (see
+[`docs/section-state.md`](section-state.md)).
 
 ## 8. Stack pins
 

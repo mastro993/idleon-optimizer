@@ -29,10 +29,10 @@ pub(crate) fn pane(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(opal) = state.opal.clone() else {
+    let Some(opal) = state.opal.save.clone() else {
         return div().into_any_element();
     };
-    let simulation = opal.simulation(&state.opal_manual);
+    let simulation = opal.simulation(&state.opal.manual);
     ScrollArea::new("opal-manual-scroll")
         .vertical()
         .flex_1()
@@ -74,7 +74,7 @@ fn inputs(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
                 .child(
                     NumberInput::new(
                         format!("opal-manual-{villager}"),
-                        state.opal_manual[villager],
+                        state.opal.manual[villager],
                     )
                     .range(0.0, MAX_OPALS.max(opal.total_opals()))
                     .step(1.0)
@@ -83,7 +83,7 @@ fn inputs(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
                     .label(format!("{} opals", NAMES[villager]))
                     .on_change(move |value, _window, cx| {
                         entity.update(cx, |state, cx| {
-                            state.set_opal_manual(villager, value, cx);
+                            state.opal.set_manual(villager, value, cx);
                         });
                     }),
                 ),
@@ -93,9 +93,9 @@ fn inputs(state: &AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyEleme
     let reset = Button::new("opal-manual-reset", "Use saved opals")
         .icon(IconName::RotateCcw)
         .size(ControlSize::Sm)
-        .disabled(state.opal_manual == saved)
+        .disabled(state.opal.manual == saved)
         .on_click(move |_event, _window, cx| {
-            entity.update(cx, |state, cx| state.reset_opal_manual(cx));
+            entity.update(cx, |state, cx| state.opal.reset_manual(cx));
         });
     Card::new()
         .header(
