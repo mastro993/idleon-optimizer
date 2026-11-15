@@ -1371,6 +1371,7 @@ impl AppState {
         let project = session::project_value(self);
         if let Err(error) = self.session.save(&project) {
             eprintln!("idleon-optimizer: could not save the session: {error}");
+            log::error!("could not save the session: {error}");
             self.status = format!(
                 "Could not save the session ({error}); this window's state will not survive a restart."
             );

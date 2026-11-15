@@ -1,6 +1,7 @@
 //! Desktop calculator suite for Legends of Idleon.
 
 mod assets;
+mod diagnostics;
 mod project;
 mod sections;
 mod session;
@@ -47,6 +48,9 @@ fn main() -> Result<()> {
     // The session file lives under the platform app-data directory, or under a
     // private directory when a harness or a second profile names one.
     let state_dir = argument("--state-dir").map(PathBuf::from);
+    // Warnings, errors and panics go to a file beside the session, so a
+    // problem in a build launched outside a terminal leaves a trace.
+    let _log = diagnostics::install(&session::Session::dir(state_dir.clone()));
     // `--section <id>` opens that registry entry at launch: the harness uses it
     // to reach hidden tools, and an unknown id proves the missing-section state.
     let initial = argument("--section");
@@ -66,6 +70,7 @@ fn main() -> Result<()> {
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
             if let Err(error) = open_window(cx, endpoint, initial, state_dir) {
                 eprintln!("idleon-optimizer: {error:#}");
+                log::error!("the window failed to open: {error:#}");
                 cx.quit();
             }
         });

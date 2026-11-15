@@ -3688,6 +3688,7 @@ dependencies = [
  "idleon-ui",
  "idleon-worship",
  "jiff",
+ "log",
  "serde",
  "serde_json",
 ]

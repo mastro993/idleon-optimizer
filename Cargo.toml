@@ -27,6 +27,7 @@ gpui-mcp = { path = "vendor/gpui-mcp/crates/gpui-mcp", default-features = false,
   "gpui-pre",
 ] }
 anyhow = "1"
+log = "0.4"
 serde = { version = "1", features = ["derive"] }
 # Correctly rounded float parsing: a save or project read back from its own
 # export keeps every f64 bit, instead of drifting by an ULP on long decimals.
