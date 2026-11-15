@@ -50,8 +50,8 @@ blocks links, upstream sources, section contract, acceptance criteria and verifi
 | --- | --- | --- |
 | `wire:all-talent` All-Talent bonus levels (idleon_account::talent::bonus_levels) passed to the sections that read talents | landed | SN-G1, RG-G1 |
 | `wire:gambit` Gambit point chain from the account decoder (idleon_account hole.rs) passed to Sneaking and Research | landed | RES-G1, SN-G1 |
-| `wire:stats-engine` Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps | landed | SA-G2, EG-G1 |
-| `stats:descriptors` Remaining All Stats descriptors (14 of 60 computed) | partial | SA-G1, EG-G1, PR-G1 |
+| `wire:stats-engine` Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps | landed | EG-G1 |
+| `stats:descriptors` Remaining All Stats descriptors (15 of 60 computed) | partial | SA-G1, EG-G1, PR-G1 |
 | `combat:auto-player` Combat simulator auto-mode player (movement, attacks, skills), the source of a character's kill rate and DPS | absent | CS-G1, ST-G1, KL-G1, CW-G1 |
 | `stats:level-tables` Upstream LEVEL_TABLES catalogue and the applyCombatSetupDetailed save writer behind the per-node formula editor | absent | SA-G3 |
 | `stats:drop-rate-descriptor` The drop-rate pool chain descriptor in the shared stat engine | absent | DR-G1 |

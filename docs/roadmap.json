@@ -68,7 +68,7 @@
     },
     {
       "id": "stats:descriptors",
-      "title": "Remaining All Stats descriptors (14 of 60 computed)",
+      "title": "Remaining All Stats descriptors (15 of 60 computed)",
       "status": "partial"
     },
     {
@@ -802,19 +802,11 @@
       "gaps": [
         {
           "id": "SA-G1",
-          "title": "Descriptors not modelled: 46 of 60 report unavailable (14 computed)",
+          "title": "Descriptors not modelled: 45 of 60 report unavailable (15 computed)",
           "blockedBy": [
             "stats:descriptors"
           ],
           "evidence": "crates/stats/tests/stats.rs the_explorer_covers_every_descriptor_and_every_category"
-        },
-        {
-          "id": "SA-G2",
-          "title": "The damage row is not resolved although the stat engine computes the damage layers",
-          "blockedBy": [
-            "wire:stats-engine"
-          ],
-          "evidence": "crates/stats/src/breakdowns/mod.rs Sheet::build (no damage resolver)"
         },
         {
           "id": "SA-G3",

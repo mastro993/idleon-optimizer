@@ -19,8 +19,7 @@ Port the map-aware character/account stat dashboard with category breakdowns and
 
 ## Known gaps
 
-- `SA-G1` Descriptors not modelled: 46 of 60 report unavailable (14 computed) — blocked by `stats:descriptors` (partial)
-- `SA-G2` The damage row is not resolved although the stat engine computes the damage layers — blocked by `wire:stats-engine` (landed)
+- `SA-G1` Descriptors not modelled: 45 of 60 report unavailable (15 computed) — blocked by `stats:descriptors` (partial)
 - `SA-G3` Per-node formula editor for equipment, obol, companion and bubble/prisma cells — blocked by `stats:level-tables` (absent)
 
 ## Upstream sources
