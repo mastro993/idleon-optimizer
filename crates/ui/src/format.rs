@@ -2,6 +2,7 @@
 
 use ely_gpui_component::typography::format::{DurationStyle, duration as ely_duration};
 use gpui::{Hsla, rgb};
+use idleon_common::curve::js_round;
 
 /// A projected span of hours as `6h 17m`, `4m 5s`, or a dash when it is endless:
 /// the upstream `fmtTimeFull` the jar tier columns print, where [`duration`] is
@@ -146,11 +147,6 @@ pub fn monster_cash(value: f64) -> String {
         return format!("{}0", js_round(10.0 * e) / 10.0);
     }
     format!("{}", js_round(100.0 * e) / 100.0)
-}
-
-/// JavaScript's `Math.round`, which rounds halves up rather than away from zero.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
 }
 
 /// JavaScript's `Math.ceil`, which keeps `-0.0` at `0`.

@@ -6,6 +6,8 @@
 //! upstream `mulberry32`, consumed in the same order, so a seeded run lands on
 //! the same numbers as the JS calculator.
 
+use idleon_common::curve::js_round;
+
 use crate::data::{GameData, game};
 use crate::math::{self, DamageInputs, bonus_dmg_per_tile_pct, current_outgoing_dmg};
 
@@ -1033,11 +1035,6 @@ impl Rng {
         let t = t.wrapping_add((t ^ (t >> 7)).wrapping_mul(61 | t)) ^ t;
         f64::from(t ^ (t >> 14)) / 4_294_967_296.0
     }
-}
-
-/// JS `Math.round`.
-fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
 }
 
 fn js_min(left: f64, right: f64) -> f64 {
