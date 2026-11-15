@@ -50,6 +50,68 @@
       "badge": "Hidden"
     }
   ],
+  "blockers": [
+    {
+      "id": "wire:all-talent",
+      "title": "All-Talent bonus levels (idleon_account::talent::bonus_levels) passed to the sections that read talents",
+      "status": "landed"
+    },
+    {
+      "id": "wire:gambit",
+      "title": "Gambit point chain from the account decoder (idleon_account hole.rs) passed to Sneaking and Research",
+      "status": "landed"
+    },
+    {
+      "id": "wire:stats-engine",
+      "title": "Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps",
+      "status": "landed"
+    },
+    {
+      "id": "stats:descriptors",
+      "title": "Remaining All Stats descriptors (14 of 60 computed)",
+      "status": "partial"
+    },
+    {
+      "id": "combat:auto-player",
+      "title": "Combat simulator auto-mode player (movement, attacks, skills), the source of a character's kill rate and DPS",
+      "status": "absent"
+    },
+    {
+      "id": "stats:level-tables",
+      "title": "Upstream LEVEL_TABLES catalogue and the applyCombatSetupDetailed save writer behind the per-node formula editor",
+      "status": "absent"
+    },
+    {
+      "id": "stats:drop-rate-descriptor",
+      "title": "The drop-rate pool chain descriptor in the shared stat engine",
+      "status": "absent"
+    },
+    {
+      "id": "stats:skill-descriptors",
+      "title": "Fishing skill descriptors (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed, prowess, equipment depths)",
+      "status": "absent"
+    },
+    {
+      "id": "stats:spelunking-descriptors",
+      "title": "Spelunking stat context: Spelunking Power, amber multiplier, stamina regeneration, Grand Discovery chance",
+      "status": "absent"
+    },
+    {
+      "id": "port:royal-objectives",
+      "title": "Royal Guardian optimizer objectives beyond the three the kingdom metrics carry (Armory target, currency portfolio, reset collection)",
+      "status": "absent"
+    },
+    {
+      "id": "port:sneaking-flower-pass",
+      "title": "Sneaking flower pass behind the Monte-Carlo claim simulation",
+      "status": "absent"
+    },
+    {
+      "id": "ui:jar-sparkline",
+      "title": "Sparkline chart behind each Jar history tile",
+      "status": "absent"
+    }
+  ],
   "milestones": [
     {
       "id": "M0",
@@ -292,6 +354,16 @@
         "Decision-tree branches"
       ],
       "assets": "Research sprites under assets/combat-sim/ui/research (ResShape*, ResSq*, ResearchBG, magnifier and observation icons).",
+      "gaps": [
+        {
+          "id": "RES-G1",
+          "title": "Gambit Milestone 15 is not modelled in the AFK rate",
+          "blockedBy": [
+            "wire:gambit"
+          ],
+          "evidence": "docs/plan.md research paragraph \"reports Gambit Milestone 15 as not modelled\""
+        }
+      ],
       "features": [
         {
           "id": "RES-01",
@@ -679,6 +751,16 @@
         "The Replay results tab draws that run: the map's background and platform art, every monster's extracted animation sheet on its spawn node, the stand-in on the scene's player node, HP bars, and a labelled placeholder for any file the asset manifest cannot resolve. It has Play/Pause, the upstream `REPLAY_SPEEDS` (0.5× to 300×), a scrubber over the frames and, when the run has a Den projection, the wave boundaries to step between.",
         "A Killroy practice captures as a version-1 replay document (`captureKillroyReplay`, `readKillroyReplay` and `_validate` in `js/ui/killroy-replay.js`): the imported save, the character, the map, duration and seed, checked with the upstream rules (a character the save carries, a Killroy room, 1 s to a day, a 32-bit seed). Opening it restores those options and re-simulates the run. Like the upstream handoff token it lives in the session, not the project.",
         "The replay never draws what the run does not have: the player's attacks, projectiles, damage numbers and the scene's decorations are named on the tab instead of faked."
+      ],
+      "gaps": [
+        {
+          "id": "CS-G1",
+          "title": "No character DPS or survival",
+          "blockedBy": [
+            "combat:auto-player"
+          ],
+          "evidence": "docs/roadmap.json combat-sim build \"the auto-mode player AI (so no character DPS or survival yet)\""
+        }
       ]
     },
     {
@@ -716,6 +798,32 @@
         "SA-04 ships the game-input sandbox: the vault, gem-shop, talent, guild and stamp levels the ported capacity rows read are editable, each edit is spliced into a clone of the save (`crates/stats/src/edits.rs`), and both the baseline and the hypothetical save resolve, so a row never shows a stale value.",
         "The change ledger marks an edited input with the saved value it replaced and resets one input or every input; the affected-formula list reports each descriptor the edit moved with its saved and hypothetical value, the delta and the percentage (`formulaDifference` in `js/stats/formula-comparison.js`), and clicking a row selects its descriptor. A descriptor row and its detail card keep the saved value beside the hypothetical one.",
         "Missing: upstream's per-node editor inside the formula inspector, which needs its `LEVEL_TABLES` catalogue and the `applyCombatSetupDetailed` save writer, so equipment, obol, companion and bubble/prisma cells are not editable yet. The sandbox offers the saved cells the ported formulas actually read, and an edit to a cell the current character no longer lists is dropped so the ledger and the applied save always agree."
+      ],
+      "gaps": [
+        {
+          "id": "SA-G1",
+          "title": "Descriptors not modelled: 46 of 60 report unavailable (14 computed)",
+          "blockedBy": [
+            "stats:descriptors"
+          ],
+          "evidence": "crates/stats/tests/stats.rs the_explorer_covers_every_descriptor_and_every_category"
+        },
+        {
+          "id": "SA-G2",
+          "title": "The damage row is not resolved although the stat engine computes the damage layers",
+          "blockedBy": [
+            "wire:stats-engine"
+          ],
+          "evidence": "crates/stats/src/breakdowns/mod.rs Sheet::build (no damage resolver)"
+        },
+        {
+          "id": "SA-G3",
+          "title": "Per-node formula editor for equipment, obol, companion and bubble/prisma cells",
+          "blockedBy": [
+            "stats:level-tables"
+          ],
+          "evidence": "docs/plan.md \"Missing: upstream's per-node editor\""
+        }
       ],
       "features": [
         {
@@ -896,6 +1004,16 @@
         "Formula breakdown"
       ],
       "assets": "None.",
+      "gaps": [
+        {
+          "id": "DR-G1",
+          "title": "No total for non-dungeon maps",
+          "blockedBy": [
+            "stats:drop-rate-descriptor"
+          ],
+          "evidence": "docs/plan.md Drop Rate paragraph \"the section stays partial until that descriptor\""
+        }
+      ],
       "features": [
         {
           "id": "DR-01",
@@ -1073,6 +1191,17 @@
         "Stats summary"
       ],
       "assets": "None.",
+      "gaps": [
+        {
+          "id": "EG-G1",
+          "title": "21 leaderboard metrics have no value",
+          "blockedBy": [
+            "wire:stats-engine",
+            "stats:descriptors"
+          ],
+          "evidence": "crates/endgame/tests/endgame.rs UNPORTED"
+        }
+      ],
       "features": [
         {
           "id": "EG-01",
@@ -1107,6 +1236,16 @@
         "ST-01 statue table: the 32-row table with saved levels, next-level bars, availability, search and sort.",
         "ST-02 STARTUE bubble and time estimates: the decoded STARTUE EXP bubble, Skinny 0 Cal vial, Onyx/Zenith tier and Royal Guardian Flair drive the deposit estimate, the per-row target, statues needed and the time from a raw statues/hour rate, with the rate source shown.",
         "ST-03 batch actions and the farming breakdown: the upstream Set targets entry (costed for every statue before it writes the plan, with the upstream rejection message), Next level for all and a one-step undo of the batch action; the shared formula tree behind one statue's row — the STARTUE bubble and its retention, the Onyx/Zenith tier, the saved Royal Guardian Flair and the Skinny 0 Cal vial, then the statues needed, raw rate and time. The upstream \"Measure statue farming\" panel needs the combat simulator (CS-03), so rates stay manual entries."
+      ],
+      "gaps": [
+        {
+          "id": "ST-G1",
+          "title": "\"Measure statue farming\" panel; statue rates are manual entries",
+          "blockedBy": [
+            "combat:auto-player"
+          ],
+          "evidence": "docs/plan.md Statue paragraph \"Missing: the upstream \\\"Measure statue farming\\\" panel\""
+        }
       ],
       "upstream": [
         "statue-calc.html",
@@ -1193,6 +1332,16 @@
         "FI-02 Best lure and line per pool: all 225 lure/line combinations ranked for the selected pool and depth, switchable between Fishing EXP and fish quantity, with the selected and saved rows marked, a Use action, the tie explanation and the best-combination KPI; the ranking is pinned against an oracle fixture of every row.",
         "FI-03 Depth projection and other characters: the Trench card projects the next depths from the saved cavern rows, with the jar and Bolaia requirement reductions, the efficiency requirements each depth raises, the selected and fish-maximizing lure + line hours per depth, cumulative totals, and a helper table of the other characters fishing the Trench whose ticked fish per hour sum into the team ETA; the requirement and every projected row are pinned against an oracle fixture evaluated from the upstream module.",
         "The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target, and the Trench projection also reads the cavern rows (`Holes`, `Spelunk`). The ranking and the per-depth fastest search hold efficiency and the EXP multiplier fixed across combinations, because the upstream recomputes them from the toolkit's POW and EXP through the skill systems."
+      ],
+      "gaps": [
+        {
+          "id": "FI-G1",
+          "title": "Efficiency, EXP multiplier, AFK rate and related skill values are typed in",
+          "blockedBy": [
+            "stats:skill-descriptors"
+          ],
+          "evidence": "docs/roadmap.json fishing build \"entered in the account card until the stats dashboard decodes them\""
+        }
       ],
       "upstream": [
         "fishing-calc.html",
@@ -1301,6 +1450,16 @@
         "Stale/summary state"
       ],
       "assets": "Bubble icons if present.",
+      "gaps": [
+        {
+          "id": "PR-G1",
+          "title": "Damage, stats and skills outcome families; bubble icons",
+          "blockedBy": [
+            "stats:descriptors"
+          ],
+          "evidence": "docs/plan.md Prisma paragraph \"Missing: the damage, stats and skills outcome families\""
+        }
+      ],
       "features": [
         {
           "id": "PR-01",
@@ -1350,6 +1509,16 @@
         "KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics, pinned against an oracle fixture of the upstream planner's own output.",
         "KL-02 +1 upgrade comparison: the upgrade list with saved levels and availability, the selection preview, the trials through the shared task runner and the comparison table that marks the best option per baseline and flags a stale result.",
         "KL-03 Saved buffs and results: the save's `BuffsActive` rows with kept/dropped markers, the Keep saved buffs and Unlimited inventory options, the bag-limited skull pickups the trial models, progress/cancel and the results export document. The combat simulator is still M2, so kills per second stands in for the character's damage; the encounter, respawn and drop maths are the game's own."
+      ],
+      "gaps": [
+        {
+          "id": "KL-G1",
+          "title": "Kills per second is a typed stand-in",
+          "blockedBy": [
+            "combat:auto-player"
+          ],
+          "evidence": "docs/roadmap.json killroy build \"kills per second stands in\""
+        }
       ],
       "upstream": [
         "killroy-calc.html",
@@ -1957,6 +2126,16 @@
         "Enchant outcomes"
       ],
       "assets": "Jar icons if present.",
+      "gaps": [
+        {
+          "id": "JR-G1",
+          "title": "History sparklines",
+          "blockedBy": [
+            "ui:jar-sparkline"
+          ],
+          "evidence": "docs/plan.md Jar paragraph \"Missing: the sparkline the page draws behind each history tile\""
+        }
+      ],
       "features": [
         {
           "id": "JR-01",
@@ -2502,6 +2681,25 @@
         "Door ETA"
       ],
       "assets": "assets/sneaking charms, items, scenes and borders.",
+      "gaps": [
+        {
+          "id": "SN-G1",
+          "title": "All-Talent terms and the Gambit point chain are explicit inputs",
+          "blockedBy": [
+            "wire:all-talent",
+            "wire:gambit"
+          ],
+          "evidence": "crates/sneaking/src/breakdown.rs \"the All-Talent levels are not modelled\", \"The Gambit point chain is not modelled\""
+        },
+        {
+          "id": "SN-G2",
+          "title": "Monte-Carlo claim simulation for the Items objective",
+          "blockedBy": [
+            "port:sneaking-flower-pass"
+          ],
+          "evidence": "docs/plan.md Sneaking paragraph \"its Monte-Carlo claim simulation needs the flower pass\""
+        }
+      ],
       "features": [
         {
           "id": "SN-01",
@@ -2720,6 +2918,16 @@
         "Combat outcomes"
       ],
       "assets": "Clamworks icons if present.",
+      "gaps": [
+        {
+          "id": "CW-G1",
+          "title": "Kills per hour, drop rate and multikill are typed stand-ins",
+          "blockedBy": [
+            "combat:auto-player"
+          ],
+          "evidence": "docs/plan.md Clamworks paragraph \"because the combat simulator's auto-mode player is not ported\""
+        }
+      ],
       "features": [
         {
           "id": "CW-01",
@@ -2822,6 +3030,24 @@
         "Unit EXP moves"
       ],
       "assets": "assets/royal-guardian maps, resources, units and lines.",
+      "gaps": [
+        {
+          "id": "RG-G1",
+          "title": "Talent rates read the purchased level only, without the All-Talent bonus levels",
+          "blockedBy": [
+            "wire:all-talent"
+          ],
+          "evidence": "crates/royal-guardian/src/rates.rs RoyalGuardian::talent_value"
+        },
+        {
+          "id": "RG-G2",
+          "title": "11 of the 14 upstream optimizer objectives are not offered",
+          "blockedBy": [
+            "port:royal-objectives"
+          ],
+          "evidence": "docs/plan.md Royal Guardian paragraph \"Upstream's fourteen objectives include several this build does not model\""
+        }
+      ],
       "features": [
         {
           "id": "RG-01",
@@ -2922,6 +3148,16 @@
         "Optimizer plan"
       ],
       "assets": "assets/spelunking cave tiles, rocks, doors, bosses, class icons and elixirs.",
+      "gaps": [
+        {
+          "id": "SP-G1",
+          "title": "Spelunking Power, amber multiplier, stamina regeneration and Grand Discovery chance are explicit inputs",
+          "blockedBy": [
+            "stats:spelunking-descriptors"
+          ],
+          "evidence": "docs/plan.md Spelunking paragraph \"stay explicit inputs here\""
+        }
+      ],
       "features": [
         {
           "id": "SP-01",

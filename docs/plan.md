@@ -1038,6 +1038,12 @@ Each issue carries `area:<section>`, `type:feature` and `roadmap` labels, and it
 issue to track progress; when all issues in a section are closed, mark the milestone `done` in
 `roadmap.json` and regenerate the docs.
 
+Acknowledged parity gaps are tracked in the same file: a milestone's `gaps` list names each one
+with the `blockers` entry it waits for, and [`docs/roadmap.md`](roadmap.md) renders the backlog by
+blocker. When a blocker's status becomes `landed`, every gap that names it is ready to be closed;
+when a section's prose here mentions something missing, it should have a gap entry. Gaps are not
+synced to GitHub issues.
+
 ## 12. Risks
 
 - **Licensing:** the upstream licence forbids reuse and redistribution of code; the game artwork is
