@@ -50,6 +50,9 @@ impl AppState {
                 "Paste a decoded save, a project file, an ROv2 state string, or drop one.".into();
             return cx.notify();
         }
+        if text.len() as u64 > import::MAX_IMPORT_BYTES {
+            return self.fail_import(source, "the text is larger than the 64 MB import limit", cx);
+        }
         match pipeline::read(text) {
             Ok(mut document) => {
                 // A project's route only has to name a section; every other
@@ -90,7 +93,7 @@ impl AppState {
         cx.notify();
     }
 
-    /// Record a dropped file that could not even be read.
+    /// Record a document that could not be read; nothing becomes pending.
     pub(crate) fn fail_import(&mut self, source: &str, reason: &str, cx: &mut Context<Self>) {
         self.import.source = source.to_string();
         self.import.pending = None;

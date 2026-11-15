@@ -193,7 +193,11 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
 
 ### 5.3 Import pipeline
 
-1. Read from file picker, paste box or drag-and-drop.
+1. Read from file picker, paste box or drag-and-drop. Text or a file over 64 MB is refused before
+   parsing, and an `ROv2:` string may inflate to at most 64 MB. While decoding, a save key suffix
+   names at most 128 characters and a sparse row at most 100,000 cells (`idleon_save::MAX_CHARACTERS`,
+   `MAX_ROW_CELLS`); a larger index is ignored rather than allocated. A non-finite number
+   (`NaN`, `inf`) reads as missing.
 2. Parse and detect the format; never mutate state before validation passes.
 3. Migrate older versions; unknown fields become warnings, not failures.
 4. Build a preview: format, save name if present, characters, research level, detected sections and
@@ -221,7 +225,10 @@ reads 1`, `no save fields found: expected Research, Lv0_*, gridLevels`.
 ### 5.5 Privacy
 
 Everything is local. No import is uploaded, no filename is sent anywhere, and logs contain only
-counts and field names, not save values.
+counts and field names, not save values. The automation bridge the harnesses use is the
+`automation` Cargo feature of the app crate: on by default for development, absent from a
+`--no-default-features` build, and reachable only by the same user's processes when present. If it
+cannot start, the window opens without it.
 
 ## 6. UI and assets
 

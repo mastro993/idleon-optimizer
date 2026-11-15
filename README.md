@@ -195,6 +195,10 @@ every statue as unavailable until a save is imported. `cargo run -- --section da
 registry entry directly, including the hidden tools and any unknown id (which shows the
 missing-section state).
 
+The default build includes the [gpui-mcp](https://github.com/mastro993/gpui-mcp) automation bridge
+the test harnesses drive the window through. For a build without any automation endpoint, run
+`cargo run --release --no-default-features`.
+
 ## Stack pins
 
 The app, the component kit and the automation bridge must share one GPUI build:

@@ -81,7 +81,9 @@ Two consequences worth knowing:
 ## Verifying a lane without the MCP client
 
 The app exposes itself through [gpui-mcp](https://github.com/mastro993/gpui-mcp); the harnesses in
-`script/` are plain Node clients, so they work from a terminal, a subagent or CI:
+`script/` are plain Node clients, so they work from a terminal, a subagent or CI. The bridge is the
+app's default `automation` feature; a `--no-default-features` build has none, so the harnesses need
+a default build:
 
 ```console
 cargo build -p idleon-optimizer

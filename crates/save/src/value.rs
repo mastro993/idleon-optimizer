@@ -87,6 +87,7 @@ impl Save {
                     .strip_prefix(prefix)
                     .filter(|rest| !rest.is_empty() && rest.chars().all(|ch| ch.is_ascii_digit()))
                     .and_then(|rest| rest.parse::<usize>().ok())
+                    .filter(|index| *index < crate::MAX_CHARACTERS)
                 else {
                     continue;
                 };
@@ -186,10 +187,11 @@ pub fn row_values(value: &Value) -> Vec<Value> {
                     cells
                         .keys()
                         .filter_map(|key| key.parse::<usize>().ok())
+                        .filter(|index| *index < crate::MAX_ROW_CELLS)
                         .max()
                         .map_or(0, |max| max + 1)
                 },
-                |length| length.max(0.0) as usize,
+                |length| (length.max(0.0) as usize).min(crate::MAX_ROW_CELLS),
             );
             (0..length)
                 .map(|index| {
@@ -252,6 +254,23 @@ mod tests {
             vec![json!(1), Value::Null, json!(3)]
         );
         assert_eq!(at(&json!({ "3": "x" }), 3), Some(&json!("x")));
+    }
+
+    #[test]
+    fn an_absurd_character_suffix_is_ignored() {
+        let save = Save::new(json!({
+            "Lv0_0": "[]",
+            "Lv0_99999999999": "[]",
+            "SL_18446744073709551615": "[]",
+        }));
+        assert_eq!(save.character_count(), 1);
+    }
+
+    #[test]
+    fn an_absurd_row_length_is_capped() {
+        assert!(row_values(&json!({ "length": 1e15 })).len() <= crate::MAX_ROW_CELLS);
+        assert!(row_values(&json!({ "999999999999": 1 })).is_empty());
+        assert_eq!(row_values(&json!({ "0": 1, "2": 3, "length": 3 })).len(), 3);
     }
 
     #[test]

@@ -59,6 +59,7 @@ use crate::ui::export::Export;
 use crate::ui::import::Import;
 use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
+#[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
@@ -498,8 +499,10 @@ pub(crate) struct AppState {
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub(crate) shadow: Shadow,
     pub(crate) focus: FocusHandle,
-    /// Held so the automation bridge stays installed while the window lives.
-    _bridge: BridgeHandle,
+    /// Held so the automation bridge stays installed while the window lives;
+    /// `None` when it could not start.
+    #[cfg(feature = "automation")]
+    _bridge: Option<BridgeHandle>,
     _subscriptions: Vec<Subscription>,
     /// Whether a debounced session save is already scheduled.
     session_save_pending: bool,
@@ -515,7 +518,11 @@ impl AppState {
         state_dir: Option<std::path::PathBuf>,
         cx: &mut Context<Self>,
     ) -> Self {
+        #[cfg(feature = "automation")]
         let bridge = ui::bridge::install(window, cx, endpoint_dir);
+        // Without the bridge the flag has nothing to scope.
+        #[cfg(not(feature = "automation"))]
+        let _ = endpoint_dir;
         let import = Import::new(window, cx);
         let search = ui::text_input("Search calculators…", "Search calculators", window, cx);
         let monument_search = ui::text_input(
@@ -1304,6 +1311,7 @@ impl AppState {
             opal_breakdown,
             shadow: Shadow::default(),
             focus,
+            #[cfg(feature = "automation")]
             _bridge: bridge,
             shape_run,
             insight_run,

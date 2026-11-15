@@ -97,5 +97,8 @@ pub fn character_count(save: &Map<String, Value>) -> usize {
 }
 
 fn character_index(key: &str) -> Option<usize> {
-    key.strip_prefix("Lv0_")?.parse().ok()
+    key.strip_prefix("Lv0_")?
+        .parse()
+        .ok()
+        .filter(|index| *index < crate::MAX_CHARACTERS)
 }
