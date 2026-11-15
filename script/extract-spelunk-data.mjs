@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -87,6 +88,7 @@ const payload = {
 
 const out = new URL('../crates/spelunking/data/spelunking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
+recordProvenance(out, source);
 console.log(
   `wrote ${payload.caves.length} caves, ${payload.tools.length} tools, ${payload.elixirs.length} elixirs, ` +
     `${payload.upgradePerLevel.length} shop rows, ${Object.keys(payload.sprites).length} sprites`,

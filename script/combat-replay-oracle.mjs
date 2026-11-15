@@ -25,6 +25,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -50,8 +51,9 @@ const root = new URL('..', import.meta.url);
 // Data: the maps a Killroy replay may name.
 // ---------------------------------------------------------------------------
 const roomMaps = killroy.killroyMapIds();
+const replayPath = new URL('crates/combat/data/replay.json', root);
 writeFileSync(
-  new URL('crates/combat/data/replay.json', root),
+  replayPath,
   JSON.stringify({
     source:
       'js/stats/systems/common/combat-sim-killroy.js + js/ui/killroy-replay.js',
@@ -60,6 +62,7 @@ writeFileSync(
     killroyMaps: roomMaps,
   })
 );
+recordProvenance(replayPath, source);
 
 // ---------------------------------------------------------------------------
 // Fixture: the codec's own bytes and frames.
@@ -354,10 +357,12 @@ const fixture = {
     })),
   },
 };
+const combatReplayPath = new URL('fixtures/combat-replay.json', root);
 writeFileSync(
-  new URL('fixtures/combat-replay.json', root),
+  combatReplayPath,
   JSON.stringify(fixture, null, 1)
 );
+recordProvenance(combatReplayPath, source);
 console.log(
   `wrote ${snapshots.length} snapshots, ${frames.length} frames (${encoder.bytes} bytes), ` +
     `${killroyCases.length} Killroy cases and ${roomMaps.length} room maps`

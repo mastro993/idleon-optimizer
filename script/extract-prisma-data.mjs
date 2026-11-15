@@ -9,6 +9,7 @@
 import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -65,10 +66,12 @@ const payload = {
     ],
   },
 };
+const output = new URL('../crates/prisma/data/prisma.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/prisma/data/prisma.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 const perCauldron = [0, 1, 2, 3].map(
   (cauldron) => bubbles.filter((bubble) => bubble.cauldron === cauldron).length,
 );

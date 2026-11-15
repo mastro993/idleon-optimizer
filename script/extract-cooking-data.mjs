@@ -10,6 +10,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -45,10 +46,12 @@ const payload = {
     files: ['js/stats/data/game/customlists.js', 'js/stats/data/game/hardcoded.js'],
   },
 };
+const cookingPath = new URL('../crates/ladle/data/cooking.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/ladle/data/cooking.json', import.meta.url),
+  cookingPath,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(cookingPath, source);
 
 // `meal-impact.js` groups meals by `MealINFO[idx][5]` and prints the effect
 // with the game's markup stripped, so the allocator's table keeps both.
@@ -64,8 +67,9 @@ const impact = MealINFO.map((row, index) => {
     effect: String(row[3]).replace(/_/g, ' ').replace(/[{}]/g, ''),
   };
 });
+const mealsPath = new URL('../crates/cooking-mastery/data/meals.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/cooking-mastery/data/meals.json', import.meta.url),
+  mealsPath,
   `${JSON.stringify(
     {
       meals: impact,
@@ -78,6 +82,7 @@ writeFileSync(
     1,
   )}\n`,
 );
+recordProvenance(mealsPath, source);
 console.log(
   `cooking: ${meals.length} meals, ${payload.numberToLetter.length} encoding letters, ` +
     `${impact.length} allocator rows`,

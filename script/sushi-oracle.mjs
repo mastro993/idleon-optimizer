@@ -5,6 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -159,7 +160,9 @@ saveData.spelunkData[52] = [];
 
 const out = join(root, 'crates/sushi/tests/fixtures');
 mkdirSync(out, { recursive: true });
-writeFileSync(join(out, 'upstream.json'), `${JSON.stringify(formulas, null, 1)}\n`);
+const output = join(out, 'upstream.json');
+writeFileSync(output, `${JSON.stringify(formulas, null, 1)}\n`);
+recordProvenance(output, source);
 console.log(
   `wrote ${formulas.upgCost.length} upgrade costs, ${formulas.bucksPerSlot.length} slot rates ` +
     `and ${formulas.perfectoOdds.length} tier odds`

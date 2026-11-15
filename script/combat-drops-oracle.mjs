@@ -23,6 +23,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -182,8 +183,9 @@ for (const [type, rows] of Object.entries(MonsterDrops)) {
   }
 }
 
+const dropsPath = new URL('crates/combat/data/drops.json', root);
 writeFileSync(
-  new URL('crates/combat/data/drops.json', root),
+  dropsPath,
   JSON.stringify({
     source: 'js/stats/data/game/{custommaps,items,monsters}.js',
     monsters,
@@ -193,6 +195,7 @@ writeFileSync(
     cards,
   })
 );
+recordProvenance(dropsPath, source);
 
 // ---------------------------------------------------------------------------
 // Fixture: the upstream module's own results over the same filtered rows.
@@ -419,10 +422,12 @@ const fixture = {
   generateCases,
   pickupCases,
 };
+const combatDropsPath = new URL('fixtures/combat-drops.json', root);
 writeFileSync(
-  new URL('fixtures/combat-drops.json', root),
+  combatDropsPath,
   JSON.stringify(fixture, null, 1)
 );
+recordProvenance(combatDropsPath, source);
 console.log(
   `wrote ${Object.keys(monsters).length} monsters, ${tables0.size} tables, ` +
     `${oddsCases.length} odds, ${resetCases.length} reset, ${generateCases.length} ` +

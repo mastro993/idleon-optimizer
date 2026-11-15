@@ -4,6 +4,7 @@
 // Usage: node script/damage-oracle.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -179,8 +180,9 @@ const maps = [...Array(MapDispName.length).keys()]
     name: String(MapDispName[map]).replace(/_/g, ' '),
   }));
 
+const output = join(root, 'fixtures/damage.json');
 writeFileSync(
-  join(root, 'fixtures/damage.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'fixtures/data.json through js/save/loader.js loadSaveData',
@@ -198,6 +200,7 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${cases.length} character summaries, ${dungeonCases.length} dungeons and ${maps.length} map rows`
 );

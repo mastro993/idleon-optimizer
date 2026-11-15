@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -172,8 +173,10 @@ const payload = {
   compare: { ...COMPARE, planWarnings: plan.warnings, rows },
 };
 
+const output = new URL('../fixtures/clamworks-afk.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/clamworks-afk.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(`wrote ${claims.length} claims, ${pureLocked.length} pure-locked cases and ${rows.length} compare rows`);

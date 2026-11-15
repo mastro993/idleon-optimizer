@@ -18,6 +18,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -54,8 +55,9 @@ const hound = MONSTERS.caveA;
 const ampNames = Array.from({ length: 8 }, (_, index) =>
   cleanName(lists.HolesInfo[57]?.[index] ?? HolesInfo[57]?.[index] ?? `Amplifier ${index}`)
 );
+const denPath = new URL('crates/combat/data/den.json', root);
 writeFileSync(
-  new URL('crates/combat/data/den.json', root),
+  denPath,
   JSON.stringify({
     source: 'js/stats/data/game/{monsters,customlists}.js + js/stats/data/w5/hole.js',
     hound: { name: cleanName(hound.Name), hp: Number(hound.MonsterHPTotal) || 0, respawn: Number(hound.RespawnTime) || 0 },
@@ -63,6 +65,7 @@ writeFileSync(
     ampNames,
   })
 );
+recordProvenance(denPath, source);
 
 // ---------------------------------------------------------------------------
 // Fixture: the Den module's own snapshots on a fabricated sim.
@@ -242,5 +245,7 @@ const fixture = {
   formulaCases,
   opalCases,
 };
-writeFileSync(new URL('fixtures/combat-den.json', root), JSON.stringify(fixture, null, 1));
+const combatDenPath = new URL('fixtures/combat-den.json', root);
+writeFileSync(combatDenPath, JSON.stringify(fixture, null, 1));
+recordProvenance(combatDenPath, source);
 console.log(`wrote ${cases.length} Den cases`);

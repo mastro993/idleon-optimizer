@@ -10,6 +10,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -63,10 +64,12 @@ const payload = {
     ],
   },
 };
+const output = new URL('../crates/jelly/data/jelly.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/jelly/data/jelly.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `jelly: ${cells} cells, ${payload.plots.length} plots, ${payload.upgrades.length} upgrades, ${payload.rewards.length} rewards`,
 );

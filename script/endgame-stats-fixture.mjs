@@ -4,6 +4,7 @@
 // Usage: node script/endgame-stats-fixture.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -29,9 +30,11 @@ const payload = {
   save: 'fixtures/data.json',
   stats,
 };
+const output = new URL('../fixtures/endgame-stats.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/endgame-stats.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 const available = stats.filter((stat) => stat.value != null).length;
 console.log(`wrote ${stats.length} metrics (${available} with a value)`);

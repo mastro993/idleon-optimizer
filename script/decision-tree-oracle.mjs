@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -157,8 +158,9 @@ const autoNodes = autoTail
     }))
   : [];
 
+const output = join(root, 'fixtures/decision-tree.json');
 writeFileSync(
-  join(root, 'fixtures/decision-tree.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'js/dt/dt-sim.js (dtBuildInitState, dtStepSim, dtAdvanceAutoInsight)',
@@ -198,6 +200,7 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/decision-tree.json: ${chain.length} steps, ` +
     `${autoNodes.length} auto-insight nodes`

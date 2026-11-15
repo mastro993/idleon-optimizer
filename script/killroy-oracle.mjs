@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -32,8 +33,9 @@ for (const week of forecast.weeks) {
   for (const character of week.characters) delete character.className;
 }
 
+const output = join(root, 'fixtures/killroy.json');
 writeFileSync(
-  join(root, 'fixtures/killroy.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'fixtures/data.json wrapped as it.json with serverVars.KillroySwap = 7',
@@ -45,4 +47,5 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(`wrote ${forecast.weeks.length} weeks to fixtures/killroy.json`);

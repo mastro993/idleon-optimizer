@@ -5,6 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -227,7 +228,9 @@ const payload = {
 
 const out = join(root, 'crates/minehead/tests/fixtures');
 mkdirSync(out, { recursive: true });
-writeFileSync(join(out, 'upstream.json'), `${JSON.stringify(payload, null, 1)}\n`);
+const output = join(out, 'upstream.json');
+writeFileSync(output, `${JSON.stringify(payload, null, 1)}\n`);
+recordProvenance(output, source);
 console.log(
   `wrote formulas, ${monteCarlo.length} Monte Carlo runs, ` +
     `${optimized.totalCombos} optimized combos`

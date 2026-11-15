@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -180,10 +181,12 @@ const fixture = {
   offering: offeringRows,
 };
 
+const output = new URL('../fixtures/coral-plan.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/coral-plan.json', import.meta.url),
+  output,
   `${JSON.stringify(fixture, null, 2)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/coral-plan.json: ${fixture.cases.length} cases, ${offeringRows.length} offering rows`,
 );

@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -399,8 +400,9 @@ function justiceFixture() {
   };
 }
 
+const output = join(root, 'fixtures/monument.json');
 writeFileSync(
-  join(root, 'fixtures/monument.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'fixtures/data.json',
@@ -419,6 +421,7 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote the permanent summary, the Bravery, Justice and Wisdom snapshots, ${charges.length} reward charges, ${odds.length} run states and ${errors.length} rejected inputs to fixtures/monument.json`
 );

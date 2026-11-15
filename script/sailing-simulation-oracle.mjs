@@ -9,6 +9,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -217,8 +218,10 @@ for (const case_ of cases) {
   });
 }
 
+const output = join(root, 'fixtures/sailing-simulation.json');
 writeFileSync(
-  join(root, 'fixtures/sailing-simulation.json'),
+  output,
   `${JSON.stringify(payload, null, 2)}\n`,
 );
+recordProvenance(output, source);
 console.log(`wrote ${payload.cases.length} simulation cases`);

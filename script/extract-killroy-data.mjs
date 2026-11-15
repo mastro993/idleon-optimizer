@@ -4,6 +4,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -47,8 +48,10 @@ const pools = Object.fromEntries(
 const upgrades = killroy.KILLROY_UPGRADES.map(({ name, effect }) => ({ name, effect }));
 
 const data = { families: killroy.KILLROY_FAMILIES, upgrades, pools };
+const output = join(import.meta.dirname, '../crates/killroy/data/killroy.json');
 writeFileSync(
-  join(import.meta.dirname, '../crates/killroy/data/killroy.json'),
+  output,
   `${JSON.stringify(data, null, 2)}\n`
 );
+recordProvenance(output, source);
 console.log(`wrote ${POOLS.length} pools to crates/killroy/data/killroy.json`);

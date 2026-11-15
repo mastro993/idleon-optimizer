@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -37,10 +38,12 @@ const payload = {
     file: 'js/stats/data/common/statues.js',
   },
 };
+const statuesPath = new URL('../crates/statue/data/statues.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/statue/data/statues.json', import.meta.url),
+  statuesPath,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(statuesPath, source);
 console.log(`wrote ${STATUE_COUNT} statues`);
 
 if (!fixture) process.exit(0);
@@ -80,10 +83,12 @@ const expected = {
   characters: characters.length,
   firstCharacter: characters.find((rows) => rows.length) ?? [],
 };
+const statueRequirementsPath = new URL('../crates/statue/tests/statue-requirements.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/statue/tests/statue-requirements.json', import.meta.url),
+  statueRequirementsPath,
   `${JSON.stringify(expected, null, 1)}\n`,
 );
+recordProvenance(statueRequirementsPath, source);
 console.log(`wrote the requirement table for character ${characters.findIndex((rows) => rows.length)}`);
 
 // The target-cost oracle: the upstream loader's view of the fixture, its
@@ -148,8 +153,9 @@ for (let charIdx = 0; charIdx < (saveData.statueLvAllData || []).length; charIdx
     rows,
   });
 }
+const statueCostsPath = new URL('../crates/statue/tests/statue-costs.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/statue/tests/statue-costs.json', import.meta.url),
+  statueCostsPath,
   JSON.stringify({
     generatedFrom: {
       repo: 'Corgan/idleon-research-optimizer',
@@ -159,6 +165,7 @@ writeFileSync(
     characters: costs,
   }),
 );
+recordProvenance(statueCostsPath, source);
 console.log(`wrote the target-cost table for ${costs.length} characters`);
 
 // The batch oracle: the page's `#apply-all` handler. The number input first
@@ -192,8 +199,9 @@ const batch = entries.map((text) => {
     return { entry: text, error: error.message };
   }
 });
+const statueBatchPath = new URL('../crates/statue/tests/statue-batch.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/statue/tests/statue-batch.json', import.meta.url),
+  statueBatchPath,
   `${JSON.stringify({
     generatedFrom: {
       repo: 'Corgan/idleon-research-optimizer',
@@ -204,4 +212,5 @@ writeFileSync(
     entries: batch,
   }, null, 1)}\n`,
 );
+recordProvenance(statueBatchPath, source);
 console.log(`wrote ${batch.length} set-all entries for character ${charIdx}`);

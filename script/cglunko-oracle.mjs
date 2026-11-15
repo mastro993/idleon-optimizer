@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -196,6 +197,7 @@ const payload = {
 
 const out = new URL('../crates/cglunko/tests/cglunko-oracle.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
+recordProvenance(out, source);
 console.log(
   `wrote ${upgrades.length} upgrades, ${payload.stones.length} stones, ${payload.focus.length} focus rows, ${payload.plans.blue.steps.length} blue steps and ${payload.plans.purple.steps.length} purple steps`
 );

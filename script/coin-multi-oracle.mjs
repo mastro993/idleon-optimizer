@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -143,10 +144,12 @@ const simple = {
   characters: [evaluate('simple', SIMPLE_SAVE, 0)],
 };
 
+const output = new URL('../fixtures/coin-multi.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/coin-multi.json', import.meta.url),
+  output,
   `${JSON.stringify({ full, simple }, null, 2)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${full.characters.length} full-save characters and ${simple.characters.length} simple-save character`,
 );

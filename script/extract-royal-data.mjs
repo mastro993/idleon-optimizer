@@ -13,6 +13,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -168,10 +169,12 @@ const payload = {
   },
 };
 
+const output = new URL('../crates/royal-guardian/data/royal-guardian.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/royal-guardian/data/royal-guardian.json', import.meta.url),
+  output,
   `${JSON.stringify(payload)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${armoryBonusPerLevel.length} armory rows, ${resources.length} resources, ${mapRows.filter(Boolean).length} maps`,
 );

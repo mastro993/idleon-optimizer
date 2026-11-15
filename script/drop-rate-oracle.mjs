@@ -3,6 +3,7 @@
 // Usage: node script/drop-rate-oracle.mjs <path-to-idleon-research-optimizer>
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -75,8 +76,9 @@ const character = 0;
 const map = Number(saveData.currentMapData?.[character]) || 0;
 const reference = resolve(map, NaN, NaN);
 
+const output = join(root, 'fixtures/drop-rate.json');
 writeFileSync(
-  join(root, 'fixtures/drop-rate.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'fixtures/data.json through js/save/loader.js loadSaveData',
@@ -99,4 +101,5 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(`wrote ${solved.length} dungeon totals to fixtures/drop-rate.json`);

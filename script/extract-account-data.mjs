@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -222,6 +223,7 @@ for (const key of Object.keys(payload)) {
 
 const out = new URL('../crates/account/data/account.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload));
+recordProvenance(out, source);
 console.log(
   `wrote ${Object.keys(itemStats).length} item stats, ${payload.tome.length} tome slots, ` +
     `${payload.rogBonus.length} RoG tiers`

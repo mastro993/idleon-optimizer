@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -163,7 +164,9 @@ const fixture = {
   goals,
   rollRanges,
 };
-writeFileSync(join(root, 'fixtures/cog-insights.json'), `${JSON.stringify(fixture, null, 2)}\n`);
+const output = join(root, 'fixtures/cog-insights.json');
+writeFileSync(output, `${JSON.stringify(fixture, null, 2)}\n`);
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/cog-insights.json · ${goals.build.impacts.length} impacts · level ${conLevel}`,
 );

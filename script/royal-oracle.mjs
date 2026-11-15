@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -727,10 +728,12 @@ payload.plan = {
   unitExp: { mixed: planMixed, trading: planTrading },
 };
 
+const output = new URL('../fixtures/royal-guardian.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/royal-guardian.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${clearingRows.length} clearing rows, ${built.length} built outposts, ${rangeTargets.length} range rows, ` +
     `${armoryList.length} shelves, ${forecastPlanned.summary.collects} planned collects`,

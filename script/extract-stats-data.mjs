@@ -6,6 +6,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -190,10 +191,12 @@ const payload = {
   monsters: monsterRows,
   equipmentSets,
 };
+const output = new URL('../crates/stats-data/data/stats.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/stats-data/data/stats.json', import.meta.url),
+  output,
   `${JSON.stringify(payload)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${maps.length} maps, ${payload.classes.length} class names and ${stamps.length} stamps, ` +
     `${Object.keys(monsterRows).length} monsters and ${Object.keys(equipmentSets).length} equipment sets`,
