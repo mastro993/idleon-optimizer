@@ -239,6 +239,8 @@ impl AppState {
         // the previous save no longer describes this one.
         self.clamworks_budget = self.clamworks.pearl_balance;
         self.clamworks_projection = None;
+        // A plan from the previous save prices levels this one may not have.
+        discard_run(&self.clamworks_run, cx);
         self.clamworks_claim.load(character_count);
         self.jar = imported.jar;
         self.spelunking_save = imported.spelunking;
