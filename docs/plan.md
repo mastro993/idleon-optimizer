@@ -178,6 +178,10 @@ remaining account effects.
    the primary user-data import and the format the game writes.
 2. **Optimizer state string** — upstream `ROv2:` + gzip + base64, exported by the research page.
 3. **Project JSON** — `{ "format": "idleon-optimizer-project", "version": 1, "save": {...}, "sections": {...} }`.
+   The optional `research` and `supplements` blocks replace the live research state and
+   multipliers; a block the document omits leaves the embedded save's (or, with no save, the
+   window's) value alone. The multipliers the embedded save decodes stay the baseline "Reset
+   supplements" returns to.
 4. **Section config JSON** — `{ "format": "idleon-optimizer-section", "section": "farming", "version": 1, ... }`.
 
 Detection order: project JSON, section config, ROv2 string, raw save. A raw save is detected by
@@ -194,7 +198,8 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
    warnings.
 5. Decode everything the document needs while previewing (the embedded save and each section
    config), then apply atomically: either the whole import succeeds or the previous state stays
-   intact. Log every applied field change as `field: old → new`, summarise it in the status bar and
+   intact. A config for a section that stores no config (or one this build does not declare) is
+   named in the preview's warnings instead of applying silently. Log every applied field change as `field: old → new`, summarise it in the status bar and
    keep the list in the dialog.
 6. Persist the imported save metadata and add it to recent imports; the session file keeps the
    whole project so the next launch restores the section, save and section configs together.

@@ -576,6 +576,8 @@ mod tests {
                     .collect(),
                 warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
                 origin: project::Origin::UpstreamState,
+                has_research: true,
+                has_supplements: true,
             },
             save: Some(*save),
         }))
