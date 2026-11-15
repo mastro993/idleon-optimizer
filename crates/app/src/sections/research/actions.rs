@@ -1253,6 +1253,11 @@ impl AppState {
                     }
                     Job::Shapes => {
                         tree.auto_shapes(inputs.node, &context, &mut watched)?;
+                        // The optimiser returns a layout even when it was told
+                        // to stop; a cancelled run stores nothing.
+                        if stopped {
+                            return None;
+                        }
                         let message = format!(
                             "Placed {} shapes on the node.",
                             tree.node(inputs.node)
@@ -1266,14 +1271,19 @@ impl AppState {
                         });
                     }
                 };
+                // Every tree job must check the stop before storing: `save`
+                // re-simulates children in place and reports success even when
+                // a stop interrupted it, so the copy may be half rebuilt.
+                if stopped {
+                    return None;
+                }
                 match stepped {
                     Some((select, message)) => Some(TreeOutcome {
                         tree,
                         select,
                         message,
                     }),
-                    // A cancel stores nothing; a dead end keeps the tree and says why.
-                    None if stopped => None,
+                    // A dead end keeps the tree and says why.
                     None => Some(TreeOutcome {
                         tree,
                         select: Some(inputs.node),
