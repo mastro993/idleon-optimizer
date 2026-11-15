@@ -221,7 +221,10 @@ reads 1`, `no save fields found: expected Research, Lv0_*, gridLevels`.
 ### 5.5 Privacy
 
 Everything is local. No import is uploaded, no filename is sent anywhere, and logs contain only
-counts and field names, not save values.
+counts and field names, not save values. The automation bridge the harnesses use is the
+`automation` Cargo feature of the app crate: on by default for development, absent from a
+`--no-default-features` build, and reachable only by the same user's processes when present. If it
+cannot start, the window opens without it.
 
 ## 6. UI and assets
 
