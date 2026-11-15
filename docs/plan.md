@@ -92,10 +92,12 @@ planned section renders the shared "On the roadmap" empty state — neither can 
 
 Section states are shared: every section page renders a `no-save-state` banner with the import
 action until a save loads; the header distinguishes a full save from a partial one with warnings.
-Long work goes through one shared `TaskRunner` (`src/task.rs`): the job runs on the background
-executor, a foreground pump copies progress into the entity, `run-cancel` stops the job at its next
-report, a cancelled run keeps the result already on screen, and a stored result whose inputs changed
-is marked stale (badge, banner, disabled Apply) instead of being dropped. `ui/task.rs` renders the
+Long work goes through one shared `TaskRunner` (`crates/ui/src/runner.rs`): the job runs on the
+background executor, a foreground pump copies progress into the entity, `run-cancel` stops the job at
+its next report, a cancelled run keeps the result already on screen, and a stored result whose inputs
+changed is marked stale (badge, banner, disabled Apply) instead of being dropped. Importing a save
+discards the runs it invalidates: whatever a discarded run still returns is dropped. A job that panics settles like a
+cancelled run, so the runner is usable again. `crates/ui/src/run_chrome.rs` renders the
 progress card, the cancelled notice and the stale marker for every section.
 
 ## 4. Sections and milestones
