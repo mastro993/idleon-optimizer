@@ -8,8 +8,8 @@ It exists for testing and debugging only. The game formulas, save decoding and o
 come from the upstream [`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer)
 repo; do not reverse-engineer logic from this file or tune behaviour to match it.
 
-Used by `crates/import/tests/fixture.rs`, `crates/statue/tests/statue.rs` and
-`crates/sneaking/tests/sneaking.rs`. To exercise the app by
+Used by most crates' tests, which import it through `idleon_import::import`
+(`crates/import/tests/fixture.rs` is the reference). To exercise the app by
 hand, open the header's Import dialog and paste the file's contents, or drop the file on it.
 
 `endgame-stats.json` is the upstream `js/endgame-stats.js` leaderboard audit of `data.json`: all 177
@@ -111,9 +111,7 @@ overkill tier and the 23 multiplicative groups' upstream names and values, so th
 overkill tier, every resolved group and the formula tree's group rows are compared against upstream,
 and the simple save's total is compared end to end. Regenerate it with
 `node script/coin-multi-oracle.mjs <upstream-repo>`; `crates/coin-multi/tests/coin_multi.rs`
-compares the port field for field. Three groups still need systems this build does not carry (the
-shared stat pipeline's total STR/AGI/WIS, talents and card/golden-food bonuses); the port reports
-them as not modelled instead of guessing.
+compares the port field for field, and every one of the 23 groups is priced and matched.
 Treat it as frozen for the same reason: it is the oracle's output, not this app's.
 
 `damage.json` is the upstream Damage Breakdown's own output for `data.json`, from
@@ -124,8 +122,8 @@ carry, followed by the same save with both fields present, the named `MapDispNam
 selector lists, and the descriptor's reason for all six dungeon maps. Regenerate it with
 `node script/damage-oracle.mjs <upstream-repo>`; `crates/damage/tests/damage.rs` recombines the
 upstream layers through the port's own summary arithmetic for every character, matches the
-metadata flags and the map rows, and reports the missing stat pipeline until the three layers can
-be resolved. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
+metadata flags and the map rows, and checks that the shared stat engine resolves the three layers for every
+character. Treat it as frozen for the same reason: it is the oracle's output, not this app's.
 
 `clamworks-scurge.json` is the upstream Clamworks Scurge planner's own output for `data.json`, from
 `js/stats/systems/w7/clamworks-scurge.js` run over the save with each case's `Menagerie` row: nine

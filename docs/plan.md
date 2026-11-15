@@ -11,7 +11,7 @@ planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multipli
 and formula tree, the
 Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
 BoneJoePickle, Cglunko, Clamworks and Fountain done, Monument, the All Stats context, breakdowns,
-explorer and input ledger built, 2 sections planned.** The live breakdown is
+explorer and input ledger built.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
 each section's full specification is under [`docs/sections/`](sections/).
 
@@ -252,6 +252,7 @@ crates/save                         raw save document: codec, JSON helpers, char
 crates/research                     research grid model, EXP/insight maths, grid/shape/mag optimizers
 crates/stats-data                   static map, monster, class and equipment-set tables
 crates/account                      account-wide bonus decoder (`Decoder`): one view of every system
+crates/stats-engine                 shared stat engine: total STR/AGI/WIS/LUK and the damage layers
 crates/minehead                     Depth Charge upgrades, floor simulation and strategy searches;
                                     reads the account decoder, so it sits beside `stats`
 crates/sushi                        Sushi Station formulas, save inputs and upgrade ranking; reads
@@ -321,7 +322,8 @@ bump moves all three together and the smoke harness is the check.
 
 ## 9. Section status
 
-Research, shadow, endgame and BoneJoePickle are implemented; research is still partial. Done: the
+Every section has a built page; [`docs/roadmap.md`](roadmap.md) lists which are complete.
+Research is still partial. Done: the
 dashboard (summary, grid and observation previews, EXP/AFK/insight breakdowns and the grid-point
 split), grid, shapes, magnifiers, local sim, shape/mag/grid optimizers, 16 presets, supplements,
 save import, the ROv2 state string export, projection chart, keyboard, canvas dragging, the
@@ -380,8 +382,8 @@ promotion and Scurge. `script/clamworks-oracle.mjs` regenerates
 `crates/clamworks/tests/clamworks-oracle.json` from the upstream module, so the tracker, the rewards and
 the plans are compared with the source of truth, and `script/clamworks-afk-oracle.mjs` regenerates
 `fixtures/clamworks-afk.json` for the claim. Multi-Scalping takes a manual multikill total, and the
-claim takes the character's kills per hour and drop rate, until the combat simulator lands. The
-claim does not carry the upstream reroll-for-pure-pearls policy, which needs the talent and guild
+claim takes the character's kills per hour and drop rate, because the combat simulator's auto-mode
+player is not ported. The claim does not carry the upstream reroll-for-pure-pearls policy, which needs the talent and guild
 bonuses the stats context resolves.
 CW-04 adds the Scurge tab: `idleon_clamworks::scurge` ports `clamworks-scurge.js`, so one Clamworks
 kill banks `(1 + RECKONING) × (1 + EVEN BETTER / 100) × (1 + SELF AFFLICTION / 100) ×
@@ -397,13 +399,12 @@ compares every row, level, change and EXP figure. The rates multiply the row's E
 character's kills-per-hour stand-in, because the shared simulator does not run Clam Work.
 Details: [`docs/sections/clamworks.md`](sections/clamworks.md).
 
-The Killroy section implements KL-01 and KL-02: the weekly forecast with every character's three
+The Killroy section implements KL-01 to KL-03: the weekly forecast with every character's three
 encounters and records, and the `+1` upgrade comparison with the Baseline and Upgrade tabs, the
 upgrade list, the selection queue preview, deterministic trials and the best-option highlight. The
 player's damage belongs to the combat simulator, so a trial takes the character's kills per second
-as an input until M2 lands; the arrival schedule, respawn bonus, `100 + Time` duration and the
-per-kill skull, talent-point, credit and pearl rolls are the game's own formulas. Missing: the full
-weekly results tables, saved buffs, unlimited inventory and the JSON export (KL-03). Details:
+as an input because the simulator's auto-mode player is not ported; the arrival schedule, respawn bonus, `100 + Time` duration and the
+per-kill skull, talent-point, credit and pearl rolls are the game's own formulas. Details:
 [`docs/sections/killroy.md`](sections/killroy.md).
 
 The hidden BoneJoePickle page is complete: DPS and max-time-to-kill inputs, the nine Death Note
@@ -440,8 +441,9 @@ target, the statues that target needs under a guaranteed or average deposit esti
 from a raw statues/hour rate with its source shown; the upstream Set targets entry (costed for every
 statue first and rejected with the upstream message), Next level for all, a one-step undo of the
 batch action, and the farming breakdown behind one statue's row through the shared formula tree.
-Missing: the upstream "Measure statue farming" panel, which needs the combat simulator's encounter
-run (CS-03), so rates are manual entries today. Formula parity against the upstream JS uses the
+Missing: the upstream "Measure statue farming" panel, which needs a character kill rate the combat
+simulator's stand-in player cannot give (its auto-mode player is not ported), so rates are manual
+entries today. Formula parity against the upstream JS uses the
 fixtures in `crates/statue/tests/statue-requirements.json`, `statue-costs.json` and
 `statue-batch.json`. Details: [`docs/sections/statue.md`](sections/statue.md).
 
@@ -473,7 +475,7 @@ vault 11, bundles, stamps with the lab and pristine multipliers and the exalted 
 signs with Seraph Cosmos, gem shop, guild, talents 78 and 634, companion 18, the Pantheon Shrine with
 its Boss3B card and map rule, prayers 4 and 12, bribe 23, materials and the material talent), and the
 two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's own terms. The other
-fifty descriptors resolve to a warning naming their upstream def instead of a guessed number, since
+forty-six descriptors resolve to a warning naming their upstream def instead of a guessed number, since
 they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capacity rows match the
 upstream stats page exactly on the committed fixture; `crates/stats/tests/stats.rs` pins the eight
 values and checks every category renders.
@@ -482,7 +484,7 @@ The explorer is the registry's second view, built from those same rows so a form
 disagree with the breakdown above it: a search over names, upstream defs and every saved input a
 formula's terms read, a category filter and a computed/not-modelled filter, and one card per formula
 whose value, explanation and terms are the selected row's. The ledger line counts every category
-(`10 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
+(`14 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
 its place instead of disappearing. Each formula links to the definition it ports in
 `Corgan/idleon-research-optimizer`.
 
@@ -509,9 +511,10 @@ expansion behind it - against the upstream calculator in `fixtures/drop-rate.jso
 names, values and operand order, so the tree's children add back up to the card's number, with a
 source on every term and the shared tree's search over labels, inputs and sources. With either
 field blank the card shows the upstream reason and the tree asks for the two run values. Every
-other map's total is the descriptor's whole pool chain, which is the shared stat pipeline the All
-Stats breakdowns (SA-02) still name as a gap, so the card and the tree both name that gap instead of
-guessing a number; the section stays partial until that engine lands.
+other map's total is the descriptor's whole pool chain, which the shared stat engine does not
+carry a descriptor for yet (it totals LUK, not the drop-rate pool chain), so the card and the tree
+both name that gap instead of guessing a number; the section stays partial until that descriptor is
+ported.
 Details: [`docs/sections/drop-rate.md`](sections/drop-rate.md).
 
 The Damage Breakdown's context and summary shell is built (part of DMG-01): the character and map
@@ -837,7 +840,7 @@ ranked by the gain one more point buys, and the EXP rate breakdown in the shared
 figure comes from the imported save, through `CookMaster`, `Meals[0][73]`, `Ribbon[28..]` and the
 upstream external multipliers (grid node 190, superbit 68, companion 87, menagerie 21, the Cook
 Maxxing fountain upgrade, the Canteen Read vial, arcade 69 and salt lick 10). The daily distribution
-(CK-02) and the yellow point allocator (CK-03) stay on the roadmap. Formula parity against the
+(CK-02) and the yellow point allocator (CK-03) are built on the same crate. Formula parity against the
 upstream page uses `fixtures/cooking-mastery.json`, regenerated by
 `script/cooking-mastery-oracle.mjs`. Details:
 [`docs/sections/cooking-mastery.md`](sections/cooking-mastery.md).
