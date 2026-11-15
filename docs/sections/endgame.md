@@ -10,6 +10,10 @@
 
 Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.
 
+## Known gaps
+
+- `EG-G1` 21 leaderboard metrics have no value — blocked by `wire:stats-engine` (landed), `stats:descriptors` (partial)
+
 ## Upstream sources
 
 - endgame.html

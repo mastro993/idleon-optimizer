@@ -10,6 +10,10 @@
 
 Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.
 
+## Known gaps
+
+- `PR-G1` Damage, stats and skills outcome families; bubble icons — blocked by `stats:descriptors` (partial)
+
 ## Upstream sources
 
 - prisma-calc.html

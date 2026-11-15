@@ -30,6 +30,9 @@ function fail(message) {
 const milestonesByKey = new Map();
 const featuresById = new Map();
 const blocks = new Map();
+const blockersById = new Map();
+// Ordered as the parity backlog lists them: a landed blocker's gaps can be closed now.
+const BLOCKER_STATUSES = ['landed', 'partial', 'absent'];
 
 function validate() {
   if (!Array.isArray(roadmap.milestones) || roadmap.milestones.length === 0) {
@@ -98,6 +101,31 @@ function validate() {
     visited.add(id);
   };
   for (const id of featuresById.keys()) visit(id);
+  for (const blocker of roadmap.blockers || []) {
+    if (!blocker.id || !blocker.title) fail(`blocker ${blocker.id || '?'} is missing id or title`);
+    if (blockersById.has(blocker.id)) fail(`duplicate blocker id ${blocker.id}`);
+    if (!BLOCKER_STATUSES.includes(blocker.status)) {
+      fail(`${blocker.id}: status must be one of ${BLOCKER_STATUSES.join(', ')}`);
+    }
+    blockersById.set(blocker.id, blocker);
+  }
+  const gapIds = new Set();
+  for (const milestone of roadmap.milestones) {
+    for (const gap of milestone.gaps || []) {
+      if (!gap.id) fail(`${milestone.key}: gap is missing id`);
+      if (gapIds.has(gap.id) || featuresById.has(gap.id)) fail(`duplicate gap id ${gap.id}`);
+      gapIds.add(gap.id);
+      for (const field of ['title', 'evidence']) {
+        if (!gap[field]) fail(`${gap.id}: gap is missing ${field}`);
+      }
+      if (!Array.isArray(gap.blockedBy) || gap.blockedBy.length === 0) {
+        fail(`${gap.id}: gap names no blocker`);
+      }
+      for (const id of gap.blockedBy) {
+        if (!blockersById.has(id)) fail(`${gap.id}: unknown blocker ${id}`);
+      }
+    }
+  }
 }
 
 function counts() {
@@ -147,6 +175,21 @@ function sectionDoc(milestone) {
     '',
     ...(milestone.build?.length
       ? ['## Current build', '', list(milestone.build), '']
+      : []),
+    ...(milestone.gaps?.length
+      ? [
+          '## Known gaps',
+          '',
+          list(
+            milestone.gaps.map(
+              (gap) =>
+                `\`${gap.id}\` ${gap.title} — blocked by ${gap.blockedBy
+                  .map((id) => `\`${id}\` (${blockersById.get(id).status})`)
+                  .join(', ')}`,
+            ),
+          ),
+          '',
+        ]
       : []),
     '## Upstream sources',
     '',
@@ -212,6 +255,23 @@ function roadmapDoc() {
     lines.push(
       `| ${milestone.id} | ${milestone.title} | ${groups.get(milestone.group) || milestone.group} | ${milestone.features.length} | ${milestone.status || 'planned'} | ${(milestone.dependsOn || []).join(', ') || '-'} | [${milestone.key}](sections/${milestone.key}.md) |`,
     );
+  }
+  if (blockersById.size > 0) {
+    const gapsBy = new Map();
+    for (const milestone of roadmap.milestones) {
+      for (const gap of milestone.gaps || []) {
+        for (const id of gap.blockedBy) gapsBy.set(id, [...(gapsBy.get(id) || []), gap.id]);
+      }
+    }
+    const ordered = [...blockersById.values()].sort(
+      (a, b) => BLOCKER_STATUSES.indexOf(a.status) - BLOCKER_STATUSES.indexOf(b.status),
+    );
+    lines.push('', '## Parity backlog', '', '| Blocker | Status | Gaps it blocks |', '| --- | --- | --- |');
+    for (const blocker of ordered) {
+      const gaps = (gapsBy.get(blocker.id) || []).join(', ') || '-';
+      lines.push(`| \`${blocker.id}\` ${blocker.title} | ${blocker.status} | ${gaps} |`);
+    }
+    lines.push('', 'A `landed` blocker means its gaps can be closed now.');
   }
   lines.push(
     '',

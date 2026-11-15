@@ -17,6 +17,10 @@ Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, de
 - FI-03 Depth projection and other characters: the Trench card projects the next depths from the saved cavern rows, with the jar and Bolaia requirement reductions, the efficiency requirements each depth raises, the selected and fish-maximizing lure + line hours per depth, cumulative totals, and a helper table of the other characters fishing the Trench whose ticked fish per hour sum into the team ETA; the requirement and every projected row are pinned against an oracle fixture evaluated from the upstream module.
 - The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target, and the Trench projection also reads the cavern rows (`Holes`, `Spelunk`). The ranking and the per-depth fastest search hold efficiency and the EXP multiplier fixed across combinations, because the upstream recomputes them from the toolkit's POW and EXP through the skill systems.
 
+## Known gaps
+
+- `FI-G1` Efficiency, EXP multiplier, AFK rate and related skill values are typed in — blocked by `stats:skill-descriptors` (absent)
+
 ## Upstream sources
 
 - fishing-calc.html

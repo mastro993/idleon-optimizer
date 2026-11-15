@@ -16,6 +16,10 @@ Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgra
 - KL-02 +1 upgrade comparison: the upgrade list with saved levels and availability, the selection preview, the trials through the shared task runner and the comparison table that marks the best option per baseline and flags a stale result.
 - KL-03 Saved buffs and results: the save's `BuffsActive` rows with kept/dropped markers, the Keep saved buffs and Unlimited inventory options, the bag-limited skull pickups the trial models, progress/cancel and the results export document. The combat simulator is still M2, so kills per second stands in for the character's damage; the encounter, respawn and drop maths are the game's own.
 
+## Known gaps
+
+- `KL-G1` Kills per second is a typed stand-in — blocked by `combat:auto-player` (absent)
+
 ## Upstream sources
 
 - killroy-calc.html
