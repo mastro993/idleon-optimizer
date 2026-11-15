@@ -494,9 +494,12 @@ nine `CATEGORY_ORDER` tabs group them. Eight carry-capacity rows are ported in f
 vault 11, bundles, stamps with the lab and pristine multipliers and the exalted doubler chain, star
 signs with Seraph Cosmos, gem shop, guild, talents 78 and 634, companion 18, the Pantheon Shrine with
 its Boss3B card and map rule, prayers 4 and 12, bribe 23, materials and the material talent), and the
-two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's own terms. The other
-forty-six descriptors resolve to a warning naming their upstream def instead of a guessed number, since
-they need the shared talent/stamp/bubble/card/equipment stat pipeline. The capacity rows match the
+two research rows (`research-exp`, `research-afk-gains`) reuse the simulator's own terms. The four
+`total-*` rows and the `damage` row read the shared stat engine (`crates/stats-engine`): `damage` is
+the maximum damage over its three layers, partial with upstream's missing-metadata reason, and a
+dungeon map hides it as the Damage section does. The other forty-five descriptors resolve to a warning
+naming their upstream def instead of a guessed number. Wiring the remaining landed providers into
+the sections that still name a gap is planned in [`wiring-landed-providers.md`](wiring-landed-providers.md). The capacity rows match the
 upstream stats page exactly on the committed fixture; `crates/stats/tests/stats.rs` pins the eight
 values and checks every category renders.
 
@@ -504,7 +507,7 @@ The explorer is the registry's second view, built from those same rows so a form
 disagree with the breakdown above it: a search over names, upstream defs and every saved input a
 formula's terms read, a category filter and a computed/not-modelled filter, and one card per formula
 whose value, explanation and terms are the selected row's. The ledger line counts every category
-(`14 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
+(`15 of 60 formulas computed · Combat 0/13 · …`), so a category with no ported formula still shows
 its place instead of disappearing. Each formula links to the definition it ports in
 `Corgan/idleon-research-optimizer`.
 

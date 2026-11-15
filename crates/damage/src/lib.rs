@@ -28,18 +28,15 @@ mod layers;
 mod tree;
 
 use idleon_common::formula::FormulaNode;
-use idleon_save::{Roster, Save};
+use idleon_save::Save;
 use idleon_stats::{self as stats, Category, Snapshot};
 use serde::{Deserialize, Serialize};
 
+pub use idleon_stats::breakdowns::damage::{DUNGEON, Metadata};
 pub use layers::{Layer, LayerId, Layers, Mastery};
 
 /// Why a summary cannot be computed without the shared stat pipeline.
 pub const STATS_ENGINE: &str = "The shared stat pipeline (talents, stamps, bubbles, cards and equipment) is not ported yet, so the damage layers cannot be resolved.";
-
-/// Why upstream hides the summary on a dungeon map.
-pub const DUNGEON: &str =
-    "Unavailable: current-run Dungeon DMG and Mastery are not stored in save JSON.";
 
 /// The calculation context the damage page resolves against.
 ///
@@ -155,82 +152,6 @@ fn map_label(map: usize, current: usize) -> String {
         label.push_str(" (current)");
     }
     label
-}
-
-/// The saved metadata the summary reads, ported from `js/save/loader.js`.
-///
-/// The loader sets `companionDataAvailable` from the `it.json` wrapper's
-/// `companion.l` list and `activeVoteDataAvailable` from
-/// `serverVars.voteCategories[0]`; both default to unavailable (`js/state.js`),
-/// so a plain `save.json` reads as missing both.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Metadata {
-    /// Whether the import carried the companion roster.
-    pub companions: bool,
-    /// Whether it carried the server's active-vote row.
-    pub vote: bool,
-}
-
-impl Metadata {
-    /// Both fields present, for a summary built without a save.
-    pub const COMPLETE: Metadata = Metadata {
-        companions: true,
-        vote: true,
-    };
-
-    /// Read the pair from an import, wrapped or flat.
-    pub fn read(save: &Save) -> Self {
-        Self {
-            companions: Roster::read(save.root().get("companion")).available,
-            vote: save
-                .get("serverVars")
-                .and_then(|vars| vars.get("voteCategories").cloned())
-                .and_then(|categories| categories.get(0).cloned())
-                .and_then(|vote| js_number(&vote))
-                .is_some_and(f64::is_finite),
-        }
-    }
-
-    /// Whether the import carried everything the summary reads.
-    pub fn complete(&self) -> bool {
-        self.companions && self.vote
-    }
-
-    /// The descriptor's `missingMetadata` list, in its order.
-    pub fn missing(&self) -> Vec<&'static str> {
-        let mut missing = Vec::new();
-        if !self.companions {
-            missing.push("companion ownership");
-        }
-        if !self.vote {
-            missing.push("current server vote");
-        }
-        missing
-    }
-
-    /// The descriptor's `reason`, empty when nothing is missing.
-    pub fn reason(&self) -> String {
-        let missing = self.missing();
-        if missing.is_empty() {
-            return String::new();
-        }
-        format!(
-            "Partial total: the imported JSON does not include {} metadata.",
-            missing.join(" or ")
-        )
-    }
-}
-
-/// JavaScript's `Number(value)` for the saved vote row: numbers and numeric
-/// strings read as numbers, and anything else is not a value.
-fn js_number(value: &serde_json::Value) -> Option<f64> {
-    match value {
-        serde_json::Value::Number(number) => number.as_f64(),
-        serde_json::Value::String(text) => text.trim().parse().ok(),
-        serde_json::Value::Bool(flag) => Some(if *flag { 1.0 } else { 0.0 }),
-        _ => None,
-    }
 }
 
 /// A computed summary, or the reason the page cannot compute one.

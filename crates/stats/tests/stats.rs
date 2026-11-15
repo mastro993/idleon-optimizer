@@ -311,6 +311,80 @@ fn the_fixture_research_rows_agree_with_the_simulator() {
     );
 }
 
+/// The `damage` row against `fixtures/damage.json`, which
+/// `script/damage-oracle.mjs` writes from `js/stats/defs/damage.js`: the row is
+/// the maximum damage, its children are the three layers, and it is partial
+/// exactly when upstream is, with upstream's reason.
+#[test]
+fn the_damage_row_matches_the_upstream_descriptor() {
+    let close =
+        |left: f64, right: f64| (left - right).abs() <= 1e-9 * left.abs().max(right.abs()).max(1.0);
+    let imported = fixture();
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/damage.json");
+    let text = std::fs::read_to_string(path).expect("fixtures/damage.json is committed");
+    let oracle: serde_json::Value = serde_json::from_str(&text).expect("the oracle is JSON");
+    let cases = oracle["cases"].as_array().expect("one case per character");
+    assert!(!cases.is_empty());
+    for case in cases {
+        let character = case["character"].as_u64().expect("a character") as usize;
+        let map = case["map"].as_u64().expect("a map") as usize;
+        let sheet = idleon_stats::Sheet::build(&idleon_stats::BreakdownInputs {
+            save: &imported.save,
+            simulation: &imported.simulation,
+            sim_context: &imported.context,
+            character,
+            map,
+        });
+        let row = sheet.get("damage").expect("damage is listed");
+        let idleon_stats::Resolution::Value { tree, partial } = &row.resolution else {
+            panic!("character {character}: damage did not resolve");
+        };
+        let max = case["max"].as_f64().expect("a maximum");
+        assert!(
+            close(tree.value, max),
+            "character {character}: {} vs {max}",
+            tree.value
+        );
+        let layers = ["base", "percent", "multiplier"];
+        assert_eq!(tree.children.len(), layers.len());
+        for (child, layer) in tree.children.iter().zip(layers) {
+            let want = case["layers"][layer]["value"].as_f64().expect("a layer");
+            assert!(
+                close(child.value, want),
+                "character {character} {layer}: {} vs {want}",
+                child.value
+            );
+        }
+        let product: f64 = tree.children.iter().map(|child| child.value).product();
+        assert!(close(product, tree.value), "character {character}");
+        let reason = case["reason"].as_str().unwrap_or_default();
+        assert_eq!(case["partial"].as_bool(), Some(partial.is_some()));
+        assert_eq!(
+            partial.as_deref().unwrap_or_default(),
+            reason,
+            "character {character}"
+        );
+    }
+}
+
+#[test]
+fn the_damage_row_is_unavailable_on_a_dungeon_map() {
+    let imported = fixture();
+    let sheet = idleon_stats::Sheet::build(&idleon_stats::BreakdownInputs {
+        save: &imported.save,
+        simulation: &imported.simulation,
+        sim_context: &imported.context,
+        character: 0,
+        map: 39,
+    });
+    let row = sheet.get("damage").expect("damage is listed");
+    assert_eq!(
+        row.warning(),
+        Some(idleon_stats::breakdowns::damage::DUNGEON)
+    );
+    assert_eq!(row.resolution.value(), None);
+}
+
 #[test]
 fn every_category_renders_and_unported_rows_name_their_source() {
     let sheet = fixture_sheet(&fixture());
@@ -337,7 +411,7 @@ fn the_explorer_covers_every_descriptor_and_every_category() {
     let coverage = sheet.coverage();
     assert_eq!(coverage.total, sheet.descriptors().len());
     assert_eq!(coverage.computed, sheet.resolved());
-    assert_eq!(coverage.computed, 14);
+    assert_eq!(coverage.computed, 15);
     assert_eq!(
         coverage.categories.len(),
         idleon_stats::BreakdownCategory::ALL.len()
