@@ -1,6 +1,7 @@
 //! The window: shell, dashboard, shared section chrome and the automation bridge.
 
 pub(crate) mod assets;
+#[cfg(feature = "automation")]
 pub(crate) mod bridge;
 pub(crate) mod dashboard;
 pub(crate) mod export;

@@ -9,6 +9,12 @@ license.workspace = true
 name = "idleon-optimizer"
 path = "src/main.rs"
 
+[features]
+default = ["automation"]
+# The gpui-mcp bridge the agent harnesses read and drive the window through.
+# A build for end users leaves it out: `cargo build --release --no-default-features`.
+automation = ["dep:gpui-mcp"]
+
 [dependencies]
 idleon-cglunko = { workspace = true }
 idleon-clamworks = { workspace = true }
@@ -49,7 +55,7 @@ idleon-ui = { workspace = true }
 ely-gpui-component = { workspace = true }
 gpui = { workspace = true }
 gpui_platform = { workspace = true }
-gpui-mcp = { workspace = true }
+gpui-mcp = { workspace = true, optional = true }
 anyhow = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
