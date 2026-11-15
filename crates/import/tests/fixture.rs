@@ -409,6 +409,8 @@ fn the_fixture_survives_a_project_export_and_import() {
         sections: Default::default(),
         warnings: Vec::new(),
         origin: Origin::Project,
+        has_research: true,
+        has_supplements: true,
     };
     let text = project::write(&document);
     let Document::Project(back) = project::read(&text).expect("the export reads back") else {

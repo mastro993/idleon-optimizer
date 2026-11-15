@@ -343,6 +343,8 @@ mod tests {
                 .collect(),
             warnings: Vec::new(),
             origin: core_project::Origin::Project,
+            has_research: true,
+            has_supplements: true,
         };
         core_project::value(&project)
     }

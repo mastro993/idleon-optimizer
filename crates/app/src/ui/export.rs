@@ -222,6 +222,8 @@ mod tests {
             sections: Default::default(),
             warnings: Vec::new(),
             origin: project::Origin::Project,
+            has_research: true,
+            has_supplements: true,
         }
     }
 
