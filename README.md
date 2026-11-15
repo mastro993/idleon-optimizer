@@ -183,8 +183,13 @@ The sync is idempotent: milestones match by title, issues by feature-id prefix. 
 
 ## Run
 
+**Download**: unsigned builds for macOS, Linux and Windows are on the
+[Releases](https://github.com/mastro993/idleon-optimizer/releases) page, with a beta of `main`
+every night; see [`docs/release.md`](docs/release.md) for the first-run steps on each platform.
+To build from source instead:
+
 Requirements: Rust 1.100 (`rust-toolchain.toml` selects it), a C toolchain (Xcode Command Line
-Tools on macOS — the only platform CI builds), and Node 20.11 or newer for the scripts under
+Tools on macOS — the only platform CI tests), and Node 20.11 or newer for the scripts under
 `script/`.
 
 ```console
