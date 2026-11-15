@@ -133,15 +133,28 @@ impl AppState {
         );
     }
 
+    /// Compute the forecast once per save and week count; rendering reads it.
+    pub(crate) fn ensure_killroy_forecast(&mut self) {
+        let Some(save) = self.save.as_ref() else {
+            self.killroy_forecast = None;
+            self.killroy_forecast_key = None;
+            return;
+        };
+        let key = (self.save_revision, self.killroy.weeks);
+        if self.killroy_forecast_key == Some(key) && self.killroy_forecast.is_some() {
+            return;
+        }
+        self.killroy_forecast = Some(killroy::forecast(save, self.killroy.weeks));
+        self.killroy_forecast_key = Some(key);
+    }
+
     /// The trials a new save, or the section's first render, starts with.
     pub(crate) fn killroy_default_selection(&mut self) {
-        let Some(save) = self.save.as_ref() else {
+        self.ensure_killroy_forecast();
+        let Some(Ok(forecast)) = self.killroy_forecast.as_ref() else {
             return;
         };
-        let checked = self.killroy.checked_weeks.clone();
-        let Ok(forecast) = killroy::forecast(save, self.killroy.weeks) else {
-            return;
-        };
+        let checked = &self.killroy.checked_weeks;
         self.killroy.selection = forecast
             .weeks
             .iter()

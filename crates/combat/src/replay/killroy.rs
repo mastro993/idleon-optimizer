@@ -70,6 +70,8 @@ impl KillroyReplay {
         if self.version != 1 || !is_truthy(&self.raw) {
             return Err(invalid());
         }
+        // `Save::new` owns its tree; this runs once per captured or opened
+        // replay, not per frame.
         let characters = Save::new(self.raw.clone()).character_count() as i64;
         if self.char_idx < 0 || self.char_idx >= characters {
             return Err(invalid());
