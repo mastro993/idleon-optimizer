@@ -80,7 +80,7 @@ use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
 use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::Plan as JellySectionPlan;
 use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
-use idleon_killroy::Plan as KillroyPlan;
+use idleon_killroy::{Forecast as KillroyForecast, KillroyError, Plan as KillroyPlan};
 use idleon_ladle::Ladle;
 use idleon_monument as monument;
 use idleon_opal::Opal;
@@ -221,6 +221,11 @@ pub(crate) struct AppState {
     pub(crate) research: ResearchState,
     /// The Killroy section's forecast settings.
     pub(crate) killroy: KillroyState,
+    /// The Killroy forecast for the current save and week count, kept until
+    /// either moves; `Err` is kept too, so a refused save is not re-read.
+    pub(crate) killroy_forecast: Option<Result<KillroyForecast, KillroyError>>,
+    /// The `(save_revision, weeks)` `killroy_forecast` was computed from.
+    pub(crate) killroy_forecast_key: Option<(u64, usize)>,
     /// The decoded save behind the simulation, for sections that read raw fields.
     pub(crate) save: Option<Save>,
     /// The sailing fleet imported from the save, and the route context.
@@ -1167,6 +1172,8 @@ impl AppState {
             last_section: None,
             research,
             killroy: KillroyState::default(),
+            killroy_forecast: None,
+            killroy_forecast_key: None,
             save: None,
             fleet: Fleet::default(),
             sailing: RouteContext::default(),
