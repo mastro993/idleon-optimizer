@@ -351,12 +351,17 @@ fn meal_rows(save: &Save) -> Option<Meals> {
     if levels.is_empty() {
         return None;
     }
-    let stocks = idleon_save::at(&rows, 2)
+    let mut stocks: Vec<f64> = idleon_save::at(&rows, 2)
         .map(idleon_save::row_values)
         .unwrap_or_default()
         .iter()
         .map(|value| idleon_save::number(value).unwrap_or(0.0).max(0.0))
         .collect();
+    // The planner indexes stocks by meal; a save whose stock row is shorter
+    // than its level row holds none of the missing meals.
+    if stocks.len() < levels.len() {
+        stocks.resize(levels.len(), 0.0);
+    }
     Some(Meals { levels, stocks })
 }
 
