@@ -632,6 +632,9 @@ impl Tree {
 
     /// Save the node: advance it, or re-simulate the children it already has.
     /// Returns the node to select afterwards.
+    ///
+    /// A stop request can leave the tree partly re-simulated while this still
+    /// returns `Some`; a caller that asked for the stop must discard the tree.
     pub fn save(
         &mut self,
         id: u64,
@@ -689,6 +692,9 @@ impl Tree {
     /// An auto-insight child is a hidden chain ending at a visible level-up: it
     /// is deleted and re-advanced, and the level-up's own children move to the
     /// new tail.
+    ///
+    /// A stop request can leave the tree partly re-simulated while this still
+    /// returns `Some`; a caller that asked for the stop must discard the tree.
     fn resim_children(
         &mut self,
         id: u64,
@@ -830,6 +836,10 @@ impl Tree {
     }
 
     /// The upstream Auto Shapes action: place the owned shapes for the rate.
+    ///
+    /// The optimiser returns its best layout so far when stopped, so this
+    /// returns `Some` after a stop too; a caller that asked for the stop must
+    /// discard the tree.
     pub fn auto_shapes(
         &mut self,
         id: u64,
@@ -1003,6 +1013,16 @@ mod tests {
             changes.iter().any(|change| change.starts_with("Grid:")),
             "no grid change reported: {changes:?}"
         );
+    }
+
+    #[test]
+    fn a_stopped_auto_shapes_still_reports_success_so_callers_must_check_the_stop() {
+        let (state, ctx) = state();
+        let mut tree = Tree::from_state(&state);
+        let mut stop = |_: Progress| Control::Stop;
+        // The optimiser is told to stop at its first report, yet the call
+        // succeeds: a caller that saw the stop must not store this tree.
+        assert!(tree.auto_shapes(1, &ctx, &mut stop).is_some());
     }
 
     #[test]
