@@ -47,8 +47,5 @@ impl AppState {
 
 /// Stop a run and drop its stored result: the inputs it answered are gone.
 pub(crate) fn discard_run<R: 'static, I: 'static>(runner: &Entity<TaskRunner<R, I>>, cx: &mut App) {
-    runner.update(cx, |runner, _| {
-        runner.cancel();
-        runner.clear();
-    });
+    runner.update(cx, |runner, _| runner.discard());
 }
