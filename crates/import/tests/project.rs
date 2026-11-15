@@ -43,6 +43,8 @@ fn an_exported_project_reads_as_a_research_state_in_the_save_importer() {
         sections: Map::new(),
         warnings: Vec::new(),
         origin: Origin::Project,
+        has_research: true,
+        has_supplements: true,
     };
     let document: Value = serde_json::from_str(&write(&project)).expect("the project is JSON");
     let imported = import(&document["research"].to_string()).expect("the research half imports");

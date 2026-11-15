@@ -326,6 +326,8 @@ mod tests {
                 .collect(),
             warnings: Vec::new(),
             origin: core_project::Origin::Project,
+            has_research: true,
+            has_supplements: true,
         };
         serde_json::from_str(&core_project::write(&project)).expect("the project writes JSON")
     }

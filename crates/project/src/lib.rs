@@ -87,6 +87,12 @@ pub struct Project {
     pub simulation: Simulation,
     /// The save-derived multipliers and user supplements behind the rate.
     pub context: SimContext,
+    /// Whether the document carried a `research` block; `false` means
+    /// `simulation` is the default, not a state the document chose.
+    pub has_research: bool,
+    /// Whether the document carried a `supplements` block; `false` means
+    /// `context` is the default.
+    pub has_supplements: bool,
     /// One config object per section id.
     pub sections: Map<String, Value>,
     /// Fields the document carried that this build could not read.
@@ -399,6 +405,8 @@ fn project(object: &Map<String, Value>) -> Result<Document, Error> {
         .and_then(Value::as_str)
         .map(str::to_string);
     let save = object.get("save").filter(|save| !save.is_null()).cloned();
+    let has_research = object.get("research").is_some();
+    let has_supplements = object.get("supplements").is_some();
     let simulation = match object.get("research") {
         Some(research) => simulation(research, &mut warnings),
         None => {
@@ -438,6 +446,8 @@ fn project(object: &Map<String, Value>) -> Result<Document, Error> {
         sections,
         warnings,
         origin: Origin::Project,
+        has_research,
+        has_supplements,
     })))
 }
 
@@ -612,6 +622,8 @@ fn migrate(object: &Map<String, Value>) -> Project {
         sections: Map::new(),
         warnings,
         origin: Origin::UpstreamState,
+        has_research: true,
+        has_supplements: true,
     }
 }
 
@@ -693,6 +705,8 @@ mod tests {
                 .collect(),
             warnings: Vec::new(),
             origin: Origin::Project,
+            has_research: true,
+            has_supplements: true,
         }
     }
 
@@ -711,6 +725,20 @@ mod tests {
         assert_eq!(back.context, project.context);
         assert_eq!(back.sections, project.sections);
         assert!(back.warnings.is_empty(), "{:?}", back.warnings);
+    }
+
+    #[test]
+    fn a_project_without_research_or_supplements_says_so() {
+        let text = r#"{ "format": "idleon-optimizer-project", "version": 1, "sections": {} }"#;
+        let Document::Project(project) = read(text).expect("the document reads") else {
+            panic!("a project document");
+        };
+        assert!(!project.has_research);
+        assert!(!project.has_supplements);
+        let Document::Project(back) = read(&write(&project_fixture())).expect("reads") else {
+            panic!("a project document");
+        };
+        assert!(back.has_research && back.has_supplements);
     }
 
     #[test]
