@@ -709,7 +709,7 @@ fn target_order(target: Target) -> usize {
 /// Adds EXP to a bar and moves its rank up: upstream `_add`.
 fn add(exp: &mut [f64; 5], ranks: &mut [f64; 5], bar: usize, amount: f64) {
     exp[bar] += amount;
-    while exp[bar] >= RoyalGuardian::exp_formula(ranks[bar], bar) {
+    while ranks[bar] < MAX_RANK && exp[bar] >= RoyalGuardian::exp_formula(ranks[bar], bar) {
         ranks[bar] += 1.0;
     }
 }

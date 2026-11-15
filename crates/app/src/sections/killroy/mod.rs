@@ -116,6 +116,9 @@ impl State {
         if self.checked_weeks.is_empty() {
             self.checked_weeks.push(0);
         }
+        // A selection from another build's project file can name a slot the
+        // week does not have.
+        self.selection.retain(|selection| selection.slot < 3);
         self.selection.sort_unstable();
         self.selection.dedup();
         self.upgrades.retain(|id| *id < killroy::UPGRADES);

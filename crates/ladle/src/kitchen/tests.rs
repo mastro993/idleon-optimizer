@@ -149,6 +149,18 @@ fn a_save_without_meals_or_kitchens_has_no_reset() {
 }
 
 #[test]
+fn a_stock_row_shorter_than_the_levels_holds_none_of_the_missing_meals() {
+    let reset = Reset::from_save(&Save::new(json!({
+        "Meals": "[[5,3,2]]",
+        "Cooking": "[[1,-1,0,0,0,0,0,0,0,0,0]]",
+        "Menagerie": "[[0,0,0,0,0,9],[],[0,0,0,0,0,1],[]]",
+    })))
+    .expect("levels without stocks still plan");
+    assert_eq!(reset.meals.stocks, vec![0.0; 3]);
+    plan(&reset, &inputs()).expect("the planner reads a stock for every meal");
+}
+
+#[test]
 fn the_horizon_clamps_to_the_upstream_range() {
     let reset = reset();
     let short = plan(

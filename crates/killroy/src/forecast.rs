@@ -189,7 +189,10 @@ pub(super) fn encounter(
         return Err(KillroyError::new("Choose a saved character"));
     }
     let rotation = rotation(save)?;
-    Ok(encounters(save, &rotation, ci, week_offset)[slot].clone())
+    encounters(save, &rotation, ci, week_offset)
+        .get(slot)
+        .cloned()
+        .ok_or_else(|| KillroyError::new("Choose one of the character's three encounters"))
 }
 
 /// The save's current rotation week and reset time, from its snapshot clock.

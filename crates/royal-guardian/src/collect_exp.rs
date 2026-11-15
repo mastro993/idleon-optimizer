@@ -491,7 +491,7 @@ impl ExpModel {
 
 /// The rank an EXP bar reaches at or above `exp`: upstream `_rankFrom`.
 fn rank_from(exp: f64, bar: usize, mut rank: f64) -> f64 {
-    while exp >= RoyalGuardian::exp_formula(rank, bar) {
+    while rank < MAX_RANK && exp >= RoyalGuardian::exp_formula(rank, bar) {
         rank += 1.0;
     }
     rank

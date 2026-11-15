@@ -466,6 +466,9 @@ impl Loadout {
 
     /// Whether an item may go into a slot, the rules `equip` enforces.
     pub fn check_slot(&self, twin: usize, slot: SlotKind, item: &Item) -> Result<(), EquipError> {
+        if twin >= self.twins.len() {
+            return Err(EquipError::UnknownTwin);
+        }
         let Some(def) = item.def() else {
             return Err(EquipError::UnknownItem(item.key.clone()));
         };

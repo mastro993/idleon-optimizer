@@ -124,13 +124,15 @@ impl Save {
                     .get(row.id)
                     .copied()
                     .filter(|max| max.is_finite() && *max >= 0.0)
-                    .unwrap_or(row.stamina);
+                    .unwrap_or(row.stamina)
+                    .max(0.0);
                 Character {
                     id: row.id,
                     name: row.name.clone(),
                     class_id: row.class_id,
                     level: row.level,
-                    stamina: row.stamina.clamp(0.0, max_stamina),
+                    // A corrupt save can hold a negative stamina, which `clamp` would panic on.
+                    stamina: row.stamina.max(0.0).min(max_stamina),
                     max_stamina,
                 }
             })
@@ -456,6 +458,17 @@ mod tests {
             inputs.partial,
             "the fixture shape carries no companion list"
         );
+    }
+
+    #[test]
+    fn a_negative_saved_stamina_reads_as_empty() {
+        let mut save = small_save();
+        let mut rows: Vec<Value> = serde_json::from_str(save["Spelunk"].as_str().unwrap()).unwrap();
+        rows[3][0] = json!(-5);
+        save["Spelunk"] = Value::String(Value::Array(rows).to_string());
+        let inputs = read(&save);
+        assert_eq!(inputs.characters[0].stamina, 0.0);
+        assert_eq!(inputs.characters[0].max_stamina, 0.0);
     }
 
     #[test]

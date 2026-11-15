@@ -226,7 +226,9 @@ pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
     // AE481 _event_01sec (83423): the counter starts at 100 + Time and drops a
     // tenth every tick, so the results boundary is one `100 + Time`-long run.
     let ticks_per_spawn = (SPAWN_MS / STEP_MS) as u64;
-    let total_ticks = (duration * 1_000.0 / SPAWN_MS).round() as u64;
+    // A corrupt save can carry a Time level at or below -100; the run is then
+    // one spawn tick long instead of never reaching its boundary.
+    let total_ticks = (duration * 1_000.0 / SPAWN_MS).round().max(1.0) as u64;
     let mut arrivals_left = 0;
     let mut step = 0u64;
     let mut finished_at = None;
@@ -248,7 +250,7 @@ pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
                 run.live += 1;
             }
             // The results boundary is the tick `100 + Time` seconds in.
-            if step / ticks_per_spawn == total_ticks {
+            if step / ticks_per_spawn >= total_ticks {
                 finished_at = Some(now);
             }
         }
@@ -302,6 +304,13 @@ mod tests {
         assert!((trial(&inputs, 1).seconds - 255.0).abs() < 1e-9);
         inputs.levels[0] += 1.0;
         assert!((trial(&inputs, 1).seconds - 256.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_trial_with_an_out_of_range_time_level_still_ends() {
+        let mut inputs = fixture_levels();
+        inputs.levels[0] = -500.0;
+        assert!((trial(&inputs, 1).seconds - 0.1).abs() < 1e-9);
     }
 
     #[test]

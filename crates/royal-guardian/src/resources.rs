@@ -111,7 +111,8 @@ impl RoyalGuardian {
         if raw < 0.0 {
             return capacity;
         }
-        raw.clamp(0.0, capacity)
+        // `clamp` panics on a NaN or negative bound, which a corrupt grade can produce.
+        raw.max(0.0).min(capacity.max(0.0))
     }
 
     /// What is still missing from a full node: upstream `resourceRemaining`.
