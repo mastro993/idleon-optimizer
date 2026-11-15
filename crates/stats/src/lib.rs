@@ -24,8 +24,8 @@ pub use breakdowns::{
 };
 pub use context::{ConstructionMode, Context, MapVisibility, Skill};
 pub use data::{
-    EquipmentSet, Monster, afk_target, class_name, equipment_set, kill_requirement, map_count,
-    map_name, monster, monster_count, set_bonus, target_name,
+    EquipmentSet, Monster, afk_target, class_label, class_name, equipment_set, kill_requirement,
+    map_count, map_name, monster, monster_count, set_bonus, target_name,
 };
 pub use edits::{Affected, GameInput, Sandbox};
 pub use explorer::{

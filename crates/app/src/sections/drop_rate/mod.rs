@@ -87,7 +87,7 @@ impl State {
         };
         (0..snapshot.characters())
             .map(|character| {
-                let class = stats::class_name(snapshot.class_id(character)).replace('_', " ");
+                let class = stats::class_label(snapshot.class_id(character));
                 Choice::new(
                     character.to_string(),
                     format!("{} ({class})", snapshot.name(character)),
