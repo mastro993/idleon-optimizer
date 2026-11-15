@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -53,8 +54,9 @@ const masteryTotal = mastery?.unlocked
   ? mastery.levels.reduce((sum, level) => sum + level, 0) + (state.rLv - mastery.level)
   : 0;
 
+const output = join(root, 'fixtures/obs-unlock.json');
 writeFileSync(
-  join(root, 'fixtures/obs-unlock.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'js/analysis.js (computeObsUnlockPriority), js/save/context.js',
@@ -93,6 +95,7 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/obs-unlock.json: ${result.results.length} undiscovered observations, ` +
     `rolls ${result.minRoll}–${result.maxRoll}, ${result.rollsPerDay}/day`

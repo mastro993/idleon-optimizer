@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -457,6 +458,7 @@ const payload = {
 
 const out = new URL('../fixtures/sneaking.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
+recordProvenance(out, source);
 console.log(
   `wrote ${payload.twins.length} twins, ${payload.inventory.length} inventory items, ${payload.functions.items.length} item stats`,
 );

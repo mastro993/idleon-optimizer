@@ -13,6 +13,7 @@
 import { spawnSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -242,7 +243,9 @@ if (payload.growthBreakpoints.length !== seedFamilyCount()) {
   throw new Error('the upstream growth breakpoints changed shape');
 }
 
-writeFileSync(join(root, 'fixtures/farming-signals.json'), `${JSON.stringify(payload, null, 2)}\n`);
+const output = join(root, 'fixtures/farming-signals.json');
+writeFileSync(output, `${JSON.stringify(payload, null, 2)}\n`);
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/farming-signals.json: ${payload.plots.length} plots, ` +
     `${payload.curves.length} curves, ${payload.cropScientist.length} Crop Scientist rows, ` +

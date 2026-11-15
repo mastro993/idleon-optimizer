@@ -16,6 +16,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -130,12 +131,15 @@ const resolved = cases.map((entry) => ({
 }));
 
 const root = new URL('..', import.meta.url);
+const overridesTable = new URL('crates/combat/data/combat-overrides.json', root);
 writeFileSync(
-  new URL('crates/combat/data/combat-overrides.json', root),
+  overridesTable,
   `${JSON.stringify({ groups: toggles.TOGGLE_GROUPS, toggles: catalog }, null, 2)}\n`
 );
+recordProvenance(overridesTable, source);
+const overridesFixture = new URL('fixtures/combat-overrides.json', root);
 writeFileSync(
-  new URL('fixtures/combat-overrides.json', root),
+  overridesFixture,
   `${JSON.stringify(
     {
       source: [
@@ -150,6 +154,7 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(overridesFixture, source);
 console.log(
   `wrote ${catalog.length} mechanics, ${cases.length} cases and ${medallions.length} medallions`
 );

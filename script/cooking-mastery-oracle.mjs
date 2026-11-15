@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -374,10 +375,12 @@ const payload = {
   yellow: yellowFixture(),
 };
 
+const output = join(root, 'fixtures/cooking-mastery.json');
 writeFileSync(
-  join(root, 'fixtures/cooking-mastery.json'),
+  output,
   `${JSON.stringify(payload, null, 2)}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote fixtures/cooking-mastery.json: ${payload.expRate.toFixed(2)} EXP/hr, ` +
     `${upgrades.length} upgrades ranked`

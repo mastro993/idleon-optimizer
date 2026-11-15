@@ -8,6 +8,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -83,6 +84,7 @@ const payload = {
 
 const out = new URL('../crates/fountain/data/fountain.json', import.meta.url);
 writeFileSync(out, `${JSON.stringify(payload, null, 1)}\n`);
+recordProvenance(out, source);
 console.log(
   `wrote ${payload.upgrades.length} waters x ${payload.upgrades[0]?.length} upgrades, ${payload.holes.measurementType.length} measurements`,
 );

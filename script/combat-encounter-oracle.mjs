@@ -25,6 +25,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -130,10 +131,12 @@ const data = {
   ),
   maps,
 };
+const encountersPath = new URL('../crates/combat/data/encounters.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/combat/data/encounters.json', import.meta.url),
+  encountersPath,
   JSON.stringify(data)
 );
+recordProvenance(encountersPath, source);
 
 // ---------------------------------------------------------------------------
 // Fixture: the upstream engine's own outcomes for the two players the port runs.
@@ -236,8 +239,10 @@ const fixture = {
   overrides: OVERRIDES,
   cases,
 };
+const combatEncounterPath = new URL('../fixtures/combat-encounter.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/combat-encounter.json', import.meta.url),
+  combatEncounterPath,
   JSON.stringify(fixture, null, 1)
 );
+recordProvenance(combatEncounterPath, source);
 console.log(`wrote ${maps.length} maps and ${cases.length} fixture cases`);

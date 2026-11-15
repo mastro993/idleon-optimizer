@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -50,10 +51,12 @@ if (payload.rogDesc.length !== payload.rogQty.length) {
   throw new Error('RoG descriptions and quantities disagree');
 }
 
+const output = new URL('../crates/sushi/data/sushi.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/sushi/data/sushi.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${payload.upgrades.length} upgrades, ${payload.tierToKnowledgeCat.length} sushi tiers, ` +
     `${payload.knowledgeCatDesc.length} knowledge categories and ${payload.rogQty.length} RoG bonuses`

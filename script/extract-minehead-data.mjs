@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -47,10 +48,12 @@ if (payload.floorRewards.qty.length !== payload.floorRewards.desc.length) {
   throw new Error('floor reward quantities and descriptions disagree');
 }
 
+const output = new URL('../crates/minehead/data/minehead.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/minehead/data/minehead.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${payload.upgrades.length} upgrades, ${payload.floorRewards.qty.length} floor rewards, ` +
     `${payload.gridDims.length} grid sizes and ${payload.bossNames.length} boss names`

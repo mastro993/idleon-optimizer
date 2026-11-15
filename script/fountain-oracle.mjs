@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -841,8 +842,10 @@ const payload = {
   simulation,
 };
 
+const output = new URL('../fixtures/fountain.json', import.meta.url);
 writeFileSync(
-  new URL('../fixtures/fountain.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(`wrote ${rows.length} income rows, ${stacks.length} stacks, ${cross.length} cross bonuses`);

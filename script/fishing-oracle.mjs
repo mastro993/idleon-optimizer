@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -469,10 +470,12 @@ const payload = {
   trench: { requirements: trenchRequirements, plans: trenchPlans },
 };
 
+const output = join(root, 'crates/fishing/tests/fishing-fixture.json');
 writeFileSync(
-  join(root, 'crates/fishing/tests/fishing-fixture.json'),
+  output,
   `${JSON.stringify(payload, null, 2)}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${depths.length} depth, ${shares.length} split, ${oreValue.length} ore, ` +
     `${multiFish.length} multi, ${speed.length} speed, ${catches.length} catch, ` +

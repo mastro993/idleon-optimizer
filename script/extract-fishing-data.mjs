@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -71,6 +72,7 @@ const payload = {
 
 const out = new URL('../crates/fishing/data/fishing.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
+recordProvenance(out, source);
 console.log(
   `wrote ${pools.length} pools, ${lures.length} lures, ${lines.length} lines, ` +
     `${locations.length} locations, ${rods.length} rods, ${trench.studies.length} Trench studies`

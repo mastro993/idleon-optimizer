@@ -45,8 +45,8 @@ The images are game assets from Legends of Idleon, not original work of the upst
 so they are free to use and are committed here with credit. The upstream code licence still
 reserves every other right.
 
-- Formulas and data tables stay ports with upstream source references; the existing extraction
-  script documents provenance.
+- Formulas and data tables stay ports with upstream source references; every extract and oracle
+  script records the upstream commit it ran against in `fixtures/PROVENANCE.json`.
 - Upstream images are **committed** under `assets/upstream/` with credit in
   `assets/upstream/README.md`; they are game assets, free to use, not upstream-authored work.
   `script/import-upstream-assets.mjs` copies them from a local checkout, writes a manifest with
@@ -294,6 +294,7 @@ docs/roadmap.md                     generated progress table
 docs/sections/<section>.md          generated full specification per section
 script/roadmap.mjs                  validate, render and sync GitHub milestones/issues
 script/import-upstream-assets.mjs   copy upstream assets from a local checkout
+script/lib/provenance.mjs           record each generated file's upstream commit
 script/extract-account-data.mjs     extract the account tables the multiplier tree reads
 script/extract-stats-data.mjs       extract the map and class tables the stats context reads
 script/extract-prisma-data.mjs      extract the bubble table the Prisma calculator reads

@@ -6,6 +6,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -293,10 +294,12 @@ const data = {
   ),
 };
 
+const output = join(import.meta.dirname, '..', 'crates/stats-engine/data/engine.json');
 writeFileSync(
-  join(import.meta.dirname, '..', 'crates/stats-engine/data/engine.json'),
+  output,
   `${JSON.stringify(data)}\n`
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${Object.keys(itemFields).length} items, ${Object.keys(bubbles).length} bubbles, ` +
     `${Object.keys(vials).length} vials and ${guilds.length} guild bonuses`

@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -68,10 +69,12 @@ const captainBonuses = customlists.CaptainBonuses.map((row, id) => ({
 }));
 
 const payload = { artifacts, islands, captainBonuses };
+const output = new URL('../crates/sailing/data/sailing.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/sailing/data/sailing.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 2)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${artifacts.length} artifacts, ${islands.length} islands, ${captainBonuses.length} captain bonuses`,
 );

@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -198,7 +199,9 @@ function minOpals(counts, ext) {
   return Number.isFinite(min) ? min : 0;
 }
 
-writeFileSync(new URL('../fixtures/opal.json', import.meta.url), `${JSON.stringify(payload, null, 1)}\n`);
+const output = new URL('../fixtures/opal.json', import.meta.url);
+writeFileSync(output, `${JSON.stringify(payload, null, 1)}\n`);
+recordProvenance(output, source);
 console.log(
   `wrote ${payload.villagers.length} villagers, ${Object.keys(payload.terms).length} terms, ` +
     `total ${payload.current.total}`,

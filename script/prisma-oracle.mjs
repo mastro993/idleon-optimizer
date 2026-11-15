@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -154,10 +155,12 @@ const payload = {
     outcomes: { ...outcomes.plan, comparisons: await comparisons(outcomes.raw, [3]) },
   },
 };
+const output = join(root, 'crates/prisma/tests/prisma-oracle.json');
 writeFileSync(
-  join(root, 'crates/prisma/tests/prisma-oracle.json'),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote prisma-oracle.json: ${payload.saves.fixture.characters.length} characters, ` +
     `multiplier ${payload.saves.fixture.multiplier}`,

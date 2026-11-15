@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -164,10 +165,12 @@ const payload = {
   cases: written,
 };
 
+const output = join(root, 'fixtures/clamworks-scurge.json');
 writeFileSync(
-  join(root, 'fixtures/clamworks-scurge.json'),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote ${written.length} cases, ${written.reduce((sum, c) => sum + (c.rows?.length || 0), 0)} rows`,
 );

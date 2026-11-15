@@ -3,6 +3,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -66,6 +67,7 @@ const payload = {
 
 const out = new URL('../crates/research/data/research.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload, null, 1));
+recordProvenance(out, source);
 console.log(`wrote ${nodes.length} nodes, ${shapes.length} shapes, ${observations.length} observations`);
 
 // Clamworks reads four Spelunky rows: the upgrade descriptions (27), per-level
@@ -94,8 +96,10 @@ const clamworks = {
   generatedFrom: { repo: 'Corgan/idleon-research-optimizer' },
 };
 
+const clamworksPath = new URL('../crates/clamworks/data/clamworks.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/clamworks/data/clamworks.json', import.meta.url),
+  clamworksPath,
   JSON.stringify(clamworks, null, 1)
 );
+recordProvenance(clamworksPath, source);
 console.log(`wrote ${clamworks.upgrades.length} Clamworks upgrades and ${clamworks.scurge.length} Scurge upgrades`);

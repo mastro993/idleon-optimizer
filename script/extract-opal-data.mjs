@@ -9,6 +9,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -72,6 +73,7 @@ const payload = {
 
 const out = new URL('../crates/opal/data/opal.json', import.meta.url);
 writeFileSync(out, `${JSON.stringify(payload, null, 1)}\n`);
+recordProvenance(out, source);
 console.log(
   `wrote ${payload.cosmo.flat().length} cosmo bases, ${payload.compassPerLevel.length} compass upgrades, ` +
     `${payload.pristine.length} pristine charms, ${payload.holesMonument.length} monument slots`,

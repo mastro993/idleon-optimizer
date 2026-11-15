@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -64,8 +65,9 @@ for (let character = 0; character < characters; character += 1) {
   cases.push(row);
 }
 
+const output = join(root, 'fixtures/stats.json');
 writeFileSync(
-  join(root, 'fixtures/stats.json'),
+  output,
   `${JSON.stringify(
     {
       source: 'fixtures/data.json through js/save/loader.js loadSaveData',
@@ -78,4 +80,5 @@ writeFileSync(
     2
   )}\n`
 );
+recordProvenance(output, source);
 console.log(`wrote ${cases.length} character stat trees`);

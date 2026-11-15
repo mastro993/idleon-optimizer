@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -70,8 +71,9 @@ items.Blank = { name: 'Blank', cooldown: 0, amount: 0, effect: '' };
 const petNames = breeding.PET_NAMES.map((world) => world.map((name) => cleanName(name)));
 const petKeys = breeding.PET_STATS.map((world) => world.map((pet) => String(pet[0])));
 
+const progressPath = new URL('crates/combat/data/progress.json', root);
 writeFileSync(
-  new URL('crates/combat/data/progress.json', root),
+  progressPath,
   JSON.stringify({
     source: 'js/stats/data/game/{items,customlists}.js + js/stats/data/w4/breeding.js',
     items,
@@ -81,6 +83,7 @@ writeFileSync(
     petKeys,
   })
 );
+recordProvenance(progressPath, source);
 
 // ---------------------------------------------------------------------------
 // Fixture: the upstream module's own summaries on a seeded stream.
@@ -373,7 +376,9 @@ const fixture = {
   coralCases,
   omegaCases,
 };
-writeFileSync(new URL('fixtures/combat-progress.json', root), JSON.stringify(fixture, null, 1));
+const combatProgressPath = new URL('fixtures/combat-progress.json', root);
+writeFileSync(combatProgressPath, JSON.stringify(fixture, null, 1));
+recordProvenance(combatProgressPath, source);
 console.log(
   `wrote ${Object.keys(items).length} forge items, ${forgeCases.length} forge, ` +
     `${petCases.length} pet, ${scurgeCases.length} Scurge, ${coralCases.length} coral and ` +

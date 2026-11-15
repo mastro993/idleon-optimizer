@@ -12,6 +12,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -818,10 +819,12 @@ const payload = {
     ],
   },
 };
+const output = new URL('../crates/ladle/tests/ladle-kitchen-oracle.json', import.meta.url);
 writeFileSync(
-  new URL('../crates/ladle/tests/ladle-kitchen-oracle.json', import.meta.url),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `ladle kitchen: ${costGrid.length} costs, ${batchScenarios.length} batches, ${planScenarios.length} plans, ${forecastScenarios.length} forecasts, ${steerScenarios.length} steering plans, ${donationScenarios.length} donation searches, ${nmlbCases.length} NMLB cases`,
 );

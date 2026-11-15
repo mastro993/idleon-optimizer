@@ -11,6 +11,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -79,6 +80,7 @@ const payload = {
 
 const out = new URL('../crates/combat/data/combat.json', import.meta.url);
 writeFileSync(out, JSON.stringify(payload));
+recordProvenance(out, source);
 console.log(
   `wrote ${Object.keys(catalog).length} wearable items, ` +
     `${payload.classes.length} classes, ${payload.talents.length} talents`

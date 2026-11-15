@@ -5,6 +5,7 @@
 import { writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -214,10 +215,12 @@ const payload = {
   captains,
   replacement,
 };
+const sailingUpgradesPath = join(root, 'fixtures/sailing-upgrades.json');
 writeFileSync(
-  join(root, 'fixtures/sailing-upgrades.json'),
+  sailingUpgradesPath,
   `${JSON.stringify(payload, null, 2)}\n`,
 );
+recordProvenance(sailingUpgradesPath, source);
 console.log(
   `wrote ${breakpoints.length} breakpoints, ${captains.length} captains and ${replacement.length} replacement cells`,
 );
@@ -360,10 +363,12 @@ const outcomes = {
   artifacts: [...weighted.values()],
 };
 
+const sailingOutcomesPath = join(root, 'fixtures/sailing-outcomes.json');
 writeFileSync(
-  join(root, 'fixtures/sailing-outcomes.json'),
+  sailingOutcomesPath,
   `${JSON.stringify(outcomes, null, 2)}\n`,
 );
+recordProvenance(sailingOutcomesPath, source);
 console.log(
   `wrote ${fleetTiers.length} fleet tiers, ${payoutRows.length} payout rows, ${nearFull.length} near-full rows, ${artifactIslands.length} islands and ${weighted.size} artifacts`,
 );

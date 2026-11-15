@@ -5,6 +5,7 @@
 import { writeFileSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -179,5 +180,7 @@ const fixture = {
   },
 };
 
-writeFileSync(join(root, 'fixtures/farming.json'), `${JSON.stringify(fixture, null, 2)}\n`);
+const output = join(root, 'fixtures/farming.json');
+writeFileSync(output, `${JSON.stringify(fixture, null, 2)}\n`);
+recordProvenance(output, source);
 console.log(`wrote ${fixture.plans.length} plans to fixtures/farming.json`);

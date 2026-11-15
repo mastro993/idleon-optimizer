@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { recordProvenance } from './lib/provenance.mjs';
 
 const source = process.argv[2];
 if (!source) {
@@ -347,10 +348,12 @@ const payload = {
   rupieJars,
 };
 
+const output = join(root, 'crates/jar/tests/jar-oracle.json');
 writeFileSync(
-  join(root, 'crates/jar/tests/jar-oracle.json'),
+  output,
   `${JSON.stringify(payload, null, 1)}\n`,
 );
+recordProvenance(output, source);
 console.log(
   `wrote rupie value ${rupieValue.toFixed(4)}, ${chances.length} chances, ${rupieJars.length} rupie jars, ${collectibles.length} collectibles, ${schematics.length} schematics, ${milestones.length} milestones`,
 );
