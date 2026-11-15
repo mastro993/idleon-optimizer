@@ -83,3 +83,25 @@ fn a_save_without_characters_asks_for_one() {
     let error = killroy::forecast(&imported.save, 1).expect_err("no characters");
     assert_eq!(error.to_string(), "Load a save with characters");
 }
+
+#[test]
+fn a_selection_outside_the_three_encounters_is_an_error() {
+    let imported = import(&wrapped_fixture()).expect("the wrapped fixture imports");
+    let input = killroy::PlanInput {
+        selections: vec![killroy::Selection {
+            week_offset: 0,
+            ci: 0,
+            slot: 9,
+        }],
+        seeds: vec![1],
+        comparisons: killroy::Comparisons::Off,
+        kills_per_second: 3.0,
+        keep_buffs: false,
+        unlimited_inventory: false,
+    };
+    let error = killroy::plan(&imported.save, &input).expect_err("no such slot");
+    assert_eq!(
+        error.to_string(),
+        "Choose one of the character's three encounters"
+    );
+}
