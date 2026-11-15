@@ -17,7 +17,7 @@
 //! written by `script/combat-progress-oracle.mjs` from one upstream checkout:
 //! the fixture runs the module's own methods on a seeded stream, so the port
 //! cannot drift from its source. The save-derived [`Config`] is decoded by
-//! `idleon_import::combat` and compared with the same fixture.
+//! `idleon_stats::combat::progress` and compared with the same fixture.
 //!
 //! Not modelled: the Omega ball's dropped item (the reward engine's item
 //! actors), the pet boosts outside the shiny table and the Menagerie EXP the
