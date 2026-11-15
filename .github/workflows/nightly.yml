@@ -31,9 +31,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # A tag on this commit means a release or beta already ships it.
+      # A tag on this commit means a release or beta already ships it. A run
+      # queued behind a release keeps the commit it was queued with, which
+      # the release then superseded: skip it too.
       - id: next
         run: |
+          head=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$head" != "$GITHUB_SHA" ]; then
+            echo "Skipped: main moved to $head since this run was queued" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           tagged=$(git ls-remote --tags origin 'v*' | awk -v head="$GITHUB_SHA" '$1 == head { print $2 }')
           if [ -n "$tagged" ]; then
             echo "Skipped: $GITHUB_SHA is already tagged ($tagged)" >> "$GITHUB_STEP_SUMMARY"

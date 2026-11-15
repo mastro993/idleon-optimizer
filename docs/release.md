@@ -46,14 +46,17 @@ Actions → **Release** → Run workflow, on `main`, with:
 4. publishes the GitHub release with the archives, `SHA256SUMS`, the first-run notes
    ([`.github/release-notes.md`](../.github/release-notes.md)) and GitHub's generated changelog.
 
-If step 4 fails after the push, the tag exists without a release: create it by hand with
-`gh release create vX.Y.Z --verify-tag …` or delete the tag and dispatch again.
+If step 4 fails after the push, `main` holds the bump commit and its tag without a release.
+Dispatching again would release the *next* version and leave this one unreleased, so finish it by
+hand: download the run's `dist-*` artifacts, `cat *.sha256 > SHA256SUMS`, and run
+`gh release create vX.Y.Z --verify-tag --latest --notes-file .github/release-notes.md
+--generate-notes <archives> SHA256SUMS`.
 
 ### Setup: the deploy key
 
 The `main` ruleset requires a pull request, and lets only deploy keys bypass it. The release job
 pushes with the private half of a write-enabled deploy key stored as the repository secret
-`RELEASE_DEPLOY_KEY`. To rotate it:
+`RELEASE_DEPLOY_KEY`; without it the run stops before building. To set it up or rotate it:
 
 ```console
 ssh-keygen -t ed25519 -N '' -C 'release workflow' -f release_key
@@ -62,13 +65,14 @@ gh secret set RELEASE_DEPLOY_KEY < release_key
 rm release_key release_key.pub
 ```
 
-Then delete the old key under Settings → Deploy keys.
+When rotating, then delete the old key under Settings → Deploy keys.
 
 ## Nightly betas
 
 [`nightly.yml`](../.github/workflows/nightly.yml) runs every day at 03:00 UTC (and by hand from
 the Actions tab). It skips the night when the head of `main` already carries a tag, so a night
-with no new commits, or one right after a release, publishes nothing. Otherwise it builds
+with no new commits, or one right after a release, publishes nothing; a run queued behind a
+release that moved `main` skips too. Otherwise it builds
 `main` as the next patch's beta, tags the commit through the release API (no commit, no deploy
 key) and publishes a prerelease. Only the five newest betas are kept; older ones and their tags
 are deleted. Stable releases are never touched.
@@ -78,13 +82,14 @@ are deleted. Stable releases are never touched.
 Every archive holds a release build without the automation bridge
 (`cargo build --release --locked -p idleon-optimizer --no-default-features`), with the ported
 formulas and extracted tables compiled in, and the game artwork (`assets/upstream/`, with
-`manifest.json` and the credit note `README.md`) beside the binary, where the app looks first.
+`manifest.json` and the credit note `README.md`) beside the binary — in the bundle's
+`Contents/Resources` on macOS — where the app looks first.
 [`script/package.mjs`](../script/package.mjs) assembles them and fails if any artwork file or the
 credit note is missing.
 
 | Platform | Archive | Layout | Built on |
 |---|---|---|---|
-| macOS 12+ | `idleon-optimizer-<version>-macos-universal.zip` | `Idleon Optimizer.app`, artwork in `Contents/MacOS/assets/upstream`, ad-hoc signed | `macos-latest`, `aarch64` and `x86_64` combined with `lipo` |
+| macOS 12+ | `idleon-optimizer-<version>-macos-universal.zip` | `Idleon Optimizer.app`, artwork in `Contents/Resources/assets/upstream`, ad-hoc signed | `macos-latest`, `aarch64` and `x86_64` combined with `lipo` |
 | Linux | `idleon-optimizer-<version>-linux-x86_64.tar.gz` | folder with `idleon-optimizer`, `assets/`, `README.txt` | `ubuntu-22.04` (glibc 2.35) |
 | Windows | `idleon-optimizer-<version>-windows-x86_64.zip` | folder with `idleon-optimizer.exe`, `assets/` | `windows-latest` (MSVC) |
 
@@ -124,8 +129,8 @@ deleting the app does not delete them:
 
 ## What is verified
 
-- macOS: packaged locally, signature verified with `codesign --verify --deep --strict`, launched
-  from the extracted archive.
+- macOS: packaged locally, signature verified with `codesign --verify --deep --strict` after
+  extracting the archive with both `ditto` and `unzip`, launched from the extracted archive.
 - Linux and Windows: built and packaged by `build.yml` on the pull request that added it; not
   launched. The test suite still runs on macOS only (`ci.yml`): the 1e-9 oracle comparisons have
   never run against Linux or Windows maths libraries.

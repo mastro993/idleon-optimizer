@@ -8,8 +8,10 @@
 //   node script/version.mjs set <version>            # write it to Cargo.toml and Cargo.lock
 import { readVersion, writeVersion } from './lib/cargo-version.mjs';
 
-const SEMVER = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/;
-const STABLE = /^\d+\.\d+\.\d+$/;
+// SemVer cores have no leading zeros; cargo rejects `01.0.0`.
+const CORE = '(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)';
+const SEMVER = new RegExp(`^${CORE}(?:-([0-9A-Za-z.-]+))?$`);
+const STABLE = new RegExp(`^${CORE}$`);
 
 function fail(message) {
   console.error(message);

@@ -71,8 +71,8 @@ function countFiles(dir) {
   return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile()).length;
 }
 
-// The artwork beside the binary, where `assets.rs` looks first. The credit
-// note must ship with it.
+// The artwork under `beside`, where `assets.rs` looks first. The credit note
+// must ship with it.
 function copyArtwork(beside) {
   const copy = join(beside, 'assets/upstream');
   cpSync(artwork, copy, { recursive: true });
@@ -102,14 +102,16 @@ if (platform === 'darwin') {
   copyFileSync(binary, join(macos, executable));
   chmodSync(join(macos, executable), 0o755);
   writeFileSync(join(dist, app, 'Contents/Info.plist'), infoPlist());
-  copyArtwork(macos);
+  // Resources, not MacOS: codesign seals data in MacOS as nested code, in
+  // xattrs that tools other than ditto drop on extraction.
+  copyArtwork(join(dist, app, 'Contents/Resources'));
   // Identity-less ad-hoc signature: Apple silicon refuses to launch an app
   // whose signature no longer matches its contents. Not a Developer ID.
   run('codesign', ['--force', '--deep', '--sign', '-', app]);
   run('codesign', ['--verify', '--deep', '--strict', app]);
   archive = `${base}-macos-${arch}.zip`;
   rmSync(join(dist, archive), { force: true });
-  run('ditto', ['-c', '-k', '--keepParent', app, archive]);
+  run('ditto', ['-c', '-k', '--norsrc', '--keepParent', app, archive]);
 } else if (platform === 'linux') {
   const name = `${base}-linux-${arch}`;
   const dir = stage(name);
