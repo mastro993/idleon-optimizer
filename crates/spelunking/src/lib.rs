@@ -45,6 +45,10 @@ pub use sim::{
 
 use std::fmt;
 
+pub(crate) use idleon_common::curve::js_round;
+/// The base-10 logarithm the upstream `getLOG` uses.
+pub(crate) use idleon_common::curve::log as game_log;
+
 /// The account values the upstream stat context would supply.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -360,21 +364,6 @@ impl Default for AmberPolicy {
             rope_reserve_pct: 25,
         }
     }
-}
-
-/// The divisor in the upstream `getLOG`, written exactly as the JS source has
-/// it. It is not `LN_10`: the game's truncated constant is part of the formula.
-#[allow(clippy::approx_constant)]
-pub(crate) const LOG_DIVISOR: f64 = 2.30259;
-
-/// The base-10 logarithm the upstream `getLOG` uses.
-pub(crate) fn game_log(value: f64) -> f64 {
-    value.max(1.0).ln() / LOG_DIVISOR
-}
-
-/// The game's `Math.round`: halves round up, so `-0.5` is `0`.
-pub(crate) fn js_round(value: f64) -> f64 {
-    (value + 0.5).floor()
 }
 
 /// The inputs `fixtures/data.json` carries under a neutral account.
