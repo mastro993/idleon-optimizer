@@ -9,10 +9,11 @@
 //!
 //! A replay is a list of JSON snapshots: a number for the simulated time under
 //! `t`, plus whatever the recorder captured (the run's monsters, for the
-//! encounter replay). Object keys are sorted by `serde_json`, and the upstream
-//! encoder visits fields in insertion order, so the oracle script sorts the
-//! snapshots it hands to the JS encoder; both sides then visit fields in the
-//! same order and the bytes stay comparable.
+//! encounter replay). `serde_json` keeps object keys in insertion order here
+//! (the workspace builds it with `preserve_order`), as the upstream encoder
+//! does; the oracle script sorts the snapshots it hands to the JS encoder and
+//! the fixture is read in that same order, so both sides visit fields
+//! identically and the bytes stay comparable.
 //!
 //! `crates/combat/data/replay.json` and `fixtures/combat-replay.json` are
 //! written by `script/combat-replay-oracle.mjs` from one upstream checkout, so

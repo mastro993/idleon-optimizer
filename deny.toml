@@ -1,0 +1,10 @@
+# RustSec advisories and dependency sources. Unmaintained notices are reported
+# only for crates a workspace member depends on directly: the transitive ones
+# (GPUI's font and D-Bus stacks) cannot be fixed from this repository.
+[advisories]
+unmaintained = "workspace"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = ["https://github.com/ELY-Open-Source/Ely-GPUI-Components"]
