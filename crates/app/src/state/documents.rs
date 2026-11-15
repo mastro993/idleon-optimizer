@@ -9,7 +9,6 @@ use gpui::{Context, Window};
 use idleon_fishing::FishingSave;
 use idleon_import::{Imported, pipeline};
 use idleon_monument as monument;
-use idleon_opal::Opal;
 use idleon_sailing::{AssignmentMode, Goal};
 
 impl AppState {
@@ -271,16 +270,7 @@ impl AppState {
         self.fountain_state.adopt(self.fountain.as_ref());
         // A plan from the previous cavern describes inputs this one no longer has.
         discard_run(&self.fountain_plan, cx);
-        self.opal = imported.opal;
-        self.opal_selected = None;
-        self.opal_target = None;
-        // The plan's default total is the new save's invested opals, and the
-        // manual simulator starts on that save's own split.
-        self.opal_total = self.opal.as_ref().map_or(0.0, Opal::total_opals);
-        self.opal_manual = self
-            .opal
-            .as_ref()
-            .map_or([0.0; idleon_opal::VILLAGERS], Opal::opals);
+        self.opal.on_import(imported.opal);
         self.royal = imported.royal;
         // A forecast from the previous save describes rows this one no longer has.
         self.royal_forecast = None;

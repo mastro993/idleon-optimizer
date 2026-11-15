@@ -25,7 +25,7 @@ use crate::sections::killroy::State as KillroyState;
 use crate::sections::ladle::Tab as LadleTab;
 use crate::sections::ladle::outcomes::OutcomeSort as LadleOutcomeSort;
 use crate::sections::monument::State as MonumentState;
-use crate::sections::opal::Tab as OpalTab;
+use crate::sections::opal::Config as OpalConfig;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::research::CustomPreset;
 use crate::sections::research::Tab as ResearchTab;
@@ -298,21 +298,6 @@ pub(crate) struct FountainConfig {
     upgrade: Option<usize>,
 }
 
-/// The opal section's config: the villager the breakdown is switched to, the
-/// optimizer's tab, target and total, and the manual simulator's counts. The
-/// villagers themselves come from the save; a document from before the
-/// optimizer has no `total`, and one from before the simulator no `manual`, so
-/// both fall back to the save's own.
-#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase", default)]
-pub(crate) struct OpalConfig {
-    selected: Option<usize>,
-    tab: OpalTab,
-    target: Option<usize>,
-    total: Option<f64>,
-    manual: Option<[f64; idleon_opal::VILLAGERS]>,
-}
-
 /// The combat simulator's config: the selected character, its tab, the named
 /// loadouts and the mechanics overrides. The working loadout itself comes from
 /// the save; presets and overrides are what the project keeps.
@@ -528,16 +513,7 @@ pub(crate) fn configs(state: &AppState) -> Map<String, Value> {
             shelf_purchases: state.royal_state.shelf_purchases,
         }),
     );
-    insert(
-        "opal",
-        value(&OpalConfig {
-            selected: state.opal_selected,
-            tab: state.opal_tab,
-            target: state.opal_target,
-            total: Some(state.opal_total),
-            manual: Some(state.opal_manual),
-        }),
-    );
+    insert("opal", value(&state.opal.config()));
     insert("sneaking", value(&state.sneaking_state));
     insert("stats-all", value(&state.stats_all.context));
     insert("drop-rate", value(&state.drop_rate.selection));
@@ -1070,22 +1046,7 @@ pub(crate) fn assign(
             state.royal_forecast = None;
             state.royal_forecast_key = None;
         }
-        Config::Opal(config) => {
-            state.set_opal_villager(config.selected, cx);
-            state.set_opal_tab(config.tab, cx);
-            state.set_opal_target(config.target, cx);
-            match config.total {
-                Some(total) => state.set_opal_total(total, cx),
-                None => state.use_saved_opal_total(cx),
-            }
-            match config.manual {
-                Some(manual) => {
-                    state.opal_manual = manual.map(idleon_opal::whole);
-                    cx.notify();
-                }
-                None => state.reset_opal_manual(cx),
-            }
-        }
+        Config::Opal(config) => state.opal.apply_config(config, cx),
         Config::Sneaking(config) => {
             let players = state
                 .sneaking
@@ -2220,26 +2181,12 @@ mod tests {
         }
     }
 
-    /// A window state built under GPUI's test platform, its session and
-    /// automation endpoint kept in a private directory. Ely's `init_for_tests`
-    /// stands in for `init`, which needs the bundled fonts the test platform
-    /// has no asset source for; without an endpoint directory the bridge would
-    /// register in the user's real one.
-    fn headless_state(
-        cx: &mut gpui::TestAppContext,
-        dir: &std::path::Path,
-    ) -> gpui::WindowHandle<AppState> {
-        cx.update(ely_gpui_component::init_for_tests);
-        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
-        cx.add_window(|window, cx| AppState::new(window, Some(endpoint), None, Some(state_dir), cx))
-    }
-
     #[test]
     fn an_export_writes_every_config_id_and_reads_back_into_the_same_configs() {
         let dir =
             std::env::temp_dir().join(format!("idleon-project-export-{}", std::process::id()));
         let mut cx = gpui::TestAppContext::single();
-        let window = headless_state(&mut cx, &dir);
+        let window = crate::state::headless(&mut cx, &dir);
         let text = window
             .update(&mut cx, |state, _, _| export(state))
             .expect("the window is open");
@@ -2335,6 +2282,32 @@ mod tests {
                 "{id} does not read back its own default"
             );
             assert!(warnings.is_empty(), "{id}: {warnings:?}");
+        }
+    }
+
+    /// The opal config as builds before the section owned its state wrote it,
+    /// and an older one from before the optimizer and the simulator: both
+    /// still decode silently, and the first writes back byte for byte.
+    #[test]
+    fn a_session_written_before_the_opal_section_owned_its_state_still_restores() {
+        let written = json!({
+            "selected": 2,
+            "tab": "optimizer",
+            "target": null,
+            "total": 1234.0,
+            "manual": [10.0, 20.0, 30.0, 40.0, 50.0],
+        });
+        let older = json!({ "selected": null, "tab": "current", "target": 1 });
+        for document in [&written, &older] {
+            let mut warnings = Vec::new();
+            let Decoded::Config(config) = decode("opal", document, &mut warnings) else {
+                panic!("{document} decodes");
+            };
+            assert!(warnings.is_empty(), "{warnings:?}");
+            assert!(matches!(*config, Config::Opal(_)));
+            if document == &written {
+                assert_eq!(config_value(&config).to_string(), written.to_string());
+            }
         }
     }
 
