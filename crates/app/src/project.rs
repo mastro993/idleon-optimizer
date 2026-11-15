@@ -359,6 +359,8 @@ pub(crate) fn export(state: &AppState) -> String {
         sections: configs(state),
         warnings: Vec::new(),
         origin: project::Origin::Project,
+        has_research: true,
+        has_supplements: true,
     })
 }
 
@@ -585,6 +587,8 @@ pub(crate) fn apply(
         section,
         simulation,
         context,
+        has_research,
+        has_supplements,
         ..
     } = document;
     match save {
@@ -595,26 +599,41 @@ pub(crate) fn apply(
                 imported.format.label(),
                 imported.characters
             ));
-            imported.simulation = simulation;
-            imported.context = context;
+            // The embedded save decodes its own research state and multipliers.
+            // A block the document carries replaces the live value; the
+            // multipliers the save decoded stay the baseline Reset returns to.
+            let save_context = imported.context.clone();
+            if has_research {
+                imported.simulation = simulation;
+            }
+            if has_supplements {
+                imported.context = context;
+            }
             changes.extend(research_changes(&state.simulation, &imported.simulation));
             changes.extend(supplement_changes(&state.context, &imported.context));
             state.load_imported(imported, cx);
+            state.context_base = save_context;
         }
         None => {
-            changes.extend(research_changes(&state.simulation, &simulation));
-            changes.extend(supplement_changes(&state.context, &context));
-            state.simulation = simulation;
-            state.research.history.clear();
-            state
-                .research
-                .minehead
-                .load(state.save.as_ref(), &state.simulation);
-            state
-                .research
-                .sushi
-                .load(state.save.as_ref(), &state.simulation);
-            state.replace_context(context);
+            // Without a save, a block the document omits leaves the window's
+            // current value alone.
+            if has_research {
+                changes.extend(research_changes(&state.simulation, &simulation));
+                state.simulation = simulation;
+                state.research.history.clear();
+                state
+                    .research
+                    .minehead
+                    .load(state.save.as_ref(), &state.simulation);
+                state
+                    .research
+                    .sushi
+                    .load(state.save.as_ref(), &state.simulation);
+            }
+            if has_supplements {
+                changes.extend(supplement_changes(&state.context, &context));
+                state.replace_context(context);
+            }
         }
     }
     for config in configs {
@@ -671,7 +690,8 @@ pub(crate) enum Config {
 /// What decoding one section config found.
 enum Decoded {
     Config(Box<Config>),
-    /// The registry declares no section with this id.
+    /// The id names no section with a config: the registry does not declare
+    /// it, or it is one of [`STATELESS`].
     Unknown,
     /// The id is declared, but the config does not fit this build's shape.
     Malformed(String),
@@ -1161,6 +1181,10 @@ pub(crate) fn assign(
         }
     }
 }
+
+/// The sections whose page is the save alone: they store no config, and a
+/// config document for one of them has nothing to apply.
+pub(crate) const STATELESS: [&str; 4] = ["cglunko", "coin-multi", "endgame", "shadow"];
 
 /// Decode one section's config by registry id, naming the fields this build
 /// does not know in `warnings`.
@@ -2122,48 +2146,27 @@ mod tests {
 
     #[test]
     fn every_built_section_is_a_config_id_or_a_page_the_save_alone_fills() {
-        // The sections whose visible state is the save alone carry no config;
-        // a planned section has no state at all yet.
-        let derived = [
-            "cglunko",
-            "coin-multi",
-            "cooking-mastery",
-            "endgame",
-            "fountain",
-            "shadow",
-        ];
         for section in sections::SECTIONS.iter() {
             let id = section.id;
-            let configured = [
-                "research",
-                "killroy",
-                "sailing",
-                "farming",
-                "fishing",
-                "statue",
-                "monument",
-                "pickle",
-                "prisma",
-                "clamworks",
-                "cog",
-                "jelly-operator",
-                "jar",
-                "opal",
-                "ladle",
-                "spelunking",
-                "coral-god-rank",
-                "cooking-mastery",
-                "worship-td",
-                "combat-sim",
-                "stats-all",
-                "damage",
-                "royal-guardian",
-                "sneaking",
-                "drop-rate",
-            ]
-            .contains(&id);
-            let covered = configured || derived.contains(&id);
-            assert!(covered, "{id} has no project config");
+            let mut warnings = Vec::new();
+            let decoded = decode(id, &json!({}), &mut warnings);
+            if STATELESS.contains(&id) {
+                assert!(
+                    matches!(decoded, Decoded::Unknown),
+                    "{id} is listed as stateless but has a config decoder"
+                );
+            } else {
+                assert!(
+                    matches!(decoded, Decoded::Config(_)),
+                    "{id} has no project config and is not listed as stateless"
+                );
+            }
+        }
+        for id in STATELESS {
+            assert!(
+                sections::find(id).is_some(),
+                "{id} is not a registered section"
+            );
         }
     }
 

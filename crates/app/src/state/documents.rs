@@ -52,19 +52,27 @@ impl AppState {
         }
         match pipeline::read(text) {
             Ok(mut document) => {
-                let ids: Vec<String> = match &document {
+                // A project's route only has to name a section; every other
+                // id carries a config that has to land somewhere.
+                let ids: Vec<(String, bool)> = match &document {
                     pipeline::Document::Project(project) => project
                         .document
                         .sections
                         .keys()
-                        .chain(project.document.section.iter())
-                        .cloned()
+                        .map(|id| (id.clone(), true))
+                        .chain(
+                            project
+                                .document
+                                .section
+                                .iter()
+                                .map(|id| (id.clone(), false)),
+                        )
                         .collect(),
-                    pipeline::Document::Section(section) => vec![section.section.clone()],
+                    pipeline::Document::Section(section) => vec![(section.section.clone(), true)],
                     pipeline::Document::Save(_) => Vec::new(),
                 };
-                for id in ids {
-                    warn_unknown_section(document.warnings_mut(), &id);
+                for (id, carries_config) in ids {
+                    warn_unknown_section(document.warnings_mut(), &id, carries_config);
                 }
                 // Decode every section config now: a document that cannot be
                 // applied whole never becomes pending.
@@ -231,6 +239,8 @@ impl AppState {
         // the previous save no longer describes this one.
         self.clamworks_budget = self.clamworks.pearl_balance;
         self.clamworks_projection = None;
+        // A plan from the previous save prices levels this one may not have.
+        discard_run(&self.clamworks_run, cx);
         self.clamworks_claim.load(character_count);
         self.jar = imported.jar;
         self.spelunking_save = imported.spelunking;
@@ -358,11 +368,16 @@ fn warnings_line(warnings: &[String]) -> String {
 }
 
 /// Name a section id the registry does not declare in the preview's warnings,
-/// and leave a declared id alone.
-fn warn_unknown_section(warnings: &mut Vec<String>, id: &str) {
+/// and a config for one it declares but that stores no config, so neither
+/// applies silently.
+fn warn_unknown_section(warnings: &mut Vec<String>, id: &str, carries_config: bool) {
     if crate::sections::find(id).is_none() {
         warnings.push(format!(
             "section: {id} is not a section this build declares"
+        ));
+    } else if carries_config && crate::project::STATELESS.contains(&id) {
+        warnings.push(format!(
+            "section: {id} stores no config in this build; nothing to apply for it"
         ));
     }
 }
@@ -374,10 +389,26 @@ mod tests {
     #[test]
     fn an_unknown_section_id_warns_and_a_declared_one_does_not() {
         let mut warnings = Vec::new();
-        warn_unknown_section(&mut warnings, "research");
+        warn_unknown_section(&mut warnings, "research", true);
         assert!(warnings.is_empty(), "{warnings:?}");
-        warn_unknown_section(&mut warnings, "no-such-section");
+        warn_unknown_section(&mut warnings, "no-such-section", true);
         assert_eq!(warnings.len(), 1);
         assert!(warnings[0].contains("no-such-section"), "{warnings:?}");
+    }
+
+    #[test]
+    fn a_declared_section_without_a_config_is_named() {
+        let mut warnings = Vec::new();
+        warn_unknown_section(&mut warnings, "cglunko", true);
+        assert_eq!(warnings.len(), 1);
+        assert!(warnings[0].contains("stores no config"), "{warnings:?}");
+        warnings.clear();
+        warn_unknown_section(&mut warnings, "cglunko", false);
+        assert!(
+            warnings.is_empty(),
+            "a route to a stateless section is fine"
+        );
+        warn_unknown_section(&mut warnings, "killroy", true);
+        assert!(warnings.is_empty(), "{warnings:?}");
     }
 }

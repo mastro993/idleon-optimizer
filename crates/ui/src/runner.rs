@@ -7,6 +7,10 @@
 //! - copies progress reports into the entity on a foreground pump;
 //! - stops the job at its next report when the user cancels, keeping the result
 //!   the section already showed;
+//! - drops whatever a discarded run still returns, so a result computed from
+//!   inputs that are gone never lands;
+//! - settles a run whose job panicked as if it had been cancelled, so the
+//!   runner is usable again;
 //! - remembers the inputs a result came from, so a later edit marks it stale
 //!   instead of silently dropping it.
 
@@ -60,6 +64,8 @@ pub struct TaskRunner<R, I> {
     stored: Option<Stored<R, I>>,
     /// Set to stop the job at its next progress report.
     cancel: Option<Arc<AtomicBool>>,
+    /// Set when the run in flight was discarded: whatever it returns is dropped.
+    discarded: bool,
     /// Held so the job keeps running while the runner is alive.
     task: Option<Task<()>>,
     /// Held so progress keeps reaching the entity while the job runs.
@@ -75,6 +81,7 @@ impl<R: 'static, I: 'static> TaskRunner<R, I> {
             progress: None,
             stored: None,
             cancel: None,
+            discarded: false,
             task: None,
             pump: None,
         }
@@ -153,6 +160,16 @@ impl<R: 'static, I: 'static> TaskRunner<R, I> {
         self.cancelled = false;
     }
 
+    /// Stop the run in flight and drop both the stored result and whatever
+    /// that run still returns: the inputs it answered are gone.
+    pub fn discard(&mut self) {
+        if self.running {
+            self.cancel();
+            self.discarded = true;
+        }
+        self.clear();
+    }
+
     /// Move a stored result's inputs after the section applies that result, so
     /// the change the result itself made is not reported as a later edit.
     pub fn commit_inputs(&mut self, inputs: I) {
@@ -164,11 +181,18 @@ impl<R: 'static, I: 'static> TaskRunner<R, I> {
     /// Store a finished run; `true` when it was cancelled.
     ///
     /// A cancelled run stores nothing, so the result the section already shows
-    /// stays exactly as it was.
+    /// stays exactly as it was. A run that was discarded while in flight
+    /// stores nothing either, and leaves no cancelled mark.
     fn settle(&mut self, outcome: Option<R>, inputs: I) -> bool {
         self.running = false;
         self.progress = None;
         self.cancel = None;
+        if std::mem::take(&mut self.discarded) {
+            // Discarded while in flight: nothing is stored and nothing is
+            // marked cancelled, as if the run had never been started.
+            self.cancelled = false;
+            return true;
+        }
         match outcome {
             Some(result) => {
                 self.cancelled = false;
@@ -223,6 +247,7 @@ where
         }
         self.running = true;
         self.cancelled = false;
+        self.discarded = false;
         let starting = Progress {
             fraction: 0.0,
             message: "Starting…".into(),
@@ -241,7 +266,9 @@ where
         self.pump = Some(cx.spawn(async move |this, cx| {
             loop {
                 let (progress, done) = {
-                    let report = pump_report.lock().expect("task progress");
+                    let report = pump_report
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner());
                     (report.progress.clone(), report.done)
                 };
                 this.update(cx, |runner, cx| runner.report(progress, cx))
@@ -263,11 +290,26 @@ where
                         if cancel.load(Ordering::Relaxed) {
                             return Control::Stop;
                         }
-                        job_report.lock().expect("task progress").progress = progress;
+                        job_report
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner())
+                            .progress = progress;
                         Control::Continue
                     };
-                    let outcome = job(inputs, &mut report);
-                    job_report.lock().expect("task progress").done = true;
+                    // A panicking job must still end the run: without this the
+                    // pump would wait on `done` forever and the runner would
+                    // stay busy until the app restarts.
+                    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        job(inputs, &mut report)
+                    }))
+                    .unwrap_or_else(|_| {
+                        eprintln!("idleon-optimizer: a background run panicked; it stored nothing");
+                        None
+                    });
+                    job_report
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .done = true;
                     outcome
                 })
                 .await;
@@ -294,6 +336,34 @@ mod tests {
         let mut runner = TaskRunner::new();
         runner.stored = Some(Stored { result, inputs });
         runner
+    }
+
+    #[test]
+    fn a_run_discarded_in_flight_stores_nothing_when_it_finishes() {
+        let mut runner = stored(12, 24);
+        runner.running = true;
+        runner.cancel = Some(Arc::new(AtomicBool::new(false)));
+        runner.discard();
+        assert_eq!(runner.result(), None, "discard dropped the old result");
+        // The job had already made its last report, so it returns a result.
+        assert!(
+            runner.settle(Some(13), 30),
+            "the late result counts as cancelled"
+        );
+        assert_eq!(runner.result(), None, "a discarded run stored its result");
+        assert!(!runner.running());
+        assert!(!runner.cancelled(), "a discard is not a user cancel");
+    }
+
+    #[test]
+    fn discarding_an_idle_runner_only_clears_it() {
+        let mut runner = stored(12, 24);
+        runner.discard();
+        assert_eq!(runner.result(), None);
+        // The next run is unaffected.
+        runner.running = true;
+        assert!(!runner.settle(Some(13), 30));
+        assert_eq!(runner.result(), Some(&13));
     }
 
     #[test]
