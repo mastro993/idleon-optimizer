@@ -3,6 +3,10 @@
 //!
 //! Every total must be fully justified: it matches upstream exactly and its
 //! `missing` list is empty. A term can therefore never be wrong silently.
+//!
+//! The depth-1 pools ("Top Level", "Total Stat Multiplier", …) are compared by
+//! name too, so two pools that drift in opposite directions cannot cancel out
+//! and leave the total matching.
 
 use idleon_stats_engine::{Stat, total_stat};
 use serde_json::Value;
@@ -58,6 +62,24 @@ fn every_character_and_stat_resolves_and_reports_its_gaps() {
                 stat.id(),
                 total.computed
             );
+            for child in upstream["children"].as_array().into_iter().flatten() {
+                let name = child["name"].as_str().unwrap_or_default();
+                let value = child["value"].as_f64().unwrap_or(0.0);
+                let ours = total
+                    .tree
+                    .children
+                    .iter()
+                    .find(|node| node.label == name)
+                    .unwrap_or_else(|| {
+                        panic!("character {character} {}: pool {name} is gone", stat.id())
+                    });
+                assert!(
+                    close(ours.value, value),
+                    "character {character} {} pool {name}: {} vs upstream {value}",
+                    stat.id(),
+                    ours.value
+                );
+            }
         }
     }
 }
