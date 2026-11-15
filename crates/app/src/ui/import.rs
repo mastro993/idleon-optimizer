@@ -35,6 +35,10 @@ const SHOWN_CHANGES: usize = 6;
 /// How many recent imports the dialog lists before it counts the rest.
 const SHOWN_RECENT: usize = 5;
 
+/// The largest import text the dialog reads. A real `it.json` is under a
+/// megabyte; the cap only keeps a wrong or hostile file from freezing the window.
+pub(crate) const MAX_IMPORT_BYTES: u64 = 64 * 1024 * 1024;
+
 /// The document waiting for Apply.
 ///
 /// [`idleon_import::pipeline`] owns detection, parsing and migration; the app side
@@ -183,6 +187,19 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
                 return;
             };
             let source = file_name(path);
+            let too_large = std::fs::metadata(path)
+                .map(|meta| meta.len() > MAX_IMPORT_BYTES)
+                .unwrap_or(false);
+            if too_large {
+                dropped.update(cx, |state, cx| {
+                    state.fail_import(
+                        &source,
+                        "the file is larger than the 64 MB import limit",
+                        cx,
+                    );
+                });
+                return;
+            }
             match std::fs::read_to_string(path) {
                 Ok(text) => dropped.update(cx, |state, cx| state.check_import(&text, &source, cx)),
                 Err(error) => dropped.update(cx, |state, cx| {
