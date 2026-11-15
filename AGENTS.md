@@ -43,7 +43,9 @@ node script/mcp-drive.mjs        # own window + private bridge endpoint
 ```
 
 `.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates on every push to `main`
-and on every pull request; the long simulations (`#[ignore = "long simulation: …"]`) run on `main`
+and on every pull request that changes code or a file a test reads (`docs/roadmap.json`,
+`docs/sections/**`, `assets/upstream/manifest.json`, the `vendor/gpui-mcp` pin); other docs and
+asset changes skip it. The long simulations (`#[ignore = "long simulation: …"]`) run on `main`
 only. The MCP harnesses still run locally only.
 
 Harness details and per-lane isolation live in [`docs/agent-harness.md`](docs/agent-harness.md).
