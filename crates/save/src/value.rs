@@ -7,6 +7,7 @@
 //! section modules re-implementing the codec.
 
 use serde_json::{Map, Value};
+use std::sync::Arc;
 
 /// A save's own field map and the wrapper object beside it.
 pub type Parts<'a> = (&'a Map<String, Value>, &'a Map<String, Value>);
@@ -15,9 +16,12 @@ pub type Parts<'a> = (&'a Map<String, Value>, &'a Map<String, Value>);
 const WRAPPER_KEYS: [&str; 3] = ["companion", "serverVars", "charNames"];
 
 /// A parsed save object, wrapped or flat.
+///
+/// The tree is shared: a clone is a reference-count bump, so a section, a
+/// sandbox and a background run can each hold the save without copying it.
 #[derive(Clone, Debug)]
 pub struct Save {
-    root: Value,
+    root: Arc<Value>,
 }
 
 impl std::ops::Deref for Save {
@@ -36,7 +40,9 @@ impl std::ops::Deref for Save {
 impl Save {
     /// Wrap the parsed text's top-level value.
     pub fn new(root: Value) -> Self {
-        Self { root }
+        Self {
+            root: Arc::new(root),
+        }
     }
 
     /// The top-level value: the `it.json` wrapper, or the flat save.
@@ -246,5 +252,12 @@ mod tests {
             vec![json!(1), Value::Null, json!(3)]
         );
         assert_eq!(at(&json!({ "3": "x" }), 3), Some(&json!("x")));
+    }
+
+    #[test]
+    fn a_cloned_save_shares_its_tree() {
+        let save = Save::new(json!({ "Lv0_0": "[]" }));
+        let copy = save.clone();
+        assert!(std::ptr::eq(save.root(), copy.root()));
     }
 }
