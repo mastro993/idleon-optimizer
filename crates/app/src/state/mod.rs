@@ -33,7 +33,7 @@ use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::ladle::planner::{LadleDonation, LadlePlanRequest};
 use crate::sections::monument::State as MonumentState;
-use crate::sections::opal::Tab as OpalTab;
+use crate::sections::opal::State as OpalState;
 use crate::sections::pickle::State as PickleState;
 use crate::sections::prisma::{RunInputs as PrismaRunInputs, State as PrismaState};
 use crate::sections::research::State as ResearchState;
@@ -84,8 +84,6 @@ use idleon_jelly::{Estimate as JellyEstimate, Jelly, Trial as JellyTrial};
 use idleon_killroy::{Forecast as KillroyForecast, KillroyError, Plan as KillroyPlan};
 use idleon_ladle::Ladle;
 use idleon_monument as monument;
-use idleon_opal::Opal;
-use idleon_opal::{Plan as OpalPlan, PlanInput as OpalPlanInput};
 use idleon_prisma::Outcome as PrismaOutcome;
 use idleon_research::game;
 use idleon_research::model::{
@@ -104,7 +102,7 @@ use idleon_worship::Inputs as WorshipInputs;
 use idleon_worship::{self as worship, RunResult as WorshipRunResult};
 pub(crate) use runs::discard_run;
 pub(crate) use subscriptions::redraw_on_edit;
-use subscriptions::{ProgressLine, RunStatus, report_run};
+pub(crate) use subscriptions::{ProgressLine, RunStatus, report_run};
 
 /// What a strategy search stored: its recommendation, or why it could not run.
 pub(crate) type SearchOutcome = Result<worship::Search, String>;
@@ -323,18 +321,8 @@ pub(crate) struct AppState {
     pub(crate) fountain_marble_plan: Entity<TaskRunner<MarblePlan, MarblePlanInputs>>,
     /// The shared runner for the fountain simulation.
     pub(crate) fountain_sim: Entity<TaskRunner<FountainSimResult, SimInputs>>,
-    /// The Opal Optimizer's villagers and account bonuses, when the save has them.
-    pub(crate) opal: Option<Opal>,
-    /// The villager the opal breakdown is switched to, or the total.
-    pub(crate) opal_selected: Option<usize>,
-    /// The Opal Optimizer's tab, kept across dashboard visits.
-    pub(crate) opal_tab: OpalTab,
-    /// The villager the opal optimizer maximizes, or `None` for the total.
-    pub(crate) opal_target: Option<usize>,
-    /// The opal total the optimizer distributes, seeded from the save.
-    pub(crate) opal_total: f64,
-    /// The manual simulator's opal counts, seeded from and reset to the save.
-    pub(crate) opal_manual: [f64; idleon_opal::VILLAGERS],
+    /// The Opal Optimizer's villagers, selections, plan run and formula tree.
+    pub(crate) opal: OpalState,
     /// The Royal Guardian rows the loaded save carries, if it has them.
     pub(crate) royal: Option<RoyalGuardian>,
     /// The Royal Guardian section's world and selected outpost.
@@ -453,8 +441,6 @@ pub(crate) struct AppState {
     pub(crate) cglunko_run: Entity<TaskRunner<CglunkoPlan, CglunkoPage>>,
     /// The shared runner for the Clamworks upgrade plan.
     pub(crate) clamworks_run: Entity<TaskRunner<ClamworksPlan, ClamworksPlanInput>>,
-    /// The shared runner for the opal distribution plan.
-    pub(crate) opal_run: Entity<TaskRunner<OpalPlan, OpalPlanInput>>,
     /// The shared runner for a Worship TD plan simulation.
     pub(crate) worship_plan: Entity<TaskRunner<WorshipRunResult, PlanRunInputs>>,
     /// The shared runner for the Worship TD strategy search.
@@ -494,8 +480,6 @@ pub(crate) struct AppState {
     pub(crate) mastery_breakdown: Entity<FormulaTree>,
     /// The shared formula tree on the Fountain overview.
     pub(crate) fountain_breakdown: Entity<FormulaTree>,
-    /// The shared formula tree on the Opal overview.
-    pub(crate) opal_breakdown: Entity<FormulaTree>,
     /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
     pub(crate) shadow: Shadow,
     pub(crate) focus: FocusHandle,
@@ -768,21 +752,6 @@ impl AppState {
                     plan.steps.len(),
                     plan.spent,
                     plan.budget
-                ))
-            },
-        );
-        let opal_run = report_run::<OpalPlan, OpalPlanInput>(
-            cx,
-            &mut subscriptions,
-            RunStatus {
-                progress: ProgressLine::Message("Optimizing the opal distribution…"),
-                cancelled_kept: "Opal plan cancelled; the previous plan is unchanged.",
-                cancelled_empty: "Opal plan cancelled; nothing was planned.",
-            },
-            |_, plan| {
-                Some(format!(
-                    "Opal plan ready: {} opals across the villagers.",
-                    idleon_ui::format::count(plan.spent() as u64)
                 ))
             },
         );
@@ -1135,7 +1104,6 @@ impl AppState {
                 ))
             },
         );
-        let opal_breakdown = ui::formula_tree("opal-formula", window, cx);
         let stats_breakdown = ui::formula_tree("stats-formula", window, cx);
         let stats_explorer_formula = ui::formula_tree("stats-explorer-formula", window, cx);
         let sneaking_breakdown = ui::formula_tree("sneaking-formula", window, cx);
@@ -1238,12 +1206,7 @@ impl AppState {
             fountain_plan,
             fountain_marble_plan,
             fountain_sim,
-            opal: None,
-            opal_selected: None,
-            opal_tab: OpalTab::default(),
-            opal_target: None,
-            opal_total: 0.0,
-            opal_manual: [0.0; idleon_opal::VILLAGERS],
+            opal: OpalState::new(window, cx),
             sneaking: None,
             sneaking_state: Default::default(),
             sneaking_opt,
@@ -1288,7 +1251,6 @@ impl AppState {
             cog_perfect_run,
             cglunko_run,
             clamworks_run,
-            opal_run,
             worship_plan,
             worship_optimize,
             prisma_run,
@@ -1308,7 +1270,6 @@ impl AppState {
             fishing_breakdown,
             mastery_breakdown,
             fountain_breakdown,
-            opal_breakdown,
             shadow: Shadow::default(),
             focus,
             #[cfg(feature = "automation")]
@@ -1466,6 +1427,21 @@ fn starter_simulation() -> Simulation {
         .map(|slot| Mag::new(MagKind::Regular, Some(slot)))
         .collect();
     simulation
+}
+
+/// A window state built under GPUI's test platform, its session and
+/// automation endpoint kept in a private directory. Ely's `init_for_tests`
+/// stands in for `init`, which needs the bundled fonts the test platform has no
+/// asset source for; without an endpoint directory the bridge would register
+/// in the user's real one.
+#[cfg(test)]
+pub(crate) fn headless(
+    cx: &mut gpui::TestAppContext,
+    dir: &std::path::Path,
+) -> gpui::WindowHandle<AppState> {
+    cx.update(ely_gpui_component::init_for_tests);
+    let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+    cx.add_window(|window, cx| AppState::new(window, Some(endpoint), None, Some(state_dir), cx))
 }
 
 #[cfg(test)]

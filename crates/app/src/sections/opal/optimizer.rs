@@ -26,10 +26,10 @@ pub(crate) fn optimizer_pane(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let Some(opal) = state.opal.clone() else {
+    let Some(opal) = state.opal.save.clone() else {
         return div().into_any_element();
     };
-    let task = state.opal_task(cx);
+    let task = state.opal.task(cx);
     let muted = cx.theme().colors.fg_muted;
     let target = plan_target(state, &opal);
     let mut body = div()
@@ -81,7 +81,7 @@ pub(crate) fn optimizer_pane(
 
 /// Which rate the current selection maximizes.
 fn plan_target(state: &AppState, opal: &Opal) -> PlanTarget {
-    match state.opal_target {
+    match state.opal.target {
         Some(villager) if opal.unlocked(villager) => PlanTarget::Villager(villager),
         _ => PlanTarget::Total,
     }
@@ -111,9 +111,9 @@ fn signed(value: f64) -> String {
 /// The target picker, the total, the saved-total reset and the run action.
 fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let total = state.opal_total;
+    let total = state.opal.total;
     let saved = opal.total_opals();
-    let running = state.opal_task(cx).running;
+    let running = state.opal.task(cx).running;
     let hint = if opal.unlocked_count() == 0 {
         "no villager is unlocked: import a save first"
     } else if total <= 0.0 {
@@ -149,7 +149,7 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
                 .parse::<usize>()
                 .ok()
                 .filter(|villager| *villager < VILLAGERS);
-            target_entity.update(cx, |state, cx| state.set_opal_target(target, cx));
+            target_entity.update(cx, |state, cx| state.opal.set_target(target, cx));
         });
 
     let total_entity = cx.entity();
@@ -158,7 +158,7 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
         .step(1.0)
         .precision(0)
         .on_change(move |value, _window, cx| {
-            total_entity.update(cx, |state, cx| state.set_opal_total(value, cx));
+            total_entity.update(cx, |state, cx| state.opal.set_total(value, cx));
         });
 
     let reset_entity = cx.entity();
@@ -167,7 +167,7 @@ fn controls(state: &mut AppState, opal: &Opal, cx: &mut Context<AppState>) -> An
         .size(ControlSize::Sm)
         .disabled(total == saved)
         .on_click(move |_event, _window, cx| {
-            reset_entity.update(cx, |state, cx| state.use_saved_opal_total(cx));
+            reset_entity.update(cx, |state, cx| state.opal.use_saved_total(cx));
         });
 
     let run_entity = cx.entity();
