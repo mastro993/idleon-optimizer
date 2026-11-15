@@ -166,6 +166,15 @@ impl Session {
             .unwrap_or_else(|| PathBuf::from(".idleon-optimizer").join(FILE))
     }
 
+    /// The directory the session file lives in: the home of everything this
+    /// app writes for itself.
+    pub(crate) fn dir(explicit: Option<PathBuf>) -> PathBuf {
+        Self::path(explicit)
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_default()
+    }
+
     /// Add an applied import to the front of the list and drop the oldest.
     pub(crate) fn record(&mut self, recent: RecentImport) {
         self.recent.insert(0, recent);

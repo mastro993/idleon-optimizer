@@ -41,7 +41,8 @@ and one issue per feature.
   restored on the next launch. The import dialog lists the recent imports with their format and
   local time. A file that cannot be read is renamed to `session.corrupt-<timestamp>.json` and the
   app starts on a clean dashboard; `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR` moves the file for
-  tests and separate profiles.
+  tests and separate profiles. Warnings, errors and crashes are appended to `idleon-optimizer.log`
+  in the same directory; the file stays on this machine and holds no save values.
 - **The farming field** — the 9×4 plots from `farmPlotData` with their seed-family colours, crop id,
   overgrowth, plot rank, evolution chance and growth time. Clicking a plot opens its saved row: crop
   and evolution depth, growth progress and remaining time, the next evolution and overgrowth rolls,
