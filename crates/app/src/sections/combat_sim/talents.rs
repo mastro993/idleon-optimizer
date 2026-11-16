@@ -1,10 +1,9 @@
 //! The talent half of the loadout editor.
 //!
-//! Ported from the upstream `renderTalents` pane (`js/ui/combat-sim-setup-ui.js`)
-//! and `readTalents` in `combat-sim-setup.js`: every talent id the save stores a
-//! level or a maximum for, its saved maximum, and a level control that stops at
-//! that maximum. A save whose stored level is above its own maximum is flagged,
-//! not silently clamped, so the editor shows what the save really says.
+//! Every talent id the save stores a level or a maximum for, its saved maximum,
+//! and a level control that stops at that maximum. A save whose stored level is
+//! above its own maximum is flagged, not silently clamped, so the editor shows
+//! what the save really says.
 
 use crate::state::AppState;
 use crate::ui::layout;

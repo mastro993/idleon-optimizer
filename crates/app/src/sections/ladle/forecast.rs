@@ -1,9 +1,9 @@
 //! The reset layout and the expandable reset instructions.
 //!
-//! Upstream draws the reset's kitchen cards, then one `<details>` per reset whose
-//! summary is its headline and whose body is its spend order. This keeps the same
-//! shape with the shared components: a card for the inspected reset's layout and
-//! batch, then the forecast list, where each row expands into its phase tables and
+//! The reset's kitchen cards come first, then one expandable row per reset
+//! whose summary is its headline and whose body is its spend order, built from
+//! the shared components: a card for the inspected reset's layout and batch,
+//! then the forecast list, where each row expands into its phase tables and
 //! copies the same instructions as plain text.
 
 use crate::state::AppState;

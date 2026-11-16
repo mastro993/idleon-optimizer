@@ -1,11 +1,6 @@
 //! The Royal Guardian sandbox: a saved state a plan can edit, and the moves it
 //! may apply to it.
 //!
-//! Ported from `cloneRoyalState`, `decodePackedUnitDigits`,
-//! `encodePackedUnitDigits`, `barracksUnlockSlot`, `outpostAssignableSlotCount`,
-//! `validateRoyalSandbox`, `applyRoyalMove` and the gate helpers of
-//! `js/stats/systems/w7/royal-guardian-optimizer.js`.
-//!
 //! A move edits the two saved rows the kingdom lives in - `RoyalG[2]` for the
 //! Armory and `RoyalMaps` for the outposts - and nothing else. Every applied
 //! move is re-validated, so a plan can only ever describe a layout the game
@@ -13,13 +8,12 @@
 //! profession, connections that are in range and legal for the outpost's type,
 //! points not overspent and no world over its Support or Savage limit.
 //!
-//! The upstream gates some moves behind Armory shelves; the port keeps those
-//! gates, so a plan on a save without the shelf says which move it cannot make.
+//! Some moves are gated behind Armory shelves, so a plan on a save without the
+//! shelf says which move it cannot make.
 
 use super::*;
 
-/// The Armory shelf that unlocks each rank bar, in bar order: upstream
-/// `BAR_ARMORY`.
+/// The Armory shelf that unlocks each rank bar, in bar order.
 pub const BAR_ARMORY: [usize; 5] = [27, 29, 73, 74, 75];
 
 /// How much reach a Support link needs beyond the outpost's own range.
@@ -34,8 +28,7 @@ const UPGRADE_TOOL: usize = 32;
 /// The Armory shelf that opens the third outpost upgrade.
 const EDUCATION_TOOL: usize = 57;
 
-/// What one outpost upgrade spends, by upgrade kind: upstream
-/// `_outpostUpgradeCosts`.
+/// What one outpost upgrade spends, by upgrade kind.
 pub const UPGRADE_COSTS: [f64; 3] = [12.0, 2.0, 1.0];
 
 /// One profession a packed unit digit names.
@@ -61,7 +54,7 @@ pub fn transient_name(kind: i64) -> &'static str {
     }
 }
 
-/// The name of one rank bar: upstream `outpostRankName`.
+/// The name of one rank bar.
 pub fn rank_name(bar: usize) -> &'static str {
     match bar {
         0 => "Trading Rank",
@@ -240,8 +233,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// Every outpost type the saved Armory unlocks, in escalation order:
-    /// upstream `_allowedTypes`.
+    /// Every outpost type the saved Armory unlocks, in escalation order.
     pub fn allowed_types(&self) -> Vec<usize> {
         let mut types = vec![0];
         if self.support_limit() > 0.0 {
@@ -253,30 +245,29 @@ impl RoyalGuardian {
         types
     }
 
-    /// How many Support outposts a world may hold: upstream `_supportLimit`.
+    /// How many Support outposts a world may hold.
     pub fn support_limit(&self) -> f64 {
         self.armory_bonus(42).round().max(0.0)
     }
 
-    /// How many Savage outposts a world may hold: upstream `_savageLimit`.
+    /// How many Savage outposts a world may hold.
     pub fn savage_limit(&self) -> f64 {
         self.armory_bonus(44).round().max(0.0)
     }
 
     /// How many outpost upgrades the Armory has opened, which is also the count
-    /// of assignable unit slots: upstream `outpostAssignableSlotCount`.
+    /// of assignable unit slots.
     pub fn assignable_slots(&self, map: usize) -> usize {
         let barracks = self.map_cell(map, 0).max(0.0).floor();
         (1.0 + barracks).clamp(0.0, 7.0) as usize
     }
 
-    /// Every unit digit a `RoyalMaps` row carries, as `(slot, profession)`:
-    /// upstream `decodePackedUnits`.
+    /// Every unit digit a `RoyalMaps` row carries, as `(slot, profession)`.
     pub fn stationed_units(&self, map: usize) -> Vec<(usize, usize)> {
         Self::packed_units(self.map_cell(map, cell::UNITS))
     }
 
-    /// The stationed units in an assignable slot: upstream `outpostUnits`.
+    /// The stationed units in an assignable slot.
     pub fn units(&self, map: usize) -> Vec<(usize, usize)> {
         let slots = self.assignable_slots(map);
         self.stationed_units(map)
@@ -285,8 +276,7 @@ impl RoyalGuardian {
             .collect()
     }
 
-    /// The profession the Armory unlocks at each rank of its worker shelves:
-    /// upstream `_unitTypes`.
+    /// The profession the Armory unlocks at each rank of its worker shelves.
     pub fn unit_types(&self) -> Vec<usize> {
         let count = 1
             + (self.armory_level(27) >= 1.0) as usize
@@ -295,18 +285,17 @@ impl RoyalGuardian {
         (0..count.min(4)).collect()
     }
 
-    /// Which rank bars the Armory unlocks: upstream `outpostUnlockedBars`.
+    /// Which rank bars the Armory unlocks.
     pub fn unlocked_bars(&self) -> [bool; 5] {
         BAR_ARMORY.map(|shelf| self.armory_level(shelf) >= 1.0)
     }
 
-    /// Whether Armory `shelf` is owned: upstream `_armoryUnlocked`.
+    /// Whether Armory `shelf` is owned.
     pub fn shelf_unlocked(&self, shelf: usize) -> bool {
         self.armory_level(shelf) >= 1.0
     }
 
-    /// Whether `to` is a legal Support target from `from`: upstream
-    /// `outpostReachable`.
+    /// Whether `to` is a legal Support target from `from`.
     pub fn outpost_reachable(&self, from: usize, to: usize) -> bool {
         let target = self.outpost(to);
         Self::world_of(from) == Self::world_of(to)
@@ -316,7 +305,7 @@ impl RoyalGuardian {
     }
 
     /// The slot a barracks level opens, when the packed row still carries the
-    /// `1` the game writes for it: upstream `barracksUnlockSlot`.
+    /// `1` the game writes for it.
     fn barracks_unlock_slot(packed: f64) -> Option<usize> {
         let digits = format!("{:09}", packed.max(0.0) as u64);
         let digits = &digits[digits.len().saturating_sub(9)..];
@@ -326,7 +315,7 @@ impl RoyalGuardian {
             .map(|(index, _)| index)
     }
 
-    /// The packed unit row with one digit replaced: upstream `_setProfession`.
+    /// The packed unit row with one digit replaced.
     fn write_profession(packed: f64, slot: usize, profession: usize) -> f64 {
         let mut digits = Self::packed_digits(packed);
         if let Some(digit) = digits.get_mut(slot) {
@@ -510,9 +499,8 @@ pub fn changes(before: &RoyalGuardian, after: &RoyalGuardian) -> Vec<Move> {
 /// Every move the state offers: the upgrades it can buy, the adjacent types it
 /// can switch to, the links it can make and the professions it can change.
 ///
-/// Upstream `_candidateMoves` also offers a `resource` move for simulation
-/// budgets and an `units` move for pool edits; a plan never needs either, so the
-/// port leaves them out.
+/// A plan never needs a `resource` move for simulation budgets or a `units` move
+/// for pool edits, so neither is offered.
 pub fn candidates(state: &Sandbox) -> Vec<Move> {
     let royal = state.state();
     let allowed = royal.allowed_types();
@@ -623,7 +611,7 @@ fn apply_type(royal: &mut RoyalGuardian, map: usize, kind: usize, errors: &mut V
             errors.push("outpost type has no available capacity".to_owned());
             return;
         }
-        // Upstream demotes the last outpost of the type the world already
+        // The switch demotes the last outpost of the type the world already
         // holds when the switch would exceed the limit.
         let world = RoyalGuardian::world_of(map);
         let mut count = 0;

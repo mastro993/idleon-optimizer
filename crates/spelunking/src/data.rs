@@ -1,8 +1,5 @@
-//! Static Spelunking data, extracted from the upstream JS calculators.
-//!
-//! `script/extract-spelunk-data.mjs` writes `data/spelunking.json` from
-//! `js/stats/data/game/customlists.js`, `js/stats/data/w7/spelunking.js` and the
-//! elixir names/presets `js/ui/spelunking.js` hardcodes.
+//! Static Spelunking data: the caves, tools, elixirs and their presets, the
+//! policies, the shop upgrades and the chapter bonuses.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -17,13 +14,13 @@ pub struct Data {
     pub tools: Vec<Tool>,
     pub elixirs: Vec<Elixir>,
     pub elixir_presets: Vec<Preset>,
-    /// The upstream policy ids, in menu order.
+    /// The policy ids, in menu order.
     pub policies: Vec<String>,
     /// `SpelunkUpg[idx][4]`: the per-level value of each shop upgrade.
     pub upgrade_per_level: Vec<f64>,
     /// `SpelunkChapters[chapter][bonus]`: the chapter-bonus formula rows.
     pub chapters: Vec<Vec<Chapter>>,
-    /// `N2L[36]`, the Super Bit token `superBitType(36, Gaming[12])` matches.
+    /// `N2L[36]`, the Super Bit token `Gaming[12]` is matched against.
     pub overuse_super_bit: String,
     /// The twelve reward names the run reports, in reward-index order.
     pub rewards: Vec<String>,
@@ -31,7 +28,7 @@ pub struct Data {
     pub sprites: std::collections::BTreeMap<String, [f64; 2]>,
 }
 
-/// One chapter-bonus row: the formula `chapterBonus` evaluates.
+/// One chapter-bonus row: the formula a chapter bonus evaluates.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Chapter {
     pub label: String,
@@ -104,7 +101,7 @@ pub struct Elixir {
 /// Which half of the belt a built-in preset fills.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 pub enum PresetKind {
-    /// The equipped belt; upstream calls it `elixir`.
+    /// The equipped belt, stored as `elixir`.
     #[serde(rename = "elixir")]
     Belt,
     /// The memorized set.
@@ -112,7 +109,7 @@ pub enum PresetKind {
     Memory,
 }
 
-/// One built-in elixir loadout from the upstream page.
+/// One built-in elixir loadout.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Preset {

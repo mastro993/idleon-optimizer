@@ -1,4 +1,4 @@
-//! Set bonuses, ported from `js/stats/systems/w3/setBonus.js`.
+//! Set bonuses.
 //!
 //! A set pays when the save lists it as a permanent unlock (`OptionsListAccount
 //! [379]`) or when the character has the pieces equipped; the bonus itself comes
@@ -18,7 +18,6 @@ pub fn set_bonus(decoder: &Decoder<'_>, name: &str, character: usize) -> f64 {
     }
 }
 
-/// `checkSetEquipped` from `js/stats/systems/w3/setBonus.js`.
 pub fn set_equipped(decoder: &Decoder<'_>, name: &str, character: usize) -> bool {
     let Some(set) = stats::equipment_set(name) else {
         return false;

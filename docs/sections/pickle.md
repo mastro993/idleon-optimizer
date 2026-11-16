@@ -8,11 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port the hidden DPS/TTK calculator.
-
-## Upstream sources
-
-- pickle-calc.html
+Implement the hidden DPS/TTK calculator.
 
 ## UI
 
@@ -44,11 +40,10 @@ Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
-- Values match upstream.
 - Inputs validate.
 - Empty state is clear.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Harness.

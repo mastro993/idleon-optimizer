@@ -1,9 +1,8 @@
-//! The Depth Charge formulas, ported from `js/stats/systems/w7/minehead.js`.
+//! The Depth Charge formulas.
 //!
 //! Everything here is pure: it takes the save-derived numbers and returns the
-//! value the game shows. The upstream functions that read `saveData` take the
-//! decoded scalars instead, so the tests can pin them against the upstream
-//! oracle without building a save.
+//! value the game shows. The formulas take decoded scalars rather than the
+//! save, so they can be tested without building a save.
 
 use crate::data::{GameData, game};
 use idleon_common::curve::log;
@@ -102,11 +101,6 @@ pub fn blocks_total(data: &GameData, levels: &[f64]) -> f64 {
     upgrade_qty(data, 10, level(levels, 10), 1.0)
 }
 
-/// `FlagsTotal`.
-pub fn flags_total(data: &GameData, levels: &[f64]) -> f64 {
-    upgrade_qty(data, 20, level(levels, 20), 1.0).round()
-}
-
 /// `InstaRevealsTotal`.
 pub fn insta_reveals_total(data: &GameData, levels: &[f64]) -> f64 {
     upgrade_qty(data, 16, level(levels, 16), 1.0).round()
@@ -122,7 +116,7 @@ pub fn max_hp_you(data: &GameData, levels: &[f64]) -> f64 {
     (3.0 + upgrade_qty(data, 6, level(levels, 6), 1.0)).round()
 }
 
-/// `floorHP`: the boss's health on `floor`.
+/// The boss's health on `floor`.
 pub fn floor_hp(floor: usize, server_var: f64) -> f64 {
     let t = floor as f64;
     (5.0 + 2.0 * t + t * t)
@@ -220,7 +214,7 @@ pub struct DamageInputs {
     pub legend40: f64,
 }
 
-/// The damage one turn commits: the seven-stage upstream pipeline.
+/// The damage one turn commits: the seven-stage damage pipeline.
 pub fn current_outgoing_dmg(
     data: &GameData,
     revealed: &[u32],
@@ -340,19 +334,6 @@ pub fn currency_per_hour(data: &GameData, inputs: &CurrencyInputs) -> f64 {
         * passive
 }
 
-/// `WiggleMaxPerGame`.
-pub fn wiggle_max_per_game(grid_bonus_166: f64) -> f64 {
-    grid_bonus_166.round()
-}
-
-/// `glimboCost`.
-pub fn glimbo_cost(trade_lv: f64, cost_exp: f64, event_shop_38: f64) -> f64 {
-    let raw = (1.0 + trade_lv + 1.5 * trade_lv)
-        * cost_exp.powf(trade_lv)
-        * (1.0 - 25.0 * event_shop_38 / 100.0).max(0.1);
-    if raw < 1e9 { raw.max(1.0).floor() } else { raw }
-}
-
 /// The tile values the shape ranking grows.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ShapeContext {
@@ -389,7 +370,7 @@ pub enum ShapeKind {
     Damage,
 }
 
-/// `mineheadGridShapeValues`: the exact gain each node gets from a shape.
+/// The exact gain each node gets from a shape.
 pub fn grid_shape_values(context: &ShapeContext) -> Vec<ShapeValue> {
     let p = context.shape_pct;
     let grown = |value: f64| value * (1.0 + p / 100.0);
@@ -461,7 +442,7 @@ pub fn grid_shape_values(context: &ShapeContext) -> Vec<ShapeValue> {
     ]
 }
 
-/// `mineheadShapePriority`: currency rows first, then damage, each by gain.
+/// Currency rows first, then damage, each by gain.
 pub fn shape_priority(context: &ShapeContext) -> Vec<usize> {
     let rows = grid_shape_values(context);
     let order = |kind: ShapeKind| {

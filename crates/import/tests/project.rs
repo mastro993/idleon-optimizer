@@ -1,7 +1,7 @@
 //! A project's research half is the decoded state the save importer reads.
 
 use idleon_import::{Format, import};
-use idleon_project::{Origin, Project, VERSION, write};
+use idleon_project::{Project, VERSION, write};
 use idleon_research::model::{Mag, MagKind, Placement, SimContext, Simulation};
 use idleon_research::{GridState, Tiers, game};
 use serde_json::{Map, Value};
@@ -42,7 +42,6 @@ fn an_exported_project_reads_as_a_research_state_in_the_save_importer() {
         context: SimContext::default(),
         sections: Map::new(),
         warnings: Vec::new(),
-        origin: Origin::Project,
         has_research: true,
         has_supplements: true,
     };

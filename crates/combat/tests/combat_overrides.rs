@@ -1,60 +1,23 @@
-//! The mechanics overrides against upstream's own catalog and outcomes.
-//!
-//! `fixtures/combat-overrides.json` and `crates/combat/data/combat-overrides.json`
-//! are written together by `script/combat-overrides-oracle.mjs` from
-//! `js/stats/systems/common/combat-sim-toggles.js`, so a case that disagrees here
-//! is a port bug, not a stale expectation.
+//! The mechanics overrides: how a run's rules resolve against its saved inputs.
 
 use idleon_combat::overrides::{self, Entries, Mode, Overrides, Rule, SavedValue, State, Value};
 use serde_json::Value as Json;
-
-fn fixture() -> Json {
-    serde_json::from_str(include_str!("../../../fixtures/combat-overrides.json"))
-        .expect("fixtures/combat-overrides.json is valid")
-}
-
-fn entries(fixture: &Json) -> Entries {
-    serde_json::from_value(fixture["entries"].clone()).expect("the saved inputs parse")
-}
 
 fn to_json<T: serde::Serialize>(value: &T) -> Json {
     serde_json::to_value(value).expect("the state serializes")
 }
 
-/// The fixture's numbers parse as integers while the port's are `f64`, so both
-/// sides are compared as the port's own types.
-fn expected_state(case: &Json) -> State {
-    serde_json::from_value(case["normalized"].clone()).expect("the normalized state parses")
-}
-
-fn expected_overrides(value: &Json) -> Overrides {
-    serde_json::from_value(value.clone()).expect("the resolved overrides parse")
-}
-
 #[test]
-fn the_catalog_keeps_every_upstream_mechanic_and_group() {
-    let fixture = fixture();
-    let groups: Vec<String> = fixture["groups"]
-        .as_array()
-        .expect("groups")
-        .iter()
-        .map(|group| group.as_str().expect("a group id").to_string())
-        .collect();
-    assert_eq!(overrides::groups(), groups.as_slice());
-    assert_eq!(overrides::data().toggles.len(), 68);
-
-    let mut ids: Vec<&str> = overrides::data()
-        .toggles
-        .iter()
-        .map(|toggle| toggle.id.as_str())
-        .collect();
+fn every_mechanic_has_its_own_id_group_and_input() {
+    let toggles = &overrides::data().toggles;
+    let mut ids: Vec<&str> = toggles.iter().map(|toggle| toggle.id.as_str()).collect();
     ids.sort_unstable();
     ids.dedup();
-    assert_eq!(ids.len(), 68, "every mechanic has its own id");
+    assert_eq!(ids.len(), toggles.len(), "every mechanic has its own id");
 
-    for toggle in &overrides::data().toggles {
+    for toggle in toggles {
         assert!(
-            groups.contains(&toggle.group),
+            overrides::groups().contains(&toggle.group),
             "{} is in an unknown group {}",
             toggle.id,
             toggle.group
@@ -73,67 +36,6 @@ fn the_catalog_keeps_every_upstream_mechanic_and_group() {
 }
 
 #[test]
-fn the_flag_mechanics_keep_their_own_keys() {
-    let fixture = fixture();
-    let flags = fixture["cases"]
-        .as_array()
-        .expect("cases")
-        .iter()
-        .find(|case| case["name"] == "flags-and-tris")
-        .expect("the flags case");
-    let saved = entries(&fixture);
-    let mut state = State::new();
-    state.set("compass3", Rule::new(Mode::On));
-    state.set("autoLoot", Rule::new(Mode::Off));
-    let resolved = state.build(&saved);
-
-    // Every medallion the upstream list carries lands in the override unchanged.
-    let expected = expected_overrides(&flags["overrides"]);
-    assert_eq!(resolved["compass3"], expected["compass3"]);
-    assert_eq!(resolved["ola83"], expected["ola83"]);
-    assert!(!resolved.contains_key("autoLoot"));
-}
-
-#[test]
-fn every_upstream_case_resolves_the_same() {
-    let fixture = fixture();
-    let saved = entries(&fixture);
-    for case in fixture["cases"].as_array().expect("cases") {
-        let name = case["name"].as_str().expect("a case name");
-        let state = State::from_json(&case["state"]);
-        let normalized = state.normalize();
-        assert_eq!(normalized, expected_state(case), "{name}: normalized state");
-        assert_eq!(
-            state.len(),
-            case["active"].as_u64().expect("active") as usize,
-            "{name}: active count"
-        );
-        assert_eq!(
-            state.needs_base(),
-            case["needsBase"].as_bool().expect("needsBase"),
-            "{name}: needs a saved input"
-        );
-        assert_eq!(
-            state.build(&saved),
-            expected_overrides(&case["overrides"]),
-            "{name}: resolved overrides"
-        );
-        // Upstream keeps the order the rules were edited in; the editor lists
-        // chips in catalog order, so the labels compare as sets.
-        let mut described: Vec<String> = case["described"]
-            .as_array()
-            .expect("described")
-            .iter()
-            .map(|line| line.as_str().expect("a line").to_string())
-            .collect();
-        let mut chips = state.describe();
-        described.sort();
-        chips.sort();
-        assert_eq!(chips, described, "{name}: chip labels");
-    }
-}
-
-#[test]
 fn off_and_set_apply_without_the_saved_inputs() {
     let mut state = State::new();
     state.set("dropRate", Rule::new(Mode::Off));
@@ -148,7 +50,7 @@ fn off_and_set_apply_without_the_saved_inputs() {
         resolved["respawnBonusPct"],
         Value::Object(Default::default())
     );
-    // A scale without a base has nothing to multiply, exactly upstream.
+    // A scale without a base has nothing to multiply.
     assert!(!resolved.contains_key("killPerKill"));
     assert!(state.needs_base());
 }

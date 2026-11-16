@@ -1,38 +1,32 @@
 //! The Yellow Point Allocator: the yellow points spent on meal mastery.
 //!
-//! Ports the `meal-alloc` tab of `cooking-mastery-calc.html` and the module it
-//! imports, `js/stats/systems/common/meal-impact.js`:
+//! - [`bonus_multi_cook`]: the mastery factor a meal's contribution scales
+//!   with, `1 + lv / (lv + 5)`.
+//! - [`Yellow::allocation`]: a greedy walk over the budget that gives each
+//!   point to the meal whose category gains the most goal value, starting from
+//!   zero mastery on every meal, so the plan is a full reallocation. The first
+//!   meal wins a tie.
+//! - [`Yellow::budget`]: the rank, the Rift Spooker, the research grid node,
+//!   the event shop and the Jelly reward.
+//! - [`GOALS`]: each goal names the meal categories that feed it and how their
+//!   totals turn into its value.
 //!
-//! - [`bonus_multi_cook`] is `bonusMultiCook`: the mastery factor a meal's
-//!   contribution scales with, `1 + lv / (lv + 5)`.
-//! - [`Yellow::allocation`] is `optimizeForGoal`: a greedy walk over the budget
-//!   that gives each point to the meal whose category gains the most goal value,
-//!   starting from zero mastery on every meal, so the plan is a full
-//!   reallocation. Upstream keeps the first meal on a tie (`gain > bestGain`
-//!   with `bestGain` starting at -1); this port does the same, which is why the
-//!   oracle compares the whole allocation and not only its value.
-//! - [`Yellow::budget`] is `yellowPointBudget`: the rank, the Rift Spooker, the
-//!   research grid node, the event shop and the Jelly reward.
-//! - [`GOALS`] is `GOALS` itself: each goal names the meal categories that feed
-//!   it and how their totals turn into its value.
+//! The three composed stat goals (`mcook`, `rcook`, `cropevo`) read the
+//! selected character's Farming or Summoning level and the account's kitchens;
+//! the rest read one category total. A meal only enters a goal when its saved
+//! level and its per-level bonus are above zero, and a goal with fewer than two
+//! such meals is hidden: one meal leaves nothing to compare.
 //!
-//! The three stat goals upstream composes (`mcook`, `rcook`, `cropevo`) read
-//! the selected character's Farming or Summoning level and the account's
-//! kitchens; the rest read one category total. A meal only enters a goal when
-//! its saved level and its per-level bonus are above zero, exactly as
-//! `optimizeForGoal` filters them, and a goal with fewer than two such meals is
-//! hidden the way the page hides it: one meal leaves nothing to compare.
-//!
-//! Every number here is the page's own arithmetic; the save reading that feeds
-//! it lives in `idleon_account`, which owns the field names.
+//! The save reading that feeds this module lives in `idleon_account`, which
+//! owns the field names.
 
 use crate::data::{Meal, meals};
 use idleon_common::formula::ValueFormat;
 
-/// How a goal's value reads: the page's `goal.unit`.
+/// How a goal's value reads.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Unit {
-    /// A percentage of the category total, the page's default.
+    /// A percentage of the category total, the default.
     #[default]
     Percent,
     /// A flat category total, e.g. Base Defence.
@@ -70,22 +64,22 @@ pub enum Value {
     CropEvolution,
 }
 
-/// One upstream goal: what it reads and how it reads it.
+/// One goal: what it reads and how it reads it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct YellowGoal {
-    /// The page's `goal.id`, and the select's value.
+    /// The goal's id, and the select's value.
     pub id: &'static str,
     pub name: &'static str,
     /// The `MealINFO` categories, in the order [`Value`] expects them.
     pub categories: &'static [&'static str],
     pub unit: Unit,
-    /// The page's line under the result, empty for the plain goals.
+    /// The line under the result, empty for the plain goals.
     pub note: &'static str,
     pub value: Value,
 }
 
 impl YellowGoal {
-    /// The page's `categoryLabels` line for one of the goal's categories.
+    /// The label line for one of the goal's categories.
     pub fn category_label(&self, category: &str) -> &'static str {
         match category {
             "Mcook" => "Direct Meal Cooking Speed",
@@ -99,7 +93,7 @@ impl YellowGoal {
     }
 }
 
-/// A one-category goal, the page's `simpleGoal`.
+/// A one-category goal.
 const fn simple(
     id: &'static str,
     name: &'static str,
@@ -119,7 +113,7 @@ const fn simple(
 
 const PERCENT: Unit = Unit::Percent;
 
-/// Every goal the page offers, in its own order (`GOALS`).
+/// Every goal the allocator offers, in order.
 ///
 /// The UI hides the ones with fewer than two leveled meals; the order here is
 /// what the select shows for the rest.
@@ -276,12 +270,12 @@ pub const GOALS: [YellowGoal; 44] = [
     simple("tdpts", "Tower Defence Points", &["TDpts"], PERCENT, ""),
 ];
 
-/// The goal with `id`, or `None` for an id the page does not define.
+/// The goal with `id`, or `None` for an id no goal has.
 pub fn goal(id: &str) -> Option<&'static YellowGoal> {
     GOALS.iter().find(|goal| goal.id == id)
 }
 
-/// `bonusMultiCook`: what one mastery level multiplies a meal's contribution by.
+/// What one mastery level multiplies a meal's contribution by.
 pub fn bonus_multi_cook(level: f64) -> f64 {
     1.0 + level / (level + 5.0)
 }
@@ -309,7 +303,7 @@ pub struct Kitchen {
     pub gem: bool,
 }
 
-/// `kitchenCookingAggregate`: what the Cabbage meals buy across the kitchens.
+/// What the Cabbage meals buy across the kitchens.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Kitchens {
     /// How many kitchens are unlocked.
@@ -325,7 +319,7 @@ pub struct Kitchens {
 }
 
 impl Kitchens {
-    /// `kitchenCookingAggregate` for the given kitchens.
+    /// The cooking aggregate for the given kitchens.
     fn aggregate(kitchens: &[Kitchen]) -> Self {
         let mut summary = Kitchens {
             count: kitchens.len(),
@@ -374,44 +368,44 @@ pub struct Yellow {
     pub mastery: Vec<f64>,
     /// `Meals[0][meal]`: the meal levels.
     pub levels: Vec<f64>,
-    /// `ribbonBonusAt(28 + meal)` per meal.
+    /// The ribbon bonus of slot `28 + meal`, per meal.
     pub ribbons: Vec<f64>,
-    /// `cookingMealMulti(save).val`.
+    /// The account's meal bonus multiplier.
     pub cook_multi: f64,
-    /// `yellowPointBudget(save)`: every yellow point the account holds.
+    /// Every yellow point the account holds.
     pub budget: f64,
     /// The characters the stat goals scale with.
     pub characters: Vec<MealCharacter>,
     /// The account's unlocked kitchens.
     pub kitchens: Vec<Kitchen>,
-    /// `eventShopOwned(53)`: the event shop perk the meal cook goal reads.
+    /// Event shop perk 53, which the meal cook goal reads.
     pub event_53: bool,
 }
 
 impl Yellow {
-    /// `kitchenCookingAggregate` over the save's kitchens.
+    /// The cooking aggregate over the save's kitchens.
     pub fn kitchens(&self) -> Kitchens {
         Kitchens::aggregate(&self.kitchens)
     }
 
     /// The goals with at least two leveled meals in their categories: the ones
-    /// the page offers.
+    /// the tab offers.
     pub fn goals(&self) -> Vec<&'static YellowGoal> {
         GOALS.iter().filter(|goal| self.offers(goal)).collect()
     }
 
-    /// Whether the page offers a goal: two leveled meals leave something to
+    /// Whether the tab offers a goal: two leveled meals leave something to
     /// compare, and one does not.
     pub fn offers(&self, goal: &YellowGoal) -> bool {
         self.meals(goal).len() > 1
     }
 
-    /// The first offered goal, which the page selects when none is chosen.
+    /// The first offered goal, which the tab selects when none is chosen.
     pub fn default_goal(&self) -> Option<&'static YellowGoal> {
         self.goals().into_iter().next()
     }
 
-    /// The meals `optimizeForGoal` compares for a goal: a saved level above
+    /// The meals the allocation compares for a goal: a saved level above
     /// zero and a per-level bonus above zero.
     fn meals(&self, goal: &YellowGoal) -> Vec<Relevant> {
         let mut relevant = Vec::new();
@@ -492,11 +486,11 @@ impl Yellow {
         totals
     }
 
-    /// `optimizeForGoal`: the budget spent across the goal's meals.
+    /// The budget spent across the goal's meals.
     ///
     /// The request is clamped to `[0, budget]` and floored to whole points,
-    /// because the page spends one point per iteration. A goal the page does
-    /// not define, or one with no leveled meals, has no plan.
+    /// because the plan spends one point per iteration. An unknown goal, or one
+    /// with no leveled meals, has no plan.
     pub fn allocation(&self, goal_id: &str, budget: f64, character: usize) -> Option<Allocation> {
         let goal = goal(goal_id)?;
         let relevant = self.meals(goal);
@@ -560,7 +554,7 @@ impl Yellow {
                 }
             })
             .collect();
-        // The page sorts by the optimal points, keeping the meal order on ties.
+        // The table sorts by the optimal points, keeping the meal order on ties.
         rows.sort_by(|left, right| right.allocated.total_cmp(&left.allocated));
         let spent: f64 = levels.iter().sum();
         Some(Allocation {
@@ -615,7 +609,7 @@ pub struct MealRow {
     pub current: f64,
     /// The points the plan gives the meal.
     pub allocated: f64,
-    /// `bonusMultiCook(allocated)`.
+    /// The mastery factor at the allocated points.
     pub mastery: f64,
 }
 
@@ -625,7 +619,7 @@ pub struct Allocation {
     pub goal: &'static YellowGoal,
     /// The character the stat goals scaled with.
     pub character: usize,
-    /// `yellowPointBudget(save)`: every point the account holds.
+    /// Every point the account holds.
     pub available: f64,
     /// The budget asked for, before clamping.
     pub requested: f64,
@@ -698,7 +692,7 @@ mod tests {
     }
 
     #[test]
-    fn the_meal_factor_is_the_pages_curve() {
+    fn the_meal_factor_follows_its_curve() {
         assert_eq!(bonus_multi_cook(0.0), 1.0);
         assert_eq!(bonus_multi_cook(5.0), 1.5);
         assert_eq!(bonus_multi_cook(20.0), 1.8);
@@ -711,7 +705,7 @@ mod tests {
         assert_eq!(offered, ["seff", "totdmg"]);
         assert!(
             yellow.allocation("crit", 5.0, 0).is_some(),
-            "the page still plans a goal with one meal"
+            "a goal with one meal still has a plan"
         );
         assert!(yellow.allocation("chocolate", 5.0, 0).is_none());
     }

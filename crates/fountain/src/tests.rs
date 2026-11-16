@@ -7,7 +7,7 @@ fn the_currency_type_changes_every_five_levels() {
     assert_eq!(level_currency(5.0), 1);
     assert_eq!(level_currency(10.0), 2);
     assert_eq!(level_currency(44.0), 8);
-    // Levels past the last currency read as the unknown type, as upstream caps.
+    // Levels past the last currency read as the unknown type.
     assert_eq!(level_currency(50.0), CURRENCIES);
 }
 

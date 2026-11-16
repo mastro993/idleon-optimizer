@@ -1,5 +1,5 @@
-//! The long-run overgrowth curve, from `optimalOvergrowthTarget`: every target
-//! OG level's reward, the full cycle it costs and the rate it settles at.
+//! The long-run overgrowth curve: every target OG level's reward, the full
+//! cycle it costs and the rate it settles at.
 
 use super::account::Snapshot;
 use super::{Farm, PLOTS, overgrowth_multiplier};
@@ -12,8 +12,8 @@ impl Farm {
             .collect()
     }
 
-    /// `optimalOvergrowthTarget(plotIdx)`: the 0-30 curve, with the best
-    /// long-run rate and what it costs from where the plot stands.
+    /// The 0-30 curve, with the best long-run rate and what it costs from where
+    /// the plot stands.
     pub fn overgrowth_curve(&self, index: usize, snapshot: &Snapshot) -> OvergrowthCurve {
         let plot = self.plots.get(index).copied().unwrap_or_default();
         let current_og = plot.overgrowth;
@@ -39,7 +39,7 @@ impl Farm {
                 eta_from_current: if target <= current_og { 0.0 } else { eta },
             });
         }
-        // The first row with the best rate wins, as upstream's strict `>` does.
+        // The first row with the best rate wins: the comparison is strict.
         let best = rows.iter().skip(1).fold(rows[0], |best, row| {
             if row.long_run_rate > best.long_run_rate {
                 *row
@@ -75,8 +75,8 @@ pub struct OvergrowthCurve {
 }
 
 impl OvergrowthCurve {
-    /// The rows the upstream plot curve shows: the current level, the best
-    /// target, the 30-step end and every target within four of the best.
+    /// The rows the plot curve shows: the current level, the best target, the
+    /// 30-step end and every target within four of the best.
     pub fn display_rows(&self) -> impl Iterator<Item = &OvergrowthRow> {
         let best = self.best.target;
         self.rows.iter().filter(move |row| {

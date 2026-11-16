@@ -1,10 +1,8 @@
 //! The upgrade list, the selection preview, the trials and the comparison.
 //!
-//! Ports the `+1` half of `js/ui/killroy.js` and `buildKillroyPlan` from
-//! `js/stats/systems/common/killroy-planner.js`: every upgrade the save unlocks
-//! is compared separately against its character's baseline with the same seeds,
-//! the preview says how many attempts that is, and the summary highlights the
-//! best option by collected skulls.
+//! Every upgrade the save unlocks is compared separately against its
+//! character's baseline with the same seeds, the preview says how many attempts
+//! that is, and the summary highlights the best option by collected skulls.
 
 use crate::sections::killroy::Mode;
 use crate::sections::killroy::forecast_view::{metric, week_label};
@@ -257,7 +255,7 @@ fn labelled(label: &'static str, input: impl IntoElement) -> AnyElement {
         .into_any_element()
 }
 
-/// The upstream Options block: saved buffs and unlimited inventory.
+/// The Options block: saved buffs and unlimited inventory.
 fn options(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let keep_entity = cx.entity();
@@ -511,7 +509,7 @@ pub(crate) fn results_card(
     .into_any_element()
 }
 
-/// What the run's inputs were, as the upstream Run details line reads them.
+/// What the run's inputs were, as the Run details line reads them.
 fn run_details(plan: &Plan) -> String {
     format!(
         "{} · {}",
@@ -725,7 +723,7 @@ fn result_row(row: &RowSummary) -> [AnyElement; 8] {
     ]
 }
 
-/// A mean, rounded the way the upstream tables print it.
+/// A mean, rounded the way the tables print it.
 fn number(value: f64) -> AnyElement {
     let text = if value.fract().abs() < 0.005 {
         idleon_ui::format::count(value.round() as u64)

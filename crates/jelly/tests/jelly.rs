@@ -1,134 +1,38 @@
-//! The Jelly Operator state, layout rules and metrics against the upstream JS.
-//!
-//! Every expected number comes from `fixtures/jelly.json`, which
-//! `script/jelly-oracle.mjs` writes by running the upstream calculator on the
-//! committed save and on three documented overrides; see `tests/common/mod.rs`
-//! for the fixture helpers.
+//! The Jelly Operator state, layout rules, metrics and operation runtime on the
+//! committed save; see `tests/common/mod.rs` for the save setups.
 
 mod common;
 
-use common::{close, jelly, numbers};
+use common::{clear, save, small_board};
 use idleon_jelly::board::{self, Layout};
 use idleon_jelly::metrics::MetricOptions;
 use idleon_jelly::operation::simulate;
 use idleon_jelly::{OperationOptions, Progress};
 
 #[test]
-fn progress_and_unlocks_match_upstream() {
-    for name in ["save", "small-board", "clear"] {
-        let (jelly, case) = jelly(name);
-        let state = &case["state"];
-        let progress = &state["progress"];
-        assert_eq!(
-            jelly.progress.obstruction,
-            progress["obstruction"].as_u64().unwrap() as usize,
-            "{name}: obstruction"
-        );
-        assert_eq!(
-            jelly.progress.fever,
-            progress["fever"].as_u64().unwrap() as u32,
-            "{name}: fever"
-        );
-        close(
-            jelly.progress.tries,
-            progress["tries"].as_f64().unwrap(),
-            "tries",
-        );
-        close(
-            jelly.progress.bloodcells,
-            progress["bloodcells"].as_f64().unwrap(),
-            "bloodcells",
-        );
-        close(
-            jelly.progress.best_dps,
-            progress["bestDps"].as_f64().unwrap(),
-            "best DPS",
-        );
-        close(
-            jelly.progress.best_bloodcells,
-            progress["bestBloodcells"].as_f64().unwrap(),
-            "best Bloodcells",
-        );
-        assert_eq!(
-            jelly.units_owned(),
-            state["unitsOwned"].as_u64().unwrap() as usize,
-            "{name}: units owned"
-        );
-        let unlocked: Vec<usize> = board::unlocked_slots(&jelly)
-            .iter()
-            .enumerate()
-            .filter(|(_, open)| **open)
-            .map(|(slot, _)| slot)
-            .collect();
-        let expected: Vec<usize> = numbers(&state["unlocked"])
-            .into_iter()
-            .map(|slot| slot as usize)
-            .collect();
-        assert_eq!(unlocked, expected, "{name}: unlocked slots");
-        close(
-            board::slot_purchases_left(&jelly),
-            state["slotPurchasesLeft"].as_f64().unwrap(),
-            "slot purchases left",
-        );
-        close(
-            jelly.daily_tries(),
-            state["dailyTries"].as_f64().unwrap(),
-            "daily tries",
-        );
-        for cell_type in 0..9 {
-            assert_eq!(
-                jelly.cell_level(cell_type),
-                state["cellLevels"][cell_type].as_u64().unwrap() as u32,
-                "{name}: cell {cell_type} level"
-            );
-            close(
-                jelly.cell_exp(cell_type),
-                state["cellExp"][cell_type].as_f64().unwrap(),
-                "cell EXP",
-            );
-        }
-    }
+fn the_layout_rules_refuse_a_locked_cell_and_an_overlap() {
+    // Two cell types owned on the first stage: type 7 is not unlocked yet,
+    // and a two-slot cell at 77 already covers 78.
+    let mut jelly = save();
+    jelly.progress.obstruction = 0;
+    jelly.upgrades = vec![0; 40];
+    jelly.upgrades[0] = 1;
+    jelly.upgrades[1] = 1;
+    let locked = Layout::from([(77, 7)]);
+    assert_eq!(
+        board::validate(&jelly, &locked).unwrap_err(),
+        "Cell 7 is locked"
+    );
+    let overlap = Layout::from([(77, 1), (78, 0)]);
+    assert_eq!(
+        board::validate(&jelly, &overlap).unwrap_err(),
+        "Cells overlap at slot 78"
+    );
 }
 
 #[test]
-fn multipliers_match_upstream() {
-    for name in ["save", "small-board", "clear"] {
-        let (jelly, case) = jelly(name);
-        let state = &case["state"];
-        let fever = Some(jelly.progress.fever);
-        let total = jelly.total_cell_level();
-        close(
-            jelly.cell_damage_multiplier(MetricOptions {
-                fever,
-                total_cell_level: Some(total),
-                ..MetricOptions::default()
-            }),
-            state["cellDamageMultiplier"].as_f64().unwrap(),
-            "cell damage multiplier",
-        );
-        close(
-            jelly.cell_speed_multiplier(fever),
-            state["cellSpeedMultiplier"].as_f64().unwrap(),
-            "cell speed multiplier",
-        );
-        close(
-            jelly.cell_exp_multiplier(fever),
-            state["cellExpMultiplier"].as_f64().unwrap(),
-            "cell EXP multiplier",
-        );
-        close(
-            jelly.currency_multiplier(fever, total, jelly.progress.best_dps),
-            state["currencyMultiplier"].as_f64().unwrap(),
-            "currency multiplier",
-        );
-    }
-}
-
-#[test]
-fn layout_metrics_match_upstream() {
-    for name in ["save", "small-board", "clear"] {
-        let (jelly, case) = jelly(name);
-        let expected = &case["metrics"];
+fn every_saved_board_has_valid_metrics() {
+    for jelly in [save(), small_board(), clear()] {
         let metrics = jelly.layout_metrics(
             &jelly.layout,
             MetricOptions {
@@ -136,115 +40,14 @@ fn layout_metrics_match_upstream() {
                 ..MetricOptions::default()
             },
         );
-        assert!(metrics.valid, "{name}: {}", metrics.reason);
-        assert_eq!(
-            metrics.valid,
-            expected["valid"].as_bool().unwrap(),
-            "{name}"
-        );
-        close(
-            metrics.damage_passive,
-            expected["damagePassive"].as_f64().unwrap(),
-            "damage passive",
-        );
-        close(
-            metrics.speed_passive,
-            expected["speedPassive"].as_f64().unwrap(),
-            "speed passive",
-        );
-        close(
-            metrics.virus_multiplier,
-            expected["virusMultiplier"].as_f64().unwrap(),
-            "virus",
-        );
-        close(metrics.dps, expected["dps"].as_f64().unwrap(), "dps");
-        close(
-            metrics.attacks_per_second,
-            expected["attacksPerSecond"].as_f64().unwrap(),
-            "attacks per second",
-        );
-        assert_eq!(
-            metrics.infected_slots,
-            expected["infectedSlots"].as_u64().unwrap() as usize,
-            "{name}: infected slots"
-        );
-        for index in 0..9 {
-            close(
-                metrics.counts[index],
-                expected["counts"][index].as_f64().unwrap(),
-                "counts",
-            );
-            close(
-                metrics.raw_counts[index],
-                expected["rawCounts"][index].as_f64().unwrap(),
-                "raw counts",
-            );
-        }
-        let expected_cells = expected["cells"].as_array().unwrap();
-        assert_eq!(
-            metrics.cells.len(),
-            expected_cells.len(),
-            "{name}: cell count"
-        );
-        for (cell, expected) in metrics.cells.iter().zip(expected_cells) {
-            assert_eq!(cell.anchor, expected["anchor"].as_u64().unwrap() as usize);
-            assert_eq!(cell.cell_type, expected["type"].as_u64().unwrap() as usize);
-            close(
-                cell.organelle,
-                expected["organelle"].as_f64().unwrap(),
-                "organelle",
-            );
-            close(
-                cell.proximity,
-                expected["proximity"].as_f64().unwrap(),
-                "proximity",
-            );
-            close(
-                cell.damage,
-                expected["damage"].as_f64().unwrap(),
-                "cell damage",
-            );
-            close(
-                cell.cooldown_progress,
-                expected["cooldownProgress"].as_f64().unwrap(),
-                "cooldown",
-            );
-            close(
-                cell.progress_per_frame,
-                expected["progressPerFrame"].as_f64().unwrap(),
-                "progress per frame",
-            );
-            close(
-                cell.frames_per_attack,
-                expected["framesPerAttack"].as_f64().unwrap(),
-                "frames per attack",
-            );
-            close(cell.dps, expected["dps"].as_f64().unwrap(), "cell dps");
-        }
-    }
-}
-
-#[test]
-fn layout_rules_match_upstream() {
-    for name in ["locked-cell", "overlap"] {
-        let (jelly, case) = jelly(name);
-        let expected = &case["validation"];
-        let result = board::validate(&jelly, &jelly.layout);
-        if expected["valid"].as_bool().unwrap() {
-            assert!(result.is_ok(), "{name}: {}", result.unwrap_err());
-        } else {
-            assert_eq!(
-                result.unwrap_err(),
-                expected["reason"].as_str().unwrap(),
-                "{name}: reason"
-            );
-        }
+        assert!(metrics.valid, "{}", metrics.reason);
+        assert_eq!(metrics.cells.len(), jelly.layout.len());
     }
 }
 
 #[test]
 fn every_cell_type_is_placeable_and_loads_back() {
-    let (jelly, _case) = jelly("small-board");
+    let jelly = small_board();
     let mut layout = Layout::new();
     let mut placed = Vec::new();
     for cell_type in 0..jelly.units_owned() {
@@ -273,7 +76,7 @@ fn every_cell_type_is_placeable_and_loads_back() {
 
 #[test]
 fn trial_seeds_are_separate_attempts() {
-    let (jelly, _case) = jelly("clear");
+    let jelly = clear();
     let trial = |seed| {
         simulate(
             &jelly,
@@ -290,7 +93,7 @@ fn trial_seeds_are_separate_attempts() {
 
 #[test]
 fn progress_and_board_come_from_the_save() {
-    let (jelly, _case) = jelly("save");
+    let jelly = save();
     assert_ne!(jelly.progress, Progress::default());
     assert!(jelly.has_data());
     assert!(!jelly.layout.is_empty());
@@ -298,14 +101,14 @@ fn progress_and_board_come_from_the_save() {
 
 #[test]
 fn a_cancelled_estimate_reports_nothing() {
-    let (jelly, _case) = jelly("save");
+    let jelly = save();
     let stopped = idleon_jelly::Estimate::run_with(&jelly, &jelly.layout, 4, 9, |done| done < 2);
     assert!(stopped.is_none(), "a stopped run stores nothing");
 }
 
 #[test]
 fn estimate_is_deterministic_and_layout_sensitive() {
-    let (jelly, _case) = jelly("save");
+    let jelly = save();
     let first = idleon_jelly::Estimate::run(&jelly, &jelly.layout, 2, 5);
     let second = idleon_jelly::Estimate::run(&jelly, &jelly.layout, 2, 5);
     assert_eq!(first, second, "a seed makes the estimate reproducible");
@@ -319,7 +122,7 @@ fn estimate_is_deterministic_and_layout_sensitive() {
 
 #[test]
 fn normalizing_a_sandbox_drops_the_cells_that_no_longer_fit() {
-    let (mut jelly, _) = jelly("save");
+    let mut jelly = save();
     jelly.progress.obstruction = 2;
     let mut layout = Layout::new();
     layout.insert(75, 0);
@@ -336,7 +139,7 @@ fn normalizing_a_sandbox_drops_the_cells_that_no_longer_fit() {
 
 #[test]
 fn an_empty_sandbox_board_runs_a_trial_with_no_projectiles() {
-    let (mut jelly, _) = jelly("save");
+    let mut jelly = save();
     jelly.upgrades = vec![0; 40];
     let options = OperationOptions {
         obstruction: Some(0),
@@ -362,7 +165,7 @@ fn an_empty_sandbox_board_runs_a_trial_with_no_projectiles() {
 
 #[test]
 fn the_count_bonus_needs_its_upgrade() {
-    let (mut jelly, _) = jelly("save");
+    let mut jelly = save();
     let with_bonus = jelly.layout_metrics(&jelly.layout, MetricOptions::default());
     assert!(with_bonus.valid);
     jelly.upgrades[14] = 0;

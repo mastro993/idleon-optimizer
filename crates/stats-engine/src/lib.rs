@@ -2,10 +2,9 @@
 //! dashboard and the damage layers both read, and the damage arithmetic on top
 //! of them.
 //!
-//! Ported from `js/stats/systems/common/stats.js` (`computeTotalStat` and the
-//! providers it sums) and `js/stats/defs/damage.js`. A provider whose upstream
-//! formula this build does not carry is recorded by name and source instead of
-//! being guessed, so a caller can show a partial result and its reason.
+//! A provider whose formula this build does not carry is recorded by name
+//! instead of being guessed, so a caller can show a partial result and its
+//! reason.
 
 mod damage;
 mod data;
@@ -17,7 +16,7 @@ use idleon_save::Save;
 
 pub use damage::{Layers, evaluate as damage_layers, is_dungeon_map};
 
-/// `primaryStatForClass`: the class branch's stat.
+/// A class's primary stat: the class branch's stat.
 pub(crate) fn primary_stat_for_class(class: usize) -> Stat {
     extra::primary_stat_index(class)
 }
@@ -55,8 +54,7 @@ impl Stat {
 }
 
 /// The additive terms behind the Coin Multiplier's "Other Additive Sources"
-/// group. The group itself lives in `js/stats/defs/coin-multi.js`; these are the
-/// systems it sums.
+/// group: the systems that group sums.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct OtherSources {
     pub talent657: f64,
@@ -155,8 +153,7 @@ pub(crate) fn with_ctx<T>(
     Some(read(&mut ctx))
 }
 
-/// The display name of an alchemy bubble by its effect key, title-cased the way
-/// upstream's `label('Bubble', …)` renders it.
+/// The display name of an alchemy bubble by its effect key, title-cased.
 pub fn bubble_label(key: &str) -> Option<String> {
     let name = &data::data().bubble(key)?.name;
     Some(
@@ -177,8 +174,8 @@ pub fn bubble_label(key: &str) -> Option<String> {
 
 /// The Cash Bubbles coin group: each bubble's value times `floor(stat / 250)`.
 ///
-/// Ported from `js/stats/defs/coin-multi.js` group 1. The terms are returned
-/// with the stat and bubble that produced them so the card can name its inputs.
+/// The terms are returned with the stat and bubble that produced them so the
+/// card can name its inputs.
 pub fn cash_bubbles(
     save: &Save,
     simulation: &idleon_research::model::Simulation,

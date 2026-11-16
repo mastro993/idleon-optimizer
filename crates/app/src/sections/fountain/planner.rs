@@ -1,11 +1,10 @@
 //! FN-03: the Planner tab, the next-level ranking and the greedy optimizer.
 //!
-//! Ported from the `#tab-planner` half of `fountain-calc.html`. The planner
-//! measures one level of every accessible upgrade against the current cavern
-//! and ranks the gain per unit cost; the optimizer buys the best affordable
-//! step, then ranks again at the levels that purchase reached. The optimizer
-//! runs through the shared [`idleon_ui::runner::TaskRunner`], so its progress
-//! and cancel chrome match every other long job.
+//! The planner measures one level of every accessible upgrade against the
+//! current cavern and ranks the gain per unit cost; the optimizer buys the best
+//! affordable step, then ranks again at the levels that purchase reached. The
+//! optimizer runs through the shared [`idleon_ui::runner::TaskRunner`], so its
+//! progress and cancel chrome match every other long job.
 
 use super::overview::{num, odds, time};
 use crate::sections::fountain::{STEP_CHOICES, State};
@@ -222,7 +221,7 @@ fn planner_table(rows: &[PlannerRow], goal: Goal) -> AnyElement {
         .into_any_element()
 }
 
-/// The goal's extra column, transcribed from the page's per-goal table headers.
+/// The goal's extra column header.
 fn goal_detail_label(goal: Goal) -> &'static str {
     match goal {
         Goal::Fill => "Coin / Marble / Duck Δ",

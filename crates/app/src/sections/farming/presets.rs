@@ -1,10 +1,10 @@
 //! The named presets: save the current goal, baseline and crop target, then
 //! apply or forget a saved one.
 //!
-//! Upstream's preset list is fixed — the page's seven `OBJECTIVES` goals drive
-//! the Preset Comparison table. A named preset here keeps the same three
-//! section inputs in the project document, so a project round trip restores it
-//! and applying one is the same edit as picking them by hand.
+//! The seven built-in goals are fixed and drive the Preset Comparison table.
+//! A named preset keeps the same three section inputs in the project document,
+//! so a project round trip restores it and applying one is the same edit as
+//! picking them by hand.
 
 use crate::sections::presets;
 use crate::state::AppState;
@@ -217,7 +217,7 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
                         .text_size(px(11.0))
                         .text_color(muted)
                         .child(
-                            "A preset keeps the objective, the Land Rank baseline and the target crop. The seven upstream goals stay in the objective selector.",
+                            "A preset keeps the objective, the Land Rank baseline and the target crop. The seven built-in goals stay in the objective selector.",
                         ),
                 ),
         )

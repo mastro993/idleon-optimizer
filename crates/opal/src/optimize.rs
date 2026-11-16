@@ -1,9 +1,8 @@
 //! The distribution optimizer: the best way to split a total across the villagers.
 //!
-//! `opal-calc.html` ships two shapes. `optimizeTotal` compares an even split with
-//! a star-weighted split, and `optimizeForTarget` moves a floor under the other
-//! villagers and puts the rest on the target. Both miss the plans that finish a
-//! villager's next ten opals, and neither guarantees the plan beats the save.
+//! Simple greedy shapes (an even split, a star-weighted split, or a floor under
+//! the other villagers with the rest on the target) miss the plans that finish
+//! a villager's next ten opals, and none guarantees the plan beats the save.
 //!
 //! This module searches the whole space. A villager's rate is
 //! `holeoz × base × count × star × (1 + spread/100) × (1 + (additive +
@@ -23,9 +22,9 @@ use idleon_common::Progress;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Target {
-    /// Every unlocked villager's rate added up, the page's `optimizeTotal`.
+    /// Every unlocked villager's rate added up.
     Total,
-    /// One villager's own rate, the page's `optimizeForTarget`.
+    /// One villager's own rate.
     Villager(usize),
 }
 

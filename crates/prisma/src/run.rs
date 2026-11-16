@@ -1,18 +1,15 @@
 //! The Prisma search: one variant per comparable bubble, streamed with progress
 //! and cancellable.
 //!
-//! Ported from `prismaChanges`, `prismaOutcome` and the row loop in
-//! `js/stats/prisma.js`. Every candidate is the saved state with one bubble's
-//! Prisma flag toggled; the measured scope is every purchased bubble's bonus
-//! (an intermediate) plus the downstream outcome families this build models.
-//! Today that is one: `statue-retention`, the Statue EXP the STARTUE EXP bubble
-//! buys (`statueLevelingInputs` in `js/stats/systems/common/statue-leveling.js`).
+//! Every candidate is the saved state with one bubble's Prisma flag toggled;
+//! the measured scope is every purchased bubble's bonus (an intermediate) plus
+//! the downstream outcome families this build models. Today that is one:
+//! `statue-retention`, the Statue EXP the STARTUE EXP bubble buys.
 //!
 //! Every other effect keeps reporting the bonus as an intermediate only.
-//! [`Coverage`] names the native systems upstream's audit
-//! (`js/stats/data/prisma-source-coverage.js`) found reading each effect and
-//! whether this build computes a downstream metric for it, so a bubble bonus is
-//! never presented as a stat, skill or damage gain it is not.
+//! [`Coverage`] names the native systems traced reading each effect and whether
+//! this build computes a downstream metric for it, so a bubble bonus is never
+//! presented as a stat, skill or damage gain it is not.
 
 use super::data::Consumer;
 use super::plan::{Plan, Row};
@@ -32,9 +29,9 @@ fn bonus_name(row: &Row) -> String {
 struct Model {
     /// The effect key the bubble carries.
     effect: &'static str,
-    /// The upstream metric id.
+    /// The metric id.
     id: &'static str,
-    /// The upstream metric name.
+    /// The metric name.
     name: &'static str,
     /// The metric's value from the effect's processed bonus.
     outcome: fn(f64) -> f64,
@@ -42,11 +39,10 @@ struct Model {
 
 /// The downstream outcomes this build models, in display order.
 ///
-/// Upstream's evaluator covers thousands of metrics; the port measures the one
-/// whose whole formula is already here. `statue-retention` is
-/// `statueLevelingInputs(...).retentionPct`, which reads only the STARTUE EXP
-/// bubble: the bubble keeps half the EXP a statue level consumes, so the metric
-/// is `(1 - max(.5, 1 - pct/100)) × 100`.
+/// Only metrics whose whole formula is modelled are measured.
+/// `statue-retention` is the statue levelling retention percentage, which reads
+/// only the STARTUE EXP bubble: the bubble keeps half the EXP a statue level
+/// consumes, so the metric is `(1 - max(.5, 1 - pct/100)) × 100`.
 const MODELS: [Model; 1] = [Model {
     effect: "StatueStartEXP",
     id: "statue-retention",
@@ -102,8 +98,8 @@ pub struct Change {
 }
 
 impl Change {
-    /// The score the ranking sorts by, as upstream ranks a metric: the relative
-    /// change, else the absolute one, negated when lower is better.
+    /// The score the ranking sorts by: the relative change, else the absolute
+    /// one, negated when lower is better.
     pub fn score(&self) -> f64 {
         let key = self.percent.unwrap_or(self.delta);
         if self.lower_is_better { -key } else { key }
@@ -120,7 +116,7 @@ pub enum Comparison {
 }
 
 impl Comparison {
-    /// The upstream comparison id.
+    /// The comparison id.
     pub fn id(self) -> &'static str {
         match self {
             Comparison::Added => "added",
@@ -128,7 +124,7 @@ impl Comparison {
         }
     }
 
-    /// The row's direction, in the upstream detail wording.
+    /// The row's direction, in the detail wording.
     pub fn label(self) -> &'static str {
         match self {
             Comparison::Added => "Potential gain",
@@ -154,8 +150,7 @@ pub struct RowResult {
 }
 
 impl RowResult {
-    /// A metric's value in the measured state, changed or not, as
-    /// `prismaOutcome` reads it.
+    /// A metric's value in the measured state, changed or not.
     pub fn outcome(&self, metric: &str) -> Option<&Metric> {
         self.after.iter().find(|entry| entry.id == metric)
     }
@@ -170,7 +165,7 @@ impl RowResult {
     }
 
     /// The metric's comparison for display: its change when it moved, else the
-    /// measured value with a zero delta, as `prismaOutcome` returns it.
+    /// measured value with a zero delta.
     pub fn view(&self, metric: &str) -> Option<Change> {
         if let Some(change) = self.change(metric) {
             return Some(change.clone());
@@ -189,8 +184,8 @@ impl RowResult {
         })
     }
 
-    /// What the ranking sort uses for one metric, matching `prismaOutcome`: a
-    /// moved metric scores by its change, an unchanged one scores zero.
+    /// What the ranking sort uses for one metric: a moved metric scores by its
+    /// change, an unchanged one scores zero.
     fn score(&self, metric: &str) -> Option<f64> {
         match self.change(metric) {
             Some(change) => Some(change.score()),
@@ -227,7 +222,7 @@ pub struct CoverageEntry {
     pub effect: String,
     /// The bubbles that carry the effect.
     pub bubbles: Vec<String>,
-    /// The direct native references upstream's audit traced for the effect.
+    /// The direct native references traced for the effect.
     pub consumers: Vec<Consumer>,
     /// The downstream metric ids this build computes for the effect.
     pub metrics: Vec<String>,
@@ -726,7 +721,7 @@ mod tests {
                 .consumers
                 .iter()
                 .any(|consumer| consumer.method == "_customBlock_TotalStats"),
-            "upstream traces TotalStats reading TotalSTR"
+            "TotalStats reads TotalSTR"
         );
 
         let outcome = finish(&outcomes(false));
@@ -746,7 +741,7 @@ mod tests {
                 .consumers
                 .iter()
                 .any(|consumer| consumer.method == "_event_StatueBars"),
-            "upstream traces the statue bar event reading the effect"
+            "the statue bar event reads the effect"
         );
     }
 }

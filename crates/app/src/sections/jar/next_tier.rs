@@ -36,7 +36,7 @@ pub(crate) fn next_tier(state: &AppState, cx: &mut Context<AppState>) -> AnyElem
         .into_any_element()
 }
 
-/// The upstream tab needs Big Jar Mach's production line before its ranking
+/// The tab needs Big Jar Mach's production line before its ranking
 /// means anything.
 fn locked(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -94,7 +94,7 @@ fn headline(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// `_renderNextTier`: the pow10 ranking, fastest first.
+/// The pow10 ranking, fastest first.
 fn milestones(jar: &Jar) -> AnyElement {
     let rows = jar.milestone_ranking();
     let mut table = Table::new([
@@ -146,7 +146,7 @@ fn milestone_name(row: &MilestoneRow, fastest: bool) -> AnyElement {
     cell.into_any_element()
 }
 
-/// The upstream recommendation line: the fastest milestone, its deficit and the
+/// The recommendation line: the fastest milestone, its deficit and the
 /// type it speeds up.
 fn recommendation(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let Some(best) = jar.milestone_ranking().into_iter().next() else {
@@ -185,7 +185,7 @@ fn recommendation(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// `_renderNextTier`'s off-map accumulation: sustained tier, accumulation peak
+/// The off-map accumulation: sustained tier, accumulation peak
 /// and what the next tier still needs.
 fn projections(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;

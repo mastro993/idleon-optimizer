@@ -4,8 +4,7 @@ use crate::state::AppState;
 use gpui::Context;
 
 impl AppState {
-    /// Pick a character and map for the drop-rate page, exactly like upstream
-    /// `switchChar`/`switchMap`.
+    /// Pick a character and map for the drop-rate page.
     pub(crate) fn set_drop_rate_character(&mut self, character: usize, cx: &mut Context<Self>) {
         let Some(snapshot) = self.drop_rate.snapshot.as_ref() else {
             return;

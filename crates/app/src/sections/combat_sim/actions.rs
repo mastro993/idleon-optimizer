@@ -143,7 +143,7 @@ impl AppState {
     }
 
     /// Save the working loadout under the typed name, replacing one with the
-    /// same name for the same character, like the upstream storage key does.
+    /// same name for the same character.
     pub(crate) fn save_combat_preset(&mut self, cx: &mut Context<Self>) {
         let name = self.combat.preset_name(cx);
         match self.combat.presets.store(&self.combat.loadout, &name) {
@@ -198,7 +198,7 @@ impl AppState {
         cx.notify();
     }
 
-    /// Set the simulated duration, clamped to the upstream presets' range.
+    /// Set the simulated duration, clamped to the presets' range.
     pub(crate) fn set_combat_encounter_duration(&mut self, seconds: u64, cx: &mut Context<Self>) {
         self.combat.sim_duration_s = seconds.clamp(10, 86_400);
         cx.notify();

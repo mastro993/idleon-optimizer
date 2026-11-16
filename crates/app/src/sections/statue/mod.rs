@@ -1,7 +1,6 @@
 //! The Statue Calculator section: a character's saved statue levels, the EXP
 //! their next level needs, and the statues and time a target level costs.
 //!
-//! Ported from `statue-calc.html` and `js/stats/systems/common/statue-leveling.js`.
 //! ST-01 covers the table, search and sort; ST-02 the STARTUE EXP bubble, the
 //! deposit estimate and the time estimate from a raw statues/hour rate; ST-03
 //! the batch set/next-level actions with their undo step and the farming
@@ -70,8 +69,8 @@ impl Sort {
     }
 }
 
-/// The deposit estimate's id, label and id lookup, matching the upstream
-/// selector's two options.
+/// The deposit estimate's id, label and id lookup, matching the selector's two
+/// options.
 fn estimate_id(estimate: Estimate) -> &'static str {
     match estimate {
         Estimate::Guaranteed => "guaranteed",
@@ -161,8 +160,7 @@ impl State {
         self.clear_inputs(cx);
     }
 
-    /// Change the table's character and clear its plan inputs, as the upstream
-    /// character switch does.
+    /// Change the table's character and clear its plan inputs.
     pub(crate) fn select_character(&mut self, character: usize, cx: &mut Context<AppState>) {
         self.character = character;
         self.clear_inputs(cx);
@@ -518,7 +516,7 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
         .child(Caption::new(label).text_color(muted))
 }
 
-/// The four upstream summary cards: statues needed, retention, the tier
+/// The four summary cards: statues needed, retention, the tier
 /// multiplier and the parallel completion time.
 fn summary(state: &State, rows: &[Row], cx: &mut Context<AppState>) -> AnyElement {
     let leveling: &Leveling = state.save.leveling();
@@ -769,7 +767,7 @@ fn statues_card(
         .into_any_element()
 }
 
-/// The upstream batch controls: Set all targets, Next level for all, and the
+/// The batch controls: Set all targets, Next level for all, and the
 /// undo step the batch actions leave.
 fn batch_row(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
@@ -864,7 +862,7 @@ fn batch_messages(state: &AppState, cx: &Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The farming breakdown behind one statue's row: the deposit terms upstream's
+/// The farming breakdown behind one statue's row: the deposit terms the
 /// detail block names, plus the statues, rate and time the table shows.
 fn farming_card(state: &AppState, selected: usize, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();

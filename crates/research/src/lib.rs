@@ -1,5 +1,5 @@
 //! The research grid: its game data, the simulation state a save decodes into,
-//! the EXP and insight maths (`js/stats/systems/w7/research-math.js`) and the
+//! the EXP and insight maths and the
 //! optimizers that spend grid points, place shapes and assign magnifiers.
 
 pub mod breakdown;

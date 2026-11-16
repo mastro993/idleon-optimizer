@@ -2,11 +2,10 @@
 //! highest one, including the bonus levels the game adds to the purchased
 //! level.
 //!
-//! Ported from `getbonus2`, `getTalentNumber` and `resolveAllTalentLVz` in
-//! `js/stats/systems/common/talent.js`. The coin groups read talent 433 (the
-//! Dustwalker) alone, and its bonus levels are the AllTalentLVz sum: the
-//! Spelunk super talent, talents 149/374/539, achievement 291, the mage family
-//! bonus (34) with its talent-144 multiplier, the Rift Slug companion, Arctis'
+//! The coin groups read talent 433 (the Dustwalker) alone, and its bonus
+//! levels are the AllTalentLVz sum: the Spelunk super talent, talents
+//! 149/374/539, achievement 291, the mage family bonus (34) with its
+//! talent-144 multiplier, the Rift Slug companion, Arctis'
 //! Divinity minor (2), Dream 12, sneaking completions, Grimoire 39, the
 //! Kattlekruk set, Arcane map 57 and Super Bit 47.
 //!
@@ -19,11 +18,10 @@ use idleon_save::fields;
 
 use crate::sets::set_bonus;
 
-/// `getbonus2(talent, …)`: the talent's value at the best character.
+/// A talent's value at the best character.
 ///
 /// `context` is the active character: its skill row, Divinity link and level
-/// are the ones the bonus-level terms read, exactly as `getbonus2` passes
-/// `ctx.charIdx` down.
+/// are the ones the bonus-level terms read.
 pub fn max_bonus(decoder: &Decoder<'_>, talent: usize, context: usize) -> f64 {
     let Some(param) = decoder.talent_param(talent) else {
         return 0.0;
@@ -34,7 +32,7 @@ pub fn max_bonus(decoder: &Decoder<'_>, talent: usize, context: usize) -> f64 {
         if raw <= 0.0 {
             continue;
         }
-        // `getbonus2` applies AllTalentLVz only from talent 100 up.
+        // The All-Talent levels apply only from talent 100 up.
         let level = if talent >= 100 {
             raw + bonus_levels(decoder, talent, character, context, true, false)
         } else {
@@ -63,10 +61,10 @@ fn excluded(talent: usize) -> bool {
     (49..=59).contains(&talent) || [149, 374, 539, 505].contains(&talent) || talent > 614
 }
 
-/// `resolveAllTalentLVz`: the levels the game adds to a talent's purchased one.
+/// The levels the game adds to a talent's purchased one.
 ///
-/// `skip_talent_144` mirrors `skipTal144FamMult`: the talent-144 multiplier on
-/// the family bonus is skipped while talent 144's own levels are resolved.
+/// `skip_talent_144` skips the talent-144 multiplier on the family bonus while
+/// talent 144's own levels are resolved.
 pub fn bonus_levels(
     decoder: &Decoder<'_>,
     talent: usize,
@@ -131,7 +129,7 @@ pub fn bonus_levels_with_family68(
     (spelunk + ordinary).floor()
 }
 
-/// `intervalAdd(1, 20, lv)` on one talent: `1 + floor(lv / 20)`, or zero when
+/// One bonus level per twenty levels of a talent: `1 + floor(lv / 20)`, or zero when
 /// the active character has not learned it.
 fn interval_add(decoder: &Decoder<'_>, context: usize, talent: usize) -> f64 {
     let level = decoder.talent_level(context, talent);
@@ -181,8 +179,7 @@ fn family_bonus_68(
     let Some(param) = decoder.talent_param(144) else {
         return bonus;
     };
-    // The nested `computeAllTalentLVz(144, …)` call passes no
-    // `allSpelunkPresets`, so it reads the selected Spelunk preset only.
+    // Talent 144's own bonus levels read the selected Spelunk preset only.
     let levels = raw + bonus_levels(decoder, 144, slot, context, false, true);
     bonus * (1.0 + curve::eval(&param.formula, param.x1, param.x2, levels) / 100.0)
 }

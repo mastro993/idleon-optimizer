@@ -1,10 +1,8 @@
 //! The Overview tab: the priority signals, the account multipliers, the GMO
 //! thresholds, the Crop Scientist bonuses and the growth breakpoints.
 //!
-//! Ported from `farming-calc.html`'s `renderOverview`, which leads with six
-//! cards, four callouts and three tables. The bean trade card and its callout
-//! belong to the markets tab and are not built here; every plot's overgrowth
-//! curve belongs to the Evolution & OG tab.
+//! The bean trade card and its callout belong to the markets tab and are not
+//! built here; every plot's overgrowth curve belongs to the Evolution & OG tab.
 
 use crate::sections::farming::field::family_name;
 use crate::state::AppState;
@@ -59,7 +57,7 @@ pub(super) fn overview(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
         .into_any_element()
 }
 
-/// A card whose headline is a formatted figure: the upstream cards show scaled
+/// A card whose headline is a formatted figure: the cards show scaled
 /// numbers, which the numeric statistic cannot.
 pub(super) fn stat_card(
     id: &'static str,
@@ -95,7 +93,7 @@ pub(super) fn stat_card(
         .into_any_element()
 }
 
-/// The five figures the upstream overview leads with.
+/// The five figures the overview leads with.
 fn cards(
     farm: &Farm,
     snapshot: &Snapshot,
@@ -163,7 +161,7 @@ fn cards(
         .into_any_element()
 }
 
-/// The four upstream callouts, each shown only while it fires.
+/// The four callouts, each shown only while it fires.
 fn signals(diagnostics: &Diagnostics, cx: &mut Context<AppState>) -> AnyElement {
     let mut list = div().id("farming-signals").flex().flex_col().gap_2();
     let mut fired = 0;
@@ -236,8 +234,8 @@ fn signals(diagnostics: &Diagnostics, cx: &mut Context<AppState>) -> AnyElement 
         .into_any_element()
 }
 
-/// `farmingExp`, `beanMultiplier`, `plotRankDisplay`, `overgrowthCommon` and
-/// `expectedVines`, as the upstream stat lines.
+/// Farming EXP, the bean multiplier, the plot rank, the common overgrowth and
+/// the expected vines, as stat lines.
 fn account_multipliers(snapshot: &Snapshot, cx: &Context<AppState>) -> AnyElement {
     let rows = [
         (

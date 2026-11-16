@@ -1,4 +1,4 @@
-//! Static game data, extracted from the upstream JS calculators.
+//! Static game data.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -52,14 +52,14 @@ pub struct ShapeDef {
 pub struct Observation {
     pub id: usize,
     pub name: String,
-    /// The research level that unlocks the observation (`isObsUsable`).
+    /// The research level that unlocks the observation.
     pub roll: f64,
-    /// The roll to beat when hunting for it (`computeObsUnlockPriority`).
+    /// The roll to beat when hunting for it.
     #[serde(rename = "rollReq")]
     pub roll_req: f64,
 }
 
-/// A built-in shape-placement preset: its upstream `above|below` tier string.
+/// A built-in shape-placement preset: its `above|below` tier string.
 #[derive(Debug, Deserialize)]
 pub struct Preset {
     pub id: String,
@@ -68,12 +68,12 @@ pub struct Preset {
 }
 
 impl Preset {
-    /// The preset's priority tiers, parsed from its upstream `data` string.
+    /// The preset's priority tiers, parsed from its `data` string.
     pub fn tiers(&self) -> Option<crate::tiers::Tiers> {
         crate::tiers::Tiers::parse(&self.data)
     }
 
-    /// The preset's tiers against the loaded grid: the two upstream presets
+    /// The preset's tiers against the loaded grid: the two presets
     /// whose `build` only re-ranks a fixed node pool do so here, and every
     /// other preset keeps its static string. `Minehead`'s ranking reads the
     /// save, so the app builds it from `idleon-minehead` before calling this;

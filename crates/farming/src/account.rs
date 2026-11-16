@@ -1,5 +1,5 @@
 //! The account multipliers the plot formulas read, from the save terms this
-//! port carries.
+//! build models.
 
 use super::{Farm, RANK_UPGRADES, data};
 
@@ -17,8 +17,8 @@ impl Farm {
         counts
     }
 
-    /// `basketUpgrade(page, idx)` from the planner: a market effect in its
-    /// percent or multiplier form, with `page = 99` reading the Night market.
+    /// A market effect in its percent or multiplier form, with `page = 99`
+    /// reading the Night market.
     pub(crate) fn basket_upgrade(&self, page: usize, idx: usize) -> f64 {
         let Some(upgrade) = data().market(page, idx) else {
             return 0.0;
@@ -62,9 +62,8 @@ impl Farm {
         }
     }
 
-    /// `ExoticBonusQTY(idx)`: the market level at `farmSlot`, scaled by the
-    /// row's linear or decaying formula, doubled by an Organic label and capped
-    /// for exotic 39.
+    /// The market level at `farmSlot`, scaled by the row's linear or decaying
+    /// formula, doubled by an Organic label and capped for exotic 39.
     pub(crate) fn exotic_bonus(&self, idx: usize) -> f64 {
         let Some(exotic) = data().exotic(idx) else {
             return 0.0;
@@ -139,7 +138,7 @@ impl Farm {
     }
 
     /// The account multipliers the plot formulas read, from the save terms
-    /// this port carries.
+    /// this build models.
     pub fn snapshot(&self) -> Snapshot {
         let crop_counts = self.crop_threshold_counts();
         let rank = self.rank_totals();

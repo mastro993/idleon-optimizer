@@ -115,7 +115,7 @@ try {
     keep,
   });
 
-  // The dashboard is the landing page: every upstream card is exposed.
+  // The dashboard is the landing page: every section card is exposed.
   await waitFor((current) => has(current, 'card-research'), 'dashboard opens');
   let nodes = await tree();
   const cards = nodes.filter((node) => /^card-/.test(node.id ?? ''));

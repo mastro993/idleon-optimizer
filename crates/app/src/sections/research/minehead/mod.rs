@@ -2,7 +2,7 @@
 //! ranking, affordable path, currency breakdown and the playable floor.
 //!
 //! The formulas and the simulation live in `idleon-minehead`; this module owns
-//! the tab state the window keeps and renders the upstream subtabs.
+//! the tab state the window keeps and renders the subtabs.
 
 mod currency;
 mod dashboard;
@@ -43,7 +43,7 @@ pub(crate) struct RunInputs {
     pub(crate) seed: u32,
 }
 
-/// The tab's own subtabs, in the upstream order.
+/// The tab's own subtabs, in order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {
@@ -134,7 +134,7 @@ impl KnobRange {
     }
 }
 
-/// The knob rows the optimizer searches, with upstream's default ranges.
+/// The knob rows the optimizer searches, with their default ranges.
 fn default_ranges() -> Vec<KnobRange> {
     let row = |key, label, min, max, step, lo, hi| KnobRange {
         key,

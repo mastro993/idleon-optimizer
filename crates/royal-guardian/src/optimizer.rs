@@ -1,16 +1,10 @@
 //! The outpost optimizer: a bounded beam search over the moves a kingdom can
 //! make, scored by what the account produces next.
 //!
-//! Ported from `optimizeRoyalGuardian`, `_candidateMoves`, `kingdomMetrics`,
-//! `rankObjective`, `_compareObjectives`, `_archiveAdd` and the caps helpers of
-//! `js/stats/systems/w7/royal-guardian-optimizer.js`.
-//!
-//! Upstream offers fourteen objectives, several of which need inputs this build
-//! does not model (an Armory target purchase, a currency portfolio, the reset
-//! projection's collection commitments). The port offers the three the kingdom
-//! metrics carry on their own: the currency the linked nodes pay per hour, the
-//! rank EXP the stationed units and militia earn per hour, and the balanced score
-//! that sums both with the outposts' reach.
+//! The optimizer offers the three objectives the kingdom metrics carry on their
+//! own: the currency the linked nodes pay per hour, the rank EXP the stationed
+//! units and militia earn per hour, and the balanced score that sums both with
+//! the outposts' reach.
 //!
 //! The search is deterministic and bounded: each iteration applies every legal
 //! move to every state on the beam, keeps the best `beam` states by the
@@ -127,8 +121,7 @@ impl Request {
     }
 }
 
-/// What a kingdom produces per hour: upstream `kingdomMetrics`, narrowed to the
-/// three figures the port's objectives read.
+/// What a kingdom produces per hour: the three figures the objectives read.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Metrics {
     pub resources_per_hour: f64,
@@ -178,7 +171,7 @@ struct Item {
 }
 
 impl RoyalGuardian {
-    /// Every figure the optimizer scores with: upstream `kingdomMetrics`.
+    /// Every figure the optimizer scores with.
     pub fn metrics(&self) -> Metrics {
         let inputs = self.collection_inputs();
         let global = self.global_collection_rate_with(&inputs);
@@ -265,7 +258,7 @@ impl RoyalGuardian {
         counts
     }
 
-    /// The bar with the highest rank: upstream `_highestOutpostRankBar`.
+    /// The bar with the highest rank.
     fn highest_bar(&self, map: usize) -> usize {
         let mut highest = 0;
         for bar in 1..5 {

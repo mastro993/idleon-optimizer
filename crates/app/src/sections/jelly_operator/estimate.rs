@@ -118,7 +118,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
             .child(run)
             .child(
                 Caption::new(
-                    "One seeded 60 FPS operation per trial, aggregated like the upstream estimate.",
+                    "One seeded 60 FPS operation per trial, aggregated across the trials.",
                 )
                 .text_color(cx.theme().colors.fg_muted),
             ),

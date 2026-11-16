@@ -1,20 +1,13 @@
 //! The Kitchens & Jellyfish reset (W4): meal levels and stocks, meal costs, the
 //! reset kitchen layout and the daily ladle investment plan.
 //!
-//! Ported from `js/stats/systems/w4/cooking-ladle.js` (`mealLevels`, `mealStocks`,
-//! `mealName`, `mealRequirement`, `mealCostInputs`, `mealLevelCost`,
-//! `blueJellyfishInfo`, `nmlbInfo`, `nmlbTarget`, `nmlbResultLevel`,
-//! `optimizeKitchenReset`, `planMealLeveling` and `planKitchenForecast`) and the
-//! "Kitchens & Jellyfish" tab of `ladle-calc.html`.
+//! [`Objective`] offers two objectives: the most meal ranks and the meal targets.
+//! A kitchen speed objective would rank by a meal-level speed model, which this
+//! build does not have, so it is not offered rather than ranked by a constant.
+//! [`donation`] ranks its search by the two objectives the section can compute
+//! for the same reason.
 //!
-//! Upstream offers three objectives: the most meal ranks, the meal targets and
-//! kitchen speed. [`Objective`] carries the first two; the speed objective ranks by
-//! the meal-level `kitchenSpeedEvaluator`, which this build does not have, so it is
-//! not offered rather than ranked by a constant. [`donation`] ranks its search by
-//! the two objectives the section can compute for the same reason.
-//!
-//! The kitchen speed model upstream builds from the account stats engine
-//! (`cookingSpeedModel`) is one entered number here: the Cooking speed /hr a
+//! The kitchen speed model is one entered number here: the Cooking speed /hr a
 //! kitchen has at Speed Lv 0, read from the game's Cooking panel the same way the
 //! ladle rates read theirs in [`super::Panel`]. The meal max level is entered
 //! beside it for the same reason. The save carries the rest: the unlocked kitchens
@@ -43,28 +36,28 @@ use std::sync::OnceLock;
 
 const COOKING_JSON: &str = include_str!("../../data/cooking.json");
 
-/// `NMLB_LEVEL_CAP`: the reset awards levels only below 150.
+/// The reset awards levels only below 150.
 pub const NMLB_LEVEL_CAP: f64 = 150.0;
 
-/// The longest horizon `planMealLeveling` accepts, in days.
+/// The longest horizon the plan accepts, in days.
 pub const MAX_DAYS: u32 = 3650;
 
-/// The horizon the upstream page starts on.
+/// The horizon the section starts on.
 pub const DEFAULT_DAYS: u32 = 30;
 
 /// How a plan and the reset layout rank their candidates.
 ///
-/// Upstream also offers `speed`, which ranks by the Cooking speed the meal levels
-/// reach. That term is the `kitchenSpeedEvaluator` model this build does not have,
-/// so the objective stays out until the meal-level speed engine lands rather than
+/// A `speed` objective would rank by the Cooking speed the meal levels reach.
+/// That term needs a meal-level speed model this build does not have, so the
+/// objective stays out until the meal-level speed engine lands rather than
 /// ranking by a number the section cannot compute.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Objective {
-    /// Spend on the cheapest meal level, wherever it is: `_planObjective`'s `ranks`.
+    /// Spend on the cheapest meal level, wherever it is.
     #[default]
     Ranks,
-    /// Spend only on meals below their entered target: the `targets` objective.
+    /// Spend only on meals below their entered target.
     Targets,
 }
 
@@ -80,7 +73,7 @@ pub struct Meal {
     pub bonus: f64,
 }
 
-/// The extracted Cooking tables: `MealINFO` and the `N2L` encoding.
+/// The static Cooking tables: `MealINFO` and the `N2L` encoding.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Data {
@@ -93,7 +86,7 @@ struct Data {
 fn data() -> &'static Data {
     static DATA: OnceLock<Data> = OnceLock::new();
     DATA.get_or_init(|| {
-        serde_json::from_str(COOKING_JSON).expect("crates/ladle/data/cooking.json is extracted")
+        serde_json::from_str(COOKING_JSON).expect("crates/ladle/data/cooking.json is valid")
     })
 }
 
@@ -110,7 +103,7 @@ pub fn meal_name(index: usize) -> &'static str {
         .unwrap_or("Meal")
 }
 
-/// `mealRequirement`: the Cooking level a meal unlocks at, or 0 when unknown.
+/// The Cooking level a meal unlocks at, or 0 when unknown.
 pub fn meal_requirement(index: usize) -> f64 {
     meals()
         .get(index)
@@ -118,19 +111,18 @@ pub fn meal_requirement(index: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `mealCostInputs`: the account terms the meal cost formula reads.
+/// The account terms the meal cost formula reads.
 ///
-/// Upstream resolves all five from the save; the stats engine terms are entered
-/// here, and the defaults are the neutral values the formula carries when a save
-/// has none of them.
+/// The stats engine terms are entered here, and the defaults are the neutral
+/// values the formula carries when a save has none of them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CostInputs {
-    /// `companionBonusForSave(162)`: the meal cost companion.
+    /// Companion 162's bonus: the meal cost companion.
     pub companion_162: f64,
-    /// `achieveStatus(233)`: 0 or 1.
+    /// Achievement 233: 0 or 1.
     pub achievement_233: f64,
-    /// `cloudBonus(33)`: the weekly boss' meal cost discount, as a fraction.
+    /// Cloud bonus 33: the weekly boss' meal cost discount, as a fraction.
     pub cloud_33: f64,
     /// `OptLacc[193]`: the Dream days the save has banked.
     pub discount_days: f64,
@@ -138,7 +130,7 @@ pub struct CostInputs {
     pub dream_11: f64,
 }
 
-/// `mealLevelCost`: what one meal level costs at `level`.
+/// What one meal level costs at `level`.
 ///
 /// `discount_days` is the value the plan passes in (the save's Dream days, or 0
 /// once the first purchase has spent the current day's), capped by `inputs.dream_11`.
@@ -177,14 +169,14 @@ pub struct Kitchen {
     pub saved_meal: i32,
     /// `Cooking[k][6]`: the kitchen's speed upgrade level.
     pub speed_level: f64,
-    /// `gemItemsData[120] > k`: the Gem Shop kitchen doubler (`dn1`).
+    /// The Gem Shop kitchen doubler (gem item 120, `dn1`).
     pub doubler: bool,
 }
 
 impl Kitchen {
     /// The kitchen's speed at the panel's base speed: `base × (1 + Lv / 10) ×
-    /// (1 + dn1)`, the upstream `Gem Shop kitchen doubler` and speed level terms
-    /// with every account-wide term folded into `base`.
+    /// (1 + dn1)`, the Gem Shop kitchen doubler and speed level terms with every
+    /// account-wide term folded into `base`.
     pub fn speed(&self, base: f64) -> f64 {
         let doubler = if self.doubler { 2.0 } else { 0.0 };
         base * (1.0 + self.speed_level / 10.0) * (1.0 + doubler)
@@ -198,7 +190,7 @@ pub struct Meals {
     pub stocks: Vec<f64>,
 }
 
-/// `blueJellyfishInfo`: the Blue Jellyfish grant a save carries.
+/// The Blue Jellyfish grant a save carries.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Jelly {
     /// Whether the save carries `Menagerie` rows at all.
@@ -280,7 +272,7 @@ pub enum Problem {
 }
 
 impl Problem {
-    /// The message the upstream page shows for the same rejected input.
+    /// The message the section shows for the rejected input.
     pub fn message(self) -> &'static str {
         match self {
             Problem::Kitchens => "Cooking supports at most ten kitchens.",
@@ -304,7 +296,7 @@ impl std::fmt::Display for Problem {
 
 impl std::error::Error for Problem {}
 
-/// `nmlbResultLevel`: the level No Meal Left Behind leaves a meal at.
+/// The level No Meal Left Behind leaves a meal at.
 pub fn nmlb_result_level(from: f64, gain: f64, max_level: f64) -> f64 {
     if from >= NMLB_LEVEL_CAP {
         return from;
@@ -312,7 +304,7 @@ pub fn nmlb_result_level(from: f64, gain: f64, max_level: f64) -> f64 {
     NMLB_LEVEL_CAP.min(max_level).min(from + gain)
 }
 
-/// `nmlbTarget`: the lowest eligible meal, ties to the highest index.
+/// The lowest eligible meal, ties to the highest index.
 pub fn nmlb_target(levels: &[f64], max_level: f64) -> Option<usize> {
     let mut pick = None;
     let mut lowest = f64::INFINITY;
@@ -325,7 +317,7 @@ pub fn nmlb_target(levels: &[f64], max_level: f64) -> Option<usize> {
     pick
 }
 
-/// A whole-ladle donation, or 0: upstream rejects anything else.
+/// A whole-ladle donation, or 0: anything else is rejected.
 fn donation(value: f64, available: f64, unlocked: bool) -> Result<f64, Problem> {
     if !value.is_finite() || value < 0.0 || value.fract() != 0.0 {
         return Err(Problem::Donation);
@@ -402,7 +394,7 @@ fn kitchens(save: &Save) -> Vec<Kitchen> {
         .collect()
 }
 
-/// `blueJellyfishInfo`: the Menagerie rows that hold the grant and its unlock.
+/// The Menagerie rows that hold the grant and its unlock.
 fn jelly(save: &Save) -> Jelly {
     let Some(rows) = save.get("Menagerie") else {
         return Jelly::default();
@@ -437,7 +429,7 @@ fn nmlb(save: &Save) -> f64 {
     (if bundle { 2.0 } else { 0.0 }) + (if emporium { 1.0 } else { 0.0 })
 }
 
-/// `hasBundle`: a bundle key set to 1, inside the save's own or the `h` holder.
+/// A bundle key set to 1, inside the save's own or the `h` holder.
 fn bundle(save: &Save, key: &str) -> bool {
     let Some(bundles) = save.get("BundlesReceived") else {
         return false;
@@ -452,7 +444,7 @@ fn bundle(save: &Save, key: &str) -> bool {
         .is_some_and(|value| value == 1.0)
 }
 
-/// `emporiumBonus(t, Ninja[102][9])`: `N2L` membership in the emporium string.
+/// An emporium bonus: `N2L` membership in the `Ninja[102][9]` string.
 fn emporium_owned(save: &Save, index: usize) -> bool {
     let flags = save
         .get("Ninja")

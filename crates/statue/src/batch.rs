@@ -1,12 +1,11 @@
 //! Batch target entry: Set all targets and Next level for all, with the plan
 //! they rewrite and the one undo step a batch action leaves.
 //!
-//! Ported from `statue-calc.html`: the `#apply-all` handler reads the entry as a
-//! whole nonnegative level, costs that level for every statue and only then
-//! writes the plan, so an entry the save cannot cost changes nothing.
-//! `#next-level` clears the explicit targets, so every row falls back to its
-//! saved level plus one. Upstream keeps no history; the acceptance asks for
-//! undoable batch actions, so the plan remembers the targets it replaced.
+//! Set all reads the entry as a whole nonnegative level, costs that level for
+//! every statue and only then writes the plan, so an entry the save cannot cost
+//! changes nothing. Next level for all clears the explicit targets, so every row
+//! falls back to its saved level plus one. Batch actions are undoable, so the
+//! plan remembers the targets it replaced.
 
 use super::{Leveling, StatueSave, Unavailable, count, info, target_cost};
 
@@ -50,8 +49,8 @@ impl BatchError {
     }
 }
 
-/// The Set all entry as the upstream handler reads it: a whole number at or
-/// above zero, and no larger than a target can hold.
+/// The Set all entry: a whole number at or above zero, and no larger than a
+/// target can hold.
 pub fn parse_level(text: &str) -> Result<u32, BatchError> {
     let text = text.trim();
     if text.is_empty() {
@@ -155,8 +154,8 @@ impl Plan {
 
     /// Set every statue's target to the level in `text`, after costing that
     /// level for each statue, and hand the level back for the status line.
-    /// Statues without a readable row are skipped, as the upstream handler
-    /// leaves their rows unavailable rather than rejecting the batch.
+    /// Statues without a readable row are skipped: their rows stay unavailable
+    /// rather than rejecting the batch.
     pub fn set_all(
         &mut self,
         save: &StatueSave,

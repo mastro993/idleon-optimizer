@@ -1,17 +1,15 @@
 //! The strategy optimizer: a bounded, seeded search over build plans.
 //!
-//! Ported from `optimizeWorshipTd` and `_searchTdLayouts` (free mode) in
-//! `js/stats/systems/w3/worship-td.js`. Every candidate is simulated by the same
-//! engine the Plan pane runs, candidates are deduplicated by their exact plan,
-//! and a diverse beam refines several competing families instead of one winner.
-//! The finalists, the coverage heuristic and every guide preset are then
-//! re-simulated on shared fresh seeds, so a baseline cannot be dropped because
-//! it screened badly. Plans are edited as single towers, same-type groups,
-//! whole types and sell-and-rebuild phases.
+//! Every candidate is simulated by the same engine the Plan pane runs,
+//! candidates are deduplicated by their exact plan, and a diverse beam refines
+//! several competing families instead of one winner. The finalists, the
+//! coverage heuristic and every guide preset are then re-simulated on shared
+//! fresh seeds, so a baseline cannot be dropped because it screened badly.
+//! Plans are edited as single towers, same-type groups, whole types and
+//! sell-and-rebuild phases.
 //!
-//! The hold-template layout search (`optimizeWorshipTdLayout`) and the
-//! souls-per-hour objective are neutral this build: [`crate::ASSUMPTIONS`]
-//! names them.
+//! The hold-template layout search and the souls-per-hour objective are neutral
+//! this build: [`crate::ASSUMPTIONS`] names them.
 
 mod edits;
 mod plans;

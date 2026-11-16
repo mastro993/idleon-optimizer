@@ -1178,8 +1178,5 @@
   40,
   44
  ],
- "vaultCropScientistPerLevel": 1,
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer"
- }
+ "vaultCropScientistPerLevel": 1
 }

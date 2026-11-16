@@ -1,6 +1,5 @@
 {
   "version": 1,
-  "source": "https://github.com/Corgan/idleon-research-optimizer@92d8c9ea8ca68400ff068b401dd4934d0d207c08",
   "generatedAt": "2026-11-10T21:15:53.350Z",
   "files": [
     {
@@ -5872,11 +5871,6 @@
       "path": "combat-sim/maps/Plat9.png",
       "bytes": 261691,
       "sha256": "c4fd5b3af5affb4bf0232d2481825918750864c4c7a02794f13de2ee4d4e5a76"
-    },
-    {
-      "path": "combat-sim/metadata.json",
-      "bytes": 307602,
-      "sha256": "65100821a469b2e438fe28c3812002995c20dc1ffb9f4c391a00d178894f3a99"
     },
     {
       "path": "combat-sim/mobs/acorn.png",
@@ -23294,11 +23288,6 @@
       "sha256": "a62c22b4b2e1b7d6bb067400b5dc3e212efc392ac6ce9e3f594bcf2d1fe349d5"
     },
     {
-      "path": "combat-sim/ui/metadata.json",
-      "bytes": 880251,
-      "sha256": "c9bbe3fbeea6a75847d11fe21cb3e98b2e6773ef49642957bd0eafb03c081823"
-    },
-    {
       "path": "combat-sim/ui/obols/ObolLocked1.png",
       "bytes": 913,
       "sha256": "8b586b422996265bad110d7c17cf1a0443d1c0aecb766b476c97840ff9f4a216"
@@ -30487,11 +30476,6 @@
       "path": "royal-guardian/UImapselB.png",
       "bytes": 239,
       "sha256": "8bdcab0409ef40f20009892173df1531a0498371dc6fd557152b8e61fd352eed"
-    },
-    {
-      "path": "sneaking/metadata.json",
-      "bytes": 30075,
-      "sha256": "b6d2fc20edfd2e471d54be41c48cd82b68c3872ea53382eaf38ca673a98704e9"
     },
     {
       "path": "sneaking/ninja.png",

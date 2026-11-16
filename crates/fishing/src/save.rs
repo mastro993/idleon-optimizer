@@ -1,10 +1,9 @@
 //! The fishing slice of a decoded save: characters, their rod and their saved
 //! fishing spot and toolkit, plus the Trench depth row FI-03 projects from.
 //!
-//! The field names follow the upstream loader's `js/save/loader.js`:
 //! `Lv0_<n>[4]` is the Fishing level, `EquipOrder_<n>[1][2]` the equipped rod,
-//! `PVFishingToolkit_<n>` the saved `[lure, line]` (the key's presence is what
-//! the upstream calls "available"), `PVFishingSpotIndex_<n>` the saved spot and
+//! `PVFishingToolkit_<n>` the saved `[lure, line]` (the key's presence marks
+//! the toolkit available), `PVFishingSpotIndex_<n>` the saved spot and
 //! `CurrentMap_<n>` / `AFKtarget_<n>` where the character was left. `Holes` and
 //! `Spelunk` supply the Trench's saved depth and its requirement reductions.
 
@@ -62,9 +61,8 @@ impl Default for Character {
 }
 
 impl Character {
-    /// The location the character was fishing, matching the upstream
-    /// `savedFishingLocationId`: an exact map/spot/pool row, then the pool's
-    /// map-wide row, then the pool outside the normal maps.
+    /// The location the character was fishing: an exact map/spot/pool row, then
+    /// the pool's map-wide row, then the pool outside the normal maps.
     pub fn saved_location(&self) -> Option<&'static Location> {
         let map = self.saved_map;
         let spot = self.saved_spot.unwrap_or(0);
@@ -97,7 +95,7 @@ impl Character {
 pub struct FishingSave {
     pub characters: Vec<Character>,
     /// `Holes` and `Spelunk`, which the Trench depth projection reads; `None`
-    /// when the save has no cavern rows, as the upstream `base.trench`.
+    /// when the save has no cavern rows.
     pub trench: Option<Trench>,
 }
 
@@ -117,7 +115,7 @@ impl FishingSave {
     }
 
     /// The character a run starts on: the first one left on a fishing pool,
-    /// then the highest Fishing level, matching the upstream `defaultCharacter`.
+    /// then the highest Fishing level.
     pub fn default_character(&self) -> usize {
         let pools: Vec<&str> = data().pools.iter().map(|pool| pool.key.as_str()).collect();
         let mut best = 0;

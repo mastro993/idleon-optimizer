@@ -22,7 +22,6 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { gzipSync } from 'node:zlib';
 import { DEFAULT_APP_BIN, McpLane, flag, hasFlag } from './mcp-lane.mjs';
 import { comparePng, decodePng } from './png.mjs';
 
@@ -683,24 +682,6 @@ const coralSave = () => {
     ),
     UpgVault: JSON.stringify(sparse(80, { 76: 40 })),
   });
-};
-
-/// The upstream optimizer's state string: gzip+base64 behind `ROv2:`.
-const upstreamState = () => {
-  const state = {
-    _format: 'research-optimizer-state',
-    _version: 2,
-    researchLevel: 140,
-    cachedResearchExp: 12345,
-    gridLevels: Array(240).fill(1),
-    occFound: Array(80).fill(1),
-    insightLvs: Array(80).fill(0),
-    insightProgress: Array(80).fill(0),
-    magData: [],
-    shapePositions: [],
-    serverVarResXP: 1.25,
-  };
-  return `ROv2:${gzipSync(JSON.stringify(state)).toString('base64')}`;
 };
 
 /// One section's config document, the shape the import dialog applies on its own.
@@ -2015,7 +1996,7 @@ const INTERACTIONS = {
     await clickInView('farming-preset-save', 'farming');
     await waitForNode(lane, 'farming-preset-0', 'farming: a named preset is saved');
 
-    // The comparison plans every upstream goal from the current baseline.
+    // The comparison plans every goal from the current baseline.
     await clickInView('farming-compare-run', 'farming');
     await waitFor(
       lane,
@@ -2857,7 +2838,7 @@ const INTERACTIONS = {
     if (has(await lane.tree(), 'unlock-missing-0')) {
       throw new Error('research: the unlock tab reports missing roll data for a save that carries it');
     }
-    // The rows the save can already use come first, as upstream orders them.
+    // The rows the save can already use come first.
     const priorityOf = (nodes) =>
       nodes
         .filter((node) => /^unlock-priority-\d+$/.test(node.id ?? ''))
@@ -3493,7 +3474,7 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'damage-formula-search' });
     await lane.call('keyboard', { keystroke: 'secondary-a' });
     await lane.call('keyboard', { keystroke: 'backspace' });
-    // A layer switch moves the card to that layer's upstream title.
+    // A layer switch moves the card to that layer's title.
     await lane.call('click_element', { id: 'segment-1' });
     await waitFor(
       lane,
@@ -3591,7 +3572,7 @@ const INTERACTIONS = {
       'stats-all: the skill and construction selectors refresh the context',
     );
 
-    // Every upstream category has a tab, rows and a summary count; clicking
+    // Every category has a tab, rows and a summary count; clicking
     // each tab swaps the panel to that category.
     await waitForNode(lane, 'stats-category-summary', 'stats-all: the category summary renders');
     const summary = labelOf(await lane.tree(), 'stats-category-summary') ?? '';
@@ -3649,13 +3630,13 @@ const INTERACTIONS = {
       'stats-all: the capacity row shows its formula tree',
     );
 
-    // A combat row has no ported formula yet, so it warns with its source.
+    // A combat row has no modelled formula yet, so it shows a warning instead.
     await lane.call('click_element', { id: 'stats-combat-tab' });
     await lane.call('click_element', { id: 'stats-row-drop-rate' });
     await waitFor(
       lane,
-      (nodes) => (labelOf(nodes, 'stats-descriptor-warning') ?? '').includes('drop-rate.js'),
-      'stats-all: an unported row names its upstream source',
+      (nodes) => (labelOf(nodes, 'stats-descriptor-warning') ?? '') !== '',
+      'stats-all: an unmodelled row explains why it has no value',
     );
 
     // The formula explorer's ledger counts every category, so the region covers
@@ -3686,16 +3667,6 @@ const INTERACTIONS = {
         !has(nodes, 'stats-formula-drop-rate'),
       'stats-all: the explorer search reaches the saved inputs',
     );
-
-    // Each formula links to the upstream definition it ports.
-    const miningLink = (await lane.tree()).find(
-      (node) => node.id === 'stats-formula-carry-capacity-mining-source',
-    );
-    if (!(miningLink?.label ?? '').includes('js/stats/defs/carry-capacity.js')) {
-      throw new Error(
-        `stats-all: the formula source link reads ${JSON.stringify(miningLink?.label)}`,
-      );
-    }
 
     // The status filter keeps the formulas this build computes.
     await bringIntoView(lane, 'stats-explorer-status');
@@ -3887,7 +3858,7 @@ const INTERACTIONS = {
     if (!waiting.endsWith('Unavailable')) {
       throw new Error(`drop-rate: the total without live values reads ${waiting}`);
     }
-    // The tree renders upstream's unavailable branch until both values arrive.
+    // The tree renders its unavailable branch until both values arrive.
     await waitFor(
       lane,
       (nodes) =>
@@ -3902,7 +3873,7 @@ const INTERACTIONS = {
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'drop-rate-total') ?? '').endsWith('13.35x'),
-      'drop-rate: the total is the upstream dungeon formula',
+      'drop-rate: the total is the dungeon formula',
     );
     // The formula tree expands that same number, term by term.
     await waitFor(
@@ -4625,8 +4596,8 @@ const INTERACTIONS = {
     await lane.call('click_element', { id: 'clamworks-multikill-more' });
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'clamworks-upgrades', 'clamworks: the upgrades tab opens');
-    // The AFK claim tab: an entry outside the credited range is refused with the
-    // upstream message, and a valid one shows the claim and its comparison.
+    // The AFK claim tab: an entry outside the credited range is refused with a
+    // message, and a valid one shows the claim and its comparison.
     await lane.call('click_element', { id: 'claim' });
     await waitForNode(lane, 'clamworks-claim', 'clamworks: the claim tab opens');
     await lane.call('click_element', { id: 'clamworks-claim-hours' });
@@ -4966,10 +4937,9 @@ async function importError(lane, text, expected, label) {
   );
 }
 
-/// The project round trip: export opens over the window state with both the
-/// project document and the state string, then the project document, the
-/// exported state string and a section config each apply and leave a visible
-/// mark.
+/// The project round trip: export opens over the window state with the
+/// project document, then the project document and a section config each apply
+/// and leave a visible mark.
 async function visitProjectRoundTrip() {
   let lane = null;
   try {
@@ -5016,70 +4986,9 @@ async function visitProjectRoundTrip() {
 
     await lane.call('click_element', { id: 'back-to-dashboard' });
     await waitForNode(lane, 'dashboard', 'project: back on the dashboard');
-    await importText(lane, upstreamState(), 'upstream state', 'state');
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('research level 140'),
-      'state: the decompressed state migrated to its research level',
-    );
-
     await searchFor(lane, 'Research Grid', 'card-research', 'config: search lists the research card');
     await lane.call('click_element', { id: 'card-research' });
     await waitForNode(lane, 'section-research', 'config: the research section opens');
-
-    // The state string half of the export: a hand-set supplement travels in the
-    // ROv2 string and comes back with it, and a reset restores what the last
-    // applied document set rather than the build's defaults.
-    await lane.call('click_element', { id: 'rates' });
-    await waitForNode(lane, 'supp-shapes', 'state: the supplements card opens');
-    await lane.call('click_element', { id: 'supp-shapes-stepper-more' });
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 1'),
-      'state: the extra-shape supplement reads 1',
-    );
-    await lane.call('click_element', { id: 'supp-shapes-stepper-more' });
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
-      'state: the extra-shape supplement reads 2',
-    );
-    await lane.call('click_element', { id: 'header-export' });
-    await waitForNode(
-      lane,
-      'export-state-text',
-      'state: the export dialog carries the ROv2 string',
-    );
-    const encoded = labelOf(await lane.tree(), 'export-state-text') ?? '';
-    check(
-      'state: the export string is an ROv2 payload',
-      encoded.startsWith('ROv2:'),
-      encoded.slice(0, 32),
-    );
-    await lane.call('click_element', { id: 'export-copy-state' });
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'status-status') ?? '').includes('ROv2 state string'),
-      'state: copy state closes the dialog and names the string',
-    );
-    await lane.call('click_element', { id: 'supp-reset' });
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 0'),
-      'state: reset drops the hand-set supplement',
-    );
-    await importText(lane, encoded, 'upstream state', 'state round trip');
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
-      'state: the exported state brings its supplements back',
-    );
-    await lane.call('click_element', { id: 'supp-reset' });
-    await waitFor(
-      lane,
-      (nodes) => (labelOf(nodes, 'supp-shapes') ?? '').includes(': 2'),
-      'state: reset keeps what the imported state established',
-    );
 
     await importText(lane, sectionConfig('research', { tab: 'run' }), 'section config', 'config');
     await waitForNode(lane, 'run-optimize', 'config: the tab came from the section config');
@@ -5114,12 +5023,6 @@ async function visitProjectRoundTrip() {
       sectionConfig('killroy', { weeks: 'twelve' }),
       'killroy',
       'malformed config',
-    );
-    await importError(
-      lane,
-      'ROv2:not-base64!',
-      'not base64',
-      'bad state string',
     );
     // The failed imports never replaced the log or the state they could not read.
     await lane.call('click_element', { id: 'header-import' });

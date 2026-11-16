@@ -1,10 +1,9 @@
-//! Strategy inference from recorded Play decisions, ported from
-//! `js/minehead/strategy-inferrer.js`.
+//! Strategy inference from recorded Play decisions.
 //!
 //! The Play tab records one [`Ctx`] per decision the player made. [`infer`]
 //! sweeps the optimizer's grid for the knob set that agrees with the most
 //! decisions, refines the human-behaviour knobs greedily for three passes, and
-//! labels the result the way upstream's profile strings do.
+//! labels the result with a profile string.
 
 use crate::optimize::{default_grid, get, inference_grid, set};
 use crate::sim::{Ctx, Decision, Params, decide};
@@ -127,7 +126,7 @@ pub fn agreement(params: &Params, decisions: &[Recorded]) -> i64 {
         .count() as i64
 }
 
-/// `analyzeSpatial`: zone, adjacency, heatmap and habitual-click tendencies.
+/// Zone, adjacency, heatmap and habitual-click tendencies.
 pub fn analyze_spatial(decisions: &[Recorded]) -> Option<SpatialReport> {
     let reveals: Vec<&Recorded> = decisions
         .iter()
@@ -322,7 +321,7 @@ pub fn analyze_spatial(decisions: &[Recorded]) -> Option<SpatialReport> {
     })
 }
 
-/// `_classifyProfile`: the human-readable habits a knob set and its clicks imply.
+/// The human-readable habits a knob set and its clicks imply.
 pub fn classify(params: &Params, spatial: Option<&SpatialReport>) -> String {
     let mut traits: Vec<&'static str> = Vec::new();
     if params.ev_multiplier <= 0.8 {

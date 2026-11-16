@@ -1,10 +1,10 @@
 //! The Forecast tab: the projection over native collects, the agenda of what
 //! each collect would commit, and the currency track.
 //!
-//! The engine is `idleon_royal_guardian::forecast`; this pane places collects and
-//! menu-open windows, shows the summary, the agenda and the currency balances.
-//! The upstream timeline chart is not drawn: the agenda lists the same events
-//! with their hours.
+//! The engine is `idleon_royal_guardian::forecast`; this pane places collects
+//! and menu-open windows, shows the summary, the agenda and the currency
+//! balances. There is no timeline chart: the agenda lists the same events with
+//! their hours.
 
 use super::overview::{figure_text, kpi};
 use crate::state::AppState;

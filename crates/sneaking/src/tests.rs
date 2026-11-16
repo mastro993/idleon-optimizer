@@ -1,4 +1,4 @@
-//! The loadout's own formula tests: the rules that do not need the oracle.
+//! The loadout's own formula tests.
 
 use super::*;
 

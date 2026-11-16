@@ -1,6 +1,6 @@
 //! One seeded Jelly operation attempt: its options, its result and its rewards.
 //!
-//! [`simulate`] is the runtime itself (`runtime`); `rng` owns the upstream
+//! [`simulate`] is the runtime itself (`runtime`); `rng` owns the
 //! Mulberry32 generator and the projectile flight model. The option and result
 //! types live here so the estimate, the insights and a future simulator share
 //! one vocabulary.
@@ -13,12 +13,12 @@ pub use runtime::simulate;
 
 use crate::boss_attack_cooldown;
 
-/// `jellyBossAttackCooldown` as a boss interval in seconds.
+/// The boss attack cooldown as an interval in seconds.
 pub fn boss_interval_seconds(obstruction: usize) -> f64 {
     boss_attack_cooldown(obstruction) / 60.0
 }
 
-/// When Stronkroid is used (`roidActivationTime`).
+/// When Stronkroid is used.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum RoidTiming {
     /// At the first frame.
@@ -34,7 +34,7 @@ pub enum RoidTiming {
     At(f64),
 }
 
-/// Which dead slot a revive brings back (`reviveTarget`).
+/// Which dead slot a revive brings back.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum RevivePolicy {
     #[default]
@@ -55,7 +55,7 @@ pub struct OperationOptions {
     pub seed: u32,
     pub roid_timing: RoidTiming,
     pub revive_policy: RevivePolicy,
-    /// The critical phase cap; the upstream default is the three-attack bound.
+    /// The critical phase cap; the default is the three-attack bound.
     pub max_critical_seconds: Option<f64>,
 }
 

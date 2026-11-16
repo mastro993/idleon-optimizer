@@ -1,5 +1,5 @@
 //! The tab's Best Upgrade pane: the efficiency ranking and the affordable
-//! upgrade path, ported from `_renderBestUpgrade` in `js/ui/sushi-ui.js`.
+//! upgrade path.
 
 use crate::data::game;
 use crate::inputs::Inputs;
@@ -82,7 +82,7 @@ pub struct Path {
 ///
 /// An upgrade is unlocked when the research level reaches its slot's
 /// requirement and the previous slot has a level, or when the save already
-/// bought a level (`upgradeSlots` in `_renderUpgrades`).
+/// bought a level.
 fn unlocked(inputs: &Inputs, slot: usize, levels: &[f64]) -> bool {
     let data = game();
     let Some(upg) = data.slot_upg(slot) else {
@@ -114,7 +114,7 @@ fn buyable(inputs: &Inputs, slot: usize, levels: &[f64]) -> Option<usize> {
     Some(upg)
 }
 
-/// `currentLevels` padded to the upgrade table, as the path search copies it.
+/// The saved levels padded to the upgrade table, as the path search copies it.
 fn padded(inputs: &Inputs) -> Vec<f64> {
     let data = game();
     let mut levels = inputs.station.levels.clone();
@@ -164,7 +164,7 @@ pub fn candidates(inputs: &Inputs, metric: Metric) -> Vec<Candidate> {
     rows
 }
 
-/// `_computePath`: buys the best efficiency per buck until the budget runs out.
+/// Buys the best efficiency per buck until the budget runs out.
 pub fn path(inputs: &Inputs, metric: Metric, budget: f64) -> Path {
     let data = game();
     let station = &inputs.station;

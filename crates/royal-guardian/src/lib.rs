@@ -1,25 +1,20 @@
 //! The Royal Guardian (W7): the outpost overview, the outpost map, the resource
 //! nodes, the currencies and the range targets.
 //!
-//! Ported from `royal-guardian-calc.html`,
-//! `js/stats/systems/w7/royal-guardian.js`,
-//! `js/stats/systems/w7/royal-guardian-optimizer.js` and
-//! `js/stats/systems/w7/royal-collect.js`. The upstream reads a decoded save
-//! through `royalGData` and `royalMapsData`; here the same rows come from the
-//! save's `RoyalG` and `RoyalMaps` fields, so every accessor below is a direct
-//! transcription of one upstream reader.
+//! Every row comes from the save's `RoyalG` and `RoyalMaps` fields, and every
+//! accessor below reads one of them.
 //!
 //! RG-01 covers the overview: the counters, the world progress cards, the raw
 //! clearing values every outpost reports and the range target behind an
 //! outpost's Advanced Logistics plan. RG-02 adds the outpost map, the resource
 //! nodes, the currencies, the drain staffing and the banked hours; the reset
-//! projection travels with the drain because the upstream computes both in one
-//! pass. The upgrade list, the breakdown tree and the forecast tab are RG-03;
-//! the optimizer, unit EXP and shelf steps are RG-04.
+//! projection travels with the drain because both come from one pass. The
+//! upgrade list, the breakdown tree and the forecast tab are RG-03; the
+//! optimizer, unit EXP and shelf steps are RG-04.
 //!
 //! The clearing rate multiplies the Royal Guardian talent 231 (Xtra Clear Killz)
 //! by the Orblet, Spelunk big-fish and Jelly Operator factors; the Jelly one is
-//! the shared [`idleon_jelly::Jelly`] port's completion bonus. The collection
+//! the shared [`idleon_jelly::Jelly`] completion bonus. The collection
 //! rate reads the same talent machinery for 225, 226 and 230 plus the Orblet,
 //! sushi, arcade and Armory factors; the W14 alchemy bubble and the companion
 //! roster it also multiplies in are not decoded, so
@@ -104,7 +99,7 @@ const MAX_RANK: f64 = 1e6;
 /// A logistics level no plan needs; the search stops here instead of looping.
 const MAX_LOGISTICS: f64 = 1e9;
 
-/// Cells of a `RoyalMaps` row, by their upstream index.
+/// Cells of a `RoyalMaps` row, by their save index.
 mod cell {
     /// The Advanced Logistics level, which is the range's one scalable term.
     pub const LOGISTICS: usize = 1;
@@ -120,7 +115,7 @@ mod cell {
     pub const GLORIFIED: usize = 12;
 }
 
-/// `RoyalG` rows the section reads, by their upstream index.
+/// `RoyalG` rows the section reads, by their save index.
 mod row {
     /// The armory levels.
     pub const ARMORY: usize = 2;
@@ -140,12 +135,12 @@ mod row {
     pub const SELECTED_BAR_CELL: usize = 7;
 }
 
-/// One outpost's map-page row: upstream `outpostEligibility`.
+/// One outpost's map-page row.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Outpost {
     pub map: usize,
     pub world: usize,
-    /// The map's upstream display name.
+    /// The map's display name.
     pub name: &'static str,
     /// Whether the map carries an outpost at all.
     pub eligible: bool,
@@ -154,7 +149,7 @@ pub struct Outpost {
     pub reason: Option<&'static str>,
 }
 
-/// The state the clearing metrics report: upstream `outpostClearMetrics.state`.
+/// The state the clearing metrics report.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClearState {
     /// Built, so no militia is clearing it.
@@ -172,18 +167,6 @@ pub enum ClearState {
 }
 
 impl ClearState {
-    /// The upstream state name, for the oracle comparison and the table.
-    pub fn id(self) -> &'static str {
-        match self {
-            ClearState::Built => "built",
-            ClearState::NonAccruing => "non-accruing",
-            ClearState::Secured => "secured",
-            ClearState::WaitingMilitia => "waiting-militia",
-            ClearState::Clearing => "clearing",
-            ClearState::Unavailable => "unavailable",
-        }
-    }
-
     /// The word the state badge prints.
     pub fn label(self) -> &'static str {
         match self {
@@ -197,7 +180,7 @@ impl ClearState {
     }
 }
 
-/// One outpost's raw clearing values: upstream `outpostClearMetrics`.
+/// One outpost's raw clearing values.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Clear {
     pub map: usize,
@@ -217,8 +200,7 @@ pub struct Clear {
     pub reason: Option<String>,
 }
 
-/// The Advanced Logistics plan for a range target: upstream
-/// `logisticsUpgradesToReach`.
+/// The Advanced Logistics plan for a range target.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Plan {
     pub possible: bool,
@@ -241,8 +223,7 @@ impl Plan {
     }
 }
 
-/// The nearest resource node an outpost cannot reach yet: upstream
-/// `nextResourceRangeTarget`.
+/// The nearest resource node an outpost cannot reach yet.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RangeTarget {
     pub resource: usize,
@@ -254,7 +235,7 @@ pub struct RangeTarget {
     pub plan: Plan,
 }
 
-/// One militia assignment: upstream `militiaAssignments` entry.
+/// One militia assignment.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Assignment {
     pub world: usize,
@@ -318,7 +299,7 @@ pub struct RoyalGuardian {
     missing: Vec<String>,
 }
 
-/// The item inventories the Orblet count reads: upstream `itemQuantityData`.
+/// The item inventories the Orblet count reads.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub(crate) struct Inventories {
     /// `ChestOrder` with `ChestQuantity`.
@@ -410,16 +391,6 @@ impl RoyalGuardian {
         nested_cell(&self.spelunk, row, cell)
     }
 
-    /// How many map rows the save carries.
-    pub fn outpost_count(&self) -> usize {
-        self.maps.len()
-    }
-
-    /// One saved `RoyalMaps` cell, for a section that prints the raw row.
-    pub fn map_cell_at(&self, map: usize, cell: usize) -> f64 {
-        self.map_cell(map, cell)
-    }
-
     /// Whether the save carries a Royal Guardian character.
     pub fn has_character(&self) -> bool {
         self.character.is_some()
@@ -463,7 +434,7 @@ impl RoyalGuardian {
         self.g_cell(row::ORBLET, index)
     }
 
-    /// An Orblet market upgrade's effect, floored the way upstream floors it.
+    /// An Orblet market upgrade's effect, floored the way the game floors it.
     pub fn orblet_bonus(&self, index: usize) -> f64 {
         (self.orblet_level(index) * bonus_per_level(&data::data().orblet_bonus_per_level, index))
             .floor()
@@ -481,7 +452,7 @@ impl RoyalGuardian {
         resource / RESOURCES_PER_WORLD
     }
 
-    /// Whether the armory has opened a world: upstream `royalWorldUnlocked`.
+    /// Whether the armory has opened a world.
     pub fn world_unlocked(&self, world: usize) -> bool {
         if world >= WORLDS {
             return false;
@@ -522,8 +493,7 @@ pub fn resource_count() -> usize {
     data::resource_count()
 }
 
-/// Every currency slot a resource node pays, in slot order: upstream
-/// `validCurrencySlots`.
+/// Every currency slot a resource node pays, in slot order.
 pub fn currency_slots() -> Vec<i64> {
     let mut slots: Vec<i64> = (0..data::resource_count())
         .map(resource_currency)
@@ -535,8 +505,7 @@ pub fn currency_slots() -> Vec<i64> {
 }
 
 /// The save's Royal Guardian character - the highest-level one when several
-/// carry the class, the way upstream picks it - and each read talent's highest
-/// purchased level.
+/// carry the class - and each read talent's highest purchased level.
 fn talent_read(
     save: &Map<String, Value>,
     levels: &[Value],

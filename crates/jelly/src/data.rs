@@ -1,11 +1,10 @@
-//! Static Jelly Operator data, extracted from the upstream JS calculator.
+//! Static Jelly Operator data.
 //!
-//! `script/extract-jelly-data.mjs` writes `data/jelly.json` from
-//! `js/stats/data/w7/jelly-operator.js`, which reads its rows out of the game's
-//! `customlists.js`: the cell table, the footprints (`Research[49]`), the board
-//! plots (`Research[50]`), the projectile visuals (`Research[51]`), the upgrade
-//! table (`JellyUPG`), the upgrade order (`Research[44]`) and the obstruction
-//! rewards (`Research[45..47]`).
+//! `data/jelly.json` holds the rows of the game's custom lists: the cell
+//! table, the footprints (`Research[49]`), the board plots (`Research[50]`),
+//! the projectile visuals (`Research[51]`), the upgrade table (`JellyUPG`), the
+//! upgrade order (`Research[44]`) and the obstruction rewards
+//! (`Research[45..47]`).
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -35,12 +34,12 @@ pub struct Cells {
     pub names: Vec<String>,
     pub base_cooldowns: Vec<f64>,
     pub base_damage: Vec<f64>,
-    /// `cellFootprint(type)`: the slot offsets from the anchor.
+    /// The slot offsets from the anchor.
     pub footprints: Vec<Vec<i32>>,
     pub projectiles: Vec<Projectile>,
 }
 
-/// `jellyProjectileData(type)`: the sprite offset and the launch spread.
+/// The sprite offset and the launch spread.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Projectile {
@@ -49,7 +48,7 @@ pub struct Projectile {
     pub spread: f64,
 }
 
-/// `jellySlotPlot(plotId)`: the slot, width and height a plot token unlocks.
+/// The slot, width and height a plot token unlocks.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Plot {
@@ -76,7 +75,7 @@ pub struct Upgrade {
 #[derive(Debug, Deserialize)]
 pub struct Reward {
     pub name: String,
-    /// The account system the reward feeds (`jellyRewardTarget`).
+    /// The account system the reward feeds.
     pub target: String,
     pub description: String,
     pub value: f64,

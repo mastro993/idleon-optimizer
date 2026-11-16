@@ -1,16 +1,15 @@
-//! The Sneaking Optimizer: the upstream loadout and inventory workspace.
+//! The Sneaking Optimizer: the loadout and inventory workspace.
 //!
-//! Ported from `sneaking-calc.html` and `js/stats/systems/w6/sneaking-math.js`.
 //! SN-01 builds the loadout half: the scenario strip, the saved floor
-//! assignments, the per-twin loadout cards with their four slots and the 39-slot
-//! inventory, all backed by the save's `Ninja` rows. SN-02 adds the formula
-//! breakdowns, SN-03 the charm placement search and SN-04 the floor × mastery
-//! table with the active door, the next captive and their ETAs.
+//! assignments, the per-twin loadout cards with their four slots and the
+//! 39-slot inventory, all backed by the save's `Ninja` rows. SN-02 adds the
+//! formula breakdowns, SN-03 the charm placement search and SN-04 the floor ×
+//! mastery table with the active door, the next captive and their ETAs.
 //!
 //! The numbers a loadout card shows are the save-backed totals: the charm bonus
 //! map with its symbol and Gold terms, action speed, KO recovery, the level,
-//! charm, account, ally and flower stealth factors and the detection chance they
-//! give. The Breakdowns workspace splits the same stack into the five upstream
+//! charm, account, ally and flower stealth factors and the detection chance
+//! they give. The Breakdowns workspace splits the same stack into the five
 //! formula trees.
 
 mod breakdowns;

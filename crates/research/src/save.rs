@@ -48,7 +48,7 @@ pub fn research_rows(save: &Map<String, Value>, warnings: &mut Vec<String>) -> V
 }
 
 /// Research level: the decoded field when present, else the highest character
-/// level, as the upstream decoder reads it.
+/// level.
 pub fn research_level(save: &Map<String, Value>, characters: &[Character]) -> Option<u32> {
     save.get("researchLevel")
         .and_then(json::number)

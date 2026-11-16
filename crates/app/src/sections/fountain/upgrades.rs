@@ -1,9 +1,8 @@
 //! The Upgrades tab: every upgrade of a water, its costs, and the cost curve.
 //!
-//! Ported from the `#tab-upgrades` half of `fountain-calc.html`. The page tabs
-//! the three waters and plots selected upgrades on a log scale; here the water
-//! strip and one curve for the pick keep the same reading, with every row
-//! carrying the next cost, the time to afford it and any cap its effect nears.
+//! The water strip picks one of the three waters and one log-scale curve plots
+//! the picked upgrade, with every row carrying the next cost, the time to
+//! afford it and any cap its effect nears.
 
 use super::overview::{num, time};
 use crate::state::AppState;

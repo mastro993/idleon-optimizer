@@ -1,5 +1,5 @@
 //! Upgrade Path: spend the saved currency on the most cost-effective +1 each
-//! step, as `_renderPathTab` in `js/ui/minehead-ui.js`.
+//! step.
 
 use super::{boss_name, run_inputs};
 use crate::state::AppState;

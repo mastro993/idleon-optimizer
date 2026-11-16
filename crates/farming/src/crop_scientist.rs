@@ -1,15 +1,14 @@
-//! The Crop Scientist bonuses, from `computeCropSC` in
-//! `js/stats/systems/w6/farming.js`.
+//! The Crop Scientist bonuses.
 //!
-//! The upstream figure is a crop-count formula times an account multiplier:
+//! Each figure is a crop-count formula times an account multiplier:
 //! Grimoire 22 (scaled by Grimoire 36), exotic 40 and Vault 79. Its lab
-//! mainframe term needs the mainframe's connection walk, which this port does
+//! mainframe term needs the mainframe's connection walk, which this crate does
 //! not model, so it stays at zero and every bonus here is a lower bound. Each
 //! row is also gated behind one emporium item (`Ninja[102][9]`).
 
 use super::{Farm, data};
 
-/// The ten permanent bonuses, in the upstream table's order.
+/// The ten permanent bonuses, in the game's order.
 const NAMES: [&str; 10] = [
     "Total Damage",
     "Gaming Evolution Chance",
@@ -23,7 +22,7 @@ const NAMES: [&str; 10] = [
     "Research EXP",
 ];
 
-/// What each bonus applies to, as the upstream table says.
+/// What each bonus applies to.
 const APPLIES_TO: [&str; 10] = [
     "All characters",
     "Gaming sprouts",
@@ -37,8 +36,8 @@ const APPLIES_TO: [&str; 10] = [
     "Research",
 ];
 
-/// The game caps the critter quantity bonus at +20; the upstream table shows
-/// the capped figure while `computeCropSC` itself returns the raw one.
+/// The game caps the critter quantity bonus at +20; the table shows the capped
+/// figure while the row value stays raw.
 const CRITTER_CAP: f64 = 20.0;
 
 impl Farm {
@@ -91,7 +90,7 @@ impl Farm {
     }
 }
 
-/// `computeCropSC`'s unit per row.
+/// The unit per row.
 const UNIT: [CropScientistUnit; 10] = [
     CropScientistUnit::Percent,
     CropScientistUnit::Multiplier,
@@ -127,8 +126,7 @@ pub struct CropScientistBonus {
     pub name: &'static str,
     pub unit: CropScientistUnit,
     pub applies_to: &'static str,
-    /// The crop-count formula times the account multiplier, as
-    /// `computeCropSC` returns it.
+    /// The crop-count formula times the account multiplier, uncapped.
     pub value: f64,
     pub unlocked: bool,
 }
@@ -184,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn the_crop_count_formulas_match_the_upstream_table() {
+    fn the_crop_count_formulas_match_each_row() {
         let full = farm("AxyzBCwLNR", 250).crop_scientist();
         assert_eq!(full.unlocked(), 10);
         assert_eq!(full.rows[0].value, 20.0 * 250.0);

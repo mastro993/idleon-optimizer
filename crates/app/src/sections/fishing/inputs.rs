@@ -1,4 +1,4 @@
-//! The account card: the skill-system values the upstream evaluator derives.
+//! The account card: the skill-system values the account's skills supply.
 //!
 //! Until the stats dashboard decodes efficiency, EXP, AFK, Multi-Fish and the
 //! speed sources, the section takes them as explicit values. The card says so,
@@ -132,7 +132,7 @@ pub(crate) fn card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
 
     Card::new()
         .header(CardHeader::new("Account bonuses").description(
-            "Entered from the game's Skills and AFK panels; the upstream derives them from the save's skill systems.",
+            "Entered from the game's Skills and AFK panels until the save's skill systems are decoded.",
         ))
         .child(
             div()

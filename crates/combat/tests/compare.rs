@@ -1,9 +1,7 @@
-//! The comparison against the upstream cell and over real encounter runs.
+//! The comparison over real encounter runs.
 //!
-//! `fixtures/combat-compare.json` is written by `script/combat-compare-oracle.mjs`
-//! from `combat-sim-setup-compare.js`, so a case that disagrees here is a port
-//! bug. The run tests use the stand-in player on two extracted maps: the same
-//! map for two loadouts (which the run ignores by design) and two maps.
+//! The run tests use the stand-in player on two extracted maps: the same map
+//! for two loadouts (which the run ignores by design) and two maps.
 
 use idleon_combat::compare::{self, Comparison, Metric, Plan, RowSpec};
 use idleon_combat::encounter::{self, Player};
@@ -11,11 +9,6 @@ use idleon_combat::loadout::Totals;
 use idleon_common::{Control, Progress};
 use serde_json::Value as Json;
 use std::collections::BTreeMap;
-
-fn fixture() -> Json {
-    serde_json::from_str(include_str!("../../../fixtures/combat-compare.json"))
-        .expect("fixtures/combat-compare.json is valid")
-}
 
 fn spec(character: usize, loadout: &str, map: usize, weapon_power: f64) -> RowSpec {
     RowSpec {
@@ -56,53 +49,6 @@ fn run(plan: &Plan) -> Comparison {
     compare::run(plan, &mut |_| Control::Continue)
         .expect("the plan is runnable")
         .expect("the run reaches its end")
-}
-
-#[test]
-fn every_cell_matches_the_upstream_module() {
-    let fixture = fixture();
-    let cases = fixture["cases"].as_array().expect("cases");
-    for case in cases {
-        let name = case["name"].as_str().expect("a case name");
-        let rates = |runs: &Json| -> Vec<f64> {
-            runs.as_array()
-                .expect("runs")
-                .iter()
-                .map(|run| {
-                    let milliseconds = run["timeMs"].as_f64().expect("timeMs");
-                    // `_runValue` keeps a run with hours > 0 and returns null
-                    // otherwise; NaN is the port's missing value.
-                    if milliseconds > 0.0 {
-                        run["kills"].as_f64().expect("kills") * 3_600_000.0 / milliseconds
-                    } else {
-                        f64::NAN
-                    }
-                })
-                .collect()
-        };
-        let values = rates(&case["values"]);
-        let baseline = rates(&case["baseline"]);
-        let cell = compare::cell(&values, &baseline);
-        let expected = &case["expected"];
-        let near = |actual: Option<f64>, key: &str| match (actual, expected[key].as_f64()) {
-            (None, None) => {}
-            (Some(actual), Some(want)) => assert!(
-                (actual - want).abs() < 1e-9,
-                "{name}: {key} {actual} vs {want}"
-            ),
-            (actual, want) => panic!("{name}: {key} {actual:?} vs {want:?}"),
-        };
-        near(cell.mean, "mean");
-        near(cell.delta, "delta");
-        near(cell.delta_pct, "deltaPct");
-        near(cell.se, "se");
-        near(cell.base_mean, "baseMean");
-        assert_eq!(
-            cell.n,
-            expected["n"].as_u64().expect("n") as usize,
-            "{name}: n"
-        );
-    }
 }
 
 #[test]

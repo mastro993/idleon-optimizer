@@ -1,11 +1,10 @@
 //! JO-05: the Optimizer tab, the coordinator over the full board.
 //!
-//! Ports the upstream `#tab-optimizer` panel of `jelly-operator-calc.html`: the
-//! objective, EXP target, search breadth, beam, rounds, finalists, trials and
-//! seed, the run through the shared task runner, and the ranked finalists with
-//! the recommended board and its critical target timeline. The search itself
-//! lives in `idleon_jelly::optimizer`; this module owns the controls, the
-//! results and the button that puts the recommendation on the layout.
+//! The objective, EXP target, search breadth, beam, rounds, finalists, trials
+//! and seed, the run through the shared task runner, and the ranked finalists
+//! with the recommended board and its critical target timeline. The search
+//! itself lives in `idleon_jelly::optimizer`; this module owns the controls,
+//! the results and the button that puts the recommendation on the layout.
 
 use super::grid;
 use super::outlook::timeline_card;
@@ -29,7 +28,7 @@ use idleon_jelly::{Jelly, data};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
 
-/// The page's optimizer controls (`optimizerControls`), with the cheaper
+/// The optimizer controls, with the cheaper
 /// defaults this single-process search runs.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -94,7 +93,7 @@ pub(crate) struct RunInputs {
 }
 
 impl RunInputs {
-    /// `optimizerControls` as the layout search reads it.
+    /// The controls as the layout search reads them.
     pub(crate) fn options(&self) -> optimizer::Options {
         optimizer::Options {
             objective: self.optimizer.objective,

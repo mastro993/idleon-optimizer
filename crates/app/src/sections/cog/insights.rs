@@ -1,11 +1,9 @@
 //! The board insights, the roll ranges and the read-only shelf.
 //!
-//! Ported from `renderInsights`, `renderRollRanges` and `renderShelf` in
-//! `cog-optimizer.html`. The insights name the weakest and strongest cog the
-//! optimizer cannot place better, and what to roll to replace the weakest; the
-//! ranges show what a roll of each tier can produce at the effective
-//! construction level; the shelf lists the pool the optimizer draws from and
-//! takes no edits.
+//! The insights name the weakest and strongest cog the optimizer cannot place
+//! better, and what to roll to replace the weakest; the ranges show what a roll
+//! of each tier can produce at the effective construction level; the shelf
+//! lists the pool the optimizer draws from and takes no edits.
 
 use ely_gpui_component::data_display::{Badge, Tone};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};

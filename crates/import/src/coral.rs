@@ -1,8 +1,7 @@
 //! The coral god rank planner's save-derived inputs.
 //!
-//! Mirrors `coralGodRankInputs` in
-//! `js/stats/systems/w5/coral-god-rank.js`: each planner value comes from the
-//! decoded save, and a missing field is named instead of guessed.
+//! Each planner value comes from the decoded save, and a missing field is named
+//! instead of guessed.
 
 use idleon_coral::{SaveInputs, upgrade_slot, y4_base};
 use idleon_save::json;

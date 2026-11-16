@@ -1,20 +1,16 @@
 //! The comparison (CS-04): run character, loadout and map setups side by side.
 //!
-//! Ported from `js/stats/systems/common/combat-sim-setup-compare.js`: a row is
-//! one character, one loadout and one map (`characterMapComparePlan`), the
-//! encounter run gives it its outcome, and every metric carries its paired
-//! delta against the first row (`setupCompareCell`). Upstream compares runs
-//! over several seeds because they roll random numbers; this build's run is
-//! deterministic, so a row holds one run and the standard error stays `None`.
+//! A row is one character, one loadout and one map, the encounter run gives it
+//! its outcome, and every metric carries its paired delta against the first
+//! row. Comparing runs over several seeds would average out random rolls; this
+//! build's run is deterministic, so a row holds one run and the standard error
+//! stays `None`.
 //!
 //! The outcome metrics are the ones the run reports; the setup metrics are the
 //! resolved gear totals the loadout editor shows. The run itself still does not
-//! read the loadout (the auto-mode player is not ported), which the UI states
+//! read the loadout (the auto-mode player is not modelled), which the UI states
 //! instead of hiding: two loadouts on one map share their outcome and differ in
 //! their gear totals.
-//!
-//! `fixtures/combat-compare.json` is written by `script/combat-compare-oracle.mjs`
-//! from the upstream module; the Rust test compares [`cell`] with its output.
 
 use crate::encounter::{self, Outcome, Player, STEP_MS};
 use crate::loadout::Totals;
@@ -177,10 +173,9 @@ impl Metric {
 
 /// A metric's mean and its paired delta against the baseline.
 ///
-/// The fields mirror upstream's `setupCompareCell`: `n` is the number of runs
-/// that reported the metric, `delta` the mean paired difference, `delta_pct`
-/// that difference over the baseline mean, and `se` its standard error when at
-/// least two pairs exist.
+/// `n` is the number of runs that reported the metric, `delta` the mean paired
+/// difference, `delta_pct` that difference over the baseline mean, and `se` its
+/// standard error when at least two pairs exist.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Cell {
     pub mean: Option<f64>,
@@ -191,9 +186,9 @@ pub struct Cell {
     pub base_mean: Option<f64>,
 }
 
-/// The mean of `values` plus its paired difference against `baseline`, ported
-/// from `setupCompareCell`. Pairs are taken by position, which is the seed in
-/// upstream and the single run here; a non-finite value is a missing run.
+/// The mean of `values` plus its paired difference against `baseline`. Pairs
+/// are taken by position, which is the single run here; a non-finite value is
+/// a missing run.
 pub fn cell(values: &[f64], baseline: &[f64]) -> Cell {
     let present: Vec<f64> = values
         .iter()

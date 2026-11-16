@@ -1,11 +1,10 @@
 //! The Combat Simulator section: the loadout editor (CS-01).
 //!
-//! Ported from the Setup editor in `combat-sim-calc.html` and
-//! `js/ui/combat-sim-setup-ui.js`: the character picker, the equipment slots
-//! with their saved upgrade deltas, the talent table and the named loadouts.
-//! The save-derived defaults and the item catalog come from
-//! [`idleon_combat`]; every edit recomputes the gear totals the header
-//! shows, so the summary never lags behind the editor.
+//! The Setup editor: the character picker, the equipment slots with their saved
+//! upgrade deltas, the talent table and the named loadouts. The save-derived
+//! defaults and the item catalog come from [`idleon_combat`]; every edit
+//! recomputes the gear totals the header shows, so the summary never lags
+//! behind the editor.
 //!
 //! The mechanics overrides (CS-02) sit beside it: the curated mechanics the
 //! simulator can disable, set or scale, with the active rules shown as chips and
@@ -111,7 +110,7 @@ impl ResultsTab {
     }
 }
 
-/// The editor's tabs, matching the upstream setup editor's character tabs.
+/// The editor's tabs, matching the setup editor's character tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {
@@ -207,7 +206,7 @@ pub(crate) struct State {
     pub(crate) den: Option<idleon_combat::den::Config>,
     /// The replay playhead, in frames; fractional while playing.
     pub(crate) replay_pos: f64,
-    /// Playback speed in frames per second, from the upstream speeds.
+    /// Playback speed in frames per second, from the replay speeds.
     pub(crate) replay_speed: f64,
     pub(crate) replay_playing: bool,
     /// Whether a playback loop is already pumping frames.
@@ -216,7 +215,7 @@ pub(crate) struct State {
     pub(crate) replay_generation: u64,
     /// When the last playback frame ticked, for the elapsed advance.
     pub(crate) replay_at: Option<std::time::Instant>,
-    /// A captured Killroy replay, kept for this session like the upstream token.
+    /// A captured Killroy replay, kept for this session.
     pub(crate) killroy_replay: Option<idleon_combat::replay::KillroyReplay>,
     /// The captured replay the next run answers, stamped onto its result.
     pub(crate) pending_source: Option<idleon_combat::replay::KillroyReplay>,
@@ -307,7 +306,7 @@ impl State {
 
     /// The loadout keys a character compares, or its default when the user has
     /// not edited the selection: the working edits when they exist, the save
-    /// otherwise, the same default the upstream picker keeps.
+    /// otherwise.
     pub(crate) fn compare_loadout_keys(&self, character: usize) -> Vec<String> {
         if let Some(keys) = self.compare_loadouts.get(&character) {
             return keys.clone();

@@ -589,20 +589,5 @@
     79
    ]
   }
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/data/game/customlists.js",
-   "js/stats/systems/w5/fountain.js",
-   "js/stats/systems/w5/jar.js",
-   "js/stats/data/w4/gaming.js",
-   "js/stats/data/common/encoding.js"
-  ],
-  "holesRows": [
-   37,
-   52,
-   55
-  ]
- }
+ ]
 }

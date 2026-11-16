@@ -1,9 +1,8 @@
 //! The research dashboard's numbers: the summary, the observation board, the
 //! grid-point split and the insight multiplier.
 //!
-//! Ported from `js/ui/dashboard.js` and `js/ui/dash-breakdowns.js`; every value
-//! comes from the same [`crate::sim`] functions the Optimizer tab reads, so the
-//! dashboard and a run can never disagree.
+//! Every value comes from the same [`crate::sim`] functions the Optimizer tab
+//! reads, so the dashboard and a run can never disagree.
 
 use crate::data::game;
 use crate::model::{SimContext, Simulation};
@@ -125,8 +124,8 @@ fn hours(remaining: f64, rate: f64) -> f64 {
 
 /// Every observation up to the ones this level has found, as the board lists them.
 ///
-/// A port of the dashboard's observation loop: the EXP column includes the
-/// account multiplier, the insight column is the monocles' rate.
+/// The dashboard's observation cards: the EXP column includes the account
+/// multiplier, the insight column is the monocles' rate.
 pub fn observations(sim: &Simulation, ctx: &SimContext) -> Vec<ObservationCard> {
     let game_data = game();
     let overlay = sim.overlay();
@@ -193,7 +192,7 @@ pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> GridPointBreakdown {
     }
 }
 
-/// The insight multiplier one monocle applies, from `buildInsightBreakdownTree`.
+/// The insight multiplier one monocle applies.
 pub fn insight_multiplier(sim: &Simulation, ctx: &SimContext) -> InsightMultiplier {
     let overlay = sim.overlay();
     let grid_91 = sim::grid_bonus(&sim.grid, &overlay, 91, ctx);

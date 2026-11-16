@@ -875,8 +875,5 @@
   ],
   "legendPerPoint": 20,
   "collectible5PerLevel": 10
- },
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer"
  }
 }

@@ -8,14 +8,7 @@
 - Status: `partial`
 - Depends on: `foundation`
 
-Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.
-
-## Upstream sources
-
-- cog-optimizer.html
-- js/cogs/cog-board.js
-- js/cogs/cog-judge.js
-- js/cogs/cog-optimizer.js
+Implement cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.
 
 ## UI
 

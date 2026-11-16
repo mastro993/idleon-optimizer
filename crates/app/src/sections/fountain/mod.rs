@@ -1,12 +1,11 @@
-//! The Fountain Calculator: the upstream Overview, Currency and Upgrades tabs.
+//! The Fountain Calculator: the Overview, Currency and Upgrades tabs.
 //!
-//! Ported from `fountain-calc.html` and `js/stats/systems/w5/fountain.js`. FN-01
-//! builds the overview (the fountain summary, fill and income rates, lucky
-//! coins and ducks, the ground coin stacks and the cross-system bonuses); FN-02
-//! adds the currency values, the desired-currency simulator and the upgrade
-//! list with its cost curve; FN-03 adds the upgrade planner and the greedy
-//! optimizer; FN-04 adds the marble planner, its optimizer and the simulated
-//! run.
+//! FN-01 builds the overview (the fountain summary, fill and income rates,
+//! lucky coins and ducks, the ground coin stacks and the cross-system bonuses);
+//! FN-02 adds the currency values, the desired-currency simulator and the
+//! upgrade list with its cost curve; FN-03 adds the upgrade planner and the
+//! greedy optimizer; FN-04 adds the marble planner, its optimizer and the
+//! simulated run.
 
 mod actions;
 

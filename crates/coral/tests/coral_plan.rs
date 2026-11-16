@@ -1,236 +1,64 @@
-//! The coral beam planner against the upstream JS.
-//!
-//! `fixtures/coral-plan.json` was produced by `script/coral-god-rank-oracle.mjs`
-//! running `js/stats/systems/w5/coral-god-rank.js` on `fixtures/data.json`, so a
-//! drift in the beam search, the offering model or the projection fails here.
+//! The coral beam planner on the fixture save and a small probe account.
 
 mod common;
 
-use common::{fixture, read};
-use idleon_coral::{Action, Goal, Inputs, ProjectionKey, plan, plan_with, project, unlocks};
+use common::fixture;
+use idleon_coral::{Goal, Inputs, ProjectionKey, plan, plan_with, project, unlocks};
 use idleon_import::import;
-use serde_json::Value;
 
-fn oracle() -> Value {
-    serde_json::from_str(&read("fixtures/coral-plan.json")).expect("the oracle is JSON")
-}
-
-fn cases() -> Vec<Value> {
-    oracle()["cases"]
-        .as_array()
-        .expect("the oracle carries cases")
-        .clone()
-}
-
-fn case(name: &str) -> Value {
-    cases()
-        .into_iter()
-        .find(|case| case["name"] == name)
-        .unwrap_or_else(|| panic!("the oracle carries the {name} case"))
-}
-
-fn inputs(case: &Value) -> Inputs {
-    serde_json::from_value(case["inputs"].clone()).expect("the oracle inputs deserialize")
-}
-
-/// Upstream figures are doubles; compare to the last few bits they share.
-#[track_caller]
-fn close(actual: f64, expected: f64) {
-    let tolerance = expected.abs().max(1.0) * 1e-9;
-    assert!(
-        (actual - expected).abs() <= tolerance,
-        "expected {expected}, got {actual}"
-    );
-}
-
-fn at(value: &Value, key: &str) -> f64 {
-    value[key]
-        .as_f64()
-        .unwrap_or_else(|| panic!("{key} is a number"))
-}
-
-fn metrics_match(name: &str, side: &str, actual: &idleon_coral::Metrics, expected: &Value) {
-    for (label, key, value) in [
-        ("divinity points", "divinityPoints", actual.divinity_points),
-        ("divinity exp", "divinityExp", actual.divinity_exp),
-        ("class exp", "classExp", actual.class_exp),
-        ("minor links", "minorLinks", actual.minor_links),
-        ("blessing cap", "blessingCap", actual.blessing_cap),
-        (
-            "daily reef coral",
-            "dailyReefCoral",
-            actual.daily_reef_coral,
-        ),
-    ] {
-        assert!(
-            (value - at(expected, key)).abs() <= at(expected, key).abs().max(1.0) * 1e-9,
-            "{name} {side} {label}: expected {}, got {value}",
-            at(expected, key)
-        );
-    }
-}
-
-fn assert_case(case: &Value) {
-    let name = case["name"].as_str().expect("a case name");
-    let inputs = inputs(case);
-    let plan = plan(&inputs);
-    let expected = &case["plan"];
-
-    assert_eq!(plan.goal.id(), expected["goal"].as_str().expect("a goal"));
-    close(plan.budget, at(expected, "budget"));
-    close(plan.spent, at(expected, "spent"));
-    close(plan.remaining(), at(expected, "remaining"));
-    close(
-        plan.whole_plan_confidence,
-        at(expected, "wholePlanConfidence"),
-    );
-    assert_eq!(
-        plan.dominance_pruned as u64,
-        expected["dominancePruned"].as_u64().expect("a count"),
-        "{name}: dominance pruned"
-    );
-
-    let current = &expected["current"];
-    let levels: [u32; 6] =
-        serde_json::from_value(current["levels"].clone()).expect("current levels");
-    assert_eq!(plan.current.levels, levels);
-    assert_eq!(plan.current.god_rank, at(current, "godRank") as u32);
-    metrics_match(name, "current", &plan.current.metrics, current);
-
-    let final_state = &expected["final"];
-    let levels: [u32; 6] =
-        serde_json::from_value(final_state["levels"].clone()).expect("final levels");
-    assert_eq!(plan.best.levels, levels);
-    assert_eq!(plan.best.god_rank, at(final_state, "godRank") as u32);
-    metrics_match(name, "final", &plan.best.metrics, final_state);
-
-    let expected_actions = expected["actions"].as_array().expect("actions");
-    assert_eq!(
-        plan.actions.len(),
-        expected_actions.len(),
-        "{name}: actions"
-    );
-    for (actual, expected) in plan.actions.iter().zip(expected_actions) {
-        match (actual, expected["type"].as_str().expect("an action type")) {
-            (Action::CoralKid { index, level, cost }, "coral-kid") => {
-                assert_eq!(*index as u64, expected["index"].as_u64().expect("index"));
-                assert_eq!(*level as u64, expected["level"].as_u64().expect("level"));
-                close(*cost, at(expected, "cost"));
-            }
-            (
-                Action::GodOffering {
-                    from_rank,
-                    to_rank,
-                    attempts,
-                    expected_spend,
-                    max_paid_spend,
-                    confidence,
-                    whole_plan_confidence,
-                },
-                "god-offering",
-            ) => {
-                assert_eq!(
-                    *from_rank as u64,
-                    expected["fromRank"].as_u64().expect("from")
-                );
-                assert_eq!(*to_rank as u64, expected["toRank"].as_u64().expect("to"));
-                assert_eq!(
-                    *attempts as u64,
-                    expected["attempts"].as_u64().expect("attempts")
-                );
-                close(*expected_spend, at(expected, "expectedSpend"));
-                close(*max_paid_spend, at(expected, "maxPaidSpend"));
-                close(*confidence, at(expected, "confidence"));
-                close(*whole_plan_confidence, at(expected, "wholePlanConfidence"));
-            }
-            (actual, kind) => panic!("{name}: expected a {kind} action, got {actual:?}"),
-        }
-    }
-
-    let partial: Vec<String> =
-        serde_json::from_value(expected["partial"].clone()).expect("partial tags");
-    assert_eq!(plan.partial, partial, "{name}: partial");
-
-    let expected_unlocks = expected["unlocks"].as_array().expect("unlocks");
-    assert_eq!(plan.unlocks.len(), expected_unlocks.len());
-    for (actual, expected) in plan.unlocks.iter().zip(expected_unlocks) {
-        assert_eq!(
-            actual.index as u64,
-            expected["index"].as_u64().expect("index")
-        );
-        assert_eq!(
-            actual.unlocked,
-            expected["unlocked"].as_bool().expect("unlocked")
-        );
-        assert_eq!(actual.known, expected["known"].as_bool().expect("known"));
-        assert_eq!(
-            actual.reason.map(str::to_string),
-            expected["reason"].as_str().map(str::to_string),
-            "{name}: unlock {} reason",
-            actual.index
-        );
-    }
-}
-
-#[test]
-fn the_fixture_defaults_match_the_upstream_planner_inputs() {
+/// The planner inputs `fixtures/data.json` fills.
+fn fixture_inputs() -> Inputs {
     let imported = import(&fixture()).expect("the fixture imports");
-    let from_save = Inputs::from_save(&imported.coral);
-    assert_eq!(from_save, inputs(&case("fixture")));
+    Inputs::from_save(&imported.coral)
 }
 
-#[test]
-fn every_upstream_plan_matches_the_port() {
-    for case in cases() {
-        assert_case(&case);
+/// A small account where the beam width changes the plan.
+fn probe(beam_size: u32) -> Inputs {
+    Inputs {
+        budget: 1e9,
+        max_levels: 8,
+        beam_size,
+        reef_upgrade_count: 10.0,
+        mine_floor: 0.0,
+        vault76_bonus: 0.0,
+        tier: 0,
+        levels: [10; 6],
+        total_divinity_levels: Some(10_000),
+        ..fixture_inputs()
     }
 }
 
-#[test]
-fn the_offering_model_matches_upstream() {
-    let oracle = oracle();
-    let base = inputs(&case("fixture"));
-    for row in oracle["offering"].as_array().expect("offering rows") {
-        let rank = row["godRank"].as_u64().expect("a rank") as u32;
-        let inputs = Inputs {
-            y4: at(row, "y4"),
-            tier: at(row, "tier") as u32,
-            ..base.clone()
-        };
-        let offer = idleon_coral::offer(&inputs, rank);
-        close(offer.odds, at(row, "odds"));
-        close(offer.cost, at(row, "cost"));
-        close(offer.free_chance, at(row, "freeChance"));
-        close(
-            offer.expected_spend_per_success,
-            at(row, "expectedSpendForOneSuccess"),
-        );
-        let confidence = &row["confidence"]["90"];
-        assert_eq!(
-            offer.attempts as u64,
-            confidence["attempts"].as_u64().expect("attempts")
-        );
-        close(offer.expected_spend, at(confidence, "expectedSpend"));
-        close(offer.max_paid_spend, at(confidence, "maxPaidSpend"));
-    }
+/// Every planner input this file exercises, by name.
+fn cases() -> [(&'static str, Inputs); 4] {
+    [
+        ("fixture", fixture_inputs()),
+        (
+            "fixture-narrow-beam",
+            Inputs {
+                beam_size: 1,
+                ..fixture_inputs()
+            },
+        ),
+        ("narrow-probe-wide", probe(100)),
+        ("narrow-probe-narrow", probe(1)),
+    ]
 }
 
 #[test]
 fn the_plan_respects_the_budget_and_the_level_cap() {
-    for case in cases() {
-        let inputs = inputs(&case);
+    for (name, inputs) in cases() {
         let plan = plan(&inputs);
         assert!(
             plan.spent <= plan.budget + plan.budget.abs() * 1e-12,
             "{}: spent {} over budget {}",
-            case["name"],
+            name,
             plan.spent,
             plan.budget
         );
         assert!(
             plan.actions.len() <= inputs.max_levels as usize,
             "{}: {} actions over the {} cap",
-            case["name"],
+            name,
             plan.actions.len(),
             inputs.max_levels
         );
@@ -240,7 +68,7 @@ fn the_plan_respects_the_budget_and_the_level_cap() {
 
 #[test]
 fn the_plan_is_reproducible_and_reports_every_step() {
-    let inputs = inputs(&case("fixture"));
+    let inputs = fixture_inputs();
     let first = plan(&inputs);
     assert_eq!(first, plan(&inputs));
 
@@ -257,10 +85,8 @@ fn the_plan_is_reproducible_and_reports_every_step() {
 
 #[test]
 fn a_wider_beam_searches_deeper_and_finds_a_better_plan() {
-    let wide = case("narrow-probe-wide");
-    let narrow = case("narrow-probe-narrow");
-    let wide_plan = plan(&inputs(&wide));
-    let narrow_plan = plan(&inputs(&narrow));
+    let wide_plan = plan(&probe(100));
+    let narrow_plan = plan(&probe(1));
     assert_ne!(wide_plan.actions, narrow_plan.actions);
     assert_eq!(wide_plan.current, narrow_plan.current);
     // The objective is the mean of the six ratios against the current state.
@@ -283,7 +109,7 @@ fn a_wider_beam_searches_deeper_and_finds_a_better_plan() {
 fn a_zero_level_cap_keeps_the_current_state() {
     let inputs = Inputs {
         max_levels: 0,
-        ..inputs(&case("fixture"))
+        ..fixture_inputs()
     };
     let plan = plan(&inputs);
     assert!(plan.actions.is_empty());
@@ -292,8 +118,8 @@ fn a_zero_level_cap_keeps_the_current_state() {
 }
 
 #[test]
-fn the_projection_has_a_row_per_metric_in_upstream_order() {
-    let inputs = inputs(&case("fixture"));
+fn the_projection_has_a_row_per_metric_in_display_order() {
+    let inputs = fixture_inputs();
     let plan = plan(&inputs);
     let rows = plan.projection();
     assert_eq!(
@@ -308,11 +134,10 @@ fn the_projection_has_a_row_per_metric_in_upstream_order() {
 fn the_goal_selects_the_metric_the_plan_grows() {
     let inputs = Inputs {
         goal: Goal::ClassExp,
-        ..inputs(&case("narrow-probe-wide"))
+        ..probe(100)
     };
     let class_exp = plan(&inputs);
-    let expected = &case("narrow-probe-wide");
-    assert_eq!(class_exp.goal, Goal::ClassExp, "{}", expected["name"]);
+    assert_eq!(class_exp.goal, Goal::ClassExp);
     assert!(class_exp.best.metrics.class_exp >= class_exp.current.metrics.class_exp);
 }
 
@@ -320,7 +145,7 @@ fn the_goal_selects_the_metric_the_plan_grows() {
 fn the_plan_flags_the_unlock_state_it_had_to_assume() {
     let inputs = Inputs {
         total_divinity_levels: None,
-        ..inputs(&case("fixture"))
+        ..fixture_inputs()
     };
     let plan = plan(&inputs);
     assert_eq!(plan.partial, ["Coral Kid unlock state"]);

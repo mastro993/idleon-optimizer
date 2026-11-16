@@ -2,9 +2,8 @@
 //!
 //! The small hand-built saves live in `tests/loadout.rs`; this file checks the
 //! committed synthetic account, whose equipment and talent tables are the
-//! realistic case. Expected values come from the upstream readers
-//! (`readEquipment`, `readTalents` in `combat-sim-setup.js`), not from the
-//! fixture itself.
+//! realistic case. Expected values come from the saved equipment and talent
+//! layout, not from the fixture itself.
 
 use idleon_combat::{IssueKind, Loadout, data};
 

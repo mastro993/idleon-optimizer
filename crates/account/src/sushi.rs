@@ -1,19 +1,19 @@
-//! Sushi Station terms, ported from `js/stats/systems/w7/sushi.js`.
+//! Sushi Station terms.
 //!
-//! `computeRooBonus` pays Poppy's per-index bonus once enough tiers of her
-//! sushi upgrades are found: `OptLacc[271]` counts the tiers, `OptLacc[279]`
-//! the Mega Feather progress. The per-index multipliers are the upstream table,
+//! Poppy pays her per-index bonus once enough tiers of her sushi upgrades are
+//! found: `OptLacc[271]` counts the tiers, `OptLacc[279]`
+//! the Mega Feather progress. The per-index multipliers are a fixed table,
 //! and the Mega Feather rows add their percentage to the whole bonus.
 
 use super::Decoder;
 
-/// `perIdx`: the per-index multiplier of one Roo bonus, `3` when unlisted.
+/// The per-index multiplier of one Roo bonus, `3` when unlisted.
 const PER_INDEX: [f64; 7] = [3.0, 3.0, 5.0, 2.0, 2.0, 0.5, 3.0];
 /// The `RooMegafeather` milestones, in `OptLacc[279]` order.
 const MEGA_FEATHER: [f64; 5] = [1.0, 3.0, 6.0, 8.0, 11.0];
 
 impl Decoder<'_> {
-    /// `computeRooBonus(index)`: the bonus one of Poppy's rows pays.
+    /// The Roo bonus at `index`: the bonus one of Poppy's rows pays.
     pub fn roo(&self, index: usize) -> f64 {
         let tiers = ((self.ola(271) - index as f64) / 7.0).ceil().max(0.0);
         if tiers <= 0.0 {

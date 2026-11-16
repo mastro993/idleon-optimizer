@@ -3,8 +3,8 @@
 //!
 //! A claim is a closed-form calculation, so nothing here runs off the UI thread:
 //! the pane asks [`State::inputs`] for the current entry and the claim answers at
-//! once. The hours are the one typed value, because the upstream page rejects an
-//! entry outside the credited range instead of clamping it.
+//! once. The hours are the one typed value, because an entry outside the
+//! credited range is rejected instead of clamped.
 
 use crate::state::AppState;
 use ely_gpui_component::forms::TextInput;

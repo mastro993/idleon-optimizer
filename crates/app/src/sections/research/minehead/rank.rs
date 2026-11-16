@@ -1,5 +1,4 @@
-//! Rank Upgrades: what one more level of each unlocked upgrade buys, as
-//! `_renderRankTab` in `js/ui/minehead-ui.js`.
+//! Rank Upgrades: what one more level of each unlocked upgrade buys.
 
 use super::{boss_name, run_inputs};
 use crate::state::AppState;

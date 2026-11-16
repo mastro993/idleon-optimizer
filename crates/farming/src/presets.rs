@@ -1,11 +1,10 @@
-//! The preset goals side by side: the upstream "Preset Comparison" table.
+//! The preset goals side by side: the "Preset Comparison" table.
 //!
-//! `renderRank` in `farming-calc.html` ends with a table that runs
-//! `optimizeLandRank` once for every goal in the page's `OBJECTIVES` list from
-//! the selected baseline, so the player sees what each goal would spend and
-//! gain before committing to one. The seven goals are the built-in presets; a
-//! custom preset, which the app keeps in the project document, saves one goal
-//! together with its baseline and crop target.
+//! The rank tab ends with a table that runs the Land Rank allocation once for
+//! every goal from the selected baseline, so the player sees what each goal
+//! would spend and gain before committing to one. The seven goals are the
+//! built-in presets; a custom preset, which the app keeps in the project
+//! document, saves one goal together with its baseline and crop target.
 
 use super::{Allocation, Farm, Mode, Objective};
 use idleon_common::Control;
@@ -16,12 +15,12 @@ use idleon_common::Progress;
 pub struct Comparison {
     pub mode: Mode,
     pub target_crop: Option<u32>,
-    /// One row per goal, in the upstream `OBJECTIVES` order.
+    /// One row per goal, in [`Objective::ALL`] order.
     pub rows: Vec<Allocation>,
 }
 
 impl Farm {
-    /// `optimizeLandRank` without a reporter: one goal's plan.
+    /// The Land Rank allocation without a reporter: one goal's plan.
     pub fn plan(&self, objective: Objective, mode: Mode, target_crop: Option<u32>) -> Allocation {
         self.allocation(objective, mode, target_crop, &mut |_progress| {
             Control::Continue

@@ -1,10 +1,9 @@
 //! The sneaking section's own state: the login context and the slot the
 //! inventory is aimed at.
 //!
-//! The workspace mirrors upstream's loadout panel, where the character selector
-//! and the current selection survive a re-render. The loadout itself comes from
-//! the save and is edited in memory; this state is what a project document keeps
-//! so the workspace opens where it was left.
+//! The character selector and the current selection survive a re-render. The
+//! loadout itself comes from the save and is edited in memory; this state is
+//! what a project document keeps so the workspace opens where it was left.
 
 use crate::state::AppState;
 use gpui::{App, Context};

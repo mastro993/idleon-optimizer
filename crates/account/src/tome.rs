@@ -1,10 +1,10 @@
-//! The Tome score, ported from `js/stats/systems/w4/tome-score.js`.
+//! The Tome score.
 //!
 //! The research tree reads the Tome score for its lore episode bonus. Every
-//! slot is computed from the save field the game stores it in. Two upstream
-//! steps are not ported and are warned about instead of guessed: the star
-//! talent total needs the talent system, and the live drop-rate refresh needs
-//! the combat stats.
+//! slot is computed from the save field the game stores it in. Two steps are
+//! not modelled and are warned about instead of guessed: the star talent total
+//! needs the talent system, and the live drop-rate refresh needs the combat
+//! stats.
 
 use super::Decoder;
 use idleon_save::Character;
@@ -12,7 +12,7 @@ use idleon_save::fields;
 use serde_json::Value;
 
 impl Decoder<'_> {
-    /// `computeTomeScore`, phase 1.
+    /// The tome score: the points every slot earns, summed.
     pub fn tome_points(&mut self) -> Option<f64> {
         if fields::field(self.save, "Cards0").is_none()
             && fields::field(self.save, "Cards1").is_none()
@@ -40,7 +40,7 @@ impl Decoder<'_> {
         Some(total)
     }
 
-    /// `_starTalentPoints`: `TotalTalentPoints()[5]`, the star-talent slot's
+    /// The star-talent points: the star-talent slot's
     /// quantity, at its best character.
     pub fn star_talent_points(&mut self) -> f64 {
         use idleon_common::curve;
@@ -82,7 +82,7 @@ impl Decoder<'_> {
         } else {
             0.0
         };
-        // `_famBonus64`: family 32, at classes 32/34/35, with talent 144 on the
+        // Family bonus 32, at classes 32/34/35, with talent 144 on the
         // active character.
         let family = self
             .family_bonus(32)
@@ -150,7 +150,7 @@ impl Decoder<'_> {
         best
     }
 
-    /// `getTalentNumber(1, index)`: one character's talent value.
+    /// One character's talent value.
     fn tome_talent_value(&mut self, talent: usize, character: usize, context: usize) -> f64 {
         let raw = self.talent_level(character, talent);
         if raw <= 0.0 {
@@ -163,7 +163,7 @@ impl Decoder<'_> {
         })
     }
 
-    /// `tomeQTY`: the raw quantity behind one slot.
+    /// The raw quantity behind one slot.
     fn tome_qty(&self, slot: usize) -> f64 {
         if slot < 64 {
             return self.tome_qty_low(slot);
@@ -403,7 +403,7 @@ impl Decoder<'_> {
         fields::row(self.save, key, path).unwrap_or_default()
     }
 
-    /// `tasksGlobalData[n]` rows, columns 0..8: the task board completion count.
+    /// The `TaskZZ<n>` rows, columns 0..8: the task board completion count.
     fn task_total(&self, key: &str) -> f64 {
         let Some(rows) = fields::field(self.save, key).and_then(|value| value.as_array().cloned())
         else {
@@ -420,7 +420,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// A scalar save field, as the loader copies `CYDeliveryBox*` across.
+    /// A scalar save field, such as `CYDeliveryBox*`.
     fn scalar(&self, key: &str) -> f64 {
         self.save
             .get(key)
@@ -477,8 +477,8 @@ impl Decoder<'_> {
         max_per_skill.values().sum()
     }
 
-    /// `saveData.totalQuestsComplete`: the quests in `SceneNPCquestOrder` that
-    /// at least one character has completed.
+    /// The quests in `SceneNPCquestOrder` that at least one character has
+    /// completed.
     pub fn quest_total(&self) -> f64 {
         let mut total = 0.0;
         for quest in &self.data.quest_order {
@@ -547,7 +547,7 @@ impl Decoder<'_> {
         best
     }
 
-    /// `breedingLevelTotals`: `(shiny, breedability)`.
+    /// The breeding level totals: `(shiny, breedability)`.
     fn breeding_totals(&self) -> (f64, f64) {
         let mut shiny = 0.0;
         let mut breedability = 0.0;
@@ -606,7 +606,7 @@ impl Decoder<'_> {
     }
 }
 
-/// `tomePCT`.
+/// The fraction of a tome slot earned by `qty`, under its scoring `mode`.
 fn tome_pct(qty: f64, mode: f64, half: f64) -> f64 {
     match mode as i32 {
         0 => {

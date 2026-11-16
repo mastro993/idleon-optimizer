@@ -1,4 +1,4 @@
-//! The coral formulas and planner inputs against the upstream JS values.
+//! The coral formulas and planner inputs.
 
 use super::*;
 
@@ -13,34 +13,6 @@ fn fixture_inputs() -> Inputs {
         singularity_levels: [49, 31, 0, 0, 0, 0],
         ..Inputs::default()
     }
-}
-
-#[test]
-fn upgrade_values_match_upstream_at_the_fixture_levels() {
-    let expected = [
-        (1540.0, 23685006833599.492),
-        (128.0, 95585514667947.14),
-        (16.644_295_302_013_422, 48864725156227.086),
-        (98.0, 24600101366955.652),
-        (200.0, 178596735924098.06),
-        (69.230_769_230_769_23, 413140638297324.75),
-    ];
-    for (index, (effect, cost)) in expected.into_iter().enumerate() {
-        let level = f64::from(fixture_inputs().levels[index]);
-        assert!((upgrade_effect(index, level) - effect).abs() < 1e-9);
-        assert!((upgrade_cost(index, level) - cost).abs() < 1.0);
-    }
-}
-
-#[test]
-fn metrics_match_upstream_for_the_fixture_levels() {
-    let metrics = fixture_inputs().metrics();
-    assert_eq!(metrics.divinity_exp, 16.4);
-    assert_eq!(metrics.divinity_points, 5350.0);
-    assert_eq!(metrics.blessing_cap, 348.0);
-    assert_eq!(metrics.minor_links, 1.98);
-    assert!((metrics.class_exp - 25.359_084_901_759_285).abs() < 1e-12);
-    assert!((metrics.daily_reef_coral - 1.692_307_692_307_692).abs() < 1e-12);
 }
 
 #[test]

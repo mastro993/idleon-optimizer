@@ -1,13 +1,10 @@
 //! The range maths: where the outposts and resource nodes sit, how far an
 //! outpost reaches and the Advanced Logistics plan that closes the gap.
-//!
-//! Ported from `outpostMapPosition`, `resourceDistance`, `outpostRange`,
-//! `logisticsUpgradesToReach` and `nextResourceRangeTarget`.
 
 use super::*;
 
 impl RoyalGuardian {
-    /// A map's anchor on the royal map: upstream `outpostMapPosition`.
+    /// A map's anchor on the royal map.
     pub fn outpost_position(map: usize) -> Option<(f64, f64)> {
         data::map(map).map(|row| (row.x + 15.0, row.y + 13.0))
     }
@@ -33,21 +30,20 @@ impl RoyalGuardian {
             + self.rank(map, 3) * self.armory_bonus(74)
     }
 
-    /// An outpost's range at one Advanced Logistics level: upstream
-    /// `outpostRangeAtLogisticsLevel`.
+    /// An outpost's range at one Advanced Logistics level.
     pub fn range_at_logistics(&self, map: usize, level: f64) -> f64 {
         let level = level.max(0.0).floor();
         let range = self.range_without_logistics(map) + 250.0 * level / (level + 100.0);
         range.min(999.0).floor()
     }
 
-    /// An outpost's saved range: upstream `outpostRange`.
+    /// An outpost's saved range.
     pub fn range(&self, map: usize) -> f64 {
         self.range_at_logistics(map, self.map_cell(map, cell::LOGISTICS))
     }
 
     /// Whether an outpost links a resource node: built, not Support, and in
-    /// reach: upstream `resourceReachable`.
+    /// reach.
     pub fn resource_reachable(&self, map: usize, resource: usize) -> bool {
         let kind = self.outpost_type(map);
         self.outpost(map).built
@@ -55,8 +51,7 @@ impl RoyalGuardian {
             && Self::resource_distance(map, resource) <= self.range(map) + RESOURCE_ALLOWANCE
     }
 
-    /// The Advanced Logistics plan that reaches a resource node: upstream
-    /// `logisticsUpgradesToReach`.
+    /// The Advanced Logistics plan that reaches a resource node.
     pub fn logistics_plan(&self, map: usize, distance: f64) -> Plan {
         let current_level = self.map_cell(map, cell::LOGISTICS).max(0.0).floor();
         let current_range = self.range(map);
@@ -101,8 +96,7 @@ impl RoyalGuardian {
         plan
     }
 
-    /// The nearest resource node the outpost cannot reach yet: upstream
-    /// `nextResourceRangeTarget`.
+    /// The nearest resource node the outpost cannot reach yet.
     pub fn next_range_target(&self, map: usize) -> Option<RangeTarget> {
         let outpost = self.outpost(map);
         if !outpost.built {

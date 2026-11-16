@@ -71,7 +71,7 @@ fn rates(jar: &Jar) -> AnyElement {
         .into_any_element()
 }
 
-/// `productionPerHRBreakdown`: what multiplies the base rate.
+/// What multiplies the base rate.
 fn multipliers(jar: &Jar) -> AnyElement {
     let mut table = Table::new(["Source", "Value"]).row([
         div().child("Base").into_any_element(),

@@ -1,10 +1,5 @@
 //! The rates the breakdown trees read: full stealth, Jade coin and hour, EXP
 //! per action, door damage and the runtime action loop.
-//!
-//! Ported from `computeTwinStealth`, `computeJadeCoin`, `computeJadeRate`,
-//! `computeDoorDamageDetailed`, `computeUntieProgressDetailed`,
-//! `computeDoorHitsPerHour`, `computeTeamDoorRates` and
-//! `computeSneakingTeamScenario` in `js/stats/systems/w6/sneaking-*.js`.
 
 use super::math::{
     DoorRate, TeamMember, door_hits_per_hour, exp_base, item_find_per_hour, jade_actions_per_hour,
@@ -286,8 +281,8 @@ impl Loadout {
             };
         }
         // A projected mastery is a what-if: the game has not relocked a floor,
-        // so upstream's `doorState` shows every door fresh at its full HP. A
-        // projection below the saved maximum has no door at all.
+        // so every door shows fresh at its full HP. A projection below the
+        // saved maximum has no door at all.
         if self.projected {
             if self.mastery < self.mastery_max {
                 return DoorState {
@@ -328,7 +323,6 @@ impl Loadout {
         }
     }
 
-    /// `computeJadeCoin`.
     pub(crate) fn jade_coin(&self, twin: usize) -> JadeCoin {
         self.jade_coin_with(twin, &self.gold_bonuses())
     }
@@ -419,7 +413,6 @@ impl Loadout {
         }
     }
 
-    /// `computeJadeRate`.
     pub(crate) fn jade_hour(&self, twin: usize) -> JadeHour {
         let coin = self.jade_coin(twin);
         let rate = jade_actions_per_hour(
@@ -439,7 +432,6 @@ impl Loadout {
         }
     }
 
-    /// `computeSneakingExpPerAction`.
     pub(crate) fn exp_action(&self, twin: usize) -> ExpAction {
         self.exp_action_with(twin, &self.gold_bonuses())
     }
@@ -563,7 +555,6 @@ impl Loadout {
         selected
     }
 
-    /// `computeDoorDamageDetailed`.
     pub(crate) fn door_damage(&self, twin: usize) -> DoorDamage {
         self.door_damage_with(twin, &self.gold_bonuses())
     }
@@ -610,7 +601,6 @@ impl Loadout {
         }
     }
 
-    /// `computeUntieProgressDetailed`.
     pub(crate) fn untie_progress(&self, twin: usize) -> UntieProgress {
         let Some(entry) = self.twins.get(twin) else {
             return UntieProgress::default();
@@ -635,7 +625,6 @@ impl Loadout {
         }
     }
 
-    /// `computeDoorHitsPerHour`.
     pub(crate) fn door_rate(&self, twin: usize) -> DoorRate {
         self.door_rate_with(twin, &self.gold_bonuses())
     }
@@ -650,7 +639,7 @@ impl Loadout {
         )
     }
 
-    /// `computeTeamDoorRates` for the twins on this twin's floor.
+    /// The team door rates for the twins on this twin's floor.
     pub(crate) fn team_door_rates(&self, twin: usize) -> Vec<DoorRate> {
         let floor = self.twins.get(twin).map_or(0, |entry| entry.floor);
         self.floor_rates(floor, &self.gold_bonuses())
@@ -707,7 +696,6 @@ impl Loadout {
             .unwrap_or_else(|| self.door_rate(twin))
     }
 
-    /// `sneakingActionMode`.
     pub(crate) fn action_mode(&self, twin: usize) -> ActionMode {
         let Some(entry) = self.twins.get(twin) else {
             return ActionMode::Normal;
@@ -729,7 +717,7 @@ impl Loadout {
         ActionMode::Normal
     }
 
-    /// `computeSneakingTeamScenario`'s row for one twin.
+    /// The runtime scenario row for one twin.
     pub fn runtime(&self, twin: usize, item_batch_hours: f64) -> Runtime {
         let Some(entry) = self.twins.get(twin) else {
             return Runtime::default();

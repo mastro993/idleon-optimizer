@@ -1,4 +1,4 @@
-//! The damage layers, ported from `js/stats/defs/damage.js`.
+//! The damage layers.
 //!
 //! The descriptor multiplies three layers: `DDL0` (base damage after its two
 //! softcaps), `DDL1` (the percentage multiplier after its three) and `DDL2` (the
@@ -7,8 +7,8 @@
 //!
 //! Every group whose provider this build does not carry is recorded by name, so
 //! a caller can show the layers and the reason they are a lower bound instead of
-//! presenting a number nobody can justify. `debug` mirrors the descriptor's own
-//! `_debug` keys so the fixture can compare the port term by term.
+//! presenting a number nobody can justify. `debug` records every term by key so
+//! a caller can show the layers term by term.
 
 use crate::systems::Ctx;
 use crate::{Stat, with_ctx};
@@ -31,17 +31,17 @@ pub struct Layers {
     pub mastery_penalty: f64,
     /// The `Mastery` bubble, as a share of the ratio.
     pub mastery_bubble: f64,
-    /// `computeCardBonusByType(21)`.
+    /// The card bonus of type 21.
     pub mastery_cards: f64,
     /// Talent 123.
     pub mastery_talent: f64,
-    /// `etcBonus('21')`.
+    /// The equipment and obol bonus `21`.
     pub mastery_etc: f64,
     pub max: f64,
     pub min: f64,
     /// The terms this build could not justify.
     pub missing: Vec<String>,
-    /// The descriptor's own `_debug` values, one entry per term it records.
+    /// The layers' term values, one entry per term the engine records.
     pub debug: BTreeMap<String, f64>,
 }
 
@@ -51,7 +51,7 @@ impl Layers {
     }
 }
 
-/// `isDungeonMap` hides the summary: a dungeon's run damage is not in the save.
+/// A dungeon map hides the summary: a dungeon's run damage is not in the save.
 pub fn is_dungeon_map(map: usize) -> bool {
     idleon_stats_data::data()
         .maps
@@ -303,8 +303,8 @@ fn base_layer(ctx: &mut Ctx<'_, '_>, map: usize, debug: &mut BTreeMap<String, f6
     }
 
     let base_post = softcap_additive(base_pre);
-    // Upstream records the post-softcap base under `preSoftcap` and the raw one
-    // under `preSoftcapRaw`.
+    // The post-softcap base is recorded under `preSoftcap` and the raw one under
+    // `preSoftcapRaw`.
     debug.insert("preSoftcap".into(), base_post);
     (base_pre, base_post)
 }
@@ -424,7 +424,7 @@ fn talent_chain(ctx: &mut Ctx<'_, '_>, speed: f64, debug: &mut BTreeMap<String, 
         let kla = idleon_save::fields::char_field(ctx.save(), "KLA", ctx.character);
         for map in 0..idleon_stats_data::map_count() {
             // `TalentCalc(110)` skips the filler rows as well, so it counts a
-            // few fewer maps than `isFightingMap` does.
+            // few fewer maps than the fighting-map test does.
             if !crate::is_fighting_map(map) || idleon_stats_data::afk_target(map) == Some("Filler")
             {
                 continue;

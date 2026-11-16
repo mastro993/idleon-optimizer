@@ -1,7 +1,7 @@
 //! Research EXP, insight, level curves and forward projection.
 //!
-//! Formulas are ports of `js/stats/systems/w7/research-math.js` in the upstream
-//! calculators, minus the save-specific multipliers this app leaves to the user.
+//! The save-specific multipliers this app leaves to the user are not part of
+//! these formulas.
 
 use crate::data::game;
 use crate::model::{GridState, Mag, MagKind, Observations, SimContext, Simulation};
@@ -17,7 +17,7 @@ pub struct ExpRate {
     pub total: f64,
 }
 
-/// The terms behind `simTotalExp`'s multiplier, in the order they are applied.
+/// The terms behind the EXP rate's multiplier, in the order they are applied.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ExpTerms {
     /// Percentages that add together before the multiplier.
@@ -58,8 +58,7 @@ pub struct Projection {
     pub samples: Vec<Sample>,
 }
 
-/// What a projection sample marks: the event that opened the segment after it,
-/// as upstream `unifiedSim` labels its phases.
+/// What a projection sample marks: the event that opened the segment after it.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Event {
     /// The layout the run started with.
@@ -160,14 +159,14 @@ pub fn observations_to_find(research_level: u32, found: &[bool]) -> usize {
 /// Is an observation usable: found, and the research level high enough for it.
 ///
 /// The gate is `roll`, the level that unlocks the observation; `rollReq` is the
-/// roll to beat when hunting for it (`computeObsUnlockPriority`), not a level.
+/// roll to beat when hunting for it, not a level.
 pub fn observation_usable(obs: usize, research_level: u32, observations: &Observations) -> bool {
     let data = &game().observations[obs];
     observations.found.get(obs).copied().unwrap_or(false) && research_level as f64 >= data.roll
 }
 
 /// The observations a magnifier can be placed on: usable, and among the ones
-/// the research level has unlocked (upstream `getAvailableSlots`).
+/// the research level has unlocked.
 pub fn available_slots(research_level: u32, observations: &Observations) -> Vec<usize> {
     let to_find = observations_to_find(research_level, &observations.found);
     (0..to_find.min(game().observations.len()))
@@ -221,7 +220,7 @@ pub fn kaleidoscope_map(mags: &[Mag], slots: usize) -> Vec<u32> {
 }
 
 /// The multiplier a kaleidoscope adds, from the grid's own kaleidoscope nodes
-/// and the emporium and jelly terms (`getKaleiMultiBase`).
+/// and the emporium and jelly terms.
 pub fn kalei_base(grid: &GridState, overlay: &[i32], ctx: &SimContext) -> f64 {
     (30.0
         + grid_bonus(grid, overlay, 52, ctx)
@@ -266,7 +265,7 @@ pub struct AfkTerm {
     pub value: f64,
     /// The grid square it reads, when it is a grid bonus.
     pub grid_cell: Option<usize>,
-    /// The upstream system or save field behind the value.
+    /// The game system or save field behind the value.
     pub source: &'static str,
     /// Why the term is missing from the sum, when this build cannot model it.
     pub unavailable: Option<&'static str>,
@@ -291,7 +290,7 @@ impl AfkTerm {
     }
 }
 
-/// The research AFK gains rate, ported from `js/stats/defs/research-afk-gains.js`.
+/// The research AFK gains rate.
 #[derive(Clone, Debug, PartialEq)]
 pub struct AfkRate {
     /// The share of active EXP the account earns while away, 0 to 1.
@@ -302,7 +301,7 @@ pub struct AfkRate {
 
 /// The research AFK gains rate for a full state.
 ///
-/// `rate = min(1, 0.01 + sum / 100)`, the upstream descriptor's combine. The
+/// `rate = min(1, 0.01 + sum / 100)`. The
 /// Gambit Milestone 15 term is listed but left out of the sum: its Hole
 /// measurement chain is not modelled yet, so it is reported rather than guessed.
 pub fn afk_rate(sim: &Simulation, ctx: &SimContext) -> AfkRate {
@@ -343,8 +342,8 @@ pub fn afk_rate(sim: &Simulation, ctx: &SimContext) -> AfkRate {
 
 /// Total research EXP per hour for a full state.
 ///
-/// A port of `simTotalExpWith`: observation EXP times the additive pool and
-/// every true multiplier the save decoded.
+/// Observation EXP times the additive pool and every true multiplier the save
+/// decoded.
 pub fn exp_rate(sim: &Simulation, ctx: &SimContext) -> ExpRate {
     let game = game();
     let overlay = sim.overlay();
@@ -401,7 +400,7 @@ fn grid_label(cell: usize) -> String {
     format!("Grid {} · {name}", crate::model::coord(cell))
 }
 
-/// `simTotalExpWith`'s multiplier, split into the terms it applies. `grid`
+/// The EXP rate's multiplier, split into the terms it applies. `grid`
 /// resolves one cell's bonus, so the shaped scoring path can feed the same
 /// formula a hypothetical overlay.
 fn exp_terms_with(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> ExpTerms {
@@ -490,7 +489,7 @@ fn exp_terms_with(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f
     }
 }
 
-/// `simTotalExpWith`'s multiplier: the additive pool times every true
+/// The EXP rate's multiplier: the additive pool times every true
 /// multiplier.
 fn total_multiplier(sim: &Simulation, ctx: &SimContext, grid: &impl Fn(usize) -> f64) -> f64 {
     exp_terms_with(sim, ctx, grid).total()
@@ -576,7 +575,7 @@ pub fn cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
 }
 
 /// The value of putting a 25% shape on each cell as if no shape covered the
-/// grid: the upstream `bareSO` scoring shapes and the tier list both read.
+/// grid: the scoring shapes and the tier list both read.
 pub fn bare_cell_values(sim: &Simulation, ctx: &SimContext) -> Vec<f64> {
     let mut bare = sim.clone();
     bare.placements.clear();
@@ -607,7 +606,7 @@ pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> GridPoints {
     }
 }
 
-/// Shapes owned, as `computeShapesOwnedAt` counts them.
+/// Shapes owned at a research level.
 pub fn shapes_owned(research_level: u32, ctx: &SimContext) -> usize {
     let lv = research_level as f64;
     let owned = if ctx.bundle_ban_m { 1.0 } else { 0.0 }
@@ -632,7 +631,7 @@ pub fn shapes_owned(research_level: u32, ctx: &SimContext) -> usize {
     owned.round().min(game().shapes.len() as f64) as usize
 }
 
-/// Magnifiers owned, as `computeMagnifiersOwnedWith` counts them.
+/// Magnifiers owned.
 pub fn magnifiers_owned(sim: &Simulation, ctx: &SimContext) -> u32 {
     let lv = sim.research_level;
     let kaleidoscopes = (sim.grid.level(72) as f64 + ctx.event_shop(33)).round();
@@ -659,9 +658,9 @@ pub fn can_rotate(research_level: u32) -> bool {
 
 /// How many magnifiers of each kind the account owns.
 ///
-/// Upstream `growMagPoolTyped` splits the owned pool by where the extra kinds
-/// come from: kaleidoscopes from grid square 72 and event shop 33, monocles from
-/// grid square 91, and every remaining magnifier a plain glass.
+/// The owned pool splits by where the extra kinds come from: kaleidoscopes
+/// from grid square 72 and event shop 33, monocles from grid square 91, and
+/// every remaining magnifier a plain glass.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MagPool {
     pub regular: u32,
@@ -708,7 +707,7 @@ pub fn mag_pool(sim: &Simulation, ctx: &SimContext) -> MagPool {
 ///
 /// Fails when the observation already holds [`mag_cap`] magnifiers or the pool
 /// has no free one of that kind. An unplaced pool entry is reused before a new
-/// one is added, as upstream's drop handler does.
+/// one is added.
 pub fn place_mag(sim: &mut Simulation, ctx: &SimContext, kind: MagKind, obs: usize) -> bool {
     if obs >= game().observations.len() {
         return false;
@@ -744,8 +743,8 @@ pub fn lift_mag(sim: &mut Simulation, obs: usize) -> bool {
 
 /// Advance a level while the accumulated EXP covers the next requirement.
 ///
-/// The `1e-9` slack and the clamp are upstream `advanceResearchLevel`'s: a jump
-/// that lands exactly on the requirement can undershoot by a rounding error, and
+/// The `1e-9` slack and the clamp guard the jump: a jump that lands exactly on
+/// the requirement can undershoot by a rounding error, and
 /// without the slack the run would spend its next jumps crawling the residual.
 pub(crate) fn advance_level(level: &mut u32, exp: &mut f64, server_var_res_xp: f64) {
     while research_level_affordable(*level, *exp, server_var_res_xp) {
@@ -758,7 +757,7 @@ fn research_level_affordable(level: u32, exp: f64, server_var_res_xp: f64) -> bo
     exp >= research_exp_req(level, server_var_res_xp) - 1e-9
 }
 
-/// Upstream's daily tournament window: 12h of research time per registration.
+/// The daily tournament window: 12h of research time per registration.
 pub const TOURNAMENT_BONUS_HOURS: f64 = 12.0;
 /// How many hours apart two tournament registrations are.
 pub(crate) const TOURNAMENT_INTERVAL_HOURS: f64 = 24.0;
@@ -770,10 +769,9 @@ const DAY_SECONDS: f64 = 86_400.0;
 
 /// Hours until the first tournament registration fires.
 ///
-/// A port of the `_firstTournamentHrs` block in upstream `unifiedSim`: from the
-/// save's `GlobalTime`, minus the half-hour buffer, skipped a day when the save
-/// already registered in the cached tournament day. Without a save clock the
-/// fallback is one full day, as upstream.
+/// Counted from the save's `GlobalTime`, minus the half-hour buffer, and
+/// skipped a day when the save already registered in the cached tournament
+/// day. Without a save clock the fallback is one full day.
 pub(crate) fn first_tournament_hours(ctx: &SimContext) -> f64 {
     if ctx.save_global_time <= 0.0 {
         return TOURNAMENT_INTERVAL_HOURS;
@@ -803,8 +801,8 @@ pub(crate) fn unlock_observations(state: &mut Simulation) {
 
 /// Add `hours` of insight collection to every observation with a monocle.
 ///
-/// One level per observation, as upstream `advanceInsightLevels` reads its
-/// single `if`; the tournament bonus is one collection event, not a loop.
+/// One level per observation per collection event; the tournament bonus is
+/// one collection event, not a loop.
 pub(crate) fn advance_insight_hours(state: &mut Simulation, ctx: &SimContext, hours: f64) -> u32 {
     let overlay = state.overlay();
     let kal_map = kaleidoscope_map(&state.mags, game().observations.len());
@@ -845,9 +843,9 @@ mod tests {
     }
 
     #[test]
-    fn observation_curve_matches_the_upstream_values() {
+    fn observation_curve_follows_the_game_formula() {
         assert!((obs_base_exp(0) - 4.0).abs() < 1e-9);
-        // Upstream: (4 + (t/2 + floor(t/4))) * (1 + t^(1+t/15*0.4)/10) + t^1.5 + 1.5t
+        // The game's curve: (4 + (t/2 + floor(t/4))) * (1 + t^(1+t/15*0.4)/10) + t^1.5 + 1.5t
         let t = 10.0_f64;
         let expected = (4.0 + (t / 2.0 + (t / 4.0).floor()))
             * (1.0 + t.powf(1.0 + t / 15.0 * 0.4) / 10.0)

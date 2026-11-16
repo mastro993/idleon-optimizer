@@ -1,24 +1,22 @@
 # Wiring landed providers into their consumers
 
 Several sections still name a gap that a shared provider has since closed: the All-Talent resolver
-(`idleon_account::talent::bonus_levels`, a port of upstream `resolveAllTalentLVz`), the shared stat
-engine (`crates/stats-engine`) and the Gambit point chain (`crates/account/src/hole.rs`). This page
-is the backlog for wiring them in. Each item is a small PR that follows its recipe below, and none of
-them ports a new upstream formula.
+(`idleon_account::talent::bonus_levels`), the shared stat engine (`crates/stats-engine`) and the
+Gambit point chain (`crates/account/src/hole.rs`). This page is the backlog for wiring them in. Each
+item is a small PR that follows its recipe below, and none of them models a new formula.
 
-Verified on 2026-11-15 against the live code and upstream
-`Corgan/idleon-research-optimizer@cf9fe34`.
+Verified on 2026-11-15 against the live code.
 
 ## 1. Inventory
 
-| Consumer | Where the gap is named | Upstream term it needs | Result |
+| Consumer | Where the gap is named | Term it needs | Result |
 |---|---|---|---|
-| All Stats `damage` row | `crates/stats/src/breakdowns/mod.rs` (`Sheet::build` fall-through) | `js/stats/defs/damage.js`: the row `val` is `maxDmg = DDL0 × DDL1 × DDL2`; `partial` is the missing companion/vote metadata | **Confirmed 1:1.** `damage_layers` matches every layer and `_debug` term for all eleven characters (`crates/damage/tests/damage.rs`). **Wired** (section 7). |
-| All Stats capacity, talent 78 | `crates/stats/src/breakdowns/capacity.rs` (`TALENT_LEVELS`) | `js/stats/systems/common/carry-capacity.js:86`: `_resolved(talent, 78, ctx)`, which goes through `talent.js` and so `resolveAllTalentLVz` | **Confirmed 1:1** for 78. Talent 634 is above 614, which `resolveAllTalentLVz` excludes, so its half of the caption was never true. |
-| Royal Guardian rates | `crates/royal-guardian/src/rates.rs` (`talent_value`) | `js/stats/systems/w7/royal-guardian.js:69`: `maxTalentBonusDetail(225/226/230/231/232)`, the max over characters of the bonus-levelled talent | **Adjacent.** `bonus_levels` gives one character's bonus levels; the consumer needs the per-character max of the curve at `purchased + bonus`. |
-| Sneaking, talent 207 | `crates/sneaking/src/breakdown.rs` (Land Rank Stealth note) | `js/stats/systems/w6/farmRank.js:22`: `rval(talent, 207, …, { mode: 'max' })`, `getbonus2(1, 207, -1)` | **Adjacent.** Same max-over-characters shape as Royal Guardian. |
-| Coin Multiplier "Other Additive Sources" | `crates/coin-multi/src/lib.rs` (`Spec::reason`) | `js/stats/defs/coin-multi.js` group g22 | **Caption already fixed.** `idleon_stats_engine::other_sources` is public and `crates/coin-multi/src/save.rs` sums it, flurbo shop included. Only the static `Spec::reason` text is stale. |
-| Research AFK rate, Gambit Milestone 15 | `crates/research/src/sim.rs` (`AfkTerm "Gambit Milestone 15"`), `crates/research/src/breakdown.rs` | `js/stats/systems/w5/hole.js:194` `gambitBonus15`: `rawPts × gambitPTSmulti >= req ? 3 : 0` | **Confirmed 1:1** with `Decoder::gambit_points` (private). Needs `gambit_bonus15` beside `gambit_bonus7`. |
+| All Stats `damage` row | `crates/stats/src/breakdowns/mod.rs` (`Sheet::build` fall-through) | The damage descriptor: the row value is the max damage, `DDL0 × DDL1 × DDL2`; `partial` is the missing companion/vote metadata | **Confirmed.** `damage_layers` supplies every layer and recorded term for all eleven characters. **Wired** (section 7). |
+| All Stats capacity, talent 78 | `crates/stats/src/breakdowns/capacity.rs` (`TALENT_LEVELS`) | Carry capacity reads talent 78 at its resolved level, purchased plus All-Talent bonus levels | **Confirmed** for 78. Talent 634 is above 614, which the All-Talent bonus excludes, so its half of the caption was never true. |
+| Royal Guardian rates | `crates/royal-guardian/src/rates.rs` (`talent_value`) | Talents 225/226/230/231/232 at the max over characters of the bonus-levelled talent | **Adjacent.** `bonus_levels` gives one character's bonus levels; the consumer needs the per-character max of the curve at `purchased + bonus`. |
+| Sneaking, talent 207 | `crates/sneaking/src/breakdown.rs` (Land Rank Stealth note) | The Land Rank Stealth bonus reads talent 207 at its max over characters | **Adjacent.** Same max-over-characters shape as Royal Guardian. |
+| Coin Multiplier "Other Additive Sources" | `crates/coin-multi/src/lib.rs` (`Spec::reason`) | The coin multiplier's group 22 | **Caption already fixed.** `idleon_stats_engine::other_sources` is public and `crates/coin-multi/src/save.rs` sums it, flurbo shop included. Only the static `Spec::reason` text is stale. |
+| Research AFK rate, Gambit Milestone 15 | `crates/research/src/sim.rs` (`AfkTerm "Gambit Milestone 15"`), `crates/research/src/breakdown.rs` | Gambit milestone 15: `raw points × Gambit points multiplier >= requirement ? 3 : 0` | **Confirmed** with `Decoder::gambit_points` (private). Needs `gambit_bonus15` beside `gambit_bonus7`. |
 
 ## 2. Wiring paths
 
@@ -55,29 +53,28 @@ Coin Multiplier needed one function per group, not raw providers, and already ha
   the save carries the character.
 
 Both follow `cash_bubbles`: return `None` unless every term is modelled. No `pub(crate)` provider
-becomes public wholesale. The flurbo shop is no longer a blocker: `Ctx::flurbo_shop` is ported and
+becomes public wholesale. The flurbo shop is no longer a blocker: `Ctx::flurbo_shop` is modelled and
 `other_sources` reads it.
 
 ## 4. Staying honest
 
-- A caption is deleted only when the term it names is wired and pinned by an oracle.
+- A caption is deleted only when the term it names is wired and pinned by a test.
 - A value that still omits a term keeps a "Lower bound: <term> not modelled" partial reason. The
   `damage` row joins the descriptor's own missing-metadata reason with the engine's missing list, so
   neither hides the other.
 
-## 5. Oracles and pins
+## 5. Tests
 
-| Consumer | Oracle script → fixture | Test that pins it |
-|---|---|---|
-| All Stats `damage` | `script/damage-oracle.mjs` → `fixtures/damage.json` (unchanged) | `crates/stats/tests/stats.rs` `the_damage_row_matches_the_upstream_descriptor` |
-| Capacity talent 78 | none yet: `FIXTURE_CAPACITY` is pinned by hand; extend `script/stats-oracle.mjs` (today it writes the engine totals to `fixtures/stats.json`) to record the capacity rows first | `the_fixture_capacity_matches_the_upstream_stats_page` |
-| Royal Guardian | `script/royal-oracle.mjs` → `fixtures/royal-guardian.json` | `crates/royal-guardian/tests/` |
-| Sneaking | `script/sneaking-oracle.mjs` → `fixtures/sneaking.json` | `crates/sneaking/tests/` |
-| Research Gambit 15 | `script/research-roi-oracle.mjs` → `fixtures/research-roi.json` | `crates/research/tests/` AFK rate |
-| Coin Multiplier | `script/coin-multi-oracle.mjs` → `fixtures/coin-multi.json` | `crates/coin-multi/tests/coin_multi.rs` |
+Each wiring lands with a test in its consumer's crate that pins the wired value on
+`fixtures/data.json` or a purpose-built save:
 
-Regenerate a fixture only from a checkout whose other numbers are unchanged; if unrelated rows move,
-that is upstream drift and belongs to its own PR.
+| Consumer | Tests |
+|---|---|
+| All Stats `damage` and capacity talent 78 | `crates/stats/tests/stats.rs` |
+| Royal Guardian | `crates/royal-guardian/tests/` |
+| Sneaking | `crates/sneaking/tests/` |
+| Research Gambit 15 | `crates/research/tests/` AFK rate |
+| Coin Multiplier | `crates/coin-multi/tests/coin_multi.rs` |
 
 ## 6. Order
 
@@ -93,6 +90,6 @@ that is upstream drift and belongs to its own PR.
 `crates/stats/src/breakdowns/damage.rs` answers the `damage` id. Its value is
 `damage_layers(…).max` and its tree's three children are the base, percentage and multiplicative
 layers, whose product is the row. A dungeon map resolves to the Damage section's own `DUNGEON` reason.
-The descriptor's missing-metadata rule (`Metadata`, ported from `js/save/loader.js`) moved from
-`idleon-damage` down into this module so the row and the Damage section share it; `idleon-damage`
-re-exports it unchanged. The explorer ledger reads `15 of 60`.
+The descriptor's missing-metadata rule (`Metadata`) moved from `idleon-damage` down into this module
+so the row and the Damage section share it; `idleon-damage` re-exports it unchanged. The explorer
+ledger reads `15 of 60`.

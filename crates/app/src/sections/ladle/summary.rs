@@ -126,7 +126,7 @@ fn panel_card(
             Caption::new(
                 "Cooking efficiency, the AFK gain rate, the EXP multiplier, skill prowess and Talent 148 come \
                  from the game's Cooking panel: the shared account stats engine is not built yet, so they are \
-                 entered here and apply to every character. The values you read in game give the exact upstream \
+                 entered here and apply to every character. The values you read in game give the exact \
                  rates; the neutral defaults are a lower bound.",
             )
             .text_color(cx.theme().colors.fg_muted),
@@ -141,7 +141,7 @@ fn panel_card(
         .into_any_element()
 }
 
-/// The upstream summary cards.
+/// The summary cards.
 fn cards(state: &AppState, ladle: &Ladle, stats: &[Stats]) -> AnyElement {
     let selected = &state.ladle_state.assigned;
     let guaranteed = total(stats, selected, |row| row.min_per_day);

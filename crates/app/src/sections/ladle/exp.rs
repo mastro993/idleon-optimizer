@@ -354,7 +354,7 @@ pub(crate) fn target_choice(target_level: u32, level: f64) -> Option<f64> {
     }
 }
 
-/// `expToLevel`: the EXP between the current level and `target`.
+/// The EXP between the current level and `target`.
 pub(crate) fn exp_to_level(level: f64, exp: f64, target: f64) -> f64 {
     let mut need = -exp;
     let mut each = level;

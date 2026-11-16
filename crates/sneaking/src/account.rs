@@ -12,7 +12,7 @@
 //! without the system leaves the tree intact. The breakdown nodes name the
 //! source field of each term, including the terms a save does not carry.
 
-/// The all-talent multiplier `maxTalentBonus(432)` and the breakdown terms.
+/// The all-talent multiplier (talent 432) and the breakdown terms.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Account {
     /// The all-talent multiplier that scales every gemstone bonus.
@@ -65,7 +65,7 @@ pub struct JadeAccount {
     pub star: f64,
     pub task_base: f64,
     pub task_level: f64,
-    /// `computeRiftSkillBonus(16, 1)`: 1 when the Rift skill rank clears one.
+    /// Rift skill 16 at threshold 1: 1 when the Rift skill rank clears one.
     pub rift: f64,
     pub compass: f64,
     pub companion_163: f64,
@@ -90,7 +90,7 @@ pub struct ExpAccount {
     pub gemstone_4: f64,
     pub vial: f64,
     pub meal: f64,
-    /// `computeRiftSkillBonus(16, 0)`, worth 25% each.
+    /// Rift skill 16 at threshold 0, worth 25% each.
     pub rift: f64,
     pub pristine: f64,
     pub card_level: f64,
@@ -112,11 +112,11 @@ pub struct ExpAccount {
 pub struct DoorAccount {
     /// `Hinge Buster` bubble (`Y8`), in percent.
     pub y8: f64,
-    /// `gemstoneBonus(2)`.
+    /// The door-damage gemstone (`NjGem2`) bonus.
     pub gemstone_2: f64,
     /// `NK 27`, True Battering, in percent.
     pub true_battering: f64,
-    /// `computeVialByKey('6Untie')`.
+    /// The `6Untie` vial bonus.
     pub untie_vial: f64,
 }
 

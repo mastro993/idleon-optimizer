@@ -1,14 +1,15 @@
 # Repo notes
 
-## Source of truth
+## Game data
 
-Game formulas, save decoding and optimizer behaviour are ported from the upstream
-[`Corgan/idleon-research-optimizer`](https://github.com/Corgan/idleon-research-optimizer) JS. When
-changing maths or save handling, read the upstream implementation first (clone it and point
-`script/extract-research-data.mjs` or `script/extract-monument-data.mjs` at the checkout); do not
-infer rules from the test fixture. Where a section has an oracle script (`script/killroy-oracle.mjs`,
-`script/monument-oracle.mjs`, `script/sailing-oracle.mjs`, …), regenerate its fixture from the same
-checkout so the port is compared against the upstream calculator's own output.
+Game formulas, save decoding and optimizer behaviour follow the game's own rules; each crate keeps
+the values it needs in `crates/*/data/*.json`. Take rules from the game, never from the test
+fixture.
+
+Before adding or changing a formula or data table, read
+[`docs/game-data-sources.md`](docs/game-data-sources.md): where each rule lives (the game client's
+`N.js` is the ground truth; the Idleon wiki and open tools help find and cross-check it), how to
+track game patches, and what each source's license lets us copy.
 
 ## Crate layout
 
@@ -17,7 +18,7 @@ One crate per calculator under `crates/`, layered (see `docs/plan.md` §7):
 `import` → `app`. A lower crate never depends on a higher one. When a domain test needs a fully
 imported save, put it in that crate's `tests/` and add `idleon-import` as a dev-dependency; unit
 tests under `src/` build a raw `idleon_save::Save` instead. Each crate owns its `data/*.json`
-tables and oracle fixtures.
+tables.
 
 ## Test data
 
@@ -45,7 +46,7 @@ node script/mcp-drive.mjs        # own window + private bridge endpoint
 
 `.github/workflows/ci.yml` runs the `fmt`, `clippy` and `cargo test` gates when a push to `main` or
 a pull request changes Rust code or a file a test reads (`docs/roadmap.json`, `docs/sections/**`,
-`assets/upstream/manifest.json`, the `vendor/gpui-mcp` pin). Every pull request reports the three
+`assets/game/manifest.json`, the `vendor/gpui-mcp` pin). Every pull request reports the three
 required checks: when nothing Rust-relevant changed (docs, assets, scripts) their steps are skipped
 and the checks pass in seconds, so such a PR can still merge. The long simulations
 (`#[ignore = "long simulation: …"]`) run on `main` only. The MCP harnesses still run locally only.

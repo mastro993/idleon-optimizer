@@ -1,30 +1,25 @@
-//! The `damage` row, ported from `js/stats/defs/damage.js` by
-//! `idleon-stats-engine`.
+//! The `damage` row, resolved by `idleon-stats-engine`.
 //!
 //! The descriptor's value is its maximum damage, `DDL0 × DDL1 × DDL2`, so the
-//! row's tree is that product over the three layers. Upstream marks the row
+//! row's tree is that product over the three layers. The row is marked
 //! partial when the import lacks the companion roster or the server's vote row
 //! ([`Metadata`]); a term the engine cannot justify is named too, so the row
-//! never shows a lower bound as complete. A dungeon map has no value, as
-//! upstream hides it.
+//! never shows a lower bound as complete. A dungeon map has no value.
 
 use super::{Inputs, Resolution};
 use idleon_common::formula::{FormulaNode, ValueFormat};
 use idleon_save::{Roster, Save};
 use idleon_stats_engine::{damage_layers, is_dungeon_map};
 
-/// Why upstream hides the damage on a dungeon map.
+/// Why the damage is hidden on a dungeon map.
 pub const DUNGEON: &str =
     "Unavailable: current-run Dungeon DMG and Mastery are not stored in save JSON.";
 
-const SOURCE: &str = "js/stats/defs/damage.js";
-
-/// The saved metadata the damage descriptor reads, ported from `js/save/loader.js`.
+/// The saved metadata the damage descriptor reads.
 ///
-/// The loader sets `companionDataAvailable` from the `it.json` wrapper's
-/// `companion.l` list and `activeVoteDataAvailable` from
-/// `serverVars.voteCategories[0]`; both default to unavailable (`js/state.js`),
-/// so a plain `save.json` reads as missing both.
+/// The companion roster comes from the `it.json` wrapper's `companion.l` list
+/// and the active vote from `serverVars.voteCategories[0]`; both default to
+/// unavailable, so a plain `save.json` reads as missing both.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
@@ -108,7 +103,7 @@ pub(super) fn resolve(inputs: &Inputs<'_>, id: &str) -> Option<Resolution> {
     let Some(layers) = damage_layers(inputs.save, inputs.simulation, inputs.character, inputs.map)
     else {
         return Some(Resolution::Unavailable {
-            reason: format!("The imported save does not carry the characters {SOURCE} needs."),
+            reason: "The imported save does not carry the characters the damage row needs.".into(),
         });
     };
     let mut reasons = vec![Metadata::read(inputs.save).reason()];
@@ -132,7 +127,7 @@ pub(super) fn resolve(inputs: &Inputs<'_>, id: &str) -> Option<Resolution> {
         partial: (!reasons.is_empty()).then(|| reasons.join(" ")),
         tree: FormulaNode::leaf("Max Damage", max, ValueFormat::Raw)
             .with_input("Base × Percentage × Multiplicative")
-            .with_source(format!("{SOURCE} · DamageDealed(\"Max\")"))
+            .with_source("DamageDealed(\"Max\")")
             .with_children([
                 FormulaNode::leaf("Base Damage (with softcap)", layers.base, ValueFormat::Raw)
                     .with_note(format!(

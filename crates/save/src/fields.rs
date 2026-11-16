@@ -1,8 +1,8 @@
 //! Reading save fields the account decoder needs.
 //!
 //! The game writes most account rows as JSON strings and spreads some tables
-//! across `<name>_<char>` keys; these helpers mirror the upstream
-//! `parseSaveKey`/array access so every system reads the same shape.
+//! across `<name>_<char>` keys; these helpers decode both so every system
+//! reads the same shape.
 
 use crate::json;
 use serde_json::{Map, Value};
@@ -132,7 +132,7 @@ pub fn object(save: &Map<String, Value>, key: &str) -> Option<Map<String, Value>
     }
 }
 
-/// `Number(value) || 0`, the upstream coercion.
+/// The value at `index`, with a missing or non-numeric cell read as zero.
 pub fn number_at(values: &[Option<f64>], index: usize) -> f64 {
     values.get(index).copied().flatten().unwrap_or(0.0)
 }

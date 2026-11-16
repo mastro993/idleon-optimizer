@@ -1,15 +1,15 @@
-//! The Damage Breakdown section: the two upstream context selectors, the four
-//! summary cards, the damage layers and the mastery breakdown.
+//! The Damage Breakdown section: the two context selectors, the four summary
+//! cards, the damage layers and the mastery breakdown.
 //!
-//! Ported from `damage-calc.html`: the character and map selects, the
-//! "Character Sheet Range" card, the minimum and maximum cards with their exact
-//! values, the mastery card with its bar, the `Damage Layers` block whose three
-//! cards carry a value, the descriptor's note and its pre-softcap value, and the
-//! `Mastery Breakdown` tree. The three layers come from the upstream shared stat
-//! pipeline, which this build does not decode, so the layer cards show a dash
-//! and the page's reason instead of a number it cannot justify. The context, the
-//! selector rows, the layers, the mastery terms and the upstream formatting live
-//! in [`idleon_damage`] and are ready for that provider.
+//! The page holds the character and map selects, the "Character Sheet Range"
+//! card, the minimum and maximum cards with their exact values, the mastery
+//! card with its bar, the `Damage Layers` block whose three cards carry a
+//! value, the descriptor's note and its pre-softcap value, and the `Mastery
+//! Breakdown` tree. The three layers come from the shared stat pipeline, which
+//! this build does not decode, so the layer cards show a dash and the page's
+//! reason instead of a number it cannot justify. The context, the selector
+//! rows, the layers, the mastery terms and their formatting live in
+//! [`idleon_damage`] and are ready for that provider.
 
 mod actions;
 
@@ -69,7 +69,7 @@ impl State {
     }
 
     /// Take a freshly imported save, opening on character one and its current
-    /// map exactly like upstream `onLoad`.
+    /// map.
     pub(crate) fn load(&mut self, save: &Save, simulation: &idleon_research::model::Simulation) {
         let snapshot = Snapshot::from_save(save);
         self.context = DamageContext::from_snapshot(&snapshot);
@@ -80,8 +80,7 @@ impl State {
         self.refresh();
     }
 
-    /// The map selector's rows for the current character, as upstream
-    /// `populateMapSel` builds them: every named map, not the accessible subset.
+    /// The map selector's rows for the current character: every named map, not the accessible subset.
     pub(crate) fn map_rows(&self) -> Vec<MapRow> {
         self.snapshot
             .as_ref()
@@ -119,7 +118,7 @@ impl State {
             .map(|save| damage::evaluate(save, &self.simulation, self.context));
     }
 
-    /// Pick a character; the map follows its current map, as upstream `switchChar`.
+    /// Pick a character; the map follows its current map.
     pub(crate) fn select_character(&mut self, character: usize) {
         let Some(snapshot) = self.snapshot.as_ref() else {
             return;
@@ -369,7 +368,7 @@ fn layers_card(
 }
 
 /// The `Formula Breakdown` card: the selected layer's expanded tree, with each
-/// term's input, multiplier and upstream source; the shared tree's search
+/// term's input, multiplier and source; the shared tree's search
 /// highlights the matching nodes.
 fn formula_breakdown(
     summary: &Summary,
@@ -438,7 +437,7 @@ fn mastery_breakdown(summary: &Summary, tree: Entity<FormulaTree>, muted: Hsla) 
     }
 }
 
-/// The four upstream cards. While the layers cannot be resolved they show a
+/// The four summary cards. While the layers cannot be resolved they show a
 /// dash and the reason, never a made-up zero.
 fn summary_card(
     summary: &Option<Summary>,
@@ -531,7 +530,7 @@ fn summary_card(
                 ),
         );
     }
-    // The import's own gap, which upstream reports beside the value: the
+    // The import's own gap, reported beside the value: the
     // `it.json` companion roster and the server's active vote.
     if summary.partial() {
         let reason = summary.partial_reason();
@@ -550,7 +549,7 @@ fn summary_card(
     body.into_any_element()
 }
 
-/// The mastery card: the ratio, its note and the upstream bar.
+/// The mastery card: the ratio, its note and the bar.
 fn mastery_card(value: String, note: &'static str, fill: f32, muted: gpui::Hsla) -> AnyElement {
     let ratio = value.clone();
     div()
@@ -672,7 +671,7 @@ mod tests {
     }
 
     #[test]
-    fn a_dungeon_map_reports_the_upstream_reason() {
+    fn a_dungeon_map_reports_the_dungeon_reason() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
         state.select_map(39);

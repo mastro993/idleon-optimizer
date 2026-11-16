@@ -1,12 +1,10 @@
 //! Decision Tree sandbox: the research-event tree, its node editor and the
 //! branch comparison.
 //!
-//! Ported from the upstream Decision Tree tab (`js/dt/decision-tree.js`,
-//! `js/dt/dt-sim.js`, `js/dt/dt-grid.js`, `js/dt/dt-obs-editor.js`). The maths
-//! lives in [`idleon_research::tree`]; this pane draws the tree, edits the
-//! selected node's layout and runs the long steps — advancing a chain,
-//! branching, and the auto magnifier and shape optimizers — through the shared
-//! task runner.
+//! The maths lives in [`idleon_research::tree`]; this pane draws the tree,
+//! edits the selected node's layout and runs the long steps — advancing a
+//! chain, branching, and the auto magnifier and shape optimizers — through the
+//! shared task runner.
 
 use crate::sections::research::colors;
 use crate::state::AppState;
@@ -110,9 +108,9 @@ pub(crate) enum Job {
     Save,
     /// Fork the node and step the copy.
     Branch,
-    /// The upstream Auto Mags action.
+    /// The Auto Mags action.
     Mags,
-    /// The upstream Auto Shapes action.
+    /// The Auto Shapes action.
     Shapes,
 }
 

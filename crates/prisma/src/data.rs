@@ -1,17 +1,15 @@
 //! The bubble table the Prisma calculator reads.
 //!
-//! Extracted from the upstream JS by `script/extract-prisma-data.mjs`:
-//! `js/stats/data/w2/alchemy.js` (`bubbleDefinitions`, `bubbleParams`) reads
-//! `AlchemyDescription`, the display labels come from `js/stats/entity-names.js`,
-//! the bubble-code letters from `js/stats/data/common/encoding.js` (`N2L`) and
-//! the native consumer audit from `js/stats/data/prisma-source-coverage.js`.
+//! The bubbles come from the game's `AlchemyDescription`, the bubble-code
+//! letters from its `N2L` encoding, and the native consumer table lists the
+//! game script references that read each bubble effect.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
 
 const PRISMA_JSON: &str = include_str!("../data/prisma.json");
 
-/// The extracted table, parsed once.
+/// The table, parsed once.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct Data {
@@ -21,7 +19,7 @@ pub(super) struct Data {
     pub(super) coverage: SourceCoverage,
 }
 
-/// The direct native references upstream's audit traced for each effect.
+/// The direct native references traced for each effect.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct SourceCoverage {
@@ -38,7 +36,7 @@ pub enum Mode {
 }
 
 impl Mode {
-    /// The mode as the upstream UI prints it.
+    /// The mode as the coverage table prints it.
     pub fn label(&self) -> String {
         match self {
             Mode::Text(text) => text.clone(),
@@ -71,9 +69,9 @@ pub struct Consumer {
 pub struct Bubble {
     pub cauldron: usize,
     pub index: usize,
-    /// The upstream row key, e.g. `ROID_RAGIN`.
+    /// The game's row key, e.g. `ROID_RAGIN`.
     pub name: String,
-    /// The display label upstream's `entityName('Bubble', …)` produces.
+    /// The display label.
     pub label: String,
     /// The effect key downstream formulas read, e.g. `TotalSTR`.
     pub effect: String,
@@ -92,10 +90,10 @@ pub(super) fn data() -> &'static Data {
     })
 }
 
-/// The four cauldrons, in the upstream tab order.
+/// The four cauldrons, in tab order.
 pub(super) const CAULDRONS: [&str; 4] = ["Power", "Quicc", "High IQ", "Kazam"];
 
-/// One cauldron's bubbles, in the upstream index order.
+/// One cauldron's bubbles, in the game's index order.
 pub fn cauldron(index: usize) -> impl Iterator<Item = &'static Bubble> {
     data()
         .bubbles
@@ -113,7 +111,7 @@ pub(super) fn letter(cauldron: usize) -> Option<char> {
     data().letters.chars().nth(cauldron)
 }
 
-/// The native references upstream's audit traced for one effect.
+/// The native references traced for one effect.
 pub(super) fn consumers(effect: &str) -> impl Iterator<Item = &'static Consumer> + '_ {
     data()
         .coverage
@@ -127,7 +125,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_table_carries_the_upstream_bubbles_and_labels() {
+    fn the_table_carries_the_bubbles_and_labels() {
         assert_eq!(data().bubbles.len(), 133);
         assert_eq!(cauldron(0).count(), 34);
         assert_eq!(cauldron(1).count(), 33);
@@ -149,7 +147,7 @@ mod tests {
     }
 
     #[test]
-    fn the_letters_are_the_upstream_encoding_and_cauldrons_are_named() {
+    fn the_letters_are_the_game_encoding_and_cauldrons_are_named() {
         assert_eq!(letter(0), Some('_'));
         assert_eq!(letter(1), Some('a'));
         assert_eq!(letter(3), Some('c'));

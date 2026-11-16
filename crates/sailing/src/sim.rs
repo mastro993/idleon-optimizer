@@ -1,19 +1,17 @@
 //! The fleet pile simulation: fresh boat departures, the near-full pile scan
 //! and the payouts of the chests left when the run ends.
 //!
-//! Ported from upstream `js/stats/systems/w5/sailing-sim.js`. Every trial starts
-//! with an empty pile and all boats freshly departed, so the first chest from a
-//! boat arrives after one full trip. A chest that finds the pile at its
-//! near-full target scans the banked chests from the first one onward: the first
-//! same-island, same-tier, sufficient-value match rolls its Unending Loot Search
-//! promotion and stops the scan; otherwise the first same-island chest with both
-//! a strictly higher tier and a strictly greater value replaces it. Every payout
-//! of an opened chest then chooses gold, primary or rare independently.
+//! Every trial starts with an empty pile and all boats freshly departed, so the
+//! first chest from a boat arrives after one full trip. A chest that finds the
+//! pile at its near-full target scans the banked chests from the first one
+//! onward: the first same-island, same-tier, sufficient-value match rolls its
+//! Unending Loot Search promotion and stops the scan; otherwise the first
+//! same-island chest with both a strictly higher tier and a strictly greater
+//! value replaces it. Every payout of an opened chest then chooses gold, primary
+//! or rare independently.
 //!
-//! One difference from upstream is deliberate: the random source is a seeded
-//! xorshift instead of `Math.random`, so the same inputs and seed reproduce the
-//! same result. `script/sailing-simulation-oracle.mjs` drives the upstream
-//! simulator with the same generator, which keeps the fixture comparison exact.
+//! The random source is a seeded xorshift, so the same inputs and seed
+//! reproduce the same result.
 
 use super::{
     AssignmentMode, FleetPlan, Goal, RouteContext, TreasureShares, chest_artifact_multiplier,
@@ -94,9 +92,8 @@ pub struct SimConfig {
 }
 
 impl SimConfig {
-    /// The upstream `buildSailingSimulationConfig`: the plan's routes, the
-    /// account's capacity, payout rolls and promotion chances, and the first
-    /// route's treasure-currency split.
+    /// The plan's routes, the account's capacity, payout rolls and promotion
+    /// chances, and the first route's treasure-currency split.
     pub fn from_plan(plan: &FleetPlan, context: &RouteContext, options: SimOptions) -> Self {
         let minimum_tier = context.minimum_tier.min(5);
         let routes = plan
@@ -179,8 +176,7 @@ impl SimSummary {
     }
 }
 
-/// The upstream `_quantile`: linear interpolation between the two nearest
-/// sorted samples.
+/// Linear interpolation between the two nearest sorted samples.
 fn quantile(values: &[f64], probability: f64) -> f64 {
     if values.is_empty() {
         return 0.0;
@@ -305,7 +301,7 @@ struct Chest {
     tier: usize,
 }
 
-/// The upstream near-full scan's outcome for one incoming chest.
+/// The near-full scan's outcome for one incoming chest.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum NearFull {
     Upgrade,
@@ -516,8 +512,7 @@ pub fn simulate(
     })
 }
 
-/// Every chest arrival one trial sees, sorted by time and then boat as the
-/// upstream `_eventsForTrial` sorts it.
+/// Every chest arrival one trial sees, sorted by time and then boat.
 fn events_for_trial(config: &SimConfig, hours: f64) -> Vec<Event> {
     let mut events = Vec::new();
     for (route_index, route) in config.routes.iter().enumerate() {
@@ -570,8 +565,8 @@ fn opened_value(chest: &Chest, payouts_by_tier: &[u32; 6]) -> f64 {
     chest.value * f64::from(payouts_by_tier[chest.tier])
 }
 
-/// The upstream `_processNearFull`: scan from the first banked chest and stop at
-/// the first eligible same-tier match or the first strictly better replacement.
+/// Scan from the first banked chest and stop at the first eligible same-tier
+/// match or the first strictly better replacement.
 fn process_near_full(
     pile: &mut [Chest],
     incoming: &mut Chest,

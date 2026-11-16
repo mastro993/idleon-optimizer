@@ -9,7 +9,7 @@ use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div, p
 use idleon_farming::{self as farming, Assignment, CropRow, PlotMetrics};
 use idleon_ui::format;
 
-/// The 9×4 family colours from `farming-calc.html`.
+/// The 9×4 family colours.
 pub(super) fn family_color(family: i64) -> Hsla {
     match family {
         0 => rgb(0x72_c6_5d).into(),
@@ -253,7 +253,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn families_use_the_upstream_colours_and_names() {
+    fn families_use_their_colours_and_names() {
         assert_eq!(family_name(0), "Basic");
         assert_eq!(family_name(6), "Medal");
         assert_eq!(family_name(-1), "Empty");

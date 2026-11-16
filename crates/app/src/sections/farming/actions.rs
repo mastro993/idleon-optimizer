@@ -116,7 +116,7 @@ impl AppState {
             .state(&self.farming_compare_inputs())
     }
 
-    /// Plan every upstream goal from the current baseline off the UI thread.
+    /// Plan every preset goal from the current baseline off the UI thread.
     pub(crate) fn compare_farming(&mut self, cx: &mut Context<Self>) {
         if !self.save_loaded {
             self.set_status("Import a save to compare the farming preset goals.", cx);

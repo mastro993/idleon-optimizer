@@ -1,8 +1,7 @@
-//! The save-derived systems the stat pipeline reads, ported from the upstream
-//! `js/stats/systems/` modules.
+//! The save-derived systems the stat pipeline reads.
 //!
 //! Every provider resolves against the same [`account::Decoder`] the other
-//! sections use; a system whose formula is not ported records itself in
+//! sections use; a system whose formula is not modelled records itself in
 //! [`Ctx::missing`] instead of returning a number nobody can justify.
 
 use crate::data::{self, Data};
@@ -18,7 +17,7 @@ pub(crate) struct Ctx<'a, 'b> {
     pub data: &'static Data,
     pub character: usize,
     pub missing: Vec<String>,
-    /// `totalTomePoints`, computed on first use.
+    /// The total Tome points, computed on first use.
     pub(crate) tome: Option<f64>,
 }
 
@@ -34,8 +33,8 @@ impl<'a, 'b> Ctx<'a, 'b> {
     }
 
     /// Records a term this build does not model, once.
-    pub(crate) fn miss(&mut self, term: &str, source: &str) {
-        let note = format!("{term}: not modelled ({source})");
+    pub(crate) fn miss(&mut self, term: &str) {
+        let note = format!("{term}: not modelled");
         if !self.missing.contains(&note) {
             self.missing.push(note);
         }
@@ -53,7 +52,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .map_or(0.0, |row| row.skill(index))
     }
 
-    /// `Lv0_<char>[index]`: one raw row entry, for the upstream indices that
+    /// `Lv0_<char>[index]`: one raw row entry, for the indices that
     /// are read directly rather than through the skill numbering.
     pub(crate) fn raw_level(&self, index: usize) -> f64 {
         self.decoder
@@ -78,7 +77,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .max(0.0) as usize
     }
 
-    /// `optionsListData[index]`, the saved account progress.
+    /// `OptLacc[index]`, the saved account progress.
     pub(crate) fn option(&self, index: usize) -> f64 {
         self.decoder.option(index)
     }
@@ -91,12 +90,12 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .max(self.decoder.save_character_count())
     }
 
-    /// `getTalentNumber(1, index)`: the active character's talent value.
+    /// The active character's talent value at `index`.
     pub(crate) fn talent(&mut self, index: usize) -> f64 {
         self.talent_tab(index, 1)
     }
 
-    /// `getTalentNumber(1, index)` on one talent tab.
+    /// The active character's talent value at `index` on one talent tab.
     pub(crate) fn talent_tab(&mut self, index: usize, tab: usize) -> f64 {
         let raw = self.decoder.talent_level(self.character, index);
         if raw <= 0.0 {
@@ -127,7 +126,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         idleon_account::talent::max_bonus(self.decoder, index, self.character)
     }
 
-    /// `computeStampBonusOfTypeX(type)`, with the exalted doubler chain.
+    /// The stamp bonus of a type, with the exalted doubler chain.
     pub(crate) fn stamp(&mut self, kind: &str) -> f64 {
         let doubler = self.stamp_doubler();
         let lab_double = if self.decoder.mainframe(7) == Some(2.0) {
@@ -169,7 +168,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         total
     }
 
-    /// `isExalted`: the saved Compass row 4 lists the stamp's letter and index.
+    /// Whether a stamp is exalted: the saved Compass row 4 lists its letter and index.
     fn stamp_exalted(&self, cat: usize, idx: usize) -> bool {
         let letter = ["_", "a", "b", "c"].get(cat).copied().unwrap_or("_");
         let key = format!("{letter}{idx}");
@@ -182,7 +181,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
                 .is_some_and(|cells| cells.iter().any(|cell| cell.as_str() == Some(&key)))
     }
 
-    /// `computeStampDoublerSources().total`.
+    /// The exalted stamp doubler's total over every source.
     fn stamp_doubler(&mut self) -> f64 {
         let atom12 = fields::at(self.save(), "Atoms", &[12]).unwrap_or(0.0);
         let pristine20 = self.decoder.pristine(20);
@@ -217,13 +216,13 @@ impl<'a, 'b> Ctx<'a, 'b> {
             + jelly50
     }
 
-    /// `bubbleValByKey(key)`: the value a descriptor reads a bubble by, before
+    /// The value a descriptor reads a bubble by its key, before
     /// the stat pipeline's slab and Tome post-passes.
     pub(crate) fn bubble(&mut self, key: &str) -> f64 {
         self.bubble_inner(key, false, false)
     }
 
-    /// `computeAlchBubble(bonusType)`: the value `computeTotalStat` reads.
+    /// The bubble value the total stat reads.
     ///
     /// Same bubble, then the post-passes the game applies only inside the stat
     /// pipeline: the slab multiplier for the W2/W4 slider bubbles, the Tome
@@ -293,7 +292,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         self.data.bubble(key).map_or(0, |bubble| bubble.cauldron)
     }
 
-    /// `_familyLevelTotal(family)`: the summed class levels of one branch.
+    /// The summed class levels of one class family.
     fn family_level_total(&self, family: usize) -> f64 {
         let mut total = 0.0;
         for character in 0..self.characters() {
@@ -323,9 +322,9 @@ impl<'a, 'b> Ctx<'a, 'b> {
 
     fn bubble_inner(&mut self, key: &str, skip_class: bool, skip_big: bool) -> f64 {
         let Some(bubble) = self.data.bubble(key).cloned() else {
-            // Upstream's `bubbleValByKey` returns 0 for a key no cauldron row
-            // carries (the Max HP/MP descriptors read `BaseHP`/`BaseMP`, which
-            // the game does not define), so this is a value, not a gap.
+            // A key no cauldron row carries reads 0 (the Max HP/MP descriptors
+            // read `BaseHP`/`BaseMP`, which the game does not define), so this
+            // is a value, not a gap.
             return 0.0;
         };
         let level = fields::field(self.save(), "CauldronInfo")
@@ -383,7 +382,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         value
     }
 
-    /// `computeVialByKey(key)`.
+    /// The alchemy vial bonus by its effect key.
     pub(crate) fn vial(&mut self, key: &str) -> f64 {
         let lab = if self.decoder.mainframe(10) == Some(2.0) {
             2.0
@@ -436,7 +435,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             return 0.0;
         }
         let Some(tiers) = self.data.sigil(index) else {
-            self.miss(&format!("Sigil {index}"), "js/stats/data/common/sigils.js");
+            self.miss(&format!("Sigil {index}"));
             return 0.0;
         };
         let base = if level < 0.5 {
@@ -460,7 +459,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         fields::at(self.save(), "Rift", &[0]).unwrap_or(0.0)
     }
 
-    /// `getEnabledStarSigns`.
+    /// The number of infinite star signs enabled.
     pub(crate) fn enabled_star_signs(&mut self) -> f64 {
         if self.rift_level() >= 10.0 {
             5.0 + self.decoder.shiny_bonus(3)
@@ -492,7 +491,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .is_some_and(|unlocked| unlocked.contains_key(&name))
     }
 
-    /// `starSignsUnlocked`: the save writes `StarSg` as a string or as one
+    /// The unlocked star signs: the save writes `StarSg` as a string or as one
     /// character per key, and the loader joins the characters before parsing.
     fn star_signs_unlocked(&self) -> Option<serde_json::Map<String, serde_json::Value>> {
         let raw = self.save().get("StarSg")?.clone();
@@ -516,7 +515,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
             .cloned()
     }
 
-    /// `computeSeraphMulti`.
+    /// The Seraph Cosmos star-sign multiplier.
     pub(crate) fn seraph_multi(&mut self) -> f64 {
         let unlocked = self
             .star_signs_unlocked()
@@ -542,7 +541,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         (0..7).any(|slot| fields::at(self.save(), "Lab", &[1 + self.character, slot]) == Some(15.0))
     }
 
-    /// `computePositiveStarSignMultiplier`.
+    /// The multiplier on positive star-sign bonuses.
     pub(crate) fn positive_star_sign_multi(&mut self) -> f64 {
         let enabled = self.enabled_star_signs();
         let equipped_pass = if self.has_star_chip() && enabled < 1.0 {
@@ -553,13 +552,10 @@ impl<'a, 'b> Ctx<'a, 'b> {
         equipped_pass * self.seraph_multi()
     }
 
-    /// `computeStarSignBonus(key)`.
+    /// The star-sign bonus by its key.
     pub(crate) fn star_sign_bonus(&mut self, key: &str) -> f64 {
         let Some(map) = self.data.star_sign_bonuses.get(key).cloned() else {
-            self.miss(
-                &format!("Star Signs: {key}"),
-                "js/stats/systems/common/starSign.js",
-            );
+            self.miss(&format!("Star Signs: {key}"));
             return 0.0;
         };
         let enabled = self.enabled_star_signs();
@@ -583,7 +579,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         total
     }
 
-    /// `computeStarSignStatBonuses(stat)`: the flat and percent totals parsed
+    /// A stat's star-sign bonuses: the flat and percent totals parsed
     /// from each active sign's description strings.
     pub(crate) fn star_sign_stat(&mut self, stat: &str) -> (f64, f64) {
         let enabled = self.enabled_star_signs();
@@ -612,7 +608,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         (flat * multi, percent * multi)
     }
 
-    /// `computeCardBonusByType(typeId)`.
+    /// The card bonus of a type.
     pub(crate) fn card_bonus(&mut self, type_id: usize) -> f64 {
         let Some(desc) = self.data.card_desc(type_id).map(str::to_owned) else {
             return 0.0;
@@ -651,7 +647,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         total
     }
 
-    /// `computeBoxReward(charIdx, key)`.
+    /// The character's post-office box reward by its key.
     pub(crate) fn box_reward(&mut self, key: &str) -> f64 {
         let Some(points) = fields::char_field(self.save(), "POu", self.character) else {
             return 0.0;
@@ -696,7 +692,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         0.0
     }
 
-    /// `computeFlurboShop(index)` from `js/stats/systems/w2/dungeon.js`.
+    /// The Flurbo shop bonus at `index`.
     pub(crate) fn flurbo_shop(&mut self, index: usize) -> f64 {
         let level = fields::at(self.save(), "DungUpg", &[5, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -708,7 +704,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         curve::eval(&param.formula, param.x1, param.x2, level)
     }
 
-    /// `guildBonusParams(index)` evaluated at the save's guild points.
+    /// The guild bonus at `index`, evaluated at the save's guild points.
     pub(crate) fn guild(&mut self, index: usize) -> f64 {
         let Some(points) = fields::at(self.save(), "Guild", &[0, index]) else {
             return 0.0;
@@ -722,7 +718,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         curve::eval(&param.formula, param.x1, param.x2, points)
     }
 
-    /// `achieveStatus(index)`: the tiered value of a completed achievement.
+    /// The tiered value of a completed achievement.
     pub(crate) fn achievement(&self, index: usize) -> f64 {
         let completed = fields::field(self.save(), "AchieveReg")
             .and_then(|value| idleon_save::json::index(&value, &[index]).cloned())
@@ -733,7 +729,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         self.data.achievement(index).max(1.0)
     }
 
-    /// `computeFamBonusQTYs`: the best class-family bonus per key.
+    /// The best class-family bonus per key.
     ///
     /// `result` is keyed by `2 * class + type`; the game keeps the maximum
     /// across every character's class chain and applies talent 144 when the
@@ -797,7 +793,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         result
     }
 
-    /// `computeAllStatPCT`: `0.1 * floor(10 * Σ terms)`.
+    /// The all-stat percentage: `0.1 * floor(10 * Σ terms)`.
     pub(crate) fn all_stat_pct(&mut self) -> f64 {
         let mut sum = 0.0;
         // 1. Vial 49 (PEARL_SELTZER), key AllStatPCT.
@@ -869,8 +865,8 @@ impl<'a, 'b> Ctx<'a, 'b> {
         sum += 10.0 * ((98.0 + self.option(232)) / 100.0).floor();
         // 14. Farming rank 19.
         sum += self.farm_rank(19);
-        // 15. Voting 2. A save alone has no server vote, so `votingBonusz`
-        // reads zero exactly as upstream does without `serverVars`.
+        // 15. Voting 2. A save alone has no server vote, so the voting bonus
+        // reads zero without `serverVars`.
         sum += self.decoder.voting(2);
         // 16. The Marbiglass set.
         sum += idleon_account::sets::set_bonus(self.decoder, "MARBIGLASS_SET", self.character);
@@ -889,15 +885,15 @@ impl<'a, 'b> Ctx<'a, 'b> {
         talent * exotic * per_level * level
     }
 
-    /// `ninjaInfo(36)[rank]`: the Land Rank bonus per level.
+    /// The Land Rank bonus per level.
     fn data_farm_rank(&self, rank: usize) -> f64 {
         self.data.farm_rank_per_level(rank)
     }
 
-    /// `gfoodBonusMULTI`: the golden-food multiplier.
+    /// The golden-food multiplier.
     ///
     /// The chain reads the Emporium's food slots, the voting multiplier
-    /// descriptor and the `calcTalentMAP209` map scan; this build models the
+    /// descriptor and talent 209's map scan; this build models the
     /// save-derived terms and reports the rest.
     pub(crate) fn gold_food_multi(&mut self) -> f64 {
         let companion174 = self.decoder.companion(174);
@@ -953,20 +949,20 @@ impl<'a, 'b> Ctx<'a, 'b> {
         set * (family + rest / 100.0)
     }
 
-    /// `achieveStatusTiered`, the same rule as [`Self::achievement`].
+    /// A tiered achievement value, the same rule as [`Self::achievement`].
     fn achievement_tiered(&self, index: usize) -> f64 {
         self.achievement(index)
     }
 
-    /// `calcTalentMAP209`: the maps a Death Bringer has pushed past 1B kills.
+    /// Talent 209's map count: the maps a Death Bringer has pushed past 1B kills.
     fn map209(&mut self) -> f64 {
         let mut holder = None;
         for character in 0..self.characters() {
             let class = fields::char_field(self.save(), "CharacterClass", character)
                 .and_then(|value| idleon_save::json::number(&value))
                 .unwrap_or(0.0) as usize;
-            // Upstream tests `CLASS_TREES[class][3] === 10`: the fourth entry
-            // of the chain, which only the Death Bringer branches carry.
+            // The holder's class tree has 10 as its fourth entry, which only
+            // the Death Bringer branches carry.
             if idleon_account::class_tree(class).is_some_and(|tree| tree.get(3) == Some(&10u32)) {
                 holder = Some(character);
             }
@@ -1001,9 +997,9 @@ impl<'a, 'b> Ctx<'a, 'b> {
         count
     }
 
-    /// `goldFoodBonuses(effect)`: the equipped golden food's own value.
+    /// The equipped golden food's own value for an effect.
     ///
-    /// Upstream also pays the Emporium's own food slots; the save's `Ninja`
+    /// The Emporium's own food slots pay too; the save's `Ninja`
     /// row 104 carries them and is read here when present.
     pub(crate) fn gold_food_bonus(&mut self, effect: &str) -> f64 {
         let multi = self.gold_food_multi();
@@ -1059,12 +1055,12 @@ impl<'a, 'b> Ctx<'a, 'b> {
         total
     }
 
-    /// `computeMealBonus(effect)`.
+    /// The meal bonus of an effect.
     pub(crate) fn meal_bonus(&mut self, effect: &str) -> f64 {
         self.decoder.meal(effect)
     }
 
-    /// `getBribeBonus(index)`.
+    /// The bribe bonus at `index`.
     pub(crate) fn bribe(&mut self, index: usize) -> f64 {
         if fields::at(self.save(), "BribeStatus", &[index]) != Some(1.0) {
             return 0.0;
@@ -1072,7 +1068,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         stats::capacity().bribes.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `computeOwlBonus(index)`.
+    /// The Owl bonus at `index`.
     pub(crate) fn owl(&mut self, index: usize) -> f64 {
         let base = self.data.owl(index);
         let progress = self.option(255);
@@ -1097,7 +1093,7 @@ impl<'a, 'b> Ctx<'a, 'b> {
         base * legend * companion * (1.0 + feathers / 100.0) * count
     }
 
-    /// `computeStatueBonusGiven(index, character)`.
+    /// The statue bonus at `index` the active character receives.
     pub(crate) fn statue_bonus(&mut self, index: usize) -> f64 {
         let level = fields::at(self.save(), "StatueLevels", &[self.character, index, 0])
             .or_else(|| {
@@ -1191,7 +1187,7 @@ fn class_chain(class: usize) -> Vec<usize> {
     chain
 }
 
-/// `_classZeroedBubble`: the bubbles a class branch never pays.
+/// The bubbles a class branch never pays.
 fn class_zeroed(key: &str, class: usize) -> bool {
     let zeroed: &[&str] = if class < 7 {
         &["W1", "A1", "A5", "M5"]

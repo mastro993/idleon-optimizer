@@ -1,4 +1,4 @@
-//! The Friend bonus, ported from `js/stats/systems/common/friend.js`.
+//! The Friend bonus.
 //!
 //! `OptionsListAccount[476]` holds one `type,score,name` entry per friend slot,
 //! in slot order. The game assigns (overwrites) each type, so the last entry of
@@ -9,7 +9,6 @@ use super::Decoder;
 
 /// `FRIEND_SCALE`: the per-type multiplier of one friend entry.
 const SCALE: [f64; 7] = [100.0, 30.0, 50.0, 25.0, 30.0, 40.0, 10.0];
-/// `FRIEND_DR` from `js/stats/data/game-constants.js`.
 const SCALE_DEFAULT: f64 = 25.0;
 const BASE: f64 = 0.25;
 const HALF: f64 = 12_000.0;
@@ -32,9 +31,8 @@ impl Decoder<'_> {
             let (Some(kind), Some(count)) = (parts.next(), parts.next()) else {
                 continue;
             };
-            // `parseInt` reads an unreadable entry as NaN, which never equals
-            // the requested type; an unreadable score is skipped rather than
-            // poisoning the whole group.
+            // An unreadable type never equals the requested one, and an
+            // unreadable score is skipped rather than poisoning the whole group.
             let (Ok(kind), Ok(count)) = (kind.trim().parse::<f64>(), count.trim().parse::<f64>())
             else {
                 continue;
@@ -52,7 +50,7 @@ impl Decoder<'_> {
         contribution * (1.0 + self.companion(30) + 0.25 * double)
     }
 
-    /// `computeFriendBonusSlots`: the slots companions and the event shop grant.
+    /// The friend bonus slots: the slots companions and the event shop grant.
     fn friend_slots(&self) -> usize {
         let slots = 2.0
             + self.companion(44)

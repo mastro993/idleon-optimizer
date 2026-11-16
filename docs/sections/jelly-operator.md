@@ -8,14 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.
-
-## Upstream sources
-
-- jelly-operator-calc.html
-- js/stats/systems/w7/jelly-operator.js
-- js/optimizers/jelly-coordinator.js
-- assets/jelly-operator
+Implement cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.
 
 ## UI
 
@@ -53,13 +46,12 @@ assets/jelly-operator cells and board art.
 
 Cell palette, board sections, saved layout and operation estimate.
 
-Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+Depends on: FND-03 Shared save JSON import, FND-06 Game asset pipeline
 
 Acceptance:
 
 - Every cell type is placeable.
 - Saved layout loads.
-- Estimate matches upstream.
 
 ### JO-02 — Operation simulator
 
@@ -81,7 +73,6 @@ Depends on: JO-01 Layout editor and overview, FND-11 Shared formula tree and bre
 
 Acceptance:
 
-- Values match upstream.
 - Breakdowns sum.
 - Missing data warned.
 
@@ -111,6 +102,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness with assets.

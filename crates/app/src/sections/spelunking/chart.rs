@@ -1,7 +1,6 @@
 //! A small line chart for the depth estimates.
 //!
-//! The upstream page draws two SVG charts with per-depth hover tips; here the
-//! same series are painted on a canvas with the axis labels laid out beside it,
+//! The series are painted on a canvas with the axis labels laid out beside it,
 //! and the depth inspector below owns the exact per-depth values and tooltips.
 //! Lines can start and stop at a rock's first and last depth, which the shared
 //! category chart cannot express, so this stays a canvas.
@@ -29,7 +28,7 @@ impl Series {
         }
     }
 
-    /// Dashed, as the upstream page draws its secondary risk series.
+    /// Dashed, for a secondary risk series.
     pub(crate) fn dashed(mut self) -> Self {
         self.dashed = true;
         self

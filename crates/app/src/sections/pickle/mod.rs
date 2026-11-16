@@ -1,8 +1,8 @@
 //! The BoneJoePickle calculator: DPS and a kill-time budget against the
 //! minibosses that stack pickles.
 //!
-//! Ported from `pickle-calc.html`; every pickle multiplies a miniboss's HP by
-//! 1.10, so the table answers how many still die inside the budget.
+//! Every pickle multiplies a miniboss's HP by 1.10, so the table answers how
+//! many still die inside the budget.
 
 mod actions;
 
@@ -247,7 +247,7 @@ fn results(dps: f64, max_ttk: f64, height: Pixels, cx: &mut Context<AppState>) -
         .into_any_element()
 }
 
-/// The upstream kill-time cell: a dash without DPS, the base time when the
+/// The kill-time cell: a dash without DPS, the base time when the
 /// budget cannot reach the miniboss, and the stacked time otherwise.
 fn kill_time(row: pickle::Row, dps: f64) -> String {
     if dps <= 0.0 {

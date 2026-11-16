@@ -206,9 +206,9 @@ pub(crate) struct AppState {
     pub(crate) context_base: SimContext,
     pub(crate) effort: Effort,
     pub(crate) target: Target,
-    /// The three upstream run toggles the next projection reads.
+    /// The three run toggles the next projection reads.
     pub(crate) options: SimOptions,
-    /// Upstream artwork resolved through `assets/upstream/manifest.json`.
+    /// Game artwork resolved through `assets/game/manifest.json`.
     pub(crate) assets: Manifest,
     /// Where the window is: the dashboard or one section.
     pub(crate) route: Route,

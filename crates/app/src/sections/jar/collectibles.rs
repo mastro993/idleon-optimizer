@@ -30,7 +30,7 @@ pub(crate) fn collectibles(state: &AppState, cx: &mut Context<AppState>) -> AnyE
         .into_any_element()
 }
 
-/// The four figures the upstream collectibles tab leads with.
+/// The four figures the collectibles tab leads with.
 fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let found = jar.collectibles_found();
     let slots = jar.collectible_slots();
@@ -85,7 +85,7 @@ fn summary(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     row.into_any_element()
 }
 
-/// `_renderCollectibles`: the tiles grouped by effect category.
+/// The tiles grouped by effect category.
 fn grid(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let groups = jar.collectible_groups();
     let found = jar.collectibles_found();
@@ -198,7 +198,7 @@ fn tile(
         .into_any_element()
 }
 
-/// `enchantPriority`: found collectibles sorted by the next level's marginal
+/// Found collectibles sorted by the next level's marginal
 /// value.
 fn priority(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let rows = jar.enchant_priority();

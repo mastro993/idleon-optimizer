@@ -1,20 +1,15 @@
 //! SA-04, the game-input sandbox and the change ledger it feeds.
 //!
-//! Ported from `createFormulaInputSandbox` in
-//! `js/stats/formula-inputs.js`: the page keeps the saved inputs and a set of
-//! pending edits, resolves every descriptor against the edited save, and
-//! `_renderInputChanges` in `stats-all.html` lists what changed next to the
-//! formulas whose value moved. Upstream finds an editable control in every
-//! formula node whose `source` names a writable level-table row, talent or
-//! equipment cell, and writes the edit back through `applyCombatSetupDetailed`.
-//! This build has no save writer, so the sandbox offers the saved cells its
-//! ported formulas actually read — the vault, gem-shop, talent, guild and stamp
-//! levels the eight carry-capacity rows scale by — and splices each edit into a
-//! clone of the save. The imported save is never touched.
+//! The page keeps the saved inputs and a set of pending edits, resolves every
+//! descriptor against the edited save, and lists what changed next to the
+//! formulas whose value moved. This build has no save writer, so the sandbox
+//! offers the saved cells its modelled formulas actually read — the vault,
+//! gem-shop, talent, guild and stamp levels the eight carry-capacity rows scale
+//! by — and splices each edit into a clone of the save. The imported save is never touched.
 //!
-//! `formulaDifference` in `js/stats/formula-comparison.js` is the other half:
-//! [`Sheet::affected`] reports the descriptors whose value a pending edit moved,
-//! with the delta and percentage upstream prints in the affected-formula list.
+//! [`Sheet::affected`] is the other half: it reports the descriptors whose value
+//! a pending edit moved, with the delta and percentage the affected-formula list
+//! prints.
 
 use std::collections::BTreeMap;
 
@@ -32,7 +27,7 @@ struct Cell {
     path: Vec<usize>,
 }
 
-/// One editable saved game input: a level the ported formulas scale by.
+/// One editable saved game input: a level the modelled formulas scale by.
 #[derive(Clone, Debug)]
 pub struct GameInput {
     /// The stable id the ledger and the window's automation bridge use.
@@ -60,7 +55,7 @@ impl GameInput {
     }
 }
 
-/// The hypothetical sandbox: the imported save, the inputs its ported formulas
+/// The hypothetical sandbox: the imported save, the inputs its modelled formulas
 /// read, and the pending edits.
 #[derive(Debug)]
 pub struct Sandbox {
@@ -91,7 +86,7 @@ impl Sandbox {
             .retain(|id, _| self.inputs.iter().any(|input| &input.id == id));
     }
 
-    /// The inputs the ported formulas read, in ledger order.
+    /// The inputs the modelled formulas read, in ledger order.
     pub fn inputs(&self) -> &[GameInput] {
         &self.inputs
     }
@@ -112,11 +107,10 @@ impl Sandbox {
         Some(self.edits.get(id).copied().unwrap_or(input.saved))
     }
 
-    /// The edit `id` now carries, after upstream's `set` checks.
+    /// The edit `id` now carries, after the input's checks.
     ///
     /// An edit back to the saved value clears itself; a non-finite, fractional
-    /// or out-of-range value is refused with the message upstream shows instead
-    /// of applying it.
+    /// or out-of-range value is refused with a message instead of applying it.
     pub fn set(&mut self, id: &str, value: f64) -> Result<(), String> {
         let (saved, max) = match self.input(id) {
             Some(input) => (input.saved, input.max),
@@ -149,8 +143,8 @@ impl Sandbox {
         self.edits.remove(id);
     }
 
-    /// Put every input back to the saved value, which is all upstream's
-    /// `Reset all edits` does.
+    /// Put every input back to the saved value, which is all `Reset all edits`
+    /// does.
     pub fn reset_all(&mut self) {
         self.edits.clear();
     }
@@ -185,7 +179,7 @@ impl Sandbox {
         Save::new(root)
     }
 
-    /// Upstream's sandbox status line.
+    /// The sandbox status line.
     pub fn status(&self) -> String {
         match self.count() {
             0 => "Game-input sandbox: no edits.".into(),
@@ -200,13 +194,12 @@ impl Sandbox {
     }
 }
 
-/// One descriptor whose value the pending edits moved, from upstream's
-/// `formulaDifference`.
+/// One descriptor whose value the pending edits moved.
 #[derive(Debug, PartialEq)]
 pub struct Affected {
-    /// The descriptor's upstream id.
+    /// The descriptor's id.
     pub id: String,
-    /// The descriptor's upstream name.
+    /// The descriptor's name.
     pub name: String,
     /// The value as the imported save resolves it.
     pub saved: String,
@@ -252,7 +245,7 @@ impl Affected {
 
 impl Sheet {
     /// The descriptors whose value `baseline` or this sheet moved, in registry
-    /// order. Upstream calls this for every edit and lists the result under
+    /// order. The page calls this for every edit and lists the result under
     /// `Affected formulas`.
     pub fn affected(&self, baseline: &Sheet) -> Vec<Affected> {
         self.descriptors()
@@ -284,7 +277,7 @@ impl Sheet {
     }
 }
 
-/// Every input the ported rows read, in the order the ledger lists them.
+/// Every input the modelled rows read, in the order the ledger lists them.
 fn catalog(save: &Save, character: usize) -> Vec<GameInput> {
     let mut inputs = Vec::new();
     inputs.extend(vault(save));
@@ -597,7 +590,7 @@ mod tests {
     }
 
     #[test]
-    fn an_affected_row_prints_upstreams_change_line() {
+    fn an_affected_row_prints_its_change_line() {
         let affected = Affected {
             id: "carry-capacity-mining".into(),
             name: "Mining Carry Capacity".into(),
@@ -664,7 +657,7 @@ mod tests {
     }
 
     #[test]
-    fn an_edit_outside_the_upstream_checks_is_refused() {
+    fn an_edit_outside_the_input_checks_is_refused() {
         let mut sandbox = Sandbox::new(&save(), 0);
         assert_eq!(
             sandbox.set("nope", 1.0),

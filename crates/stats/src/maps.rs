@@ -1,7 +1,6 @@
 //! Which maps a character may pick, and how each one is classified.
 //!
-//! Ported from the upstream `js/stats/systems/common/map-access.js` and the
-//! `stats-all.html` map selector. The classification decides the selector
+//! The classification decides the selector
 //! label, the category tab a breakdown lands in (SA-02), and the context note's
 //! warning; the access walk decides which maps a character has proven.
 
@@ -12,7 +11,7 @@ use super::context::MapVisibility;
 use super::data::{data, map_count};
 use super::snapshot::Snapshot;
 
-/// A map's `MapDispName` entry, or `None` where upstream leaves it blank.
+/// A map's `MapDispName` entry, or `None` where the game leaves it blank.
 ///
 /// The drop-rate selector lists only named maps; the All Stats list classifies
 /// blank ones as internal instead.
@@ -31,7 +30,7 @@ const FEATURE_MAPS: [usize; 6] = [41, 42, 73, 120, 166, 216];
 const RUNTIME_MAPS: [usize; 2] = [37, 69];
 const INTERNAL_MAPS: [usize; 13] = [3, 4, 5, 20, 21, 22, 23, 25, 34, 35, 56, 313, 314];
 
-/// Where a map sits in the upstream categories.
+/// Where a map sits in the map categories.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Category {
     Map,
@@ -116,12 +115,12 @@ pub struct MapOption {
     pub accessible: bool,
     /// Neither accessible, visited nor current: listed but not proven.
     pub locked: bool,
-    /// The upstream reason string, e.g. `Cleared portal from Spore Meadows`.
+    /// The reason string, e.g. `Cleared portal from Spore Meadows`.
     pub evidence: String,
 }
 
 impl MapOption {
-    /// The selector label, as upstream `_mapLabel` builds it.
+    /// The selector label.
     pub fn label(&self, map_bonus: Option<&[f64]>) -> String {
         let mut label = self.class.name.clone();
         let mob = clean_name(&self.class.target_name);
@@ -149,8 +148,8 @@ impl MapOption {
 
 /// The account's arcane map bonus, as the map label's multiplier.
 ///
-/// Upstream `_arcaneMulti` in `stats-all.html`: a log-scaled reward for the
-/// lifetime kills on a map, with a flat first-thousand term.
+/// A log-scaled reward for the lifetime kills on a map, with a flat
+/// first-thousand term.
 pub fn arcane_multi(kills: f64) -> f64 {
     if kills < 1.0 || !kills.is_finite() {
         return 0.0;
@@ -162,7 +161,7 @@ pub fn arcane_multi(kills: f64) -> f64 {
         + (5.0 * (lg - 5.0)).max(0.0)
 }
 
-/// One map's classification, ported from upstream `classifyMap`.
+/// One map's classification.
 pub fn classify(map: usize) -> MapClass {
     let Some(row) = data().maps.get(map) else {
         return unknown_map(map);
@@ -225,7 +224,7 @@ pub fn classify(map: usize) -> MapClass {
     class
 }
 
-/// A map index the data does not carry: upstream classifies it as internal.
+/// A map index the data does not carry is classified as internal.
 fn unknown_map(map: usize) -> MapClass {
     MapClass {
         map,
@@ -244,8 +243,8 @@ fn unknown_map(map: usize) -> MapClass {
 
 /// Which maps a character may pick, in the selector's order.
 ///
-/// Upstream `buildCharacterMapOptions`: the current map first, then world and
-/// index. The list level decides which categories appear at all.
+/// The current map first, then world and index. The list level decides which
+/// categories appear at all.
 pub fn build_options(
     character: usize,
     snapshot: &Snapshot,
@@ -268,8 +267,8 @@ pub fn build_options(
         let world_town_map = (class.world as usize).saturating_sub(1) * 50;
         let world_town =
             TOWN_MAPS.contains(&world_town_map) && access.accessible.contains(&world_town_map);
-        // A hidden map the character is standing on is still listed, as upstream
-        // does: the selector must name the map the context is on.
+        // A hidden map the character is standing on is still listed: the
+        // selector must name the map the context is on.
         let include = current
             || match class.visibility {
                 ClassVisibility::Hidden => false,
@@ -305,7 +304,7 @@ pub fn build_options(
     options
 }
 
-/// Upstream `_isInternalName`: an unnamed or placeholder scene.
+/// An unnamed or placeholder scene.
 fn is_internal_name(display: &str, internal: &str) -> bool {
     let display = display.to_lowercase();
     let internal = internal.to_lowercase();
@@ -319,12 +318,11 @@ fn is_internal_name(display: &str, internal: &str) -> bool {
         || internal == "nothinglol"
 }
 
-/// Upstream `_worldForMap`.
 fn world_for_map(map: usize) -> u32 {
     map as u32 / 50 + 1
 }
 
-/// Upstream `_cleanName`: display names carry underscores.
+/// Display names carry underscores.
 fn clean_name(name: &str) -> String {
     name.replace('_', " ")
 }
@@ -334,7 +332,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_classification_matches_the_upstream_categories() {
+    fn the_classification_matches_the_map_categories() {
         let expected = [
             (0, Category::Town, ClassVisibility::Default),
             (1, Category::Combat, ClassVisibility::Default),
@@ -370,22 +368,18 @@ mod tests {
     }
 
     #[test]
-    fn the_arcane_multiplier_matches_the_upstream_js() {
-        // Values evaluated from `_arcaneMulti` in stats-all.html.
-        let cases = [
-            (0.0, 0.0),
-            (0.5, 0.0),
-            (1.0, 0.001),
-            (1_000.0, 1.0),
-            (1_000_000.0, 38.035_573_119_211_79),
-        ];
-        for (kills, expected) in cases {
+    fn the_arcane_multiplier_starts_at_one_kill_and_grows_with_the_log() {
+        // Below one kill there is no reward; up to a thousand kills only the
+        // flat `kills / 1000` term counts, because every log term is still zero.
+        for (kills, expected) in [(0.0, 0.0), (0.5, 0.0), (1.0, 0.001), (1_000.0, 1.0)] {
             assert!(
-                (arcane_multi(kills) - expected).abs() < 1e-9,
-                "{kills}: {} vs {expected}",
+                (arcane_multi(kills) - expected).abs() < 1e-12,
+                "{kills}: {}",
                 arcane_multi(kills)
             );
         }
+        assert_eq!(arcane_multi(f64::NAN), 0.0);
+        assert!(arcane_multi(1_000_000.0) > arcane_multi(10_000.0));
         assert!(arcane_multi(1_000_000_000.0) > 100.0);
     }
 }

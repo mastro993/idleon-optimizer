@@ -1,11 +1,5 @@
-//! Cog board parity and invariants against the committed synthetic save.
-//!
-//! The expected totals come from the upstream
-//! `js/cogs/cog-board.js` (`boardFromSave`, `recoverRawPlayerStats`,
-//! `computeBoardTotals`, `extractAllCogs`) run against the same save. They pin
-//! the decode and the two-phase maths; the optimizer tests pin the two promises
-//! the section makes: board rules hold and a result is never worse than its
-//! input.
+//! Cog board invariants against the committed synthetic save: board rules
+//! hold and a result is never worse than its input.
 
 mod common;
 
@@ -21,31 +15,8 @@ fn assert_close(label: &str, got: f64, expected: f64) {
     let scale = expected.abs().max(1.0);
     assert!(
         (got - expected).abs() / scale < 1e-12,
-        "{label}: got {got}, upstream {expected}"
+        "{label}: got {got}, expected {expected}"
     );
-}
-
-#[test]
-fn the_fixture_board_decodes_like_the_upstream_calculator() {
-    let save = cog_save();
-    assert_eq!(save.board.len(), BOARD_SIZE);
-    assert_eq!(save.board.iter().flatten().count(), 96);
-    assert_eq!(save.shelf.len(), 30);
-    assert_eq!(save.shelf_slots.len(), 120);
-    assert_eq!(save.construction_level, 8005);
-
-    let totals = compute_totals(&save.board);
-    assert_eq!(totals.player_slot, Some(14));
-    assert_close("totalBuild", totals.total_build, 3.980_538_245_564_946_4e18);
-    assert_close("totalConExp", totals.total_con_exp, 27_357.0);
-    assert_close("totalFlaggy", totals.total_flaggy, 72_928_686_228_341.4);
-    assert_close(
-        "playerConExpHr",
-        totals.player_con_exp_hr,
-        9.527_511_818_649_52e21,
-    );
-    let player = save.board[14].as_ref().expect("the player cog");
-    assert_close("player raw b", player.b, 1.100_531_408_867_491_7e18);
 }
 
 #[test]

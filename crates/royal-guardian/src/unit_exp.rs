@@ -1,10 +1,6 @@
 //! The unit EXP planner: which traders and surveyors the outpost should run, and
 //! when to switch, to reach the rank targets a player sets.
 //!
-//! Ported from `planRoyalUnitExp`, `_model`, `_rates`, `_run`, `_optimize`,
-//! `_summary`, `_retarget`, `_transientPools` and `projectRoyalUnitExp` in
-//! `js/stats/systems/w7/royal-unit-exp.js`.
-//!
 //! Trading EXP comes from the traders and Intel EXP from the surveyors; Command,
 //! Military and Purity EXP come from the Commander, Knight and Priest
 //! assignments. Only traders and surveyors earn EXP themselves, so the plan is a
@@ -14,9 +10,9 @@
 //! changes come from the saved packed unit row, so a step only ever retargets a
 //! slot the outpost already fields.
 //!
-//! Upstream also moves the same-world Commander, Knight and Militia assignments
-//! onto the target outpost when a target needs them; the port keeps that pass.
-//! Priests stay put: the port sets no Purity target.
+//! The plan also moves the same-world Commander, Knight and Militia assignments
+//! onto the target outpost when a target needs them. Priests stay put: the
+//! planner sets no Purity target.
 
 use super::*;
 use crate::sandbox::{rank_name, transient_name};
@@ -127,17 +123,6 @@ pub enum StepReason {
     IntelRank,
 }
 
-impl StepReason {
-    /// The id a control keys by.
-    pub fn id(self) -> &'static str {
-        match self {
-            StepReason::Start => "start",
-            StepReason::TradingTarget => "trading-target",
-            StepReason::IntelRank => "intel-rank",
-        }
-    }
-}
-
 /// One point in the plan where the trader and surveyor split changes.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Step {
@@ -172,17 +157,6 @@ pub enum Status {
 }
 
 impl Status {
-    /// The id a control keys by.
-    pub fn id(self) -> &'static str {
-        match self {
-            Status::Already => "already",
-            Status::Reached => "reached",
-            Status::NoProgress => "no-progress",
-            Status::Cutoff => "cutoff",
-            Status::Limit => "limit",
-        }
-    }
-
     /// Whether the targets are met.
     pub fn reached(self) -> bool {
         matches!(self, Status::Already | Status::Reached)
@@ -314,7 +288,7 @@ struct State {
     ranks: [f64; 5],
 }
 
-/// One outpost's planner model: upstream `_model`.
+/// One outpost's planner model.
 #[derive(Clone, Debug)]
 struct Model {
     map: usize,
@@ -348,7 +322,7 @@ struct Recorded {
 }
 
 impl RoyalGuardian {
-    /// One outpost's planner model: upstream `_model`.
+    /// One outpost's planner model.
     fn unit_exp_model(&self, map: usize) -> Model {
         let a72 = self.armory_bonus(72) / 100.0;
         let mult = 1.0 + self.rank(map, 1) * a72;
@@ -397,7 +371,7 @@ impl RoyalGuardian {
 }
 
 impl Model {
-    /// The EXP per hour each bar earns at one split: upstream `_rates`.
+    /// The EXP per hour each bar earns at one split.
     fn rates(&self, ranks: &[f64; 5], traders: f64, counts: &[f64; 8], out: &mut [f64; 5]) {
         let mult = 1.0 + ranks[1] * self.a72;
         let purity = if !self.purified && ranks[4] >= 1.0 {
@@ -418,7 +392,7 @@ impl Model {
         }
     }
 
-    /// The traders the split runs: upstream `_policy`.
+    /// The traders the split runs.
     fn traders(&self, spec: &Spec, ranks: &[f64; 5], targets: &UnitTargets) -> f64 {
         let trading_done = targets
             .trading
@@ -434,7 +408,7 @@ impl Model {
     }
 
     /// One native `CollectAll`: Trading and Intel at the saved split, then the
-    /// saved transient order: upstream `_collectOnce`.
+    /// saved transient order.
     fn collect_once(&self, state: &mut State, hours: f64) {
         let mut rates = [0.0; 5];
         self.rates(&state.ranks, self.current, &[0.0; 8], &mut rates);
@@ -467,7 +441,7 @@ impl Model {
         }
     }
 
-    /// One projection: upstream `_run`.
+    /// One projection.
     fn run(
         &self,
         start: &State,
@@ -706,7 +680,7 @@ fn target_order(target: Target) -> usize {
     }
 }
 
-/// Adds EXP to a bar and moves its rank up: upstream `_add`.
+/// Adds EXP to a bar and moves its rank up.
 fn add(exp: &mut [f64; 5], ranks: &mut [f64; 5], bar: usize, amount: f64) {
     exp[bar] += amount;
     while ranks[bar] < MAX_RANK && exp[bar] >= RoyalGuardian::exp_formula(ranks[bar], bar) {
@@ -714,7 +688,7 @@ fn add(exp: &mut [f64; 5], ranks: &mut [f64; 5], bar: usize, amount: f64) {
     }
 }
 
-/// The bar with the highest rank: upstream `_highest`.
+/// The bar with the highest rank.
 fn highest(ranks: &[f64; 5]) -> usize {
     let mut bar = 0;
     for index in 1..5 {
@@ -725,7 +699,7 @@ fn highest(ranks: &[f64; 5]) -> usize {
     bar
 }
 
-/// Whether every target is met: upstream `_met`.
+/// Whether every target is met.
 fn met(targets: &UnitTargets, ranks: &[f64; 5]) -> bool {
     Target::ALL.iter().all(|target| {
         targets
@@ -734,7 +708,7 @@ fn met(targets: &UnitTargets, ranks: &[f64; 5]) -> bool {
     })
 }
 
-/// Why no plan can reach the targets, when none can: upstream `_reachable`.
+/// Why no plan can reach the targets, when none can.
 fn unreachable(
     model: &Model,
     targets: &UnitTargets,
@@ -768,8 +742,7 @@ fn unreachable(
     None
 }
 
-/// Whether a projection is faster, or as fast with fewer switches: upstream
-/// `_better`.
+/// Whether a projection is faster, or as fast with fewer switches.
 fn better(result: &Run, best: Option<&Run>) -> bool {
     let Some(eta) = result.eta_hours else {
         return false;
@@ -787,7 +760,7 @@ fn better(result: &Run, best: Option<&Run>) -> bool {
     }
 }
 
-/// The split a fixed trader count runs: upstream `fixed`.
+/// The split a fixed trader count runs.
 fn fixed(traders: f64) -> Spec {
     Spec {
         first: traders,
@@ -798,7 +771,7 @@ fn fixed(traders: f64) -> Spec {
 }
 
 /// The split search: every saved split, then every two-step split and switch
-/// point: upstream `_optimize`.
+/// point.
 fn optimize(
     model: &Model,
     start: &State,
@@ -873,14 +846,14 @@ fn optimize(
     Some(best.unwrap_or_else(|| (fixed(model.current), base)))
 }
 
-/// The packed digits a unit row holds: upstream `_digits`.
+/// The packed digits a unit row holds.
 fn digits(packed: f64) -> [char; 9] {
     let text = format!("{:09}", packed.max(0.0) as u64);
     let text = &text[text.len().saturating_sub(9)..];
     std::array::from_fn(|index| text.as_bytes()[index] as char)
 }
 
-/// Retargets the outpost's traders: upstream `_retarget`.
+/// Retargets the outpost's traders.
 fn retarget(mut packed: [char; 9], traders: f64) -> ([char; 9], Vec<ProfessionChange>) {
     let slots: Vec<(usize, usize)> = packed
         .iter()
@@ -909,8 +882,7 @@ fn retarget(mut packed: [char; 9], traders: f64) -> ([char; 9], Vec<ProfessionCh
     (packed, changes)
 }
 
-/// The same-world assignments a target outpost may borrow: upstream
-/// `_transientPools`.
+/// The same-world assignments a target outpost may borrow.
 fn transient_pools(royal: &RoyalGuardian, map: usize) -> Vec<Donor> {
     let world = RoyalGuardian::world_of(map);
     let mut donors: Vec<Donor> = royal
@@ -979,7 +951,7 @@ fn start_state(royal: &RoyalGuardian, model: &Model) -> State {
     state
 }
 
-/// The plan's steps and targets: upstream `_summary`.
+/// The plan's steps and targets.
 fn summary(
     royal: &RoyalGuardian,
     model: &Model,
@@ -1029,7 +1001,7 @@ pub fn step_text(step: &Step) -> String {
     )
 }
 
-/// The targets as the planner reads them: upstream `_targets`.
+/// The targets as the planner reads them.
 fn validate_targets(request: &UnitExpRequest, unlocked: &[bool; 5]) -> Result<(), Refusal> {
     for target in Target::ALL {
         let Some(value) = request.targets.get(target) else {
@@ -1065,7 +1037,7 @@ fn donors_of(donors: &[Donor], kind: i64) -> usize {
     donors.iter().filter(|donor| donor.kind == kind).count()
 }
 
-/// A count vector for one joint combination: upstream's mixed-radix walk.
+/// A count vector for one joint combination: a mixed-radix walk.
 fn extra_counts(model: &Model, donors: &[Donor], index: usize) -> [f64; 8] {
     let mut counts = model.counts;
     let mut rest = index;
@@ -1149,7 +1121,7 @@ fn moved(model: &Model, counts: &[f64; 8]) -> f64 {
 }
 
 /// Whether `left` reaches the targets earlier than `right`, or as early with
-/// fewer moved assignments: upstream's `better` inside the transient pass.
+/// fewer moved assignments, inside the transient pass.
 fn better_counts(
     solver: &mut Solver,
     model: &Model,
@@ -1180,8 +1152,8 @@ fn better_counts(
 }
 
 impl RoyalGuardian {
-    /// Plan the split that reaches `targets` fastest: upstream
-    /// `planRoyalUnitExp`, with the search reported through `report`.
+    /// Plan the split that reaches `targets` fastest, with the search reported
+    /// through `report`.
     pub fn plan_unit_exp(
         &self,
         request: &UnitExpRequest,

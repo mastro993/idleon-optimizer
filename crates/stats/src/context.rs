@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// The skill the context resolves skill-scoped descriptors against.
 ///
-/// The labels are the upstream `skill-sel` option texts, which descriptors read
+/// The labels are the skill selector's option texts, which descriptors read
 /// as the `skillType` layer; the ids are this app's project-file names.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -27,7 +27,7 @@ pub enum Skill {
 }
 
 impl Skill {
-    /// Every option in the upstream select's order.
+    /// Every option in the selector's order.
     pub const ALL: [Skill; 12] = [
         Skill::Mining,
         Skill::Choppin,
@@ -61,7 +61,7 @@ impl Skill {
         }
     }
 
-    /// The upstream option text, which descriptors read as `skillType`.
+    /// The option text, which descriptors read as `skillType`.
     pub fn label(self) -> &'static str {
         match self {
             Skill::Mining => "Mining",
@@ -85,7 +85,7 @@ impl Skill {
     }
 }
 
-/// Which maps the map selector lists: upstream's `#map-visibility`.
+/// Which maps the map selector lists.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum MapVisibility {
@@ -126,7 +126,7 @@ impl MapVisibility {
     }
 }
 
-/// Whether the character is building: upstream's `#construction-mode`.
+/// Whether the character is building.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ConstructionMode {
@@ -179,7 +179,7 @@ pub struct Context {
 
 impl Context {
     /// The context a freshly imported save opens on: character one, its current
-    /// map, and the selectors' own defaults (upstream `onLoad`).
+    /// map, and the selectors' own defaults.
     pub fn from_snapshot(snapshot: &Snapshot) -> Self {
         Self {
             character: 0,
@@ -193,8 +193,8 @@ impl Context {
         build_options(self.character, snapshot, self.map_visibility)
     }
 
-    /// Point the context at `character`, following upstream `switchChar`: the
-    /// map becomes that character's current map, then the options clamp it.
+    /// Point the context at `character`: the map becomes that character's
+    /// current map, then the options clamp it.
     pub fn select_character(&mut self, character: usize, snapshot: &Snapshot) {
         self.character = character;
         if let Some(map) = snapshot.current_map(character) {
@@ -206,8 +206,8 @@ impl Context {
     /// Keep the selected map inside the options the save and list allow.
     ///
     /// Returns the map that was dropped, when the selection had to move: the
-    /// caller names it in a warning. Upstream `populateMapSel` keeps the
-    /// preferred map, else the character's current map, else the first option.
+    /// caller names it in a warning. The selection keeps the preferred map,
+    /// else the character's current map, else the first option.
     pub fn clamp_map(&mut self, snapshot: &Snapshot) -> Option<usize> {
         let options = self.map_options(snapshot);
         let first = options.first()?;
@@ -243,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn the_skill_labels_are_the_upstream_option_texts() {
+    fn the_skill_labels_are_the_selector_option_texts() {
         let labels: Vec<&str> = Skill::ALL.iter().map(|skill| skill.label()).collect();
         assert_eq!(
             labels,

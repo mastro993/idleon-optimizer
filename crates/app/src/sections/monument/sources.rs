@@ -224,7 +224,7 @@ fn loaded(summary: &Summary, cx: &mut Context<AppState>) -> AnyElement {
     column.into_any_element()
 }
 
-/// A group heading above its cards, as the upstream `h2` does.
+/// A group heading above its cards.
 fn group_title(id: &'static str, text: &'static str) -> AnyElement {
     div()
         .id(id)

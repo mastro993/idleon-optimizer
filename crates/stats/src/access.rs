@@ -1,9 +1,8 @@
 //! The map access walk: which maps a character has proven it can reach.
 //!
-//! Ported from upstream `_buildAccess`/`_specialAccess` in
-//! `js/stats/systems/common/map-access.js`: the world starters, recorded map
-//! progress, the current map, the save's special unlocks, then the cleared
-//! portals each character has walked, until nothing new opens.
+//! The walk reads the world starters, recorded map progress, the current map,
+//! the save's special unlocks, then the cleared portals each character has
+//! walked, until nothing new opens.
 
 use super::Snapshot;
 use super::data::{data, map_count};
@@ -40,7 +39,7 @@ impl Access {
     }
 }
 
-/// Upstream `_buildAccess`: starter maps, recorded progress, the current map,
+/// Starter maps, recorded progress, the current map,
 /// special unlocks and then cleared portals until nothing new opens.
 pub(super) fn access(character: usize, snapshot: &Snapshot) -> Access {
     let mut access = Access {
@@ -107,7 +106,7 @@ pub(super) fn access(character: usize, snapshot: &Snapshot) -> Access {
     access
 }
 
-/// The maps the save itself unlocks, with upstream's reason strings.
+/// The maps the save itself unlocks, with their reason strings.
 fn special_access(snapshot: &Snapshot) -> Vec<(usize, String)> {
     let mut special = Vec::new();
     if snapshot.pet_park_level > 16.0 {
@@ -153,7 +152,7 @@ fn counter_cleared(snapshot: &Snapshot, character: usize, map: usize, counter: u
 }
 
 /// Whether any kills are recorded on a map: the requirement minus the row's
-/// first counter, exactly as upstream `_isVisited` reads it.
+/// first counter.
 pub(super) fn is_visited(snapshot: &Snapshot, character: usize, map: usize) -> bool {
     let Some(remaining) =
         kla_row(snapshot, character, map).and_then(|row| row.first().copied().flatten())
@@ -180,7 +179,7 @@ fn has_multichar_clear(snapshot: &Snapshot, map: usize) -> bool {
     cleared as f64 >= required
 }
 
-/// The internal name one portal leads to, by upstream's `i + 1` indexing.
+/// The internal name one portal leads to, by `i + 1` indexing.
 fn transition(map: usize, index: usize) -> Option<String> {
     data()
         .maps

@@ -8,13 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`, `stats-all`
 
-Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.
-
-## Upstream sources
-
-- coin-multi-calc.html
-- js/stats/systems/common/overkill.js
-- js/stats/tree-builder.js
+Implement the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.
 
 ## UI
 
@@ -48,7 +42,6 @@ Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and resp
 
 Acceptance:
 
-- Total matches upstream.
 - Partial state is explained.
 - Inputs validate.
 
@@ -66,5 +59,5 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Tree-sum test.

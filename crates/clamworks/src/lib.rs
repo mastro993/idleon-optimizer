@@ -1,21 +1,20 @@
 //! Clamworks (W7): pearl value, upgrade costs, upgrade priority, the AFK claim,
 //! the budgeted upgrade plan and the promotion tracker.
 //!
-//! Ports `js/stats/systems/w7/clamworks.js` from the upstream calculators. Save
-//! fields: `OptionsListAccount` (or `OptLacc`) index 454 is the pearl balance,
-//! 455..=463 are the nine upgrade levels, 464 the promotion level and 465 how
-//! far the pearl upgrades have unlocked; `Menagerie[5]` holds the Scurge upgrade
-//! levels, `Menagerie[0][8]` the Scurge level and `Menagerie[2][4]` the unlock
-//! that buys the Scurge menu.
+//! Save fields: `OptionsListAccount` (or `OptLacc`) index 454 is the pearl
+//! balance, 455..=463 are the nine upgrade levels, 464 the promotion level and
+//! 465 how far the pearl upgrades have unlocked; `Menagerie[5]` holds the
+//! Scurge upgrade levels, `Menagerie[0][8]` the Scurge level and
+//! `Menagerie[2][4]` the unlock that buys the Scurge menu.
 //!
-//! Multi-Scalping's bonus depends on the character's multikill total, which the
-//! upstream derives from its combat simulator. Until that lands here the total
-//! is an input; the formulas are the same for any value, and 0 leaves the bonus
-//! at zero.
+//! Multi-Scalping's bonus depends on the character's multikill total, which
+//! comes from the combat simulator. Until that lands here the total is an
+//! input; the formulas are the same for any value, and 0 leaves the bonus at
+//! zero.
 //!
-//! [`afk`] ports the claim itself and the `+1` comparison beside it. [`scurge`]
-//! ports the Scurge EXP panels: the per-kill EXP, the Self Affliction comparison
-//! and the allocation of unspent Scurge points.
+//! [`afk`] models the claim itself and the `+1` comparison beside it.
+//! [`scurge`] models the Scurge EXP panels: the per-kill EXP, the Self
+//! Affliction comparison and the allocation of unspent Scurge points.
 
 pub mod afk;
 pub mod data;
@@ -59,7 +58,7 @@ pub struct Clamworks {
     pub scurge_upgrades: [u32; SCURGE_COUNT],
 }
 
-/// The factors of [`Clamworks::pearl_value`], one per upstream breakdown node.
+/// The factors of [`Clamworks::pearl_value`], one per breakdown node.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PearlValue {
     /// PEARL VALUE: `1 + bonus(0)`.
@@ -79,7 +78,7 @@ impl PearlValue {
     }
 }
 
-/// What an upgrade changes, as the upstream priority table groups it.
+/// What an upgrade changes, as the priority table groups it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Category {
     /// Pearl value, 10x chance or drop rate: ranked by pearls per kill.
@@ -103,7 +102,7 @@ impl Category {
     }
 }
 
-/// One row of the upstream upgrade priority table.
+/// One row of the upgrade priority table.
 #[derive(Clone, Copy, Debug)]
 pub struct UpgradeRank {
     pub index: usize,
@@ -116,7 +115,7 @@ pub struct UpgradeRank {
     /// `ppk_gain / next_cost`.
     pub efficiency: f64,
     pub category: Category,
-    /// Whether the level moves pearls per kill, as the upstream table filters.
+    /// Whether the level moves pearls per kill, as the table filters.
     pub is_pearl_upgrade: bool,
 }
 
@@ -204,7 +203,7 @@ impl Clamworks {
         1e16 * 30f64.powf(f64::from(level))
     }
 
-    /// The pearl value factors, in upstream display order.
+    /// The pearl value factors, in display order.
     pub fn pearl_value_breakdown(&self, multikill_total: f64) -> PearlValue {
         PearlValue {
             base: 1.0 + self.upgrade_bonus(0, multikill_total),
@@ -214,13 +213,13 @@ impl Clamworks {
         }
     }
 
-    /// `pearlValue`: the product of the breakdown factors.
+    /// The product of the breakdown factors.
     pub fn pearl_value(&self, multikill_total: f64) -> f64 {
         self.pearl_value_breakdown(multikill_total).product()
     }
 
     /// The pearl value as the shared formula tree: the root is the product and
-    /// each child is one upstream breakdown factor.
+    /// each child is one breakdown factor.
     pub fn pearl_value_tree(&self, multikill_total: f64) -> FormulaNode {
         let value = self.pearl_value(multikill_total);
         let bonus_0 = self.upgrade_bonus(0, multikill_total);
@@ -232,7 +231,7 @@ impl Clamworks {
             .with_format(ValueFormat::Multiplier)
             .with_input("PEARL VALUE × MULTI-SCALPING × SHINIER PEARLS × Scurge")
             .with_multiplier(value)
-            .with_source("clamworks.js · pearlValue")
+            .with_source("Clamworks pearl value")
             .with_note("What one regular pearl is worth; the factors multiply.")
             .with_children([
                 FormulaNode::leaf("PEARL VALUE", 1.0 + bonus_0, ValueFormat::Multiplier)
@@ -310,7 +309,7 @@ impl Clamworks {
     }
 
     /// The cost multiplier when buying `index`: FRUGALITY, Scurge 3, this
-    /// upgrade's Scurge 5 scaling and ANTI INFLATION, in upstream order.
+    /// upgrade's Scurge 5 scaling and ANTI INFLATION, in that order.
     pub fn cost_reduction_at(&self, index: usize) -> f64 {
         let scurge_3 = self.scurge_bonus(3);
         let scurge_5 = self.scurge_bonus(5);
@@ -382,8 +381,8 @@ impl Clamworks {
             + self.black_pearl_drop_rate() * self.black_pearl_value()
     }
 
-    /// The upstream upgrade ranking: pearls per kill gain per unit cost,
-    /// highest first. Ties keep the game's upgrade order.
+    /// The upgrade ranking: pearls per kill gain per unit cost, highest first.
+    /// Ties keep the game's upgrade order.
     pub fn priority(&self, multikill_total: f64) -> Vec<UpgradeRank> {
         let mut rows: Vec<UpgradeRank> = (0..UPGRADE_COUNT)
             .map(|index| {
@@ -488,7 +487,7 @@ impl Clamworks {
     }
 }
 
-/// The upstream options list: `OptionsListAccount` wins over `OptLacc`.
+/// The account options list: `OptionsListAccount` wins over `OptLacc`.
 fn options(save: &Map<String, Value>) -> Option<Value> {
     ["OptionsListAccount", "OptLacc"]
         .into_iter()

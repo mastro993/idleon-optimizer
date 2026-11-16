@@ -1,9 +1,7 @@
 //! Coral Kid upgrades and the God Rank offering planner.
 //!
-//! Ported from `js/stats/systems/w5/coral-god-rank.js` in
-//! <https://github.com/Corgan/idleon-research-optimizer>. This module owns the
-//! formulas and the planner inputs, the offering model and the bounded
-//! deterministic beam search that projects the best plan.
+//! This module owns the formulas and the planner inputs, the offering model and
+//! the bounded deterministic beam search that projects the best plan.
 
 mod offering;
 mod planner;
@@ -15,15 +13,14 @@ pub use planner::{
     Action, Plan, Projection, ProjectionKey, Snapshot, Unlock, plan, plan_with, project, unlocks,
 };
 
-/// Total Divinity LV across all players required per Coral Kid upgrade,
-/// `CORAL_KID_UNLOCK_LEVELS` upstream. The first upgrade of each page is always
-/// available.
+/// Total Divinity LV across all players required per Coral Kid upgrade. The
+/// first upgrade of each page is always available.
 pub(crate) const CORAL_KID_UNLOCK_LEVELS: [f64; 6] = [0.0, 600.0, 900.0, 1200.0, 1500.0, 1750.0];
 
-/// Minehead floor-reward bonus at slot 9, from `Research[20][9]` upstream.
+/// Minehead floor-reward bonus at slot 9, from the game's `Research[20][9]`.
 const MINEHEAD_BONUS_QTY_9: f64 = 80.0;
 
-/// The planner objective, `GOALS` upstream.
+/// The planner objective.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Goal {
@@ -38,7 +35,7 @@ pub enum Goal {
 }
 
 impl Goal {
-    /// Every goal in the upstream select's order.
+    /// Every goal in the goal select's order.
     pub const ALL: [Goal; 7] = [
         Goal::Balanced,
         Goal::DivinityPoints,
@@ -75,7 +72,7 @@ impl Goal {
         }
     }
 
-    /// Parse a select value; unknown values fall back to `Balanced`, as upstream.
+    /// Parse a select value; unknown values fall back to `Balanced`.
     pub fn from_id(id: &str) -> Self {
         Self::ALL
             .into_iter()
@@ -87,7 +84,7 @@ impl Goal {
 /// The save fields the planner reads, before the user edits them.
 ///
 /// `None` means the save did not carry that value; [`Inputs::from_save`] then
-/// uses the upstream fallback and the section warns about it.
+/// uses the default fallback and the section warns about it.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SaveInputs {
     pub budget: Option<f64>,
@@ -106,8 +103,8 @@ pub struct SaveInputs {
 }
 
 impl SaveInputs {
-    /// The offering model's inputs the save did not carry, in upstream
-    /// `offeringMissing` order. The fit reads them as zero until they are entered.
+    /// The offering model's inputs the save did not carry, Y4 first. The fit
+    /// reads them as zero until they are entered.
     pub fn offering_missing(&self) -> Vec<&'static str> {
         let mut missing = Vec::new();
         if self.y4.is_none() {
@@ -133,7 +130,7 @@ impl SaveInputs {
     }
 }
 
-/// Every upstream planner input plus the save's current Coral Kid level.
+/// Every planner input plus the save's current Coral Kid level.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Inputs {
@@ -166,7 +163,7 @@ impl Default for Inputs {
 }
 
 impl Inputs {
-    /// The upstream `getDefaultInputs` values, taking what the save carries.
+    /// The default planner inputs, taking what the save carries.
     pub fn from_save(save: &SaveInputs) -> Self {
         Self {
             goal: Goal::Balanced,
@@ -336,7 +333,7 @@ pub struct LevelRow {
     pub next_cost: f64,
 }
 
-/// The coral state `coralKidMetrics` returns.
+/// The coral multipliers at one set of levels.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Metrics {
     pub divinity_exp: f64,
@@ -347,7 +344,7 @@ pub struct Metrics {
     pub daily_reef_coral: f64,
 }
 
-/// `coralKidLevelSlot`: upgrades 0-5 use `OLA[427+i]`, 6-11 use `OLA[616+(i-6)]`.
+/// The save slot of an upgrade: 0-5 use `OLA[427+i]`, 6-11 use `OLA[616+(i-6)]`.
 pub fn upgrade_slot(index: usize) -> usize {
     if index >= 6 {
         616 + index - 6
@@ -356,7 +353,7 @@ pub fn upgrade_slot(index: usize) -> usize {
     }
 }
 
-/// `coralKidUpgradeCost`: Divinity points for 0-5, Singularity for 6-11.
+/// The next level's cost: Divinity points for 0-5, Singularity for 6-11.
 pub(crate) fn upgrade_cost(index: usize, level: f64) -> f64 {
     let lv = level.max(0.0);
     let index = index as f64;
@@ -372,7 +369,7 @@ pub(crate) fn upgrade_cost(index: usize, level: f64) -> f64 {
     (7.0 + 2.0 * (index - 6.0)).powf(index - 6.0) * 1.13f64.powf(lv)
 }
 
-/// `coralKidUpgradeEffect`: the bonus the upgrade grants at `level`.
+/// The bonus the upgrade grants at `level`.
 pub(crate) fn upgrade_effect(index: usize, level: f64) -> f64 {
     let lv = level.max(0.0);
     match index {
@@ -408,7 +405,7 @@ pub fn y4_base(bubble_level: f64) -> f64 {
     40.0 * lv / (lv + 60.0)
 }
 
-/// `coralKidMetrics`: the current/projected coral multipliers.
+/// The current/projected coral multipliers.
 pub(crate) fn metrics(
     levels: &[f64; 6],
     singularity_levels: &[f64; 6],

@@ -1,9 +1,8 @@
 //! The Worship Tower Defense simulator's save-derived inputs.
 //!
-//! Mirrors `worshipTdInputs` in `js/stats/systems/w3/worship-td.js` for the
-//! fields the live simulator reads: tower trial levels, the best-wave table,
-//! `Atom 5`, `Dream 7`, Salt Lick 6, the Menagerie pre-cook floor and the
-//! super-bit totem HP. Account bonuses the simulator does not model yet (start
+//! Covers the fields the live simulator reads: tower trial levels, the
+//! best-wave table, `Atom 5`, `Dream 7`, Salt Lick 6, the Menagerie pre-cook
+//! floor and the super-bit totem HP. Account bonuses the simulator does not model yet (start
 //! points, kill-point meals, meritocracy) stay neutral and are named.
 
 use idleon_save::{at as cell, json};

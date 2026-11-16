@@ -1,4 +1,4 @@
-//! Static Monument data, extracted from the upstream JS calculators.
+//! Static Monument data.
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -21,9 +21,9 @@ pub struct Data {
     pub compass: HashMap<String, Vec<Value>>,
     pub minehead_bonus_qty: Vec<f64>,
     pub companions: HashMap<String, [f64; 2]>,
-    /// `MERITOC_BASE`, the vote bonuses the reward charge reads.
+    /// The vote bonuses the reward charge reads.
     pub meritoc_base: Vec<f64>,
-    /// `ROG_BONUS_QTY`, the sushi-tier bonuses the Meritoc vote counts.
+    /// The sushi-tier bonuses the Meritoc vote counts.
     pub rog_bonus_qty: Vec<f64>,
     /// `N2L`: item `t` is owned when a saved list carries `encoding[t]`.
     pub encoding: String,

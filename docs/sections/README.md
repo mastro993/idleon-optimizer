@@ -3,7 +3,7 @@
 <!-- Generated from docs/roadmap.json. Edit the JSON, then run node script/roadmap.mjs --write. -->
 
 - [M0 Foundation: dashboard, navigation, JSON import, assets](sections/foundation.md)
-- [M1 Research Optimizer: full upstream parity](sections/research.md)
+- [M1 Research Optimizer: complete section](sections/research.md)
 - [M2 Combat Simulator](sections/combat-sim.md)
 - [M3 All Stats Dashboard](sections/stats-all.md)
 - [M4 Damage Breakdown](sections/damage.md)

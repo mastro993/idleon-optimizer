@@ -2732,20 +2732,5 @@
    1000
   ],
   "zenithPerLevel": 1
- },
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/data/game/customlists.js",
-   "js/stats/data/game/custommaps.js",
-   "js/stats/data/game/hardcoded.js",
-   "js/stats/systems/w6/sneaking-math.js",
-   "js/stats/data/w2/alchemy.js",
-   "js/stats/data/common/sigils.js",
-   "js/stats/data/common/guild.js",
-   "js/stats/data/common/talent.js",
-   "js/stats/data/w1/stamp.js",
-   "js/stats/data/w5/hole.js"
-  ]
  }
 }

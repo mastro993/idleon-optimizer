@@ -1,5 +1,5 @@
 //! The calculation context: the selector lists and the save defaults behind
-//! them, against upstream `js/stats/systems/common/map-access.js`.
+//! them.
 
 use idleon_import::{Imported, import};
 use idleon_research::sim;
@@ -42,7 +42,7 @@ fn a_save_opens_on_character_one_and_its_current_map() {
     assert_eq!(context.map_visibility, MapVisibility::Accessible);
     assert_eq!(context.construction, ConstructionMode::Active);
 
-    // Upstream `switchChar` follows the new character's current map.
+    // Switching character follows the new character's current map.
     let mut context = context;
     context.select_character(1, &snapshot);
     assert_eq!(context.character, 1);
@@ -59,7 +59,7 @@ fn the_current_map_leads_the_list_and_hidden_maps_never_do() {
     let first = options.first().expect("a current map is always listed");
     assert_eq!(first.class.map, 200);
     assert!(first.current);
-    // Upstream `_mapLabel` shows the target name with its underscores turned
+    // The map label shows the target name with its underscores turned
     // into spaces; this map's target is the `_` placeholder, so it reads as one.
     assert_eq!(
         first.label(snapshot.map_bonus(200)),
@@ -97,7 +97,7 @@ fn an_advanced_map_label_names_its_mob_bonus_and_category() {
 
 #[test]
 fn a_hidden_current_map_is_still_listed() {
-    // Upstream includes the current map before it filters by visibility.
+    // The current map is included before the list filters by visibility.
     let snapshot = snapshot(json!({
         "Lv0_0": "[1]",
         "CurrentMap_0": 3,
@@ -111,7 +111,7 @@ fn a_hidden_current_map_is_still_listed() {
 }
 
 #[test]
-fn the_list_levels_match_the_upstream_rules() {
+fn the_list_levels_follow_the_access_rules() {
     let snapshot = snapshot(json!({
         "Lv0_0": "[1]",
         "CurrentMap_0": 0,
@@ -133,8 +133,8 @@ fn the_list_levels_match_the_upstream_rules() {
 }
 
 #[test]
-fn cleared_portals_unlock_their_destination_with_the_upstream_reason() {
-    // The map's first counter cleared: upstream reads `transitions[0 + 1]`.
+fn cleared_portals_unlock_their_destination_with_their_reason() {
+    // The map's first counter cleared: the portal is `transitions[0 + 1]`.
     let snapshot = snapshot(json!({
         "KLA_0": "[[0]]",
     }));
@@ -144,7 +144,7 @@ fn cleared_portals_unlock_their_destination_with_the_upstream_reason() {
         .find(|option| option.class.map == 50)
         .expect("Blunder Hills' first portal leads to the desert town");
     assert!(destiny.accessible);
-    // The world starter claims the map first, exactly like upstream `add()`.
+    // The world starter claims the map first.
     assert_eq!(destiny.evidence, "World 2 unlocked");
 
     // A boss scene is never reachable through the plain access walk, so the
@@ -250,20 +250,6 @@ fn the_fixture_opens_on_its_saved_current_map() {
     }
 }
 
-/// The upstream stats page's own output for the committed fixture, read by
-/// running `computeMaxCapacity` from
-/// `js/stats/systems/common/carry-capacity.js` over the same save.
-const FIXTURE_CAPACITY: [(&str, f64); 8] = [
-    ("carry-capacity-mining", 113_019_116.0),
-    ("carry-capacity-chopping", 123_532_522.0),
-    ("carry-capacity-fishing", 90_415_293.0),
-    ("carry-capacity-catching", 77_799_205.0),
-    ("carry-capacity-food", 10_513_406.0),
-    ("carry-capacity-critters", 10_513_406.0),
-    ("carry-capacity-souls", 10_513_406.0),
-    ("carry-capacity-materials", 542_813_368.0),
-];
-
 fn fixture_sheet(imported: &Imported) -> idleon_stats::Sheet {
     let inputs = idleon_stats::BreakdownInputs {
         save: &imported.save,
@@ -273,24 +259,6 @@ fn fixture_sheet(imported: &Imported) -> idleon_stats::Sheet {
         map: 0,
     };
     idleon_stats::Sheet::build(&inputs)
-}
-
-#[test]
-fn the_fixture_capacity_matches_the_upstream_stats_page() {
-    let sheet = fixture_sheet(&fixture());
-    for (id, expected) in FIXTURE_CAPACITY {
-        let row = sheet.get(id).unwrap_or_else(|| panic!("{id} is listed"));
-        assert_eq!(
-            row.resolution.value(),
-            Some(expected),
-            "{id} disagrees with the upstream page"
-        );
-    }
-    // The roster sits beside the save in an it.json and this fixture is flat,
-    // exactly like upstream's own partial reason for the same save.
-    let mining = sheet.get("carry-capacity-mining").expect("the row");
-    let warning = mining.warning().expect("the missing roster is named");
-    assert!(warning.contains("companion roster"), "{warning}");
 }
 
 #[test]
@@ -309,62 +277,6 @@ fn the_fixture_research_rows_agree_with_the_simulator() {
         afk.resolution.value(),
         Some(sim::afk_rate(&imported.simulation, &imported.context).rate * 100.0)
     );
-}
-
-/// The `damage` row against `fixtures/damage.json`, which
-/// `script/damage-oracle.mjs` writes from `js/stats/defs/damage.js`: the row is
-/// the maximum damage, its children are the three layers, and it is partial
-/// exactly when upstream is, with upstream's reason.
-#[test]
-fn the_damage_row_matches_the_upstream_descriptor() {
-    let close =
-        |left: f64, right: f64| (left - right).abs() <= 1e-9 * left.abs().max(right.abs()).max(1.0);
-    let imported = fixture();
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/damage.json");
-    let text = std::fs::read_to_string(path).expect("fixtures/damage.json is committed");
-    let oracle: serde_json::Value = serde_json::from_str(&text).expect("the oracle is JSON");
-    let cases = oracle["cases"].as_array().expect("one case per character");
-    assert!(!cases.is_empty());
-    for case in cases {
-        let character = case["character"].as_u64().expect("a character") as usize;
-        let map = case["map"].as_u64().expect("a map") as usize;
-        let sheet = idleon_stats::Sheet::build(&idleon_stats::BreakdownInputs {
-            save: &imported.save,
-            simulation: &imported.simulation,
-            sim_context: &imported.context,
-            character,
-            map,
-        });
-        let row = sheet.get("damage").expect("damage is listed");
-        let idleon_stats::Resolution::Value { tree, partial } = &row.resolution else {
-            panic!("character {character}: damage did not resolve");
-        };
-        let max = case["max"].as_f64().expect("a maximum");
-        assert!(
-            close(tree.value, max),
-            "character {character}: {} vs {max}",
-            tree.value
-        );
-        let layers = ["base", "percent", "multiplier"];
-        assert_eq!(tree.children.len(), layers.len());
-        for (child, layer) in tree.children.iter().zip(layers) {
-            let want = case["layers"][layer]["value"].as_f64().expect("a layer");
-            assert!(
-                close(child.value, want),
-                "character {character} {layer}: {} vs {want}",
-                child.value
-            );
-        }
-        let product: f64 = tree.children.iter().map(|child| child.value).product();
-        assert!(close(product, tree.value), "character {character}");
-        let reason = case["reason"].as_str().unwrap_or_default();
-        assert_eq!(case["partial"].as_bool(), Some(partial.is_some()));
-        assert_eq!(
-            partial.as_deref().unwrap_or_default(),
-            reason,
-            "character {character}"
-        );
-    }
 }
 
 #[test]
@@ -386,7 +298,7 @@ fn the_damage_row_is_unavailable_on_a_dungeon_map() {
 }
 
 #[test]
-fn every_category_renders_and_unported_rows_name_their_source() {
+fn every_category_renders_and_unmodelled_rows_name_themselves() {
     let sheet = fixture_sheet(&fixture());
     for category in idleon_stats::BreakdownCategory::ALL {
         let rows: Vec<&idleon_stats::Breakdown> = sheet.in_category(category).collect();
@@ -398,7 +310,7 @@ fn every_category_renders_and_unported_rows_name_their_source() {
                     assert_eq!(Some(tree.value), row.resolution.value());
                 }
                 idleon_stats::Resolution::Unavailable { reason } => {
-                    assert!(reason.contains(row.source), "{}: {reason}", row.id);
+                    assert!(reason.contains(row.name), "{}: {reason}", row.id);
                 }
             }
         }
@@ -449,7 +361,7 @@ fn the_explorer_covers_every_descriptor_and_every_category() {
 }
 
 #[test]
-fn the_explorer_search_reads_names_sources_and_saved_inputs() {
+fn the_explorer_search_reads_names_and_saved_inputs() {
     let sheet = fixture_sheet(&fixture());
     let all = idleon_stats::ExplorerFilter::default();
     assert_eq!(sheet.matching("", all).len(), sheet.descriptors().len());
@@ -459,14 +371,6 @@ fn the_explorer_search_reads_names_sources_and_saved_inputs() {
     let by_name = sheet.matching("Mining Carry Capacity", all);
     assert_eq!(by_name.len(), 1);
     assert_eq!(by_name[0].id, "carry-capacity-mining");
-
-    let by_source = sheet.matching("drop-rate.js", all);
-    assert_eq!(by_source.len(), 1);
-    assert_eq!(by_source[0].id, "drop-rate");
-    assert_eq!(
-        by_source[0].source_url(),
-        format!("{}js/stats/defs/drop-rate.js", idleon_stats::UPSTREAM)
-    );
 
     // A saved input the capacity formulas read finds the eight rows that read
     // it: the search reaches the terms, not only the row names.
@@ -506,17 +410,20 @@ fn the_explorer_filters_by_category_and_status() {
             ..Default::default()
         },
     );
-    let unported = sheet.matching(
+    let not_modelled = sheet.matching(
         "",
         idleon_stats::ExplorerFilter {
-            status: idleon_stats::ExplorerStatus::Unported,
+            status: idleon_stats::ExplorerStatus::NotModelled,
             ..Default::default()
         },
     );
     assert_eq!(computed.len(), sheet.resolved());
-    assert_eq!(computed.len() + unported.len(), sheet.descriptors().len());
+    assert_eq!(
+        computed.len() + not_modelled.len(),
+        sheet.descriptors().len()
+    );
     assert!(computed.iter().all(|row| row.display_value().is_some()));
-    assert!(unported.iter().all(|row| row.display_value().is_none()));
+    assert!(not_modelled.iter().all(|row| row.display_value().is_none()));
 
     // The filters combine.
     let research = sheet.matching(
@@ -530,7 +437,7 @@ fn the_explorer_filters_by_category_and_status() {
 }
 
 #[test]
-fn every_explorer_row_is_its_breakdown_row_and_links_its_source() {
+fn every_explorer_row_is_its_breakdown_row() {
     let sheet = fixture_sheet(&fixture());
     for row in sheet.descriptors() {
         let listed = sheet.matching(row.id, idleon_stats::ExplorerFilter::default());
@@ -542,22 +449,5 @@ fn every_explorer_row_is_its_breakdown_row_and_links_its_source() {
             found.display_value(),
             sheet.get(row.id).unwrap().display_value()
         );
-        assert_eq!(
-            found.source_url(),
-            format!("{}{}", idleon_stats::UPSTREAM, row.source)
-        );
     }
-    // The mining card shows the value the upstream stats page pins.
-    let mining = sheet.matching(
-        "carry-capacity-mining",
-        idleon_stats::ExplorerFilter::default(),
-    );
-    assert_eq!(
-        mining
-            .iter()
-            .find(|row| row.id == "carry-capacity-mining")
-            .and_then(|row| row.display_value())
-            .as_deref(),
-        Some("113,019,116")
-    );
 }

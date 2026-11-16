@@ -1,12 +1,6 @@
 //! The global breakdown tree: the account-wide rules every outpost, node and
 //! unit formula multiplies, as expandable nodes.
 //!
-//! Ported from `globalBreakdownTree` in `royal-guardian-calc.html` and the
-//! upstream breakdown functions it calls: `globalResourceRateBreakdown`,
-//! `globalRangeBreakdown`, `globalRankExpBreakdown`, `barExpRateBase`,
-//! `globalPointBreakdown`, `globalUnitBreakdowns`, `globalSupportBreakdown` and
-//! `globalSavageBreakdown`.
-//!
 //! Each category returns the same tree the page draws, built out of
 //! [`FormulaNode`]s so the shared formula tree renders it. A heading whose value
 //! is the sum of its children says so: the group nodes add their terms, and the
@@ -15,7 +9,7 @@
 use super::*;
 use idleon_common::formula::{FormulaNode, ValueFormat};
 
-/// The global Range rules: upstream `globalRangeBreakdown`.
+/// The global Range rules.
 const BASE_RANGE: f64 = 80.0;
 const MAX_RANGE: f64 = 999.0;
 const OUTPOST_ALLOWANCE: f64 = 8.0;
@@ -101,7 +95,7 @@ pub const RANK_BARS: [&str; 5] = [
     "Purity Rank",
 ];
 
-/// The unit that feeds each rank bar: upstream `outpostRankContributor`.
+/// The unit that feeds each rank bar.
 pub const RANK_CONTRIBUTORS: [&str; 5] = ["Trader", "Surveyor", "Commander", "Knight", "Priest"];
 
 /// One unit rule's static half: its name, stat label, base effect and the
@@ -118,7 +112,7 @@ const UNIT_RULES: [(&str, &str, f64, usize); 8] = [
 ];
 
 impl RoyalGuardian {
-    /// The global breakdown for one category: upstream `globalBreakdownTree`.
+    /// The global breakdown for one category.
     pub fn global_breakdown(&self, category: Category) -> Breakdown {
         match category {
             Category::Collection => self.collection_breakdown(),
@@ -131,7 +125,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// One rank bar's EXP per contributor: upstream `barExpRateBase`.
+    /// One rank bar's EXP per contributor.
     pub fn bar_exp_rate_base(&self, bar: usize) -> f64 {
         let bar = bar.min(4);
         let mut value = (1.0 + self.orblet_bonus(6) / 100.0) * (1.0 + self.jelly_bonus(1) / 100.0);
@@ -144,9 +138,9 @@ impl RoyalGuardian {
         value * (1.0 + self.unit_spec([1, 3, 5, 6, 7][bar]) / 100.0)
     }
 
-    /// A Spelunk shop row's bonus: upstream `shopUpgBonus`, narrowed to the two
-    /// rank-EXP rows the section reads. Neither row takes one of the source's
-    /// per-index multipliers, so the plain level product is exact here.
+    /// A Spelunk shop row's bonus, narrowed to the two rank-EXP rows the section
+    /// reads. Neither row takes a per-index multiplier, so the plain level
+    /// product is exact here.
     pub fn shop_bonus(&self, index: usize) -> f64 {
         data::spelunk_shop_per_level(index) * self.spelunk_cell(5, index).max(0.0)
     }
@@ -196,8 +190,8 @@ impl RoyalGuardian {
             .iter()
             .map(|factor| FormulaNode::leaf(factor.label, factor.value, ValueFormat::Multiplier))
             .collect();
-        // The additive factor is the one the upstream tree expands: its five
-        // terms sum to the amount the factor divides by a hundred.
+        // The additive factor is the one the tree expands: its five terms sum to
+        // the amount the factor divides by a hundred.
         factors[1].children = vec![
             FormulaNode::leaf("Orblet collection", orblet, ValueFormat::Percent)
                 .with_source("RoyalG[23][1]"),
@@ -262,8 +256,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// An Orblet row's effect as a subtree, the way upstream `effectDetailChildren`
-    /// expands it.
+    /// An Orblet row's effect as a subtree.
     fn armory_like_orblet(&self, index: usize, label: &str, value: f64) -> FormulaNode {
         FormulaNode::leaf(label, value, ValueFormat::Raw)
             .with_source(format!("RoyalG[23][{index}]"))

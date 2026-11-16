@@ -1,10 +1,8 @@
-//! The Jelly Operator fixture helpers both `jelly` test binaries share.
+//! The Jelly Operator save setups the `jelly` test binaries share.
 //!
-//! `fixtures/jelly.json` is `script/jelly-oracle.mjs` running
-//! `js/stats/systems/w7/jelly-operator.js` on `fixtures/data.json` and on three
-//! documented save overrides, so a drift in the board rules, the metrics, the
-//! seeded runtime, the estimate or the outlook fails there. Every expected
-//! number is the upstream calculator's own output.
+//! Every setup starts from `fixtures/data.json` and applies a documented
+//! override, so a test can reach a small board, a cleared stage or a board with
+//! its sections bought without a purpose-built save.
 //!
 //! Only some helpers apply to each binary, so the module allows dead code.
 #![allow(dead_code)]
@@ -12,87 +10,113 @@
 use idleon_import::import;
 use idleon_jelly::Jelly;
 use idleon_jelly::board::Layout;
-use serde_json::Value;
 
-pub fn fixture() -> String {
-    std::fs::read_to_string(concat!(
+/// The committed save's Jelly Operator, untouched.
+pub fn save() -> Jelly {
+    let fixture = std::fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../../fixtures/data.json"
     ))
-    .expect("fixtures/data.json is committed")
+    .expect("fixtures/data.json is committed");
+    import(&fixture)
+        .expect("the fixture imports")
+        .jelly
+        .expect("the fixture carries a jelly board")
 }
 
-pub fn oracle() -> Value {
-    serde_json::from_str(
-        &std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../fixtures/jelly.json"
-        ))
-        .expect("fixtures/jelly.json is committed"),
-    )
-    .expect("the oracle is JSON")
+/// The committed save with most of its board sections bought, so a search has
+/// room to improve on the saved board.
+pub fn bought_sections() -> Jelly {
+    let mut jelly = save();
+    jelly.plots = vec![
+        0, 2, 3, 4, 5, 7, 8, 9, 10, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 30,
+        31, 32, 33, 34, 35, 37, 38,
+    ];
+    jelly
 }
 
-pub fn case(name: &str) -> Value {
-    oracle()["cases"]
-        .as_array()
-        .expect("the oracle carries cases")
-        .iter()
-        .find(|case| case["name"] == name)
-        .unwrap_or_else(|| panic!("the oracle carries the {name} case"))
-        .clone()
+/// An early account: eight cell types on a small board at the last stage.
+pub fn small_board() -> Jelly {
+    let mut jelly = save();
+    set(
+        &mut jelly,
+        1,
+        32,
+        &[
+            (0, 6),
+            (4, 2),
+            (59, 1),
+            (65, 0),
+            (67, 5),
+            (72, 4),
+            (84, 3),
+            (94, 7),
+        ],
+        &[
+            (0, 1),
+            (1, 1),
+            (2, 1),
+            (3, 1),
+            (4, 1),
+            (5, 1),
+            (6, 1),
+            (7, 1),
+            (10, 1),
+            (12, 1),
+            (13, 2),
+            (14, 1),
+            (15, 1),
+            (16, 2),
+            (17, 3),
+            (18, 5),
+            (23, 2),
+            (28, 1),
+            (29, 10),
+            (35, 2),
+            (36, 1),
+            (38, 2),
+        ],
+        [3, 2, 1, 0, 0, 0, 0, 0, 0],
+        [10.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    );
+    jelly
 }
 
-/// The committed save with one case's documented overrides applied.
-pub fn jelly(name: &str) -> (Jelly, Value) {
-    let case = case(name);
-    let imported = import(&fixture()).expect("the fixture imports");
-    let mut jelly = imported.jelly.expect("the fixture carries a jelly board");
-    apply(&mut jelly, &case["overrides"]);
-    (jelly, case)
+/// A fresh account at the first stage with two cells on the board.
+pub fn clear() -> Jelly {
+    let mut jelly = save();
+    set(
+        &mut jelly,
+        2,
+        0,
+        &[(77, 1), (95, 1)],
+        &[(0, 1), (1, 1), (12, 1), (16, 3), (28, 1), (36, 1)],
+        [0; 9],
+        [0.0; 9],
+    );
+    jelly
 }
 
-pub fn apply(jelly: &mut Jelly, overrides: &Value) {
-    if let Some(fever) = overrides["fever"].as_u64() {
-        jelly.progress.fever = fever as u32;
-    }
-    if let Some(obstruction) = overrides["obstruction"].as_u64() {
-        jelly.progress.obstruction = obstruction as usize;
-    }
-    if let Some(upgrades) = overrides["upgrades"].as_object() {
-        for (id, level) in upgrades {
-            let id: usize = id.parse().expect("upgrade ids are numbers");
-            if jelly.upgrades.len() <= id {
-                jelly.upgrades.resize(id + 1, 0);
-            }
-            jelly.upgrades[id] = level.as_u64().expect("levels are integers") as u32;
+fn set(
+    jelly: &mut Jelly,
+    fever: u32,
+    obstruction: usize,
+    layout: &[(usize, usize)],
+    upgrades: &[(usize, u32)],
+    cell_level: [u32; 9],
+    cell_exp: [f64; 9],
+) {
+    jelly.progress.fever = fever;
+    jelly.progress.obstruction = obstruction;
+    jelly.layout = layout.iter().copied().collect::<Layout>();
+    for &(id, level) in upgrades {
+        if jelly.upgrades.len() <= id {
+            jelly.upgrades.resize(id + 1, 0);
         }
+        jelly.upgrades[id] = level;
     }
-    if let Some(plots) = overrides["plots"].as_array() {
-        jelly.plots = plots
-            .iter()
-            .map(|plot| plot.as_u64().expect("plot ids are integers") as usize)
-            .collect();
-    }
-    if let Some(levels) = overrides["cellLevels"].as_array() {
-        for (cell_type, level) in levels.iter().enumerate() {
-            jelly.cell_level[cell_type] = level.as_u64().expect("levels are integers") as u32;
-        }
-    }
-    if let Some(exp) = overrides["cellExp"].as_array() {
-        for (cell_type, value) in exp.iter().enumerate() {
-            jelly.cell_exp[cell_type] = value.as_f64().expect("EXP is a number");
-        }
-    }
-    if let Some(layout) = overrides["layout"].as_object() {
-        jelly.layout = Layout::new();
-        for (anchor, cell_type) in layout {
-            jelly.layout.insert(
-                anchor.parse().expect("anchors are numbers"),
-                cell_type.as_u64().expect("types are integers") as usize,
-            );
-        }
-    }
+    jelly.cell_level = cell_level;
+    jelly.cell_exp = cell_exp;
 }
 
 pub fn close(actual: f64, expected: f64, what: &str) {
@@ -101,27 +125,4 @@ pub fn close(actual: f64, expected: f64, what: &str) {
         (actual - expected).abs() <= tolerance,
         "{what}: {actual} != {expected}"
     );
-}
-
-pub fn close_opt(actual: Option<f64>, expected: &Value, what: &str) {
-    match expected.as_f64() {
-        Some(value) => close(
-            actual.unwrap_or_else(|| panic!("{what}: expected {value}")),
-            value,
-            what,
-        ),
-        None => assert!(
-            actual.is_none(),
-            "{what}: expected no value, got {actual:?}"
-        ),
-    }
-}
-
-pub fn numbers(value: &Value) -> Vec<f64> {
-    value
-        .as_array()
-        .expect("a number array")
-        .iter()
-        .map(|item| item.as_f64().expect("a number"))
-        .collect()
 }

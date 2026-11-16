@@ -1,7 +1,6 @@
 //! The combat replay codec, recorder and Killroy handoff (CS-07).
 //!
-//! Ported from `js/stats/systems/common/combat-sim-replay.js`: each recorded
-//! frame holds only what changed since the previous frame, every
+//! Each recorded frame holds only what changed since the previous frame, every
 //! `keyframe_every` frames holds the complete state, positions are quantized to
 //! 0.1 px and changed values are stored as tenth deltas. Frames are packed into
 //! transferable chunks and read back through a [`Store`] that decodes a frame
@@ -10,19 +9,11 @@
 //! A replay is a list of JSON snapshots: a number for the simulated time under
 //! `t`, plus whatever the recorder captured (the run's monsters, for the
 //! encounter replay). `serde_json` keeps object keys in insertion order here
-//! (the workspace builds it with `preserve_order`), as the upstream encoder
-//! does; the oracle script sorts the snapshots it hands to the JS encoder and
-//! the fixture is read in that same order, so both sides visit fields
-//! identically and the bytes stay comparable.
+//! (the workspace builds it with `preserve_order`), so the encoder and the
+//! store visit fields in the same order.
 //!
-//! `crates/combat/data/replay.json` and `fixtures/combat-replay.json` are
-//! written by `script/combat-replay-oracle.mjs` from one upstream checkout, so
-//! the encoder's bytes and the store's decoded frames cannot drift from their
-//! source. The same fixture carries the Killroy handoff's own capture and its
-//! accept/reject cases.
-//!
-//! The module is split the way the source is: [`codec`] writes a frame,
-//! [`store`] reads one back, and [`killroy`] is the practice's handoff document.
+//! The module is split by role: [`codec`] writes a frame, [`store`] reads one
+//! back, and [`killroy`] is the practice's handoff document.
 
 mod codec;
 mod killroy;
@@ -49,7 +40,7 @@ const KIND_L: u8 = 1;
 const KIND_V: u8 = 2;
 /// `Number.MAX_SAFE_INTEGER`.
 const SAFE_INTEGER: f64 = 9_007_199_254_740_991.0;
-/// The message upstream raises for a payload it will not replay.
+/// The message raised for a payload that cannot be replayed.
 pub const INVALID_KILLROY_REPLAY: &str = "Invalid captured Killroy replay";
 
 #[derive(Debug, serde::Deserialize)]
@@ -65,7 +56,7 @@ fn data() -> &'static ReplayData {
     DATA.get_or_init(|| serde_json::from_str(REPLAY_JSON).expect("replay.json is valid"))
 }
 
-/// The codec's default keyframe interval (`createReplayEncoder`).
+/// The codec's default keyframe interval.
 pub fn keyframe_every() -> usize {
     data().keyframe_every
 }
@@ -75,7 +66,7 @@ pub fn snapshot_ms() -> u64 {
     data().snapshot_ms
 }
 
-/// The maps a captured Killroy replay may name (`killroyMapIds`).
+/// The maps a captured Killroy replay may name.
 pub fn killroy_maps() -> &'static [i64] {
     &data().killroy_maps
 }

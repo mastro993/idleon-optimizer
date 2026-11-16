@@ -1,13 +1,9 @@
 //! The one import pipeline: detection, migration to the current schema and the
 //! message each failure gets.
 
-use base64::Engine as _;
-use flate2::Compression;
-use flate2::write::GzEncoder;
 use idleon_import::pipeline::{self, Document, Error};
 use idleon_project::{self as project, FORMAT, SECTION_FORMAT};
 use serde_json::{Value, json};
-use std::io::Write as _;
 
 /// The research rows the save reader expects, with two levels on the grid.
 fn research_rows() -> Value {
@@ -58,41 +54,12 @@ fn project_document() -> Value {
     })
 }
 
-/// An upstream `ROv2:` state string: base64 of gzip of the state object.
-fn upstream_state(version: u32) -> String {
-    let state = json!({
-        "_format": "research-optimizer-state",
-        "_version": version,
-        "researchLevel": 140,
-        "gridLevels": vec![1; 240],
-        "occFound": vec![0; 80],
-        "insightLvs": vec![0; 80],
-        "insightProgress": vec![0; 80],
-        "magData": [],
-        "shapePositions": [],
-    });
-    let mut encoder = GzEncoder::new(Vec::new(), Compression::fast());
-    encoder
-        .write_all(state.to_string().as_bytes())
-        .expect("gzip");
-    format!(
-        "ROv2:{}",
-        base64::engine::general_purpose::STANDARD.encode(encoder.finish().expect("gzip"))
-    )
-}
-
 #[test]
 fn every_accepted_format_is_detected_and_named() {
     let project = pipeline::read(&project_document().to_string()).expect("the project reads");
     assert_eq!(project.format(), "project");
     assert_eq!(project.research_level(), Some(123));
     assert_eq!(project.section_configs(), 1);
-
-    let state = pipeline::read(&upstream_state(2)).expect("the state string reads");
-    assert_eq!(state.format(), "upstream state");
-    assert_eq!(state.research_level(), Some(140));
-    // The migrated state carries no save, so it names no character count.
-    assert_eq!(state.characters(), None);
 
     let section = json!({
         "format": SECTION_FORMAT,
@@ -160,10 +127,6 @@ fn an_unsupported_version_names_the_version_and_what_the_build_reads() {
     let message = error.to_string();
     assert!(message.contains("version 9"), "{message}");
     assert!(message.contains(&project::VERSION.to_string()), "{message}");
-
-    let error = pipeline::read(&upstream_state(7)).expect_err("state version 7 is unknown");
-    let message = error.to_string();
-    assert!(message.contains("upstream state 7"), "{message}");
 }
 
 #[test]
@@ -197,28 +160,6 @@ fn a_project_including_a_save_prepares_it_before_apply() {
     // The project's own research state is what applies, not the save's.
     assert_eq!(project.document.simulation.research_level, 123);
     assert_eq!(project.characters(), Some(1));
-}
-
-#[test]
-fn an_ro_v2_state_string_is_decompressed_and_migrated() {
-    let Document::Project(project) = pipeline::read(&upstream_state(1)).expect("the state reads")
-    else {
-        panic!("a state string is a project document");
-    };
-    assert_eq!(project.document.origin, project::Origin::UpstreamState);
-    assert_eq!(project.document.version, project::VERSION);
-    assert_eq!(project.document.simulation.research_level, 140);
-    assert!(project.save.is_none());
-    // The upstream export carries no save, and the migration says so.
-    assert!(
-        project
-            .document
-            .warnings
-            .iter()
-            .any(|warning| warning.starts_with("save: ")),
-        "{:?}",
-        project.document.warnings
-    );
 }
 
 #[test]

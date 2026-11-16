@@ -1,9 +1,8 @@
 //! JR-04: the Enchant Simulator tab.
 //!
-//! Ported from `_renderEnchantSim` and `_renderSimResults` in `jar-calc.html`.
-//! The controls are the page's `esim-*` inputs; the run goes through the shared
-//! [`idleon_ui::runner::TaskRunner`], so progress and cancel match every other
-//! long job, and the odds table reads the same simulated average the page does.
+//! The run goes through the shared [`idleon_ui::runner::TaskRunner`], so
+//! progress and cancel match every other long job, and the odds table reads the
+//! simulated average.
 
 use crate::sections::jar::metric;
 use crate::sections::jar::state::{ENCHANTS, SIMS, TARGET_MAX};
@@ -182,9 +181,10 @@ fn controls(state: &AppState, jar: &Jar, cx: &mut Context<AppState>) -> AnyEleme
         });
 
     Card::new()
-        .header(CardHeader::new("Enchant Simulator").description(
-            "All simulations start from the found collectibles at one level, as the page's worker does.",
-        ))
+        .header(
+            CardHeader::new("Enchant Simulator")
+                .description("All simulations start from the found collectibles at one level."),
+        )
         .child(
             div()
                 .id("jar-sim-controls")
@@ -456,7 +456,7 @@ fn odds(jar: &Jar, result: &SimResult, muted: gpui::Hsla) -> AnyElement {
         .into_any_element()
 }
 
-/// One odds cell, in the page's hr/d/y units.
+/// One odds cell, in hr/d/y units.
 fn hours_cell(hours: f64) -> String {
     if !hours.is_finite() {
         return "—".to_owned();

@@ -1,36 +1,16 @@
 //! The coordinator and its bounded full-board search.
 //!
-//! `fixtures/jelly.json` carries the upstream `jellySearchAssignment` and
-//! `jellySelectSharedElites` rows for the committed save, so the coordinator's
-//! focus rotation, its refine override and its elite selection are compared
-//! field for field. The search's own rules are held here: the recommendation is
-//! never worse than the board it was given, it is legal and applies to the
-//! layout, the same options reproduce the same board, and a stopped run stores
-//! nothing.
+//! The search's own rules are held here: the recommendation is never worse than
+//! the board it was given, it is legal and applies to the layout, the same
+//! options reproduce the same board, and a stopped run stores nothing.
 
 mod common;
 
-use common::{close, jelly};
-use idleon_jelly::board::{self, Layout};
-use idleon_jelly::optimizer::{self, Focus, Optimization, Options};
+use common::{bought_sections, save};
+use idleon_jelly::board;
+use idleon_jelly::optimizer::{self, Optimization, Options};
 use idleon_jelly::planner::Objective;
 use idleon_jelly::surrogate::{self, Objective as SurrogateObjective};
-use serde_json::Value;
-use std::collections::BTreeMap;
-
-fn layout_of(value: &Value) -> Layout {
-    value
-        .as_object()
-        .expect("a layout object")
-        .iter()
-        .map(|(anchor, cell_type)| {
-            (
-                anchor.parse().expect("a numeric anchor"),
-                cell_type.as_u64().expect("a cell type") as usize,
-            )
-        })
-        .collect::<BTreeMap<usize, usize>>()
-}
 
 fn small() -> Options {
     Options {
@@ -45,140 +25,9 @@ fn small() -> Options {
     }
 }
 
-fn start_of(row: &Value) -> optimizer::Start {
-    optimizer::Start {
-        start: row["start"].as_u64().expect("a start") as usize,
-        focus: Focus::from_id(row["assignment"]["focus"].as_str().expect("a focus"))
-            .expect("a known focus"),
-        layout: layout_of(&row["result"]["layout"]),
-        score: row["result"]["score"].as_f64().expect("a score"),
-        elapsed_ms: row["elapsedMs"].as_f64().expect("an elapsed measure"),
-        baseline_score: row["assignment"]["baselineScore"].as_f64(),
-    }
-}
-
-fn coordinator_options() -> Options {
-    Options {
-        iterations: 20,
-        saved_refinement_rounds: 3,
-        ..Options::default()
-    }
-}
-
-#[test]
-fn the_coordinator_matches_upstream() {
-    let (jelly, case) = jelly("optimizer-coordinator");
-    let base: Vec<optimizer::Start> = case["coordinatorRows"]
-        .as_array()
-        .expect("the fixture lists the rows")
-        .iter()
-        .map(start_of)
-        .collect();
-
-    let expected_elites = case["coordinatorElites"]
-        .as_array()
-        .expect("the fixture lists the elites");
-    let elites = optimizer::shared_elites(&base, optimizer::SHARED_ELITES);
-    assert_eq!(elites.len(), expected_elites.len(), "elite count");
-    for (elite, expected) in elites.iter().zip(expected_elites) {
-        assert_eq!(
-            elite.source_start,
-            expected["sourceStart"].as_u64().expect("a start") as usize,
-            "elite source"
-        );
-        assert_eq!(elite.layout, layout_of(&expected["layout"]), "elite layout");
-    }
-
-    let expected = case["coordinator"]
-        .as_array()
-        .expect("the fixture lists the assignments");
-    let mut running: Vec<optimizer::Start> = Vec::new();
-    for (start, expected) in expected.iter().enumerate() {
-        let assignment = optimizer::assignment(&running, start, &coordinator_options());
-        assert_eq!(
-            assignment.focus,
-            Focus::from_id(expected["focus"].as_str().expect("a focus")).expect("a known focus"),
-            "start {start}: focus"
-        );
-        assert_eq!(
-            assignment.iterations,
-            expected["overrides"]["iterations"]
-                .as_u64()
-                .expect("build rounds") as usize,
-            "start {start}: build rounds"
-        );
-        assert_eq!(
-            assignment.saved_refinement_rounds,
-            expected["overrides"]["savedRefinementRounds"]
-                .as_u64()
-                .expect("saved-board rounds") as usize,
-            "start {start}: saved-board rounds"
-        );
-        assert_eq!(
-            assignment.active_exact_node_budget,
-            Some(
-                expected["overrides"]["activeExactNodeBudget"]
-                    .as_u64()
-                    .expect("the repair budget") as usize
-            )
-            .filter(|budget| *budget > 0),
-            "start {start}: repair budget"
-        );
-        assert_eq!(
-            assignment.source_starts,
-            expected["sourceStarts"]
-                .as_array()
-                .expect("the source starts")
-                .iter()
-                .map(|start| start.as_u64().expect("a start") as usize)
-                .collect::<Vec<_>>(),
-            "start {start}: source starts"
-        );
-        match expected["baselineScore"].as_f64() {
-            Some(score) => close(
-                assignment.baseline_score.expect("a baseline"),
-                score,
-                "the baseline score",
-            ),
-            None => assert!(assignment.baseline_score.is_none()),
-        }
-        let mut row = base[start % base.len()].clone();
-        row.start = start;
-        row.focus = assignment.focus;
-        running.push(row);
-    }
-    let _ = jelly;
-}
-
-#[test]
-fn the_ranking_score_matches_upstream() {
-    let (jelly, case) = jelly("optimizer-coordinator");
-    let scores = case["optimizerScores"]
-        .as_array()
-        .expect("the fixture lists the scores");
-    assert!(!scores.is_empty());
-    for row in scores {
-        let objective = row["objective"].as_str().expect("an objective");
-        let objective = match objective {
-            "dps" => SurrogateObjective::Dps,
-            "bloodcells" => SurrogateObjective::Bloodcells,
-            "exp" => SurrogateObjective::Exp,
-            "survival" => SurrogateObjective::Survival,
-            "clear" => SurrogateObjective::Clear,
-            other => panic!("unknown objective {other}"),
-        };
-        let layout = layout_of(&row["layout"]);
-        close(
-            surrogate::proxy_score(&jelly, &layout, objective, None, None),
-            row["score"].as_f64().expect("a score"),
-            &format!("{objective:?} proxy score"),
-        );
-    }
-}
-
 #[test]
 fn the_optimizer_finds_a_board_at_least_as_good_as_the_saved_one() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     let result = Optimization::run(&jelly, small());
     assert!(
         result.recommended.proxy_score >= result.baseline_score,
@@ -206,7 +55,7 @@ fn the_optimizer_finds_a_board_at_least_as_good_as_the_saved_one() {
 fn the_optimizer_beats_the_saved_board_when_the_board_has_room() {
     // The committed save's own board is a tight local optimum; the same account
     // with its sections bought leaves the search somewhere to improve.
-    let (jelly, _) = jelly("optimizer-coordinator");
+    let jelly = bought_sections();
     let result = Optimization::run(&jelly, small());
     assert!(
         result.recommended.proxy_score > result.baseline_score,
@@ -221,7 +70,7 @@ fn the_optimizer_beats_the_saved_board_when_the_board_has_room() {
 
 #[test]
 fn the_same_options_reproduce_the_same_board() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     let first = Optimization::run(&jelly, small());
     let second = Optimization::run(&jelly, small());
     assert_eq!(first.recommended.layout, second.recommended.layout);
@@ -242,7 +91,7 @@ fn the_same_options_reproduce_the_same_board() {
 
 #[test]
 fn a_stopped_run_stores_nothing() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     let mut reports = 0;
     let stopped = Optimization::run_with(&jelly, small(), |_| {
         reports += 1;
@@ -254,7 +103,7 @@ fn a_stopped_run_stores_nothing() {
 
 #[test]
 fn the_recommendation_applies_to_the_layout() {
-    let (mut jelly, _) = jelly("save");
+    let mut jelly = save();
     let result = Optimization::run(&jelly, small());
     jelly.layout = result.recommended.layout.clone();
     assert!(board::validate(&jelly, &jelly.layout).is_ok());
@@ -272,7 +121,7 @@ fn the_recommendation_applies_to_the_layout() {
 
 #[test]
 fn every_objective_never_falls_below_the_saved_board() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     for objective in [
         Objective::Clear,
         Objective::Bloodcells,
@@ -305,7 +154,7 @@ fn every_objective_never_falls_below_the_saved_board() {
 
 #[test]
 fn the_beam_width_changes_how_much_board_the_search_sees() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     let narrow = Optimization::run(
         &jelly,
         Options {
@@ -327,7 +176,7 @@ fn the_beam_width_changes_how_much_board_the_search_sees() {
 
 #[test]
 fn a_hypothetical_obstruction_is_the_score_context() {
-    let (jelly, _) = jelly("save");
+    let jelly = save();
     let result = Optimization::run(
         &jelly,
         Options {

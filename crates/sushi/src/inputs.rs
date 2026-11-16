@@ -1,9 +1,9 @@
 //! The save side of the Sushi Station tab: the station rows, the account terms
 //! the currency and fuel formulas read, and the RoG table.
 //!
-//! Upstream keeps the station on `saveData.sushiData` (`Sushi`), the unique
-//! tier count on `cachedUniqueSushi` and the rest on the account systems the
-//! shared decoder already reads. A field the save does not carry is reported,
+//! The station comes from the save's `Sushi` rows, the unique tier count from
+//! its discovery row and the rest from the account systems the shared decoder
+//! already reads. A field the save does not carry is reported,
 //! never guessed.
 
 use crate::math::{External, Station, compute_unique_sushi};
@@ -74,7 +74,7 @@ pub fn inputs(save: &Save, simulation: &Simulation) -> (Inputs, Vec<String>) {
         minehead11: decoder.minehead_bonus(11),
         atom14: decoder.atom(14),
         sailing39: sailing_artifact(save, 39),
-        // Upstream reads `bon_v` here (`sushi-ui.js`), not the `bun_v` id.
+        // The bundle key is `bon_v` here, not the `bun_v` id.
         bundle_v: decoder.bundle("bon_v"),
         super_bit67: decoder.superbit(67),
         button2: decoder.button_bonus(2),

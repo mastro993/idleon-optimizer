@@ -1,22 +1,21 @@
 //! The daily distribution: the mastery point budget spent across the upgrades.
 //!
-//! The Mastery EXP tab keeps its "Optimal Distribution (Daily Reset)" maths
-//! inline too, so this module names the page function it rewrites:
-//! [`Mastery::distribution`] is `optimizeDistribution`: every mastery point the
-//! rank and the Rift Spooker companion grant (`totalPts`) goes to the unlocked
-//! EXP upgrade with the biggest marginal multiplier, starting from zero, so the
-//! plan is a full reallocation rather than an increment on the saved levels.
+//! [`Mastery::distribution`] is the "Optimal Distribution (Daily Reset)": every
+//! mastery point the rank and the Rift Spooker companion grant goes to the
+//! unlocked EXP upgrade with the biggest marginal multiplier, starting from
+//! zero, so the plan is a full reallocation rather than an increment on the
+//! saved levels.
 //!
-//! The page picks that upgrade with `newMulti / curMulti` and a strict `>`, so a
-//! tie keeps the game's own upgrade order; this port does the same, which is why
-//! the oracle compares the whole plan and not only its rate.
+//! The upgrade is picked by the ratio of its new to its current multiplier,
+//! and only a strictly bigger ratio wins, so a tie keeps the game's own upgrade
+//! order.
 //!
-//! The page has one objective, the EXP rate. [`Goal`] adds the second choice the
-//! section's inputs ask for, derived from the page's own tables: the same budget
-//! spent at the rank that unlocks the next upgrade. `RANK_REQ` decides that rank
-//! and `scalingFactor(5)` grows with it, so the plan changes once SOUR (rank 25)
-//! or SAVORY (rank 100) joins the comparison; a save with every upgrade unlocked
-//! gets the same plan either way.
+//! [`Goal::Now`] plans for the EXP rate at the current rank. [`Goal`] adds a
+//! second choice: the same budget spent at the rank that unlocks the next
+//! upgrade. [`REQUIRED_LEVEL`] decides that rank and SAVORY's scaling grows
+//! with it, so the plan changes once SOUR (rank 25) or SAVORY (rank 100) joins
+//! the comparison; a save with every upgrade unlocked gets the same plan either
+//! way.
 
 use super::{BASE_RATE, COMPANION_POINTS, EXP_UPGRADES, Mastery, REQUIRED_LEVEL, UPGRADE_NAMES};
 use idleon_common::formula::ValueFormat;
@@ -25,8 +24,7 @@ use idleon_common::formula::ValueFormat;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Goal {
-    /// The rate the upgrades give at the current mastery rank, the page's own
-    /// `optimizeDistribution` plan.
+    /// The rate the upgrades give at the current mastery rank.
     #[default]
     Now,
     /// The rate the same budget gives at the rank that unlocks the next upgrade:
@@ -62,7 +60,7 @@ pub struct Row {
     /// The upgrade's index in [`UPGRADE_NAMES`].
     pub index: usize,
     pub name: &'static str,
-    /// `getUpgLevel(t)`: the level the save holds.
+    /// The level the save holds.
     pub current: f64,
     /// The level the plan reaches.
     pub planned: f64,
@@ -72,9 +70,9 @@ pub struct Row {
     pub locked: bool,
     /// The mastery rank the upgrade needs.
     pub required_level: u32,
-    /// `bonusTotal(t, planned)`: the planned bonus, as a percentage.
+    /// The planned bonus, as a percentage.
     pub bonus: f64,
-    /// `expMultiplier(t, planned)`: the factor the plan reaches.
+    /// The factor the plan reaches.
     pub multiplier: f64,
 }
 
@@ -86,7 +84,7 @@ pub struct Plan {
     pub current_rank: f64,
     /// The mastery rank the plan is computed at.
     pub rank: f64,
-    /// The points the rank and the companion grant there (`totalPts`).
+    /// The points the rank and the companion grant there.
     pub available: f64,
     /// The budget asked for, before clamping.
     pub requested: f64,
@@ -100,8 +98,8 @@ pub struct Plan {
     pub current_rate: f64,
     /// `(rate − current_rate) / current_rate`, as a percentage.
     pub improvement: f64,
-    /// The page's `optTimeToLevel`: the saved level's requirement over the
-    /// planned rate, so the goal-switch plans stay comparable.
+    /// The saved level's requirement over the planned rate, so the goal-switch
+    /// plans stay comparable.
     pub hours: f64,
     /// Hours to the next mastery level at the saved rate.
     pub current_hours: f64,
@@ -159,16 +157,16 @@ impl Plan {
     }
 }
 
-/// A point count as the page prints it: whole numbers only.
+/// A point count as the tab prints it: whole numbers only.
 fn whole(value: f64) -> String {
     format!("{value:.0}")
 }
 
 impl Mastery {
-    /// `totalPts`: the points the mastery rank and the companion grant.
+    /// The points the mastery rank and the companion grant.
     ///
-    /// The page adds the companion's five points but not the research grid,
-    /// event shop or jelly sources the yellow point allocator counts.
+    /// The companion's five points count, but not the research grid, event shop
+    /// or jelly sources the yellow point allocator counts.
     pub(crate) fn points_earned_at(&self, rank: f64) -> f64 {
         rank + 1.0
             + if self.companion_87_owned {
@@ -199,7 +197,7 @@ impl Mastery {
         }
     }
 
-    /// `scalingFactor(t)` at another mastery rank: only SAVORY reads the rank.
+    /// The upgrade's scaling at another mastery rank: only SAVORY reads the rank.
     pub(crate) fn scaling_at(&self, index: usize, rank: f64) -> f64 {
         if index == 5 {
             rank + 1.0
@@ -208,27 +206,27 @@ impl Mastery {
         }
     }
 
-    /// `bonusTotal(t, level)` at another mastery rank, as a percentage.
+    /// The upgrade's bonus at another mastery rank, as a percentage.
     pub(crate) fn bonus_at(&self, index: usize, level: f64, rank: f64) -> f64 {
         self.per_lv(index) * level * self.scaling_at(index, rank)
     }
 
-    /// `expMultiplier(t, level)` at another mastery rank.
+    /// The upgrade's factor at another mastery rank.
     pub(crate) fn multiplier_at(&self, index: usize, level: f64, rank: f64) -> f64 {
         1.0 + self.bonus_at(index, level, rank) / 100.0
     }
 
-    /// `computeExpRate` for the given levels at the given mastery rank.
+    /// The EXP rate for the given levels at the given mastery rank.
     pub(crate) fn rate_at(&self, levels: &[f64; 6], rank: f64) -> f64 {
         EXP_UPGRADES.iter().fold(BASE_RATE, |rate, index| {
             rate * self.multiplier_at(*index, levels[*index], rank)
         }) * self.external.total()
     }
 
-    /// `optimizeDistribution(totalPoints)`: the budget across the upgrades.
+    /// The budget across the upgrades.
     ///
-    /// The request is clamped to `[0, totalPts]` the way the page's input is, and
-    /// floored to whole points because the page spends one point per iteration.
+    /// The request is clamped to the points available and floored to whole
+    /// points, because the plan spends one point per iteration.
     pub fn distribution(&self, goal: Goal, budget: f64) -> Plan {
         let rank = self.plan_rank(goal);
         let available = self.points_earned_at(rank);

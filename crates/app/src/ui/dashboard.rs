@@ -1,4 +1,4 @@
-//! Landing dashboard: the searchable card grid ported from upstream `index.html`.
+//! Landing dashboard: the searchable card grid of every section.
 
 use crate::sections::{self, Group, Section};
 use crate::state::AppState;

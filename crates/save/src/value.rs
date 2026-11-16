@@ -1,10 +1,10 @@
-//! The decoded save, read with the upstream `readRawKey` semantics.
+//! The decoded save.
 //!
 //! The game writes some fields as JSON strings and others as one character per
-//! key (`{"0":"{","1":"["…}`). Upstream's `js/stats/systems/common/combat-sim-setup.js`
-//! decodes both on every read, and the Killroy planner depends on that. This
-//! wrapper keeps the parsed object and offers the same lookups without the
-//! section modules re-implementing the codec.
+//! key (`{"0":"{","1":"["…}`). Both are decoded on every read, and the
+//! Killroy planner depends on that. This wrapper keeps the parsed object and
+//! offers the same lookups without the section modules re-implementing the
+//! codec.
 
 use serde_json::{Map, Value};
 use std::sync::Arc;
@@ -50,7 +50,7 @@ impl Save {
         &self.root
     }
 
-    /// Read one key, decoding it the way upstream does.
+    /// Read one key, decoding either encoding.
     pub fn get(&self, key: &str) -> Option<Value> {
         let root = self.root.as_object()?;
         let source = if WRAPPER_KEYS.contains(&key) {
@@ -156,7 +156,7 @@ fn numeric_key(key: &str) -> Option<usize> {
     key.parse::<usize>().ok()
 }
 
-/// The upstream `_number`: a missing, blank or non-finite value is `None`.
+/// A number: a missing, blank or non-finite value is `None`.
 pub fn number(value: &Value) -> Option<f64> {
     match value {
         Value::Null => None,
@@ -176,7 +176,7 @@ pub fn at(value: &Value, index: usize) -> Option<&Value> {
     }
 }
 
-/// A row as upstream `rowValues` reads it: arrays as-is, objects by their
+/// A row's cells: arrays as-is, objects by their
 /// numeric keys, and holes as `Null`.
 pub fn row_values(value: &Value) -> Vec<Value> {
     match value {

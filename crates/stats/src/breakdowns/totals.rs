@@ -1,5 +1,5 @@
-//! The four `total-str`/`total-agi`/`total-wis`/`total-luk` rows, ported from
-//! `js/stats/systems/common/stats.js` by `idleon-stats-engine`.
+//! The four `total-str`/`total-agi`/`total-wis`/`total-luk` rows, resolved by
+//! `idleon-stats-engine`.
 //!
 //! The engine resolves the pools it models and names every term it leaves out,
 //! so the row shows a real total with a partial reason rather than a dash.
@@ -22,7 +22,7 @@ pub(super) fn resolve(inputs: &Inputs<'_>, id: &str) -> Option<Resolution> {
             Some(total) => Resolution::Value {
                 partial: (!total.is_complete()).then(|| {
                     format!(
-                        "Lower bound: {} of the upstream terms are not modelled ({}).",
+                        "Lower bound: {} of the stat terms are not modelled ({}).",
                         total.missing.len(),
                         total.missing.join("; ")
                     )
@@ -30,7 +30,7 @@ pub(super) fn resolve(inputs: &Inputs<'_>, id: &str) -> Option<Resolution> {
                 tree: total
                     .tree
                     .with_format(ValueFormat::Count)
-                    .with_source("js/stats/systems/common/stats.js · computeTotalStat"),
+                    .with_source("Total stat pools"),
             },
             None => Resolution::Unavailable {
                 reason: format!(

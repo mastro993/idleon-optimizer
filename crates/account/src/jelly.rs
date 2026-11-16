@@ -1,13 +1,11 @@
 //! The Jelly Operator save slice.
 //!
-//! Ports the save access in `jelly-operator-calc.html` and
-//! `js/stats/systems/w7/jelly-operator.js`: the progress row `Research[7]`, the
-//! layout `Research[14]`, the cell EXP and levels `Research[15..16]`, the
-//! upgrade levels `Research[17]` and the plot tokens `Research[18]`, plus the
-//! account systems the page multiplies: grid nodes 185-187, Spelunking palette
-//! 1, Legend Talent 41, the Bloodclot artifact, arcade 72, Atom 15, the `ban_j`
-//! bundle, event shop 56/57, Sushi's `rogBonusQTY(63)` and Menagerie's Upgrade
-//! Doubler row `Spelunk[53]`.
+//! The progress row `Research[7]`, the layout `Research[14]`, the cell EXP and
+//! levels `Research[15..16]`, the upgrade levels `Research[17]` and the plot
+//! tokens `Research[18]`, plus the account systems that multiply them: grid
+//! nodes 185-187, Spelunking palette 1, Legend Talent 41, the Bloodclot
+//! artifact, arcade 72, Atom 15, the `ban_j` bundle, event shop 56/57, Sushi's
+//! Ring of Glory bonus 63 and Menagerie's Upgrade Doubler row `Spelunk[53]`.
 //!
 //! A save without `Research[14]` and `Research[17]` has no board to read; the
 //! section names that instead of showing a guessed one.
@@ -34,7 +32,7 @@ const JELLY_DOUBLER_ROW: usize = 53;
 const LEGEND_ROW: usize = 18;
 /// The Legend talent whose points grant plot tokens.
 const LEGEND_PLOT_TALENT: usize = 41;
-/// Sushi's `rogBonusQTY(63)`.
+/// Sushi's Ring of Glory bonus 63.
 const SASHIMI_63: usize = 63;
 /// The Bloodclot artifact: `Sailing[3][40]`.
 const BLOODCLOT_ARTIFACT: usize = 40;

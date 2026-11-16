@@ -37,7 +37,7 @@ pub(crate) fn rupies(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
         .into_any_element()
 }
 
-/// The four figures the upstream page leads with.
+/// The four figures the tab leads with.
 fn headline(jar: &Jar, tier: u32, cx: &mut Context<AppState>) -> AnyElement {
     let gilded = jar.doubler_bonus();
     let (gilded_value, gilded_caption, gilded_tone) = match gilded > 0.0 {
@@ -147,7 +147,7 @@ fn breakdown(tree: Entity<idleon_ui::formula::FormulaTree>) -> AnyElement {
         .into_any_element()
 }
 
-/// `extraRupieChance`: the sources that add a rupie to a break.
+/// The sources that add a rupie to a break.
 fn extra_chances(jar: &Jar) -> AnyElement {
     let mut table = Table::new(["Source", "Value", "From"]).row([
         div().child("One rupie").into_any_element(),
@@ -189,7 +189,7 @@ fn extra_chances(jar: &Jar) -> AnyElement {
         .into_any_element()
 }
 
-/// `rupieTypeRange`: what one break of each rupie jar pays at the chosen tier,
+/// What one break of each rupie jar pays at the chosen tier,
 /// split across the colors the account has reached.
 fn income(jar: &Jar, tier: u32) -> AnyElement {
     let mut table = Table::new(["Jar type", "Colors", "Rupies / break"]);
@@ -238,7 +238,7 @@ fn income(jar: &Jar, tier: u32) -> AnyElement {
         .into_any_element()
 }
 
-/// A rupie's own dot, as the upstream pills draw it.
+/// A rupie's own dot, as the pills draw it.
 fn dot(color: usize) -> AnyElement {
     div()
         .flex_none()
@@ -248,7 +248,7 @@ fn dot(color: usize) -> AnyElement {
         .into_any_element()
 }
 
-/// `rupieValueByTier`: the multiplier at each of the five value tiers.
+/// The multiplier at each of the five value tiers.
 fn value_by_tier(jar: &Jar) -> AnyElement {
     let mut headers: Vec<String> = vec!["Rupie value".into()];
     for tier in 0..VALUE_TIERS {

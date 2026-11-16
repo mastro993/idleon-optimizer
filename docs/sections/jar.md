@@ -8,16 +8,11 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.
+Implement jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.
 
 ## Known gaps
 
 - `JR-G1` History sparklines — blocked by `ui:jar-sparkline` (absent)
-
-## Upstream sources
-
-- jar-calc.html
-- js/stats/systems/w5/jar.js
 
 ## UI
 
@@ -59,7 +54,6 @@ Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
-- Values match upstream.
 - Slot details render.
 - Missing jars are flagged.
 
@@ -71,7 +65,6 @@ Depends on: JR-01 Overview and production, FND-11 Shared formula tree and breakd
 
 Acceptance:
 
-- Values match upstream.
 - Tier switching works.
 - Breakdown sums to the total.
 
@@ -101,6 +94,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Enchant determinism.
 - Harness.

@@ -1,14 +1,13 @@
 //! The Coin Multiplier Calculator section: the character selector, the current
 //! calculation cards, the partial state and the formula tree behind the total.
 //!
-//! Ported from `coin-multi-calc.html`: the character select, the six cards, the
-//! partial badge and the `#tree` breakdown. The cards read the save through
-//! [`idleon_coin_multi`], which resolves all 23 groups for a full save and names
-//! any group it cannot resolve, so a partial badge always explains itself and
-//! the breakdown lists every term. The damage card is the one editable value:
-//! upstream resolves it through the damage descriptor, which this build does not
-//! carry yet, so the field opens on the save's highest recorded hit and the
-//! overkill tier follows what it holds.
+//! The cards read the save through [`idleon_coin_multi`], which resolves all 23
+//! groups for a full save and names any group it cannot resolve, so a partial
+//! badge always explains itself and the breakdown lists every term. The damage
+//! card is the one editable value: the full model resolves it through the
+//! damage descriptor, which this build does not carry yet, so the field opens
+//! on the save's highest recorded hit and the overkill tier follows what it
+//! holds.
 
 mod actions;
 
@@ -51,7 +50,7 @@ impl State {
     }
 
     /// Take a freshly imported save: character one, its saved target and the
-    /// save's highest recorded damage, exactly like upstream's `onLoad`.
+    /// save's highest recorded damage.
     pub(crate) fn load(&mut self, imported: &Imported, cx: &mut Context<AppState>) {
         self.character = 0;
         let prefill = imported
@@ -272,9 +271,10 @@ pub(crate) fn view(
 /// breakdown cards.
 fn formula_card(tree: Entity<FormulaTree>) -> AnyElement {
     Card::new()
-        .header(CardHeader::new("Formula Breakdown").description(
-            "The 23 groups behind the total, each with the upstream source that owns it.",
-        ))
+        .header(
+            CardHeader::new("Formula Breakdown")
+                .description("The 23 groups behind the total, each with the source that owns it."),
+        )
         .child(
             div()
                 .id("coin-formula-card-body")
@@ -306,7 +306,7 @@ fn formula_gap(message: &str, muted: Hsla) -> AnyElement {
         .into_any_element()
 }
 
-/// The six current-calculation cards, in upstream's order.
+/// The six current-calculation cards.
 fn cards(
     character: Option<&Character>,
     evaluation: Option<&Evaluation>,

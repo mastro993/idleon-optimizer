@@ -6,7 +6,7 @@ use idleon_stats::{ConstructionMode, MapVisibility, Skill};
 
 impl AppState {
     /// Pick the stats context's character; the map follows its current map and
-    /// then the map list, exactly like an upstream character switch.
+    /// then the map list.
     pub(crate) fn set_stats_character(&mut self, character: usize, cx: &mut Context<Self>) {
         let Some(snapshot) = self.stats_all.snapshot.clone() else {
             return;
@@ -120,9 +120,8 @@ impl AppState {
 
     /// Record a hypothetical edit of one game input and re-resolve the page.
     ///
-    /// Upstream applies the edit to a copy of the save, recalculates and keeps
-    /// the message when the value is outside the input's own checks; the same
-    /// refusal keeps the previous value and shows the error in the ledger.
+    /// A value outside the input's own checks is refused: the previous value
+    /// stays and the ledger shows the error.
     pub(crate) fn set_stats_input(&mut self, id: String, value: f64, cx: &mut Context<Self>) {
         let outcome = match self.stats_all.sandbox.as_mut() {
             Some(sandbox) => sandbox.set(&id, value),
@@ -150,7 +149,7 @@ impl AppState {
         self.stats_sandbox_changed(cx);
     }
 
-    /// Drop every pending edit, which is upstream's `Reset all edits`.
+    /// Drop every pending edit (`Reset all edits`).
     pub(crate) fn reset_stats_inputs(&mut self, cx: &mut Context<Self>) {
         if let Some(sandbox) = self.stats_all.sandbox.as_mut() {
             sandbox.reset_all();
@@ -161,7 +160,7 @@ impl AppState {
     }
 
     /// Show one descriptor from the affected-formula list: the tab follows it,
-    /// then the row is selected, like upstream's link into the breakdowns.
+    /// then the row is selected.
     pub(crate) fn select_stats_descriptor(&mut self, id: String, cx: &mut Context<Self>) {
         let category = match self
             .stats_all

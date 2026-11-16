@@ -8,24 +8,17 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.
+Implement weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.
 
 ## Current build
 
-- KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics, pinned against an oracle fixture of the upstream planner's own output.
+- KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics.
 - KL-02 +1 upgrade comparison: the upgrade list with saved levels and availability, the selection preview, the trials through the shared task runner and the comparison table that marks the best option per baseline and flags a stale result.
 - KL-03 Saved buffs and results: the save's `BuffsActive` rows with kept/dropped markers, the Keep saved buffs and Unlimited inventory options, the bag-limited skull pickups the trial models, progress/cancel and the results export document. The combat simulator is still M2, so kills per second stands in for the character's damage; the encounter, respawn and drop maths are the game's own.
 
 ## Known gaps
 
 - `KL-G1` Kills per second is a typed stand-in — blocked by `combat:auto-player` (absent)
-
-## Upstream sources
-
-- killroy-calc.html
-- js/ui/killroy.js
-- js/stats/systems/common/killroy-planner.js
-- js/stats/data/w2/killroy.js
 
 ## UI
 
@@ -63,7 +56,6 @@ Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
-- Forecast matches upstream.
 - Week range validates.
 - Results explain assumptions.
 
@@ -93,6 +85,6 @@ Acceptance:
 
 ## Verification
 
-- Forecast fixture.
+- Forecast tests.
 - Trial determinism test.
 - Harness.

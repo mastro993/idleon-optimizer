@@ -12,7 +12,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
 use idleon_cglunko as cglunko;
 
-/// The overview page: the upstream cards and the DR tree.
+/// The overview page: the summary cards and the DR tree.
 pub(crate) fn overview_pane(
     state: &mut AppState,
     _window: &mut Window,

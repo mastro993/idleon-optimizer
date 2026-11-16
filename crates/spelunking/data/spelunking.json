@@ -2743,16 +2743,5 @@
    38,
    36
   ]
- },
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "caves": "SpelunkRocks / Spelunky[0,6,7,8,9]",
-  "tools": "Spelunky[10..13]",
-  "elixirs": "Spelunky[3,16,17]",
-  "shop": "SpelunkUpg[idx][4]",
-  "chapters": "SpelunkChapters",
-  "rewards": "js/stats/systems/w7/spelunk-expedition.js SPELUNK_REWARDS",
-  "sprites": "js/stats/data/game/spelunk-sprites.js SPELUNK_SPRITES",
-  "ui": "js/ui/spelunking.js elixirNames/elixirPresets"
  }
 }

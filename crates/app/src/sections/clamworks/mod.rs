@@ -1,14 +1,12 @@
 //! The Clamworks section: the overview, the upgrade tables, the AFK claim, the
 //! plan and the promotion.
 //!
-//! Summary, pearl value, the upgrade priority, the claim, the budgeted plan, the
-//! promotion tracker and the Scurge panels are ports of the upstream
-//! `clamworks-calc.html` tabs, `js/stats/systems/w7/clamworks.js` and
-//! `js/stats/systems/w7/clamworks-scurge.js`. The save-derived inputs (pearl
-//! balance, upgrade and promotion levels, Scurge level and upgrades) come from the
-//! shared import; the multikill total, the plan's budget, and the claim's kills
-//! per hour and drop rate are manual inputs until the combat simulator runs Clam
-//! Work, exactly like the upstream's own supplement fields.
+//! The tabs cover the summary, pearl value, the upgrade priority, the claim,
+//! the budgeted plan, the promotion tracker and the Scurge panels. The
+//! save-derived inputs (pearl balance, upgrade and promotion levels, Scurge
+//! level and upgrades) come from the shared import; the multikill total, the
+//! plan's budget, and the claim's kills per hour and drop rate are manual
+//! inputs until the combat simulator runs Clam Work.
 
 mod actions;
 
@@ -45,7 +43,7 @@ pub(crate) enum Tab {
     Upgrades,
     /// One AFK claim and the `+1` comparison.
     Claim,
-    /// The budgeted plan and the upstream priority ranking.
+    /// The budgeted plan and the priority ranking.
     Optimizer,
     /// The promotion tracker and the worker-class rewards.
     Promotion,

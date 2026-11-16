@@ -31,9 +31,9 @@ pub fn optimize(
     place_all(sim, ctx, effort, options, true)
 }
 
-/// The EXP-only assignment the analysis tabs optimize with: `optimizeMagsFor`
-/// places glasses and kaleidoscopes for the research rate and leaves the
-/// monocles off the grid, so a candidate layout's rate is the exp they do not
+/// The EXP-only assignment the analysis tabs optimize with: it places glasses
+/// and kaleidoscopes for the research rate and leaves the monocles off the
+/// grid, so a candidate layout's rate is the exp they do not
 /// earn. Unlocking an observation is priced against that layout.
 pub fn optimize_exp(sim: &Simulation, ctx: &SimContext, effort: Effort) -> MagsOutcome {
     place_all(sim, ctx, effort, SimOptions::default(), false)
@@ -215,8 +215,7 @@ fn assign(
 
 /// EXP/hour each observation's next insight level would permanently add, at
 /// the magnifiers placed so far. The extended lookahead ranks a monocle by
-/// `gain × insight/hour`, the upstream `chooseMonoTargets` score, instead of
-/// the next level-up alone.
+/// `gain × insight/hour` instead of the next level-up alone.
 fn insight_gains(sim: &Simulation, ctx: &SimContext, mags: &[Mag]) -> Vec<f64> {
     let mut trial = sim.clone();
     trial.mags = mags.to_vec();

@@ -43,7 +43,7 @@ pub(crate) fn overview(
         .into_any_element()
 }
 
-/// The page's account snapshot (`summaryCards`), minus the fields that need an
+/// The account snapshot, minus the fields that need an
 /// estimate; those live under the estimate itself.
 fn snapshot(cx: &mut Context<AppState>, jelly: &Jelly) -> AnyElement {
     let progress = &jelly.progress;

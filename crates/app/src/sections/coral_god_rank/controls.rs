@@ -1,4 +1,4 @@
-//! Planner controls: every upstream input, its validation and the save's data gaps.
+//! Planner controls: every planner input, its validation and the save's data gaps.
 
 use super::Field;
 use crate::state::AppState;
@@ -91,7 +91,7 @@ pub(crate) fn controls_pane(
     let mut card = Card::new()
         .header(
             CardHeader::new("Planner controls")
-                .description("The upstream inputs for the Coral Kid and offering plan.")
+                .description("The inputs for the Coral Kid and offering plan.")
                 .action(reset),
         )
         .child(

@@ -1,6 +1,6 @@
-//! `planKitchenForecast`: the scenarios the Kitchens tab compares.
+//! The scenarios the Kitchens tab compares.
 //!
-//! Upstream plans the same horizon three ways, so the section can show what the
+//! The section plans the same horizon three ways, so it can show what the
 //! optimizer's assignment and the Blue Jellyfish donation policy each add: the
 //! saved assignments with no new donations, the optimized assignments with no new
 //! donations, and the optimized assignments with the selected policy. Only the
@@ -11,16 +11,16 @@ use super::layout::{LayoutChoice, LayoutMode};
 use super::plan::{Inputs, Plan, Policy, plan};
 use super::{Objective, Problem, Reset};
 
-/// The scenarios the comparison shows, in the order upstream renders them.
+/// The scenarios the comparison shows, in the order it renders them.
 pub const SCENARIOS: [Scenario; 3] = [Scenario::Current, Scenario::Layout, Scenario::Recommended];
 
 /// One way to plan the same horizon.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Scenario {
-    /// `currentPlan`: the saved kitchen assignments, with no new donations.
+    /// The saved kitchen assignments, with no new donations.
     Current,
-    /// `baselinePlan`: the optimized assignments, with no new donations.
+    /// The optimized assignments, with no new donations.
     Layout,
     /// `plan`: the optimized assignments plus the selected donation policy.
     #[default]
@@ -37,7 +37,7 @@ impl Scenario {
         }
     }
 
-    /// The name upstream gives the scenario.
+    /// The scenario's display name.
     pub fn label(self) -> &'static str {
         match self {
             Scenario::Current => "Saved reset assignments, no new donations",
@@ -70,13 +70,13 @@ impl Forecast {
         }
     }
 
-    /// `rankSum`: the meal levels the scenario gained over the horizon.
+    /// The meal levels the scenario gained over the horizon.
     pub fn ranks(&self, scenario: Scenario) -> f64 {
         self.plan(scenario).gained.iter().sum()
     }
 }
 
-/// `planKitchenForecast` with a fixed donation schedule: the same horizon under
+/// The forecast with a fixed donation schedule: the same horizon under
 /// the saved layout, the optimized layout and the policy.
 ///
 /// The donation search that picks the policy itself is the NMLB planner's job;

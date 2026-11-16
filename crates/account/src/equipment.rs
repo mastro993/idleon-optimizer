@@ -1,5 +1,4 @@
-//! Equipment, obol and gallery bonuses, ported from
-//! `js/stats/systems/common/etcBonus.js` and its sources.
+//! Equipment, obol and gallery bonuses.
 //!
 //! `EtcBonuses(108)` is one total across every gear source, applied as a single
 //! multiplier. The sources are the equipped items, obols, gallery nametags,
@@ -33,8 +32,8 @@ impl Decoder<'_> {
         Some((1.0 + total / 100.0).clamp(1.0, 15.0))
     }
 
-    /// `EtcBonuses(index)` for one character: every gear source added up, as
-    /// `etcBonus.resolve` does. A save without the gear fields totals zero.
+    /// `EtcBonuses(index)` for one character: every gear source added up. A
+    /// save without the gear fields totals zero.
     pub fn etc(&self, index: usize, character: usize) -> f64 {
         let Some(stat) = self.data.etc_stat(index).map(str::to_owned) else {
             return 0.0;
@@ -300,7 +299,7 @@ impl Decoder<'_> {
         total
     }
 
-    /// `computeGalleryBaseStat(statName, character)`: the trophy, nametag,
+    /// A character's gallery base stat: the trophy, nametag,
     /// hatrack and Cape Vine pools the stat totals add to equipment.
     pub fn gallery_base_stat(&self, stat: &str, character: usize) -> f64 {
         let mut total = 0.0;
@@ -357,7 +356,7 @@ impl Decoder<'_> {
         total
     }
 
-    /// `galleryBonusMulti`.
+    /// The gallery bonus multiplier for a character.
     pub fn gallery_bonus_multi(&self, character: usize) -> f64 {
         let gallery_level = self.spelunk(13, 4);
         let trophy_chip = if self.chip_count(character, 16) > 0.0 {
@@ -397,7 +396,7 @@ impl Decoder<'_> {
         1.0 + (hats + companion + event + minehead + rog) / 100.0
     }
 
-    /// `capevineBonusMulti`.
+    /// The Cape Vine bonus multiplier for a slot.
     pub fn capevine_bonus_multi(&self, slot: usize) -> f64 {
         let capes = fields::strings(self.save, "Spelunk", &[54])
             .map(|capes| capes.len() as f64)
@@ -412,7 +411,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `trophyTier`.
+    /// The tier multiplier of a trophy slot.
     pub fn trophy_tier(&self, slot: usize) -> f64 {
         if slot < 48 {
             return 0.3;
@@ -472,17 +471,17 @@ impl Decoder<'_> {
             .round()
     }
 
-    /// `galleryBonusSystemOn`: KLA map 250 cleared.
+    /// The gallery bonuses are on once KLA map 250 is cleared.
     pub fn gallery_on(&self, character: usize) -> bool {
         self.map_cleared(250, character)
     }
 
-    /// `premHatBonusSystemOn`: KLA map 50 cleared.
+    /// The premium hat bonuses are on once KLA map 50 is cleared.
     pub fn premhat_on(&self, character: usize) -> bool {
         self.map_cleared(50, character)
     }
 
-    /// `capevineBonusSystemOn`: KLA map 100 cleared.
+    /// The Cape Vine bonuses are on once KLA map 100 is cleared.
     pub fn capevine_on(&self, character: usize) -> bool {
         self.map_cleared(100, character)
     }
@@ -504,7 +503,7 @@ impl Decoder<'_> {
         kills <= 0.0
     }
 
-    /// `charHasChip`.
+    /// Whether a character has a lab chip with `effect` slotted.
     pub fn char_has_chip(&self, character: usize, effect: &str) -> bool {
         fields::row(self.save, "Lab", &[1 + character])
             .map(|chips| {

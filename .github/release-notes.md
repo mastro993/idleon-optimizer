@@ -12,5 +12,5 @@ unsigned, so the first launch needs one extra step:
   or X11.
 
 Details: [docs/release.md](https://github.com/mastro993/idleon-optimizer/blob/main/docs/release.md).
-The game artwork in `assets/upstream` belongs to Legends of Idleon and is credited in its
+The game artwork in `assets/game` belongs to Legends of Idleon and is credited in its
 `README.md`.

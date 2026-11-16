@@ -1,6 +1,5 @@
 //! The Best Upgrade pane: the efficiency ranking and the affordable path for
-//! bucks, fuel generation and fuel capacity, as `_renderBestUpgrade` in
-//! `js/ui/sushi-ui.js`.
+//! bucks, fuel generation and fuel capacity.
 
 use crate::state::AppState;
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};

@@ -1,9 +1,9 @@
-//! Images resolved through the upstream asset manifest.
+//! Images resolved through the game asset manifest.
 //!
 //! Every reference goes through [`Manifest::artwork`], so a missing install or a
 //! deleted file draws a labelled placeholder in the same box instead of a
 //! broken image. Sections use this for sprites; the planned pages use it for a
-//! small preview of their upstream art.
+//! small preview of their game art.
 
 use crate::assets::{Artwork, Manifest};
 use ely_gpui_component::primitives::{Icon, IconName};
@@ -26,7 +26,7 @@ pub(crate) fn asset_image(
 }
 
 /// The same image with independent width and height, for the non-square
-/// upstream sprites (the Jelly Operator cells are 36×109 and 184×183).
+/// game sprites (the Jelly Operator cells are 36×109 and 184×183).
 pub(crate) fn asset_image_sized(
     id: impl Into<ElementId>,
     manifest: &Manifest,

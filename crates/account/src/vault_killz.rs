@@ -1,4 +1,4 @@
-//! `computeVaultKillzTotal` from `js/stats/systems/common/vaultKillz.js`.
+//! The vault kill totals.
 //!
 //! Indices 0..3 are the raw kills on maps 14, 24, 13 and 8; 4..7 their floored
 //! logs; 8 the completed tasks; 9 the capped bubble levels; 10 and 11 the same
@@ -8,7 +8,7 @@ use crate::Decoder;
 use idleon_save::fields;
 use idleon_stats_data as stats;
 
-/// The vault kill-count columns, as `computeVaultKillzTotal(i)` indexes them.
+/// The vault kill-count columns, by the index the vault upgrades read.
 pub fn vault_killz(decoder: &Decoder<'_>) -> [f64; 12] {
     let mut result = [0.0; 12];
     let kills = |map: usize| -> f64 {

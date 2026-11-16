@@ -1,10 +1,8 @@
 //! The combat simulator's save-derived inputs (CS-06).
 //!
-//! Ported from `combatProgressInputs` in
-//! `js/stats/systems/common/combat-sim-progress.js` and the Den's config in
-//! `js/stats/systems/common/combat-sim-special.js`. The account-wide terms are
-//! read through [`idleon_account::Decoder`], which sits beside this crate, and
-//! the stamp, bribe and shiny lookups reuse the capacity breakdown's ports.
+//! The account-wide terms are read through [`idleon_account::Decoder`], which
+//! sits beside this crate, and the stamp, bribe and shiny lookups reuse the
+//! capacity breakdown's readers.
 //!
 //! The terms this build cannot decode are returned as warnings rather than
 //! guessed: the star-sign 57b term of the shiny-pet speed and the per-kill
@@ -21,7 +19,7 @@ use idleon_save::{Save, json};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-/// The star-sign term `computeShinyBonusS` leaves out here.
+/// The star-sign term the shiny-pet bonus leaves out here.
 pub const STAR_SIGN: &str = "Star sign 57b is not decoded for the shiny-pet speed; its term reads 0 and the speed can be low.";
 /// The per-kill grants the talent formulas would need.
 pub const TALENT_GRANTS: &str = "Per-kill forge, pet and alchemy time (talents 280, 362 and 490) is not \
@@ -88,7 +86,7 @@ pub fn den(save: &Save, _character: usize) -> Option<den::Config> {
     })
 }
 
-/// `combatProgressInputs`'s forge half.
+/// The forge half of the combat progress inputs.
 fn forge(save: &Save, decoder: &mut Decoder) -> Forge {
     let Some(fields_map) = save.as_object() else {
         return Forge::default();
@@ -136,7 +134,7 @@ fn forge(save: &Save, decoder: &mut Decoder) -> Forge {
     }
 }
 
-/// `combatProgressInputs`'s pet half.
+/// The pet half of the combat progress inputs.
 fn pets(save: &Save, decoder: &mut Decoder) -> Pets {
     let Some(fields_map) = save.as_object() else {
         return Pets::default();
@@ -169,7 +167,7 @@ fn pets(save: &Save, decoder: &mut Decoder) -> Pets {
     }
 }
 
-/// `overLevels`: the shiny levels above 20 across every pet world.
+/// The shiny levels above 20 across every pet world.
 fn over_levels(breeding: &[Vec<f64>], thresholds: usize) -> f64 {
     let worlds = capacity::shiny_pet_worlds();
     let mut total = 0.0;
@@ -274,7 +272,7 @@ fn option(save: &Save, index: usize) -> f64 {
     option_value(save, index).unwrap_or(0.0)
 }
 
-/// `getBribeBonus(index)` through the capacity table.
+/// The bribe bonus at `index`, through the capacity table.
 fn bribe(save: &Save, index: usize) -> f64 {
     capacity::bribe_bonus(save, index)
 }

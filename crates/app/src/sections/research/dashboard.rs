@@ -1,5 +1,5 @@
 //! Dashboard pane: the summary, grid and observation previews and the three
-//! breakdown trees, ported from the upstream `js/ui/dashboard.js`.
+//! breakdown trees.
 //!
 //! Every number comes from [`idleon_research::dashboard`], which composes the same
 //! simulation functions the Optimizer tab reads. The previews are read-only:
@@ -26,7 +26,7 @@ use idleon_ui::formula::FormulaTree;
 /// Logical pixels per preview cell.
 const CELL_PX: f32 = 24.0;
 /// Observation cards hold their name and two rates; this keeps eight a row at
-/// the minimum window width, as the upstream `.obs-grid` does.
+/// the minimum window width.
 const OBS_WIDTH: f32 = 132.0;
 
 /// The three formula trees plus the grid-point tree the dashboard owns.
@@ -299,7 +299,7 @@ fn grid_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let overlay = state.simulation.overlay();
     let entity = cx.entity();
     let open = entity.clone();
-    // The cells are laid out in rows so the board keeps the upstream 20 columns.
+    // The cells are laid out in rows so the board keeps its 20 columns.
     let mut rows = div().flex().flex_col().gap_0p5();
     for row in 0..game.grid.rows {
         let mut line = div().flex().flex_row().gap_0p5();

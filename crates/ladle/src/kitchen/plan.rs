@@ -1,5 +1,4 @@
-//! `planMealLeveling`: the daily ladle investment behind the Kitchens &
-//! Jellyfish tab.
+//! The daily ladle investment behind the Kitchens & Jellyfish tab.
 //!
 //! Each day the plan claims the guaranteed ladles, donates the policy's share to
 //! the Blue Jellyfish, spends what is left on the cheapest meal level (whole
@@ -8,9 +7,8 @@
 //! levels the reset batch's stock covers. Sub-level stock carries forward, so
 //! failing to buy a rank today does not force a donation.
 //!
-//! Upstream picks the best speed-per-hour meal when the objective is kitchen
-//! speed; that ranking reads the meal-level speed engine this build does not have,
-//! so the plan always spends like upstream's `cheapest` strategy. The NMLB floor
+//! A speed-per-hour ranking would read the meal-level speed engine this build
+//! does not have, so the plan always spends on the cheapest level. The NMLB floor
 //! guard is [`super::steer`]; the new-donation search is [`super::donation`].
 //!
 //! A [`Schedule`] replaces the section's [`Policy`] with the whole ladles the
@@ -39,7 +37,7 @@ pub struct Inputs {
     /// Whether the kitchens cook passively for 24h a day.
     pub passive: bool,
     /// Whether only meals whose next level fits in a day of kitchen time are
-    /// levelled directly, as upstream defaults to.
+    /// levelled directly, the default.
     pub ladleable_only: bool,
     /// The highest meal level the Cooking panel allows.
     pub max_level: f64,
@@ -288,7 +286,7 @@ pub struct Plan {
     pub timeline: Vec<Day>,
 }
 
-/// `planMealLeveling`: the reset horizon the inputs describe.
+/// The reset horizon the inputs describe.
 pub fn plan(reset: &Reset, inputs: &Inputs) -> Result<Plan, Problem> {
     let days = inputs.days.clamp(1, MAX_DAYS);
     let ladle_multi = inputs.ladle_multi.max(0.0);
@@ -487,7 +485,7 @@ impl Run<'_> {
         }
     }
 
-    /// `ladlesForLevels`: the ladles raising `meal` from `from` to `to`.
+    /// The ladles raising `meal` from `from` to `to`.
     fn ladles_for_levels(&self, meal: usize, from: f64, to: f64, stock: f64) -> f64 {
         let mut total = 0.0;
         let mut stock = stock;
@@ -506,7 +504,7 @@ impl Run<'_> {
         total
     }
 
-    /// `refreshTurkey`: the Turkey stock passed the cached Artifact 13 bonus.
+    /// The Turkey stock passed the cached Artifact 13 bonus.
     fn refresh_turkey(&mut self) -> bool {
         let stock = self.stocks.first().copied().unwrap_or(0.0);
         if stock <= self.cached_turkey {
@@ -516,7 +514,7 @@ impl Run<'_> {
         true
     }
 
-    /// `pickCheapest`: the meal whose next level costs the fewest kitchen hours.
+    /// The meal whose next level costs the fewest kitchen hours.
     ///
     /// Under [`Objective::Targets`] only meals below their target are direct
     /// candidates; once every target is reached the caller banks the time instead.
@@ -563,7 +561,7 @@ impl Run<'_> {
             })
     }
 
-    /// `ladlesFor`: draw `hours` from the ladle pool first, then passive time.
+    /// Draw `hours` from the ladle pool first, then passive time.
     fn ladles_for(&mut self, hours: f64, pool: &mut Pool) -> f64 {
         let from_ladles = hours.min(pool.ladle);
         pool.ladle -= from_ladles;
@@ -641,7 +639,7 @@ impl Run<'_> {
         used
     }
 
-    /// `runPhase`: spend one phase's ladles and passive hours.
+    /// Spend one phase's ladles and passive hours.
     fn run_phase(&mut self, phase: &mut Phase) {
         let mut hours = phase.passive_hours + phase.ladles * self.ladle_multi;
         let start_hours = hours;
@@ -713,7 +711,7 @@ impl Run<'_> {
         phase.passive_hours_used = ((start_hours - hours) - ladle_hours_used).max(0.0);
     }
 
-    /// `runJellyBatch`: the reset grant cooks one batch, then its stock buys
+    /// The reset grant cooks one batch, then its stock buys
     /// levels in the layout's purchase order.
     fn run_jelly(&mut self) -> Result<Phase, Problem> {
         let mut phase = Phase {
@@ -899,7 +897,7 @@ impl Run<'_> {
     }
 }
 
-/// `_spendOrderRows`: one row per purchase order, stock-covered levels folded in.
+/// One row per purchase order, stock-covered levels folded in.
 fn spend_order_rows(steps: &[Spend]) -> Vec<Spend> {
     let mut rows: Vec<Spend> = Vec::new();
     for step in steps {
@@ -915,7 +913,7 @@ fn spend_order_rows(steps: &[Spend]) -> Vec<Spend> {
     rows
 }
 
-/// `_groupDaySteps`: the day's purchases per meal, in first-spend order.
+/// The day's purchases per meal, in first-spend order.
 fn group_day_steps(steps: &[Spend]) -> Vec<MealGain> {
     let mut groups: Vec<MealGain> = Vec::new();
     for step in steps {
@@ -940,7 +938,7 @@ fn group_day_steps(steps: &[Spend]) -> Vec<MealGain> {
 }
 
 impl Phase {
-    /// The phase's heading, as the upstream reset instructions open each block.
+    /// The phase's heading, as the reset instructions open each block.
     pub fn title(&self, day: u32) -> String {
         match self.kind {
             PhaseKind::Jelly => format!(
@@ -1192,7 +1190,7 @@ fn meal_label(meal: i32) -> String {
     }
 }
 
-/// `fullCount`: a whole number of ladles or levels.
+/// A whole number of ladles or levels.
 fn count(value: f64) -> String {
     match (value.is_finite(), value.abs() < 1e21) {
         (false, _) => "∞".to_owned(),
@@ -1216,7 +1214,7 @@ fn number(value: f64) -> String {
     }
 }
 
-/// `fmtHours`: a duration in the unit a player reads.
+/// A duration in the unit a player reads.
 fn hours(value: f64) -> String {
     if !value.is_finite() {
         return "∞".to_owned();

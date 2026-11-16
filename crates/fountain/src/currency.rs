@@ -1,9 +1,7 @@
 //! Currency values, income rates, stacks and the lucky-coin and duck systems.
 //!
-//! Every function transcribes one upstream reader from
-//! `js/stats/systems/w5/fountain.js`. The per-currency income table is the one
-//! block the upstream page computes inline; it follows the same order of
-//! operations, including the royal weighting and the full-stack bonus.
+//! The per-currency income table follows the game's order of operations,
+//! including the royal weighting and the full-stack bonus.
 
 use super::data::data;
 use super::{
@@ -13,7 +11,7 @@ use super::{
 use idleon_common::curve::log;
 
 impl Fountain {
-    /// `currencyFountainMulti`: the bonuses the fountain's own upgrades grant.
+    /// The bonuses the fountain's own upgrades grant.
     pub fn currency_fountain_multi(&self) -> f64 {
         let blue = 1.0 + self.bon_tot(0, 0) / 100.0;
         let yellow = 1.0 + self.bon_tot(1, 0) / 100.0;
@@ -27,20 +25,20 @@ impl Fountain {
         self.bon_tot(0, 1) + self.bon_tot(1, 1) + self.bon_tot(2, 1) + self.bon_tot(1, 12)
     }
 
-    /// `_bellBonus`: the bell coin bonus at slot 6.
+    /// The bell coin bonus at slot 6.
     fn bell_bonus(&self) -> f64 {
         let level = self.cell(row::BELLS, 6);
         level * data().holes.bell_per_level.get(6).copied().unwrap_or(0.0)
     }
 
-    /// `_lampBonus99`: the lamp-wish bonus, scaled by the Spelunk wish level.
+    /// The lamp-wish bonus, scaled by the Spelunk wish level.
     fn lamp_bonus(&self) -> f64 {
         let level = self.cell(row::LAMP, 7);
         let wish = self.spelunk_cell(45, 2);
         data().lamp_per_level * level * (1.0 + wish / 100.0)
     }
 
-    /// `_bolaiaBonus`: the Bolaia study bonus at one measurement slot.
+    /// The Bolaia study bonus at one measurement slot.
     fn bolaia_bonus(&self, index: usize) -> f64 {
         self.cell(row::BOLAIA, index)
             * data()
@@ -51,7 +49,7 @@ impl Fountain {
                 .unwrap_or(0.0)
     }
 
-    /// `_measBonus`: one measurement's bonus, its base and its multiplier.
+    /// One measurement's bonus, its base and its multiplier.
     fn measurement_bonus(&self, index: usize) -> f64 {
         let level = self.cell(row::MEASUREMENTS, index);
         if level <= 0.0 {
@@ -67,7 +65,7 @@ impl Fountain {
         base * self.measurement_multi(super::measurement_type(index))
     }
 
-    /// `_measMulti`: the account quantity a measurement type counts.
+    /// The account quantity a measurement type counts.
     fn measurement_multi(&self, kind: u32) -> f64 {
         let cards = self.cards;
         let qty = match kind {
@@ -82,12 +80,12 @@ impl Fountain {
         }
     }
 
-    /// `_cglunkoUpgBon(14)`: the Cglunko coin-value upgrade at level × 10.
+    /// The Cglunko coin-value upgrade at level × 10.
     fn cglunko_bonus(&self) -> f64 {
         self.option(644) * 10.0
     }
 
-    /// `currencyExternalMulti`'s terms, in the order the breakdown lists them.
+    /// The external multiplier's terms, in the order the breakdown lists them.
     pub(super) fn external_terms(&self) -> Vec<(&'static str, f64, String)> {
         let trench_level = self.schematic(schematic::TRENCH, 1.0);
         let depth = self.cell(row::STATE, saved::TRENCH_DEPTH);
@@ -123,7 +121,7 @@ impl Fountain {
         ]
     }
 
-    /// `currencyExternalMulti`: everything outside the fountain that scales coins.
+    /// Everything outside the fountain that scales coins.
     pub fn currency_external_multi(&self) -> f64 {
         self.external_terms()
             .iter()
@@ -131,12 +129,12 @@ impl Fountain {
             .product()
     }
 
-    /// `currencyAllMulti`: the whole currency value multiplier.
+    /// The whole currency value multiplier.
     pub fn currency_all_multi(&self) -> f64 {
         self.currency_fountain_multi() * self.currency_external_multi()
     }
 
-    /// `currencyBaseValue`: one currency's own base value.
+    /// One currency's own base value.
     pub fn currency_base_value(&self, currency: usize) -> f64 {
         let mythril_log = self.mythril_log();
         let sharp_log = self.sharp_log();
@@ -173,12 +171,12 @@ impl Fountain {
         self.pow_log(20, 2)
     }
 
-    /// `1 + log10(POW 10 <resource>) × bonTOT / 100`.
+    /// `1 + log10(POW 10 <resource>) × bon_tot / 100`.
     fn pow_log(&self, cell: usize, water: usize) -> f64 {
         1.0 + log(self.cell(row::CURRENCY, cell)) * self.bon_tot(water, 19) / 100.0
     }
 
-    /// `luckyCoinChance`: the chance a collected coin is lucky.
+    /// The chance a collected coin is lucky.
     pub fn lucky_coin_chance(&self, currency: usize) -> f64 {
         let base = self.bon_tot(2, 8);
         if base == 0.0 {
@@ -189,7 +187,7 @@ impl Fountain {
         (0.001 * (1.0 + (base + boost) / 100.0) * 0.25_f64.powf(count)).min(1.0)
     }
 
-    /// `luckyCoinValue`: the value multiplier a currency's lucky coins give.
+    /// The value multiplier a currency's lucky coins give.
     pub fn lucky_coin_value(&self, currency: usize) -> f64 {
         let count = self.lucky_coin_count(currency);
         if count <= 0.0 {
@@ -198,7 +196,7 @@ impl Fountain {
         1.0 + count * self.lucky_coin_value_per() / 100.0
     }
 
-    /// `duckChance`: the chance a duck bar fill gives a duck.
+    /// The chance a duck bar fill gives a duck.
     pub fn duck_chance(&self) -> f64 {
         if !self.duck_bar_unlocked() {
             return 0.0;
@@ -208,7 +206,7 @@ impl Fountain {
         (1.0 / 3.0 * (1.0 + boost / 100.0) * 0.2_f64.powf(count)).min(1.0)
     }
 
-    /// `duckMulti`: the currency multiplier the owned ducks give.
+    /// The currency multiplier the owned ducks give.
     pub fn duck_multi(&self) -> f64 {
         let count = self.duck_count();
         if count <= 0.0 {
@@ -217,7 +215,7 @@ impl Fountain {
         (1.0 + self.bon_tot(2, 11) / 100.0).powf(count)
     }
 
-    /// `duckOddsDisplay`: the odds ratio and percentage of the next duck.
+    /// The odds ratio and percentage of the next duck.
     pub fn duck_odds(&self) -> (String, String) {
         let chance = self.duck_chance();
         if chance <= 0.0 {
@@ -232,12 +230,12 @@ impl Fountain {
         (format!("{:.2}", 1.0 / chance), percent)
     }
 
-    /// `currencyTotalValue`: one coin's value at the save's desired currency.
+    /// One coin's value at the save's desired currency.
     pub fn currency_total_value(&self, currency: usize) -> f64 {
         self.currency_total_value_with(currency, self.desired_currency())
     }
 
-    /// `currencyTotalValue` with the desired currency chosen by the caller, so
+    /// One coin's value with the desired currency chosen by the caller, so
     /// the section can simulate switching it.
     pub fn currency_total_value_with(&self, currency: usize, desired: usize) -> f64 {
         let base = self.currency_base_value(currency);
@@ -254,7 +252,7 @@ impl Fountain {
         }
     }
 
-    /// `marblePerFill`: the marble one marble-bar fill gives.
+    /// The marble one marble-bar fill gives.
     pub fn marble_per_fill(&self) -> f64 {
         100.0
             * (1.0 + self.bon_tot(1, 10) / 100.0)
@@ -262,7 +260,7 @@ impl Fountain {
             * (1.0 + 10.0 * self.cosmo_bonus(0, cosmo::MAX_STACK) / 100.0)
     }
 
-    /// `marblePerHr`: the marble an hour of active play gives.
+    /// The marble an hour of active play gives.
     pub fn marble_per_hr(&self) -> f64 {
         if !self.marble_bar_unlocked() {
             return 0.0;
@@ -270,8 +268,8 @@ impl Fountain {
         self.marble_per_fill() * 3600.0 * self.active_speed() / Self::marble_bar_fill_time()
     }
 
-    /// `optimalStackValueForCurrency`: one full stack of a currency, with the
-    /// royal multiplier and the Size Does Matter bonus.
+    /// One full stack of a currency, with the royal multiplier and the Size
+    /// Does Matter bonus.
     pub fn optimal_stack_value_for_currency(&self, currency: usize, desired: usize) -> f64 {
         let stack = self.max_stack();
         stack
@@ -280,12 +278,12 @@ impl Fountain {
             * (1.0 + stack * self.size_matter_bonus() / 100.0)
     }
 
-    /// `optimalStackValue`: one full stack of the desired currency.
+    /// One full stack of the desired currency.
     pub fn optimal_stack_value(&self, desired: usize) -> f64 {
         self.optimal_stack_value_for_currency(desired, desired)
     }
 
-    /// `optimalStacksPerHr`: the full royal stacks a collector can bank each hour.
+    /// The full royal stacks a collector can bank each hour.
     pub fn optimal_stacks_per_hr(&self) -> f64 {
         let chance = self.royal_chance();
         let stack = self.max_stack();
@@ -302,7 +300,7 @@ impl Fountain {
         fills_per_hr / (stack + wait)
     }
 
-    /// `flushTime`: the seconds to collect every space once.
+    /// The seconds to collect every space once.
     pub fn flush_time(&self) -> f64 {
         let stacks = self.optimal_stacks_per_hr();
         if stacks <= 0.0 {
@@ -311,7 +309,7 @@ impl Fountain {
         self.spaces() as f64 / stacks * 3600.0
     }
 
-    /// `stackRedeemValue`: what one ground stack is worth when collected.
+    /// What one ground stack is worth when collected.
     pub fn stack_redeem_value(&self, stack: &CoinStack) -> f64 {
         let size = self.size_matter_bonus();
         let royal = self.effective_royal_multi();
@@ -326,7 +324,7 @@ impl Fountain {
             .sum()
     }
 
-    /// `totalRedeemValue`: every ground stack's value.
+    /// Every ground stack's value.
     pub fn total_redeem_value(&self) -> f64 {
         self.stacks()
             .iter()
@@ -368,7 +366,7 @@ impl Fountain {
         values
     }
 
-    /// `activeEarnRatesPerHr`: every currency's active rate, optionally focused.
+    /// Every currency's active rate, optionally focused.
     ///
     /// A focus assumes Turn and Push hides every other currency; `None` reads
     /// the save's own active set. The desired currency is the save's.
@@ -376,7 +374,7 @@ impl Fountain {
         self.active_earn_rates_with(self.desired_currency(), focus)
     }
 
-    /// `activeEarnRatesPerHr` with the desired currency chosen by the caller.
+    /// Every currency's active rate with the desired currency chosen by the caller.
     pub fn active_earn_rates_with(
         &self,
         desired: usize,
@@ -405,8 +403,8 @@ impl Fountain {
         rates
     }
 
-    /// `baseCurrencyPerHr`: the shared rate every currency's own base value
-    /// multiplies, as the simulator's overview card reads it.
+    /// The shared rate every currency's own base value multiplies, as the
+    /// simulator's overview card reads it.
     pub fn base_currency_per_hr(&self) -> f64 {
         let royal_chance = self.royal_chance();
         let royal = self.effective_royal_multi();
@@ -478,36 +476,35 @@ impl Fountain {
         }
     }
 
-    /// `activeSpeedMulti`'s fill time: one coin bar while standing at the fountain.
+    /// The active fill time: one coin bar while standing at the fountain.
     pub fn active_fill_time(&self) -> f64 {
         self.bar_fill_time() / self.active_speed()
     }
 
-    /// `stackFillTime`: one space's coins at the active rate.
+    /// One space's coins at the active rate.
     pub fn stack_fill_time(&self) -> f64 {
         self.active_fill_time() * self.max_stack()
     }
 
-    /// `allStacksFillTime`: every space, at the active rate.
+    /// Every space, at the active rate.
     pub fn all_stacks_fill_time(&self) -> f64 {
         self.stack_fill_time() * self.spaces() as f64
     }
 
-    /// `afkStackFillTime`: one space's coins while away.
+    /// One space's coins while away.
     pub fn afk_stack_fill_time(&self) -> f64 {
         self.bar_fill_time() * self.max_stack()
     }
 
-    /// `afkAllStacksFillTime`: every space, while away.
+    /// Every space, while away.
     pub fn afk_all_stacks_fill_time(&self) -> f64 {
         self.afk_stack_fill_time() * self.spaces() as f64
     }
 
     // ----- currency tab -----
 
-    /// `earnRatesPerHr`: every unlocked currency's optimal /hr, as if it were
-    /// both the desired currency and the only one generating when Turn and Push
-    /// is bought.
+    /// Every unlocked currency's optimal /hr, as if it were both the desired
+    /// currency and the only one generating when Turn and Push is bought.
     pub fn earn_rates(&self) -> [f64; CURRENCIES] {
         let focus = self.ignore_unlocked();
         let mut rates = [0.0; CURRENCIES];
@@ -639,7 +636,7 @@ impl Fountain {
     }
 }
 
-/// The leading number of a `HolesInfo` base string, as `parseFloat` reads it.
+/// The leading number of a `HolesInfo` base string.
 pub(super) fn leading_number(text: &str) -> f64 {
     let digits: String = text
         .trim_start()

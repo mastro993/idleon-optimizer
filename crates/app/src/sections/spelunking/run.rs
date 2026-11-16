@@ -1,11 +1,10 @@
 //! The expedition run: its controls, the run in flight and the results.
 //!
-//! Upstream runs the expedition in a module worker. This section runs the same
-//! simulation through the shared [`idleon_ui::runner::TaskRunner`], so the progress
-//! card, the cancel action and the stale marker are the ones every other
-//! section uses. A run is deterministic: the seed, the cave, the party, the belt
-//! and the memorized elixirs fully describe it, so the result says which seed
-//! produced it.
+//! The expedition simulation runs through the shared
+//! [`idleon_ui::runner::TaskRunner`], so the progress card, the cancel action
+//! and the stale marker are the ones every other section uses. A run is
+//! deterministic: the seed, the cave, the party, the belt and the memorized
+//! elixirs fully describe it, so the result says which seed produced it.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -74,7 +73,7 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
         Caption::new(
             "The run replays the game's 10 ms tick with a seeded generator: the same seed, \
              cave, party, belt and memorized elixirs reproduce it exactly. Progress and the \
-             events log are the accessible record; the canvas replay is not ported yet.",
+             events log are the accessible record; the canvas replay is not built yet.",
         )
         .text_color(muted),
     );

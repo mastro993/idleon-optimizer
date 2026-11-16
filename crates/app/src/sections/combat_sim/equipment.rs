@@ -1,10 +1,9 @@
 //! The equipment half of the loadout editor: the slot list and one slot's item.
 //!
-//! Ported from the upstream `renderGear`/`gearDetail` pane (`js/ui/combat-sim-setup-ui.js`):
-//! a slot list on the left, the chosen slot's item, its added stats and its
-//! unique bonuses on the right. Upstream shows every stat as base + added; this
-//! pane shows the same split and notes that a new item drops the old item's
-//! saved deltas, which is what its `equipment` patch does.
+//! A slot list on the left, the chosen slot's item, its added stats and its
+//! unique bonuses on the right. Every stat shows as base + added, and the pane
+//! notes that a new item drops the old item's saved deltas, which is what its
+//! `equipment` patch does.
 
 use super::State;
 use crate::state::AppState;

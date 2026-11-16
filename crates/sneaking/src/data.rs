@@ -1,11 +1,7 @@
-//! The Sneaking tables, extracted from the upstream JS calculators.
-//!
-//! `script/extract-sneaking-data.mjs` writes `crates/sneaking/data/sneaking.json`
-//! from `js/stats/data/game/custommaps.js` (`NjEQ`), `customlists.js`
-//! (`NinjaUpg`, `NinjaInfo`) and `js/stats/systems/w6/sneaking-math.js`
-//! (`CHARM_BONUS_TYPES`). Nothing here is guessed: an item key the catalog does
-//! not carry has no definition, and every formula reports it instead of
-//! substituting a zero.
+//! The Sneaking tables: the game's `NjEQ` items, `NinjaUpg` and `NinjaInfo`
+//! rows and the charm bonus type names. Nothing here is guessed: an item key
+//! the catalog does not carry has no definition, and every formula reports it
+//! instead of substituting a zero.
 
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -22,9 +18,9 @@ pub struct Data {
     pub upgrades: Vec<Upgrade>,
     pub info: Info,
     pub scales: Scales,
-    /// `CHARM_BONUS_TYPES`: the readable name of every charm bonus type.
+    /// The readable name of every charm bonus type.
     pub charm_bonus_types: HashMap<String, String>,
-    /// The emporium letters `emporiumBonus` tests the `Ninja[102][9]` string for.
+    /// The emporium letters the `Ninja[102][9]` string is tested for.
     pub emporium_letters: String,
     /// `LegendTalents[idx][2]`: the points each legend talent level pays.
     pub legend_talent_per_point: Vec<f64>,
@@ -43,7 +39,7 @@ pub struct AccountTables {
     pub guild14: Curve,
     /// `MSA_Bonus(idx)`'s static config.
     pub msa: Vec<MsaConfig>,
-    /// `sigilTiers(idx)` for every Summoning sigil.
+    /// The tier values of every Summoning sigil.
     pub sigils: Vec<Option<Vec<f64>>>,
     /// `AlchemyDescription[4]`: each vial's effect and curve.
     pub vials: Vec<VialRow>,
@@ -57,7 +53,7 @@ pub struct AccountTables {
     /// `StarSigns[i][0]`: the name each index unlocks under.
     pub star_sign_names: Vec<String>,
     pub star_sign_bonuses: StarSignBonuses,
-    /// `buildStampTypeMap` for the stamp effects the trees read.
+    /// The stamp effects the trees read, by type.
     pub stamp_types: HashMap<String, Vec<StampRow>>,
     pub rift_ranks: Vec<f64>,
     pub zenith_per_level: f64,
@@ -110,7 +106,7 @@ pub struct Bubbles {
     pub y9: BubbleParam,
 }
 
-/// One bubble's curve, from `bubbleParams`.
+/// One bubble's curve.
 #[derive(Clone, Debug, Deserialize)]
 pub struct BubbleParam {
     pub cauldron: usize,
@@ -176,12 +172,12 @@ pub struct ItemDef {
 }
 
 impl ItemDef {
-    /// The name as the calculator prints it: the game stores underscores.
+    /// The display name: the game stores underscores.
     pub fn display_name(&self) -> String {
         self.name.replace('_', " ")
     }
 
-    /// The weapon damage, for the `Damage: N` line upstream prints.
+    /// The weapon damage, for the `Damage: N` tooltip line.
     pub fn damage(&self) -> f64 {
         self.stat.trim().parse().unwrap_or(0.0)
     }
@@ -251,8 +247,7 @@ pub fn charm_bonus_label(bonus_type: i32) -> &'static str {
         .unwrap_or("Unknown charm bonus")
 }
 
-/// The weapon class label upstream prints beside a weapon: `equipInfo`'s
-/// `WEAPON_CLASS` map.
+/// The weapon class label printed beside a weapon.
 pub(crate) fn weapon_class(bonus_type: i32) -> &'static str {
     match bonus_type {
         0 => "Gloves",

@@ -1,14 +1,11 @@
 //! The loadout editor's model: a character's equipment and talents, read from a
 //! decoded save and edited in memory.
 //!
-//! Ported from the pure half of `js/stats/systems/common/combat-sim-setup.js`
-//! (`readEquipment`, `readTalents`, `readCharacter`, `itemName`) and the item
-//! slot rules in `js/ui/combat-sim-setup-ui.js`. Upstream edits a setup of typed
-//! patches over a cloned save; this model edits the resolved loadout directly,
-//! because the editor is the only consumer and the save stays read-only.
+//! It reads the equipment, talents and character, and applies the item slot
+//! rules. This model edits the resolved loadout directly, because the editor is
+//! the only consumer and the save stays read-only.
 //!
-//! A newly equipped item drops its saved `EMm` upgrade deltas, exactly as the
-//! upstream `equipment` patch does unless `keepStats` is set. Every edit
+//! A newly equipped item drops its saved `EMm` upgrade deltas. Every edit
 //! recomputes the totals from scratch, so a view that reads them is never stale.
 
 use super::data;

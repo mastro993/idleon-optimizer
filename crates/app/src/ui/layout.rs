@@ -1,7 +1,7 @@
 //! Shared page chrome and the responsive rules every section follows.
 //!
 //! A section renders the same header (back, title, world badge, save status,
-//! import) and owns its upstream tab strip. Two-column panes use [`split_pane`],
+//! import) and owns its tab strip. Two-column panes use [`split_pane`],
 //! which stacks them below [`COMPACT_WIDTH`] so the minimum window never clips
 //! a fixed side rail.
 
@@ -150,8 +150,8 @@ fn split_pane_inner(
     }
 }
 
-/// A headline figure as the upstream `_card` draws it: its label, its value and
-/// a one-line explanation, all in one card.
+/// A headline figure: its label, its value and a one-line explanation, all in
+/// one card.
 pub(crate) fn figure(
     id: &'static str,
     label: &'static str,

@@ -42,7 +42,7 @@ pub(crate) fn terms(opal: &Opal, cx: &mut Context<AppState>) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Bonus Terms").description(
-                "Every term the page's buildExt reads, in its own order: the chain and the outer \
+                "Every term the villagers' EXP rates read, in their own order: the chain and the outer \
                  factors multiply, the additive pool sums",
             ),
         )

@@ -2,8 +2,7 @@
 //! chase, and the off-map accumulation that decides the highest tier it can
 //! reach.
 //!
-//! Ported from `_renderNextTier` in `jar-calc.html`: the `Jar Production Line`
-//! ranking and the `_simMaxTier` / `_simTierStats` off-map loop. The game ticks
+//! The `Jar Production Line` ranking runs an off-map loop. The game ticks
 //! every five seconds and produces one jar per slot per tick; surplus progress
 //! accumulates until it clears the next tier's requirement.
 
@@ -12,13 +11,13 @@ use super::{Jar, TYPE_NAMES, upgrade};
 /// Seconds between off-map production ticks.
 pub const TICK_SECONDS: f64 = 5.0;
 
-/// Ticks the upstream ranking simulates, so the maximum tier is comparable.
+/// Ticks the ranking simulates, so the maximum tier is comparable.
 const SIM_TICKS: u32 = 500;
 
-/// Ticks the upstream stats loop watches to time the highest-tier jar.
+/// Ticks the stats loop watches to time the highest-tier jar.
 const STAT_TICKS: u32 = 1_000;
 
-/// The slots the upstream ranking assumes for a milestone: all three.
+/// The slots the ranking assumes for a milestone: all three.
 const ASSUMED_SLOTS: f64 = 3.0;
 
 /// One row of the `Next Pow10 Milestone Ranking`.
@@ -26,7 +25,6 @@ const ASSUMED_SLOTS: f64 = 3.0;
 pub struct MilestoneRow {
     pub jar_type: usize,
     pub name: &'static str,
-    /// `jarsProducedOfType`.
     pub count: f64,
     /// The next power of ten above the count.
     pub next: f64,
@@ -52,7 +50,7 @@ pub struct TierProjection {
     /// The tier the per-tick progress sustains, or `None` when it cannot even
     /// fill tier one every tick.
     pub sustained: Option<u32>,
-    /// `_simMaxTier`: the highest tier the 500-tick simulation reaches.
+    /// The highest tier the 500-tick simulation reaches.
     pub max_tier: u32,
     /// The ticks between the highest-tier jars, when the loop produced one.
     pub ticks_between_max: Option<f64>,
@@ -75,7 +73,7 @@ pub struct TierProjection {
 }
 
 impl Jar {
-    /// `productionLineUnlocked`: whether Big Jar Mach's production line is owned.
+    /// Whether Big Jar Mach's production line is owned.
     pub fn production_line_unlocked(&self) -> bool {
         self.upgrade(upgrade::PRODUCTION_LINE)
     }
@@ -85,7 +83,7 @@ impl Jar {
         self.production_per_hour() * TICK_SECONDS / 3_600.0
     }
 
-    /// `_renderNextTier`: every available type ranked by how fast it reaches the
+    /// Every available type ranked by how fast it reaches the
     /// next power of ten.
     pub fn milestone_ranking(&self) -> Vec<MilestoneRow> {
         let per_hour = self.production_per_hour();
@@ -128,7 +126,7 @@ impl Jar {
             .collect()
     }
 
-    /// One type's off-map projection, exactly as `_renderNextTier` builds it.
+    /// One type's off-map projection.
     pub fn tier_projection(&self, jar_type: usize) -> TierProjection {
         let requirement = self.production_requirement(jar_type);
         let base_requirement = 1_000.0 + 2_000.0 * jar_type as f64;
@@ -146,7 +144,7 @@ impl Jar {
         let next_tier = sustained.map_or(0, |tier| tier + 1);
         let net_next = per_tick - requirement * 10_f64.powi(next_tier as i32);
 
-        // `_renderNextTier` asks what previous-type count the production line
+        // The ranking asks what previous-type count the production line
         // would need; a non-positive percentage means the line already has it.
         let mach_seven = 1.0 + self.upgrade_value(upgrade::REQUIREMENT, 30.0) / 100.0;
         let sustain_needed = per_tick / 10_f64.powf(next_tier as f64);
@@ -181,7 +179,7 @@ impl Jar {
         }
     }
 
-    /// `_simMaxTier`: the highest tier [`SIM_TICKS`] off-map ticks consume.
+    /// The highest tier [`SIM_TICKS`] off-map ticks consume.
     fn sim_max_tier(per_tick: f64, requirement: f64) -> u32 {
         if per_tick <= requirement {
             return 0;
@@ -210,7 +208,7 @@ impl Jar {
         })
     }
 
-    /// `_simTierStats.ticksBetweenMax`: how many ticks separate highest-tier
+    /// How many ticks separate highest-tier
     /// jars, when the loop produces more than one.
     fn ticks_between_max(
         per_tick: f64,

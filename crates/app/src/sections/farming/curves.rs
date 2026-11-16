@@ -1,9 +1,9 @@
 //! The all-plot overgrowth curves: every plot's long-run target and the
-//! selected plot's full curve, from `optimalOvergrowthTarget`.
+//! selected plot's full curve.
 //!
-//! Upstream renders these as two tables on its evolution tab — an all-plots
-//! summary and `Plot N Curve` for the selected plot. Selecting a plot anywhere
-//! on the section, including a summary row here, switches the curve.
+//! Two tables on the evolution tab: an all-plots summary and `Plot N Curve`
+//! for the selected plot. Selecting a plot anywhere on the section, including
+//! a summary row here, switches the curve.
 
 use crate::sections::farming::field::family_name;
 use crate::state::AppState;
@@ -121,7 +121,7 @@ fn all_plots(
     table.into_any_element()
 }
 
-/// The selected plot's 0-30 curve, trimmed to the rows upstream shows.
+/// The selected plot's 0-30 curve, trimmed to the rows the table shows.
 fn plot_curve(curve: &OvergrowthCurve) -> AnyElement {
     let mut table = Table::new([
         "Target OG",

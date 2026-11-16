@@ -1,10 +1,10 @@
-//! Manifest-backed upstream artwork.
+//! Manifest-backed game artwork.
 //!
-//! Upstream images are game artwork, committed under `assets/upstream/` with a
-//! credit note. The app never assumes a path exists: it reads
-//! `assets/upstream/manifest.json` (written by `script/import-upstream-assets.mjs`),
-//! resolves a reference only when the file is on disk, and reports the rest as
-//! missing so the UI can draw a labelled placeholder.
+//! The images are Legends of Idleon game artwork, committed under
+//! `assets/game/` with a credit note. The app never assumes a path exists: it
+//! reads `assets/game/manifest.json`, resolves a reference only when the file
+//! is on disk, and reports the rest as missing so the UI can draw a labelled
+//! placeholder.
 
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 /// The manifest file inside the asset folder.
 pub(crate) const MANIFEST_FILE: &str = "manifest.json";
 /// The default asset folder, relative to the repository root.
-pub(crate) const DEFAULT_DIR: &str = "assets/upstream";
+pub(crate) const DEFAULT_DIR: &str = "assets/game";
 /// Overrides the asset folder, for packaged builds and harnesses.
 pub(crate) const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
 
@@ -178,7 +178,7 @@ impl Manifest {
 
 /// Normalize a reference to a manifest path.
 ///
-/// Accepts the upstream form (`./assets/combat-sim/...`) and the manifest form
+/// Accepts the data-table form (`./assets/combat-sim/...`) and the manifest form
 /// (`combat-sim/...`), and rejects absolute paths and parent traversal.
 pub(crate) fn normalize(reference: &str) -> Option<String> {
     let reference = reference.trim().replace('\\', "/");
@@ -234,7 +234,7 @@ mod tests {
     }
 
     #[test]
-    fn references_accept_upstream_paths_and_reject_escapes() {
+    fn references_accept_table_paths_and_reject_escapes() {
         assert_eq!(
             normalize("./assets/combat-sim/player/0.png").as_deref(),
             Some("combat-sim/player/0.png")
@@ -321,7 +321,7 @@ mod tests {
         assert_eq!(
             manifest.status,
             Status::Ready,
-            "the upstream assets are committed"
+            "the game assets are committed"
         );
         let mut missing = Vec::new();
         for map in idleon_combat::encounter::maps() {

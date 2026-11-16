@@ -1,5 +1,5 @@
-//! `ladleableMeals` and `nmlbFloorPlan`: how the reset splits the meals and how
-//! to hold No Meal Left Behind on an expensive target.
+//! How the reset splits the meals and how to hold No Meal Left Behind on an
+//! expensive target.
 //!
 //! NMLB raises the lowest meal at Lv 2 or more below the max level, up to 150,
 //! once per reset, and ties go to the highest meal number. A meal whose next level
@@ -10,7 +10,7 @@
 
 use super::{CostInputs, meal_level_cost, meal_requirement, nmlb_result_level, nmlb_target};
 
-/// The rotation upstream predicts when the page does not ask for another length.
+/// The rotation length predicted when the section does not ask for another.
 pub const ROTATION_DAYS: u32 = 14;
 
 /// The kitchen state and rates the steering plan reads.
@@ -31,7 +31,7 @@ pub struct Input<'a> {
     pub rotation_days: u32,
 }
 
-/// `ladleableMeals`: one meal's class for the day.
+/// One meal's class for the day.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MealClass {
     pub meal: usize,
@@ -97,7 +97,7 @@ pub struct RotationDay {
     pub ladles_saved: f64,
 }
 
-/// `nmlbFloorPlan`: the meal split, the floor, its blockers and the rotation.
+/// The meal split, the floor, its blockers and the rotation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Floor {
     pub day_hours: f64,
@@ -127,8 +127,8 @@ struct Blockers {
     ladles: f64,
 }
 
-/// `ladlesForMealLevel`: the ladles raising `meal` one level from `level`, spending
-/// `stock` first. The first-purchase discount is off, as upstream prices the plan.
+/// The ladles raising `meal` one level from `level`, spending `stock` first.
+/// The first-purchase discount is off.
 fn ladles(meal: usize, level: f64, stock: f64, input: &Input) -> f64 {
     let cost = meal_level_cost(level, input.cost, 0.0);
     let per_ladle = per_ladle(meal, input);
@@ -139,7 +139,7 @@ fn ladles(meal: usize, level: f64, stock: f64, input: &Input) -> f64 {
     }
 }
 
-/// `mealsPerLadle`: the stock one ladle cooks.
+/// The stock one ladle cooks.
 fn per_ladle(meal: usize, input: &Input) -> f64 {
     let requirement = meal_requirement(meal);
     match requirement > 0.0 {
@@ -148,7 +148,7 @@ fn per_ladle(meal: usize, input: &Input) -> f64 {
     }
 }
 
-/// `_ladlesForLevels`: the ladles raising `meal` from `from` to `to`.
+/// The ladles raising `meal` from `from` to `to`.
 fn ladles_for_levels(meal: usize, from: f64, to: f64, stock: f64, input: &Input) -> f64 {
     let mut total = 0.0;
     let mut stock = stock;
@@ -161,7 +161,7 @@ fn ladles_for_levels(meal: usize, from: f64, to: f64, stock: f64, input: &Input)
     total
 }
 
-/// `_steerBlockers`: the meals NMLB would pick before `x`.
+/// The meals NMLB would pick before `x`.
 fn steer_blockers(levels: &[f64], x: usize, max_level: f64) -> Vec<usize> {
     let level = levels[x];
     if !(level >= 2.0 && level < max_level) {
@@ -178,7 +178,7 @@ fn steer_blockers(levels: &[f64], x: usize, max_level: f64) -> Vec<usize> {
         .collect()
 }
 
-/// `_nmlbPickAmong`: the lowest eligible level among the allowed meals.
+/// The lowest eligible level among the allowed meals.
 fn pick_among(levels: &[f64], max_level: f64, allowed: impl Fn(usize) -> bool) -> Option<usize> {
     let mut pick = None;
     let mut lowest = f64::INFINITY;
@@ -191,7 +191,7 @@ fn pick_among(levels: &[f64], max_level: f64, allowed: impl Fn(usize) -> bool) -
     pick
 }
 
-/// `ladleableMeals`: every meal's class for the day.
+/// Every meal's class for the day.
 pub fn classes(input: &Input) -> Vec<MealClass> {
     (0..input.levels.len())
         .map(|meal| {
@@ -261,7 +261,7 @@ fn blockers_for(x: usize, is_target: &[bool], input: &Input) -> Blockers {
             }
         }
     }
-    // Upstream walks the blockers lowest level first, then highest meal number.
+    // Walk the blockers lowest level first, then highest meal number.
     ladleable.sort_by(|a, b| {
         a.level
             .partial_cmp(&b.level)
@@ -275,7 +275,7 @@ fn blockers_for(x: usize, is_target: &[bool], input: &Input) -> Blockers {
     }
 }
 
-/// `nmlbFloorPlan`: the split, tonight's pick, the floor and the rotation that
+/// The split, tonight's pick, the floor and the rotation that
 /// holding it predicts.
 pub fn floor_plan(input: &Input) -> Floor {
     let classes = classes(input);

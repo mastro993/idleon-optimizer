@@ -1,18 +1,15 @@
-//! Worship Tower Defense: the static tables, the formula port and the
+//! Worship Tower Defense: the static tables, the formulas and the
 //! deterministic wave simulator.
 //!
-//! Ported from the upstream calculator
-//! (`js/stats/systems/w3/worship-td.js`, `js/stats/data/w3/worship-td.js` and
-//! `worship-td-calc.html`). The tables in `data/worship-td.json` are written by
-//! `script/extract-worship-td-data.mjs`; every formula below keeps the upstream
-//! evaluation order so a seeded run matches the source tick for tick.
+//! Every formula below keeps the game's evaluation order, and every run is
+//! seeded, so a run is reproducible tick for tick.
 //!
-//! Two upstream runtime choices are explicit assumptions here, as they are
-//! there: wizards scan on 100 ms ticks with a 300 ms popup after each cooldown,
-//! and a pulse volley rolls one critical for all of its hits. A build [`Plan`]
-//! holds phases and their staged layouts; a [`Replay`] records a run's
-//! timeline. The strategy search, [`optimize()`], reports progress and stops
-//! when the reporter asks, so a section can cancel it.
+//! Two runtime choices are explicit assumptions: wizards scan on 100 ms ticks
+//! with a 300 ms popup after each cooldown, and a pulse volley rolls one
+//! critical for all of its hits. A build [`Plan`] holds phases and their staged
+//! layouts; a [`Replay`] records a run's timeline. The strategy search,
+//! [`optimize()`], reports progress and stops when the reporter asks, so a
+//! section can cancel it.
 
 mod optimize;
 mod plan;
@@ -36,7 +33,7 @@ pub use sim::{
 
 /// The modelling choices and neutral inputs the simulator and plans make.
 ///
-/// These are assumptions, not game rules: each one describes timing the source
+/// These are assumptions, not game rules: each one describes timing the game
 /// leaves to animation frames, a plan check the game applies on screen, or an
 /// account bonus this build does not decode yet. The Model pane lists them.
 pub const ASSUMPTIONS: &[&str] = &[
@@ -48,7 +45,7 @@ pub const ASSUMPTIONS: &[&str] = &[
     "A Kraken hit on an already-dead acquired target deals no damage but still consumes the hit and applies knockback.",
     "Sprite centres use the unscaled frame size.",
     "The 1 s wave timer ticks on the first 100 ms tick of each second.",
-    "After an upgrade a tower keeps its raw cooldown until the next trait pass, matching the source quirk.",
+    "After an upgrade a tower keeps its raw cooldown until the next trait pass, matching the game's quirk.",
     "Poisonic clouds are centred on the target at NodeY - 24.",
     "The map-100 TrialType override is ignored.",
     "Each direct hit rolls its own critical, except a Pulse volley, which rolls once for all of its hits.",
@@ -89,7 +86,7 @@ pub struct WorshipData {
     pub geometry: std::collections::BTreeMap<usize, Geometry>,
     pub towers: Vec<TowerDef>,
     pub traits: Vec<TraitDef>,
-    /// The `N2L` tokens `superBitType` matches against `Gaming[12]`.
+    /// The `N2L` tokens the super-bit check matches against `Gaming[12]`.
     #[serde(rename = "superBits")]
     pub super_bits: std::collections::BTreeMap<usize, String>,
     #[serde(rename = "menagerieBoost15PerLevel")]
@@ -134,7 +131,7 @@ pub struct WaveRow {
     pub mods: f64,
 }
 
-/// A row scaled the way `tdWaveRow` spawns it.
+/// A row scaled the way the game spawns it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Wave {
     pub wave: u32,

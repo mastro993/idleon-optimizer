@@ -2,11 +2,8 @@
 //! it resolves against, the formula explorer over the same descriptors and the
 //! game-input sandbox whose edits those rows resolve hypothetically.
 //!
-//! The context is ported from `js/stats/systems/common/map-access.js`, which
-//! decides which maps a character may pick, and from the
-//! `populateMapSel`/`switchChar` wiring in `stats-all.html`. The breakdowns
-//! follow `js/stats/registry.js`, `js/stats/stat-context.js` and the
-//! descriptor definitions under `js/stats/defs/`.
+//! The context decides which maps a character may pick and follows the
+//! character and map selectors.
 
 mod access;
 pub mod breakdowns;
@@ -20,7 +17,7 @@ mod snapshot;
 
 pub use breakdowns::{
     Breakdown, CapacityKind, Category as BreakdownCategory, Inputs as BreakdownInputs, Resolution,
-    Scope, Sheet, UPSTREAM,
+    Scope, Sheet,
 };
 pub use context::{ConstructionMode, Context, MapVisibility, Skill};
 pub use data::{

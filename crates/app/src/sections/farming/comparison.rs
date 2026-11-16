@@ -1,5 +1,5 @@
 //! The preset comparison: every built-in goal planned from the current
-//! baseline, as the upstream Land Rank tab's "Preset Comparison" table.
+//! baseline, as the Land Rank tab's "Preset Comparison" table.
 //!
 //! The run plans all seven goals, so it goes through the shared task runner:
 //! it reports progress per goal, cancels without dropping the previous table,
@@ -129,9 +129,8 @@ pub(super) fn comparison_card(state: &mut AppState, cx: &mut Context<AppState>) 
     }
     Card::new()
         .header(
-            CardHeader::new("Preset comparison").description(
-                "Each upstream goal's plan from the same baseline, largest moves first",
-            ),
+            CardHeader::new("Preset comparison")
+                .description("Each preset goal's plan from the same baseline, largest moves first"),
         )
         .child(body)
         .into_any_element()
@@ -186,7 +185,7 @@ fn rows_table(comparison: &Comparison, current: Objective, muted: gpui::Hsla) ->
         .into_any_element()
 }
 
-/// The upstream "Largest Moves" column: the four biggest rows, or a note.
+/// The "Largest Moves" column: the four biggest rows, or a note.
 fn largest_moves(row: &Allocation) -> String {
     let moves: Vec<String> = row
         .changes
@@ -223,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn the_largest_moves_name_the_upstream_rows() {
+    fn the_largest_moves_name_the_biggest_rows() {
         let farm = farm();
         let comparison = farm
             .comparison(Mode::Reset, Some(240), &mut |_progress| {

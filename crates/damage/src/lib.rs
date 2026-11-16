@@ -1,28 +1,24 @@
 //! The damage calculator's context and summary.
 //!
-//! Ported from the final combine in `js/stats/defs/damage.js` and the context
-//! wiring in `damage-calc.html`: the summary is the base damage, percentage
+//! The summary is the base damage, percentage
 //! multiplier and multiplicative-bonus layers multiplied together, the minimum
 //! is that maximum times the mastery ratio, and the "character sheet" card is
 //! the same pair. [`layers`] carries the three layers' values and notes and the
 //! mastery terms the ratio is built from. The layers themselves come from the
-//! upstream shared stat pipeline (`js/stats/systems/common/stats.js` and the
-//! talent, stamp, bubble, card and equipment systems it reads), which
-//! `crates/stats-engine` ports; every term the pipeline still leaves out is
+//! shared stat pipeline (the talent, stamp, bubble, card and equipment systems
+//! it reads) in `crates/stats-engine`; every term the pipeline still leaves out is
 //! named in the summary's reason instead of being guessed. This module keeps
 //! the arithmetic, the dungeon rule and the missing-input state separate from
 //! the provider.
 //!
-//! Upstream hides the summary on a dungeon map, because a dungeon's current-run
-//! damage and mastery are not stored in the save JSON. The same maps are
-//! [`is_dungeon`], so the page answers with the upstream reason instead of a
-//! number.
+//! The summary is hidden on a dungeon map, because a dungeon's current-run
+//! damage and mastery are not stored in the save JSON. Those maps are
+//! [`is_dungeon`], so the page answers with the reason instead of a number.
 //!
 //! The descriptor also flags the saved metadata an import can lack: the `it.json`
-//! companion roster and the server's active-vote row. The loader decides both
-//! (`js/save/loader.js`), the descriptor reports the pair as `partial` with one
-//! reason, and [`Metadata`] ports that rule so the page names a partial result
-//! instead of a complete one.
+//! companion roster and the server's active-vote row. The descriptor reports the
+//! pair as `partial` with one reason, and [`Metadata`] applies that rule so the
+//! page names a partial result instead of a complete one.
 
 mod layers;
 mod tree;
@@ -36,13 +32,13 @@ pub use idleon_stats::breakdowns::damage::{DUNGEON, Metadata};
 pub use layers::{Layer, LayerId, Layers, Mastery};
 
 /// Why a summary cannot be computed without the shared stat pipeline.
-pub const STATS_ENGINE: &str = "The shared stat pipeline (talents, stamps, bubbles, cards and equipment) is not ported yet, so the damage layers cannot be resolved.";
+pub const STATS_ENGINE: &str = "The shared stat pipeline (talents, stamps, bubbles, cards and equipment) is not modelled yet, so the damage layers cannot be resolved.";
 
 /// The calculation context the damage page resolves against.
 ///
-/// Upstream's `damage-calc.html` carries exactly two selectors, a character and
-/// a map, and lists every valid map rather than the character's accessible
-/// subset. The context round-trips through the project and session files.
+/// The page carries exactly two selectors, a character and a map, and lists
+/// every valid map rather than the character's accessible subset. The context
+/// round-trips through the project and session files.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Context {
@@ -54,7 +50,7 @@ pub struct Context {
 
 impl Context {
     /// The context a freshly imported save opens on: character one and its
-    /// current map, exactly like upstream `onLoad`.
+    /// current map.
     pub fn from_snapshot(snapshot: &Snapshot) -> Self {
         Self {
             character: 0,
@@ -62,9 +58,8 @@ impl Context {
         }
     }
 
-    /// Every map the selector lists, as upstream `populateMapSel` builds it.
+    /// Every map the selector lists.
     pub fn map_rows(&self, snapshot: &Snapshot) -> Vec<MapRow> {
-        // Upstream `onSaveLoaded` reads `Number(currentMapData[0]) || 0`.
         let current = snapshot.current_map(self.character).unwrap_or(0);
         let mut rows: Vec<MapRow> = (0..stats::map_count())
             .filter(|map| stats::display_name(*map).is_some())
@@ -76,7 +71,7 @@ impl Context {
             })
             .collect();
         // A map the character stands on that the table leaves unnamed is still
-        // listed, first, as upstream `populateMapSel` inserts it.
+        // listed, first.
         if !rows.iter().any(|row| row.current) {
             rows.insert(
                 0,
@@ -92,7 +87,7 @@ impl Context {
     }
 
     /// Point the context at `character`; the map becomes that character's
-    /// current map, then the map list clamps it, as upstream `switchChar` does.
+    /// current map, then the map list clamps it.
     pub fn select_character(&mut self, character: usize, snapshot: &Snapshot) {
         self.character = character;
         if let Some(map) = snapshot.current_map(character) {
@@ -120,9 +115,9 @@ impl Context {
 
 /// One row of the damage page's map selector.
 ///
-/// Upstream `populateMapSel` lists every named `MapDispName` entry in index
-/// order, marks the dungeon and the character's current map in the label, and
-/// inserts the current map first when the table leaves it unnamed.
+/// The selector lists every named `MapDispName` entry in index order, marks the
+/// dungeon and the character's current map in the label, and inserts the
+/// current map first when the table leaves it unnamed.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapRow {
     /// The map's game index.
@@ -135,14 +130,14 @@ pub struct MapRow {
     pub current: bool,
 }
 
-/// Upstream `_mapName`: the display name with its underscores replaced.
+/// The display name with its underscores replaced.
 fn map_name(map: usize) -> String {
     stats::display_name(map)
         .map(|name| name.replace('_', " "))
         .unwrap_or_else(|| format!("Map {map}"))
 }
 
-/// The selector label for a map, as `populateMapSel` builds it.
+/// The selector label for a map.
 fn map_label(map: usize, current: usize) -> String {
     let mut label = map_name(map);
     if is_dungeon(map) {
@@ -162,13 +157,13 @@ pub struct Summary {
     pub available: bool,
     /// The saved metadata the descriptor flags; a missing field is partial.
     pub metadata: Metadata,
-    /// The upstream reason a summary is unavailable, or the partial note.
+    /// The reason a summary is unavailable, or the partial note.
     pub reason: String,
     /// The minimum damage; zero while unavailable.
     pub min: f64,
     /// The maximum damage; zero while unavailable.
     pub max: f64,
-    /// The mastery ratio, capped exactly as upstream caps it.
+    /// The mastery ratio, capped at 0.8.
     pub mastery: f64,
     /// The layers the summary was built from, for the layer tabs and the
     /// mastery breakdown; `None` while they cannot be resolved.
@@ -182,9 +177,8 @@ pub struct Summary {
 impl Summary {
     /// The summary the three layers produce.
     ///
-    /// Upstream computes `MaxDmg = DDL[0] * DDL[1] * DDL[2]` and
-    /// `MinDmg = MaxDmg * mastery`, with mastery already capped at 0.8 by the
-    /// descriptor. The ratio is [`Mastery::value`], so the minimum is the
+    /// `MaxDmg = DDL[0] * DDL[1] * DDL[2]` and `MinDmg = MaxDmg * mastery`,
+    /// with mastery already capped at 0.8. The ratio is [`Mastery::value`], so the minimum is the
     /// mastery breakdown tree's root times the maximum.
     pub fn from_layers(layers: Layers) -> Self {
         let mastery = layers.mastery.value();
@@ -214,7 +208,7 @@ impl Summary {
     }
 
     /// The selected layer's formula tree: every term the engine recorded, with
-    /// its input, multiplier and upstream source.
+    /// its input, multiplier and source.
     pub fn layer_tree(&self, layer: LayerId) -> Option<FormulaNode> {
         self.trees.as_ref().and_then(|trees| {
             trees
@@ -245,18 +239,18 @@ impl Summary {
         }
     }
 
-    /// The "Character Sheet Range" card: upstream formats the same pair as a
-    /// range and notes that a partial result is not what the sheet shows.
+    /// The "Character Sheet Range" card: the same pair formatted as a range,
+    /// noting that a partial result is not what the sheet shows.
     pub fn game_range(&self) -> Option<(f64, f64)> {
         self.available.then_some((self.min, self.max))
     }
 
-    /// The mastery bar's fraction: `min(100, mastery / 0.8 * 100)` upstream.
+    /// The mastery bar's fraction: `min(100, mastery / 0.8 * 100)`.
     pub fn mastery_fill(&self) -> f64 {
         (self.mastery / 0.8 * 100.0).clamp(0.0, 100.0)
     }
 
-    /// A summary that could not be resolved, with the upstream reason.
+    /// A summary that could not be resolved, with its reason.
     pub fn unavailable(reason: impl Into<String>) -> Self {
         Self {
             available: false,
@@ -267,15 +261,15 @@ impl Summary {
     }
 }
 
-/// Whether a map is a dungeon, where upstream hides the whole summary.
+/// Whether a map is a dungeon, where the whole summary is hidden.
 pub fn is_dungeon(map: usize) -> bool {
     stats::classify(map).category == Category::Dungeon
 }
 
 /// Resolve the summary for a save and context.
 ///
-/// The shared stat engine resolves the three layers. A dungeon map keeps the
-/// upstream reason, and a save the engine cannot fully justify keeps its layers
+/// The shared stat engine resolves the three layers. A dungeon map keeps its
+/// reason, and a save the engine cannot fully justify keeps its layers
 /// but names every term it left out, so the page shows a lower bound instead of
 /// a number presented as complete. The metadata flags are read either way.
 pub fn evaluate(
@@ -338,10 +332,8 @@ pub fn evaluate(
 mod tests {
     use super::*;
 
-    /// Character one's upstream layers from `fixtures/damage.json`, written by
-    /// `script/damage-oracle.mjs` from the descriptor's own children in a
-    /// checkout of `Corgan/idleon-research-optimizer`. The arithmetic is the
-    /// only part this module owns until the shared stat pipeline lands.
+    /// One character's layers. The arithmetic is the only part this module
+    /// owns.
     fn fixture() -> Layers {
         Layers {
             base: Layer {
@@ -378,7 +370,7 @@ mod tests {
     }
 
     #[test]
-    fn mastery_is_capped_at_the_upstream_eight_tenths() {
+    fn mastery_is_capped_at_eight_tenths() {
         let summary = Summary::from_layers(Layers {
             base: Layer {
                 value: 100.0,
@@ -443,12 +435,26 @@ mod tests {
     }
 
     #[test]
-    fn the_dungeon_maps_are_the_upstream_set() {
+    fn the_dungeon_maps_are_the_six_dungeons() {
         for map in [39, 40, 70, 71, 118, 119] {
             assert!(is_dungeon(map), "map {map}");
         }
         for map in [0, 1, 50, 200, 306] {
             assert!(!is_dungeon(map), "map {map}");
+        }
+    }
+
+    #[test]
+    fn a_dungeon_map_answers_with_the_reason_instead_of_a_number() {
+        for map in [39, 40, 70, 71, 118, 119] {
+            let summary = evaluate(
+                &flat_save(),
+                &Default::default(),
+                Context { character: 0, map },
+            );
+            assert!(!summary.available, "map {map}");
+            assert_eq!(summary.reason, DUNGEON, "map {map}");
+            assert_eq!(summary.layers(), None, "map {map}");
         }
     }
 

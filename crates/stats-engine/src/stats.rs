@@ -1,8 +1,6 @@
-//! `computeTotalStat` from `js/stats/systems/common/stats.js`.
-//!
 //! The four primary stats share one shape: a top-level additive pool, a percent
 //! multiplier, the equipment/obol pools it scales, a flat base and a flat add.
-//! Each stat's sources are the upstream `STAT_CONFIG` row; the tree keeps one
+//! Each stat's sources are its config row; the tree keeps one
 //! node per term so a caller can show where the total came from.
 
 use crate::systems::Ctx;
@@ -11,7 +9,7 @@ use idleon_common::formula::FormulaNode;
 use idleon_research::model::Simulation;
 use idleon_save::Save;
 
-/// One stat's upstream `STAT_CONFIG` row.
+/// One stat's config row.
 pub(crate) struct Config {
     total_bubble: &'static str,
     dn_pct_talent: usize,
@@ -179,13 +177,13 @@ pub struct Total {
 }
 
 impl Total {
-    /// Whether every term upstream sums was modelled.
+    /// Whether every term the total sums was modelled.
     pub fn is_complete(&self) -> bool {
         self.missing.is_empty()
     }
 }
 
-/// `computeTotalStat(stat, character, ctx)`.
+/// A character's total of one primary stat.
 pub fn total_stat(
     save: &Save,
     simulation: &Simulation,
@@ -384,7 +382,7 @@ fn compute(ctx: &mut Ctx<'_, '_>, stat: Stat) -> Total {
     }
 }
 
-/// `computeEquipBaseStat`: the equipped items' raw stat plus the saved affix.
+/// The equipment base stat: the equipped items' raw stat plus the saved affix.
 fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
     let Some(order) = fields_json(ctx, &format!("EquipOrder_{}", ctx.character)) else {
         return 0.0;
@@ -433,7 +431,7 @@ fn equip_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
     total
 }
 
-/// `computeGalleryBaseStat`: the trophy, nametag, hatrack and Cape Vine pools.
+/// The gallery base stat: the trophy, nametag, hatrack and Cape Vine pools.
 pub(crate) fn gallery_base_here(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
     gallery_base(ctx, stat)
 }
@@ -543,7 +541,7 @@ fn string_row(ctx: &Ctx<'_, '_>, key: &str, index: usize) -> Option<Vec<String>>
     })
 }
 
-/// `computeObolBaseStat`: personal and family obols plus their saved rolls.
+/// The obol base stat: personal and family obols plus their saved rolls.
 fn obol_base(ctx: &mut Ctx<'_, '_>, stat: &str) -> f64 {
     let personal = obols(
         ctx,
@@ -591,7 +589,7 @@ fn obols(ctx: &mut Ctx<'_, '_>, names: Option<String>, maps: Option<String>, sta
     total
 }
 
-/// `computeDreamShimmer`: the Sailing artifact 31 tier's clamped multiplier.
+/// The Dream shimmer: the Sailing artifact 31 tier's clamped multiplier.
 fn dream_shimmer(ctx: &mut Ctx<'_, '_>) -> f64 {
     let tier = fields_json(ctx, "Sailing")
         .and_then(|value| value.as_array().and_then(|rows| rows.get(3)).cloned())

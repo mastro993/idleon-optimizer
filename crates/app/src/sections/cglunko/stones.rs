@@ -1,11 +1,10 @@
 //! The Cglunko stones: each page's six stones, the DR a digit adds and the
 //! stone worth focusing.
 //!
-//! Ports the Stones tab of `cglunko-calc.html` and the `stoneEfficiency` and
-//! `bestStoneFocus` functions of `js/stats/systems/w5/cglunko.js`. The section
-//! header's page selector picks the colour, so both pages render through this
-//! one tab: the page's stones with their next digit, the digit's DR impact, and
-//! the focus target the card explains.
+//! The Stones tab: each stone's efficiency and the best stone to focus. The
+//! section header's page selector picks the colour, so both pages render
+//! through this one tab: the page's stones with their next digit, the digit's
+//! DR impact, and the focus target the card explains.
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, KpiCard, Statistic, Tone};
@@ -45,7 +44,7 @@ pub(crate) fn stones_pane(
         .into_any_element()
 }
 
-/// The upstream Digit DR Impact cards: what one digit of each colour is worth.
+/// The Digit DR Impact cards: what one digit of each colour is worth.
 fn digit_impact(cglunko: &Cglunko, muted: Hsla) -> AnyElement {
     let impact = |page: Page| {
         let digits = match page {
@@ -286,7 +285,7 @@ fn focus_note(cglunko: &Cglunko, page: Page, best: Option<&Focus>) -> String {
     format!("{multiplier} {detail}")
 }
 
-/// The upstream `_stoneTable` order: the stones still short of a digit first,
+/// The stone table order: the stones still short of a digit first,
 /// fewest kills first, a stone already on its power of ten last.
 fn stone_order(a: &Stone, b: &Stone) -> std::cmp::Ordering {
     match (a.deficit > 0.0, b.deficit > 0.0) {
@@ -296,12 +295,12 @@ fn stone_order(a: &Stone, b: &Stone) -> std::cmp::Ordering {
     }
 }
 
-/// A stone as the upstream tables name it: `Blue #2` for the second slot.
+/// A stone as the tables name it: `Blue #2` for the second slot.
 fn stone_name(page: Page, slot: usize) -> String {
     format!("{} #{}", page.label(), slot + 1)
 }
 
-/// The page's digit total, the upstream `bdig`/`pdig` figure.
+/// The page's digit total.
 fn digits(cglunko: &Cglunko, page: Page) -> u32 {
     match page {
         Page::Blue => cglunko.blue_digits(),
@@ -309,7 +308,7 @@ fn digits(cglunko: &Cglunko, page: Page) -> u32 {
     }
 }
 
-/// A drop rate as the upstream table prints it: two decimals, or an exponent
+/// A drop rate as the table prints it: two decimals, or an exponent
 /// below a hundredth of a drop per kill.
 fn drops(value: f64) -> String {
     if value >= 0.01 {

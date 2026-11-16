@@ -1,13 +1,10 @@
-//! The static tables the stats context reads, extracted from the upstream JS by
-//! `script/extract-stats-data.mjs`.
+//! The static tables the stats context reads, from the game's data.
 //!
 //! `MapDispName`, `MapName`, `MapAFKtarget`, `MapAFKtargetSide`, `MapDetails`,
-//! `SceneTransitions`, `ColosseumInfo` and `ClassNames` come from
-//! `js/stats/data/game/customlists.js`, the target names, AFK types and combat
-//! rows from `monsters.js`, the multi-character requirements from `custommaps.js`
-//! and the dungeon maps from `js/stats/systems/w2/dungeon.js`. The equipment set
-//! bonuses are `EquipmentSets[name][3][2]`, the lookup upstream's
-//! `equipSetBonus` makes.
+//! `SceneTransitions`, `ColosseumInfo` and `ClassNames` come from the game's
+//! custom lists, the target names, AFK types and combat rows from its monster
+//! table, alongside the multi-character requirements and the dungeon maps. The
+//! equipment set bonuses are `EquipmentSets[name][3][2]`.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -15,8 +12,7 @@ use std::sync::OnceLock;
 
 const STATS_JSON: &str = include_str!("../data/stats.json");
 
-/// The static tables extracted from the upstream JS by
-/// `script/extract-stats-data.mjs`.
+/// The static tables extracted from the game's data.
 #[derive(Debug, Deserialize)]
 pub struct Data {
     pub maps: Vec<MapRow>,
@@ -45,7 +41,7 @@ pub struct EquipmentSet {
     pub bonus: f64,
 }
 
-/// One monster's static combat row, from `js/stats/data/game/monsters.js`.
+/// One monster's static combat row, from the game's monster table.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct Monster {
     /// The display name with its underscores, e.g. `Green_Mushroom`.
@@ -103,7 +99,7 @@ pub struct CapacityData {
     pub carry_star_signs: Vec<[f64; 2]>,
 }
 
-/// `paletteParams(23)`: the Honey Yellow palette behind the stamp doubler.
+/// Palette 23: the Honey Yellow palette behind the stamp doubler.
 #[derive(Debug, Deserialize)]
 pub struct PaletteParam {
     pub coeff: f64,
@@ -111,7 +107,7 @@ pub struct PaletteParam {
     pub decay: bool,
 }
 
-/// `exoticParams(49)`: the Exalted Eldou upgrade behind the stamp doubler.
+/// Exotic upgrade 49: the Exalted Eldou upgrade behind the stamp doubler.
 #[derive(Debug, Deserialize)]
 pub struct ExoticParam {
     pub base: f64,
@@ -126,7 +122,7 @@ pub struct Curve {
     pub x2: f64,
 }
 
-/// One stamp row, built from the stamp item's description upstream.
+/// One stamp row, built from the stamp item's description.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StampRow {
@@ -160,7 +156,7 @@ pub fn capacity() -> &'static CapacityData {
     &data().capacity
 }
 
-/// One class id's upstream display name.
+/// One class id's display name.
 pub fn class_name(id: usize) -> &'static str {
     data()
         .classes
@@ -169,7 +165,7 @@ pub fn class_name(id: usize) -> &'static str {
         .unwrap_or("Unknown Class")
 }
 
-/// A class id's name as a page prints it: the upstream name with its
+/// A class id's name as a page prints it: the display name with its
 /// underscores as spaces.
 pub fn class_label(id: usize) -> String {
     class_name(id).replace('_', " ")
@@ -185,7 +181,7 @@ pub fn monster_count() -> usize {
     data().monsters.len()
 }
 
-/// An equipment set's bonus percentage, as `equipSetBonus` returns it.
+/// An equipment set's bonus percentage.
 pub fn set_bonus(name: &str) -> f64 {
     equipment_set(name).map(|set| set.bonus).unwrap_or(0.0)
 }
@@ -220,8 +216,7 @@ pub fn map_name(map: usize) -> String {
 
 /// A monster's display name with its underscores replaced, or `Unavailable`.
 ///
-/// `coin-multi-calc.html`'s `_targetName` trims the display name and treats an
-/// empty one and `Nothing` as unavailable.
+/// The display name is trimmed, and an empty one or `Nothing` is unavailable.
 pub fn target_name(key: &str) -> String {
     let name = monster(key)
         .map(|monster| monster.name.replace('_', " ").trim().to_string())
@@ -238,7 +233,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_class_names_are_the_upstream_table() {
+    fn the_class_names_are_the_game_table() {
         assert_eq!(class_name(0), "0");
         assert_eq!(class_name(1), "BEGINNER");
         assert_eq!(class_name(53), "LABORATORY");
@@ -249,14 +244,14 @@ mod tests {
     }
 
     #[test]
-    fn the_map_table_carries_the_upstream_map_count() {
+    fn the_map_table_carries_the_game_map_count() {
         assert_eq!(map_count(), 327);
         assert_eq!(data().maps[0].display_name, "Blunder_Hills");
         assert_eq!(data().maps[0].internal_name, "GrasslandaTown");
     }
 
     #[test]
-    fn the_capacity_tables_name_every_upstream_source() {
+    fn the_capacity_tables_name_every_source() {
         let capacity = capacity();
         assert_eq!(capacity.guilds.len(), 18);
         assert_eq!(capacity.bribes.len(), 41);
@@ -270,7 +265,7 @@ mod tests {
         assert_eq!(capacity.bribes[23], 5.0);
         // Pantheon Shrine is shrine 3.
         assert_eq!(capacity.shrines[3], [10.0, 2.0]);
-        // The carry stamps are the six groups upstream's TYPE_CONFIG names.
+        // The carry stamps are the six carry-capacity stamp groups.
         for kind in [
             "MinCap",
             "ChopCap",

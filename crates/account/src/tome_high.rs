@@ -1,4 +1,4 @@
-//! The upper half of the Tome slot list, from `js/stats/systems/w4/tome-score.js`.
+//! The upper half of the Tome slot list.
 
 use super::Decoder;
 use idleon_save::fields;

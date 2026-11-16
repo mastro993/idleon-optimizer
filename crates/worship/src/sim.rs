@@ -1,10 +1,9 @@
 //! The deterministic 100 ms Worship TD run.
 //!
-//! A port of `createWorshipTdRun` in
-//! `js/stats/systems/w3/worship-td.js`, covering wave countdowns, spawns, mob
-//! timers, tower firing, projectiles, the totem, the build-plan policy the Plan
-//! pane runs and the replay recorder the Replay pane reads. The strategy search
-//! is a later feature issue.
+//! The run covers wave countdowns, spawns, mob timers, tower firing,
+//! projectiles, the totem, the build-plan policy the Plan pane runs and the
+//! replay recorder the Replay pane reads. The strategy search is a later
+//! feature issue.
 
 use super::{
     PhaseWhen, Plan, PlanTower, SkipPolicy, TICKS_PER_SECOND, Trial, Wave, atom5_bonus,
@@ -557,7 +556,7 @@ pub struct Run {
 /// One tower's aura pass: type, sides, range and centre.
 type AuraSource = (usize, Vec<(bool, f64, usize)>, f64, f64, f64);
 
-/// Mulberry32, the upstream seeded generator.
+/// Mulberry32, the seeded generator.
 pub(crate) struct Rng {
     a: u32,
 }

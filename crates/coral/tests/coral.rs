@@ -91,7 +91,7 @@ fn every_planner_input_has_a_default() {
 }
 
 #[test]
-fn the_save_slots_are_the_upstream_ones() {
+fn the_save_slots_follow_the_options_list() {
     assert_eq!(
         (0..12).map(upgrade_slot).collect::<Vec<_>>(),
         [427, 428, 429, 430, 431, 432, 616, 617, 618, 619, 620, 621]

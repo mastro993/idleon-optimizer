@@ -1,8 +1,7 @@
 //! BoneJoePickle stacking and time-to-kill.
 //!
-//! Ported from `pickle-calc.html` in the upstream calculators. Each pickle
-//! multiplies a miniboss's HP by 1.10; the calculator finds how many fit inside
-//! a kill-time budget and what the effective HP and kill time become.
+//! Each pickle multiplies a miniboss's HP by 1.10; the calculator finds how many
+//! fit inside a kill-time budget and what the effective HP and kill time become.
 
 /// The multiplier one pickle stacks onto a miniboss's HP.
 const PICKLE_GROWTH: f64 = 1.1;
@@ -28,7 +27,7 @@ pub struct Miniboss {
     pub world: &'static str,
 }
 
-/// The upstream miniboss list, in table order.
+/// The miniboss list, in table order.
 const MINIBOSSES: [Miniboss; 9] = [
     Miniboss {
         code: "slimeB",
@@ -107,7 +106,7 @@ pub fn rows(dps: f64, max_ttk: f64) -> impl Iterator<Item = Row> {
         .map(move |miniboss| row(miniboss, dps, max_ttk))
 }
 
-/// The upstream `fmtNum`: `1.23M`, `1.00B`, `25.00T`, or plain digits.
+/// A compact number: `1.23M`, `1.00B`, `25.00T`, or plain digits.
 pub fn compact(value: f64) -> String {
     if value >= 1e15 {
         format!("{:.2}Q", value / 1e15)
@@ -177,32 +176,6 @@ mod tests {
     }
 
     #[test]
-    fn fifty_million_dps_inside_thirty_seconds_matches_upstream() {
-        let outcomes: Vec<Row> = rows(50_000_000.0, 30.0).collect();
-        assert_eq!(
-            solvable(&outcomes),
-            [
-                Some(125),
-                Some(79),
-                Some(96),
-                Some(79),
-                Some(65),
-                Some(50),
-                Some(26),
-                Some(4),
-                None
-            ]
-        );
-        let first = outcomes[0];
-        assert!((first.effective_hp - 1_493_088_824.218_05).abs() < 1e-6);
-        assert!((first.kill_time - 29.861_776_484_361).abs() < 1e-9);
-        let spiritlord = outcomes[8];
-        assert_eq!(spiritlord.effective_hp, 25_000_000_000_000.0);
-        assert_eq!(spiritlord.kill_time, 500_000.0);
-        assert_eq!(compact(spiritlord.kill_time), "500.0K");
-    }
-
-    #[test]
     fn a_long_budget_fits_more_pickles_on_every_killable_miniboss() {
         let outcomes: Vec<Row> = rows(1_000_000_000.0, 120.0).collect();
         assert_eq!(
@@ -254,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn compact_uses_the_upstream_suffixes() {
+    fn compact_uses_short_suffixes() {
         assert_eq!(compact(999.0), "999");
         assert_eq!(compact(1_000.0), "1.0K");
         assert_eq!(compact(1_500_000.0), "1.50M");

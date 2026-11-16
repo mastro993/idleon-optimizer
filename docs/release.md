@@ -6,10 +6,8 @@ From [`plan.md`](plan.md) §2:
 
 > **Distribution decision (2026-11-14).** The app is distributed through GitHub only: unsigned
 > builds for macOS, Linux and Windows are attached to this repository's GitHub Releases, and there
-> is no other channel. A release bundles the game artwork under `assets/upstream/` with its credit
-> note (`assets/upstream/README.md`). No written permission is sought from the upstream
-> calculator's author, who is another community tool author and not the game's owner; ports stay
-> fresh rewrites with source references, as above.
+> is no other channel. A release bundles the game artwork under `assets/game/` with its credit
+> note (`assets/game/README.md`).
 
 No website, package manager, app store or update check: the app makes no network calls
 ([`plan.md`](plan.md) §5.5).
@@ -80,8 +78,8 @@ are deleted. Stable releases are never touched.
 ## What a release contains
 
 Every archive holds a release build without the automation bridge
-(`cargo build --release --locked -p idleon-optimizer --no-default-features`), with the ported
-formulas and extracted tables compiled in, and the game artwork (`assets/upstream/`, with
+(`cargo build --release --locked -p idleon-optimizer --no-default-features`), with the formulas
+and data tables compiled in, and the game artwork (`assets/game/`, with
 `manifest.json` and the credit note `README.md`) beside the binary — in the bundle's
 `Contents/Resources` on macOS — where the app looks first.
 [`script/package.mjs`](../script/package.mjs) assembles them and fails if any artwork file or the
@@ -89,7 +87,7 @@ credit note is missing.
 
 | Platform | Archive | Layout | Built on |
 |---|---|---|---|
-| macOS 12+ | `idleon-optimizer-<version>-macos-universal.zip` | `Idleon Optimizer.app`, artwork in `Contents/Resources/assets/upstream`, ad-hoc signed | `macos-latest`, `aarch64` and `x86_64` combined with `lipo` |
+| macOS 12+ | `idleon-optimizer-<version>-macos-universal.zip` | `Idleon Optimizer.app`, artwork in `Contents/Resources/assets/game`, ad-hoc signed | `macos-latest`, `aarch64` and `x86_64` combined with `lipo` |
 | Linux | `idleon-optimizer-<version>-linux-x86_64.tar.gz` | folder with `idleon-optimizer`, `assets/`, `README.txt` | `ubuntu-22.04` (glibc 2.35) |
 | Windows | `idleon-optimizer-<version>-windows-x86_64.zip` | folder with `idleon-optimizer.exe`, `assets/` | `windows-latest` (MSVC) |
 
@@ -132,7 +130,7 @@ deleting the app does not delete them:
 - macOS: packaged locally, signature verified with `codesign --verify --deep --strict` after
   extracting the archive with both `ditto` and `unzip`, launched from the extracted archive.
 - Linux and Windows: built and packaged by `build.yml` on the pull request that added it; not
-  launched. The test suite still runs on macOS only (`ci.yml`): the 1e-9 oracle comparisons have
+  launched. The test suite still runs on macOS only (`ci.yml`): the 1e-9 formula comparisons have
   never run against Linux or Windows maths libraries.
 
 ## Follow-ups

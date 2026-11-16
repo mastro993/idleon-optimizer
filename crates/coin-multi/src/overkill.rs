@@ -1,4 +1,4 @@
-//! The overkill tier, ported from `js/stats/systems/common/overkill.js`.
+//! The overkill tier.
 //!
 //! The game's `OverkillStuffs("2")` gives the tier the coin multiplier reads:
 //!
@@ -6,7 +6,7 @@
 //! - tier 1 is the baseline, and every threshold the damage clears raises it by
 //!   one, up to 51;
 //! - a target with no monster HP leaves the tier at 1 and marks the result
-//!   partial, exactly like upstream's `partial: true` branch.
+//!   partial.
 
 use idleon_stats as stats;
 
@@ -27,8 +27,8 @@ pub struct Overkill {
 
 /// The tier one map's monster HP and a damage value produce.
 ///
-/// Ported from `computeOverkillTier`: a target without HP returns tier 1 and
-/// `partial`; otherwise the tier is the number of thresholds the damage clears.
+/// A target without HP returns tier 1 and `partial`; otherwise the tier is the
+/// number of thresholds the damage clears.
 pub fn tier(map: usize, monster_hp: f64, damage: f64) -> Overkill {
     let exponent = if map >= 300 { 5.0 } else { 2.0 };
     let monster_hp = monster_hp.max(0.0);
@@ -80,7 +80,7 @@ mod tests {
     }
 
     #[test]
-    fn the_thresholds_are_the_upstream_geometric_series() {
+    fn the_thresholds_are_a_geometric_series() {
         // A World 1 map, exponent 2: HP 100 → 400, 800, 1600, ...
         let green = tier(1, 100.0, 400.0);
         assert_eq!(green.tier, 2);

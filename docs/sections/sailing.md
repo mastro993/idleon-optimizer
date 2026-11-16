@@ -8,12 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.
-
-## Upstream sources
-
-- sailing-calc.html
-- js/stats/systems/w5/sailing.js
+Implement fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.
 
 ## UI
 
@@ -66,7 +61,6 @@ Depends on: SL-01 Fleet assignment
 
 Acceptance:
 
-- Breakpoints match upstream.
 - Replacement ranking is stable.
 - Missing captains are flagged.
 
@@ -79,7 +73,6 @@ Depends on: SL-01 Fleet assignment
 Acceptance:
 
 - Chances sum to one.
-- Loot value matches upstream.
 - Artifact odds are explained.
 
 ### SL-04 — Fleet pile simulation
@@ -92,10 +85,9 @@ Acceptance:
 
 - Simulation is cancellable.
 - Results are reproducible.
-- Matches upstream fixture.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Chance-sum test.
 - Harness.

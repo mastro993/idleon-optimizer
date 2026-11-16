@@ -1,10 +1,9 @@
 //! The enchant simulator's controls and the history the project keeps.
 //!
-//! The knobs are the upstream `esim-*` inputs: how many enchants a simulation
-//! distributes, how many simulations to run, the strategy and its focus, the
-//! level each collectible is aimed at and the seed. The history is the
-//! `_saveSnapshot` spread from `jar-calc.html`, saved with the project instead
-//! of `localStorage`.
+//! The knobs are how many enchants a simulation distributes, how many
+//! simulations to run, the strategy and its focus, the level each collectible
+//! is aimed at and the seed. The history is each applied save's spread, saved
+//! with the project.
 
 use idleon_jar::{COLLECTIBLES, EnchantSnapshot, HISTORY_LIMIT, SimInputs, Strategy};
 use std::collections::BTreeMap;

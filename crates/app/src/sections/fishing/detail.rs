@@ -1,5 +1,5 @@
 //! The selected pool's fish split: requirements, shares, counts and EXP, plus
-//! the real-versus-panel comparison the upstream footer explains.
+//! the real-versus-panel comparison the footer explains.
 
 use super::spot_text;
 use crate::state::AppState;

@@ -1,7 +1,6 @@
-//! The pure fishing formulas, ported 1:1 from
-//! `js/stats/systems/w2/fishing.js`.
+//! The pure fishing formulas.
 //!
-//! Every function keeps the upstream evaluation order and its floors, because
+//! Every function keeps the game's evaluation order and its floors, because
 //! the AFK claim floors each fish count and the split rounds each share down to
 //! hundredths: reordering the multiplications changes the result.
 
@@ -81,50 +80,7 @@ pub fn ore_value(efficiency: f64, eff_req: f64, prowess: f64) -> f64 {
     ratio.powf(0.25 + prowess).max(1.0).floor()
 }
 
-/// The inputs the upstream `fishingMultiFish` reads.
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase", default)]
-pub struct MultiFishInputs {
-    /// Fishing skill power.
-    pub power: f64,
-    /// Fishing level.
-    pub level: f64,
-    /// Stamps: Multi-Fish, as a percentage.
-    pub stamp: f64,
-    /// The Fishing Active bubble's Multi-Fish, as a percentage.
-    pub bubble: f64,
-    /// Star signs: Multi-Fish, as a percentage.
-    pub star_sign: f64,
-    /// Cosmo Upgrade 2-2's cap bonus, as a percentage.
-    pub cosmo: f64,
-}
-
-/// `SkillStats("FishingMultiOre")`: the Multi-Fish percentage and its cap.
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
-#[serde(rename_all = "camelCase", default)]
-pub struct MultiFish {
-    pub value: f64,
-    pub raw: f64,
-    pub cap: f64,
-}
-
-/// `SkillStats("FishingMultiOre")`, floored to the upstream cap.
-pub fn multi_fish(inputs: &MultiFishInputs) -> MultiFish {
-    let power = inputs.power.max(0.0);
-    let level = inputs.level;
-    let bubble = inputs.bubble;
-    let raw = inputs.stamp
-        + 100.0 * (power.sqrt() / (4.0 * power.sqrt() + 50.0) + 0.15 * level / (level + 40.0))
-        + (bubble + inputs.star_sign);
-    let cap = (if bubble < 20.0 { 100.0 } else { 300.0 }) + inputs.cosmo;
-    MultiFish {
-        value: cap.min(raw),
-        raw,
-        cap,
-    }
-}
-
-/// The inputs the upstream `fishingSpeed` reads.
+/// The inputs the catch time reads.
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SpeedInputs {

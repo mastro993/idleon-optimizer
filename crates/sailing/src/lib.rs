@@ -1,11 +1,11 @@
 //! Sailing fleet assignment: boats, captains, routes and the one-to-one
 //! optimizer.
 //!
-//! The formulas follow the upstream `sailing-chests.js` and `sailing.js`:
-//! boat base loot and speed, captain bonuses, chest tiers, artifact odds and
-//! route cadence. Account-wide multipliers live in [`RouteContext`]; the save
-//! import fills the ones it can read and leaves the rest neutral, so the
-//! assignment ranking stays exact even when a bonus is not modelled.
+//! The formulas cover boat base loot and speed, captain bonuses, chest tiers,
+//! artifact odds and route cadence. Account-wide multipliers live in
+//! [`RouteContext`]; the save import fills the ones it can read and leaves the
+//! rest neutral, so the assignment ranking stays exact even when a bonus is not
+//! modelled.
 //!
 //! A route's captain is the only assignment variable. Everything else — boat
 //! levels, island, account bonuses — is fixed per boat, which is what lets the
@@ -110,7 +110,7 @@ pub struct Fleet {
 
 impl Fleet {
     /// How many captains the fleet has at legendary rarity, capped at 30 as
-    /// the upstream loot and artifact bonuses cap it.
+    /// the loot and artifact bonuses cap it.
     pub(crate) fn legendary_captains(&self) -> usize {
         self.captains
             .iter()
@@ -129,9 +129,8 @@ impl Fleet {
         self.currency_balances.get(kind).copied().unwrap_or(0.0)
     }
 
-    /// How many islands the save has unlocked, matching upstream
-    /// `availableIslandCount`: the first island, any negative progress, or progress
-    /// at least the island's cloud requirement.
+    /// How many islands the save has unlocked: the first island, any negative
+    /// progress, or progress at least the island's cloud requirement.
     pub fn available_islands(&self) -> usize {
         (0..island_count())
             .filter(|island| {
@@ -189,7 +188,7 @@ impl Default for LootBonuses {
     }
 }
 
-/// Account-wide speed bonuses, as the upstream `boatSpeed` factors.
+/// Account-wide speed bonuses, grouped as the boat speed formula's factors.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SpeedBonuses {
     /// `1 + (divinity + cards + bubble) / 125`.
@@ -214,8 +213,8 @@ impl Default for SpeedBonuses {
     }
 }
 
-/// Account-wide captain-EXP bonuses, split the way upstream sums and
-/// multiplies them.
+/// Account-wide captain-EXP bonuses, split into the summed and multiplied
+/// parts.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CaptainExpBonuses {
     /// Talents, achievements, shiny pets and the vault, in percent.
@@ -233,8 +232,8 @@ impl Default for CaptainExpBonuses {
     }
 }
 
-/// Account-wide artifact-find bonuses, split the way upstream sums and
-/// multiplies them.
+/// Account-wide artifact-find bonuses, split into the summed and multiplied
+/// parts.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ArtifactBonuses {
     /// Every additive source except the captain's own bonus.
@@ -302,10 +301,10 @@ pub struct RouteContext {
     pub chest_rolls: u32,
     pub captain_exp: CaptainExpBonuses,
     /// Unending Loot Search (talent 325) as a percentage. It scales chest
-    /// loot, and zero turns near-full replacement off as upstream does
+    /// loot, and zero turns near-full replacement off, as the game does
     /// without the talent.
     pub unending_loot_search: f64,
-    /// The pile's chest slots, `maxChestSlots` from the save.
+    /// The pile's chest slots, read from the save.
     pub chest_capacity: usize,
 }
 
@@ -403,7 +402,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_minimum_trip_floor_and_gem_discount_match_upstream() {
+    fn the_minimum_trip_floor_and_gem_discount_apply() {
         let travel = MinimumTravel {
             family: 20.0,
             shiny: 10.0,

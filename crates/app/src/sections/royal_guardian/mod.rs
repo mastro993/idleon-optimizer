@@ -1,16 +1,13 @@
-//! The Royal Guardian Calculator: the upstream Overview, Outposts, Resources,
+//! The Royal Guardian Calculator: the Overview, Outposts, Resources,
 //! Currencies, Upgrades, Breakdowns and Forecast tabs.
 //!
-//! Ported from `royal-guardian-calc.html`,
-//! `js/stats/systems/w7/royal-guardian.js` and
-//! `js/stats/systems/w7/royal-guardian-optimizer.js`. RG-01 builds the overview:
-//! the counters, the world progress cards, the raw clearing values every outpost
-//! reports and the range target behind an outpost's Advanced Logistics plan.
-//! RG-02 adds the outpost map, the resource nodes, the currencies, the drain
-//! staffing and the banked hours. RG-03 adds the upgrade list with its cost
-//! plans, the global breakdown tree and the forecast. RG-04 adds the outpost
-//! optimizer and the unit EXP plan with the shelf steps toward the next Armory
-//! shelf.
+//! RG-01 builds the overview: the counters, the world progress cards, the raw
+//! clearing values every outpost reports and the range target behind an
+//! outpost's Advanced Logistics plan. RG-02 adds the outpost map, the resource
+//! nodes, the currencies, the drain staffing and the banked hours. RG-03 adds
+//! the upgrade list with its cost plans, the global breakdown tree and the
+//! forecast. RG-04 adds the outpost optimizer and the unit EXP plan with the
+//! shelf steps toward the next Armory shelf.
 
 mod actions;
 mod breakdowns;

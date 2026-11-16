@@ -1,9 +1,9 @@
 //! The depth estimates: the two charts and the per-depth inspector.
 //!
-//! Ported from the upstream Depth limits tab. The charts show per-floor
-//! placement odds and the expected stamina to break each object; the inspector
-//! below them carries the exact numbers, the reference tool and the over-budget
-//! flags, which is also the accessible path the canvas cannot offer.
+//! The charts show per-floor placement odds and the expected stamina to break
+//! each object; the inspector below them carries the exact numbers, the
+//! reference tool and the over-budget flags, which is also the accessible path
+//! the canvas cannot offer.
 
 use super::chart::{Series, chart};
 use super::state::records;
@@ -19,7 +19,7 @@ use gpui::{AnyElement, Context, Div, IntoElement, ParentElement, Styled, div, px
 use idleon_spelunking::{ConfigError, Inputs, Profile, ReferenceTool, profile};
 use idleon_ui::format::{self, hex};
 
-/// The upstream per-rock-type chart colours.
+/// The per-rock-type chart colours.
 const DEPTH_COLORS: [&str; 16] = [
     "#4dd0e1", "#ffb74d", "#a5d66f", "#df91f0", "#fb8299", "#82aaff", "#ffe082", "#80cbc4",
     "#dca978", "#adadff", "#e4ceff", "#91c4a0", "#f6956a", "#b6d6ee", "#ed95bb", "#ffffff",

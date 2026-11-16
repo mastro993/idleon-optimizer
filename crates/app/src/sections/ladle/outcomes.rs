@@ -1,10 +1,11 @@
 //! The forecast comparison and the meal outcomes table (LD-03).
 //!
-//! Upstream compares the same horizon under the saved assignments, the optimized
-//! assignments and the donation policy, then lists every discovered meal with the
-//! levels each source bought and the target the `Selected meal targets` objective
-//! spends toward. The tables and the two charts reuse the shared components; the
-//! numbers come from [`idleon_ladle::kitchen::forecast`] and its plans.
+//! The comparison runs the same horizon under the saved assignments, the
+//! optimized assignments and the donation policy, then lists every discovered
+//! meal with the levels each source bought and the target the `Selected meal
+//! targets` objective spends toward. The tables and the two charts reuse the
+//! shared components; the numbers come from [`idleon_ladle::kitchen::forecast`]
+//! and its plans.
 
 use crate::state::AppState;
 use ely_gpui_component::charts::{LineChart, Series};
@@ -57,7 +58,7 @@ impl OutcomeSort {
     }
 }
 
-/// The objective's name, as upstream labels it in the comparison.
+/// The objective's name, as the comparison labels it.
 pub(crate) fn objective_label(objective: Objective) -> &'static str {
     match objective {
         Objective::Ranks => "Most meal ranks",
@@ -222,8 +223,8 @@ fn charts(forecast: &Forecast) -> AnyElement {
 
 /// The meal outcomes table, its sort and the per-meal target inputs.
 ///
-/// `plan` is `None` when the forecast refused its inputs, as upstream still draws
-/// the target inputs so the player can fix them; the projected column is then `-`.
+/// `plan` is `None` when the forecast refused its inputs. The table still draws
+/// the target inputs so the player can fix them, and the projected column is then `-`.
 pub(crate) fn meal_outcomes(
     state: &AppState,
     levels: &[f64],

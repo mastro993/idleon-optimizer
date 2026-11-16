@@ -1,7 +1,5 @@
 //! The card and obol halves of the reward engine (CS-05).
 //!
-//! Ported from `js/stats/systems/common/combat-sim-rewards.js`:
-//!
 //! - [`drop_odds`] is the game's `DropOdds` (src 66955): one stream draw and the
 //!   expected-count shortcut that makes a huge chance land every kill;
 //! - [`State::roll`] is `generateMonsterDrops` (src 66420) over the card, obol
@@ -16,11 +14,8 @@
 //!   by the card-chance multiplier, and the obol task's rows are spliced into
 //!   the drop tables their roll reads.
 //!
-//! `crates/combat/data/drops.json` and `fixtures/combat-drops.json` are written
-//! by `script/combat-drops-oracle.mjs` from one upstream checkout. Every row
-//! that cannot produce a card or an obol is left out of both, so the fixture's
-//! upstream calls roll the same stream as this port and their results compare
-//! exactly. The other reward paths (coins, equipment, EXP, inventory) stay
+//! `crates/combat/data/drops.json` keeps only the rows that can produce a card
+//! or an obol. The other reward paths (coins, equipment, EXP, inventory) stay
 //! unmodelled and are listed by [`crate::encounter::unsupported`].
 
 use crate::overrides::{Overrides, Value};
@@ -33,7 +28,7 @@ use std::sync::OnceLock;
 
 const DROPS_JSON: &str = include_str!("../data/drops.json");
 
-/// The upstream fragment balance cap.
+/// The fragment balance cap.
 const FRAGMENT_CAP: f64 = 2e9;
 
 /// One drop row: the item, its per-kill chance and the quantity one roll pays.
@@ -95,8 +90,7 @@ fn data() -> &'static Data {
     DATA.get_or_init(|| serde_json::from_str(DROPS_JSON).expect("bundled drop rows are valid"))
 }
 
-/// A monster's display name, with the game data's underscores as spaces; the
-/// upstream `monName`.
+/// A monster's display name, with the game data's underscores as spaces.
 pub fn monster_name(kind: &str) -> String {
     data()
         .monsters
@@ -105,7 +99,7 @@ pub fn monster_name(kind: &str) -> String {
         .unwrap_or_else(|| kind.to_string())
 }
 
-/// Whether the monster rolls drops at all: upstream gates the drop branch on
+/// Whether the monster rolls drops at all: the drop branch is gated on
 /// the definition's `Type` being `Monster`, so ore, trees, bugs and fish do not.
 pub fn rolls(kind: &str) -> bool {
     data()
@@ -188,7 +182,7 @@ pub struct Summary {
     /// Whether the auto-trash is unlocked at all.
     pub auto_trash: bool,
     /// Obols neither placed nor trashed: a full page without the auto-trash
-    /// would fall back to the inventory, which this port does not model.
+    /// would fall back to the inventory, which this build does not model.
     pub obols_unpicked: u64,
 }
 
@@ -277,7 +271,7 @@ pub enum Pickup {
     Placed,
     /// A full obol page auto-trashed the drop for this many fragments.
     Fragments(f64),
-    /// Neither: the drop needs a path this port does not model.
+    /// Neither: the drop needs a path this build does not model.
     Unpicked,
 }
 
@@ -326,21 +320,6 @@ impl State {
         };
         state.reset();
         state
-    }
-
-    /// The rows one monster rolls after the current card odds.
-    pub fn rows(&self, kind: &str) -> &[Row] {
-        self.monsters.get(kind).map(Vec::as_slice).unwrap_or(&[])
-    }
-
-    /// One drop table's rows after the obol task's splices.
-    pub fn table(&self, name: &str) -> &[Row] {
-        self.tables.get(name).map(Vec::as_slice).unwrap_or(&[])
-    }
-
-    /// The obol pages as the run leaves them.
-    pub fn pages(&self) -> &[BTreeMap<usize, String>] {
-        &self.pages
     }
 
     /// `lootDropOddsReset`: rebuild the odds from the pristine rows.
@@ -599,7 +578,7 @@ mod tests {
         assert!(snapshot.pages.is_empty());
         assert!(!snapshot.fragments_known);
         assert!(!snapshot.auto_trash);
-        // The upstream rate is `(10 + Menagerie[0][10]) / 100`, so a save
+        // The rate is `(10 + Menagerie[0][10]) / 100`, so a save
         // without the row still rolls on its own tenth.
         assert!((snapshot.auto_trash_rate - 0.1).abs() < 1e-12);
         assert_eq!(snapshot.tasks_obol, 0.0);

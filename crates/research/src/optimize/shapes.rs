@@ -25,7 +25,7 @@ pub struct ShapesOutcome {
 }
 
 /// Per-cell priorities: the above tier first, EXP value second, the below tier
-/// as the tiebreak, matching the upstream `optimizeShapePlacement` comparator.
+/// as the tiebreak.
 struct Weights {
     above: Vec<f64>,
     below: Vec<f64>,
@@ -38,8 +38,7 @@ impl Weights {
     }
 
     /// The same weights with the per-cell values the caller supplies, and no
-    /// tiers: the insight ROI scores grind shapes on insight alone, as upstream
-    /// `optimizeShapePlacement` does when it is handed `precomputedCellValues`.
+    /// tiers: the insight ROI scores grind shapes on insight alone.
     fn from_values(value: Vec<f64>) -> Self {
         Self {
             above: vec![0.0; game().cells()],
@@ -219,7 +218,7 @@ fn run(
         }
     }
 
-    // Upstream's second phase: a shape the EXP-valued nodes left over covers
+    // The second phase: a shape the EXP-valued nodes left over covers
     // the below tier in rank order, so a preset's lower priorities still get
     // shapes once every square worth EXP is taken.
     let placed: Vec<usize> = greedy.iter().map(|placement| placement.shape).collect();
@@ -323,7 +322,7 @@ fn score(sim: &Simulation, ctx: &SimContext, placements: &[Placement]) -> f64 {
 /// A scored candidate: above-tier weight, EXP, below-tier weight, cells, spot.
 type Candidate = (f64, f64, f64, usize, Placement);
 
-/// Whether `left` beats `right`, in the upstream comparator's order: above
+/// Whether `left` beats `right`, in the comparator's order: above
 /// rank, then EXP, then below rank, then the number of uncovered cells.
 fn beats(left: &Candidate, right: &Candidate) -> bool {
     if left.0 != right.0 {
@@ -644,7 +643,7 @@ mod tests {
 
     #[test]
     fn tier_order_is_above_then_exp_then_below() {
-        // Every comparison upstream makes: a higher above rank wins whatever
+        // Every comparison the ranking makes: a higher above rank wins whatever
         // the EXP, EXP wins over the below rank, and cells only break a tie.
         assert!(beats(
             &candidate(2.0, 0.0, 0.0, 1),

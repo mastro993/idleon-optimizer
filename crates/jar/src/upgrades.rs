@@ -1,16 +1,12 @@
 //! The upgrades tab: the jar schematics, the jar-type costs and the plan for the
 //! next type the rupies can pay for.
-//!
-//! Ported from `B_UPG_DATA`, `B_UPG_GROUPS`, `newJarCost`,
-//! `newJarCurrencyType`, `canAffordNewJar` and `doublerTierValue` in
-//! `js/stats/systems/w5/jar.js` and the `_renderUpgrades` tables.
 
 use super::{Jar, RUPIE_NAMES, TYPE_NAMES, data};
 
-/// Six gilded tiers, as `_renderUpgrades` lists them.
+/// Six gilded tiers, as the upgrades tab lists them.
 pub const GILDED_TIERS: u32 = 6;
 
-/// One `B_UPG_DATA` schematic at its saved ownership.
+/// One schematic at its saved ownership.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Schematic {
     pub index: usize,
@@ -21,7 +17,7 @@ pub struct Schematic {
     /// The rupie index the schematic costs; meaningful when `cost` is non-zero.
     pub currency: usize,
     pub cost: f64,
-    /// `bupgOwned`: `Holes[13][index] >= 1`.
+    /// `Holes[13][index] >= 1`.
     pub owned: bool,
 }
 
@@ -114,7 +110,7 @@ impl UpgradePlan {
 }
 
 impl Jar {
-    /// The schematics in the upstream group order.
+    /// The schematics in group order.
     pub fn schematics(&self) -> Vec<Schematic> {
         let mut rows = Vec::new();
         for group in &data().schematic_groups {
@@ -137,13 +133,13 @@ impl Jar {
         rows
     }
 
-    /// `newJarCost` for the purchase that unlocks type `jar_type` (`1..=9`).
+    /// The cost of the purchase that unlocks type `jar_type` (`1..=9`).
     pub fn jar_type_cost(jar_type: usize) -> f64 {
         let owned = jar_type.saturating_sub(1) as f64;
         50.0 * (1.0 + owned).powf(1.5) * 4.8_f64.powf(owned)
     }
 
-    /// `upgradePlan`: the nine types in purchase order, each checked against
+    /// The nine types in purchase order, each checked against
     /// the rupie balance the game pays it with.
     pub fn upgrade_plan(&self) -> UpgradePlan {
         let owned = self.types_purchased();
@@ -177,12 +173,12 @@ impl Jar {
         UpgradePlan { steps }
     }
 
-    /// `doublerTierValue`: what a gilded tier adds to the next rupie break.
+    /// What a gilded tier adds to the next rupie break.
     pub fn doubler_tier_value(tier: u32) -> f64 {
         100.0 * 3_f64.powi(tier as i32)
     }
 
-    /// `doublerMultiplier`: the gilded tier's multiplier.
+    /// The gilded tier's multiplier.
     pub fn doubler_multiplier(tier: u32) -> f64 {
         1.0 + Self::doubler_tier_value(tier) / 100.0
     }

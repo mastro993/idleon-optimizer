@@ -8,14 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`, `stats-all`
 
-Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.
-
-## Upstream sources
-
-- damage-calc.html
-- js/stats/stat-context.js
-- js/stats/systems/w2/dungeon.js
-- js/ui/dash-breakdowns.js
+Implement the damage calculator: min/max damage, mastery, damage layers and the full formula tree.
 
 ## UI
 
@@ -51,7 +44,6 @@ Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and resp
 
 Acceptance:
 
-- Values match upstream.
 - Missing inputs are flagged.
 - Context persists.
 
@@ -63,7 +55,7 @@ Depends on: DMG-01 Damage context and summary
 
 Acceptance:
 
-- Every upstream layer is present.
+- Every damage layer is present.
 - Layer sum matches the summary.
 - Mastery matches the formula tree.
 
@@ -81,6 +73,6 @@ Acceptance:
 
 ## Verification
 
-- Damage fixture matches upstream.
+- Formula tests cover every damage layer.
 - Layer sum test.
 - Harness screenshot.

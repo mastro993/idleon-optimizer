@@ -210,7 +210,7 @@ pub(crate) fn contribution_card(result: &Estimate) -> AnyElement {
     Card::new()
         .header(
             CardHeader::new("Cell contribution")
-                .description("Mean across the trials; the page's own table, per cell type."),
+                .description("Mean across the trials, per cell type."),
         )
         .child(div().id("jelly-contribution").p_3().child(table))
         .into_any_element()

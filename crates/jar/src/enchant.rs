@@ -1,11 +1,9 @@
 //! The enchant simulator: a seeded Monte Carlo over the forty collectibles.
 //!
-//! Ported from `js/workers/enchant-sim-worker.js` and the `_renderEnchantSim`
-//! controls in `jar-calc.html`: every simulation starts from the found
-//! collectibles at one level, distributes `enchants` rolls, optionally rolling
-//! for a focus first, and reports the spread each simulation reached. The
-//! upstream worker draws from `Math.random()`, so it cannot repeat a run; here
-//! the generator is seeded, which is what makes the spread reproducible.
+//! Every simulation starts from the found collectibles at one level,
+//! distributes `enchants` rolls, optionally rolling for a focus first, and
+//! reports the spread each simulation reached. The generator is seeded, which
+//! is what makes the spread reproducible.
 //!
 //! Progress and stop follow the protocol every long run in the app speaks
 //! ([`idleon_common::Progress`]/[`idleon_common::Control`]), so the section runs
@@ -15,10 +13,10 @@ use crate::{COLLECTIBLES, collectible_name};
 use idleon_common::{Control, Progress};
 use serde::{Deserialize, Serialize};
 
-/// How many simulations run between two progress reports, the worker's `BATCH`.
+/// How many simulations run between two progress reports.
 const BATCH: u32 = 500;
 
-/// The simulator's focus policy, the upstream `esim-strategy` select.
+/// The simulator's focus policy.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Strategy {
@@ -36,7 +34,7 @@ impl Strategy {
     /// The three strategies, in the select's order.
     pub const ALL: [Strategy; 3] = [Strategy::None, Strategy::Fixed, Strategy::Smart];
 
-    /// The id the page and a saved project use.
+    /// The id a saved project uses.
     pub fn id(self) -> &'static str {
         match self {
             Strategy::None => "none",
@@ -64,14 +62,14 @@ impl Strategy {
 /// spread exactly.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SimInputs {
-    /// `collectibleLevels`: the forty saved levels, one per collectible.
+    /// The forty saved levels, one per collectible.
     pub levels: [u32; COLLECTIBLES],
-    /// `enchCount`: how many enchants each simulation distributes.
+    /// How many enchants each simulation distributes.
     pub enchants: u32,
-    /// `simCount`: how many independent simulations to run.
+    /// How many independent simulations to run.
     pub sims: u32,
     pub strategy: Strategy,
-    /// `focusIdx`: the fixed focus, or Smart's fallback; `None` is upstream `-1`.
+    /// The fixed focus, or Smart's fallback; `None` is no focus.
     pub focus: Option<usize>,
     /// The target level per collectible index, in ascending index order.
     pub targets: Vec<(usize, u32)>,
@@ -80,14 +78,14 @@ pub struct SimInputs {
 }
 
 impl SimInputs {
-    /// `foundList`: the collectibles the save has found, in save order.
+    /// The collectibles the save has found, in save order.
     pub fn found(&self) -> Vec<usize> {
         (0..COLLECTIBLES)
             .filter(|index| self.levels[*index] >= 1)
             .collect()
     }
 
-    /// `focusChance`: `5 / (found + 3)`, the roll that lands an enchant on the
+    /// `5 / (found + 3)`, the roll that lands an enchant on the
     /// focus. Zero when nothing has been found.
     pub fn focus_chance(&self) -> f64 {
         match self.found().len() {
@@ -113,7 +111,7 @@ impl SimInputs {
 pub struct Spread {
     pub index: usize,
     pub name: &'static str,
-    /// `spreadSums[index] / simCount`: the average enchant levels gained.
+    /// The average enchant levels gained per simulation.
     pub average: f64,
     pub min: u32,
     pub max: u32,
@@ -133,7 +131,8 @@ pub struct SimResult {
     pub focus: Option<usize>,
     /// The found collectibles, in save order.
     pub spread: Vec<Spread>,
-    /// `allHit / simCount`, when at least one target was set.
+    /// The share of simulations that hit every target, when at least one
+    /// target was set.
     pub all_hit: Option<f64>,
     /// The seed the spread came from.
     pub seed: u64,
@@ -141,7 +140,7 @@ pub struct SimResult {
 
 impl SimResult {
     /// The average total enchant levels across the spread, which the odds table
-    /// reads (the page's `avgTotalEnchLvs`).
+    /// reads.
     pub fn average_total(&self) -> f64 {
         self.spread.iter().map(|entry| entry.average).sum()
     }
@@ -169,14 +168,14 @@ pub fn simulate(
 ) -> Option<SimResult> {
     let found = inputs.found();
     let targets = inputs.target_list();
-    // The page only ever offers a found collectible as the focus; a config that
+    // Only a found collectible can be the focus; a config that
     // names one the save has not found simulates as if no focus were picked.
     let fallback = inputs
         .focus
         .filter(|index| *index < COLLECTIBLES && found.contains(index));
     let chance = inputs.focus_chance();
     let sims = inputs.sims.max(1);
-    // Nothing found means nothing to enchant: the page refuses to run rather
+    // Nothing found means nothing to enchant: the run stops rather
     // than distributing rolls over an empty list.
     if found.is_empty() {
         return Some(SimResult {
@@ -226,8 +225,7 @@ pub fn simulate(
                     Strategy::Fixed => focus = fallback,
                     Strategy::None => {}
                 }
-                // The roll happens only when there is a focus, exactly as the
-                // worker's `curFocus >= 0 && Math.random() < focusChance` does.
+                // The roll happens only when there is a focus.
                 let target = match focus {
                     Some(index) if rng.unit() < chance => index,
                     _ => pick(&mut rng, &found),
@@ -292,8 +290,7 @@ pub fn simulate(
     })
 }
 
-/// A uniformly random found collectible, as the worker's
-/// `foundList[Math.floor(Math.random() * foundList.length)]` picks one.
+/// A uniformly random found collectible.
 fn pick(rng: &mut Rng, found: &[usize]) -> usize {
     let index = (rng.unit() * found.len() as f64) as usize;
     found[index.min(found.len() - 1)]

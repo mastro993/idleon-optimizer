@@ -1,13 +1,6 @@
 //! The loadout's formulas: the charm bonus map, the Gold inventory scan, the
 //! action speed, the KO recovery, the stealth factors and the detection chance.
 //!
-//! Ported from `js/stats/systems/w6/sneaking-math.js` (`nkBonus`, `charmStat`,
-//! `weaponItemStat`, `actionSpeed`, `koDuration`, `detectionChance`,
-//! `floorDetectionBase`, `stealthValue`, `stealthForDetection`) and the loadout
-//! half of `js/stats/systems/w6/sneaking-stealth.js` (`twinCharmBonuses`,
-//! `goldInventoryBonusDetails`, `computeActionSpeed`, `computeTwinStealth`,
-//! `_gemstoneBonus`, `_gloveSPD`).
-//!
 //! Every value is recomputed from the slots, so a view that reads a twin after
 //! an edit never shows a stale figure.
 
@@ -61,8 +54,8 @@ impl Loadout {
         value * (1.0 + first / 100.0) * self.account.talent_432.max(1.0)
     }
 
-    /// `goldInventoryBonusDetails`: the best Gold charm per bonus type, with
-    /// the gemstone, legend-point and symbol multipliers.
+    /// The best Gold charm per bonus type, with the gemstone, legend-point and
+    /// symbol multipliers.
     pub fn gold_bonuses(&self) -> GoldBonuses {
         let gemstone = self.gemstone(3);
         let legend = self.legend_points(6);
@@ -102,8 +95,8 @@ impl Loadout {
         bonuses
     }
 
-    /// `twinCharmBonuses`: the equipped charms' totals, each scaled by the Gold
-    /// charm-power bonus and its slot symbol.
+    /// The equipped charms' totals, each scaled by the Gold charm-power bonus
+    /// and its slot symbol.
     pub fn bonuses(&self, twin: usize) -> Bonuses {
         self.bonuses_with(twin, &self.gold_bonuses())
     }
@@ -140,7 +133,7 @@ impl Loadout {
         bonuses
     }
 
-    /// `gloveSPD`: a Gloves weapon's action-speed stat, zero for other weapons.
+    /// A Gloves weapon's action-speed stat, zero for other weapons.
     fn glove_speed(&self, twin: usize) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
@@ -156,18 +149,19 @@ impl Loadout {
 
     // ----- Formulas -----
 
-    /// `detectionChance`'s base for a floor at the saved mastery.
+    /// The detection base for a floor at the saved mastery.
     pub fn detection_base(&self, floor: usize) -> f64 {
         detection_base(floor, self.mastery)
     }
 
-    /// `funeralStealthBonus`: the flowers on a floor times Ninja Knowledge 21.
+    /// The flowers on a floor times Ninja Knowledge 21.
     pub(crate) fn funeral_percent(&self, floor: usize) -> f64 {
         self.flowers.get(floor).copied().unwrap_or(0.0) * self.ninja_bonus(21)
     }
 
-    /// The twin's stealth: `stealthValue` with the level base, the charm stealth
-    /// factors, the account-wide stack, the floor allies and the flowers.
+    /// The twin's stealth: [`stealth_value`] with the level base, the charm
+    /// stealth factors, the account-wide stack, the floor allies and the
+    /// flowers.
     pub fn stealth(&self, twin: usize) -> f64 {
         self.stealth_with(twin, &self.gold_bonuses())
     }
@@ -215,8 +209,8 @@ impl Loadout {
             .collect()
     }
 
-    /// The other twins' floor-stealth charm totals on this twin's floor:
-    /// the ally bonus `computeTwinStealth` adds.
+    /// The other twins' floor-stealth charm totals on this twin's floor: the
+    /// ally bonus the twin's stealth adds.
     fn ally_stealth(&self, twin: usize, gold: &GoldBonuses) -> f64 {
         let Some(entry) = self.twins.get(twin) else {
             return 0.0;
@@ -232,8 +226,8 @@ impl Loadout {
             .sum()
     }
 
-    /// `computeActionSpeed`: Ninja Knowledge 4, the charm speed bonus (doubled
-    /// for a solo twin), the Gloves stat and the Gold inventory bonus.
+    /// Ninja Knowledge 4, the charm speed bonus (doubled for a solo twin), the
+    /// Gloves stat and the Gold inventory bonus.
     pub fn action_speed(&self, twin: usize) -> f64 {
         self.action_speed_with(twin, &self.gold_bonuses())
     }
@@ -257,7 +251,7 @@ impl Loadout {
         3600.0 / speed
     }
 
-    /// `koDuration`: the recovery before action speed, in seconds.
+    /// The recovery before action speed, in seconds.
     pub fn ko_seconds(&self, twin: usize) -> f64 {
         self.ko_seconds_with(twin, &self.gold_bonuses())
     }
@@ -287,11 +281,6 @@ impl Loadout {
         )
     }
 
-    /// The stealth a target detection chance needs on a floor.
-    pub fn stealth_for_detection(&self, floor: usize, target: f64) -> f64 {
-        stealth_for_detection(floor, self.mastery, target)
-    }
-
     /// The fastest twin and the hours until its first 100-action batch.
     pub fn first_batch(&self) -> Option<(String, f64)> {
         let fastest = self
@@ -316,7 +305,7 @@ pub struct AllyContribution {
     pub type16: f64,
 }
 
-/// `nkBonus`: `NinjaUpg[idx][5]` times the level, plus the Omni-Jade levels for
+/// `NinjaUpg[idx][5]` times the level, plus the Omni-Jade levels for
 /// the first seventeen upgrades. Index 99 is the game's constant one.
 pub fn ninja_bonus(knowledge: &[f64], omni: &[f64], index: usize) -> f64 {
     if index == 99 {
@@ -331,17 +320,17 @@ pub fn ninja_bonus(knowledge: &[f64], omni: &[f64], index: usize) -> f64 {
     data::upgrade(index).map_or(0.0, |upgrade| upgrade.per_level) * level
 }
 
-/// `actionSpeed`: `1 + (NLbonuses(4) + equipSpd) / 100`.
+/// `1 + (NLbonuses(4) + equipSpd) / 100`.
 pub fn action_speed(knowledge: &[f64], omni: &[f64], equip_speed: f64) -> f64 {
     1.0 + (ninja_bonus(knowledge, omni, 4) + equip_speed) / 100.0
 }
 
-/// `koDuration`: `7200 / (1 + (NLbonuses(15) + equipKO) / 100)`.
+/// `7200 / (1 + (NLbonuses(15) + equipKO) / 100)`.
 pub fn ko_duration(knowledge: &[f64], omni: &[f64], equip_ko: f64) -> f64 {
     7200.0 / (1.0 + (ninja_bonus(knowledge, omni, 15) + equip_ko) / 100.0)
 }
 
-/// `floorDetectionBase`: the detection base a floor starts with at a mastery.
+/// The detection base a floor starts with at a mastery.
 pub fn detection_base(floor: usize, mastery: u32) -> f64 {
     let raw = data::data()
         .info
@@ -358,21 +347,11 @@ pub fn detection_base(floor: usize, mastery: u32) -> f64 {
     0.1 * raw * data::data().scales.detection.powf(f64::from(mastery))
 }
 
-/// `stealthForDetection`: the stealth a target chance needs on a floor.
-pub fn stealth_for_detection(floor: usize, mastery: u32, target: f64) -> f64 {
-    let base = detection_base(floor, mastery);
-    if base <= 0.0 {
-        return 0.0;
-    }
-    let target = target.clamp(0.0, 1.0);
-    (1.0 - target) * base / (0.1 + target)
-}
-
-/// `stealthValue`: `(10 + NLbonuses(13) * sneakLv) * stealthMulti
+/// `(10 + NLbonuses(13) * sneakLv) * stealthMulti
 /// * (1 + funeralPct / 100) * (1 + NLbonuses(23) / 100)`.
 ///
-/// Upstream's extras also carry the fractal, emperor and sushi percentages; they
-/// are account terms, so the caller's multiplier folds them in.
+/// The fractal, emperor and sushi percentages are account terms, so the
+/// caller's multiplier folds them in.
 pub fn stealth_value(
     sneak_level: f64,
     knowledge: &[f64],
@@ -385,7 +364,7 @@ pub fn stealth_value(
     base * mult * (1.0 + funeral_pct / 100.0) * shh
 }
 
-/// `charmStat`: the charm's value at a level.
+/// The charm's value at a level.
 pub fn charm_stat(key: &str, level: f64) -> f64 {
     let Some(def) = data::item(key) else {
         return 0.0;
@@ -400,7 +379,7 @@ pub fn charm_stat(key: &str, level: f64) -> f64 {
     first + second
 }
 
-/// `weaponItemStat`: the weapon's damage stat at a level.
+/// The weapon's damage stat at a level.
 pub fn weapon_stat(key: &str, level: f64) -> f64 {
     let Some(def) = data::item(key) else {
         return 0.0;
@@ -422,7 +401,7 @@ pub fn weapon_stat(key: &str, level: f64) -> f64 {
     base * 1.23_f64.powi(110) * 0.92_f64.powi(30) * 1.063_704_f64.powf(level - 110.0)
 }
 
-/// `detectionChance`: `1 - 1.1 * stealth / (stealth + base)`, clamped.
+/// `1 - 1.1 * stealth / (stealth + base)`, clamped.
 pub fn detection_chance(stealth: f64, base: f64) -> f64 {
     if base <= 0.0 {
         return 0.0;
@@ -436,7 +415,7 @@ mod tests {
     use crate::data;
 
     #[test]
-    fn detection_matches_the_upstream_clamp() {
+    fn detection_is_clamped_to_a_probability() {
         assert_eq!(detection_chance(0.0, 0.0), 0.0);
         assert_eq!(detection_chance(1000.0, 0.0), 0.0);
         assert!((detection_chance(0.0, 500.0) - 1.0).abs() < 1e-12);
@@ -445,14 +424,14 @@ mod tests {
     }
 
     #[test]
-    fn a_weapon_stat_follows_the_upstream_curves() {
+    fn a_glove_stat_follows_its_curve() {
         let gloves = data::item("NjGl2").expect("the catalog carries NjGl2");
         assert_eq!(gloves.kind, 1);
         let expected = 10.0 * gloves.damage() * ((100.0 + 10.0) / (100.0 + 40.0));
         assert!((weapon_stat("NjGl2", 100.0) - expected).abs() < 1e-9);
     }
 }
-/// `floorJadeBase`: the Jade a floor pays before the account multipliers.
+/// The Jade a floor pays before the account multipliers.
 pub(crate) fn jade_base(floor: usize, mastery: u32) -> f64 {
     let data = data::data();
     let raw = data.info.jade_base.get(floor).copied().unwrap_or(0.0);
@@ -462,7 +441,7 @@ pub(crate) fn jade_base(floor: usize, mastery: u32) -> f64 {
     0.1 * raw * data.scales.jade.powf(f64::from(mastery))
 }
 
-/// `floorExpMult`: the EXP a floor pays before the account multipliers.
+/// The EXP a floor pays before the account multipliers.
 pub(crate) fn exp_base(floor: usize, mastery: u32) -> f64 {
     let data = data::data();
     let raw = data.info.exp_base.get(floor).copied().unwrap_or(0.0);
@@ -473,7 +452,7 @@ pub(crate) fn exp_base(floor: usize, mastery: u32) -> f64 {
     0.1 * raw * scale.powf(f64::from(mastery))
 }
 
-/// `computeJadeActionsPerHour`'s result.
+/// The Jade action rate.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct JadeRate {
     pub actions_per_hour: f64,
@@ -483,7 +462,6 @@ pub struct JadeRate {
     pub dodge: f64,
 }
 
-/// `computeJadeActionsPerHour`.
 pub(crate) fn jade_actions_per_hour(
     action_speed: f64,
     detection: f64,
@@ -512,7 +490,7 @@ pub(crate) fn jade_actions_per_hour(
     }
 }
 
-/// `computeDoorHitsPerHour`'s result.
+/// The door hit rate.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct DoorRate {
     pub hits_per_hour: f64,
@@ -528,7 +506,6 @@ pub struct DoorRate {
     pub flowers_per_hour: f64,
 }
 
-/// `computeDoorHitsPerHour`.
 pub(crate) fn door_hits_per_hour(
     action_speed: f64,
     detection: f64,
@@ -569,7 +546,7 @@ pub struct TeamMember {
     pub flower_gain: f64,
 }
 
-/// `computeTeamDoorRates`: the Taunting Mark redirect loop's expected rates.
+/// The Taunting Mark redirect loop's expected rates.
 pub(crate) fn team_door_rates(members: &[TeamMember]) -> Vec<DoorRate> {
     let count = members.len();
     if count == 0 {
@@ -703,7 +680,7 @@ fn solve_linear(mut matrix: Vec<Vec<f64>>, values: Vec<f64>) -> Option<Vec<f64>>
     Some(matrix.iter().map(|row| row[size]).collect())
 }
 
-/// `itemFindExpectedFromRate` without the probability-state batch: the rate
+/// The item find expectation without the probability-state batch: the rate
 /// model the tree uses when a save has no accumulated actions.
 pub(crate) fn item_find_per_hour(
     nk14: f64,

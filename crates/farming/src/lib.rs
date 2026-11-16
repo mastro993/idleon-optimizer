@@ -1,25 +1,12 @@
 //! Farming: the 9×4 field, per-plot metrics and the save-derived multipliers.
 //!
-//! Ported from the upstream `js/stats/data/w5/farming.js`,
-//! `js/stats/systems/w6/farming.js`, `js/stats/systems/w6/farming-planner.js`
-//! and `farming-calc.html`.
-//!
-//! The upstream account snapshot reads a dozen other systems (bubbles, meals,
+//! The full account multipliers draw on a dozen other systems (bubbles, meals,
 //! cards, stamps, vials, star signs, achievements, summoning, rift, minehead,
-//! sushi, gaming, hole, pristine and the lab mainframe). This port applies only
+//! sushi, gaming, hole, pristine and the lab mainframe). This crate applies only
 //! the terms the save itself carries — market levels, Land Rank, exotic
 //! upgrades, crop quantities, `GemItemsPurchased`, Spelunk organic labels, the
 //! emporium encoding (`Ninja[102][9]`), Grimoire 22/36 and Vault 79 — so
 //! chances and values here are lower bounds. The importer warns about it.
-//!
-//! Everything here is pinned against the upstream calculator's own output:
-//! `script/farming-signals-oracle.mjs` regenerates `fixtures/farming-signals.json` from
-//! `farming-planner.js` and `farming.js`, and `crates/farming/tests/farming_signals.rs`
-//! compares the snapshot, the diagnostics, the growth breakpoints, every plot's
-//! metrics, every plot's overgrowth curve and the Crop Scientist table.
-//! `script/farming-oracle.mjs` regenerates `fixtures/farming.json` from the same
-//! planner, carrying the page's seven preset goals and the allocation and
-//! comparison tables `crates/farming/tests/farming_planner.rs` compares.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -27,12 +14,12 @@ use std::sync::OnceLock;
 
 const FARMING_JSON: &str = include_str!("../data/farming.json");
 
-/// Land plots in the upstream field.
+/// Land plots in the field.
 pub const PLOTS: usize = 36;
 /// Land Rank upgrade rows.
 pub const RANK_UPGRADES: usize = 20;
 
-/// Everything the planner reads from the upstream game data.
+/// Everything the planner reads from the game data.
 #[derive(Debug, Deserialize)]
 pub struct FarmingData {
     pub seeds: Vec<SeedFamily>,
@@ -112,7 +99,7 @@ pub struct ExoticUpgrade {
 }
 
 impl FarmingData {
-    /// A seed family by its upstream index.
+    /// A seed family by its game index.
     pub fn seed(&self, id: usize) -> Option<&SeedFamily> {
         self.seeds.get(id)
     }
@@ -124,7 +111,7 @@ impl FarmingData {
             .find(|family| crop >= family.start && crop <= family.end)
     }
 
-    /// A market row; page 99 reads the Night market, as the upstream does.
+    /// A market row; page 99 reads the Night market.
     pub fn market(&self, page: usize, id: usize) -> Option<&MarketUpgrade> {
         let page = if page == 99 { 1 } else { page };
         self.market
@@ -137,8 +124,8 @@ impl FarmingData {
         self.exotics.get(id)
     }
 
-    /// `emporiumBonus(t, Ninja[102][9])`: whether the encoding of the owned
-    /// emporium items carries the character that item `t` is encoded as.
+    /// Whether the encoding of the owned emporium items (`Ninja[102][9]`)
+    /// carries the character that item `t` is encoded as.
     pub fn emporium_owned(&self, owned: &str, item: usize) -> bool {
         self.emporium_encoding
             .chars()
@@ -336,7 +323,7 @@ mod tests {
         );
         // The family's last crop cannot evolve further.
         assert_eq!(farm.next_crop_chance(0, &plot(0, 20), &snapshot), 0.0);
-        // Farming level 2 is the upstream gate.
+        // Farming level 2 is the game's gate.
         farm.farm_level = 1;
         assert_eq!(farm.next_crop_chance(0, &plot(0, 0), &farm.snapshot()), 0.0);
     }
@@ -406,7 +393,7 @@ mod tests {
     }
 
     #[test]
-    fn the_objectives_and_modes_round_trip_their_upstream_ids() {
+    fn the_objectives_and_modes_round_trip_their_ids() {
         for objective in Objective::ALL {
             assert_eq!(Objective::from_id(objective.id()), Some(objective));
         }

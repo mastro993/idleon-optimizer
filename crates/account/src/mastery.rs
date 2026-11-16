@@ -1,18 +1,16 @@
 //! The Cooking Mastery inputs the Mastery EXP tab and the yellow point
 //! allocator read.
 //!
-//! Ports the save access in `cooking-mastery-calc.html` (`getCM`,
-//! `getTotalCookingLv`, `getMeal73Level`, `getTotalRibbonLv`) and its
-//! `computeExternalMulti`. The mastery upgrades themselves are
-//! `CookMaster[2]`, the rank row is `CookMaster[1]`, the Divorce Cake level is
-//! `Meals[0][73]` and the ribbon ranks start at `Ribbon[28]`.
+//! The mastery upgrades themselves are `CookMaster[2]`, the rank row is
+//! `CookMaster[1]`, the Divorce Cake level is `Meals[0][73]` and the ribbon
+//! ranks start at `Ribbon[28]`.
 //!
 //! The allocator reads one more row of the same section: `CookMaster[0]`, the
 //! yellow points each meal holds, beside the meal levels in `Meals[0]`.
 //!
-//! Every external term is the upstream system's own function: the grid bonus of
-//! node 190, superbit 68, companion 87, menagerie boost 21, `Fountain_BonTOT(2,
-//! 17)`, the Canteen Read vial, arcade 69 and salt lick 10. A save that lacks a
+//! Every external term is read from its own system: the grid bonus of
+//! node 190, superbit 68, companion 87, menagerie boost 21, fountain upgrade
+//! 17 of water 2, the Canteen Read vial, arcade 69 and salt lick 10. A save that lacks a
 //! field leaves that term at zero; none of them is guessed.
 
 use super::Decoder;
@@ -36,25 +34,25 @@ const FOUNTAIN_WATER: usize = 2;
 /// The Divorce Cake meal's index in `Meals[0]`.
 const DIVORCE_CAKE: usize = 73;
 
-/// The event shop perk that doubles the meal cook goal (`eventShopOwned(53)`).
+/// The event shop perk that doubles the meal cook goal (event shop 53).
 const EVENT_COOK_MULTI: usize = 53;
 
-/// The event shop perk that grants yellow points (`eventShopOwned(54)`).
+/// The event shop perk that grants yellow points (event shop 54).
 const EVENT_YELLOW_POINTS: usize = 54;
 
-/// The Jelly Operator reward that grants yellow points (`jellyRewardBonus(5)`).
+/// The Jelly Operator reward that grants yellow points (reward 5).
 const JELLY_YELLOW_POINTS: usize = 5;
 
-/// The grid node whose level grants yellow points (`gridLevels[190]`).
+/// The grid node whose level grants yellow points (node 190).
 const GRID_YELLOW_POINTS: usize = 190;
 
 /// The Rift Spooker companion, which grants five yellow points.
 const COMPANION_YELLOW_POINTS: usize = 87;
 
-/// The Rift depth that turns the vial threshold on (`riftData[0] > 34`).
+/// The Rift depth that turns the vial threshold on (`Rift[0] > 34`).
 const RIFT_VIALS: f64 = 34.0;
 
-/// The vial level the Rift bonus counts (`(Number(vials[rvi]) || 0) >= 13`).
+/// The vial level the Rift bonus counts: a vial at 13 or above.
 const VIAL_THRESHOLD: f64 = 13.0;
 
 /// A `CookMaster[0]` or `Meals[0]` row, one number per `MealINFO` row.
@@ -92,8 +90,8 @@ impl Decoder<'_> {
         })
     }
 
-    /// `yellowPointBudget`: the rank, the companion, the grid node, the event
-    /// shop and the Jelly reward, rounded the way the page rounds it.
+    /// The yellow point budget: the rank, the companion, the grid node, the
+    /// event shop and the Jelly reward, rounded to the nearest point.
     fn yellow_point_budget(&self, rank: f64) -> f64 {
         let companion = 5.0 * self.companion(COMPANION_YELLOW_POINTS);
         let grid = f64::from(self.grid.level(GRID_YELLOW_POINTS));
@@ -141,7 +139,7 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `kitchenCookingAggregate`'s input: every unlocked `Cooking` row, with the
+    /// The kitchens the cooking rate sums: every unlocked `Cooking` row, with the
     /// gem purchase the kitchen's rate doubles or triples on.
     fn kitchens(&self) -> Vec<Kitchen> {
         let gem_kitchens = self.row_at("GemItemsPurchased", 120).floor();
@@ -169,8 +167,8 @@ impl Decoder<'_> {
     }
     /// The save's Cooking Mastery state, or `None` when it carries none.
     ///
-    /// The page shows "Cooking Mastery data not found in save" in that case: it
-    /// needs Rift 59 or the Rift Spooker, and the section has nothing to read.
+    /// A save carries no Cooking Mastery data until the account has Rift 59 or
+    /// the Rift Spooker, and the section then has nothing to read.
     pub(crate) fn cooking_mastery(&mut self) -> Option<Mastery> {
         fields::field(self.save, "CookMaster")?;
         let rank = self.nested_row("CookMaster", &[1]);
@@ -201,7 +199,7 @@ impl Decoder<'_> {
         Some(mastery)
     }
 
-    /// `getTotalRibbonLv`: every ribbon rank from slot 28 on.
+    /// The total ribbon level: every ribbon rank from slot 28 on.
     fn ribbon_total(&self) -> f64 {
         self.row("Ribbon")
             .iter()
@@ -210,7 +208,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// `computeExternalMulti`: the factors outside the mastery upgrades.
+    /// The external multiplier: the factors outside the mastery upgrades.
     fn external_multi(&mut self) -> External {
         External {
             menagerie: self.menagerie_boost_qty(21),
@@ -226,8 +224,8 @@ impl Decoder<'_> {
         }
     }
 
-    /// The Canteen Read vial, with the lab, vault and meritocracy factors the
-    /// page applies to it. Zero until the vial is bought.
+    /// The Canteen Read vial, with the lab, vault and meritocracy factors
+    /// applied to it. Zero until the vial is bought.
     fn cook_mastery_vial(&mut self) -> f64 {
         let level = self.vial_level();
         if level <= 0.0 {

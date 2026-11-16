@@ -1,15 +1,14 @@
 //! The Monument (W5) Justice response advisor.
 //!
-//! Ported from the upstream `js/stats/systems/w5/monument-justice.js` and the
-//! `justiceCases` helper its worksheet reads. The advisor is a local worksheet,
-//! not a live-game connection: the save only fixes the fresh-story start, and
-//! the player records the cases and responses they actually saw. Every recorded
-//! step (a stat edit, an effect toggle, a response, an opened case) is undoable,
-//! so [`Worksheet`] owns the history and the app only renders it.
+//! The advisor is a local worksheet, not a live-game connection: the save only
+//! fixes the fresh-story start, and the player records the cases and responses
+//! they actually saw. Every recorded step (a stat edit, an effect toggle, a
+//! response, an opened case) is undoable, so [`Worksheet`] owns the history and
+//! the app only renders it.
 //!
-//! The heuristic is upstream's: survival first, then mental health, chests,
-//! dismissals and balanced coin/popularity reserves, including up to ten cases
-//! of scheduled investment income. It is not a whole-story optimum.
+//! The heuristic puts survival first, then mental health, chests, dismissals
+//! and balanced coin/popularity reserves, including up to ten cases of
+//! scheduled investment income. It is not a whole-story optimum.
 
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
@@ -17,7 +16,7 @@ use std::sync::OnceLock;
 use super::Save;
 use super::data::data;
 
-/// One Justice case: `HolesInfo[62]` split as `justiceCases()` does.
+/// One Justice case: one row of `HolesInfo[62]`.
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Case {
@@ -36,7 +35,7 @@ pub struct Case {
     pub gate: String,
 }
 
-/// Every case row, parsed once from the extracted table.
+/// Every case row, parsed once from the static table.
 pub fn cases() -> &'static [Case] {
     static CASES: OnceLock<Vec<Case>> = OnceLock::new();
     CASES.get_or_init(|| {
@@ -69,15 +68,14 @@ fn parse_case(id: usize, row: &str) -> Option<Case> {
     })
 }
 
-/// A case row, or the upstream rejection for an id no table row has.
+/// A case row, or the rejection for an id no table row has.
 pub fn case(id: usize) -> Result<&'static Case, Error> {
     cases().get(id).ok_or(Error::UnknownCase)
 }
 
 /// The deals, promises and investments a worksheet can carry.
 ///
-/// The serialised name is the upstream save key, so an exported worksheet reads
-/// like the calculator's own state.
+/// The serialised name is the effect's save key.
 #[derive(
     Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
 )]
@@ -113,7 +111,7 @@ pub enum Effect {
     BrokeDeath,
 }
 
-/// One effect's upstream key, label and explanation.
+/// One effect's key, label and explanation.
 struct EffectRow {
     effect: Effect,
     key: &'static str,
@@ -121,7 +119,7 @@ struct EffectRow {
     help: &'static str,
 }
 
-/// `JUSTICE_EFFECTS`, in the upstream order the delayed-effect table renders.
+/// Every effect, in the order the delayed-effect table renders.
 const EFFECT_ROWS: [EffectRow; 25] = [
     EffectRow {
         effect: Effect::StudentLoanInvest,
@@ -276,7 +274,7 @@ const EFFECT_ROWS: [EffectRow; 25] = [
 ];
 
 impl Effect {
-    /// Every effect, in the upstream table order.
+    /// Every effect, in table order.
     pub const ALL: [Effect; 25] = [
         Effect::StudentLoanInvest,
         Effect::ScripticusLoan,
@@ -305,7 +303,7 @@ impl Effect {
         Effect::BrokeDeath,
     ];
 
-    /// The effect's upstream key, which is also its serialised name.
+    /// The effect's key, which is also its serialised name.
     pub fn key(self) -> &'static str {
         self.row().key
     }
@@ -381,7 +379,7 @@ impl State {
         self.effects.remove(&effect);
     }
 
-    /// Rejects the inputs upstream refuses.
+    /// Rejects out-of-range inputs.
     pub fn validate(&self) -> Result<(), Error> {
         for (field, value, nonnegative) in [
             ("round", self.round, true),
@@ -437,7 +435,7 @@ pub enum Action {
 }
 
 impl Action {
-    /// The three responses, in the upstream order they are evaluated.
+    /// The three responses, in the order they are evaluated.
     pub const ALL: [Action; 3] = [Action::Approve, Action::Reject, Action::Dismiss];
 
     /// The lower-case id the UI and the export use.
@@ -839,7 +837,7 @@ fn apply(state: &State, row: &Case, action: Action, variant: usize) -> State {
     state
 }
 
-/// `_variants`: the random outcomes an approve can roll, in the upstream order.
+/// The random outcomes an approve can roll.
 fn variants(row: &Case, action: Action) -> Vec<(f64, &'static str)> {
     if action != Action::Approve {
         return vec![(1.0, "Outcome")];
@@ -994,7 +992,7 @@ pub fn delayed_effects(state: &State) -> Vec<Delayed> {
         .collect()
 }
 
-/// `justiceOpenCase`: settle the timers and visitor payments one time, when the
+/// Settle the timers and visitor payments one time, when the
 /// next observed case opens.
 pub fn open_case(state: &State, id: usize) -> Result<Opened, Error> {
     state.validate()?;
@@ -1153,7 +1151,7 @@ struct Step {
     awaiting: bool,
 }
 
-/// How many steps the worksheet remembers, as upstream caps them.
+/// How many steps the worksheet remembers.
 const HISTORY: usize = 30;
 
 /// The undoable Justice worksheet: the observed case, the stats and the steps.

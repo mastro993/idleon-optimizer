@@ -1,5 +1,5 @@
 //! The Minehead strategy search: the knob ranges, the background search and the
-//! top strategies, as `_renderOptimize` in `js/ui/minehead-ui.js`.
+//! top strategies.
 
 use super::{OptimizeInputs, Params};
 use crate::state::AppState;

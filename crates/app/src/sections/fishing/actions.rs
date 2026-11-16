@@ -18,13 +18,13 @@ impl AppState {
         cx.notify();
     }
 
-    /// Select a lure index, clamped to the upstream list.
+    /// Select a lure index, clamped to the lure list.
     pub(crate) fn set_fishing_lure(&mut self, index: usize, cx: &mut Context<Self>) {
         self.fishing.lure = index.min(idleon_fishing::data().lures.len().saturating_sub(1));
         cx.notify();
     }
 
-    /// Select a line index, clamped to the upstream list.
+    /// Select a line index, clamped to the line list.
     pub(crate) fn set_fishing_line(&mut self, index: usize, cx: &mut Context<Self>) {
         self.fishing.line = index.min(idleon_fishing::data().lines.len().saturating_sub(1));
         cx.notify();

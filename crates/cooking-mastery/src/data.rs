@@ -1,10 +1,9 @@
 //! The static meal table the yellow point allocator reads.
 //!
-//! `script/extract-cooking-data.mjs` writes `data/meals.json` from the upstream
-//! `MealINFO`, whose rows are
+//! `data/meals.json` holds the game's `MealINFO` rows,
 //! `[name, requirement, bonusPerLevel, effect, flavor, effectKey]`: the
 //! allocator needs the per-level bonus, the effect text and the category
-//! (`effectKey`) that `js/stats/systems/common/meal-impact.js` groups meals by.
+//! (`effectKey`) that groups meals by goal.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -33,7 +32,7 @@ struct Table {
 pub fn meals() -> &'static [Meal] {
     static TABLE: OnceLock<Table> = OnceLock::new();
     &TABLE
-        .get_or_init(|| serde_json::from_str(MEALS_JSON).expect("meals.json is extracted"))
+        .get_or_init(|| serde_json::from_str(MEALS_JSON).expect("meals.json is valid"))
         .meals
 }
 

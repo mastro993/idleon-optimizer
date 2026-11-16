@@ -1,6 +1,6 @@
 //! The account systems the research multiplier tree reads.
 //!
-//! Ports of the roll-up lookups in `js/stats/systems`: royal outposts,
+//! The roll-up lookups for royal outposts,
 //! meritocracy, legend points, vault and grimoire upgrades, exotic crops,
 //! mastery, achievements, emperor bonuses, arcane upgrades, the prisma and
 //! bubble lookups behind the gallery, palettes, and spelunking shop upgrades.
@@ -10,8 +10,6 @@ use super::data::{BubbleParam, account_data};
 use idleon_save::fields;
 use serde_json::{Map, Value};
 
-/// `vaultUpgBonus` from `js/stats/systems/common/vault.js`.
-///
 /// The level is `UpgVault[index]`; the mastery levels that multiply every
 /// upgrade are the ones at 32, 61 and 89, and the upgrades in
 /// `VAULT_NO_MASTERY` skip them.
@@ -56,7 +54,7 @@ pub fn vault_upgrade_bonus(save: &Map<String, Value>, index: usize) -> f64 {
 }
 
 impl Decoder<'_> {
-    /// `RoyalGuardian("outpostROGBonus", 1)`: the research focus selection.
+    /// The Royal Guardian research focus bonus: whether research is the selected focus.
     pub fn royal_research(&self) -> f64 {
         let selected = fields::at(self.save, "RoyalG", &[3, 2])
             .unwrap_or(0.0)
@@ -68,8 +66,8 @@ impl Decoder<'_> {
         1.0 + progress / (40.0 + progress) * 2.0
     }
 
-    /// `TotalStatz` from `js/stats/systems/w7/royal-guardian.js`, reduced to
-    /// the outpost count the research focus reads.
+    /// The royal guardian stat totals, reduced to the outpost count the
+    /// research focus reads.
     pub fn total_statz(&self) -> [f64; 5] {
         let maps = fields::field(self.save, "RoyalMaps")
             .and_then(|value| value.as_array().cloned())
@@ -81,7 +79,6 @@ impl Decoder<'_> {
         [0.0, 0.0, 0.0, 0.0, built]
     }
 
-    /// `computeMeritocBonusz` from `js/stats/systems/w7/meritoc.js`.
     pub fn meritoc(&self, option: usize) -> f64 {
         let active_vote = self.ola(453);
         if option as f64 != active_vote {
@@ -129,7 +126,7 @@ impl Decoder<'_> {
             .and_then(idleon_save::json::number)
     }
 
-    /// `legendPTSbonus`.
+    /// The bonus a Legend Talent's points grant at `index`.
     pub fn legend(&self, index: usize) -> f64 {
         let points = self.spelunk(18, index);
         let per_point = self
@@ -141,7 +138,6 @@ impl Decoder<'_> {
         (points * per_point).round()
     }
 
-    /// `vaultUpgBonus` from `js/stats/systems/common/vault.js`.
     pub fn vault(&self, index: usize) -> f64 {
         vault_upgrade_bonus(self.save, index)
     }
@@ -156,14 +152,12 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
-    /// `grimoireUpgBonus22` from `js/stats/systems/mc/grimoire.js`.
     pub fn grimoire_22(&self) -> f64 {
         let level_22 = self.row_at("Grimoire", 22);
         let level_36 = self.row_at("Grimoire", 36);
         level_22 * (1.0 + level_36 / 100.0)
     }
 
-    /// `computeExoticBonus(idx)` from `js/stats/systems/w6/farming.js`.
     pub fn exotic(&self, index: usize) -> f64 {
         let Some(param) = self.data.exotic(index) else {
             return 0.0;
@@ -186,7 +180,6 @@ impl Decoder<'_> {
         value
     }
 
-    /// `researchMasteryBonuses` from `js/stats/systems/w7/research-math.js`.
     pub(crate) fn mastery(&self) -> Mastery {
         let unlocked = self.row_at("Rift", 0) >= 15.0;
         let total = if unlocked {
@@ -211,7 +204,6 @@ impl Decoder<'_> {
         }
     }
 
-    /// `achieveStatus` from `js/stats/systems/common/achievement.js`.
     pub fn achievement(&self, index: usize) -> f64 {
         let completed = fields::field(self.save, "AchieveReg").and_then(|value| {
             idleon_save::json::index(&value, &[index]).and_then(idleon_save::json::number)
@@ -227,7 +219,6 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeEmperorBon(8)` from `js/stats/systems/w6/emperor.js`.
     pub fn emperor_8(&self) -> f64 {
         let count = self.ola(369) as usize;
         let value = self.data.emperor_bonus_val.get(8).copied().unwrap_or(0.0);
@@ -242,7 +233,6 @@ impl Decoder<'_> {
         (sum * multi).floor()
     }
 
-    /// `arcaneUpgBonus` from `js/stats/systems/mc/tesseract.js`.
     pub(crate) fn arcane(&self, index: usize) -> f64 {
         let level = self.row_at("Arcane", index);
         if level <= 0.0 {
@@ -288,7 +278,6 @@ impl Decoder<'_> {
         base * prisma
     }
 
-    /// `getPrismaBonusMult` from `js/stats/systems/w2/alchemy.js`.
     pub fn prisma_bonus_multi(&self) -> f64 {
         let purple_sigils = fields::row(self.save, "CauldronP2W", &[4])
             .map(|row| {
@@ -313,12 +302,10 @@ impl Decoder<'_> {
         (2.0 + sum / 100.0).min(5.0)
     }
 
-    /// `bubbleBonusY13` from `js/stats/systems/w2/alchemy.js`.
     pub(crate) fn bubble_y13(&self) -> f64 {
         self.bubble_value(&self.data.bubbles.y13)
     }
 
-    /// `computePaletteBonus` from `js/stats/systems/w7/spelunking.js`.
     pub fn palette(&self, index: usize) -> f64 {
         let level = self.spelunk(9, index);
         if level <= 0.0 {
@@ -351,7 +338,7 @@ impl Decoder<'_> {
         raw * legend_multi * black_star_multi * (1.0 + 0.5 * lore)
     }
 
-    /// `cachedSailingArt37`: five points for the fixture, capped at ten.
+    /// Sailing artifact 37's saved level, capped at ten.
     pub(crate) fn sailing_art37(&self) -> f64 {
         self.nested("Sailing", &[3, 37]).round().clamp(0.0, 10.0)
     }
@@ -361,7 +348,7 @@ impl Decoder<'_> {
         self.nested("Sailing", &[3, 36]).round().clamp(0.0, 6.0)
     }
 
-    /// `computeArtifactBonus(1)`: Maneki Kat, coins per highest class level.
+    /// Sailing artifact 1, Maneki Kat: coins per highest class level.
     ///
     /// The artifact pays its base per class level of the best character, and
     /// its tier multiplies that again from the second tier on.
@@ -379,12 +366,11 @@ impl Decoder<'_> {
         if tier >= 2.0 { value * tier } else { value }
     }
 
-    /// `researchGridPointsTaskLevel`: `TaskZZ2[6][3]`.
+    /// The task level that grants research grid points: `TaskZZ2[6][3]`.
     pub fn task_grid_points(&self) -> f64 {
         self.nested("TaskZZ2", &[6, 3]).max(0.0)
     }
 
-    /// `shopUpgBonus` from `js/stats/systems/w7/spelunking.js`.
     pub(crate) fn spelunk_upgrade(&self, index: usize) -> f64 {
         let shop_level = self.spelunk(5, index).max(0.0);
         if shop_level <= 0.0 {
@@ -446,7 +432,6 @@ impl Decoder<'_> {
         value
     }
 
-    /// `petArenaCrucBonus` from `js/stats/systems/w7/menagerie.js`.
     pub(crate) fn crucible(&self, index: usize) -> f64 {
         if self.menagerie_unlock(8) != 1.0 {
             return 0.0;
@@ -463,7 +448,6 @@ impl Decoder<'_> {
         if count > index as f64 { 1.0 } else { 0.0 }
     }
 
-    /// `arcadeBonus` from `js/stats/systems/w2/arcade.js`.
     pub fn arcade(&self, index: usize) -> f64 {
         let Some((formula, base, denom)) = self.data.arcade(index) else {
             return 0.0;
@@ -490,7 +474,6 @@ impl Decoder<'_> {
         maxed * companion_27 * raw
     }
 
-    /// `computeCardLv` from `js/stats/systems/common/cards.js`.
     pub fn card_level(&self, key: &str) -> f64 {
         let Some(cards) = fields::object(self.save, "Cards0") else {
             return 0.0;
@@ -542,7 +525,6 @@ impl Decoder<'_> {
         level
     }
 
-    /// `cloudBonus` from `js/game-helpers.js`.
     pub fn cloud_bonus(&self, index: usize) -> f64 {
         let Some(weekly_boss) = fields::object(self.save, "WeeklyBoss") else {
             return 0.0;
@@ -558,7 +540,6 @@ impl Decoder<'_> {
         }
     }
 
-    /// `ribbonBonusAt` from `js/game-helpers.js`.
     pub fn ribbon(&self, index: usize) -> f64 {
         let level = self.row_at("Ribbon", index);
         if level <= 0.0 {
@@ -572,7 +553,7 @@ impl Decoder<'_> {
         let emp_term = (level / 4.0).floor() * (emperor / 4.0);
         let cloud_73 = (level / 10.0).floor() * self.cloud_bonus(73);
         let jelly_term = (level / 20.0).floor() * self.jelly(60);
-        // Upstream floors the whole base sum, not only its halves.
+        // The game floors the whole base sum, not only its halves.
         let base =
             (5.0 * level + (level / 2.0).floor() * (4.0 + 6.5 * (level / 5.0).floor())).floor();
         1.0 + (base + emp_term + cloud_73 + jelly_term) / 100.0
@@ -585,8 +566,8 @@ pub(crate) struct Mastery {
     pub additive: f64,
     pub exp_multi: f64,
     pub grid_points: u32,
-    /// `minRoll`: one more minimum observation roll past 200 total levels.
+    /// One more minimum observation roll past 200 total levels.
     pub min_roll: f64,
-    /// `maxRoll`: one more maximum observation roll past 1000.
+    /// One more maximum observation roll past 1000.
     pub max_roll: f64,
 }

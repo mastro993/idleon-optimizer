@@ -1,12 +1,9 @@
 //! The outpost rows, their ranks, the militia assigned to them and their units.
-//!
-//! Ported from `outpostState`, `worldOutpostRows`, `outpostRank`,
-//! `militiaAssignments`, `totalUnitsByType` and the readers around them.
 
 use super::*;
 
 impl RoyalGuardian {
-    /// One map's outpost row: upstream `outpostEligibility`.
+    /// One map's outpost row.
     pub fn outpost(&self, map: usize) -> Outpost {
         let info = data::map(map);
         let world = Self::world_of(map);
@@ -29,7 +26,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// One world's outposts, in map order: upstream `worldOutpostRows`.
+    /// One world's outposts, in map order.
     pub fn world_outposts(&self, world: usize) -> Vec<Outpost> {
         (0..MAPS_PER_WORLD)
             .map(|offset| world * MAPS_PER_WORLD + offset)
@@ -39,7 +36,7 @@ impl RoyalGuardian {
             .collect()
     }
 
-    /// How many kills an outpost needs: upstream `outpostKillRequirement`.
+    /// How many kills an outpost needs.
     pub fn kill_requirement(&self, map: usize) -> f64 {
         data::map(map)
             .map(|row| row.kill_requirement)
@@ -61,7 +58,7 @@ impl RoyalGuardian {
         self.outpost(map).built && self.rank(map, 4) >= 1.0
     }
 
-    /// One rank bar's EXP requirement: upstream `outpostExpFormula`.
+    /// One rank bar's EXP requirement.
     pub fn exp_formula(rank: f64, bar: usize) -> f64 {
         match bar {
             4 => 1e5 * 10f64.powf(rank),
@@ -121,7 +118,7 @@ impl RoyalGuardian {
             .count() as f64
     }
 
-    /// A packed unit row decoded into its slots: upstream `decodePackedUnits`.
+    /// A packed unit row decoded into its slots.
     pub(super) fn packed_units(packed: f64) -> Vec<(usize, usize)> {
         let digits = format!("{:09}", packed.max(0.0) as u64);
         let digits = &digits[digits.len().saturating_sub(9)..];
@@ -143,8 +140,7 @@ impl RoyalGuardian {
         ((rank - profession as f64).max(0.0) / 4.0).ceil()
     }
 
-    /// A profession's units in the outpost, permanents included: upstream
-    /// `totalUnitsByType`.
+    /// A profession's units in the outpost, permanents included.
     pub fn units_by_type(&self, map: usize) -> [f64; 4] {
         let mut totals = [0.0; 4];
         for (_, profession) in Self::packed_units(self.map_cell(map, cell::UNITS)) {
@@ -168,7 +164,7 @@ impl RoyalGuardian {
         self.units_by_type(map).iter().sum()
     }
 
-    /// The points a map has left to spend: upstream `outpostPointsLeft`.
+    /// The points a map has left to spend.
     pub fn points_left(&self, map: usize) -> f64 {
         if self.map_row(map).len() <= 3 {
             return 0.0;
@@ -188,7 +184,7 @@ impl RoyalGuardian {
         points - self.map_cell(map, 0) * 12.0 - self.map_cell(map, 1) * 2.0 - self.map_cell(map, 2)
     }
 
-    /// A rank bar's EXP per hour, for one outpost: upstream `barExpRate`.
+    /// A rank bar's EXP per hour, for one outpost.
     pub fn bar_exp_rate(&self, bar: usize, map: usize) -> f64 {
         self.bar_exp_rate_given(bar, map, self.support_count(map))
     }

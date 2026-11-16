@@ -1,19 +1,15 @@
 //! Mechanics overrides: the curated combat mechanics the simulator can disable,
 //! set to a value, or scale relative to the save.
 //!
-//! Ported from `js/stats/systems/common/combat-sim-toggles.js`. The catalog names
-//! every mechanic once, with the input keys it owns, its neutral value and the
-//! modes it supports; a [`State`] holds one [`Rule`] per mechanic id, and
-//! [`State::build`] turns the rules plus the run's saved inputs into the override
-//! map the simulator applies. `raw:<input>` ids address any other scalar input.
+//! The catalog names every mechanic once, with the input keys it owns, its
+//! neutral value and the modes it supports; a [`State`] holds one [`Rule`] per
+//! mechanic id, and [`State::build`] turns the rules plus the run's saved inputs
+//! into the override map the simulator applies. `raw:<input>` ids address any other scalar input.
 //!
-//! The catalog lives in `crates/combat/data/combat-overrides.json`, written by
-//! `script/combat-overrides-oracle.mjs` from the upstream module, so the data and
-//! the oracle fixture it also writes can never drift apart. The saved inputs
-//! (`entries` upstream) arrive with the encounter run; until then [`Entries`] is
-//! empty, which is exactly the upstream behaviour when the saved values are
-//! unavailable: `off` and `set` still apply, while `scale` and the object
-//! mechanic wait for a base value.
+//! The catalog lives in `crates/combat/data/combat-overrides.json`. The saved
+//! inputs arrive with the encounter run; until then [`Entries`] is empty, and
+//! with the saved values unavailable `off` and `set` still apply, while `scale`
+//! and the object mechanic wait for a base value.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -200,8 +196,8 @@ pub enum SavedValue {
     Object(BTreeMap<String, f64>),
 }
 
-/// The run's saved inputs, keyed by input name: the part of upstream's
-/// `buildCombatInputs(...).entries` the overrides read.
+/// The run's saved inputs, keyed by input name: the part of the combat inputs
+/// the overrides read.
 pub type Entries = BTreeMap<String, SavedValue>;
 
 /// One resolved input override.
@@ -277,7 +273,7 @@ impl State {
 
     /// Reads the project's JSON shape, keeping every row whose mode the engine
     /// knows. Unsupported modes and missing values are dropped by
-    /// [`Self::normalize`], the way upstream's `normalizeToggleState` drops them.
+    /// [`Self::normalize`].
     pub fn from_json(value: &serde_json::Value) -> Self {
         let mut state = Self::new();
         let Some(rows) = value.as_object() else {
@@ -347,9 +343,9 @@ impl State {
         self.len() == 0
     }
 
-    /// Whether any rule scales a saved input, upstream `toggleNeedsBase`. The
-    /// object mechanic reads the saved inputs too, but `off` resolves to an empty
-    /// object without them, so only scale has to wait.
+    /// Whether any rule scales a saved input. The object mechanic reads the saved
+    /// inputs too, but `off` resolves to an empty object without them, so only
+    /// scale has to wait.
     pub fn needs_base(&self) -> bool {
         self.normalize()
             .0
@@ -378,7 +374,7 @@ impl State {
     }
 
     /// The rules resolved against `entries`, with `base` applied last so an
-    /// explicit run override always wins, exactly upstream `resolveToggleOverrides`.
+    /// explicit run override always wins.
     pub fn resolve(&self, entries: &Entries, base: &Overrides) -> Overrides {
         let valid = self.normalize();
         if valid.0.is_empty() {
@@ -494,8 +490,8 @@ impl<'de> Deserialize<'de> for State {
     }
 }
 
-/// The friendly name of a `raw:<input>` id, upstream `rawInputName`: the talent
-/// families it knows, then the camel-case split with its first letter raised.
+/// The friendly name of a `raw:<input>` id: the talent families it knows, then
+/// the camel-case split with its first letter raised.
 pub fn raw_name(key: &str) -> String {
     if let Some((id, value)) = split_talent_value(key) {
         return format!("{} (value {value})", crate::data::talent_name(id));

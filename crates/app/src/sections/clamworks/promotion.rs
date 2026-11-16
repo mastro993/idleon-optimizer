@@ -2,7 +2,7 @@
 //!
 //! `clamworks.promotion` reads the saved worker-class level (`OLA[464]`) and
 //! prices the next attempt, and the rewards table lists every `Spelunky[30]`
-//! reward with the level that unlocks it, matching the upstream promotion tab.
+//! reward with the level that unlocks it.
 
 use super::kpi;
 use crate::state::AppState;

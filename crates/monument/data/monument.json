@@ -1257,26 +1257,5 @@
   1,
   1,
   1
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "holesRows": [
-   30,
-   31,
-   32,
-   37,
-   52,
-   55,
-   70
-  ],
-  "meritocRows": [
-   "MERITOC_BASE"
-  ],
-  "sushiRows": [
-   "ROG_BONUS_QTY"
-  ],
-  "encodingRows": [
-   "N2L"
-  ]
- }
+ ]
 }

@@ -1,9 +1,8 @@
-//! The expedition configuration: the upstream `normalizeSpelunkConfig` port.
+//! The expedition configuration.
 //!
 //! The request carries what the controls chose and every field falls back to
-//! the save, exactly as upstream does. A request the game would not accept is
-//! rejected with the upstream message, so a duplicate party or a locked policy
-//! reads the same on both sides.
+//! the save. A request the game would not accept is rejected with a message
+//! naming the problem, such as a duplicate party or a locked policy.
 
 use super::{AmberPolicy, Entry, Inputs, Policy, StaminaMode, ToolChoice};
 use std::fmt;
@@ -29,7 +28,7 @@ pub struct Requested {
     pub stamina: Option<StaminaMode>,
 }
 
-/// A configuration the upstream normaliser accepts.
+/// A configuration the normaliser accepts.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
     pub cave: usize,
@@ -48,7 +47,7 @@ pub struct Config {
     pub stamina: StaminaMode,
 }
 
-/// Why a requested configuration cannot run, with the upstream message.
+/// Why a requested configuration cannot run.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConfigError(pub String);
 
@@ -64,11 +63,8 @@ fn invalid(message: &str) -> ConfigError {
     ConfigError(message.to_string())
 }
 
-/// The upstream `normalizeSpelunkConfig`: fill defaults from the save and
-/// reject a party, belt or mode the game would not accept.
-///
-/// The order of the checks follows the upstream function so a rejected request
-/// reports the same message.
+/// Fill defaults from the save and reject a party, belt or mode the game would
+/// not accept.
 pub fn normalize(input: &Inputs, requested: &Requested) -> Result<Config, ConfigError> {
     let cave = requested.cave.unwrap_or(0);
     if cave >= input.caves.len() {

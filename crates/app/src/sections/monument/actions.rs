@@ -29,7 +29,7 @@ impl AppState {
         cx.notify();
     }
 
-    /// The enemy number the odds are for, clamped to the upstream 1-1001 range.
+    /// The enemy number the odds are for, clamped to the 1-1001 range.
     pub(crate) fn set_monument_wave(&mut self, value: f64, cx: &mut Context<Self>) {
         self.monument.wave = value.round().clamp(1.0, 1001.0) as u32;
         cx.notify();

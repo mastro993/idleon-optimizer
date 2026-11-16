@@ -3483,7 +3483,6 @@ name = "idleon-cglunko"
 version = "0.2.0"
 dependencies = [
  "idleon-common",
- "idleon-import",
  "idleon-save",
  "serde",
  "serde_json",
@@ -3529,7 +3528,6 @@ dependencies = [
 name = "idleon-combat"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
  "idleon-common",
  "idleon-import",
  "idleon-save",
@@ -3558,7 +3556,6 @@ dependencies = [
  "idleon-common",
  "idleon-import",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3621,8 +3618,6 @@ dependencies = [
 name = "idleon-import"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
- "flate2",
  "idleon-account",
  "idleon-cglunko",
  "idleon-clamworks",
@@ -3653,7 +3648,6 @@ name = "idleon-jar"
 version = "0.2.0"
 dependencies = [
  "idleon-common",
- "idleon-import",
  "idleon-save",
  "serde",
  "serde_json",
@@ -3709,7 +3703,6 @@ name = "idleon-monument"
 version = "0.2.0"
 dependencies = [
  "idleon-common",
- "idleon-import",
  "idleon-save",
  "serde",
  "serde_json",
@@ -3799,8 +3792,6 @@ dependencies = [
 name = "idleon-project"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
- "flate2",
  "idleon-research",
  "idleon-save",
  "serde_json",
@@ -3901,7 +3892,6 @@ dependencies = [
  "idleon-account",
  "idleon-common",
  "idleon-fountain",
- "idleon-import",
  "idleon-research",
  "idleon-save",
  "idleon-stats-data",

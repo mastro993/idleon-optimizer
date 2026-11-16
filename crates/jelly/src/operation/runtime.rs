@@ -1,10 +1,8 @@
 //! The seeded attempt itself: one board against one obstruction.
 //!
-//! Ports `simulateJellyOperation` and its helpers (`roidActivationTime`,
-//! `reviveTarget`) from `js/stats/systems/w7/jelly-operator.js`. The port keeps
-//! the frame-by-frame loop and the upstream fast path's one behavioural
-//! difference: the displayed DPS, and therefore the Best DPS the Bloodcell
-//! multiplier reads, only updates on the one-second callback ticks.
+//! The runtime steps frame by frame, with one behavioural quirk: the displayed
+//! DPS, and therefore the Best DPS the Bloodcell multiplier reads, only updates
+//! on the one-second callback ticks.
 
 use super::rng::{Geometry, Rng, geometry, hit_frame, random_int};
 use super::{Contribution, Death, OperationOptions, RevivePolicy, RoidTiming, Trial};
@@ -31,7 +29,6 @@ struct RuntimeCell {
     geometry: Geometry,
 }
 
-/// `roidActivationTime`.
 fn roid_activation_time(timing: RoidTiming, obstruction: usize) -> f64 {
     match timing {
         RoidTiming::Never => f64::INFINITY,
@@ -42,7 +39,7 @@ fn roid_activation_time(timing: RoidTiming, obstruction: usize) -> f64 {
     }
 }
 
-/// `simulateJellyOperation`: one seeded attempt.
+/// One seeded attempt.
 pub fn simulate(jelly: &Jelly, layout: &Layout, options: OperationOptions) -> Trial {
     let obstruction = options.obstruction.unwrap_or(jelly.progress.obstruction);
     let fever = options.fever.unwrap_or(jelly.progress.fever);
@@ -125,7 +122,7 @@ pub fn simulate(jelly: &Jelly, layout: &Layout, options: OperationOptions) -> Tr
     let mut live_immunoid: Vec<usize> = immunoid_order.clone();
     let mut live_slots: Vec<usize> = all_slots.clone();
 
-    // The opening roll walks every board anchor, like the upstream loop: one
+    // The opening roll walks every board anchor: one
     // drawn progress per placed cell and one skipped value per anchor.
     let mut cell_progress = vec![0.0_f64; cells.len()];
     let mut opening_progress = Vec::with_capacity(cells.len());
@@ -417,7 +414,7 @@ pub fn simulate(jelly: &Jelly, layout: &Layout, options: OperationOptions) -> Tr
     trial
 }
 
-/// `reviveTarget`: which dead slot the policy brings back first.
+/// Which dead slot the policy brings back first.
 fn revive_target(
     policy: RevivePolicy,
     dead_slots: &[usize],

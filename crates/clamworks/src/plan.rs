@@ -1,14 +1,13 @@
 //! The upgrade plan: what a pearl budget buys, in the order the optimizer buys it.
 //!
-//! The upstream calculator ranks the upgrades once (`rankUpgrades` in
-//! `js/stats/systems/w7/clamworks.js`). A plan repeats that ranking: each
-//! purchase is the best marginal pearls-per-kill gain per pearl the budget can
-//! afford at the levels the plan has already reached, so every step pays the
-//! `upgNextCost` the game would charge at that point — FRUGALITY and ANTI
-//! INFLATION included, never a cheaper earlier price.
+//! A plan repeats the upgrade ranking after every purchase: each purchase is
+//! the best marginal pearls-per-kill gain per pearl the budget can afford at
+//! the levels the plan has already reached, so every step pays the next cost
+//! the game would charge at that point — FRUGALITY and ANTI INFLATION included,
+//! never a cheaper earlier price.
 //!
 //! Utility upgrades rank at zero pearls per kill, so the greedy pass leaves them
-//! alone; the upstream table lists them separately for exactly that reason.
+//! alone; the priority table lists them separately for exactly that reason.
 
 use super::Clamworks;
 use crate::data;
@@ -55,7 +54,7 @@ pub struct Step {
     pub from_level: u32,
     /// What the level costs at the plan's levels when it is bought.
     pub cost: f64,
-    /// The fractional pearls-per-kill gain the upstream rank priced it at.
+    /// The fractional pearls-per-kill gain the ranking priced it at.
     pub gain: f64,
 }
 
@@ -132,10 +131,9 @@ impl Plan {
 impl Clamworks {
     /// The plan a budget buys, reporting each purchase; `None` when stopped.
     ///
-    /// The first affordable upgrade in the upstream ranking is bought, then the
-    /// ranking is recomputed at the new levels: a purchase that costs more than
-    /// the remaining budget is skipped in favour of the next one, never
-    /// overbought.
+    /// The first affordable upgrade in the ranking is bought, then the ranking
+    /// is recomputed at the new levels: a purchase that costs more than the
+    /// remaining budget is skipped in favour of the next one, never overbought.
     pub fn plan_with(
         &self,
         input: Input,

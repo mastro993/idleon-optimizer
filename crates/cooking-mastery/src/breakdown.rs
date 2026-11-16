@@ -1,4 +1,4 @@
-//! The EXP rate tree behind the Mastery EXP tab (`renderBreakdownTree`).
+//! The EXP rate tree behind the Mastery EXP tab.
 //!
 //! The root is the rate the KPI cards show, and the terms below it are the
 //! factors that multiply to it: the base rate, one node per EXP upgrade with its
@@ -14,7 +14,7 @@ pub(crate) fn tree(mastery: &Mastery) -> FormulaNode {
     let rate = mastery.exp_rate();
     let mut children = vec![
         FormulaNode::leaf("Base", super::BASE_RATE, ValueFormat::Raw)
-            .with_note("computeExpRate starts every account at 2 per hour"),
+            .with_note("Every account starts at 2 EXP per hour"),
     ];
     for index in EXP_UPGRADES {
         children.push(upgrade(mastery, index));
@@ -27,7 +27,7 @@ pub(crate) fn tree(mastery: &Mastery) -> FormulaNode {
             super::BASE_RATE,
             mastery.external.total()
         ))
-        .with_source("cooking-mastery-calc.html · computeExpRate")
+        .with_source("Cooking mastery EXP rate")
         .with_note("Every factor is a multiplier: the tree's root is the rate the cards show.")
         .with_children(children)
 }
@@ -57,12 +57,12 @@ fn upgrade(mastery: &Mastery, index: usize) -> FormulaNode {
             FormulaNode::leaf("Scaled Bonus", bonus, ValueFormat::Percent),
         ])
         .with_note(format!(
-            "perLv×level×scaling = {} → {}",
+            "per level × level × scaling = {} → {}",
             ValueFormat::Percent.format(bonus),
             ValueFormat::Multiplier.format(multiplier)
         ))
         .with_source(if mastery.unlocked(index) {
-            "cooking-mastery-calc.html · bonusTotal"
+            "Cooking mastery upgrade bonus"
         } else {
             "locked: gains nothing until the mastery rank reaches it"
         })
@@ -72,26 +72,26 @@ fn upgrade(mastery: &Mastery, index: usize) -> FormulaNode {
 fn external(external: &External) -> FormulaNode {
     FormulaNode::new("External Multipliers", external.total())
         .with_format(ValueFormat::Multiplier)
-        .with_source("cooking-mastery-calc.html · computeExternalMulti")
+        .with_source("Cooking mastery external multipliers")
         .with_children([
             factor(
                 "Menagerie Boost 21 (Cooking Mastery EXP)",
                 1.0 + external.menagerie / 100.0,
                 Some(external.menagerie),
-                "menagerieBoostQTY(21)",
+                "Menagerie boost 21",
             ),
             factor(
                 "Masterius Cookerius (Research)",
                 1.0 + external.grid_190 / 100.0,
                 Some(external.grid_190),
-                "gbWith(gridLevels, shapeOverlay, 190)",
+                "Research grid 190",
             ),
             FormulaNode::new(
                 "Cooking Master (Zuperbit)",
                 1.0 + 40.0 * external.super_bit_68 / 100.0,
             )
             .with_format(ValueFormat::Multiplier)
-            .with_source("superBitType(68)")
+            .with_source("Gaming superbit 68")
             .with_note(if external.super_bit_68 > 0.0 {
                 "Unlocked (+40%)"
             } else {
@@ -101,13 +101,13 @@ fn external(external: &External) -> FormulaNode {
                 "Rift Spooker",
                 1.0 + 2.0 * external.companion_87,
                 Some(external.companion_87),
-                "companions(87)",
+                "Companion 87",
             ),
             factor(
                 "Cook Maxxing (Fountain)",
                 1.0 + external.fountain / 100.0,
                 Some(external.fountain),
-                "Fountain_BonTOT(2, 17)",
+                "Fountain water 2 upgrade 17",
             ),
             FormulaNode::new("Additive EXP Bonuses", 1.0 + external.additive() / 100.0)
                 .with_format(ValueFormat::Multiplier)
@@ -126,13 +126,13 @@ fn external(external: &External) -> FormulaNode {
                         external.arcade,
                         ValueFormat::Percent,
                     )
-                    .with_source("arcadeBonus(69)"),
+                    .with_source("Arcade bonus 69"),
                     FormulaNode::leaf(
                         "Salt Lick: Cooking Mastery EXP",
                         external.salt_lick,
                         ValueFormat::Percent,
                     )
-                    .with_source("computeSaltLick(10)"),
+                    .with_source("Salt Lick 10"),
                 ])
                 .with_note("The three terms add, then multiply the rate"),
         ])

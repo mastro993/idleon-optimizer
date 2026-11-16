@@ -1,6 +1,5 @@
 //! The Sushi Station upgrade table: every upgrade in unlock order with its
-//! next cost and the time the bank needs to afford it, as `_renderUpgrades` in
-//! `js/ui/sushi-ui.js`.
+//! next cost and the time the bank needs to afford it.
 
 use super::rate_text;
 use crate::state::AppState;

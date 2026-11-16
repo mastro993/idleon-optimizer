@@ -148,9 +148,9 @@ pub fn respec(
 ///
 /// The marginal climb and the full search spend the same points differently, and
 /// the immediate EXP/hour rank they are built on is not what a level target
-/// rewards. Each whole layout is projected to the target and the winner kept, as
-/// upstream `beamSpendAtLevel` scores its combos with a forward simulation: a
-/// level target keeps the fastest, an hour target the one that earns the most.
+/// rewards. Each whole layout is projected to the target with a forward
+/// simulation and the winner kept: a level target keeps the fastest, an hour
+/// target the one that earns the most.
 pub fn spend_for_target(
     sim: &Simulation,
     ctx: &SimContext,

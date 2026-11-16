@@ -1,5 +1,5 @@
 //! The Sushi Station currency pane: the bucks multiplier, the per-slot totals
-//! and the two fuel trees, as `_renderCurrency` in `js/ui/sushi-ui.js`.
+//! and the two fuel trees.
 
 use crate::state::AppState;
 use ely_gpui_component::layout::{Card, CardHeader};

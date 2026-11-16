@@ -225,9 +225,5 @@
    "percent": true,
    "basePerLevel": 0.02
   }
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "file": "js/stats/data/common/statues.js"
- }
+ ]
 }

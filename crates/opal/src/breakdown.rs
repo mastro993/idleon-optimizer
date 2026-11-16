@@ -5,12 +5,12 @@
 //!
 //! - the total tree adds the unlocked villagers' rates, so its children sum to
 //!   the root;
-//! - a villager tree multiplies the factors `villagerExpRate` applies, so its
+//! - a villager tree multiplies the factors the villager's rate applies, so its
 //!   children multiply to the root.
 //!
 //! The additive group inside each villager sums to the percentage the rate
-//! applies, and the chain group multiplies to `multiChain`, so a deeper node
-//! always agrees with the value the section reports.
+//! applies, and the chain group multiplies to the chain factor, so a deeper
+//! node always agrees with the value the section reports.
 
 use super::{CHAIN, Opal, RATE, VILLAGERS, name};
 use idleon_common::formula::{FormulaNode, ValueFormat};
@@ -24,7 +24,7 @@ pub(super) fn tree(opal: &Opal, selected: Option<usize>) -> FormulaNode {
     }
 }
 
-/// `totalExpRate`: one child per unlocked villager, whose rates add up.
+/// One child per unlocked villager, whose rates add up.
 fn total(opal: &Opal, opals: &[f64; VILLAGERS]) -> FormulaNode {
     let rate = opal.total_exp_rate(opals);
     let mut children = Vec::new();
@@ -37,21 +37,18 @@ fn total(opal: &Opal, opals: &[f64; VILLAGERS]) -> FormulaNode {
             "the {} unlocked villagers' rates, added",
             opal.unlocked_count()
         ))
-        .with_source("opal-calc.html · totalExpRate")
         .with_note("Each villager's own rate is its factors multiplied; the villagers add up.")
         .with_children(children)
 }
 
-/// `villagerExpRate`: the factors one villager's rate multiplies.
+/// The factors one villager's rate multiplies.
 fn villager_node(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> FormulaNode {
     let rate = opal.exp_rate(villager, opals);
     let count = opals[villager];
-    let mut node = FormulaNode::new(format!("{} EXP/hr", name(villager)), rate)
-        .with_format(RATE)
-        .with_source("opal-calc.html · villagerExpRate");
+    let mut node = FormulaNode::new(format!("{} EXP/hr", name(villager)), rate).with_format(RATE);
     if count <= 0.0 {
         return node.with_input("no opals invested").with_note(
-            "The page returns zero before it reads any factor, so this villager earns nothing.",
+            "The rate is zero before any factor is read, so this villager earns nothing.",
         );
     }
     node = node
@@ -100,7 +97,7 @@ fn villager_node(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> Form
     ])
 }
 
-/// `baseMulti`: the base, the multiplicative chain and the four outer factors.
+/// The base, the multiplicative chain and the four outer factors.
 fn base_multiplier(terms: &super::Terms) -> FormulaNode {
     let mut children = vec![
         FormulaNode::leaf(
@@ -129,11 +126,10 @@ fn base_multiplier(terms: &super::Terms) -> FormulaNode {
     }
     FormulaNode::new("Base multiplier", terms.base_multiplier())
         .with_format(ValueFormat::Multiplier)
-        .with_source("buildExt · baseMulti")
         .with_children(children)
 }
 
-/// `addPct`: the constant terms plus the villager's own Opal Enthusiasm.
+/// The constant terms plus the villager's own Opal Enthusiasm.
 fn additive_pct(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> FormulaNode {
     let terms = &opal.ext.terms;
     let constant = FormulaNode::group(
@@ -157,7 +153,7 @@ fn additive_pct(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> Formu
         .with_note("The terms add up; the factor above turns the sum into a multiplier.")
 }
 
-/// `1 + addPct / 100`: the factor the villager's rate multiplies.
+/// `1 + additive % / 100`: the factor the villager's rate multiplies.
 fn additive_factor(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> FormulaNode {
     FormulaNode::new(
         "Additive factor",
@@ -168,7 +164,7 @@ fn additive_factor(opal: &Opal, villager: usize, opals: &[f64; VILLAGERS]) -> Fo
     .with_children([additive_pct(opal, villager, opals)])
 }
 
-/// A number as the page prints it, without a trailing `.0`.
+/// A number without a trailing `.0`.
 fn raw(value: f64) -> String {
     ValueFormat::Raw.format(value)
 }

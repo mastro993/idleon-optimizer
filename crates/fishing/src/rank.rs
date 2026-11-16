@@ -1,18 +1,17 @@
 //! The lure/line ranking: every combination of the 15 lures and 15 lines,
 //! evaluated for one pool and sorted by the chosen objective.
 //!
-//! Ported from the upstream `rankFishingToolkits` in
-//! `js/stats/systems/w2/fishing.js`. The upstream rebuilds each selection's
-//! efficiency and EXP multiplier from the skill systems with the toolkit's `POW`
-//! and `EXP`; this port carries both in [`AccountInputs`] and holds them fixed
-//! across a ranking, because the skill systems are not decoded yet. Everything
-//! else — depth, catch time, the split, ore value, fish and EXP — is resolved
-//! per combination through [`evaluate`].
+//! The game derives each selection's efficiency and EXP multiplier from the
+//! skill systems with the toolkit's `POW` and `EXP`; the ranking carries both
+//! in [`AccountInputs`] and holds them fixed across a ranking, because the
+//! skill systems are not decoded yet. Everything else — depth, catch time, the
+//! split, ore value, fish and EXP — is resolved per combination through
+//! [`evaluate`].
 
 use super::data::data;
 use super::{AccountInputs, Evaluation, FishingSave, PoolOutcome, evaluate};
 
-/// What a ranking sorts by, matching the upstream `state.objective`.
+/// What a ranking sorts by.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Objective {
@@ -32,7 +31,7 @@ impl Objective {
         }
     }
 
-    /// The control label the upstream `renderRanking` shows.
+    /// The control label the ranking shows.
     pub fn label(self) -> &'static str {
         match self {
             Objective::Exp => "Fishing EXP",
@@ -53,7 +52,7 @@ impl Objective {
 ///
 /// The rows are the same [`Evaluation`] an explicit selection returns, so the
 /// ranking can never disagree with the outcome card. Ties sort by EXP, then
-/// fish, then lure and line order, as the upstream comparator does.
+/// fish, then lure and line order.
 pub fn rank(
     save: &FishingSave,
     account: &AccountInputs,
@@ -84,8 +83,8 @@ pub fn rank(
 /// How many rows share the best metric: 1 when the top row wins outright.
 ///
 /// The split and the fish counts are floored, so combinations with the same
-/// depth and speed totals often round to the same score; the ranking then orders
-/// them by EXP, then fish, then the upstream lure and line order.
+/// depth and speed totals often round to the same score; the ranking then
+/// orders them by EXP, then fish, then the lure and line order.
 pub fn ties(rows: &[Evaluation], objective: Objective) -> usize {
     let Some(best) = rows.first().map(|row| objective.metric(&row.outcome)) else {
         return 0;

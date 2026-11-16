@@ -1,14 +1,13 @@
 //! The save-derived inputs the calculation context reads.
 //!
-//! Ported from the per-character reads in the upstream `js/save/loader.js`:
-//! `KLA_<n>` map counters drive which maps a character has visited and which
-//! portals it has cleared, `CurrentMap_<n>` is where it stands, and the
-//! account fields the map-access rules test are `Dream`, `OptionsListAccount`,
-//! `QuestComplete_<n>`, `Holes`, `Lv0_0`, `MapBon` and `CharacterClass_<n>`.
+//! The per-character reads: `KLA_<n>` map counters drive which maps a
+//! character has visited and which portals it has cleared, `CurrentMap_<n>` is
+//! where it stands, and the account fields the map-access rules test are
+//! `Dream`, `OptionsListAccount`, `QuestComplete_<n>`, `Holes`, `Lv0_0`,
+//! `MapBon` and `CharacterClass_<n>`.
 //!
-//! Upstream pads the character count to at least ten even when the save names
-//! fewer, because the selectors are built before the save is read; the same
-//! padding keeps the character selector identical here.
+//! The character count is padded to at least ten even when the save names
+//! fewer, so the character selector always lists ten rows.
 
 use idleon_save::{Save, number, row_values};
 use serde_json::Value;
@@ -131,7 +130,7 @@ fn names(save: &Save) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// How many characters a save carries, padded to the upstream minimum of ten.
+/// How many characters a save carries, padded to a minimum of ten.
 fn character_count(save: &Save, named: usize) -> usize {
     const ROWS: [&str; 17] = [
         "Lv0",

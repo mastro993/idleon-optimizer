@@ -1,11 +1,10 @@
-//! Monocle targeting: where the optical monocles go, ported from upstream
-//! `js/optimizers/monos.js`.
+//! Monocle targeting: where the optical monocles go.
 //!
 //! A monocle earns insight on its observation, and insight only pays EXP where
 //! the grid reads it (squares 93 and 94), so the choice of observation is a
 //! trade between levelling insight fastest and levelling the insight the rate
-//! already multiplies. Upstream scores each usable observation by that trade and
-//! greedily fills the rooms the other magnifiers left, which is what the
+//! already multiplies. Each usable observation is scored by that trade and the
+//! monocles greedily fill the rooms the other magnifiers left, which is what the
 //! decision tree's Auto Insight does at every insight level-up it skips through.
 
 use crate::data::game;
@@ -48,8 +47,7 @@ pub fn choose_mono_targets(state: &Simulation, ctx: &SimContext) -> Vec<Mag> {
         }
     }
 
-    // Every usable observation, whether or not the found count has reached it;
-    // upstream scans the ones past the count in a second pass of the same list.
+    // Every usable observation, whether or not the found count has reached it.
     let mut candidates = Vec::new();
     let mut trial = state.clone();
     for obs in 0..game.observations.len() {
@@ -123,7 +121,7 @@ struct Candidate {
     room: usize,
 }
 
-/// Strip the monocles and fill the rooms best score first, as `_spreadMonos`.
+/// Strip the monocles and fill the rooms best score first.
 fn spread(
     state: &Simulation,
     candidates: &[Candidate],
@@ -170,7 +168,7 @@ fn spread(
             assigned[obs] += 1;
         }
     }
-    // A monocle the scoring left over goes anywhere with room, as upstream.
+    // A monocle the scoring left over goes anywhere with room.
     for index in &indices {
         if mags[*index].slot.is_some() {
             continue;
@@ -187,7 +185,7 @@ fn spread(
 }
 
 /// Re-place the regular magnifiers for the current insight levels, keeping the
-/// kaleidoscopes and monocles where they are (upstream `reoptRegularMags`).
+/// kaleidoscopes and monocles where they are.
 fn reopt_regular_mags(state: &Simulation, ctx: &SimContext) -> Vec<Mag> {
     let game = game();
     let overlay = state.overlay();
@@ -233,8 +231,7 @@ fn reopt_regular_mags(state: &Simulation, ctx: &SimContext) -> Vec<Mag> {
             slots.push((value, obs));
         }
     }
-    // Best value first; equal values keep the observation order, as the
-    // stable sort upstream relies on does.
+    // Best value first; the stable sort keeps equal values in observation order.
     slots.sort_by(|left, right| right.0.total_cmp(&left.0));
     let reclaimed: Vec<Mag> = slots
         .into_iter()

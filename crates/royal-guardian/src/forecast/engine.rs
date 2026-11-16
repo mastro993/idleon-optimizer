@@ -19,7 +19,7 @@ pub(crate) enum BoundaryKind {
     Horizon,
 }
 
-/// The segment between two boundaries: upstream `_segment`.
+/// The segment between two boundaries.
 pub(crate) fn segment(
     royal: &RoyalGuardian,
     model: &Model,
@@ -189,8 +189,7 @@ pub(crate) fn segment(
     segment
 }
 
-/// One native pass over `banked` hours, and what it made affordable:
-/// upstream `_commit`.
+/// One native pass over `banked` hours, and what it made affordable.
 pub(crate) fn commit(
     royal: &mut RoyalGuardian,
     banked: f64,
@@ -232,7 +231,7 @@ pub(crate) fn commit(
     }
 }
 
-/// One daily reset: upstream `_reset`.
+/// One daily reset.
 pub(crate) fn reset(
     royal: &mut RoyalGuardian,
     model: &Model,
@@ -286,13 +285,13 @@ pub(crate) fn reset(
     event
 }
 
-/// Whether the game releases a node at all: upstream `_released`.
+/// Whether the game releases a node at all.
 pub(crate) fn resource_released(index: usize) -> bool {
     data::resource(index).is_some_and(|row| row.base_capacity > 0.0 && row.currency_slot >= 0)
 }
 
-/// A menu-open window: upstream `_active`. Steps exactly to each fill, rank,
-/// clear or reset boundary.
+/// A menu-open window. Steps exactly to each fill, rank, clear or reset
+/// boundary.
 pub(crate) fn active(
     royal: &mut RoyalGuardian,
     window: (f64, f64),

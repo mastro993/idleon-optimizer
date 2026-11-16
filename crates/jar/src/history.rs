@@ -1,11 +1,9 @@
 //! The enchant history: the snapshots the jar section keeps.
 //!
-//! Ported from `_saveSnapshot` and the `#tab-enchanthistory` half of
-//! `jar-calc.html`. The upstream keeps the snapshots in `localStorage` under
-//! `idleon-enchant-history`; here they are part of the project document, so an
-//! export carries them and the session restores them on the next launch. A
-//! snapshot is recorded once per applied import, exactly where the upstream page
-//! records one per render, and a snapshot identical to the last one is skipped.
+//! The snapshots are part of the project document, so an export carries them
+//! and the session restores them on the next launch. A snapshot is recorded
+//! once per applied import, and a snapshot identical to the last one is
+//! skipped.
 
 use crate::Jar;
 use serde::{Deserialize, Serialize};
@@ -19,7 +17,7 @@ pub const HISTORY_LIMIT: usize = 200;
 pub struct EnchantSnapshot {
     /// Unix seconds the snapshot was taken.
     pub at: i64,
-    /// `totalEnchantLevels`: the sum of `max(0, level - 1)`.
+    /// The sum of `max(0, level - 1)`.
     pub total: u32,
     /// Every collectible's enchant levels, in save order.
     pub spread: Vec<u32>,

@@ -115,7 +115,7 @@ fn message(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The layout stats the page shows under the board (`layoutStats`).
+/// The layout stats shown under the board.
 fn stats(metrics: &idleon_jelly::Metrics) -> AnyElement {
     if !metrics.valid {
         return div()

@@ -1,8 +1,6 @@
 //! The Ladle Optimizer (W4): ladles per day, claim plans and Cooking EXP balloons.
 //!
-//! Ported from `js/stats/systems/w4/cooking-ladle.js` in
-//! <https://github.com/Corgan/idleon-research-optimizer>. Every function below is
-//! the upstream expression with its reads made explicit:
+//! Every function below makes its reads explicit:
 //!
 //! - [`ladles_per_day`], [`ladle_breakpoints`] and [`ladle_tier_outlook`] are the
 //!   AFK panel rate and how it moves with Cooking efficiency.
@@ -14,12 +12,11 @@
 //!   model: one balloon at a time, each read at the current level, overflow carried.
 //!
 //! The four panel values a ladle rate needs (Cooking efficiency, AFK gain rate,
-//! EXP multiplier and skill prowess) come from the upstream stats engine
-//! (`js/stats/stat-context.js`), which this build does not have yet. They are
-//! [`Panel`] inputs here, so the maths is exact and the sourcing is explicit; the
-//! section reads them from the player until that engine lands. Talent 148 is the
-//! same: [`Panel::ladle_hours`] turns its percentage into the ladle-hours
-//! multiplier.
+//! EXP multiplier and skill prowess) come from an account stats engine this
+//! build does not have yet. They are [`Panel`] inputs here, so the maths is
+//! exact and the sourcing is explicit; the section reads them from the player
+//! until that engine lands. Talent 148 is the same: [`Panel::ladle_hours`] turns
+//! its percentage into the ladle-hours multiplier.
 //!
 //! Everything else is save-derived: the roster, Cooking level and EXP, the AFK
 //! target and pending AFK time, the Post Office 19c roll, the Prayer 2 cap and the
@@ -33,17 +30,17 @@ pub mod kitchen;
 use idleon_common::formula::{FormulaNode, ValueFormat};
 use idleon_save::Save;
 
-/// `COOKING_SKILL_IDX`: Cooking's index in a `Lv0_<n>` / `Exp0_<n>` row.
+/// Cooking's index in a `Lv0_<n>` / `Exp0_<n>` row.
 pub const COOKING_LEVEL_INDEX: usize = 10;
 
-/// `LADLE_ITEM`: the item the ladle counts read.
+/// The item the ladle counts read.
 pub const LADLE_ITEM: &str = "Ladle";
 
-/// `AFK_CLAIM_CAP_SECONDS`: the longest claim Prayer 2 credits.
+/// The longest claim Prayer 2 credits.
 pub const AFK_CLAIM_CAP_SECONDS: f64 = 36_000.0;
 
-/// `EXP_BALLOONS`: the three Cooking EXP balloons, with the item ID
-/// `balloonGain` multiplies by (`ITEMS[key].ID`).
+/// The three Cooking EXP balloons, with the item ID the balloon gain
+/// multiplies by.
 pub const EXP_BALLOONS: [Balloon; 3] = [
     Balloon {
         key: "ExpBalloon1",
@@ -81,7 +78,7 @@ pub struct Balloon {
     pub key: &'static str,
     /// The label the select shows.
     pub label: &'static str,
-    /// `ITEMS[key].ID`, the base `balloonGain` multiplies.
+    /// The item's ID, the base the balloon gain multiplies.
     pub item_id: f64,
 }
 
@@ -95,10 +92,10 @@ pub struct Count {
     pub missing: Vec<String>,
 }
 
-/// The upstream stats-engine values a ladle rate needs, entered from the game's
-/// Cooking panel until the account stats engine is built.
+/// The stats-engine values a ladle rate needs, entered from the game's Cooking
+/// panel until the account stats engine is built.
 ///
-/// A value the player reads from the panel gives the exact upstream outcome; the
+/// A value the player reads from the panel gives the exact outcome; the
 /// neutral defaults (no efficiency or prowess, an EXP multiplier of 1 and the
 /// game's 0.01 AFK floor) give a lower bound instead.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -110,7 +107,7 @@ pub struct Panel {
     pub afk: f64,
     /// `skill-exp` for Cooking: the EXP multiplier.
     pub exp_multi: f64,
-    /// `computeAllSkillProwessDetail`: the prowess the ladle exponent adds.
+    /// The prowess the ladle exponent adds.
     pub prowess: f64,
     /// Talent 148 Overflowing Ladle, as a percentage.
     pub talent_148: f64,
@@ -129,7 +126,7 @@ impl Default for Panel {
 }
 
 impl Panel {
-    /// `ladleMultiplier`: ladle hours per ladle, `1 + Talent 148 / 100`.
+    /// Ladle hours per ladle, `1 + Talent 148 / 100`.
     pub fn ladle_hours(self) -> f64 {
         1.0 + self.talent_148 / 100.0
     }
@@ -153,9 +150,9 @@ pub struct Character {
     pub exp: f64,
     /// `TimeAway.GlobalTime − PTimeAway_<n> × 1000` in hours, when known.
     pub pending_hours: Option<f64>,
-    /// `computeBoxReward(charIdx, '19c')`, the Post Office 2x ladle chance.
+    /// Post Office box 19c's reward, the 2x ladle chance.
     pub double_chance: f64,
-    /// `computePrayerReal(2, 1, charIdx) > 2`: Prayer 2 caps the claim at ten hours.
+    /// Whether Prayer 2's bonus is over 2: Prayer 2 caps the claim at ten hours.
     pub claim_capped: bool,
 }
 
@@ -330,7 +327,7 @@ pub struct Split {
 pub struct Claimer {
     pub index: usize,
     pub name: String,
-    /// `rawPerHour`: ladles an hour before the claim rolls.
+    /// Ladles an hour before the claim rolls.
     pub raw_per_hour: f64,
     /// The Post Office 19c doubling chance, as a percentage.
     pub double_chance: f64,
@@ -383,13 +380,13 @@ fn tier_exponent(prowess: f64) -> f64 {
     0.25 + prowess.clamp(0.0, 0.1)
 }
 
-/// `ladlesPerDay`: `15 × floor(max((efficiency / 1000)^(0.25 + prowess), 1))`.
+/// `15 × floor(max((efficiency / 1000)^(0.25 + prowess), 1))`.
 pub fn ladles_per_day(efficiency: f64, prowess: f64) -> f64 {
     let exponent = tier_exponent(prowess);
     15.0 * ((efficiency / 1000.0).powf(exponent).max(1.0)).floor()
 }
 
-/// `ladleBreakpoints`: the next `count` floored steps and the efficiency each needs.
+/// The next `count` floored steps and the efficiency each needs.
 pub fn ladle_breakpoints(efficiency: f64, prowess: f64, count: usize) -> Vec<Breakpoint> {
     let exponent = tier_exponent(prowess);
     let tier = ladles_per_day(efficiency, prowess) / 15.0;
@@ -406,7 +403,7 @@ pub fn ladle_breakpoints(efficiency: f64, prowess: f64, count: usize) -> Vec<Bre
         .collect()
 }
 
-/// `ladleTierOutlook`: how the rate answers more efficiency.
+/// How the rate answers more efficiency.
 pub fn ladle_tier_outlook(efficiency: f64, prowess: f64) -> Outlook {
     let efficiency = efficiency.max(0.0);
     let exponent = tier_exponent(prowess);
@@ -432,7 +429,7 @@ pub fn ladle_tier_outlook(efficiency: f64, prowess: f64) -> Outlook {
     }
 }
 
-/// `ladleClaimExpectation`: the average ladles one claim of `value` gives, with
+/// The average ladles one claim of `value` gives, with
 /// the Post Office 19c doubling roll.
 pub fn claim_expectation(value: f64, double_chance: f64) -> f64 {
     let chance = (double_chance / 100.0).clamp(0.0, 1.0);
@@ -446,13 +443,13 @@ pub fn claim_expectation(value: f64, double_chance: f64) -> f64 {
     }
 }
 
-/// `ladleClaimMinimum`: the guaranteed ladles one claim gives, without the roll.
+/// The guaranteed ladles one claim gives, without the roll.
 pub fn claim_minimum(value: f64) -> f64 {
     let value = value.max(0.0);
     if value >= 1.0 { value.floor() } else { 0.0 }
 }
 
-/// `ladleClaimPlan`: the claims before the next reset.
+/// The claims before the next reset.
 ///
 /// Each claimer claims every `claim_hours`, with the final claim just before the
 /// reset; the earliest claim also collects `pending_hours` already accrued. The
@@ -539,7 +536,7 @@ pub fn claim_plan(claimers: &[Claimer], window_hours: f64) -> ClaimPlan {
     plan
 }
 
-/// `cookingExpReq`: the EXP one Cooking level costs.
+/// The EXP one Cooking level costs.
 pub fn cooking_exp_req(level: f64) -> f64 {
     let level = level.max(0.0);
     (15.0 + level.powi(2) + 15.0 * level)
@@ -547,12 +544,12 @@ pub fn cooking_exp_req(level: f64) -> f64 {
         - 30.0
 }
 
-/// `balloonGain`: `item ID × (level + 1) × EXP multi`, read at the current level.
+/// `item ID × (level + 1) × EXP multi`, read at the current level.
 pub fn balloon_gain(item_id: f64, level: f64, exp_multi: f64) -> f64 {
     item_id * (level + 1.0) * exp_multi
 }
 
-/// `balloonsToLevel`: spends balloons one at a time, each read at the current
+/// Spends balloons one at a time, each read at the current
 /// level, carrying the overflow into the next level.
 pub fn balloons_to_level(
     level: f64,
@@ -598,7 +595,7 @@ pub fn balloons_to_level(
     }
 }
 
-/// `levelsFromBalloons`: spends up to `count` balloons and reports the level.
+/// Spends up to `count` balloons and reports the level.
 pub fn levels_from_balloons(
     level: f64,
     exp: f64,
@@ -640,7 +637,7 @@ pub fn levels_from_balloons(
     }
 }
 
-/// `splitBalloons`: shares a balloon stack to keep Cooking levels even.
+/// Shares a balloon stack to keep Cooking levels even.
 ///
 /// Each next level-up goes to the lowest-level character (ties: the fewest
 /// balloons to its next level, then the lowest index). When the remainder cannot
@@ -720,7 +717,7 @@ pub fn split_balloons(
     }
 }
 
-/// `cookingLadleStats`: one character's rates, from its save row and the panel.
+/// One character's rates, from its save row and the panel.
 pub fn stats(character: &Character, panel: Panel, claim_hours: f64) -> Stats {
     let efficiency = panel.efficiency;
     let prowess = panel.prowess.clamp(0.0, 0.1);
@@ -1029,7 +1026,7 @@ impl Stats {
         (window / self.claim_hours - 1e-9).ceil().max(1.0) as usize
     }
 
-    /// The next-step cell's text, as the upstream outlook column shows it.
+    /// The next-step cell's text, as the outlook column shows it.
     pub fn outlook_label(&self) -> String {
         let outlook = self.outlook;
         if outlook.small_tier {
@@ -1052,7 +1049,7 @@ struct PostOfficeSlot {
     x2: f64,
 }
 
-/// `computeBoxReward` for a `decay` slot: the invested points past the slot's
+/// A Post Office box reward for a `decay` slot: the invested points past the slot's
 /// threshold, run through `x1 × lv / (lv + x2)`.
 fn box_reward(points: f64, slot: &PostOfficeSlot) -> f64 {
     let mut points = points.max(0.0);
@@ -1066,10 +1063,10 @@ fn box_reward(points: f64, slot: &PostOfficeSlot) -> f64 {
     slot.x1 * points / (points + slot.x2)
 }
 
-/// `prayerValue(2, 1, ci)`: the Prayer 2 bonus a character holds.
+/// The Prayer 2 bonus a character holds.
 ///
-/// `costIdx` is 1, which is the charge the cap reads; upstream only pays the
-/// no-prayer passive on the other costs, so an unequipped character holds none.
+/// This is the charge the cap reads; the no-prayer passive only applies to the
+/// other costs, so an unequipped character holds none.
 fn prayer_2_value(save: &Save, index: usize) -> f64 {
     let level = save
         .get("PrayOwned")
@@ -1094,7 +1091,7 @@ fn prayer_2_value(save: &Save, index: usize) -> f64 {
     (PRAYER_2_BASE_BONUS * scale).round()
 }
 
-/// `_prayerCapped`: Prayer 2 credits ten hours, which is over the two-hour gate.
+/// Prayer 2 credits ten hours, which is over the two-hour gate.
 fn prayer_capped(save: &Save, index: usize) -> bool {
     prayer_2_value(save, index) > 2.0
 }

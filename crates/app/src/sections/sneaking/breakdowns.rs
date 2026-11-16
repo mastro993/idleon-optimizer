@@ -1,10 +1,9 @@
 //! The Sneaking breakdowns workspace: the twin selector, the five formula
 //! tabs and the shared tree.
 //!
-//! Ported from the `breakdowns` workspace panel in `sneaking-calc.html`:
-//! `_renderFormulaBreakdowns` builds the Stealth, Jade, EXP, Door and Runtime
-//! trees for one twin, and the shared [`FormulaTree`] supplies the search,
-//! expand/collapse and copy controls.
+//! The workspace builds the Stealth, Jade, EXP, Door and Runtime trees for one
+//! twin, and the shared [`FormulaTree`] supplies the search, expand/collapse
+//! and copy controls.
 
 use super::state::FormulaTab;
 use crate::state::AppState;

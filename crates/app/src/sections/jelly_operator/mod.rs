@@ -1,17 +1,17 @@
 //! The Jelly Operator section: the overview, the layout editor and the simulator.
 //!
-//! JO-01 ports the upstream page's Overview and Layout tabs: the save's board
-//! with every cell type placeable, the account snapshot and the seeded operation
-//! estimate with its outlook. JO-02 adds the Simulator tab: a sandbox copy of
-//! the board with the stage, Fever, Stronkroid, revive policy, remove mode,
-//! board sections and one seeded operation through the shared task runner.
-//! JO-04 adds the Sections tab: strategy, objective, EXP target, token count,
-//! quality and beam, then the ranked section plan through the same runner.
-//! JO-03 adds the Upgrades tab (the `Research[44]` purchase list and its
-//! prices), the Bonuses tab (the 72 obstruction rewards) and the Breakdowns tab
-//! (the four cell multipliers, the layout's two passives and the per-cell
-//! output), with every warning the save earns. The coordinator optimizer (JO-05)
-//! is the later feature on the same section.
+//! JO-01 builds the Overview and Layout tabs: the save's board with every cell
+//! type placeable, the account snapshot and the seeded operation estimate with
+//! its outlook. JO-02 adds the Simulator tab: a sandbox copy of the board with
+//! the stage, Fever, Stronkroid, revive policy, remove mode, board sections and
+//! one seeded operation through the shared task runner. JO-04 adds the Sections
+//! tab: strategy, objective, EXP target, token count, quality and beam, then
+//! the ranked section plan through the same runner. JO-03 adds the Upgrades tab
+//! (the `Research[44]` purchase list and its prices), the Bonuses tab (the 72
+//! obstruction rewards) and the Breakdowns tab (the four cell multipliers, the
+//! layout's two passives and the per-cell output), with every warning the save
+//! earns. The coordinator optimizer (JO-05) is the later feature on the same
+//! section.
 //!
 //! The maths lives in `idleon_jelly`; this module owns the board on
 //! screen and the shared task runner's inputs.
@@ -47,7 +47,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div}
 use idleon_jelly::Jelly;
 use idleon_jelly::board::{self, Layout};
 
-/// The upstream tabs this issue builds.
+/// The section's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {

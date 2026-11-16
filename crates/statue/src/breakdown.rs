@@ -1,10 +1,10 @@
 //! The farming breakdown behind one statue's row.
 //!
-//! Ported from `statue-calc.html`'s "EXP multipliers & calculation details"
-//! breakdown (the STARTUE EXP bubble and its retention, the shared Onyx/Zenith
-//! tier multiplier, each statue's saved Royal Guardian Flair and the Skinny
-//! 0 Cal vial) plus the table's own statues-needed, rate and time columns, so
-//! every number the row shows can be traced to the terms that produce it.
+//! The EXP multipliers (the STARTUE EXP bubble and its retention, the shared
+//! Onyx/Zenith tier multiplier, each statue's saved Royal Guardian Flair and the
+//! Skinny 0 Cal vial) plus the table's own statues-needed, rate and time
+//! columns, so every number the row shows can be traced to the terms that
+//! produce it.
 
 use super::{Estimate, Leveling, StatueSave, hours, info, target_cost};
 use idleon_common::formula::{FormulaNode, ValueFormat};

@@ -2,8 +2,7 @@
 
 use serde_json::{Map, Value};
 
-/// A save field that may be a JSON value or a string holding one, as the
-/// upstream `parseSaveKey` helper reads it.
+/// A save field that may be a JSON value or a string holding one.
 pub fn parsed_field(save: &Map<String, Value>, key: &str) -> Option<Value> {
     match save.get(key)? {
         Value::String(text) => serde_json::from_str(text).ok(),

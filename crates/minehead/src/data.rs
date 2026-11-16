@@ -1,4 +1,4 @@
-//! Static game data, extracted from the upstream Depth Charge calculator.
+//! Static Depth Charge game data.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -92,7 +92,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_tables_carry_every_upstream_row() {
+    fn the_tables_carry_every_game_row() {
         let game = game();
         assert_eq!(game.upgrades.len(), 30);
         assert_eq!(game.grid_dims.len(), 17);

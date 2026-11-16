@@ -8,14 +8,7 @@
 - Status: `partial`
 - Depends on: `foundation`
 
-Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.
-
-## Upstream sources
-
-- farming-calc.html
-- js/stats/data/w5/farming.js
-- js/stats/systems/w6/farming.js
-- js/stats/systems/w6/farming-planner.js
+Implement the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.
 
 ## UI
 
@@ -83,7 +76,7 @@ Depends on: FM-02 Plot assignment and Land Rank
 
 Acceptance:
 
-- Every upstream preset exists.
+- Every built-in preset exists.
 - Comparison is per objective.
 - Custom preset persists.
 
@@ -108,11 +101,10 @@ Depends on: FM-01 Field and plot detail, FND-11 Shared formula tree and breakdow
 Acceptance:
 
 - Signals update with state.
-- Thresholds match upstream.
 - Curves render for every plot.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Allocator invariant.
 - Harness.

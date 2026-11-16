@@ -1,17 +1,15 @@
 //! The Drop Rate Calculator's maths: the context map list, the live dungeon
 //! inputs, the total and the formula tree behind it.
 //!
-//! Ported from `drop-rate-calc.html`, the `drop-rate` descriptor in
-//! `js/stats/defs/drop-rate.js` and the dungeon system in
-//! `js/stats/systems/w2/dungeon.js`. On a dungeon map the descriptor ignores
-//! every saved term and reads only the two values the active run shows:
+//! On a dungeon map the drop rate ignores every saved term and reads only the
+//! two values the active run shows:
 //!
 //! ```text
 //! total = 1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100
 //! ```
 //!
 //! Those two values are not stored in save JSON, so a dungeon map without them
-//! reports the upstream reason instead of a number. [`tree`] expands that
+//! reports the reason instead of a number. [`tree`] expands that
 //! expression into the breakdown the formula tree renders. Every other map's
 //! total is the descriptor's whole pool chain (talents, equipment, stamps, cards,
 //! shrines, prayers, companions, …), which is the account stats engine the All
@@ -19,10 +17,9 @@
 //! total as [`Total::Unsupported`] rather than guessing it, and has no tree for
 //! it.
 //!
-//! The map list is `populateMapSel` from `drop-rate-calc.html`: Town first, then
-//! every named map, each marked when it is a dungeon and when it is the
-//! character's current map. Unlike the All Stats Dashboard it is not filtered by
-//! what the character has unlocked.
+//! The map list is Town first, then every named map, each marked when it is a
+//! dungeon and when it is the character's current map. Unlike the All Stats
+//! Dashboard it is not filtered by what the character has unlocked.
 
 mod tree;
 
@@ -31,7 +28,7 @@ use serde::{Deserialize, Serialize};
 
 pub use tree::tree;
 
-/// The maps upstream treats as dungeons (`DUNGEON_MAPS` in `dungeon.js`).
+/// The maps the game treats as dungeons.
 pub const DUNGEON_MAPS: [usize; 6] = [39, 40, 70, 71, 118, 119];
 
 /// Whether the map runs the live dungeon drop-rate formula.
@@ -39,7 +36,7 @@ pub fn is_dungeon_map(map: usize) -> bool {
     DUNGEON_MAPS.contains(&map)
 }
 
-/// The upstream reason a dungeon map cannot answer without its live values.
+/// The reason a dungeon map cannot answer without its live values.
 pub const NEEDS_RUNTIME: &str = "Dungeon Drop Rate needs live dungeon Total LUK and Dungeon Drop Rate \
                                  stat values, which are not stored in save JSON.";
 
@@ -51,7 +48,7 @@ pub const UNSUPPORTED: &str = "The pool chain needs the shared stat pipeline (ta
 
 /// The two values the active dungeon run shows, as the fields hold them.
 ///
-/// `None` is a blank field: upstream reads a blank as `NaN`, which is what makes
+/// `None` is a blank field: a blank reads as `NaN`, which is what makes
 /// a dungeon map report [`NEEDS_RUNTIME`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -74,8 +71,8 @@ impl Runtime {
 
     /// The first entry the fields refuse, as the message the card shows.
     ///
-    /// Upstream declares both inputs `min="0" step="1"`; a value outside that
-    /// range cannot be a live run value.
+    /// Both inputs are whole numbers from zero; a value outside that range
+    /// cannot be a live run value.
     pub fn invalid(self) -> Option<String> {
         let checks = [
             ("Dungeon Total LUK", self.luk),
@@ -97,7 +94,7 @@ impl Runtime {
 /// What the total card shows.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Total {
-    /// The exact upstream total.
+    /// The exact total.
     Value(f64),
     /// A dungeon map whose live run values are blank.
     NeedsRuntime,
@@ -127,7 +124,7 @@ impl Total {
     }
 }
 
-/// The total drop-rate multiplier for a map, exactly as upstream resolves it.
+/// The total drop-rate multiplier for a map.
 pub fn total(map: usize, runtime: Runtime) -> Total {
     if !is_dungeon_map(map) {
         return Total::Unsupported;
@@ -141,7 +138,7 @@ pub fn total(map: usize, runtime: Runtime) -> Total {
     Total::Value(dungeon_total(luk, drop_rate))
 }
 
-/// `computeDungeonDropRate(totalLuk, dungeonDropRarity)` from `dungeon.js`.
+/// The dungeon drop rate: `1 + (total LUK + dungeon drop rarity) / 100`.
 fn dungeon_total(luk: f64, drop_rate: f64) -> f64 {
     1.0 + (luk + drop_rate) / 100.0
 }
@@ -168,8 +165,7 @@ pub struct Selection {
 }
 
 impl Selection {
-    /// A freshly imported save opens on character one and its current map,
-    /// exactly like upstream `onSaveLoaded`.
+    /// A freshly imported save opens on character one and its current map.
     pub fn from_snapshot(snapshot: &Snapshot) -> Self {
         Self {
             character: 0,
@@ -177,8 +173,7 @@ impl Selection {
         }
     }
 
-    /// Switch character; the map follows that character's current map, as
-    /// upstream `switchChar` does.
+    /// Switch character; the map follows that character's current map.
     pub fn select_character(&mut self, character: usize, snapshot: &Snapshot) {
         if character >= snapshot.characters() {
             return;
@@ -205,17 +200,17 @@ impl Selection {
 pub struct MapRow {
     /// The game's map index.
     pub map: usize,
-    /// The `_mapLabel` text, including the dungeon and current markers.
+    /// The selector text, including the dungeon and current markers.
     pub label: String,
     pub dungeon: bool,
     /// The selected character's current map, marked `(current)`.
     pub current: bool,
 }
 
-/// The map selector's rows for a character, in upstream `populateMapSel` order.
+/// The map selector's rows for a character, in selector order.
 ///
-/// Town comes first even when no save is loaded, exactly like the upstream
-/// select's default option.
+/// Town comes first even when no save is loaded, as the select's default
+/// option.
 pub fn maps(snapshot: Option<&Snapshot>, character: usize) -> Vec<MapRow> {
     let town = MapRow {
         map: 0,
@@ -224,7 +219,7 @@ pub fn maps(snapshot: Option<&Snapshot>, character: usize) -> Vec<MapRow> {
         current: false,
     };
     let Some(snapshot) = snapshot else {
-        // Before a save loads upstream's select holds only its Town default.
+        // Before a save loads the select holds only its Town default.
         return vec![town];
     };
     let current = snapshot.current_map(character);
@@ -265,8 +260,8 @@ pub fn maps(snapshot: Option<&Snapshot>, character: usize) -> Vec<MapRow> {
             push(map, &mut rows);
         }
     }
-    // Upstream adds the current map as its own second entry when the named list
-    // does not carry it.
+    // The current map is added as its own second entry when the named list does
+    // not carry it.
     if let Some(map) = current
         && !rows.iter().any(|row| row.map == map)
     {
@@ -303,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn the_upstream_dungeon_maps_are_the_only_ones() {
+    fn the_dungeon_maps_are_the_only_ones() {
         assert_eq!(DUNGEON_MAPS, [39, 40, 70, 71, 118, 119]);
         for map in DUNGEON_MAPS {
             assert!(is_dungeon_map(map), "{map} is a dungeon");

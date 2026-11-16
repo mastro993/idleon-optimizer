@@ -1,12 +1,11 @@
 //! The Scurge tab: the Self Affliction comparison and the optimized EXP
 //! allocation.
 //!
-//! Ports the two panels of `js/ui/clamworks-scurge.js` (`mode: 'affliction'` and
-//! `mode: 'upgrades'`) over [`idleon_clamworks::scurge`], plus the list of the
-//! nine Scurge upgrades the allocation spends on. Upstream compares simulated
-//! runs on Clam Work; the shared simulator does not run that map, so the rates
-//! multiply the row's EXP per kill by the character's kills-per-hour stand-in,
-//! the same one the AFK claim takes.
+//! The affliction and upgrades panels over [`idleon_clamworks::scurge`], plus
+//! the list of the nine Scurge upgrades the allocation spends on. The shared
+//! simulator does not run Clam Work, so the rates multiply the row's EXP per
+//! kill by the character's kills-per-hour stand-in, the same one the AFK claim
+//! takes.
 
 use crate::state::AppState;
 use ely_gpui_component::feedback::Banner;
@@ -207,7 +206,7 @@ fn controls_card(
     card.into_any_element()
 }
 
-/// The upstream comparison table: every allocation beside the saved one.
+/// The comparison table: every allocation beside the saved one.
 fn comparison_card(plan: &Plan, kills: f64, muted: gpui::Hsla) -> AnyElement {
     // Every row shares one kills-per-hour entry, so the best allocation is the
     // same either way; the headline names the unit the entry actually reads.

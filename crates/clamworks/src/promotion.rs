@@ -1,11 +1,8 @@
 //! The promotion tracker and the worker-class rewards.
 //!
-//! Ports `promotionLevel`, `promotionCost`, `promotionChance`,
-//! `expectedPearlsPerPromotion`, `clamHP` and `clamWorkBonus` from
-//! `js/stats/systems/w7/clamworks.js`, and the rewards table from the promotion
-//! tab of `clamworks-calc.html` (`Spelunky[30]`).
+//! The rewards table is the game's `Spelunky[30]` list.
 //!
-//! A reward unlocks at the worker-class level it names: `clamWorkBonus(i)` is 1
+//! A reward unlocks at the worker-class level it names: reward `i` is active
 //! only once the saved promotion level is past `i`.
 
 use super::Clamworks;
@@ -16,7 +13,7 @@ use crate::data;
 pub struct Reward {
     /// The worker-class level that unlocks it, 1-based.
     pub level: u32,
-    /// The upstream description with its underscores read as spaces.
+    /// The game's description with its underscores read as spaces.
     pub description: String,
     pub unlocked: bool,
 }

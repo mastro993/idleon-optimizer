@@ -1,9 +1,6 @@
 //! The one import path every section shares: drop a file, browse for one or
 //! paste the JSON, preview what it detected, then apply it.
 //!
-//! Ported from the upstream `js/ui/save-loader.js`, which loads a file or a paste
-//! into `js/state.js` and reports the load in the bar it injects, and from
-//! `js/ui/state-io.js`, whose state box reads the gzip+base64 `ROv2:` string.
 //! Detection, parsing and migration live in [`idleon_import::pipeline`], so this
 //! module only names what it found: the format, the research level, the section
 //! count and the warnings are shown before anything is applied, a failed parse
@@ -55,7 +52,7 @@ pub(crate) struct Pending {
 /// What the dialog is holding while it is open.
 pub(crate) struct Import {
     pub(crate) open: bool,
-    /// The pasted JSON or state string.
+    /// The pasted JSON.
     pub(crate) input: Entity<TextInput>,
     /// Where the previewed text came from: the paste box, or a dropped file.
     pub(crate) source: String,
@@ -76,15 +73,14 @@ impl Import {
         let input = cx.new(|cx| {
             TextInput::new(window, cx)
                 .multi_line(4, 10)
-                .placeholder("Paste it.json, save.json, a project file or an ROv2 state string…")
+                .placeholder("Paste it.json, save.json, a project file or a section config…")
                 .label("Import JSON")
         });
         Self {
             open: false,
             input,
             source: "pasted text".into(),
-            message: "Paste a decoded save, a project file, an ROv2 state string, or drop one."
-                .into(),
+            message: "Paste a decoded save, a project file, a section config, or drop one.".into(),
             ok: true,
             pending: None,
             changes: Vec::new(),
@@ -181,7 +177,7 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
     let dropped = entity.clone();
     let drop_zone = DropZone::new("import-drop")
         .kinds(&["json", "txt"])
-        .hint("it.json, save.json, a project file, a section config or an ROv2 state string")
+        .hint("it.json, save.json, a project file or a section config")
         .on_drop(move |paths, _window, cx| {
             let Some(path) = paths.first() else {
                 return;
@@ -215,7 +211,7 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
             close.update(cx, |state, cx| state.close_import(window, cx));
         },
     )
-    .detail("Drop a file, browse for one, or paste the JSON or state string.")
+    .detail("Drop a file, browse for one, or paste the JSON.")
     .child(drop_zone)
     .child(
         div()
@@ -591,7 +587,6 @@ mod tests {
                     .into_iter()
                     .collect(),
                 warnings: warnings.iter().map(|warning| warning.to_string()).collect(),
-                origin: project::Origin::UpstreamState,
                 has_research: true,
                 has_supplements: true,
             },
@@ -643,15 +638,15 @@ mod tests {
     }
 
     #[test]
-    fn a_project_summary_names_the_upstream_state_and_its_sections() {
+    fn a_project_summary_names_the_project_and_its_sections() {
         let line = summary(&project(&["a"]));
-        assert!(line.contains("upstream state"), "{line}");
+        assert!(line.starts_with("Ready to apply: project"), "{line}");
         assert!(line.contains("research level 140"), "{line}");
         assert!(line.contains("4 character"), "{line}");
         assert!(line.contains("1 section config"), "{line}");
         assert!(line.contains("1 warning"), "{line}");
         let line = applied(&project(&[]));
-        assert!(line.contains("upstream state"), "{line}");
+        assert!(line.starts_with("Applied the project"), "{line}");
         assert!(line.contains("save included"), "{line}");
     }
 

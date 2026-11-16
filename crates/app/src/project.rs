@@ -1,9 +1,9 @@
 //! The app's project file: what an export writes and an import applies.
 //!
-//! [`idleon_project`] owns the document — the format markers, the
-//! version, the research state, the supplements and the ROv2 migration. This
-//! module owns the part that is the window's: which section it was on and the
-//! config object each section keeps as its visible state.
+//! [`idleon_project`] owns the document — the format markers, the version, the
+//! research state and the supplements. This module owns the part that is the
+//! window's: which section it was on and the config object each section keeps
+//! as its visible state.
 //!
 //! Every section config is a plain serde struct, so an export is a `to_value`
 //! and an import a `from_value`; a config whose field this build does not know
@@ -67,11 +67,11 @@ pub(crate) struct ResearchConfig {
     tab: ResearchTab,
     selected_cell: Option<usize>,
     selected_shape: Option<usize>,
-    /// `"hours"` or `"level"`, matching the target radio upstream.
+    /// `"hours"` or `"level"`, matching the target radio.
     target_kind: String,
     target_value: f64,
     effort: Effort,
-    /// The three upstream run toggles.
+    /// The three run toggles.
     options: SimOptions,
     supplements_open: bool,
     /// The named shape tier lists the window keeps.
@@ -343,7 +343,6 @@ fn document(state: &AppState) -> project::Project {
         context: state.context.clone(),
         sections: configs(state),
         warnings: Vec::new(),
-        origin: project::Origin::Project,
         has_research: true,
         has_supplements: true,
     }
@@ -1621,7 +1620,7 @@ mod tests {
         });
         assert_eq!(jar.tab, JarTab::Production);
         assert_eq!(jar.tier, 3);
-        // The rupie tab keeps its upstream `rupie` name, not the enum's.
+        // The rupie tab keeps its `rupie` id, not the enum's name.
         let rupies = round_trip(&JarConfig {
             tab: JarTab::RupieValue,
             tier: 2,
@@ -1661,7 +1660,7 @@ mod tests {
         assert_eq!(fountain.water, 2);
         assert_eq!(fountain.desired, Some(5));
         assert_eq!(fountain.upgrade, Some(11));
-        // The JR-03 and JR-04 tabs keep the upstream ids in a saved project.
+        // The JR-03 and JR-04 tabs keep their ids in a saved project.
         for tab in [
             JarTab::Collectibles,
             JarTab::Upgrades,

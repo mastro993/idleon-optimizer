@@ -1,9 +1,7 @@
 //! The Breakdowns tab: the four multipliers the board reads and the layout's two
 //! passives, as the shared formula tree, plus the page's per-cell output table.
 //!
-//! Ported from `breakdownsHtml` and `initializeBreakdownTrees` in
-//! `jelly-operator-calc.html`. The page draws six trees side by side; the port
-//! shows one at a time behind a rail, and every tree is the same
+//! The six trees show one at a time behind a rail, and every tree is the same
 //! [`FormulaTree`](idleon_ui::formula::FormulaTree) the other calculators use.
 //!
 //! A breakdown the save cannot compute (Cell EXP without Cell Biology,
@@ -51,7 +49,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>, jelly: &Jel
         .gap_3()
         .child(rail(category, cx));
     if !breakdown.available {
-        // The page prints the locked text instead of a tree, so a factor the save
+        // The locked text prints instead of a tree, so a factor the save
         // cannot compute never reads as a number.
         body = body.child(
             div().id("jelly-breakdown-warning").child(

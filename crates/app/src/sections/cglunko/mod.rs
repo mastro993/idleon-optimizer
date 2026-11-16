@@ -1,9 +1,9 @@
 //! The Cglunko section: the save-derived overview, the upgrade list, the upgrade
 //! plan and the stone focus.
 //!
-//! CL-01 builds the Overview tab of `cglunko-calc.html`; CL-02 adds the
-//! Upgrades and Optimizer tabs with a page selector that drives both; CL-03 adds
-//! the Stones tab, whose blue and purple pages the same selector picks.
+//! CL-01 builds the Overview tab; CL-02 adds the Upgrades and Optimizer tabs
+//! with a page selector that drives both; CL-03 adds the Stones tab, whose blue
+//! and purple pages the same selector picks.
 
 mod actions;
 

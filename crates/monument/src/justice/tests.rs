@@ -1,8 +1,5 @@
 //! Worksheet behaviour: the effect table, undoable edits and the advisor's own
 //! explanation.
-//!
-//! Formula parity is in `crates/monument/tests/monument.rs`, which compares the port
-//! against the upstream calculator's output for every case.
 
 use super::*;
 
@@ -25,7 +22,7 @@ fn worksheet() -> Worksheet {
 }
 
 #[test]
-fn every_effect_carries_its_upstream_key() {
+fn every_effect_carries_its_save_key() {
     assert_eq!(Effect::ALL.len(), EFFECT_ROWS.len());
     for effect in Effect::ALL {
         assert_eq!(

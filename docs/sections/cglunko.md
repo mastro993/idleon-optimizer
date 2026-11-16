@@ -8,13 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.
-
-## Upstream sources
-
-- cglunko-calc.html
-- js/stats/systems/w5/cglunko.js
-- js/ui/cglunko-combat.js
+Implement Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.
 
 ## UI
 
@@ -52,7 +46,6 @@ Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and break
 
 Acceptance:
 
-- Values match upstream.
 - Formula tree sums to the total.
 - Missing data is warned.
 
@@ -77,11 +70,10 @@ Depends on: CL-02 Upgrades and optimizer
 Acceptance:
 
 - Both pages render.
-- Digit impact matches upstream.
 - Focus target is explained.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness.

@@ -36,7 +36,7 @@ pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
         .into_any_element()
 }
 
-/// The four figures the upstream overview leads with.
+/// The four figures the overview leads with.
 fn summary(jar: &Jar) -> AnyElement {
     let label = format!(
         "{} / {} jar types · {} production slots · {} opals",
@@ -127,13 +127,13 @@ fn missing(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The twelve rupie balances, as the upstream pills.
+/// The twelve rupie balances, as pills.
 fn balances(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let mut pills = div().id("jar-rupies").flex().flex_wrap().gap_2();
     let available = jar.types_available();
     for index in 0..RUPIE_NAMES.len() {
         let balance = jar.rupies(index);
-        // Upstream hides a standard rupie the account cannot earn yet.
+        // A standard rupie the account cannot earn yet stays hidden.
         if index < TYPE_NAMES.len() && index >= available && balance <= 0.0 {
             continue;
         }
@@ -182,7 +182,7 @@ fn pill(index: usize, balance: f64, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The gilded bonus, Break All and the targeted enchant, as the upstream cards.
+/// The gilded bonus, Break All and the targeted enchant, as cards.
 fn state_cards(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let doubler = jar.doubler_bonus();
     let gilded = match doubler > 0.0 {

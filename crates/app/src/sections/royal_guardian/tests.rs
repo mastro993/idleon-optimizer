@@ -1,8 +1,8 @@
 //! The overview's selection and plan wording.
 //!
-//! The numbers themselves are pinned in `crates/royal-guardian/tests/royal_guardian.rs`
-//! against the upstream JS; these cover what the section decides on top of them:
-//! which outpost the range panel explains and how it words the plan.
+//! The numbers themselves are tested in `idleon-royal-guardian`; these cover
+//! what the section decides on top of them: which outpost the range panel
+//! explains and how it words the plan.
 
 use super::overview::{plan_text, selected_outpost};
 use idleon_royal_guardian as royal_guardian;
@@ -52,7 +52,7 @@ fn the_panel_explains_the_saved_outpost_or_the_worlds_first() {
 }
 
 #[test]
-fn the_plan_reads_as_the_upstream_panel_words_it() {
+fn the_plan_reads_as_the_panel_words_it() {
     let royal = royal();
     let target = royal
         .next_range_target(1)

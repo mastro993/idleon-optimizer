@@ -1,5 +1,4 @@
-//! The Play tab: the interactive Depth Charge floor, as `renderPlayfield` in
-//! `js/ui/minehead-play.js`.
+//! The Play tab: the interactive Depth Charge floor.
 //!
 //! Every click is recorded as a decision, and after three finished games the
 //! tab infers the knobs that best explain the player's choices.
@@ -143,7 +142,7 @@ impl AppState {
         play.log_reveal(position, result);
         let minehead = &mut self.research.minehead;
         minehead.record(decision);
-        // A cleared grid commits its damage by itself, as upstream.
+        // A cleared grid commits its damage by itself.
         if play.game.remaining().0 + play.game.remaining().1 == 0.0 {
             play.game.clear_turn();
         }

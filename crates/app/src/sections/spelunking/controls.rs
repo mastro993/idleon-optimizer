@@ -1,10 +1,10 @@
 //! The expedition controls above the party, belt and depth estimate.
 //!
-//! Every control the upstream toolbar carries: the logged-in character, the cave
-//! (with its Normal/Manic records), Normal/Manic mode, the policy, the Auto
+//! Every control the toolbar carries: the logged-in character, the cave (with
+//! its Normal/Manic records), Normal/Manic mode, the policy, the Auto
 //! full-clear flag and the Auto speed. The account card carries the four values
-//! upstream derives from its whole stat context and this port does not decode
-//! yet.
+//! that come from the account's whole stat context, which the save decode does
+//! not cover yet.
 
 use super::state::records;
 use crate::state::AppState;
@@ -195,7 +195,7 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
         .into_any_element()
 }
 
-/// The account values the upstream stat context would supply.
+/// The account values the account's stat context would supply.
 pub(crate) fn account_card(
     state: &AppState,
     _inputs: &Inputs,

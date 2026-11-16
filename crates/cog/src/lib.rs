@@ -1,10 +1,9 @@
 //! Cog board (W3): the saved layout, the game's two-phase totals and the
 //! objective scorer.
 //!
-//! Ported from `js/cogs/cog-board.js` in
-//! <https://github.com/Corgan/idleon-research-optimizer>. The board is 12x8
-//! slots; every cog can surround other slots with its `e`/`f`/`g`/`j` values,
-//! and the game applies those surrounds before it sums the base stats:
+//! The board is 12x8 slots; every cog can surround other slots with its
+//! `e`/`f`/`g`/`j` values, and the game applies those surrounds before it sums
+//! the base stats:
 //!
 //! 1. **Surround pass:** every directional cog adds its surround percentages to
 //!    the slots its direction reaches. Yin pieces only contribute while their
@@ -46,7 +45,7 @@ pub const BOARD_H: usize = 8;
 pub const BOARD_SIZE: usize = BOARD_W * BOARD_H;
 
 /// The direction a cog's surround bonus travels, as the save's `h` field names
-/// it. Indexes into the upstream `COG_MATRICES` order are kept in comments.
+/// it. Each variant's comment keeps its matrix index.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Direction {
     /// `0`: the four orthogonal neighbours.
@@ -73,7 +72,7 @@ pub enum Direction {
     Everything,
 }
 
-/// The offsets of each matrix direction, from the upstream `COG_MATRICES`.
+/// The offsets of each matrix direction.
 const ADJACENT: [(i32, i32); 4] = [(0, 1), (0, -1), (1, 0), (-1, 0)];
 const DIAGONAL: [(i32, i32); 4] = [(1, 1), (1, -1), (-1, -1), (-1, 1)];
 const LEFT: [(i32, i32); 6] = [(-1, 0), (-2, 0), (-1, 1), (-1, -1), (-2, 1), (-2, -1)];
@@ -217,7 +216,6 @@ impl Cog {
     }
 
     /// The Yin piece number (0-3), or `None` when the cog is not a Yin cog.
-    /// Upstream reads the last character of the name.
     pub(crate) fn yin_piece(&self) -> Option<usize> {
         if !self.yin && !self.name.starts_with("CogZA") {
             return None;
@@ -250,7 +248,7 @@ impl Cog {
         }
     }
 
-    /// The name the upstream page shows in its result and swap list.
+    /// The name the result and swap list show.
     pub fn display_name(&self) -> String {
         display_name(&self.name)
     }
@@ -311,8 +309,8 @@ impl Goal {
 
 /// The normalised weights of a weighted objective, one per [`Goal`].
 ///
-/// The weights sum to one. Upstream divides the three fields by their total and
-/// keeps the ratios; this build refuses the inputs it would silently replace.
+/// The weights sum to one: the three fields are divided by their total, keeping
+/// the ratios, and inputs that cannot be normalised are refused.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Weights {
     build: f64,
@@ -346,7 +344,7 @@ impl Weights {
         })
     }
 
-    /// Equal thirds, the upstream default.
+    /// Equal thirds.
     pub fn uniform() -> Self {
         Self::new(1.0, 1.0, 1.0).expect("equal weights are valid")
     }
@@ -421,7 +419,7 @@ pub struct WeightInputs {
 }
 
 impl Default for WeightInputs {
-    /// The upstream control defaults: 33 / 34 / 33.
+    /// The control defaults: 33 / 34 / 33.
     fn default() -> Self {
         Self {
             build: 33.0,
@@ -466,9 +464,8 @@ impl WeightInputs {
 pub enum Objective {
     /// One raw metric, the single-objective runs.
     Goal(Goal),
-    /// The weighted sum of each metric relative to a reference board, the
-    /// upstream `scoreBoard` weighted branch. A metric the reference board does
-    /// not have is left out, as upstream does.
+    /// The weighted sum of each metric relative to a reference board. A metric
+    /// the reference board does not have is left out.
     Weighted {
         weights: Weights,
         /// The metric values of the board the weights are read against, in
@@ -483,9 +480,9 @@ impl Objective {
         Self::Goal(goal)
     }
 
-    /// Weight the metrics against `reference`'s totals. Upstream normalises
-    /// against the save board, so a run scores one on that board and the
-    /// percentage improvement reads as a share of the save's own mix.
+    /// Weight the metrics against `reference`'s totals. Normalising against the
+    /// save board means a run scores one on that board and the percentage
+    /// improvement reads as a share of the save's own mix.
     pub fn weighted(weights: Weights, reference: &Board) -> Self {
         let totals = compute_totals(reference);
         Self::Weighted {
@@ -499,8 +496,7 @@ impl Objective {
     }
 
     /// The goal the greedy heuristics sort and bias for: the only goal, or the
-    /// heaviest weight. Ties keep the earlier goal in [`Goal::ALL`] order, as
-    /// the upstream `_dominantGoal` does.
+    /// heaviest weight. Ties keep the earlier goal in [`Goal::ALL`] order.
     pub fn dominant(&self) -> Goal {
         match self {
             Self::Goal(goal) => *goal,
@@ -783,7 +779,7 @@ pub fn goal_score(board: &Board, goal: Goal) -> f64 {
 ///
 /// A single goal is the raw metric. A weighted objective is
 /// `Σ weight × metric / reference`, skipping metrics the reference board does
-/// not have, exactly the upstream `scoreBoard` weighted branch.
+/// not have.
 pub fn score(board: &Board, objective: &Objective) -> f64 {
     match objective {
         Objective::Goal(goal) => goal_score(board, *goal),
@@ -941,7 +937,7 @@ mod tests {
     }
 
     #[test]
-    fn display_names_match_the_upstream_labels() {
+    fn display_names_match_the_game_labels() {
         assert_eq!(display_name("Player_Ana"), "Ana");
         assert_eq!(display_name("CogY"), "Yang Cog");
         assert_eq!(display_name("CogZA01"), "Yin Cog");

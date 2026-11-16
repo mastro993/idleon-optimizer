@@ -5,7 +5,7 @@ use gpui::{Hsla, rgb};
 use idleon_common::curve::js_round;
 
 /// A projected span of hours as `6h 17m`, `4m 5s`, or a dash when it is endless:
-/// the upstream `fmtTimeFull` the jar tier columns print, where [`duration`] is
+/// the full time label the jar tier columns print, where [`duration`] is
 /// the coarse `6.28h` style.
 pub fn projection(hours: f64) -> String {
     if !hours.is_finite() || hours <= 0.0 {
@@ -14,10 +14,10 @@ pub fn projection(hours: f64) -> String {
     ely_duration((hours * 3600.0).round() as u64, DurationStyle::Compact)
 }
 
-/// A `#rgb` or `#rrggbb` colour from the upstream data as a theme colour.
+/// A `#rgb` or `#rrggbb` colour from the game data as a theme colour.
 pub fn hex(color: &str) -> Hsla {
     let digits = color.trim_start_matches('#');
-    // The upstream data writes both shorthands; `#f44` is `#ff4444`.
+    // The data writes both shorthands; `#f44` is `#ff4444`.
     let expanded: String = match digits.len() {
         3 => digits.chars().flat_map(|digit| [digit, digit]).collect(),
         _ => digits.to_string(),
@@ -60,7 +60,7 @@ pub fn scale(value: f64) -> (f64, &'static str) {
     }
 }
 
-/// A game value as `1.23M`, `845.0` or `0.0`, matching the upstream `fmtVal`.
+/// A game value as `1.23M`, `845.0` or `0.0`.
 pub fn value(value: f64) -> String {
     if value.abs() >= 1e24 {
         return format!("{value:.2e}");
@@ -82,7 +82,7 @@ pub fn count(value: u64) -> String {
     group(&value.to_string())
 }
 
-/// The upstream `fmtMonsterCash` tiers, used by the coin multiplier card.
+/// The monster cash tiers, used by the coin multiplier card.
 ///
 /// It is the game's own `NotateNumber` ladder: the Big chain above 1e16, the
 /// B/M suffixes up to it, and the `MultiplierInfo` decimals below 1e7.
@@ -135,7 +135,7 @@ fn js_ceil(value: f64) -> f64 {
     if ceil == 0.0 { 0.0 } else { ceil }
 }
 
-/// The upstream `fmtVal` tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
+/// The shorthand tiers: `1.23K`, `4.56M`, `7.89QQ` or a signed exponent.
 pub fn fmt_val(value: f64) -> String {
     let (scaled, suffix) = scaled(value);
     if value.abs() >= 1e6 {
@@ -145,10 +145,10 @@ pub fn fmt_val(value: f64) -> String {
     }
 }
 
-/// The upstream `fmtDmgRange`: the game's character-sheet notation.
+/// The game's character-sheet damage notation.
 ///
-/// The tiers are the upstream `DMG_TIERS` table: a raw integer range below ten
-/// million, then thousands/millions/billions/trillions in the game's own
+/// The tiers are a raw integer range below ten million, then
+/// thousands/millions/billions/trillions in the game's own
 /// stepping, quadrillions behind the gem prefix, and an exponent fallback.
 pub fn damage_range(min: f64, max: f64) -> String {
     const TIERS: [(f64, f64, f64, &str, &str); 13] = [
@@ -176,11 +176,11 @@ pub fn damage_range(min: f64, max: f64) -> String {
     format!("{min}~{max}")
 }
 
-/// The upstream `fmtExact`: the whole number with thousands separators.
+/// The whole number with thousands separators.
 ///
-/// JavaScript's `toLocaleString` prints 17 significant digits and pads the
-/// rest with zeros once a double is past a quadrillion, so this keeps the same
-/// digits instead of showing the binary tail Rust's `{:.0}` prints.
+/// Past a quadrillion a double holds only 17 significant digits, so this
+/// prints those and pads the rest with zeros instead of showing the binary
+/// tail Rust's `{:.0}` prints.
 pub fn exact(value: f64) -> String {
     if !value.is_finite() {
         return "—".into();
@@ -221,7 +221,7 @@ fn group(whole: &str) -> String {
     out
 }
 
-/// A value and its suffix, in the upstream `fmtVal` shorthand.
+/// A value and its suffix, in the [`fmt_val`] shorthand.
 pub fn scaled(value: f64) -> (f64, String) {
     let magnitude = value.abs();
     if magnitude >= 1e24 {
@@ -265,7 +265,7 @@ pub fn hours(value: f64) -> String {
     }
 }
 
-/// The statue calculator's `time()` label from `statue-calc.html`: `Ready` for
+/// The statue calculator's time label: `Ready` for
 /// a met target, `Add rate` when no farming rate is entered, then seconds,
 /// minutes, hours, days and years.
 pub fn statue_time(hours: f64) -> String {
@@ -290,8 +290,8 @@ pub fn statue_time(hours: f64) -> String {
     format!("{}y", fmt_val(hours / 8760.0))
 }
 
-/// A large number as `1.23M`, `4.56T` or `7.89QQ`, matching the upstream
-/// `fmtNum` tiers the farming page uses.
+/// A large number as `1.23M`, `4.56T` or `7.89QQ`, in the tiers the farming
+/// page uses.
 pub fn number(value: f64) -> String {
     if !value.is_finite() {
         return "—".into();
@@ -353,7 +353,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn values_and_percentages_follow_the_upstream_display() {
+    fn values_and_percentages_use_the_shorthand_display() {
         assert_eq!(value(0.0), "0.0");
         assert_eq!(value(845.0), "845.0");
         assert_eq!(value(121_945.0), "121.9K");
@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn farming_numbers_chances_and_durations_read_like_upstream() {
+    fn farming_numbers_chances_and_durations_read_as_labels() {
         assert_eq!(number(845.0), "845");
         assert_eq!(number(12_345.0), "12.3K");
         assert_eq!(number(4.5e9), "4.50B");
@@ -438,7 +438,7 @@ mod tests {
     }
 
     #[test]
-    fn statue_times_read_like_the_upstream_labels() {
+    fn statue_times_read_as_short_labels() {
         assert_eq!(statue_time(0.0), "Ready");
         assert_eq!(statue_time(f64::INFINITY), "Add rate");
         assert_eq!(statue_time(1.0 / 3600.0), "1s");
@@ -450,7 +450,7 @@ mod tests {
     }
 
     #[test]
-    fn monster_cash_matches_the_upstream_ladder() {
+    fn monster_cash_follows_the_game_ladder() {
         assert_eq!(monster_cash(0.5), "0.50");
         assert_eq!(monster_cash(1234.567), "1234.57");
         assert_eq!(monster_cash(1e6), "1000000.00");
@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn damage_ranges_use_the_game_character_sheet_tiers() {
-        // The upstream fixture's min and max, formatted by `fmtDmgRange`.
+        // A late-game min and max.
         let min = 1.235_462_757_427_009e31;
         let max = 1.544_328_446_783_761e31;
         assert_eq!(damage_range(min, max), "💎12354628M~15443285M");

@@ -1340,9 +1340,5 @@
    "name": "Daily Worship",
    "data": "K4|"
   }
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "game": 64
- }
+ ]
 }

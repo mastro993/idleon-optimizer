@@ -1,4 +1,4 @@
-//! The game's universal formula evaluator, ported from `js/formulas.js`.
+//! The game's universal formula evaluator.
 
 /// `ArbitraryCode5Inputs`: the curve type a data row names, its two
 /// coefficients and the level.

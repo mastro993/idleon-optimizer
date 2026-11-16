@@ -1,24 +1,21 @@
 //! The expedition run: seeded floor generation, digging, elixirs, party
 //! switching, exits and the loot a run banks.
 //!
-//! Ported from `js/stats/systems/w7/spelunk-expedition.js`. Upstream drives the
-//! expedition through a 10 ms callback loop with a seeded local generator; this
-//! port keeps the tick, the generator, the task queue and the order of every
-//! draw, so the same inputs and seed reproduce the same run — which
-//! `fixtures/spelunking.json` pins against the JS.
+//! The expedition advances through a 10 ms tick with a seeded local generator,
+//! a task queue and a fixed order for every draw, so the same inputs and seed
+//! reproduce the same run.
 //!
-//! The phased Amber policy (`amber-farm`) ports the upstream `amber` object: the
-//! full-clear buildup, the deliberate stamina burn from the dump depth, the
-//! orange activation at the finishing reserve, the boosted harvest and the rope
-//! search. Every phase change is recorded with its reason, so a result explains
-//! the policy it ran.
+//! The phased Amber policy (`amber-farm`) covers the full-clear buildup, the
+//! deliberate stamina burn from the dump depth, the orange activation at the
+//! finishing reserve, the boosted harvest and the rope search. Every phase
+//! change is recorded with its reason, so a result explains the policy it ran.
 
 use super::depth::{dig_power, entry_effects, hit_damage, rock_stats, shop, stamina_multiplier};
 use super::{Cave, Config, ConfigError, Inputs, Policy, Tool, ToolChoice, data, js_round};
 use idleon_common::Control;
 use idleon_common::Progress;
 
-/// The upstream `step()` default, and the tick a run advances at.
+/// The tick a run advances at.
 const TICK_MS: i64 = 10;
 /// The 144 tile slots one floor uses: 12 columns of 12 rows.
 const SLOTS: usize = 144;
@@ -109,7 +106,7 @@ pub enum ExitKind {
 }
 
 impl ExitKind {
-    /// The upstream exit name.
+    /// The exit id.
     pub fn id(self) -> &'static str {
         match self {
             ExitKind::Toll => "toll",
@@ -182,7 +179,7 @@ pub enum AmberPhase {
 }
 
 impl AmberPhase {
-    /// The upstream phase id.
+    /// The phase id.
     pub fn id(self) -> &'static str {
         match self {
             AmberPhase::Buildup => "buildup",
@@ -193,7 +190,7 @@ impl AmberPhase {
         }
     }
 
-    /// The menu label, matching the upstream page.
+    /// The menu label.
     pub fn label(self) -> &'static str {
         match self {
             AmberPhase::Buildup => "Full-clear buildup",
@@ -305,7 +302,7 @@ pub enum EventKind {
 }
 
 impl EventKind {
-    /// The upstream event name.
+    /// The event id.
     pub fn id(&self) -> &'static str {
         match self {
             EventKind::Floor => "floor",
@@ -361,7 +358,7 @@ pub struct RunResult {
     pub error: Option<String>,
 }
 
-/// The upstream `_rng`: a 32-bit mulberry32 stream with a draw counter.
+/// A 32-bit mulberry32 stream with a draw counter.
 #[derive(Clone, Debug)]
 struct Rng {
     state: u32,
@@ -1524,7 +1521,7 @@ impl<'a> Run<'a> {
         });
     }
 
-    /// `useElixir`: spend one belt slot's charge.
+    /// Spend one belt slot's charge.
     fn use_elixir(&mut self, slot: usize) -> bool {
         let Some(id) = self.config.elixirs.get(slot).copied() else {
             return false;
@@ -1591,7 +1588,7 @@ impl<'a> Run<'a> {
         true
     }
 
-    /// `chooseElixir`: whether the party drinks one charge before digging.
+    /// Whether the party drinks one charge before digging.
     fn choose_elixir(&mut self) -> bool {
         let manual = self.config.policy != Policy::Auto;
         // The Amber policy drinks its double-Amber oranges ahead of everything.
@@ -2168,7 +2165,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// `advanceEffects`: tick the delayed effects and fire the due ones.
+    /// Tick the delayed effects and fire the due ones.
     fn advance_effects(&mut self) {
         for pending in &mut self.pending {
             let remaining = pending.remaining() - 1;
@@ -2262,7 +2259,7 @@ impl<'a> Run<'a> {
         self.pending.retain(|pending| pending.remaining() >= 0);
     }
 
-    /// One 10 ms frame of the upstream callback loop.
+    /// One 10 ms frame of the run loop.
     fn tick(&mut self) {
         self.time += 1;
         let mut index = 0;
@@ -2333,7 +2330,7 @@ impl<'a> Run<'a> {
         }
     }
 
-    /// The exhaustion, switch and decision block of the upstream tick.
+    /// The exhaustion, switch and decision block of the tick.
     fn tick_stamina(&mut self) {
         if self.stamina[self.active] <= 0.0 {
             if self.effects[2] > 0.0 && self.rng.next() < 0.5 {
@@ -2403,7 +2400,7 @@ pub fn simulate(
     }
 }
 
-/// The notes a run carries, matching `buildSpelunkInputs`.
+/// The notes a run carries.
 fn notes(input: &Inputs, config: &Config) -> Vec<String> {
     let mut notes = vec![
         "Native 10 ms callback and animated targeting model, with a seeded local RNG stream. \

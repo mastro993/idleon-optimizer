@@ -1,8 +1,7 @@
 //! The Divinity minor link and Crop Scientist coin terms.
 //!
-//! Ported from `computeDivinityMinor` in `js/stats/systems/w5/divinity.js` and
-//! `computeCropSC` in `js/stats/systems/w6/farming.js`. Both are account-wide,
-//! so the coin groups read them once for every character row:
+//! Both are account-wide, so the coin groups read them once for every
+//! character row:
 //!
 //! - a Harriep minor link pays `max(1, Y2 bubble) × (1 + Coral Kid 3 / 100) ×
 //!   Div Lv / (60 + Div Lv) × god base` for every linked character, or for
@@ -11,7 +10,7 @@
 //! - Crop Scientist 4 pays `15 × crops × (1 + mainframe 17 / 100) ×
 //!   (1 + (Grimoire 22 + exotic 40 + Vault 79) / 100)` behind emporium item 23.
 //!
-//! The Y2 bubble is `finalBubbleValByKey('Y2ACTIVE', …)`: its own curve times
+//! The Y2 bubble (`Y2ACTIVE`) is its own curve times
 //! the equipped check. It is a large bubble, so Prisma and the big-bubble pass
 //! never apply to it.
 
@@ -27,7 +26,7 @@ const POCKETS: [usize; 2] = [29, 30];
 const CROP_SCIENTIST_EMPORIUM: usize = 23;
 const CROP_SCIENTIST_CROPS: f64 = 15.0;
 
-/// `computeDivinityMinor(-1, style, saveData)`: the total minor-link bonus.
+/// The account's total minor-link bonus for one Divinity style.
 pub fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
     let Some(target) =
         (0..decoder.god_count()).find(|god| decoder.god_type(*god as f64) == style as f64)
@@ -56,11 +55,10 @@ pub fn minor(decoder: &Decoder<'_>, style: i32) -> f64 {
     total
 }
 
-/// `computeDivinityMinor(character, style, saveData)`: one character's own
-/// link. This is the share the talent system's AllTalentLVz reads for Arctis
-/// (style 2).
+/// One character's own minor link for one Divinity style. This is the share
+/// the talent system's AllTalentLVz reads for Arctis (style 2).
 ///
-/// A link the save has not assigned is `-1` upstream, not zero, so an absent
+/// A link the save has not assigned is `-1`, not zero, so an absent
 /// row never pays.
 pub fn minor_for(decoder: &Decoder<'_>, character: usize, style: i32) -> f64 {
     let Some(target) =
@@ -133,7 +131,7 @@ fn minor_link(decoder: &Decoder<'_>, character: usize, god: usize, y2: f64, cora
     y2.max(1.0) * ((1.0 + coral_kid / 100.0) * div_lv / (60.0 + div_lv)) * base
 }
 
-/// `finalBubbleValByKey('Y2ACTIVE', character, saveData)`.
+/// One character's Y2 bubble (`Y2ACTIVE`) value.
 fn y2_bubble(decoder: &Decoder<'_>, character: usize) -> f64 {
     let save = decoder.save();
     // `CauldronInfo` rows can be sparse objects, so read row 3 through the
@@ -156,7 +154,7 @@ fn y2_bubble(decoder: &Decoder<'_>, character: usize) -> f64 {
     decoder.y2_bubble(level)
 }
 
-/// `computeCropSC(4, saveData)`: Coins from Monsters.
+/// Crop Scientist 4: Coins from Monsters.
 pub fn crop_scientist(decoder: &mut Decoder<'_>) -> f64 {
     if decoder.emporium(CROP_SCIENTIST_EMPORIUM) <= 0.0 {
         return 0.0;
@@ -166,7 +164,7 @@ pub fn crop_scientist(decoder: &mut Decoder<'_>) -> f64 {
     CROP_SCIENTIST_CROPS * crop_count(decoder) as f64 * multiplier
 }
 
-/// `farmCropCount`: `Object.keys(FarmCrop).length`.
+/// The crops the farm has discovered: the number of `FarmCrop` entries.
 pub fn crop_count(decoder: &Decoder<'_>) -> usize {
     match fields::field(decoder.save(), "FarmCrop") {
         Some(serde_json::Value::Object(crops)) => crops.len(),

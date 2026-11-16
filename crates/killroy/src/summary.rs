@@ -1,15 +1,14 @@
 //! Averages the trials into per-row means, deltas against the baseline and the
 //! best option each baseline carries.
 //!
-//! Ports `summarizeKillroy` from `js/stats/systems/common/killroy-planner.js`.
 //! Every row averages the same seeds, so an average is a mean per attempt, and a
 //! `+1` row's delta is the difference against its own baseline.
 
 use super::planner::{Plan, Row};
 use super::trial::{Record, trial};
 
-/// The trial seeds `trials` attempts derive from a base seed, matching the
-/// upstream `((first + i - 1) % 0xffffffff) + 1`.
+/// The trial seeds `trials` attempts derive from a base seed:
+/// `((first + i - 1) % 0xffffffff) + 1`.
 pub fn trial_seeds(base: u64, trials: usize) -> Vec<u64> {
     let first = base.max(1);
     (0..trials.max(1) as u64)

@@ -1,9 +1,8 @@
 //! Named loadouts: the item keys and talent levels the project JSON keeps.
 //!
-//! Upstream stores named setups per character in browser storage
-//! (`js/ui/combat-sim-loadouts.js`). A preset here is data only; applying one
-//! edits the loadout the same way equipping each slot by hand does, and the app
-//! keeps the list in the project's section config.
+//! A preset is data only; applying one edits the loadout the same way equipping
+//! each slot by hand does, and the app keeps the list in the project's section
+//! config.
 
 use super::data;
 use super::loadout::Loadout;

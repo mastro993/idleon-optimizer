@@ -8,19 +8,13 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.
+Implement Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.
 
 ## Current build
 
-- CK-01 Mastery EXP and upgrade comparison: the mastery rank, free points, EXP rate and EXP to the next level with the hours it takes, the five EXP upgrades ranked by what one more point buys, and the whole rate as a formula tree, all decoded from the save and pinned against the upstream page's own numbers.
-- CK-02 Optimal daily distribution: `optimizeDistribution` re-plans the daily budget one point at a time onto the upgrade with the biggest marginal multiplier, for the rate at the current rank or the rate the same points buy at the rank that unlocks the next upgrade; the plan is copyable as text.
-- CK-03 Yellow point allocator: `optimizeForGoal` spreads the account's yellow points across the meals of the selected goal — meal level, per-level bonus, the meal multiplier and each meal's ribbon factor — with the page's 44 goals, the character context the stat goals scale with, the kitchen aggregate, and a clamped budget that is rejected rather than overspent.
-
-## Upstream sources
-
-- cooking-mastery-calc.html
-- js/stats/systems/common/cooking.js
-- js/stats/systems/common/meal-impact.js
+- CK-01 Mastery EXP and upgrade comparison: the mastery rank, free points, EXP rate and EXP to the next level with the hours it takes, the five EXP upgrades ranked by what one more point buys, and the whole rate as a formula tree, all decoded from the save.
+- CK-02 Optimal daily distribution: the distribution optimizer re-plans the daily budget one point at a time onto the upgrade with the biggest marginal multiplier, for the rate at the current rank or the rate the same points buy at the rank that unlocks the next upgrade; the plan is copyable as text.
+- CK-03 Yellow point allocator: the allocator spreads the account's yellow points across the meals of the selected goal — meal level, per-level bonus, the meal multiplier and each meal's ribbon factor — with its 44 goals, the character context the stat goals scale with, the kitchen aggregate, and a clamped budget that is rejected rather than overspent.
 
 ## UI
 
@@ -58,7 +52,6 @@ Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and break
 
 Acceptance:
 
-- Values match upstream.
 - Upgrade ranking is stable.
 - Breakdown sums to the total.
 
@@ -88,6 +81,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Allocator invariant.
 - Harness.

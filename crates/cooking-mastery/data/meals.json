@@ -444,11 +444,5 @@
    "category": "MineCurr",
    "effect": "+% Mine Currency gain"
   }
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/data/game/customlists.js"
-  ]
- }
+ ]
 }

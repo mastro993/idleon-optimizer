@@ -1,9 +1,9 @@
 //! The results document the section copies as JSON.
 //!
-//! The upstream results screen has no export, so this document is the section's
-//! own, versioned shape: the run's inputs and assumptions, the saved buffs each
-//! selected character starts with, and one entry per configuration with its
-//! average gains, its delta against the baseline and the best marker.
+//! The document has its own versioned shape: the run's inputs and assumptions,
+//! the saved buffs each selected character starts with, and one entry per
+//! configuration with its average gains, its delta against the baseline and the
+//! best marker.
 //!
 //! Nothing here reads the clock or the window state, so exporting the same plan
 //! twice writes the same bytes.

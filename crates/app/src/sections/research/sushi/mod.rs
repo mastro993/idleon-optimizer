@@ -2,7 +2,7 @@
 //! currency breakdown, the best-upgrade ranking and the sushi tier table.
 //!
 //! The formulas and the save decode live in `idleon-sushi`; this module owns
-//! the tab state the window keeps and renders the upstream subtabs.
+//! the tab state the window keeps and renders the subtabs.
 
 mod best;
 mod currency;
@@ -19,7 +19,7 @@ use idleon_research::model::Simulation;
 use idleon_save::Save;
 use idleon_sushi::{Inputs, inputs};
 
-/// The tab's own subtabs, in the upstream order.
+/// The tab's own subtabs, in order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {

@@ -122,9 +122,8 @@ impl Observations {
 
 /// Save-derived multipliers that are not on the grid.
 ///
-/// Shapes the upstream save context and `simTotalExpWith` read: the fields
-/// named after `js/save/context.js` keep that meaning here. Every value is
-/// decoded from the save by `idleon_account::account`; none is guessed.
+/// The save context the EXP rate reads. Every value is decoded from the save
+/// by `idleon_account::account`; none is guessed.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SimContext {
@@ -135,8 +134,7 @@ pub struct SimContext {
     /// The all-bonus multiplier every grid square gets (`1.0` is none).
     pub all_bonus_multi: f64,
     /// Additive account bonuses the grid does not provide, as a percentage.
-    /// Upstream calls this `extPctExSticker`: the additive pool with the
-    /// sticker, grid and mastery terms removed.
+    /// The additive pool with the sticker, grid and mastery terms removed.
     pub extra_pct: f64,
     /// Companion 52's bonus, already folded with companion 153's.
     pub companion_52: f64,
@@ -201,7 +199,7 @@ pub struct SimContext {
     /// Consecutive failed observation rolls, `OptLacc[514]`; `None` when the
     /// save lacks the entry.
     pub observation_failed_rolls: Option<f64>,
-    /// Jelly reward 12's extra maximum roll (`jellyObservationMaxRoll`).
+    /// Jelly reward 12's extra maximum roll.
     pub jelly_observation_max_roll: f64,
     /// Event shop items owned, by index.
     pub event_shop: Vec<u8>,
@@ -391,9 +389,8 @@ pub enum Target {
 }
 
 impl Target {
-    /// Why this target cannot run, as upstream validates the run button: a
-    /// level target must be above the current research level and an hour
-    /// target must be positive.
+    /// Why this target cannot run: a level target must be above the current
+    /// research level and an hour target must be positive.
     pub fn validate(self, research_level: u32) -> Result<(), String> {
         match self {
             Target::Level(level) if level <= research_level => Err(format!(
@@ -407,7 +404,7 @@ impl Target {
         }
     }
 
-    /// The target with the upstream bounds applied, so a stale level after an
+    /// The target with its bounds applied, so a stale level after an
     /// import keeps running instead of turning the Optimize button off.
     pub fn normalized(self, research_level: u32) -> Self {
         match self {
@@ -418,15 +415,15 @@ impl Target {
     }
 }
 
-/// The upstream run toggles that change what a projection simulates.
+/// The run toggles that change what a projection simulates.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SimOptions {
     /// Unlock every observation whose research requirement is met as the run
-    /// levels up, the upstream *assume observations unlocked* scenario.
+    /// levels up: the *assume observations unlocked* scenario.
     pub assume_observations: bool,
     /// Value an insight level by the EXP rate it permanently buys, the
-    /// upstream extended break-even lookahead, instead of only its speed.
+    /// extended break-even lookahead, instead of only its speed.
     pub extended_insight: bool,
     /// Register in the daily tournament and add 12h of research time at each
     /// 24h boundary.
@@ -437,7 +434,7 @@ impl Default for SimOptions {
     fn default() -> Self {
         Self {
             assume_observations: false,
-            // Upstream ships the extended lookahead checked.
+            // The extended lookahead is on unless the user turns it off.
             extended_insight: true,
             include_tournament: false,
         }

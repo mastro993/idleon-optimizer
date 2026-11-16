@@ -1,8 +1,5 @@
 //! Production: the shared rate every slot fills at, its multipliers and the
 //! requirement each jar type takes.
-//!
-//! Ported from `productionSlots`, `productionPerHR`, `productionPerHRBreakdown`,
-//! `productionREQ` and `timeToTier` in `js/stats/systems/w5/jar.js`.
 
 use super::{
     BASE_PRODUCTION_PER_HOUR, Jar, ProductionTerm, TYPE_NAMES, log, measurement, row, state,
@@ -10,7 +7,7 @@ use super::{
 };
 
 impl Jar {
-    /// `productionSlots`: one slot, two with Big Jar Mach III, three with VI.
+    /// One slot, two with Big Jar Mach III, three with VI.
     pub fn production_slots(&self) -> usize {
         if self.upgrade(upgrade::SLOTS_THREE) {
             3
@@ -21,22 +18,22 @@ impl Jar {
         }
     }
 
-    /// `productionSlotType`: the jar type a slot is filling.
+    /// The jar type a slot is filling.
     pub fn slot_type(&self, slot: usize) -> usize {
         (self.cell(row::SLOTS, slot).round().max(0.0) as usize).min(TYPE_NAMES.len() - 1)
     }
 
-    /// `productionSlotProgress`: the progress a slot has banked toward its next jar.
+    /// The progress a slot has banked toward its next jar.
     pub fn slot_progress(&self, slot: usize) -> f64 {
         self.cell(row::SLOTS, slot + 3)
     }
 
-    /// `jarsProducedOfType`: how many jars of a type the account has broken.
+    /// How many jars of a type the account has broken.
     pub fn jars_produced(&self, jar_type: usize) -> f64 {
         self.cell(row::STATE, state::JARS_PRODUCED + jar_type)
     }
 
-    /// `productionPerHR`: progress every slot shares, before any bonus.
+    /// Progress every slot shares, before any bonus.
     pub fn production_per_hour(&self) -> f64 {
         let legend = self.ext.legend_pts;
         let collectibles = self.collectible_bonus(1, legend)
@@ -48,8 +45,8 @@ impl Jar {
         BASE_PRODUCTION_PER_HOUR * (1.0 + bonus / 100.0) * (1.0 + light_speed)
     }
 
-    /// `productionPerHRBreakdown`: the bonuses [`Self::production_per_hour`]
-    /// applies, in the upstream order, without the ones that grant nothing.
+    /// The bonuses [`Self::production_per_hour`]
+    /// applies, in breakdown order, without the ones that grant nothing.
     pub fn production_terms(&self) -> Vec<ProductionTerm> {
         let legend = self.ext.legend_pts;
         let mut terms = Vec::new();
@@ -82,7 +79,7 @@ impl Jar {
         terms
     }
 
-    /// `productionREQ`: the progress a jar of `jar_type` needs, after Big Jar
+    /// The progress a jar of `jar_type` needs, after Big Jar
     /// Mach VII and the production line.
     pub fn production_requirement(&self, jar_type: usize) -> f64 {
         let (mach_seven, line) = self.requirement_reduction(jar_type);
@@ -98,7 +95,7 @@ impl Jar {
         (mach_seven, line)
     }
 
-    /// `timeToTier`: hours one slot needs to reach `tier` of `jar_type`, counting
+    /// Hours one slot needs to reach `tier` of `jar_type`, counting
     /// the tiers below it.
     pub fn time_to_tier(&self, jar_type: usize, tier: u32) -> f64 {
         let needed = self.production_requirement(jar_type) * 10_f64.powi(tier as i32);

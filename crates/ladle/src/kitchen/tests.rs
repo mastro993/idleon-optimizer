@@ -161,7 +161,7 @@ fn a_stock_row_shorter_than_the_levels_holds_none_of_the_missing_meals() {
 }
 
 #[test]
-fn the_horizon_clamps_to_the_upstream_range() {
+fn the_horizon_clamps_to_its_range() {
     let reset = reset();
     let short = plan(
         &reset,

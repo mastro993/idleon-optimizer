@@ -1,15 +1,12 @@
 //! The All Stats Dashboard's category breakdowns.
 //!
-//! Ported from the descriptor registry in `js/stats/registry.js` and the
-//! category tabs in `stats-all.html`: every upstream descriptor keeps its id,
-//! name, scope and category, and the tabs read the upstream `CATEGORY_ORDER`
-//! and `CATEGORY_LABELS` tables. A descriptor whose formula this build does
-//! not port resolves to [`Resolution::Unavailable`] with the upstream source
-//! named, so a category renders every row instead of hiding the gaps.
+//! Every descriptor keeps its id, name, scope and category, and the tabs follow
+//! the category order and labels. A descriptor whose formula this build does
+//! not model resolves to [`Resolution::Unavailable`] with the row named, so a
+//! category renders every row instead of hiding the gaps.
 //!
-//! The ported formulas live beside this module: [`capacity`] carries the eight
-//! carry-capacity descriptors (`js/stats/defs/carry-capacity.js` and
-//! `js/stats/systems/common/carry-capacity.js`), [`research`] the two research
+//! The modelled formulas live beside this module: [`capacity`] carries the eight
+//! carry-capacity descriptors, [`research`] the two research
 //! descriptors the simulator already computes, [`totals`] the four base-stat
 //! totals and [`damage`] the maximum damage, both from `idleon-stats-engine`.
 
@@ -24,7 +21,7 @@ use idleon_save::Save;
 
 pub use capacity::CapacityKind;
 
-/// A breakdown category, in the upstream `CATEGORY_ORDER`.
+/// A breakdown category, in tab order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Category {
     Combat,
@@ -52,7 +49,7 @@ impl Category {
         Category::Progression,
     ];
 
-    /// The upstream category key.
+    /// The category key.
     pub fn id(self) -> &'static str {
         match self {
             Category::Combat => "combat",
@@ -67,7 +64,7 @@ impl Category {
         }
     }
 
-    /// The upstream tab label.
+    /// The tab label.
     pub fn label(self) -> &'static str {
         match self {
             Category::Combat => "Combat",
@@ -88,7 +85,7 @@ impl Category {
     }
 }
 
-/// What a descriptor resolves against: upstream's `scope`.
+/// What a descriptor resolves against.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Scope {
     Character,
@@ -98,7 +95,7 @@ pub enum Scope {
 }
 
 impl Scope {
-    /// The badge text upstream's `_scopeInfo` uses.
+    /// The scope's badge text.
     pub fn label(self) -> &'static str {
         match self {
             Scope::Character => "Character",
@@ -112,13 +109,13 @@ impl Scope {
 /// One descriptor's result: its value and formula tree, or why it has none.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Resolution {
-    /// The ported formula's value and its formula tree.
+    /// The modelled formula's value and its formula tree.
     Value {
         tree: FormulaNode,
-        /// The upstream `partial` reason, when the total leaves a system out.
+        /// The `partial` reason, when the total leaves a system out.
         partial: Option<String>,
     },
-    /// The descriptor's formula is not ported; the reason names the source.
+    /// The descriptor's formula is not modelled; the reason names the row.
     Unavailable {
         /// Why no value is shown.
         reason: String,
@@ -143,36 +140,25 @@ impl Resolution {
     }
 }
 
-/// The repository every ported definition is read from.
-pub const UPSTREAM: &str = "https://github.com/Corgan/idleon-research-optimizer/blob/main/";
-
-/// One row of the dashboard: an upstream descriptor and its result.
+/// One row of the dashboard: a descriptor and its result.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Breakdown {
     pub id: &'static str,
     pub name: &'static str,
     pub category: Category,
     pub scope: Scope,
-    /// The upstream definition this row ports, such as `js/stats/defs/damage.js`.
-    pub source: &'static str,
     pub resolution: Resolution,
 }
 
 impl Breakdown {
-    /// Where the row's upstream definition lives: the repository the port
-    /// reads, at the path the row names.
-    pub fn source_url(&self) -> String {
-        format!("{UPSTREAM}{}", self.source)
-    }
-
-    /// Whether `query` names this row, its category, its upstream source or one
+    /// Whether `query` names this row, its category or one
     /// of its formula terms, case-insensitively.
     pub fn matches(&self, query: &str) -> bool {
         let query = query.trim().to_lowercase();
         if query.is_empty() {
             return false;
         }
-        [self.id, self.name, self.source, self.scope.label()]
+        [self.id, self.name, self.scope.label()]
             .into_iter()
             .chain(std::iter::once(self.category.label()))
             .any(|field| field.to_lowercase().contains(&query))
@@ -223,14 +209,14 @@ impl<'a> Inputs<'a> {
     }
 }
 
-/// The dashboard's descriptors, one per upstream row, in registry order.
+/// The dashboard's descriptors, in registry order.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Sheet {
     descriptors: Vec<Breakdown>,
 }
 
 impl Sheet {
-    /// Resolve every upstream descriptor against the save and the context.
+    /// Resolve every descriptor against the save and the context.
     pub fn build(inputs: &Inputs<'_>) -> Self {
         let descriptors = SPECS
             .iter()
@@ -243,7 +229,7 @@ impl Sheet {
                         reason: format!(
                             "{} is not modelled yet: it needs a system this build \
                              does not decode.",
-                            spec.source
+                            spec.name
                         ),
                     });
                 Breakdown {
@@ -251,7 +237,6 @@ impl Sheet {
                     name: spec.name,
                     category: spec.category,
                     scope: spec.scope,
-                    source: spec.source,
                     resolution,
                 }
             })
@@ -271,7 +256,7 @@ impl Sheet {
             .filter(move |row| row.category == category)
     }
 
-    /// One descriptor by its upstream id.
+    /// One descriptor by its id.
     pub fn get(&self, id: &str) -> Option<&Breakdown> {
         self.descriptors.iter().find(|row| row.id == id)
     }
@@ -290,452 +275,349 @@ impl Sheet {
     }
 }
 
-/// A descriptor's fixed metadata, as the upstream registry declares it.
+/// A descriptor's fixed metadata, as the registry declares it.
 struct Spec {
     id: &'static str,
     name: &'static str,
     category: Category,
     scope: Scope,
-    source: &'static str,
 }
 
-const fn spec(
-    id: &'static str,
-    name: &'static str,
-    category: Category,
-    scope: Scope,
-    source: &'static str,
-) -> Spec {
+const fn spec(id: &'static str, name: &'static str, category: Category, scope: Scope) -> Spec {
     Spec {
         id,
         name,
         category,
         scope,
-        source,
     }
 }
 
-/// Every descriptor `allDescriptors()` returns, in its own order.
+/// Every descriptor, in registry order.
 const SPECS: [Spec; 60] = [
     spec(
         "drop-rate",
         "Drop Rate",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/drop-rate.js",
     ),
     spec(
         "voting-multi",
         "Voting Multiplier",
         Category::Multiplier,
         Scope::Account,
-        "js/stats/defs/voting-multi.js",
     ),
     spec(
         "gfood-multi",
         "Golden Food Multi",
         Category::Multiplier,
         Scope::Character,
-        "js/stats/defs/gfood-multi.js",
     ),
     spec(
         "research-exp",
         "Research EXP Multiplier",
         Category::Research,
         Scope::Account,
-        "js/stats/defs/research-exp.js",
     ),
     spec(
         "research-afk-gains",
         "Research AFK Gains Rate",
         Category::Research,
         Scope::Account,
-        "js/stats/defs/research-afk-gains.js",
     ),
     spec(
         "sushi-bucks",
         "Sushi Bucks/hr",
         Category::Currency,
         Scope::Account,
-        "js/stats/defs/sushi-bucks.js",
     ),
     spec(
         "minehead-currency",
         "Minehead Currency/hr",
         Category::Currency,
         Scope::Account,
-        "js/stats/defs/minehead-currency.js",
     ),
     spec(
         "coin-multi",
         "Coin Multiplier",
         Category::Multiplier,
         Scope::CharacterMap,
-        "js/stats/defs/coin-multi.js",
     ),
     spec(
         "monster-exp",
         "Monster EXP Multiplier",
         Category::Multiplier,
         Scope::CharacterMap,
-        "js/stats/defs/monster-exp.js",
     ),
     spec(
         "kill-per-kill",
         "Kill Per Kill (Multikill)",
         Category::Multiplier,
         Scope::CharacterMap,
-        "js/stats/defs/kill-per-kill.js",
     ),
     spec(
         "fighting-afk",
         "Fighting AFK Rate",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/fighting-afk.js",
     ),
     spec(
         "skill-afk",
         "Skill AFK Rate",
         Category::Rate,
         Scope::CharacterMapSkill,
-        "js/stats/defs/skill-afk.js",
     ),
     spec(
         "damage",
         "Damage (Normal)",
         Category::Stat,
         Scope::CharacterMap,
-        "js/stats/defs/damage.js",
     ),
     spec(
         "spelunking-pow",
         "Spelunking Power",
         Category::Stat,
         Scope::Account,
-        "js/stats/defs/spelunking-pow.js",
     ),
     spec(
         "spelunking-max-stamina",
         "Spelunking Max Stamina",
         Category::Stat,
         Scope::Character,
-        "js/stats/defs/spelunking-max-stamina.js",
     ),
     spec(
         "amber-supply-swap",
         "Ambery Supply Swap: Expected Primary Amber Yield",
         Category::Stat,
         Scope::Account,
-        "js/stats/defs/amber-supply-swap.js",
     ),
     spec(
         "skill-efficiency",
         "Skill Efficiency",
         Category::Stat,
         Scope::CharacterMapSkill,
-        "js/stats/defs/skill-efficiency.js",
     ),
     spec(
         "skill-exp",
         "Skill EXP Multiplier",
         Category::Multiplier,
         Scope::CharacterMapSkill,
-        "js/stats/defs/skill-exp.js",
     ),
     spec(
         "tome-score",
         "Tome Score",
         Category::Progression,
         Scope::Account,
-        "js/stats/defs/tome-score.js",
     ),
     spec(
         "build-rate",
         "Player Build Speed/hr",
         Category::Construction,
         Scope::Character,
-        "js/stats/defs/build-rate.js",
     ),
     spec(
         "construction-exp",
         "Player Construction EXP/hr",
         Category::Construction,
         Scope::Character,
-        "js/stats/defs/construction-exp.js",
     ),
     spec(
         "flaggy-speed",
         "Flaggy Rate Multiplier",
         Category::Construction,
         Scope::Account,
-        "js/stats/defs/flaggy-speed.js",
     ),
-    spec(
-        "total-str",
-        "Total STR",
-        Category::Stat,
-        Scope::Character,
-        "js/stats/defs/base-stats.js",
-    ),
-    spec(
-        "total-agi",
-        "Total AGI",
-        Category::Stat,
-        Scope::Character,
-        "js/stats/defs/base-stats.js",
-    ),
-    spec(
-        "total-wis",
-        "Total WIS",
-        Category::Stat,
-        Scope::Character,
-        "js/stats/defs/base-stats.js",
-    ),
-    spec(
-        "total-luk",
-        "Total LUK",
-        Category::Stat,
-        Scope::Character,
-        "js/stats/defs/base-stats.js",
-    ),
+    spec("total-str", "Total STR", Category::Stat, Scope::Character),
+    spec("total-agi", "Total AGI", Category::Stat, Scope::Character),
+    spec("total-wis", "Total WIS", Category::Stat, Scope::Character),
+    spec("total-luk", "Total LUK", Category::Stat, Scope::Character),
     spec(
         "crit-chance",
         "Crit Chance",
         Category::Stat,
         Scope::CharacterMap,
-        "js/stats/defs/crit-chance.js",
     ),
     spec(
         "crit-damage",
         "Crit Damage",
         Category::Stat,
         Scope::Character,
-        "js/stats/defs/crit-damage.js",
     ),
-    spec(
-        "max-hp",
-        "Max HP",
-        Category::Stat,
-        Scope::CharacterMap,
-        "js/stats/defs/max-hp.js",
-    ),
-    spec(
-        "max-mp",
-        "Max MP",
-        Category::Stat,
-        Scope::Character,
-        "js/stats/defs/max-mp.js",
-    ),
+    spec("max-hp", "Max HP", Category::Stat, Scope::CharacterMap),
+    spec("max-mp", "Max MP", Category::Stat, Scope::Character),
     spec(
         "accuracy",
         "Accuracy",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/accuracy.js",
     ),
-    spec(
-        "defence",
-        "Defence",
-        Category::Combat,
-        Scope::Character,
-        "js/stats/defs/defence.js",
-    ),
+    spec("defence", "Defence", Category::Combat, Scope::Character),
     spec(
         "movement-speed",
         "Movement Speed",
         Category::Combat,
         Scope::Character,
-        "js/stats/defs/movement-speed.js",
     ),
     spec(
         "giant-mob",
         "Giant Mob Odds",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/giant-mob.js",
     ),
     spec(
         "crystal-spawn",
         "Crystal Mob Chance",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/crystal-spawn.js",
     ),
     spec(
         "hit-chance",
         "Hit Chance",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "accuracy-required",
         "Accuracy Required (100% Hit)",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "overkill-tier",
         "Overkill Tier",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "multikill-base",
         "Multikill Base",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "multikill-per-tier",
         "Multikill Per Tier",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "multikill-total",
         "Multikill Total",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "divinity-points-per-hour",
         "Divinity Points/hr",
         Category::Rate,
         Scope::Character,
-        "js/stats/defs/divinity-rates.js",
     ),
     spec(
         "divinity-exp-per-hour",
         "Divinity EXP/hr",
         Category::Rate,
         Scope::Character,
-        "js/stats/defs/divinity-rates.js",
     ),
     spec(
         "raw-combat-kills-per-hour",
         "Raw Combat Kills/hr",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "printer-sample-size",
         "Printer Sample Size",
         Category::Progression,
         Scope::Character,
-        "js/stats/defs/utility-stats.js",
     ),
     spec(
         "card-drop-chance-multiplier",
         "Card Drop Chance Multiplier",
         Category::Multiplier,
         Scope::Character,
-        "js/stats/defs/utility-stats.js",
     ),
     spec(
         "combat-survivability",
         "Combat Survivability",
         Category::Combat,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "reward-roll-kills-per-hour",
         "Reward-Roll Kills/hr",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "credited-kills-per-hour",
         "Credited Kills/hr",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "class-exp-per-hour",
         "Class EXP/hr",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "panel-coins-per-hour",
         "Panel Coins/hr",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "direct-card-average-time",
         "Direct Card Average Time",
         Category::Rate,
         Scope::CharacterMap,
-        "js/stats/defs/combat-outcomes.js",
     ),
     spec(
         "carry-capacity-mining",
         "Mining Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-chopping",
         "Chopping Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-fishing",
         "Fishing Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-catching",
         "Catching Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-food",
         "Food Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-critters",
         "Critter Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-souls",
         "Soul Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
     spec(
         "carry-capacity-materials",
         "Material Carry Capacity",
         Category::Capacity,
         Scope::CharacterMap,
-        "js/stats/defs/carry-capacity.js",
     ),
 ];
 
@@ -763,23 +645,17 @@ mod tests {
     }
 
     #[test]
-    fn the_sheet_carries_every_upstream_descriptor_once() {
+    fn the_sheet_carries_every_descriptor_once() {
         let sheet = sheet();
         assert_eq!(sheet.descriptors().len(), 60);
         let mut ids: Vec<&str> = sheet.descriptors().iter().map(|row| row.id).collect();
         ids.sort_unstable();
         ids.dedup();
         assert_eq!(ids.len(), 60, "descriptor ids must be unique");
-        assert!(
-            sheet
-                .descriptors()
-                .iter()
-                .all(|row| row.source.ends_with(".js"))
-        );
     }
 
     #[test]
-    fn every_upstream_category_holds_at_least_one_descriptor() {
+    fn every_category_holds_at_least_one_descriptor() {
         let sheet = sheet();
         for category in Category::ALL {
             assert!(
@@ -796,13 +672,13 @@ mod tests {
     }
 
     #[test]
-    fn a_category_with_no_ported_formula_still_warns_on_every_row() {
+    fn a_category_with_no_modelled_formula_still_warns_on_every_row() {
         let sheet = sheet();
         let combat: Vec<&Breakdown> = sheet.in_category(Category::Combat).collect();
         assert!(!combat.is_empty());
         for row in combat {
             let warning = row.warning().expect("combat rows warn in this build");
-            assert!(warning.contains(row.source), "{warning}");
+            assert!(warning.contains(row.name), "{warning}");
             assert!(row.display_value().is_none());
         }
         assert!(
@@ -813,7 +689,7 @@ mod tests {
     }
 
     #[test]
-    fn every_ported_value_agrees_with_its_formula_tree() {
+    fn every_modelled_value_agrees_with_its_formula_tree() {
         let sheet = sheet();
         for row in sheet.descriptors() {
             if let Some(tree) = row.resolution.tree() {

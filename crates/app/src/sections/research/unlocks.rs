@@ -1,11 +1,10 @@
 //! Observation Unlocks: which undiscovered observation is worth rolling for.
 //!
-//! Ported from the upstream `Observation Unlocks` tab (`js/analysis.js`,
-//! `js/renderers/render-analysis.js`). Each row is one observation the save has
-//! not found yet: its roll requirement, the chance a day of rolls lands it, the
-//! expected days to the first success and the research EXP/hour it adds. The
-//! ranking runs through the shared task runner; the summary names the roll
-//! range, the rolls a day and the failed-roll streak the probabilities read.
+//! Each row is one observation the save has not found yet: its roll
+//! requirement, the chance a day of rolls lands it, the expected days to the
+//! first success and the research EXP/hour it adds. The ranking runs through
+//! the shared task runner; the summary names the roll range, the rolls a day
+//! and the failed-roll streak the probabilities read.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, SegmentedControl};
@@ -162,7 +161,7 @@ fn summary_card(
         .into_any_element()
 }
 
-/// The upstream summary line: the roll bounds, the pity, the rolls a day, the
+/// The summary line: the roll bounds, the pity, the rolls a day, the
 /// failed-roll streak and the current rate.
 fn roll_line(result: &Outcome, colors: &Palette) -> AnyElement {
     let rolls = result.rolls;

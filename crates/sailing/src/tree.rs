@@ -2,9 +2,8 @@
 //!
 //! Each tree is the arithmetic the route already reports, split into the
 //! factors it multiplies, so the shared formula component can expand any of
-//! them. Upstream draws the same four panels from `sailing-calc.html`; the
-//! account bonuses it lists separately are one pool here, because the save
-//! import only knows their sum.
+//! them. Account bonuses are one pool here, because the save import only
+//! knows their sum.
 
 use super::{RouteContext, RouteMetrics, chest_loot_multiplier, minimum_travel_details};
 use idleon_common::formula::{FormulaNode, ValueFormat};

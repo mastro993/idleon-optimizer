@@ -1,14 +1,12 @@
 //! The Coin Multiplier Calculator's save slice.
 //!
-//! Ports the save-derived groups of `js/stats/defs/coin-multi.js`, plus the
-//! grep-free reads of `coin-multi-calc.html` (`CurrentMap_<n>`, `AFKtarget_<n>`,
-//! `TaskZZ0[1][0]`). A group whose upstream source this build does not port is
-//! left `None`; the caller reports it as not modelled instead of guessing.
+//! Reads the save-derived coin groups, plus the card values (`CurrentMap_<n>`,
+//! `AFKtarget_<n>`, `TaskZZ0[1][0]`). A group whose source this build does not
+//! model is left `None`; the caller reports it as not modelled instead of
+//! guessing.
 //!
-//! The vault kill-count tiers follow `js/stats/systems/common/vaultKillz.js`,
-//! the equipped-set check follows `checkSetEquipped` in
-//! `js/stats/systems/w3/setBonus.js`, and the Divinity/Crop Scientist group is
-//! resolved by [`idleon_account::divinity`].
+//! The Divinity/Crop Scientist group is resolved by
+//! [`idleon_account::divinity`].
 
 use idleon_account::Decoder;
 use idleon_account::divinity;
@@ -21,7 +19,7 @@ use serde_json::{Map, Value};
 
 use crate::{Group, Term};
 
-/// The number of groups `coin-multi.js` multiplies.
+/// The number of groups the coin multiplier multiplies.
 const GROUP_COUNT: usize = 23;
 
 /// Decode every character's coin groups, in [`crate::GROUPS`] order.
@@ -174,7 +172,7 @@ fn coin_groups(
         )
         .with_terms(terms, 100.0);
         groups[19] = crate::group(19, Some(1.0 + decoder.pristine_charm(16) / 100.0));
-        // `computePrayerReal`, shared with the All Stats capacity breakdown.
+        // Prayer 8's bonus, shared with the All Stats capacity breakdown.
         groups[20] = crate::group(
             20,
             Some(1.0 + idleon_account::prayer(decoder.save(), index, 8, false) / 100.0),
@@ -233,7 +231,7 @@ pub(crate) fn other_group(other: &idleon_stats_engine::OtherSources, tier: f64) 
     crate::group(22, Some(1.0 + sum / 100.0)).with_terms(terms, 100.0)
 }
 
-/// Adds a term the way upstream draws it: only when the value is above zero.
+/// Adds a term only when its value is above zero.
 fn push(terms: &mut Vec<Term>, name: &'static str, value: f64) {
     if value > 0.0 {
         terms.push(Term::new(name, value));

@@ -73,7 +73,7 @@ fn the_policy_menu_respects_the_mode_and_clears() {
 }
 
 #[test]
-fn the_party_and_belt_enumerators_match_the_upstream_order() {
+fn the_party_and_belt_enumerators_keep_their_order() {
     let ordered = parties(&[0, 1, 2], 1, 2, false);
     assert_eq!(ordered.len(), 9);
     assert_eq!(ordered[0], vec![0]);

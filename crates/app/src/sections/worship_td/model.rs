@@ -2,7 +2,7 @@
 //! exact values the run reads from the save.
 //!
 //! The assumptions are written as model limits, not game rules: each names a
-//! timing the source leaves to animation frames, a check the game makes on
+//! timing the game leaves to animation frames, a check the game makes on
 //! screen, or an account bonus this build does not decode yet.
 
 use crate::state::AppState;

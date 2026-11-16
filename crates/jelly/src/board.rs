@@ -1,11 +1,6 @@
 //! The Jelly Operator board: the saved layout, its slots and the placement rules.
 //!
-//! Ports `jellyLayoutFromSave`, `jellyFootprintSlots`, `jellyLayoutOccupancy`,
-//! `jellyValidateLayout`, `jellyPlaceCell`, `jellyRemoveCell`,
-//! `jellyUnlockedSlots`, `jellySlotPurchasesLeft` and `jellyLayoutKey` from
-//! `js/stats/systems/w7/jelly-operator.js`.
-//!
-//! The layout is an anchor-to-type map, like the upstream object: a cell covers
+//! The layout is an anchor-to-type map: a cell covers
 //! its anchor plus the type's footprint offsets, so a slot never holds more than
 //! one cell and a footprint that runs off the board is rejected.
 
@@ -15,7 +10,7 @@ use std::collections::BTreeMap;
 /// The board's layout: cell anchors to cell types, in slot order.
 pub type Layout = BTreeMap<usize, usize>;
 
-/// `jellyLayoutFromSave`: the saved `Research[14]` row as a layout.
+/// The saved `Research[14]` row as a layout.
 pub fn layout_from_save(grid: &[Option<f64>]) -> Layout {
     let mut layout = Layout::new();
     for (anchor, raw) in grid.iter().enumerate() {
@@ -27,7 +22,7 @@ pub fn layout_from_save(grid: &[Option<f64>]) -> Layout {
     layout
 }
 
-/// `jellyFootprintSlots`: every slot a cell covers, or `None` when it runs off
+/// Every slot a cell covers, or `None` when it runs off
 /// the board or wraps around a row edge.
 pub fn footprint(anchor: usize, cell_type: usize) -> Option<Vec<usize>> {
     let data = data();
@@ -51,7 +46,7 @@ pub fn footprint(anchor: usize, cell_type: usize) -> Option<Vec<usize>> {
     Some(slots)
 }
 
-/// `normalizeSimulatorLayout`'s re-place: every cell in anchor order, dropping
+/// The sandbox re-place: every cell in anchor order, dropping
 /// the ones the sandbox's unlocked slots no longer fit. Returns the layout and
 /// how many cells were dropped.
 pub fn normalize(jelly: &Jelly, layout: &Layout) -> (Layout, usize) {
@@ -66,7 +61,7 @@ pub fn normalize(jelly: &Jelly, layout: &Layout) -> (Layout, usize) {
     (next, removed)
 }
 
-/// `jellyLayoutOccupancy`: which cell covers each slot.
+/// Which cell covers each slot.
 pub fn occupancy(layout: &Layout) -> BTreeMap<usize, (usize, usize)> {
     let mut occupied = BTreeMap::new();
     for (anchor, cell_type) in layout {
@@ -80,7 +75,7 @@ pub fn occupancy(layout: &Layout) -> BTreeMap<usize, (usize, usize)> {
     occupied
 }
 
-/// `jellyUnlockedSlots`: the starting slots, the two clears and every plot.
+/// The starting slots, the two clears and every plot.
 pub fn unlocked_slots(jelly: &Jelly) -> Vec<bool> {
     let data = data();
     let mut unlocked = vec![false; data.size()];
@@ -125,7 +120,7 @@ pub fn unlocked_count(jelly: &Jelly) -> usize {
     unlocked_slots(jelly).iter().filter(|slot| **slot).count()
 }
 
-/// `jellySlotPurchasesLeft`: the plot tokens still unbought.
+/// The plot tokens still unbought.
 pub fn slot_purchases_left(jelly: &Jelly) -> f64 {
     let bundle = if jelly.account.bundle_ban_j { 1.0 } else { 0.0 };
     let completion = jelly.completion_bonus(44);
@@ -135,7 +130,7 @@ pub fn slot_purchases_left(jelly: &Jelly) -> f64 {
         .round()
 }
 
-/// `jellyValidateLayout`: the upstream rules, as the reason a layout is refused.
+/// The placement rules, as the reason a layout is refused.
 pub fn validate(jelly: &Jelly, layout: &Layout) -> Result<(), String> {
     let data = data();
     let unlocked = unlocked_slots(jelly);
@@ -174,7 +169,7 @@ pub fn validate(jelly: &Jelly, layout: &Layout) -> Result<(), String> {
     Ok(())
 }
 
-/// `jellyPlaceCell`: the layout with `cell_type` anchored at `anchor`, or why
+/// The layout with `cell_type` anchored at `anchor`, or why
 /// the placement is refused.
 pub fn place(
     jelly: &Jelly,
@@ -209,7 +204,7 @@ pub fn place(
     Ok(next)
 }
 
-/// `jellyRemoveCell`: the layout without the cell anchored at `anchor`.
+/// The layout without the cell anchored at `anchor`.
 pub fn remove(layout: &Layout, anchor: usize) -> Layout {
     let mut next = layout.clone();
     next.remove(&anchor);

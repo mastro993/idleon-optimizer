@@ -1,20 +1,17 @@
 //! The Jar Cavern (W5): the summary, production, rupie value, break chances,
 //! collectibles, upgrades and next tier.
 //!
-//! Ported from the upstream `js/stats/systems/w5/jar.js` and its
-//! `jar-calc.html` page. The upstream reads a decoded save through
-//! `holesData`; here the same rows come from the `Holes` field of an imported
-//! save, so every accessor below is a direct transcription of one upstream
-//! reader.
+//! The rows come from the `Holes` field of an imported save, and every accessor
+//! below reads one of them.
 //!
 //! The overview, production, rupie value, break chances, collectibles, upgrade
 //! plan, next tier, enchant simulator and its history are complete.
 //!
 //! The external bonuses the formulas read live in [`Ext`]. Everything the save
 //! itself carries is decoded here; two bonuses (the Cavern Resource stamp and
-//! the farming Exotic 52) belong to systems this app has not ported yet, so
-//! they stay at their upstream default and the section says the total leaves
-//! them out.
+//! the farming Exotic 52) belong to systems this app does not model yet, so
+//! they stay at a default of zero and the section says the total leaves them
+//! out.
 
 mod bonus;
 mod chance;
@@ -50,7 +47,7 @@ use idleon_common::curve::log;
 use idleon_save::json;
 use serde_json::{Map, Value};
 
-/// The `holesData` rows the jar reads, by their upstream index.
+/// The `Holes` rows the jar reads, by their save index.
 mod row {
     /// `Holes[4]`: the tier zero Cosmo upgrades.
     pub const COSMO: usize = 4;
@@ -92,7 +89,7 @@ mod state {
     pub const TARGETED_ENCHANT: usize = 62;
 }
 
-/// Schematic indices in [`row::UPGRADES`] (`B_UPG_DATA`).
+/// Schematic indices in [`row::UPGRADES`].
 mod upgrade {
     pub const SLOTS_TWO: usize = 63;
     pub const SLOTS_THREE: usize = 66;
@@ -126,7 +123,7 @@ mod spelunk {
     pub const BLACK_STARS: usize = 49;
 }
 
-/// One production bonus, as `productionPerHRBreakdown` lists it.
+/// One production bonus, as the production breakdown lists it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ProductionTerm {
     /// The system that grants it.
@@ -145,7 +142,7 @@ struct Fountain {
 /// The Jar Cavern state one save carries.
 #[derive(Clone, Debug, Default)]
 pub struct Jar {
-    /// `holesData`: the cavern's saved rows, missing cells read as zero.
+    /// The cavern's saved rows, missing cells read as zero.
     rows: Vec<Vec<f64>>,
     /// `Spelunk`: the row of the W7 cave the cavern bonuses read.
     spelunk: Vec<Vec<f64>>,
@@ -201,7 +198,7 @@ impl Jar {
         Some(jar)
     }
 
-    /// A cell of a `holesData` row; a missing row or cell reads as zero.
+    /// A cell of a `Holes` row; a missing row or cell reads as zero.
     fn cell(&self, row: usize, cell: usize) -> f64 {
         self.rows
             .get(row)
@@ -229,29 +226,29 @@ impl Jar {
         self.opt_lacc.get(cell).copied().unwrap_or(0.0)
     }
 
-    /// Whether a `B_UPG_DATA` schematic is owned (`holesData[13][idx] >= 1`).
+    /// Whether a schematic is owned (`Holes[13][idx] >= 1`).
     fn upgrade(&self, index: usize) -> bool {
         self.cell(row::UPGRADES, index) >= 1.0
     }
 
-    /// `_bUpgVal`: the schematic's value once owned, zero before.
+    /// The schematic's value once owned, zero before.
     fn upgrade_value(&self, index: usize, value: f64) -> f64 {
         if self.upgrade(index) { value } else { 0.0 }
     }
 
-    /// `computeCosmoBonus`: a Cosmo upgrade's base times its saved level, floored.
+    /// A Cosmo upgrade's base times its saved level, floored.
     fn cosmo_bonus(&self, row: usize, cell: usize, base: f64) -> f64 {
         (base * self.cell(row, cell)).floor()
     }
 
     // ----- summary -----
 
-    /// `jarTypesOwned`: the jar types bought above the free base jar.
+    /// The jar types bought above the free base jar.
     pub fn types_purchased(&self) -> usize {
         (self.cell(row::STATE, state::TYPES_OWNED).round().max(0.0) as usize).min(9)
     }
 
-    /// `totalJarTypes`: the base jar plus the purchased ones.
+    /// The base jar plus the purchased ones.
     pub fn types_available(&self) -> usize {
         self.types_purchased() + 1
     }
@@ -261,32 +258,32 @@ impl Jar {
         self.types_available()..TYPE_NAMES.len()
     }
 
-    /// `newJarCost`: what the next jar type costs, in the rupie it is paid with.
+    /// What the next jar type costs, in the rupie it is paid with.
     pub fn next_type_cost(&self) -> f64 {
         Self::jar_type_cost(self.types_purchased() + 1)
     }
 
-    /// `canAffordNewJar`: whether the rupie the next type is paid with covers it.
+    /// Whether the rupie the next type is paid with covers it.
     pub fn can_afford_next_type(&self) -> bool {
         self.types_purchased() < 9 && self.rupies(self.types_purchased()) >= self.next_type_cost()
     }
 
-    /// `opalsFromJars`: opals the cavern has banked from jar breaks.
+    /// Opals the cavern has banked from jar breaks.
     pub fn opals(&self) -> f64 {
         self.cell(row::OPALS, 10)
     }
 
-    /// `doublerBonus`: the gilded jar bonus waiting on the next rupie break.
+    /// The gilded jar bonus waiting on the next rupie break.
     pub fn doubler_bonus(&self) -> f64 {
         self.cell(row::STATE, state::DOUBLER)
     }
 
-    /// `breakAllUnlocked`.
+    /// Whether the Break All schematic is owned.
     pub fn break_all_unlocked(&self) -> bool {
         self.upgrade(upgrade::BREAK_ALL)
     }
 
-    /// `page2Unlocked`: whether the second collectible page is open.
+    /// Whether the second collectible page is open.
     pub fn page_two_unlocked(&self) -> bool {
         self.upgrade(upgrade::PAGE_TWO)
     }
@@ -300,7 +297,7 @@ impl Jar {
         }
     }
 
-    /// `targetedEnchantIdx`: the collectible the next enchant targets, if any.
+    /// The collectible the next enchant targets, if any.
     pub fn targeted_enchant(&self) -> Option<usize> {
         let index = self.cell(row::STATE, state::TARGETED_ENCHANT).round();
         (0.0..COLLECTIBLES as f64)
@@ -308,7 +305,7 @@ impl Jar {
             .then_some(index as usize)
     }
 
-    /// `targetedEnchantProb`: the chance an enchant lands on the target.
+    /// The chance an enchant lands on the target.
     pub fn targeted_enchant_chance(&self) -> f64 {
         let found = self.collectibles_found();
         if found == 0 {
@@ -319,7 +316,7 @@ impl Jar {
 
     // ----- rupies and collectibles -----
 
-    /// `rupieBalance`: ten standard rupies at `Holes[9][20 + n]`, then white and
+    /// Ten standard rupies at `Holes[9][20 + n]`, then white and
     /// dark from their own storage cells.
     pub fn rupies(&self, rupie: usize) -> f64 {
         match rupie {
@@ -329,36 +326,35 @@ impl Jar {
         }
     }
 
-    /// `whiteRupies`.
+    /// The white rupie balance, kept apart from the ten standard ones.
     pub fn white_rupies(&self) -> f64 {
         self.rupies(10)
     }
 
-    /// `darkRupies`.
+    /// The dark rupie balance, kept apart from the ten standard ones.
     pub fn dark_rupies(&self) -> f64 {
         self.rupies(11)
     }
 
-    /// `collectibleLevel`.
     fn collectible_level(&self, index: usize) -> u32 {
         self.cell(row::COLLECTIBLES, index).max(0.0) as u32
     }
 
-    /// `collectibleBonus`: a collectible's total bonus at its saved level, raised
+    /// A collectible's total bonus at its saved level, raised
     /// by the legend talent points every collectible level shares.
     pub fn collectible_bonus(&self, index: usize, legend_pts: f64) -> f64 {
         let per_level = data().collectible_per_level(index);
         f64::from(self.collectible_level(index)) * per_level * (1.0 + legend_pts / 100.0)
     }
 
-    /// `collectiblesFound`: how many of the forty collectibles are found.
+    /// How many of the forty collectibles are found.
     pub fn collectibles_found(&self) -> usize {
         (0..COLLECTIBLES)
             .filter(|index| self.collectible_level(*index) >= 1)
             .count()
     }
 
-    /// `totalEnchantLevels`: every level past the first, which the enchant
+    /// Every level past the first, which the enchant
     /// chance counts.
     pub fn enchant_levels(&self) -> u32 {
         (0..COLLECTIBLES)
@@ -368,7 +364,7 @@ impl Jar {
 
     // ----- production -----
 
-    /// `computeMeasurementBonus`: a measurement's base at its saved level, scaled
+    /// A measurement's base at its saved level, scaled
     /// by the multiplier its input type grants.
     fn measurement_bonus(&self, index: usize) -> f64 {
         let level = self.cell(row::MEASUREMENTS, index);
@@ -387,8 +383,8 @@ impl Jar {
         meas_base * self.measurement_multi(data().measurement_type(index))
     }
 
-    /// `_measMulti`: what a measurement's input is worth. The types whose
-    /// systems are not ported stay at the neutral multiplier the game uses for
+    /// What a measurement's input is worth. The types whose
+    /// systems are not modelled stay at the neutral multiplier the game uses for
     /// an empty input.
     fn measurement_multi(&self, kind: u32) -> f64 {
         let quantity = match kind {
@@ -416,7 +412,7 @@ impl Jar {
     }
 }
 
-/// `parseFloat` on a measurement base, which the game writes as text.
+/// The leading number of a measurement base, which the game writes as text.
 fn parse_base(text: &str) -> f64 {
     let digits: String = text
         .chars()
@@ -425,7 +421,7 @@ fn parse_base(text: &str) -> f64 {
     digits.parse().unwrap_or(0.0)
 }
 
-/// The sum of `Lv0_<n>[0]`, which measurement 12 reads as `tomeQTY(5)`.
+/// The sum of `Lv0_<n>[0]`, which measurement 12 reads as its Tome input.
 fn account_levels(save: &Map<String, Value>) -> f64 {
     save.iter()
         .filter(|(key, _)| {

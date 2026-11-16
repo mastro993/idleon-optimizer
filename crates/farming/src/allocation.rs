@@ -1,10 +1,9 @@
 //! Land Rank allocation: spend the account's unspent points for one objective.
 //!
-//! Ported from `optimizeLandRank` and `_rankObjectiveEvaluator` in
-//! `js/stats/systems/w6/farming-planner.js`. The allocator is a greedy marginal
-//! search: every point goes to the unlocked upgrade that raises the objective's
-//! score the most, and it stops as soon as no upgrade helps, so the result can
-//! never score below the levels it started from.
+//! The allocator is a greedy marginal search: every point goes to the unlocked
+//! upgrade that raises the objective's score the most, and it stops as soon as
+//! no upgrade helps, so the result can never score below the levels it started
+//! from.
 
 use super::account::{RankTotals, Snapshot};
 use super::assignment::{Objective, crop_weight};
@@ -25,9 +24,9 @@ pub enum Mode {
 }
 
 impl Mode {
-    /// Both modes, in the upstream order.
+    /// Both modes, in display order.
     pub const ALL: [Mode; 2] = [Mode::Unspent, Mode::Reset];
-    /// The upstream id, used by the project document.
+    /// The stable id, used by the project document.
     pub fn id(self) -> &'static str {
         match self {
             Mode::Unspent => "unspent",
@@ -43,13 +42,13 @@ impl Mode {
         }
     }
 
-    /// The mode behind an upstream id.
+    /// The mode behind an id.
     pub fn from_id(id: &str) -> Option<Self> {
         Self::ALL.iter().copied().find(|mode| mode.id() == id)
     }
 }
 
-/// `optimizeLandRank`: the levels, points and scores of one allocation.
+/// The levels, points and scores of one allocation.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Allocation {
     pub objective: Objective,
@@ -60,12 +59,11 @@ pub struct Allocation {
     pub points_spent: u32,
     pub initial_score: f64,
     pub final_score: f64,
-    /// The rows the allocation moved, largest absolute move first, as the
-    /// upstream `changes` list sorts them.
+    /// The rows the allocation moved, largest absolute move first.
     pub changes: Vec<UpgradeChange>,
 }
 
-/// One Land Rank row a level moved, as `optimizeLandRank` reports it.
+/// One Land Rank row a level moved.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UpgradeChange {
     pub id: usize,
@@ -86,7 +84,7 @@ impl Allocation {
         self.points_available.saturating_sub(self.points_spent)
     }
 
-    /// `relativeGain`: the fraction the allocation gains over its baseline.
+    /// The fraction the allocation gains over its baseline.
     pub fn relative_gain(&self) -> f64 {
         if self.initial_score > 0.0 {
             self.final_score / self.initial_score - 1.0
@@ -98,7 +96,7 @@ impl Allocation {
     }
 }
 
-/// `atLeastOneChance`: the chance at least one of the independent rolls lands.
+/// The chance at least one of the independent rolls lands.
 pub(crate) fn at_least_one_chance(chances: impl IntoIterator<Item = f64>) -> f64 {
     let log_miss: f64 = chances
         .into_iter()
@@ -358,7 +356,7 @@ impl Farm {
         }
     }
 
-    /// `optimizeLandRank`: spend the available points on one objective.
+    /// Spend the available points on one objective.
     ///
     /// Returns `None` when the reporter stopped the run, so a cancelled
     /// allocation stores nothing.
@@ -425,8 +423,8 @@ impl Farm {
             fraction: 1.0,
             message: format!("Allocated {spent} point(s) for {}.", objective.label()),
         });
-        // The upstream list walks the rows in order and then sorts by the size
-        // of the move, so equal moves keep their row order.
+        // The list walks the rows in order and then sorts by the size of the
+        // move, so equal moves keep their row order.
         let mut changes: Vec<UpgradeChange> = (0..RANK_UPGRADES)
             .filter(|index| levels[*index] != initial_levels[*index])
             .map(|index| UpgradeChange {

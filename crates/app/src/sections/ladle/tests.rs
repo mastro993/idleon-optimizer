@@ -243,7 +243,7 @@ fn the_outcome_sort_orders_the_discovered_meals() {
         vec![3, 2, 0]
     );
     // Without a plan the gain sort keeps index order and the level sort reads the
-    // current levels, as upstream draws them before the forecast runs.
+    // current levels, as drawn before the forecast runs.
     assert_eq!(
         sorted(&plan.start_levels, None, OutcomeSort::Gain),
         vec![0, 2, 3]

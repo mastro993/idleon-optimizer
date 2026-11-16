@@ -314,7 +314,7 @@ fn rows_table(state: &AppState, allocation: &Allocation, muted: gpui::Hsla) -> A
         .into_any_element()
 }
 
-/// Why the allocator left points unspent, as the upstream callout phrases it.
+/// Why the allocator left points unspent, as the callout phrases it.
 fn unused_reason(allocation: &Allocation) -> &'static str {
     match allocation.objective {
         Objective::CropValue | Objective::Beans => {

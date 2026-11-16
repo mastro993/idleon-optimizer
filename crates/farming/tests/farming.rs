@@ -1,5 +1,5 @@
 //! Farming import: the farm fields map onto plots, ranks, crops and market
-//! levels, and the plot metrics follow the upstream formulas.
+//! levels, and the plot metrics follow the game formulas.
 
 use idleon_farming::{PLOTS, RANK_UPGRADES, data, land_rank_requirement, overgrowth_multiplier};
 use idleon_import::Format;
@@ -97,7 +97,7 @@ fn farming_fields_import_into_the_field_and_its_ranks() {
 }
 
 #[test]
-fn plot_metrics_follow_the_upstream_formulas() {
+fn plot_metrics_follow_the_game_formulas() {
     let imported = import(&farming_save().to_string()).expect("the farming save imports");
     let farm = &imported.farming;
     let snapshot = farm.snapshot();
@@ -175,7 +175,7 @@ fn a_save_without_farming_fields_keeps_an_empty_field_silently() {
 }
 
 #[test]
-fn the_bundled_extract_covers_the_upstream_tables() {
+fn the_bundled_extract_covers_the_game_tables() {
     let data = data();
     assert_eq!(data.seeds.len(), 7);
     assert_eq!(data.market.len(), 16);

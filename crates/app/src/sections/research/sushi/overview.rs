@@ -1,5 +1,5 @@
 //! The Sushi Station overview: the station's stat cards, the slot grid and the
-//! discovered-tier map, as `_renderOverview` in `js/ui/sushi-ui.js`.
+//! discovered-tier map.
 
 use super::rate_text;
 use crate::state::AppState;

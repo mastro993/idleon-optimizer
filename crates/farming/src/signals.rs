@@ -1,12 +1,12 @@
-//! The priority signals the overview leads with, from `farmingDiagnostics`.
+//! The priority signals the overview leads with.
 
 use super::account::Snapshot;
 use super::{Farm, PLOTS};
 
 impl Farm {
-    /// `farmingDiagnostics`: what the loaded field is telling the player — the
-    /// plots at the value cap, the growth floor, the Medal plots and the Land
-    /// Rank points waiting to be spent.
+    /// What the loaded field is telling the player — the plots at the value
+    /// cap, the growth floor, the Medal plots and the Land Rank points waiting
+    /// to be spent.
     pub fn diagnostics(&self, snapshot: &Snapshot) -> Diagnostics {
         let plots = (0..PLOTS).map(|index| self.plot_metrics_with(index, snapshot));
         let mut capped = 0;
@@ -45,7 +45,7 @@ impl Farm {
     }
 }
 
-/// `farmingDiagnostics`'s result.
+/// What the field diagnostics report.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Diagnostics {
     pub crop_count: u32,

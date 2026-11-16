@@ -1,11 +1,6 @@
 //! The Armory shelf planner: the steps that unlock the next shelf, in the order
 //! a player takes them.
 //!
-//! Ported from `planNextArmoryShelf`, `_armoryShelfCandidates`,
-//! `_shelfLayoutStrategy`, `_connectPortfolioOutposts`, `_resourceProfessionState`,
-//! `_assignIdleOutpostsToRanks`, `_applyArmoryShelfPurchase` and `_advanceTime` in
-//! `js/stats/systems/w7/royal-guardian-planner.js`.
-//!
 //! A shelf unlocks when the account's Armory levels reach the shelf's research
 //! order. Reaching it means buying levels with the currencies the resource nodes
 //! pay, so the plan alternates between two kinds of step: a layout step that puts
@@ -14,19 +9,18 @@
 //! depletions and the daily reset (Armory 70 refills a collected node, Armory 0
 //! raises its grade) so the projected times match what the account would see.
 //!
-//! Upstream's layout strategy scores a currency portfolio across every eligible
-//! shelf and beams over profession splits. The port keeps the deterministic part
-//! of it: minimum Guards for reach, the rest Workers, the focused currency first
-//! and the shortest projected drain to break ties, and Trader/Surveyor rank
-//! fallbacks for outposts with nothing left to drain. The plan's own steps are
+//! The layout strategy is deterministic: minimum Guards for reach, the rest
+//! Workers, the focused currency first and the shortest projected drain to break
+//! ties, and Trader/Surveyor rank fallbacks for outposts with nothing left to
+//! drain. The plan's own steps are
 //! replayed through [`sandbox::apply`], so a layout step only ever contains moves
 //! the game accepts and a purchase step only ever spends a balance the plan has.
 
 use super::*;
 use idleon_common::{Control, Progress};
 
-/// The shelf whose purchase switches the whole kingdom's assignments; upstream
-/// excludes it until it models the change.
+/// The shelf whose purchase switches the whole kingdom's assignments; the plan
+/// excludes it because it does not model the change.
 const EXCLUDED_SHELF: usize = 68;
 /// The hours after the saved countdown the next reset lands at.
 const RESET_INTERVAL_HOURS: f64 = 24.0;
@@ -134,8 +128,8 @@ pub struct ShelfPlan {
 }
 
 impl RoyalGuardian {
-    /// Plan the purchases that unlock the next Armory shelf: upstream
-    /// `planNextArmoryShelf`, with the purchases reported through `report`.
+    /// Plan the purchases that unlock the next Armory shelf, with the purchases
+    /// reported through `report`.
     /// Returns `None` when the caller stops the run.
     pub fn plan_shelf(
         &self,
@@ -349,8 +343,7 @@ impl ShelfPlan {
     }
 }
 
-/// The Armory totals the shelves unlock at, in purchase order: upstream
-/// `planNextArmoryShelf`'s `effectiveThresholds`.
+/// The Armory totals the shelves unlock at, in purchase order.
 fn thresholds() -> Vec<f64> {
     let mut values: Vec<f64> = data::data()
         .armory
@@ -382,7 +375,7 @@ struct Candidate {
     efficiency: f64,
 }
 
-/// Every shelf the plan could buy next: upstream `_armoryShelfCandidates`.
+/// Every shelf the plan could buy next.
 fn shelf_candidates(royal: &RoyalGuardian) -> Vec<Candidate> {
     let unlocked = royal.armory_unlocked_count();
     let income = currency_rates(royal);
@@ -474,8 +467,8 @@ fn shelf_layout(royal: &Sandbox) -> (Sandbox, Vec<Move>) {
     (sandbox, moves)
 }
 
-/// Puts one Normal outpost on the best node its reach allows: upstream
-/// `_connectPortfolioOutposts`, narrowed to one outpost at a time.
+/// Puts one Normal outpost on the best node its reach allows, one outpost at a
+/// time.
 fn connect_outpost(
     royal: &Sandbox,
     map: usize,
@@ -553,7 +546,7 @@ fn connect_outpost(
     }
 }
 
-/// The profession split one Guard count leaves: upstream `_resourceProfessionState`.
+/// The profession split one Guard count leaves.
 fn professions(royal: &Sandbox, map: usize, guards: usize) -> (Sandbox, Vec<Move>) {
     let mut sandbox = royal.clone();
     let mut moves = Vec::new();
@@ -577,8 +570,8 @@ fn professions(royal: &Sandbox, map: usize, guards: usize) -> (Sandbox, Vec<Move
     (sandbox, moves)
 }
 
-/// Moves the units of outposts with nothing left to drain onto rank EXP:
-/// upstream `_assignIdleOutpostsToRanks`, narrowed to a deterministic split.
+/// Moves the units of outposts with nothing left to drain onto rank EXP, with a
+/// deterministic split.
 fn idle_to_ranks(royal: &Sandbox) -> (Sandbox, Vec<Move>) {
     let mut sandbox = royal.clone();
     let mut moves = Vec::new();
@@ -637,7 +630,7 @@ fn layout_mode(moves: &[Move]) -> &'static str {
     "rank"
 }
 
-/// Spends one purchase on the sandbox: upstream `_applyArmoryShelfPurchase`.
+/// Spends one purchase on the sandbox.
 fn buy(sandbox: &mut Sandbox, candidate: &Candidate) -> Result<(), Vec<String>> {
     let balance = sandbox
         .state()
@@ -689,7 +682,7 @@ struct ResetEvent {
 }
 
 /// Runs the clock forward `hours`, draining the linked nodes and processing the
-/// resets it crosses: upstream `_advanceTime` and `_processReset`.
+/// resets it crosses.
 fn advance(sandbox: &mut Sandbox, hours: f64) -> Advance {
     let mut remaining = hours;
     let mut elapsed = 0.0;
@@ -701,7 +694,7 @@ fn advance(sandbox: &mut Sandbox, hours: f64) -> Advance {
         .hours_remaining
         .filter(|value| *value > 0.0);
     // Without the countdown the plan still projects income, it just cannot
-    // claim a refill; upstream's reset projection is unavailable in the same way.
+    // claim a refill.
     let reset_available = reset_hours.is_some();
     let mut reset_in = reset_hours.unwrap_or(f64::INFINITY);
     for _ in 0..MAX_STEPS {
@@ -767,8 +760,8 @@ fn advance(sandbox: &mut Sandbox, hours: f64) -> Advance {
     }
 }
 
-/// Collects the full nodes and refills them: upstream `_processReset`, narrowed
-/// to the nodes the plan drains.
+/// Collects the full nodes and refills them, narrowed to the nodes the plan
+/// drains.
 fn reset(sandbox: &mut Sandbox, hours: f64) -> ResetEvent {
     let refill = sandbox.state().armory_bonus(70) >= 1.0;
     let grade = sandbox.state().armory_bonus(0) >= 1.0;

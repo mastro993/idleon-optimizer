@@ -1,9 +1,5 @@
 //! Rupie value: the multiplier the cavern applies to every rupie, the extra
 //! rupie chance and what one break pays out.
-//!
-//! Ported from `rupieValue`, `rupieValueBreakdown`, `extraRupieChance`,
-//! `avgRupiesPerBreak` and `rupieTypeRange` in
-//! `js/stats/systems/w5/jar.js`.
 
 use super::{Jar, TYPE_CATEGORIES, TYPE_NAMES, TypeCategory, upgrade};
 use idleon_common::formula::{FormulaNode, ValueFormat};
@@ -11,10 +7,10 @@ use idleon_common::formula::{FormulaNode, ValueFormat};
 /// The tiers the income table projects, counted from the first.
 pub const INCOME_TIERS: u32 = 6;
 
-/// The tiers the rupie value table projects, as the upstream page shows five.
+/// The tiers the rupie value table projects.
 pub const VALUE_TIERS: u32 = 5;
 
-/// One multiplier of the rupie value, as `rupieValueBreakdown` lists it.
+/// One multiplier of the rupie value, as the breakdown lists it.
 struct Term {
     label: String,
     multiplier: f64,
@@ -34,7 +30,7 @@ pub struct ExtraRupieTerm {
 }
 
 impl Jar {
-    /// `rupieValue`: the multiplier every rupie a jar drops is worth.
+    /// The multiplier every rupie a jar drops is worth.
     pub fn rupie_value(&self) -> f64 {
         self.value_terms()
             .iter()
@@ -42,7 +38,7 @@ impl Jar {
             .product()
     }
 
-    /// The multiplier sources, in the upstream breakdown order, without the
+    /// The multiplier sources, in breakdown order, without the
     /// ones that grant nothing.
     fn value_terms(&self) -> Vec<Term> {
         let mut terms = Vec::new();
@@ -166,7 +162,7 @@ impl Jar {
         let mut tree = FormulaNode::new("Rupie Value", self.rupie_value())
             .with_format(ValueFormat::Multiplier)
             .with_input("The multipliers below, multiplied")
-            .with_source("jar.js · rupie value")
+            .with_source("Jar rupie value")
             .with_children(terms);
         if self.ext.stamp_cavern_res == 0.0 || self.ext.exotic == 0.0 {
             tree = tree.with_note(
@@ -177,13 +173,13 @@ impl Jar {
         tree
     }
 
-    /// `rupiesPerBreak`: what one break of the jar pays at `tier`, counting the
+    /// What one break of the jar pays at `tier`, counting the
     /// extra rupie chance. A multi-color jar splits it across its colors.
     pub fn rupies_per_break(&self, tier: u32) -> f64 {
         self.avg_rupies_per_break() * self.rupie_value() * 10_f64.powi(tier as i32)
     }
 
-    /// `rupieValue` at one tier: tiers multiply the value by ten each.
+    /// The rupie value at one tier: tiers multiply the value by ten each.
     pub fn rupie_value_at_tier(&self, tier: u32) -> f64 {
         self.rupie_value() * 10_f64.powi(tier as i32)
     }
@@ -194,7 +190,7 @@ impl Jar {
         (first..=last).collect()
     }
 
-    /// `rupieTypeRange`: the colors a rupie jar escalates to at the current
+    /// The colors a rupie jar escalates to at the current
     /// balances.
     fn rupie_color_range(&self, jar_type: usize) -> (usize, usize) {
         match jar_type {
@@ -211,7 +207,7 @@ impl Jar {
         }
     }
 
-    /// `extraRupieChance`: the chance a break pays one more rupie, as a fraction.
+    /// The chance a break pays one more rupie, as a fraction.
     pub fn extra_rupie_chance(&self) -> f64 {
         self.extra_rupie_terms()
             .iter()
@@ -220,7 +216,7 @@ impl Jar {
             / 100.0
     }
 
-    /// The sources of the extra rupie chance, as the upstream table lists them.
+    /// The sources of the extra rupie chance, as the table lists them.
     pub fn extra_rupie_terms(&self) -> Vec<ExtraRupieTerm> {
         let mut terms = Vec::new();
         if self.ext.bell > 0.0 {
@@ -247,7 +243,7 @@ impl Jar {
         terms
     }
 
-    /// `avgRupiesPerBreak`: `floor(1 + chance + rand())` averages to `1 + chance`.
+    /// `floor(1 + chance + rand())` averages to `1 + chance`.
     pub fn avg_rupies_per_break(&self) -> f64 {
         1.0 + self.extra_rupie_chance()
     }

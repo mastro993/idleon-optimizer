@@ -1,10 +1,9 @@
 //! JO-04: the Sections tab, the board section planner.
 //!
-//! Ports the upstream `#tab-sections` panel of `jelly-operator-calc.html`: the
-//! strategy, objective, EXP target, token, quality and beam controls, the ranked
-//! section sequences, the two boards and every individual section. The planner
-//! itself lives in `idleon_jelly::planner`; this module owns the controls and
-//! renders the plan.
+//! The strategy, objective, EXP target, token, quality and beam controls, the
+//! ranked section sequences, the two boards and every individual section. The
+//! planner itself lives in `idleon_jelly::planner`; this module owns the
+//! controls and renders the plan.
 
 use super::grid;
 use crate::sections::jelly_operator::estimate::text_kpi;
@@ -26,7 +25,7 @@ use idleon_jelly::{Estimate, Jelly, board};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
 
-/// The page's planner controls (`sectionControls`). The token count starts
+/// The planner controls. The token count starts
 /// unset so the first imported save fills in its unused sections.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -70,7 +69,7 @@ impl Planner {
             .map(|cell_type| cell_type.min(jelly.units_owned().saturating_sub(1)));
     }
 
-    /// Pick a strategy; the page also moves the objective to what it plays for.
+    /// Pick a strategy; the objective also moves to what it plays for.
     pub(crate) fn set_strategy(&mut self, strategy: Strategy) {
         self.strategy = strategy;
         if let Some(objective) = strategy.objective() {
@@ -97,7 +96,7 @@ pub(crate) struct RunInputs {
 }
 
 impl RunInputs {
-    /// `sectionControls` as `planJellySections` reads it.
+    /// The controls as the section planner reads them.
     pub(crate) fn options(&self) -> PlanOptions {
         let available = self
             .jelly

@@ -1,12 +1,12 @@
 //! FN-04: the fountain simulator.
 //!
-//! Ported from `runSim` in `js/fountain-sim-worker.js`. The simulation advances
-//! an active cavern forward in time: it buys the upgrade that best grows the
-//! marble rate (weighted three times) and the optimal desired-currency rate,
-//! waits for the currency the next purchase costs, drains the marble bar as it
-//! fills, and spends the marble on the best marble level whenever one becomes
-//! affordable. Currency income is a steady-state estimate at the current rates,
-//! so the saved ground stacks do not seed the run.
+//! The simulation advances an active cavern forward in time: it buys the
+//! upgrade that best grows the marble rate (weighted three times) and the
+//! optimal desired-currency rate, waits for the currency the next purchase
+//! costs, drains the marble bar as it fills, and spends the marble on the best
+//! marble level whenever one becomes affordable. Currency income is a
+//! steady-state estimate at the current rates, so the saved ground stacks do
+//! not seed the run.
 //!
 //! There is no randomness and no wall clock in the loop: the same cavern and
 //! [`SimRequest`] always produce the same events, balances and levels.
@@ -18,7 +18,7 @@ use idleon_common::{Control, Progress};
 /// How long the run simulates, and the desired currency it holds.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SimRequest {
-    /// The time limit in hours, as the page's input reads it.
+    /// The time limit in hours.
     pub hours: f64,
     /// The simulated desired currency; `None` reads the save's choice.
     pub desired: Option<usize>,
@@ -145,13 +145,13 @@ struct MarbleTarget {
 }
 
 impl Fountain {
-    /// `runSim` without a progress report.
+    /// The simulation without a progress report.
     pub fn simulate(&self, request: SimRequest) -> SimResult {
         self.simulate_with(request, |_| Control::Continue)
             .expect("a run without reports is never asked to stop")
     }
 
-    /// `runSim`: simulate active fountain play for the request's time limit.
+    /// Simulate active fountain play for the request's time limit.
     ///
     /// Returns `None` when the report asked the run to stop; the original
     /// cavern is untouched either way, because the run works on a copy.
@@ -287,7 +287,7 @@ impl Fountain {
 struct Run<'a> {
     fountain: Fountain,
     desired: usize,
-    /// The desired currency the page's goal measurements hold fixed.
+    /// The desired currency the goal measurements hold fixed.
     fixed_desired: usize,
     focus: Option<usize>,
     time_limit: f64,
@@ -304,7 +304,7 @@ struct Run<'a> {
 }
 
 impl Run<'_> {
-    /// `_rates`: every currency's active rate and the marble bar speed.
+    /// Every currency's active rate and the marble bar speed.
     fn rates(&self) -> Rates {
         Rates {
             currency: self
@@ -349,7 +349,7 @@ impl Run<'_> {
         })
     }
 
-    /// `_targetState`: what a purchase on `kind` would switch to.
+    /// What a purchase on `kind` would switch to.
     fn target_state(&self, kind: usize) -> Target {
         let can_desire = self.fountain.bon_tot(1, 11) > 0.0;
         let can_focus = self.fountain.ignore_unlocked();
@@ -361,14 +361,14 @@ impl Run<'_> {
         }
     }
 
-    /// `_targetRateFor`: the rate of `kind` once the run switches to it.
+    /// The rate of `kind` once the run switches to it.
     fn target_rate(&self, kind: usize) -> f64 {
         let target = self.target_state(kind);
         self.fountain
             .active_earn_rates_with(target.desired, target.focus)[kind]
     }
 
-    /// `_targetRateFor` at the levels a candidate purchase would reach.
+    /// The target rate at the levels a candidate purchase would reach.
     fn target_rate_at(&self, kind: usize, fountain: &Fountain) -> f64 {
         let can_desire = fountain.bon_tot(1, 11) > 0.0;
         let can_focus = fountain.ignore_unlocked();
@@ -377,7 +377,7 @@ impl Run<'_> {
         fountain.active_earn_rates_with(desired, focus)[kind]
     }
 
-    /// `_relativeGain`: the relative gain from `current` to `next`.
+    /// The relative gain from `current` to `next`.
     fn relative_gain(&self, current: f64, next: f64) -> f64 {
         if next <= current {
             return 0.0;
@@ -389,7 +389,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_marbleTargetTimeSaved`: how much of the target's wait a purchase saves.
+    /// How much of the target's wait a purchase saves.
     #[allow(clippy::too_many_arguments)]
     fn marble_target_time_saved(
         &self,
@@ -432,7 +432,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_findBestMarbleTarget`: the currency upgrade that grows marble most.
+    /// The currency upgrade that grows marble most.
     fn find_best_marble_target(&self, rates: &Rates) -> Option<MarbleTarget> {
         let mut best: Option<MarbleTarget> = None;
         let mut best_score = 0.0;
@@ -489,7 +489,7 @@ impl Run<'_> {
         best
     }
 
-    /// The best currency purchase, as the page's main loop scores them.
+    /// The best currency purchase, as the main loop scores them.
     fn best_upgrade(&self, rates: &Rates, target: Option<&MarbleTarget>) -> Option<Candidate> {
         let mut best: Option<Candidate> = None;
         for water in 0..WATERS {
@@ -510,8 +510,8 @@ impl Run<'_> {
         best
     }
 
-    /// `_scoreUpgrade`: value a currency upgrade by the marble rate it grows
-    /// (weighted three times) plus the optimal rate it adds.
+    /// Value a currency upgrade by the marble rate it grows (weighted three
+    /// times) plus the optimal rate it adds.
     fn score_upgrade(
         &self,
         water: usize,
@@ -598,7 +598,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_scoreMarble`: value a marble level the same way.
+    /// Value a marble level the same way.
     fn score_marble(
         &self,
         water: usize,
@@ -678,7 +678,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_buyAffordable`: buy every affordable upgrade, best score first.
+    /// Buy every affordable upgrade, best score first.
     fn buy_affordable(&mut self) {
         loop {
             let rates = self.rates();
@@ -766,7 +766,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_advanceTime`: earn for `seconds`, draining the marble bar as it fills.
+    /// Earn for `seconds`, draining the marble bar as it fills.
     ///
     /// After each fill the newly affordable marble levels are bought, so the
     /// marble rate compounds inside the advance.
@@ -846,7 +846,7 @@ impl Run<'_> {
         }
     }
 
-    /// `_pushClaims`: record the currency an advance earned.
+    /// Record the currency an advance earned.
     fn push_claims(&mut self, earned: &[f64; CURRENCIES], seconds: f64) {
         for (currency, amount) in earned.iter().enumerate() {
             if *amount <= 0.0 {

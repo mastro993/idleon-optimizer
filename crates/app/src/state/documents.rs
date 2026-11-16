@@ -45,7 +45,7 @@ impl AppState {
             self.import.pending = None;
             self.import.ok = true;
             self.import.message =
-                "Paste a decoded save, a project file, an ROv2 state string, or drop one.".into();
+                "Paste a decoded save, a project file, a section config, or drop one.".into();
             return cx.notify();
         }
         if text.len() as u64 > import::MAX_IMPORT_BYTES {
@@ -306,11 +306,7 @@ impl AppState {
     /// Open the export dialog over a freshly written project document.
     pub(crate) fn open_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.export = Export::open(self);
-        self.status = format!(
-            "Exporting the project ({} bytes) and its state string ({} bytes).",
-            self.export.bytes(),
-            self.export.state_bytes()
-        );
+        self.status = format!("Exporting the project ({} bytes).", self.export.bytes());
         window.focus(&self.focus, cx);
         cx.notify();
     }
@@ -329,19 +325,6 @@ impl AppState {
             format!(
                 "Copied the project JSON to the clipboard ({} bytes).",
                 self.export.bytes()
-            ),
-            cx,
-        );
-    }
-
-    /// Put the `ROv2:` state string on the clipboard, for the upstream tool or
-    /// the import dialog's paste box.
-    pub(crate) fn copy_export_state(&mut self, cx: &mut Context<Self>) {
-        crate::ui::export::copy_state(self, cx);
-        self.set_status(
-            format!(
-                "Copied the ROv2 state string to the clipboard ({} bytes).",
-                self.export.state_bytes()
             ),
             cx,
         );

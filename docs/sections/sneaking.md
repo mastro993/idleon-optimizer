@@ -8,19 +8,12 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.
+Implement loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.
 
 ## Known gaps
 
 - `SN-G1` All-Talent terms and the Gambit point chain are explicit inputs — blocked by `wire:all-talent` (landed), `wire:gambit` (landed)
-- `SN-G2` Monte-Carlo claim simulation for the Items objective — blocked by `port:sneaking-flower-pass` (absent)
-
-## Upstream sources
-
-- sneaking-calc.html
-- js/ui/sneaking-*.js
-- js/stats/systems/w6/sneaking.js
-- assets/sneaking
+- `SN-G2` Monte-Carlo claim simulation for the Items objective — blocked by `model:sneaking-flower-pass` (absent)
 
 ## UI
 
@@ -55,7 +48,7 @@ assets/sneaking charms, items, scenes and borders.
 
 Loadout/inventory editors backed by the save with saved placement output.
 
-Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+Depends on: FND-03 Shared save JSON import, FND-06 Game asset pipeline
 
 Acceptance:
 
@@ -95,12 +88,11 @@ Depends on: SN-01 Loadout and inventory workspaces
 
 Acceptance:
 
-- Mastery values match upstream.
 - ETA updates with loadout.
 - Empty floor shows a state.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness with assets.

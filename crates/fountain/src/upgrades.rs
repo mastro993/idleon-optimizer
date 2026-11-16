@@ -1,8 +1,8 @@
 //! Upgrade levels, unlocks and the summary multipliers they feed.
 //!
-//! One method per upstream reader. [`Fountain::bon_tot`] is the percentage an
-//! upgrade grants once its marble levels are counted, and every summary figure
-//! the overview shows is built from it.
+//! [`Fountain::bon_tot`] is the percentage an upgrade grants once its marble
+//! levels are counted, and every summary figure the overview shows is built
+//! from it.
 
 use super::data::{self, data};
 use super::{
@@ -15,12 +15,12 @@ use serde_json::Value;
 impl Fountain {
     // ----- bonuses -----
 
-    /// `marbleBon`: the marble multiplier a marble level grants.
+    /// The marble multiplier a marble level grants.
     pub fn marble_bonus(level: f64) -> f64 {
         if level <= 0.0 { 1.0 } else { 1.5 + 0.5 * level }
     }
 
-    /// `bonTOT`: the percentage one upgrade grants at its current levels.
+    /// The percentage one upgrade grants at its current levels.
     pub fn bon_tot(&self, water: usize, upgrade: usize) -> f64 {
         let level = self.upgrade_level(water, upgrade);
         let marble = Self::marble_bonus(self.marble_level(water, upgrade));
@@ -30,7 +30,7 @@ impl Fountain {
         (marble * level * per_level).round()
     }
 
-    /// `upgUnlocked`: whether an upgrade's prerequisite is met.
+    /// Whether an upgrade's prerequisite is met.
     pub fn upgrade_unlocked(&self, water: usize, upgrade: usize) -> bool {
         let Some(entry) = super::upgrade(water, upgrade) else {
             return false;
@@ -46,7 +46,7 @@ impl Fountain {
         }
     }
 
-    /// `highestWaterIndex`: how many of the three water unlocks are bought.
+    /// How many of the three water unlocks are bought.
     fn highest_water(&self) -> usize {
         let mut highest = 0;
         for water in 0..WATERS {
@@ -55,12 +55,12 @@ impl Fountain {
         highest.min(WATERS - 1)
     }
 
-    /// `watersOwned`: the implemented waters the account can use.
+    /// The implemented waters the account can use.
     pub fn waters_owned(&self) -> usize {
         self.highest_water() + 1
     }
 
-    /// `currencyUnlocked`: whether a currency can be found.
+    /// Whether a currency can be found.
     pub fn currency_unlocked(&self, currency: usize) -> bool {
         match currency {
             0 => true,
@@ -76,22 +76,22 @@ impl Fountain {
         }
     }
 
-    /// `waterAccessible`: the water itself is unlocked.
+    /// The water itself is unlocked.
     pub fn water_accessible(&self, water: usize) -> bool {
         water <= self.highest_water()
     }
 
-    /// `upgradeAccessible`: the water and the upgrade's prerequisite are met.
+    /// The water and the upgrade's prerequisite are met.
     pub fn upgrade_accessible(&self, water: usize, upgrade: usize) -> bool {
         self.water_accessible(water) && self.upgrade_unlocked(water, upgrade)
     }
 
-    /// `ignoreUnlocked`: whether Turn and Push can hide a currency.
+    /// Whether Turn and Push can hide a currency.
     pub fn ignore_unlocked(&self) -> bool {
         self.upgrade_level(1, 12) >= 1.0
     }
 
-    /// `currencyIgnored`: whether the save hides one currency type.
+    /// Whether the save hides one currency type.
     ///
     /// `Holes[11][83]` holds the ignored types as letters (`_abcdefgh`); the
     /// game writes it as a string, and a zero cell means nothing is hidden.
@@ -115,7 +115,7 @@ impl Fountain {
             .is_some_and(|letter| text.contains(*letter))
     }
 
-    /// `activeCurrencyTypes`: the currencies that can appear, falling back to bronze.
+    /// The currencies that can appear, falling back to bronze.
     pub fn active_currencies(&self) -> Vec<usize> {
         let active: Vec<usize> = (0..CURRENCIES)
             .filter(|currency| self.currency_unlocked(*currency))
@@ -124,12 +124,12 @@ impl Fountain {
         if active.is_empty() { vec![0] } else { active }
     }
 
-    /// `spacesOwned`: how many coins can lie on the ground at once.
+    /// How many coins can lie on the ground at once.
     pub fn spaces(&self) -> usize {
         (1.0 + self.bon_tot(0, 10)).min(16.0) as usize
     }
 
-    /// `maxStackSize`: how many coins one space holds.
+    /// How many coins one space holds.
     pub fn max_stack(&self) -> f64 {
         (3.0 + self.schematic(schematic::STACK_TWO, 3.0)
             + self.bon_tot(0, 11)
@@ -137,17 +137,17 @@ impl Fountain {
         .min(50.0)
     }
 
-    /// `maxCoins`: the spaces times the stack size.
+    /// The spaces times the stack size.
     pub fn max_coins(&self) -> f64 {
         self.spaces() as f64 * self.max_stack()
     }
 
-    /// `barSpeed`: the AFK fill rate multiplier.
+    /// The AFK fill rate multiplier.
     pub fn bar_speed(&self) -> f64 {
         (1.0 + self.bon_tot(0, 9) / 100.0) * (1.0 + self.arcade_fountain_speed() / 100.0)
     }
 
-    /// `_arcadeBonus68`: the arcade's Fountain Speed bonus.
+    /// The arcade's Fountain Speed bonus.
     fn arcade_fountain_speed(&self) -> f64 {
         let level = self.arcade.get(68).and_then(json::number).unwrap_or(0.0);
         if level <= 0.0 {
@@ -183,39 +183,39 @@ impl Fountain {
         maxed * companion * raw
     }
 
-    /// `barFillTime`: the AFK seconds one coin bar takes.
+    /// The AFK seconds one coin bar takes.
     pub fn bar_fill_time(&self) -> f64 {
         data().bar_fill_times[0] / self.bar_speed()
     }
 
-    /// `marbleBarFillTime`: the AFK seconds the marble bar takes.
+    /// The AFK seconds the marble bar takes.
     pub fn marble_bar_fill_time() -> f64 {
         data().bar_fill_times[1]
     }
 
-    /// `duckBarFillTime`: the AFK seconds the duck bar takes.
+    /// The AFK seconds the duck bar takes.
     pub fn duck_bar_fill_time() -> f64 {
         data().bar_fill_times[2]
     }
 
-    /// `activeSpeedMultiDisplay`: the Water Bender fill multiplier alone.
+    /// The Water Bender fill multiplier alone.
     pub fn active_speed_display(&self) -> f64 {
         let bonus = self.bon_tot(0, 12);
         1.0 + (4.0 * bonus).min(4.0) + bonus / 100.0
     }
 
-    /// `activeSpeedMulti`: the AFK and active fill rates combined.
+    /// The AFK and active fill rates combined.
     pub fn active_speed(&self) -> f64 {
         1.0 + self.active_speed_display()
     }
 
-    /// `currencyKeep`: the Money Back Guarantee share of a full board's coins.
+    /// The Money Back Guarantee share of a full board's coins.
     pub fn currency_keep(&self) -> f64 {
         let bonus = self.bon_tot(0, 8);
         0.1 + bonus / (100.0 + bonus) * 0.5
     }
 
-    /// `royalChance`: the chance a fill crowns a stack.
+    /// The chance a fill crowns a stack.
     pub fn royal_chance(&self) -> f64 {
         let bonus = self.bon_tot(1, 8);
         if bonus <= 0.0 {
@@ -224,12 +224,12 @@ impl Fountain {
         (1.0 / 300.0 * (1.0 + bonus / 100.0)).min(1.0)
     }
 
-    /// `royalMulti`: what a royal stack is worth.
+    /// What a royal stack is worth.
     pub fn royal_multi(&self) -> f64 {
         5.0 + self.bon_tot(1, 9) / 100.0
     }
 
-    /// `effectiveRoyalMulti`: the royal multiplier once Royal Stacks is bought.
+    /// The royal multiplier once Royal Stacks is bought.
     pub fn effective_royal_multi(&self) -> f64 {
         if self.royal_chance() > 0.0 {
             self.royal_multi()
@@ -238,27 +238,27 @@ impl Fountain {
         }
     }
 
-    /// `desireMulti`: what a desired currency is worth.
+    /// What a desired currency is worth.
     pub fn desire_multi(&self) -> f64 {
         1.0 + self.bon_tot(1, 11) / 100.0
     }
 
-    /// `_sizeMatterBonus`: the stack-size coin bonus once the schematic is owned.
+    /// The stack-size coin bonus once the schematic is owned.
     pub fn size_matter_bonus(&self) -> f64 {
         self.schematic(schematic::SIZE, 10.0)
     }
 
-    /// `marbleBarUnlocked`: whether Marble Filling is bought.
+    /// Whether Marble Filling is bought.
     pub fn marble_bar_unlocked(&self) -> bool {
         self.bon_tot(1, 10) >= 1.0
     }
 
-    /// `duckBarUnlocked`: whether Rubber Ducky is bought.
+    /// Whether Rubber Ducky is bought.
     pub fn duck_bar_unlocked(&self) -> bool {
         self.upgrade_level(2, 12) >= 1.0
     }
 
-    /// `luckyCoinBaseChance`: the lucky chance before each coin grows rarer.
+    /// The lucky chance before each coin grows rarer.
     pub fn lucky_coin_base_chance(&self) -> f64 {
         let base = self.bon_tot(2, 8);
         if base == 0.0 {
@@ -268,14 +268,14 @@ impl Fountain {
         (0.001 * (1.0 + (base + boost) / 100.0)).min(1.0)
     }
 
-    /// `luckyCoinValuePer`: the value a lucky coin adds, as a percentage.
+    /// The value a lucky coin adds, as a percentage.
     pub fn lucky_coin_value_per(&self) -> f64 {
         25.0 + self.bon_tot(2, 9)
     }
 
     // ----- planner -----
 
-    /// `upgCost`: the currency the next upgrade level costs.
+    /// The currency the next upgrade level costs.
     ///
     /// A base cost of one is the game's per-level row, whose cost grows with the
     /// level as well as the scale.
@@ -290,7 +290,7 @@ impl Fountain {
         }
     }
 
-    /// `marbleCost`: the marble the next marble level costs.
+    /// The marble the next marble level costs.
     pub fn marble_cost(water: usize, upgrade: usize, marble_level: f64) -> f64 {
         if water >= 2 {
             return 250_000.0 * (2.0 * (5.0 + marble_level)).powf(marble_level);
@@ -301,7 +301,7 @@ impl Fountain {
         500.0 * (5.0 + marble_level).powf(marble_level)
     }
 
-    /// `canMarble`: the upgrades `HolesInfo[76]` leaves without a marble track.
+    /// The upgrades `HolesInfo[76]` leaves without a marble track.
     pub fn can_marble(water: usize, upgrade: usize) -> bool {
         !matches!(
             (water, upgrade),
@@ -362,7 +362,7 @@ impl Fountain {
         })
     }
 
-    /// `_formatUpgradeDescription`: the saved numbers filled into the row text.
+    /// The saved numbers filled into the row text.
     pub fn upgrade_description(&self, water: usize, upgrade: usize) -> String {
         let Some(row) = super::upgrade(water, upgrade) else {
             return String::new();
@@ -432,7 +432,7 @@ impl Fountain {
         description.replace('$', &token)
     }
 
-    /// `_upgBreakpoint`: the cap an upgrade's effect is near, if any.
+    /// The cap an upgrade's effect is near, if any.
     pub fn upgrade_cap(&self, water: usize, upgrade: usize, bonus: f64) -> Option<CapHint> {
         let (label, capped, detail) = match (water, upgrade) {
             (0, 10) => {
@@ -482,7 +482,7 @@ impl Fountain {
             .collect()
     }
 
-    /// `opalCost`: the opals the next fountain level costs.
+    /// The opals the next fountain level costs.
     pub fn opal_cost(level: f64) -> f64 {
         100.0 * (1.0 + level).powf(1.5) * 4.8_f64.powf(level)
     }
@@ -511,7 +511,7 @@ impl Fountain {
 
     // ----- cross-system bonuses -----
 
-    /// The eighteen fountain upgrades that boost other systems, in upstream order.
+    /// The eighteen fountain upgrades that boost other systems, in game order.
     pub fn cross_bonuses(&self) -> Vec<CrossBonus> {
         const BONUSES: [(usize, usize, &str, &str); 18] = [
             (0, 13, "Bravery Monument", "Monumental Boost"),
@@ -550,7 +550,7 @@ impl Fountain {
         let fountain = FormulaNode::new("Fountain upgrades", self.currency_fountain_multi())
             .with_format(ValueFormat::Multiplier)
             .with_input("Water unlocks × currency boosters")
-            .with_source("fountain.js · currencyFountainMulti")
+            .with_source("Fountain currency multiplier")
             .with_children([
                 FormulaNode::leaf(
                     "Blue Water",
@@ -584,13 +584,13 @@ impl Fountain {
             .with_format(ValueFormat::Multiplier)
             .with_input("Fountain bonuses × external bonuses")
             .with_multiplier(total)
-            .with_source("fountain.js · currencyAllMulti")
+            .with_source("Fountain currency value")
             .with_note("What every coin is worth before its own currency and stack bonuses.")
             .with_children(std::iter::once(fountain).chain(external))
     }
 }
 
-/// A number as JS `String` prints it: whole numbers lose the fraction.
+/// A number in its shortest form: whole numbers lose the fraction.
 fn plain(value: f64) -> String {
     if value.fract() == 0.0 {
         format!("{value:.0}")

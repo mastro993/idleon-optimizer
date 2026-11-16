@@ -1,10 +1,9 @@
 //! Custom shape priority presets: the named tier lists the project keeps.
 //!
-//! Upstream stores user presets in browser storage (`idleon_shapePresets`).
-//! This build keeps them in the project's research config, so an export
-//! carries them and an import restores them. A preset holds the two tier lists
-//! only; editing a tier detaches the active preset, it never rewrites the
-//! preset or a built-in.
+//! The presets live in the project's research config, so an export carries
+//! them and an import restores them. A preset holds the two tier lists only;
+//! editing a tier detaches the active preset, it never rewrites the preset or
+//! a built-in.
 
 use crate::sections::presets;
 use idleon_research::Tiers;

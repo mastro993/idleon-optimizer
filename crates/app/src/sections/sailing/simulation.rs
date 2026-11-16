@@ -1,11 +1,11 @@
 //! The Fleet Simulation tab: the run controls, progress and the pile results.
 //!
-//! Upstream runs the pile in a module worker. This section runs the same
-//! simulation through the shared [`idleon_ui::runner::TaskRunner`], so the progress
-//! card, cancel action, cancelled notice and stale marker are the ones every
-//! other section uses. Every trial starts with an empty pile and all boats
-//! freshly departed, and the tier filter applies only until the pile reaches its
-//! near-full target, matching the game's order.
+//! The pile simulation runs through the shared
+//! [`idleon_ui::runner::TaskRunner`], so the progress card, cancel action,
+//! cancelled notice and stale marker are the ones every other section uses.
+//! Every trial starts with an empty pile and all boats freshly departed, and
+//! the tier filter applies only until the pile reaches its near-full target,
+//! matching the game's order.
 
 use super::text_kpi;
 use crate::state::AppState;

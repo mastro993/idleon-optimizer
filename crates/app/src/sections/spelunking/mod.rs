@@ -1,14 +1,14 @@
 //! The Spelunking Simulator: expedition controls, party, elixir belt, depth
 //! estimates and the expedition run.
 //!
-//! Ported from `spelunking-calc.html` and `js/ui/spelunking.js`. SP-01 covers the
-//! controls, the party and elixir belt, and the Depth limits tab; SP-02 adds the
-//! seeded run with its entry, tool, reaction time and event log; SP-03 adds the
-//! phased Amber policy with its dump, finisher, reserve, harvest and rope
-//! reserve limits, the run result's phase record, and the depth optimizer (SP-04).
+//! SP-01 covers the controls, the party and elixir belt, and the Depth limits
+//! tab; SP-02 adds the seeded run with its entry, tool, reaction time and event
+//! log; SP-03 adds the phased Amber policy with its dump, finisher, reserve,
+//! harvest and rope reserve limits, the run result's phase record, and the
+//! depth optimizer (SP-04).
 //!
-//! The four account multipliers upstream derives from its whole stat context are
-//! user inputs here (see [`idleon_spelunking::Account`]); every other
+//! The four account multipliers that come from the account's whole stat context
+//! are user inputs here (see [`idleon_spelunking::Account`]); every other
 //! control and every depth estimate comes from the imported save.
 
 mod actions;
@@ -36,8 +36,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
 
 /// The section: the controls, the party and belt, the account inputs and the
-/// depth estimates in one scrolling page (the upstream page's shared toolbar
-/// above its Depth limits tab).
+/// depth estimates in one scrolling page.
 pub(crate) fn view(
     state: &mut AppState,
     window: &mut Window,

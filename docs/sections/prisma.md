@@ -8,16 +8,11 @@
 - Status: `partial`
 - Depends on: `foundation`
 
-Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.
+Implement bubble Prisma impact search across damage, stats, skills and account totals with streamed results.
 
 ## Known gaps
 
 - `PR-G1` Damage, stats and skills outcome families; bubble icons — blocked by `stats:descriptors` (partial)
-
-## Upstream sources
-
-- prisma-calc.html
-- js/ui/prisma.js
 
 ## UI
 
@@ -68,10 +63,9 @@ Acceptance:
 
 - Rows sort by the selected metric.
 - Coverage lists missing systems.
-- Values match upstream.
 
 ## Verification
 
-- Fixture ranking test.
+- Ranking tests over the impact search.
 - Cancel test.
 - Harness.

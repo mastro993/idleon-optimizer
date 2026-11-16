@@ -67,8 +67,8 @@ impl Tab {
 /// The optimizer's step caps, as the page's selector lists them.
 pub(crate) const STEP_CHOICES: [usize; 5] = [10, 25, 50, 100, 250];
 
-/// The simulation's time limit bounds, in hours. The page's input has no
-/// maximum; the section caps a run so a typo cannot start an endless one.
+/// The simulation's time limit bounds, in hours. The cap keeps a typo from
+/// starting an endless run.
 pub(crate) const SIM_MIN_HOURS: f64 = 1.0;
 pub(crate) const SIM_MAX_HOURS: f64 = 720.0;
 pub(crate) const SIM_DEFAULT_HOURS: f64 = 24.0;

@@ -228,7 +228,7 @@ fn rows(save: &Map<String, Value>, key: &str) -> Vec<Vec<Value>> {
     }
 }
 
-/// `1 + Sailing[row][cell]`, the active slot count upstream uses.
+/// `1 + Sailing[row][cell]`, the active slot count.
 fn count(sailing: &[Vec<Value>], row: usize, cell: usize) -> usize {
     let active = sailing
         .get(row)
