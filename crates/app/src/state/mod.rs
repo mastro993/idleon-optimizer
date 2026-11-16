@@ -496,6 +496,7 @@ impl AppState {
         endpoint_dir: Option<std::path::PathBuf>,
         section: Option<String>,
         state_dir: Option<std::path::PathBuf>,
+        launch_import: Option<std::path::PathBuf>,
         cx: &mut Context<Self>,
     ) -> Self {
         #[cfg(feature = "automation")]
@@ -1304,6 +1305,9 @@ impl AppState {
         if let Some(notice) = state.session.notice.clone() {
             state.status = notice;
         }
+        if let Some(path) = launch_import {
+            state.import_file(&path, window, cx);
+        }
         if let Some(id) = section {
             state.open_section(&id, window, cx);
         }
@@ -1447,7 +1451,9 @@ pub(crate) fn headless(
 ) -> gpui::WindowHandle<AppState> {
     cx.update(ely_gpui_component::init_for_tests);
     let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
-    cx.add_window(|window, cx| AppState::new(window, Some(endpoint), None, Some(state_dir), cx))
+    cx.add_window(|window, cx| {
+        AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
+    })
 }
 
 #[cfg(test)]
@@ -1476,6 +1482,71 @@ mod tests {
         let section = route.section().expect("the damage page is registered");
         assert!(!section.dashboard);
         assert_eq!(section.status, sections::Status::Ready);
+    }
+
+    /// A window launched with `--import <path>`.
+    fn launched_with_import(
+        cx: &mut gpui::TestAppContext,
+        dir: &std::path::Path,
+        import: std::path::PathBuf,
+    ) -> gpui::WindowHandle<AppState> {
+        cx.update(ely_gpui_component::init_for_tests);
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        cx.add_window(|window, cx| {
+            AppState::new(
+                window,
+                Some(endpoint),
+                None,
+                Some(state_dir),
+                Some(import),
+                cx,
+            )
+        })
+    }
+
+    #[test]
+    fn a_launch_import_applies_the_file_like_the_import_dialog() {
+        let dir = std::env::temp_dir().join(format!("idleon-launch-import-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let fixture =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/data.json");
+        let mut cx = gpui::TestAppContext::single();
+        let window = launched_with_import(&mut cx, &dir, fixture);
+        window
+            .update(&mut cx, |state, _, _| {
+                assert!(state.save_loaded, "{}", state.status);
+                assert!(!state.import.open);
+                assert_eq!(
+                    state
+                        .session
+                        .recent
+                        .first()
+                        .map(|entry| entry.source.as_str()),
+                    Some("data.json")
+                );
+            })
+            .expect("the window is open");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_launch_import_that_cannot_be_read_says_so_and_loads_nothing() {
+        let dir =
+            std::env::temp_dir().join(format!("idleon-launch-missing-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut cx = gpui::TestAppContext::single();
+        let window = launched_with_import(&mut cx, &dir, dir.join("missing.json"));
+        window
+            .update(&mut cx, |state, _, _| {
+                assert!(!state.save_loaded);
+                assert!(
+                    state.status.starts_with("Could not read missing.json"),
+                    "{}",
+                    state.status
+                );
+            })
+            .expect("the window is open");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

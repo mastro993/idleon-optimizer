@@ -9,6 +9,7 @@ use idleon_fishing::FishingSave;
 use idleon_import::{Imported, pipeline};
 use idleon_monument as monument;
 use idleon_sailing::{AssignmentMode, Goal};
+use std::path::Path;
 
 impl AppState {
     /// Open the shared import dialog, where every section's header import goes.
@@ -89,6 +90,36 @@ impl AppState {
             Err(error) => self.fail_import(source, &error.to_string(), cx),
         }
         cx.notify();
+    }
+
+    /// Read the file at `path` into a pending import, as a dropped file is.
+    pub(crate) fn check_file(&mut self, path: &Path, cx: &mut Context<Self>) {
+        let source = import::file_name(path);
+        let too_large = std::fs::metadata(path)
+            .map(|meta| meta.len() > import::MAX_IMPORT_BYTES)
+            .unwrap_or(false);
+        if too_large {
+            return self.fail_import(
+                &source,
+                "the file is larger than the 64 MB import limit",
+                cx,
+            );
+        }
+        match std::fs::read_to_string(path) {
+            Ok(text) => self.check_import(&text, &source, cx),
+            Err(error) => self.fail_import(&source, &error.to_string(), cx),
+        }
+    }
+
+    /// Apply the file at `path` the way the import dialog would, for
+    /// `--import`; a file that cannot be read is named on the status line.
+    pub(crate) fn import_file(&mut self, path: &Path, window: &mut Window, cx: &mut Context<Self>) {
+        self.check_file(path, cx);
+        if self.import.pending.is_some() {
+            self.apply_import(window, cx);
+        } else {
+            self.status = self.import.message.clone();
+        }
     }
 
     /// Record a document that could not be read; nothing becomes pending.

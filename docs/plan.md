@@ -61,7 +61,8 @@ Shell (`ui/shell.rs`):
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
   ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
-  clicking it does nothing. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
+  clicking it does nothing. The sidebar scrolls with an edge shade (Ely `ScrollShadow`) and no
+  scrollbar, which would cover the rail's icons. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
   in a tooltip) and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
 - The workspace beside the sidebar holds the place and, on a section without a save, the
@@ -76,7 +77,8 @@ Home (the landing page):
 - Search matches title, description and group; Escape clears; Enter opens the first match.
 - Last opened section is remembered and offered as Resume.
 - Import accepts a raw save, a project JSON or a section config; it previews the detected format and
-  warnings before applying.
+  warnings before applying. `--import <file>` (or `IDLEON_OPTIMIZER_IMPORT`) applies one at launch
+  the same way, after the session restores and before `--section` opens.
 
 Section pages:
 

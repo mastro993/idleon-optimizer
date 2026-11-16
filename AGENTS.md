@@ -26,8 +26,10 @@ tables.
 or needs a realistic run to debug:
 
 - import it in tests through `idleon_import::import` (`crates/import/tests/fixture.rs`);
-- paste it into the Import dialog (the Import button in the shared header), or type it through the
-  MCP bridge, to debug the app with real account state.
+- launch the app with it to debug real account state:
+  `idleon-optimizer --import fixtures/data.json` (or `IDLEON_OPTIMIZER_IMPORT=<path>`, which a
+  harness-spawned window inherits) applies it as the Import dialog would. The bridge refuses typed
+  text over 64 KiB, so do not paste the fixture through it.
 
 It is test input only: never tune production logic to its quirks. Add small purpose-built saves in
 `crates/import/tests/save.rs` for edge cases and leave the fixture frozen; if it is regenerated,

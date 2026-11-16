@@ -96,7 +96,16 @@ pkill -f target/debug/idleon-optimizer
 `mcp-drive.mjs` exits non-zero when a check fails, which makes it usable as a gate for a lane that
 touches the UI.
 
-The app also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
+The app also takes `--import <file>` (or `IDLEON_OPTIMIZER_IMPORT=<file>`, inherited by every window
+a harness spawns) to apply a save, project or section config at launch exactly as the Import dialog
+would; a file that cannot be read is named on the status line. Use it for the 665 KiB
+`fixtures/data.json`, which is over the bridge's 64 KiB `type_text` limit:
+
+```console
+IDLEON_OPTIMIZER_IMPORT=$PWD/fixtures/data.json node script/mcp-smoke.mjs --spawn --section farming
+```
+
+It also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
 it and asserts the section root and (while no save is loaded) the shared `no-save-state` banner:
 
 ```console

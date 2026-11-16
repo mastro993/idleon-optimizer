@@ -179,28 +179,8 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
         .kinds(&["json", "txt"])
         .hint("it.json, save.json, a project file or a section config")
         .on_drop(move |paths, _window, cx| {
-            let Some(path) = paths.first() else {
-                return;
-            };
-            let source = file_name(path);
-            let too_large = std::fs::metadata(path)
-                .map(|meta| meta.len() > MAX_IMPORT_BYTES)
-                .unwrap_or(false);
-            if too_large {
-                dropped.update(cx, |state, cx| {
-                    state.fail_import(
-                        &source,
-                        "the file is larger than the 64 MB import limit",
-                        cx,
-                    );
-                });
-                return;
-            }
-            match std::fs::read_to_string(path) {
-                Ok(text) => dropped.update(cx, |state, cx| state.check_import(&text, &source, cx)),
-                Err(error) => dropped.update(cx, |state, cx| {
-                    state.fail_import(&source, &error.to_string(), cx);
-                }),
+            if let Some(path) = paths.first() {
+                dropped.update(cx, |state, cx| state.check_file(path, cx));
             }
         });
 
@@ -517,7 +497,7 @@ fn stat(id: &'static str, label: &'static str, value: &str, tone: gpui::Hsla) ->
 }
 
 /// The dropped file's name, or its whole path for a root.
-fn file_name(path: &Path) -> String {
+pub(crate) fn file_name(path: &Path) -> String {
     match path.file_name() {
         Some(name) => name.to_string_lossy().into_owned(),
         None => path.display().to_string(),

@@ -44,6 +44,9 @@ fn has_argument(name: &str) -> bool {
         .any(|argument| argument == name || argument.starts_with(&format!("{name}=")))
 }
 
+/// The environment variable that names a file to import at launch.
+const IMPORT_ENV: &str = "IDLEON_OPTIMIZER_IMPORT";
+
 fn main() -> Result<()> {
     // The verification harnesses read the registry from the binary instead of
     // duplicating section ids in JavaScript.
@@ -61,6 +64,11 @@ fn main() -> Result<()> {
     // `--section <id>` opens that registry entry at launch: the harness uses it
     // to reach hidden tools, and an unknown id proves the missing-section state.
     let initial = argument("--section");
+    // `--import <file>` (or `IDLEON_OPTIMIZER_IMPORT`) applies a save, project
+    // or section config at launch, as the import dialog would.
+    let import = argument("--import")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os(IMPORT_ENV).map(PathBuf::from));
     gpui_platform::application()
         .with_assets(ely_gpui_component::Assets)
         .run(move |cx: &mut App| {
@@ -75,7 +83,7 @@ fn main() -> Result<()> {
                 cx,
             );
             Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
-            if let Err(error) = open_window(cx, endpoint, initial, state_dir) {
+            if let Err(error) = open_window(cx, endpoint, initial, state_dir, import) {
                 eprintln!("idleon-optimizer: {error:#}");
                 log::error!("the window failed to open: {error:#}");
                 cx.quit();
@@ -89,6 +97,7 @@ fn open_window(
     endpoint: Option<PathBuf>,
     initial: Option<String>,
     state_dir: Option<PathBuf>,
+    import: Option<PathBuf>,
 ) -> Result<()> {
     let bounds = Bounds::centered(None, size(px(1440.0), px(900.0)), cx);
     let options = WindowOptions {
@@ -102,7 +111,7 @@ fn open_window(
         ..Default::default()
     };
     cx.open_window(options, move |window, cx| {
-        cx.new(move |cx| AppState::new(window, endpoint, initial, state_dir, cx))
+        cx.new(move |cx| AppState::new(window, endpoint, initial, state_dir, import, cx))
     })
     .context("window failed to open")?;
     cx.activate(true);
