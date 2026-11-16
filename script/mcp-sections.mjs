@@ -2093,7 +2093,7 @@ const INTERACTIONS = {
     if (useBest) {
       const y = useBest.bounds?.y ?? 0;
       if (y > 600) {
-        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
         await waitForNode(lane, 'fishing-use-best', 'fishing: the ranking scrolls into view');
       }
       await lane.call('click_element', { id: 'fishing-use-best' });
@@ -2133,7 +2133,7 @@ const INTERACTIONS = {
       const node = (await lane.tree()).find((entry) => entry.id === id);
       const y = node?.bounds?.y ?? 0;
       if (y > 600) {
-        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
         await waitForNode(lane, id, `fishing: ${id} scrolls into view`);
       }
     };
