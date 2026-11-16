@@ -68,7 +68,7 @@ Flows:
   item turns active and its finished or failed dot clears. Clicking Home shows the grid. The header
   carries no place title (owner's call after the S1 review): the active item names the place.
 - **Fold the sidebar.** Click the toggle (`IconName::PanelLeft`) at the header's left: the sidebar animates from 240 px
-  (icon and title, group headings) to the 56 px rail (icons only, title in a tooltip, no group
+  (icon and title, group headings) to the 56 px rail (icons only, title in a tooltip, short group
   headings) and back. The choice is written to the session file and restored at launch; the
   default is expanded.
 - **Go back and forward.** The arrows beside the toggle, or Cmd/Ctrl+[ and Cmd/Ctrl+] (also
@@ -106,8 +106,7 @@ game sprites.
 | Back, forward, history list | Ely `BackForwardNavigation` |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
-| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); dropped in the rail |
-| Rail separator between groups | 1 px `border` line, 4 px side inset |
+| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form centred over the icons |
 | Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded |
 | Running mark | Ely `ProgressRing` (14 px expanded, 12 px rail) |
 | Finished / failed mark | Ely `DotBadge` (8 px), accent / danger |
@@ -127,7 +126,7 @@ finished dot), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
 | Toggle tooltip and label | "Collapse sidebar" / "Expand sidebar" |
 | Arrows | "Back", "Forward"; history list "History" (Ely's own) |
 | Home item | "Home" |
-| Group headings | "General", "World 2" … "World 7", "Tools" (`Group::label`) |
+| Group headings | "General", "World 2" … "World 7", "Tools" (`Group::label`); in the rail "Gen", "W2" … "W7", "Tools" |
 | Running mark tooltip and aria label | "Running · 42%"; "2 runs · 42%" |
 | Finished / failed aria label | "Finished" / "Failed" |
 | Rail item tooltip | the section title, then " · " and the mark text when it has one |
@@ -200,7 +199,9 @@ flowchart LR
 - **A2** The header shows no place title; the active sidebar item names the open place.
 - **A3** Escape no longer leaves a section (the sidebar makes it unnecessary); sections that bind
   Escape deeper keep it.
-- **A4** Group headings do not fold; the sidebar scrolls. Rail mode drops the headings.
+- **A4** Group headings do not fold; the sidebar scrolls. Rail mode shortens the headings
+  ("Gen", "W2" … "W7", "Tools") instead of separating the groups with lines (owner's call after
+  the S1 review).
 - **A5** Several runs in one section show one ring at the least advanced fraction.
 - **A6** History and activity marks live only for the window's lifetime.
 - **A7** 1180 px suits every section's side rail (330–440 px; the 440 px one leaves its main pane about

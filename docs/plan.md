@@ -63,7 +63,7 @@ Shell (`ui/shell.rs`):
   ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
   clicking it does nothing. The sidebar scrolls with no scrollbar, which would cover the rail's
   icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
-  in a tooltip) and back; the fold is saved in the session file as
+  in a tooltip, group headings shortened to "Gen", "W2" … "W7", "Tools") and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
 - The workspace beside the sidebar holds the place and, on a section without a save, the
   `no-save-state` banner. There is no status bar: the last run or import message

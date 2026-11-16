@@ -40,10 +40,7 @@ pub(crate) fn groups() -> Vec<(Group, Vec<&'static Section>)> {
 /// The sidebar column: Home, then every group, scrolling on its own.
 pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let rail = state.session.shell.sidebar == SidebarFold::Rail;
-    let (border, ground) = {
-        let colors = &cx.theme().colors;
-        (colors.border, colors.bg)
-    };
+    let ground = cx.theme().colors.bg;
     let entity = cx.entity();
     let scroll = &state.sidebar_scroll;
 
@@ -64,9 +61,6 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 }),
         );
     for (group, sections) in groups() {
-        if rail {
-            list = list.child(div().self_stretch().mx_1().h(px(1.0)).bg(border));
-        }
         // Folded, NavGroup renders its items alone; the heading is drawn here
         // because NavGroup's title always carries a fold chevron, and these
         // headings do not fold.
@@ -88,17 +82,14 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 }),
             );
         }
-        list = list.child(if rail {
-            nav.into_any_element()
-        } else {
+        list = list.child(
             div()
                 .flex()
                 .flex_col()
                 .gap_0p5()
-                .child(heading(group, cx))
-                .child(nav)
-                .into_any_element()
-        });
+                .child(heading(group, rail, cx))
+                .child(nav),
+        );
     }
 
     // A fade at each edge says there is more to scroll; a scrollbar would sit
@@ -160,8 +151,9 @@ fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
     .size_full()
 }
 
-/// A group's title in `NavGroup`'s type, without the fold chevron.
-fn heading(group: Group, cx: &App) -> impl IntoElement {
+/// A group's title in `NavGroup`'s type, without the fold chevron; the rail
+/// shows its short form, centred over the icons.
+fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .id(SharedString::from(format!(
@@ -173,13 +165,27 @@ fn heading(group: Group, cx: &App) -> impl IntoElement {
         .flex()
         .items_center()
         .h(theme.control_height(ControlSize::Sm))
-        .px_2()
         .border_1()
         .border_color(gpui::transparent_black())
         .text_size(theme.text_size(TextSize::Xs))
         .font_weight(FontWeight::MEDIUM)
         .text_color(theme.colors.fg_subtle)
-        .child(group.label())
+        .map(|heading| {
+            if rail {
+                heading.justify_center().child(rail_label(group))
+            } else {
+                heading.px_2().child(group.label())
+            }
+        })
+}
+
+/// A group's heading in the rail, short enough for its 56 px.
+fn rail_label(group: Group) -> &'static str {
+    match group {
+        Group::General => "Gen",
+        Group::Tools => "Tools",
+        world => world.badge(),
+    }
 }
 
 /// The 20 px icon slot every item shares.
@@ -344,6 +350,12 @@ impl RenderOnce for SidebarItem {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_rail_shortens_every_group_heading() {
+        let labels: Vec<&str> = Group::ALL.into_iter().map(rail_label).collect();
+        assert_eq!(labels, ["Gen", "W2", "W3", "W4", "W5", "W6", "W7", "Tools"]);
+    }
 
     #[test]
     fn every_section_sits_once_under_its_world_and_the_hidden_ones_under_tools() {
