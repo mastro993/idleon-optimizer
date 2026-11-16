@@ -7,7 +7,7 @@ use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
 use crate::state::AppState;
 use ely_gpui_component::forms::Run;
-use ely_gpui_component::layout::{ScrollArea, Sidebar, bring_into_view};
+use ely_gpui_component::layout::{ScrollShadow, Sidebar, bring_into_view};
 use ely_gpui_component::navigation::NavGroup;
 use ely_gpui_component::primitives::{FocusRing as _, Icon, IconName, Tooltip};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, IconSize, Radius, TextSize};
@@ -84,14 +84,23 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
         list = list.child(nav);
     }
 
+    // A shade at each edge says there is more to scroll; a scrollbar would sit
+    // on the icons, the rail's narrow column most of all.
     Sidebar::new("app-sidebar", rail)
         .child(
-            ScrollArea::new("app-sidebar-scroll")
-                .vertical()
-                .track_scroll(scroll)
+            div()
+                .relative()
                 .flex_1()
                 .min_h_0()
-                .child(list),
+                .child(
+                    div()
+                        .id("app-sidebar-scroll")
+                        .size_full()
+                        .overflow_y_scroll()
+                        .track_scroll(scroll)
+                        .child(list),
+                )
+                .child(ScrollShadow::new(scroll)),
         )
         .into_any_element()
 }
