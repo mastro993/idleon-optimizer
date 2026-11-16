@@ -8,7 +8,7 @@ use crate::sections::research::Tab;
 use crate::state::AppState;
 use ely_gpui_component::layout::ScrollArea;
 use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, ElementId, Global, IntoElement, ParentElement, Pixels, Role,
@@ -200,12 +200,22 @@ pub(crate) fn figure(
 }
 
 /// A tab strip that scrolls sideways when its tabs need more room than the
-/// workspace leaves them, instead of running past the window's edge.
-pub(crate) fn scrolling_tabs(id: impl Into<ElementId>, tabs: impl IntoElement) -> AnyElement {
-    ScrollArea::new(id)
-        .flex_1()
+/// workspace leaves them, instead of running past the window's edge. It takes
+/// the full width in a column and shrinks beside siblings in a row; its height
+/// is a tab's, so a column that squeezes its children never collapses it.
+pub(crate) fn scrolling_tabs(
+    id: impl Into<ElementId>,
+    tabs: impl IntoElement,
+    cx: &App,
+) -> AnyElement {
+    let height = cx.theme().control_height(ControlSize::Md);
+    div()
+        .flex()
+        .w_full()
         .min_w_0()
-        .child(tabs)
+        .h(height)
+        .min_h(height)
+        .child(ScrollArea::new(id).flex_1().min_w_0().child(tabs))
         .into_any_element()
 }
 
@@ -221,7 +231,7 @@ pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyEleme
             entity.update(cx, |state, cx| state.set_tab(tab, cx));
         }
     });
-    scrolling_tabs("app-tabs-scroll", tabs)
+    scrolling_tabs("app-tabs-scroll", tabs, cx)
 }
 
 #[cfg(test)]
