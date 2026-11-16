@@ -273,7 +273,6 @@ pub(crate) fn view(
         .items_center()
         .gap_3()
         .child(layout::app_tabs(state, cx))
-        .child(div().flex_1())
         .child(
             div()
                 .id("research-summary")

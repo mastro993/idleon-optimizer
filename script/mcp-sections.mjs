@@ -4780,6 +4780,33 @@ const searchFor = async (lane, text, cardId, label) => {
   }
 };
 
+/// Click a sidebar item, scrolling the sidebar first when the item sits
+/// outside it (the Tools group is below the fold at the default height).
+async function openNav(lane, id) {
+  let previous = null;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const nodes = await lane.tree();
+    const node = nodes.find((entry) => entry.id === id);
+    if (!node) throw new Error(`${id} is not in the sidebar`);
+    const frame = nodes.find((entry) => entry.id === 'app-sidebar')?.bounds;
+    if (!frame) throw new Error('the sidebar is not in the tree');
+    const { y, height } = node.bounds;
+    // An item that cannot move further is pressed where it is.
+    if ((y >= frame.y && y + height <= frame.y + frame.height) || y === previous) {
+      await lane.call('click_element', { id });
+      return;
+    }
+    previous = y;
+    await lane.call('scroll', {
+      x: frame.x + frame.width / 2,
+      y: frame.y + frame.height / 2,
+      delta_y: Math.ceil(y - (frame.y + frame.height / 2)),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`${id} did not scroll into the sidebar`);
+}
+
 /// Open a card from the dashboard, then verify the section it routes to.
 async function visitCard(lane, unit) {
   await waitForNode(lane, 'dashboard-search', 'the dashboard is ready');
@@ -4802,7 +4829,6 @@ async function visitSection(lane, unit) {
   const nodes = await lane.tree();
   const missing = [
     'sidebar-toggle',
-    'header-place',
     'header-import',
     'header-export',
     'header-save',
@@ -4810,11 +4836,6 @@ async function visitSection(lane, unit) {
   ]
     .filter((id) => !has(nodes, id));
   check(`${unit.id}: shared header`, missing.length === 0, `missing ${missing.join(', ')}`);
-  check(
-    `${unit.id}: header names the section`,
-    labelOf(nodes, 'header-place') === unit.title,
-    String(labelOf(nodes, 'header-place')),
-  );
   check(`${unit.id}: its sidebar item is active`, selected(nodes, `nav-${unit.id}`));
 
   if (unit.status === 'Planned') {
@@ -5060,7 +5081,6 @@ async function visitShell(registry) {
     await waitForNode(lane, 'dashboard', 'shell: the window opens on Home');
     let nodes = await lane.tree();
     check('shell: Home is active', selected(nodes, 'nav-home'));
-    check('shell: the header names Home', labelOf(nodes, 'header-place') === 'Home');
     const groups = [...new Set(registry.map((unit) => (unit.dashboard ? unit.group : 'tools')))];
     const absent = [
       'app-sidebar',
@@ -5070,11 +5090,9 @@ async function visitShell(registry) {
     check('shell: every group and section has a sidebar entry', absent.length === 0, absent.join(', '));
 
     for (const id of ['farming', 'damage']) {
-      const unit = registry.find((entry) => entry.id === id);
-      await lane.call('click_element', { id: `nav-${id}` });
+      await openNav(lane, `nav-${id}`);
       await waitForNode(lane, `section-${id}`, `shell: the ${id} item opens its section`);
       nodes = await lane.tree();
-      check(`shell: the header names ${id}`, labelOf(nodes, 'header-place') === unit.title);
       check(`shell: the ${id} item is active`, selected(nodes, `nav-${id}`));
       check(`shell: Home is no longer active on ${id}`, !selected(nodes, 'nav-home'));
       const actions = ['header-save', 'header-export', 'header-import'].filter((action) => !has(nodes, action));
@@ -5082,7 +5100,7 @@ async function visitShell(registry) {
     }
     await lane.call('click_element', { id: 'evolution' });
     await waitForNode(lane, 'farming-chain', 'shell: farming changes tab before leaving');
-    await lane.call('click_element', { id: 'nav-farming' });
+    await openNav(lane, 'nav-farming');
     await waitForNode(lane, 'farming-chain', 'shell: farming reopens on the tab it was left on');
 
     await lane.call('click_element', { id: 'sidebar-toggle' });

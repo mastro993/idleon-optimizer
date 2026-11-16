@@ -55,9 +55,8 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 
 Shell (`ui/shell.rs`):
 
-- Header across the window (`ui/header.rs`): sidebar toggle, the open place's icon, title and world
-  badge ("Home" on the dashboard, "Unknown section" for an id the registry lacks), save status,
-  Export and Import.
+- Header across the window (`ui/header.rs`): sidebar toggle, save status, Export and Import. The
+  open place is named by its active sidebar item and the status bar, not the header.
 - Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
@@ -81,7 +80,7 @@ Home (the landing page):
 
 Section pages:
 
-- The header names the section; the sidebar opens any other section in one click.
+- The active sidebar item marks the section; the sidebar opens any other section in one click.
 - The section owns its tab strip and content; the shell owns only window chrome, status
   bar and global import.
 - Per-section state survives tab switches and dashboard visits for the session, and persists across
@@ -245,7 +244,7 @@ cannot start, the window opens without it.
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
   several trees (the All Stats breakdown card and its formula card, for instance) without the
   accessibility tree collapsing their rows onto one another.
-- One shared header (sidebar toggle, place title, world badge, save status, Export, Import), one
+- One shared header (sidebar toggle, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header, sidebar and
   status bar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`

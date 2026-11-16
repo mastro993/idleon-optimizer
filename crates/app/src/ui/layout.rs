@@ -199,18 +199,29 @@ pub(crate) fn figure(
         .into_any_element()
 }
 
+/// A tab strip that scrolls sideways when its tabs need more room than the
+/// workspace leaves them, instead of running past the window's edge.
+pub(crate) fn scrolling_tabs(id: impl Into<ElementId>, tabs: impl IntoElement) -> AnyElement {
+    ScrollArea::new(id)
+        .flex_1()
+        .min_w_0()
+        .child(tabs)
+        .into_any_element()
+}
+
 /// The shared tab strip; the section that owns it passes its active tab in state.
-pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let mut tabs = TabBar::new("app-tabs").selected(SharedString::from(state.research.tab.id()));
     for tab in Tab::ALL {
         tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
     }
-    tabs.on_select(move |id, _window, cx| {
+    let tabs = tabs.on_select(move |id, _window, cx| {
         if let Some(tab) = Tab::from_id(id.as_ref()) {
             entity.update(cx, |state, cx| state.set_tab(tab, cx));
         }
-    })
+    });
+    scrolling_tabs("app-tabs-scroll", tabs)
 }
 
 #[cfg(test)]

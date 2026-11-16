@@ -1,24 +1,13 @@
-//! The header across the window: the sidebar toggle, the open place's title,
-//! the save status and the shared Export and Import actions.
+//! The header across the window: the sidebar toggle, the save status and the
+//! shared Export and Import actions.
 
 use crate::session::SidebarFold;
-use crate::state::{AppState, Route, SaveStatus};
-use crate::ui::theme::WorldBadge;
+use crate::state::{AppState, SaveStatus};
 use ely_gpui_component::buttons::{Button, ButtonVariant, IconButton};
-use ely_gpui_component::primitives::{Icon, IconName};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, IconSize};
-use ely_gpui_component::typography::Heading;
+use ely_gpui_component::primitives::IconName;
+use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
-
-/// The title the header gives a place.
-pub(crate) fn title(route: &Route) -> &'static str {
-    match route {
-        Route::Dashboard => "Home",
-        Route::Section(section) => section.title,
-        Route::Missing(_) => "Unknown section",
-    }
-}
 
 /// The header for every place. Its left padding leaves room for the macOS
 /// traffic lights in the transparent title bar.
@@ -54,42 +43,9 @@ pub(crate) fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
                     toggle.update(cx, |state, cx| state.toggle_sidebar(cx));
                 }),
         )
-        .child(place(&state.route))
         .child(div().flex_1())
         .child(save_actions(state.save_status(), muted, entity))
         .into_any_element()
-}
-
-/// The open place's icon, title and world badge.
-fn place(route: &Route) -> impl IntoElement {
-    let title = title(route);
-    let icon = match route {
-        Route::Dashboard => Some(
-            Icon::new(IconName::House)
-                .size(IconSize::Md)
-                .into_any_element(),
-        ),
-        Route::Section(section) => Some(
-            div()
-                .text_size(px(18.0))
-                .child(section.icon)
-                .into_any_element(),
-        ),
-        Route::Missing(_) => None,
-    };
-    div()
-        .id("header-place")
-        .role(Role::Heading)
-        .aria_label(title)
-        .flex()
-        .items_center()
-        .gap_3()
-        .min_w_0()
-        .children(icon)
-        .child(Heading::new(3, title))
-        .when_some(route.section(), |place, section| {
-            place.child(WorldBadge::new(section.group))
-        })
 }
 
 /// The save status and the Export and Import actions.
@@ -124,16 +80,4 @@ fn save_actions(save: SaveStatus, muted: Hsla, state: Entity<AppState>) -> impl 
                     state.update(cx, |state, cx| state.open_import(window, cx));
                 }),
         )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn the_header_names_home_the_open_section_or_an_unknown_one() {
-        assert_eq!(title(&Route::Dashboard), "Home");
-        assert_eq!(title(&Route::open("farming")), "Farming Planner");
-        assert_eq!(title(&Route::open("no-such-section")), "Unknown section");
-    }
 }

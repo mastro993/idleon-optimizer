@@ -118,8 +118,8 @@ fn emoji(icon: &'static str) -> AnyElement {
     slot().text_size(px(15.0)).child(icon).into_any_element()
 }
 
-/// One place in the sidebar: `NavItem`'s height, radius, hover, active
-/// indicator and focus ring, with any element as its icon.
+/// One place in the sidebar: `NavItem`'s height, radius, hover, active fill
+/// and focus ring, with any element as its icon.
 #[derive(IntoElement)]
 pub(crate) struct SidebarItem {
     id: SharedString,
@@ -225,16 +225,7 @@ impl RenderOnce for SidebarItem {
             .on_mouse_down(MouseButton::Left, |_, window, _| window.prevent_default())
             .map(|item| {
                 if self.active {
-                    item.bg(colors.hover).font_weight(FontWeight::MEDIUM).child(
-                        div()
-                            .absolute()
-                            .left_0()
-                            .top_1p5()
-                            .bottom_1p5()
-                            .w(theme.tab_indicator())
-                            .rounded_full()
-                            .bg(colors.accent),
-                    )
+                    item.bg(colors.hover).font_weight(FontWeight::MEDIUM)
                 } else {
                     item.hover(|style| style.bg(colors.hover).text_color(colors.fg))
                 }

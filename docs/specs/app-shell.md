@@ -61,8 +61,8 @@ Decisions agreed with the owner:
 Flows:
 
 - **Open a section.** Click its sidebar item: the section opens in the state it was left in, the
-  item turns active, its finished or failed dot clears, and the header shows its icon, title and
-  world badge. Clicking Home shows the grid with "Home" in the header.
+  item turns active and its finished or failed dot clears. Clicking Home shows the grid. The header
+  carries no place title (owner's call after the S1 review): the active item names the place.
 - **Fold the sidebar.** Click the toggle (`IconName::PanelLeft`) at the header's left: the sidebar animates from 240 px
   (icon and title, group headings) to the 56 px rail (icons only, title in a tooltip, no group
   headings) and back. The choice is written to the session file and restored at launch; the
@@ -77,7 +77,7 @@ Flows:
 - **Import a save.** The import discards the runs it invalidates (as today) and clears every
   finished and failed dot, because the results they pointed to may be gone.
 - **Missing id.** `--section <unknown>` still renders the missing-section state; no sidebar item is
-  active, and the header says "Unknown section".
+  active, and the missing-section state names the id.
 - **Narrow window.** At the 1080 × 680 minimum, both sidebar states fit; the sidebar scrolls when
   its items are taller than the window.
 
@@ -100,12 +100,11 @@ game sprites.
 | Header bar | the existing `header_bar` (`ui/layout.rs`), moved to `ui/header.rs`; keeps the 84 px traffic-light inset and 48 px height |
 | Sidebar toggle | Ely `IconButton` (`IconName::PanelLeft`, ghost, `ControlSize::Sm`) |
 | Back, forward, history list | Ely `BackForwardNavigation` |
-| Place title | Ely `Heading` level 3, the section's art (or emoji), and the existing `WorldBadge` |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
 | Group heading | Ely `NavGroup` (title dropped in the rail) |
 | Rail separator between groups | 1 px `border` line, 4 px side inset |
-| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active indicator and focus ring; a 20 px manifest image; tooltip when folded |
+| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded |
 | Running mark | Ely `ProgressRing` (14 px expanded, 12 px rail) |
 | Finished / failed mark | Ely `DotBadge` (8 px), accent / danger |
 | Rail corner disc | a circle in the row's current background (`bg`, or `hover` when active or hovered) |
@@ -114,7 +113,7 @@ game sprites.
 
 All existing (`ui/theme.rs` and Ely's theme): `bg`, `surface`, `hover`, `border`,
 `border_strong` (ring track), `fg`, `fg_muted`, `fg_subtle` (group headings), `accent` (ring arc,
-finished dot, active indicator), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
+finished dot), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
 `radius(Md)`, `control_height(Md)` (32 px rows), `sidebar_width`. No new tokens.
 
 ### Copy
@@ -123,12 +122,11 @@ finished dot, active indicator), Ely `danger` (failed dot), `tooltip_bg`/`toolti
 |---|---|
 | Toggle tooltip and label | "Collapse sidebar" / "Expand sidebar" |
 | Arrows | "Back", "Forward"; history list "History" (Ely's own) |
-| Home item and header | "Home" |
+| Home item | "Home" |
 | Group headings | "General", "World 2" … "World 7", "Tools" (`Group::label`) |
 | Running mark tooltip and aria label | "Running · 42%"; "2 runs · 42%" |
 | Finished / failed aria label | "Finished" / "Failed" |
 | Rail item tooltip | the section title, then " · " and the mark text when it has one |
-| Unknown place | "Unknown section" |
 | Save status | unchanged (`SaveStatus::label`) |
 
 ### Interactions and focus
@@ -156,7 +154,7 @@ flowchart LR
 
 - **Shell layout** (`ui/shell.rs`): header across the full width, then a row of sidebar and
   workspace, then the status bar. `layout::page_header`, `dashboard_header`, `missing_header` and
-  `back_button` merge into one `ui/header.rs`, which renders the place title from the route.
+  `back_button` merge into one `ui/header.rs`, which holds no place title.
   ([ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md))
 - **Sidebar** (`ui/sidebar.rs`): Ely `Sidebar` with one `NavGroup` per `Group` in `Group::ALL`
   order; the Tools group lists every entry with `dashboard: false` (so `stats-all` appears under
@@ -189,13 +187,13 @@ flowchart LR
   Home uses Ely's `IconName::House`. The dashboard cards switch to the same art.
 - **Ids for the harness**: `app-sidebar`, `sidebar-toggle`, `nav-home`, `nav-group-<group>`,
   `nav-<section>`, `nav-<section>-activity` (aria label "Running 42%", "Finished", "Failed"),
-  `header-place`, the history arrows under `history`. `card-<id>` stays.
+  the history arrows under `history`. `card-<id>` stays.
 
 ## Assumptions
 
 - **A1** No one has seen a run in one section block another; the requirement is guarded by a test,
   not a fix. If it has happened, a bug slice comes first.
-- **A2** The header shows the open place's icon, title and world badge after the arrows.
+- **A2** The header shows no place title; the active sidebar item names the open place.
 - **A3** Escape no longer leaves a section (the sidebar makes it unnecessary); sections that bind
   Escape deeper keep it.
 - **A4** Group headings do not fold; the sidebar scrolls. Rail mode drops the headings.
@@ -211,8 +209,8 @@ flowchart LR
 
 1. Every registry entry has a sidebar item under its group, the five dashboard-hidden ones under
    Tools, and Home first. (S1)
-2. Clicking an item opens that section in the state it was left in; the item is marked active and
-   the header names it. (S1)
+2. Clicking an item opens that section in the state it was left in, and the item is marked
+   active. (S1)
 3. The toggle folds the sidebar to the rail and back; after a relaunch the fold is restored; a
    session file without the `shell` key opens expanded. (S1)
 4. Import, Export and the save status sit at the header's right on every place. (S1)

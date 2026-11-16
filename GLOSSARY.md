@@ -13,8 +13,8 @@ names the game gives them and are not listed here.
 - **Home**: the dashboard card grid, reached from the top of the sidebar (`Route::Dashboard`).
 - **Shell**: the window chrome around a section: header, sidebar and status bar (`ui/shell.rs`).
   A section never renders shell parts itself.
-- **Header**: the bar across the top of the window: sidebar toggle, history arrows, the open
-  place's title, save status, Import and Export.
+- **Header**: the bar across the top of the window: sidebar toggle, history arrows, save status,
+  Import and Export.
 - **Sidebar**: the column of sections down the left, grouped by group. It is either **expanded**
   (icon and title) or folded to the **rail** (icon only, title in a tooltip). Avoid "drawer",
   "nav bar".
