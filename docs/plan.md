@@ -61,8 +61,8 @@ Shell (`ui/shell.rs`):
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
   ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
-  clicking it does nothing. The sidebar scrolls with an edge shade (Ely `ScrollShadow`) and no
-  scrollbar, which would cover the rail's icons. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
+  clicking it does nothing. The sidebar scrolls with no scrollbar, which would cover the rail's
+  icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
   in a tooltip) and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
 - The workspace beside the sidebar holds the place and, on a section without a save, the

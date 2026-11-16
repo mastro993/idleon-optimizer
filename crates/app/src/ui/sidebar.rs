@@ -7,14 +7,15 @@ use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
 use crate::state::AppState;
 use ely_gpui_component::forms::Run;
-use ely_gpui_component::layout::{ScrollShadow, Sidebar, bring_into_view};
+use ely_gpui_component::layout::{Sidebar, bring_into_view};
 use ely_gpui_component::navigation::NavGroup;
 use ely_gpui_component::primitives::{FocusRing as _, Icon, IconName, Tooltip};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, IconSize, Radius, TextSize};
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Axis, Context, FontWeight, IntoElement, MouseButton, ParentElement,
-    RenderOnce, Role, ScrollHandle, SharedString, Styled, Window, canvas, div, px,
+    AnyElement, App, Axis, Bounds, Context, FontWeight, Hsla, IntoElement, MouseButton,
+    ParentElement, Pixels, RenderOnce, Role, ScrollHandle, SharedString, Styled, Window, canvas,
+    div, fill, linear_color_stop, linear_gradient, point, px, size,
 };
 use std::rc::Rc;
 
@@ -39,7 +40,10 @@ pub(crate) fn groups() -> Vec<(Group, Vec<&'static Section>)> {
 /// The sidebar column: Home, then every group, scrolling on its own.
 pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let rail = state.session.shell.sidebar == SidebarFold::Rail;
-    let border = cx.theme().colors.border;
+    let (border, ground) = {
+        let colors = &cx.theme().colors;
+        (colors.border, colors.bg)
+    };
     let entity = cx.entity();
     let scroll = &state.sidebar_scroll;
 
@@ -84,7 +88,7 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
         list = list.child(nav);
     }
 
-    // A shade at each edge says there is more to scroll; a scrollbar would sit
+    // A fade at each edge says there is more to scroll; a scrollbar would sit
     // on the icons, the rail's narrow column most of all.
     Sidebar::new("app-sidebar", rail)
         .child(
@@ -100,9 +104,47 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                         .track_scroll(scroll)
                         .child(list),
                 )
-                .child(ScrollShadow::new(scroll)),
+                .child(edge_fades(scroll, ground)),
         )
         .into_any_element()
+}
+
+/// A fade into the sidebar's ground at each edge with more items beyond it.
+///
+/// Ely's `ScrollShadow` casts its shadows downward, so its bottom edge is
+/// clipped away, and it reads the scroll offsets during render, before the
+/// frame's layout. This paints after the list is laid out, so a fold or a
+/// scroll always shows the current edges.
+fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
+    let scroll = scroll.clone();
+    canvas(
+        |_, _, _| {},
+        move |bounds, (), window, _| {
+            let scrolled = -scroll.offset().y;
+            let reach = scroll.max_offset().y;
+            let height = px(36.0).min(bounds.size.height);
+            let fade = |top: Pixels, angle: f32| {
+                fill(
+                    Bounds::new(point(bounds.origin.x, top), size(bounds.size.width, height)),
+                    linear_gradient(
+                        angle,
+                        linear_color_stop(ground.alpha(0.0), 0.0),
+                        linear_color_stop(ground, 1.0),
+                    ),
+                )
+            };
+            if scrolled > Pixels::ZERO {
+                window.paint_quad(fade(bounds.top(), 0.0));
+            }
+            if scrolled < reach {
+                window.paint_quad(fade(bounds.bottom() - height, 180.0));
+            }
+        },
+    )
+    .absolute()
+    .top_0()
+    .left_0()
+    .size_full()
 }
 
 /// The 20 px icon slot every item shares.
