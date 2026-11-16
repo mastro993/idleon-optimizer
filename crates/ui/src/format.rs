@@ -82,26 +82,6 @@ pub fn count(value: u64) -> String {
     group(&value.to_string())
 }
 
-/// A leaderboard value, as the upstream endgame page prints it: `Unavailable`
-/// without a value, a grouped number below a million, `fmt_val` above.
-pub fn stat_value(value: Option<f64>) -> String {
-    let Some(value) = value else {
-        return "Unavailable".into();
-    };
-    if value < 1e6 {
-        let rounded = format!("{value:.2}");
-        let (whole, fraction) = match rounded.split_once('.') {
-            Some((whole, fraction)) => (whole, fraction.trim_end_matches('0')),
-            None => (rounded.as_str(), ""),
-        };
-        return match fraction {
-            "" => group(whole),
-            fraction => format!("{}.{fraction}", group(whole)),
-        };
-    }
-    fmt_val(value)
-}
-
 /// The upstream `fmtMonsterCash` tiers, used by the coin multiplier card.
 ///
 /// It is the game's own `NotateNumber` ladder: the Big chain above 1e16, the
@@ -508,14 +488,7 @@ mod tests {
     }
 
     #[test]
-    fn leaderboard_values_match_the_upstream_formatter() {
-        assert_eq!(stat_value(None), "Unavailable");
-        assert_eq!(stat_value(Some(3_748.500_000_000_336)), "3,748.5");
-        assert_eq!(stat_value(Some(746.926)), "746.93");
-        assert_eq!(stat_value(Some(0.0)), "0");
-        assert_eq!(stat_value(Some(1_000_000.0)), "1.00M");
-        assert_eq!(stat_value(Some(6.100_056_391_290_721e44)), "6.10e+44");
-        assert_eq!(stat_value(Some(14_754_186_378_368_600_000.0)), "14.75QQ");
+    fn grouped_counts_and_leaders() {
         assert_eq!(count(1_234_567), "1,234,567");
         assert_eq!(group("-1234"), "-1,234");
     }

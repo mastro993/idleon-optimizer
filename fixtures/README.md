@@ -12,11 +12,6 @@ Used by most crates' tests, which import it through `idleon_import::import`
 (`crates/import/tests/fixture.rs` is the reference). To exercise the app by
 hand, open the header's Import dialog and paste the file's contents, or drop the file on it.
 
-`endgame-stats.json` is the upstream `js/endgame-stats.js` leaderboard audit of `data.json`: all 177
-metrics with their group, label and value. Generate it from an upstream checkout with
-`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/endgame/tests/endgame.rs` compares
-the Rust port against it and lists the 21 metrics that still need the account stats engine.
-
 Treat it as frozen. Add small purpose-built saves to `crates/import/tests/save.rs` for edge cases
 instead of editing this one; regenerating it means updating the fixture test on purpose.
 

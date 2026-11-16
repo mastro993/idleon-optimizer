@@ -129,14 +129,6 @@ and one issue per feature.
   the eight milestones and ten permanent reward levels, and the reward charge saved waiting has built
   with its 24-hour preview, including the Meritoc vote, sushi tier and gaming superbit behind it.
   Missing Summoning access is warned about instead of guessed.
-- **Shadow-ban check** — the upstream “Am I shadow banned?” page answers from `OptLacc[26]`: YES for
-  any finite nonzero value, NO for zero, and UNKNOWN before a save or when the flag is missing. The
-  page shows the save status and the flag it read under the verdict, so it never guesses.
-- **The endgame check** — the upstream joke page: a huge `NO` before and after a save loads, with the
-  leaderboard audit beneath it. The audit lists all 177 upstream metrics in their categories and reads
-  the 156 the save tables carry; the 21 that need the account stats engine say so instead of guessing,
-  a field the save lacks reads `Unavailable`, and incomplete research rows show a clear error panel.
-  `fixtures/endgame-stats.json` pins the ported values against the upstream JS.
 - **Projection chart** — EXP/hour across the run, from an event-driven simulation that levels insight
   as it goes.
 - **The Clamworks overview** — pearl balance, pearl value and its searchable four-factor formula
@@ -303,7 +295,6 @@ docs/plan.md       product plan, dashboard, JSON import, architecture, verificat
 docs/roadmap.json  milestones and feature issues (source of truth)
 docs/sections/     generated full specification per section
 fixtures/data.json synthetic account save for import tests
-fixtures/endgame-stats.json upstream leaderboard audit for the endgame check
 vendor/gpui-mcp    submodule pinned to the bridge's GPUI branch
 ```
 
@@ -340,11 +331,9 @@ upstream leveling inputs and target costs (statues needed) for three targets per
 character.
 
 `fixtures/data.json` is a full synthetic account save used by `crates/import/tests/fixture.rs` and for
-manual debugging (open Import in the header and paste it). `fixtures/endgame-stats.json` is the
-upstream `js/endgame-stats.js` audit of that save, regenerated with
-`node script/endgame-stats-fixture.mjs <upstream-checkout>`; `crates/endgame/tests/endgame.rs` compares
-the Rust port against it. Both are test input only: game formulas and save decoding stay ports of the
-upstream repo, never inferred from the fixtures. See [`fixtures/README.md`](fixtures/README.md).
+manual debugging (open Import in the header and paste it). It is test input only: game formulas
+and save decoding stay ports of the upstream repo, never inferred from the fixture. See
+[`fixtures/README.md`](fixtures/README.md).
 
 Upstream artwork is committed in `assets/upstream/`. The images are game assets from Legends of
 Idleon, not original work of the upstream repository; credit sits in `assets/upstream/README.md`.

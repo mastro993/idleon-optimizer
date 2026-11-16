@@ -26,7 +26,6 @@ idleon-cooking-mastery = { workspace = true }
 idleon-coral = { workspace = true }
 idleon-damage = { workspace = true }
 idleon-drop-rate = { workspace = true }
-idleon-endgame = { workspace = true }
 idleon-farming = { workspace = true }
 idleon-fishing = { workspace = true }
 idleon-fountain = { workspace = true }

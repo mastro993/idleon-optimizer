@@ -5,7 +5,7 @@ use std::path::Path;
 
 #[test]
 fn keeps_every_upstream_page_once_and_grouped() {
-    assert_eq!(SECTIONS.len(), 30);
+    assert_eq!(SECTIONS.len(), 28);
     let mut ids: Vec<&str> = SECTIONS.iter().map(|section| section.id).collect();
     ids.sort_unstable();
     ids.dedup();
@@ -29,7 +29,7 @@ fn keeps_every_upstream_page_once_and_grouped() {
                 .count()
         })
         .collect();
-    assert_eq!(counts, [5, 3, 2, 2, 7, 2, 5, 4]);
+    assert_eq!(counts, [3, 3, 2, 2, 7, 2, 5, 4]);
     for section in &SECTIONS {
         assert!(!section.title.is_empty());
         assert!(!section.icon.is_empty());
@@ -40,12 +40,12 @@ fn keeps_every_upstream_page_once_and_grouped() {
 
 #[test]
 fn the_dashboard_shows_the_upstream_cards_and_hides_the_tools() {
-    assert_eq!(card_count(), 25);
+    assert_eq!(card_count(), 23);
     let counts: Vec<usize> = Group::ALL
         .iter()
         .map(|group| cards().filter(|section| section.group == *group).count())
         .collect();
-    assert_eq!(counts, [4, 3, 2, 2, 7, 2, 5, 0]);
+    assert_eq!(counts, [2, 3, 2, 2, 7, 2, 5, 0]);
     let hidden: Vec<&str> = SECTIONS
         .iter()
         .filter(|section| !section.dashboard)

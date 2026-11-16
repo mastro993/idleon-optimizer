@@ -9,8 +9,6 @@
 - [M4 Damage Breakdown](sections/damage.md)
 - [M5 Drop Rate Calculator](sections/drop-rate.md)
 - [M6 Coin Multiplier Calculator](sections/coin-multi.md)
-- [M7 Shadow Ban Check](sections/shadow.md)
-- [M8 Endgame Check](sections/endgame.md)
 - [M9 Statue Calculator](sections/statue.md)
 - [M10 Fishing Calculator](sections/fishing.md)
 - [M11 Prisma Calculator](sections/prisma.md)
