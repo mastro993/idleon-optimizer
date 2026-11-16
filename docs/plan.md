@@ -49,8 +49,8 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 ## 3. Dashboard and navigation
 
 > **Redesign in progress:** [`specs/app-shell.md`](specs/app-shell.md). The header, the sidebar and
-> the workspace breakpoint (slice 1) are built and described below; page history (slice 2),
-> per-section run activity (slice 3) and game-art icons (slice 4) are still planned. The grid stays as
+> the workspace breakpoint (slice 1) and per-section run activity (slice 3) are built and described
+> below; page history (slice 2) and game-art icons (slice 4) are still planned. The grid stays as
 > Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)).
 
 Shell (`ui/shell.rs`):
@@ -85,8 +85,8 @@ Home (the landing page):
 Section pages:
 
 - The active sidebar item marks the section; the sidebar opens any other section in one click.
-- The section owns its tab strip and content; the shell owns only window chrome, status
-  bar and global import.
+- The section owns its tab strip and content; the shell owns only window chrome and global
+  import.
 - Per-section state survives tab switches and dashboard visits for the session, and persists across
   launches in the local session file with the imported save and the active section.
 
@@ -113,8 +113,23 @@ background executor, a foreground pump copies progress into the entity, `run-can
 its next report, a cancelled run keeps the result already on screen, and a stored result whose inputs
 changed is marked stale (badge, banner, disabled Apply) instead of being dropped. Importing a save
 discards the runs it invalidates: whatever a discarded run still returns is dropped. A job that panics settles like a
-cancelled run, so the runner is usable again. `crates/ui/src/run_chrome.rs` renders the
+cancelled run, so the runner is usable again, but the runner reports it as failed: a run ends
+`Stored`, `Cancelled` (stopped or discarded) or `Failed` (`TaskEvent::Finished(Ending)`).
+`crates/ui/src/run_chrome.rs` renders the
 progress card, the cancelled notice and the stale marker for every section.
+
+Runs in different sections go on side by side. Every runner is created through `report_run`
+(`state/subscriptions.rs`), which mirrors it in the status line and records its events, under the
+section named by `RunStatus.section`, in one `Activity` table on `AppState` (`state/activity.rs`,
+[ADR 0002](adr/0002-section-activity-is-pushed-from-runner-events.md)). The sidebar reads it and
+marks the section's item (`ui/mark.rs`, id `nav-<section>-activity`): a progress ring at the least
+advanced run's fraction while any run is in flight (tooltip and label "Running · 42%", or
+"2 runs · 42%"), an accent dot ("Finished") when a run stored its result while another place was
+open, and a red dot ("Failed") when one panicked while away. Opening the section clears its dot, a
+new run replaces it with the ring, a cancelled run leaves none, and applying an import clears every
+dot. Expanded, the mark sits at the row's end (a 14 px ring or an 8 px dot); in the rail it sits on
+the icon's bottom-right corner (a 12 px ring or the dot) on a disc in the row's background, and the
+row's tooltip adds the mark's text to the title. The marks live only as long as the window.
 
 ## 4. Sections and milestones
 

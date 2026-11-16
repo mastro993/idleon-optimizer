@@ -5128,6 +5128,45 @@ async function visitShell(registry) {
   }
 }
 
+/// The sidebar's activity marks: a run that stores its result while another
+/// place is open leaves a Finished mark on its section's item, expanded and in
+/// the rail, until the section is opened.
+async function visitActivity() {
+  let lane = null;
+  try {
+    lane = await McpLane.start({ appBin, keep, section: 'research' });
+    await waitForNode(lane, 'run', 'activity: research opens');
+    await lane.call('click_element', { id: 'run' });
+    await waitForNode(lane, 'run-optimize', 'activity: the optimize tab opens');
+    await lane.call('click_element', { id: 'run-optimize' });
+    await openNav(lane, 'nav-home');
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'nav-research-activity') === 'Finished',
+      'activity: the optimizer finishing on Home leaves a Finished mark'
+    );
+    await lane.call('click_element', { id: 'sidebar-toggle' });
+    await waitFor(
+      lane,
+      (nodes) =>
+        labelOf(nodes, 'sidebar-toggle') === 'Expand sidebar' &&
+        labelOf(nodes, 'nav-research-activity') === 'Finished',
+      'activity: the rail keeps the mark'
+    );
+    await lane.call('click_element', { id: 'sidebar-toggle' });
+    await openNav(lane, 'nav-research');
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'section-research') && !has(nodes, 'nav-research-activity'),
+      'activity: opening the section clears its mark'
+    );
+  } catch (error) {
+    fail('activity', error);
+  } finally {
+    lane?.close();
+  }
+}
+
 /// The session file: one lane imports a save and opens a section, a second lane
 /// starts from the same app-data directory and must land back there, and a
 /// third must back up a corrupt file and start on a clean dashboard.
@@ -5318,6 +5357,7 @@ try {
     // One window proves the whole round trip; a shard's other lanes are busy.
     if (!only && shardIndex === 0) {
       await visitShell(registry);
+      await visitActivity();
       await visitProjectRoundTrip();
       await visitSessionPersistence();
     }

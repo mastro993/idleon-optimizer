@@ -139,6 +139,8 @@ impl AppState {
         let Some(Pending { document, configs }) = self.import.pending.take() else {
             return;
         };
+        // The results the marks point to may be gone with the old save.
+        self.activity.clear_marks();
         let format = document.format().to_string();
         let characters = document.characters();
         let research_level = document.research_level();

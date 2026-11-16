@@ -108,7 +108,7 @@ game sprites.
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
 | Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge |
 | Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move |
-| Running mark | Ely `ProgressRing` (14 px expanded, 12 px rail) |
+| Running mark | a ring drawn in the app at D5's strokes (14 px expanded, 12 px rail); Ely's `ProgressRing` has a fixed 4 px stroke (ADR 0003) |
 | Finished / failed mark | Ely `DotBadge` (8 px), accent / danger |
 | Rail corner disc | a circle in the row's current background (`bg`, or `hover` when active or hovered) |
 
@@ -240,7 +240,8 @@ flowchart LR
    the harness for the new ids. Checks 1–4, 9, 11. Depends on nothing.
 2. **S2 – History.** `History`, `open_place`, arrows, history list and shortcuts; removes
    `BackToDashboard`. Checks 5, 11. Depends on S1.
-3. **S3 – Section activity.** `Ending`, `RunStatus.section` at the 37 `report_run` sites,
+3. **S3 – Section activity.** `Ending`, `RunStatus.section` at the 38 `report_run` sites (the three
+   Royal Guardian runners now go through it too),
    `Activity`, marks on `SidebarItem` at the D5 sizes, and the concurrency test. Updates `plan.md` §3's runner
    paragraph. Checks 6–8, 11. Depends on S1.
 4. **S4 – Game art icons.** One sprite per section under `assets/game/sections/`, manifest
