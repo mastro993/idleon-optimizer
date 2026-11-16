@@ -44,7 +44,6 @@ mod coral;
 mod farming;
 pub mod pipeline;
 mod sailing;
-mod shadow;
 mod statue;
 mod worship;
 
@@ -52,7 +51,6 @@ use idleon_account as account;
 use idleon_research::save as research;
 
 pub use idleon_save::{Roster, Save, at, number, row_values};
-pub use shadow::{Shadow, ShadowVerdict};
 
 pub use account::sneaking_account;
 pub use account::{BonusTerm, BonusTree};
@@ -153,8 +151,6 @@ pub struct Imported {
     pub named_characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
-    /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
-    pub shadow: Shadow,
     /// The coin multiplier calculator's per-character cards and groups.
     pub coin: idleon_coin_multi::Snapshot,
 }
@@ -294,7 +290,6 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
     };
     let cog = CogSave::from_save(save, construction_level, &mut warnings);
     let worship = worship::inputs(save, &mut warnings);
-    let shadow = Shadow::read(save);
     let coin = idleon_coin_multi::coin(save, root, &characters, &simulation);
     let companion = root.get("companion").cloned();
     let jar = Jar::from_save(save);
@@ -370,7 +365,6 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         characters: roster,
         named_characters,
         warnings,
-        shadow,
         coin,
     })
 }

@@ -17,7 +17,6 @@ use crate::sections::cooking_mastery::State as MasteryPlanState;
 use crate::sections::coral_god_rank::State as CoralState;
 use crate::sections::damage::State as DamageState;
 use crate::sections::drop_rate::State as DropRateState;
-use crate::sections::endgame;
 use crate::sections::farming::{
     CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
 };
@@ -76,7 +75,6 @@ use idleon_fishing::FishingSave;
 use idleon_fountain::{
     Fountain, MarblePlan, OptimizerPlan, PlanRequest, SimResult as FountainSimResult,
 };
-use idleon_import::Shadow;
 use idleon_jar::{Jar, SimInputs as JarSimInputs, SimResult as JarSimResult};
 use idleon_jelly::optimizer::Optimization as JellyOptimization;
 use idleon_jelly::planner::Plan as JellySectionPlan;
@@ -272,8 +270,6 @@ pub(crate) struct AppState {
     pub(crate) clamworks_claim: ClamworksState,
     /// The Scurge panel the section was left on.
     pub(crate) clamworks_scurge: ScurgeInputs,
-    /// The endgame section's audit of the last applied save.
-    pub(crate) endgame: endgame::State,
     /// The Jelly Operator board the last imported save carried.
     pub(crate) jelly: Option<Jelly>,
     /// The Jelly Operator section's board on screen and its palette pick.
@@ -480,8 +476,6 @@ pub(crate) struct AppState {
     pub(crate) mastery_breakdown: Entity<FormulaTree>,
     /// The shared formula tree on the Fountain overview.
     pub(crate) fountain_breakdown: Entity<FormulaTree>,
-    /// The shadow-ban flag the loaded save carries (`OptLacc[26]`).
-    pub(crate) shadow: Shadow,
     pub(crate) focus: FocusHandle,
     /// Held so the automation bridge stays installed while the window lives;
     /// `None` when it could not start.
@@ -1182,7 +1176,6 @@ impl AppState {
             clamworks_projection: None,
             clamworks_claim: sections::clamworks::State::new(window, cx),
             clamworks_scurge: ScurgeInputs::default(),
-            endgame: endgame::State::default(),
             jar_tab: JarTab::default(),
             jar_tier: 0,
             jelly: None,
@@ -1270,7 +1263,6 @@ impl AppState {
             fishing_breakdown,
             mastery_breakdown,
             fountain_breakdown,
-            shadow: Shadow::default(),
             focus,
             #[cfg(feature = "automation")]
             _bridge: bridge,

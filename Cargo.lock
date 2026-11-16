@@ -3587,15 +3587,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "idleon-endgame"
-version = "0.2.0"
-dependencies = [
- "idleon-import",
- "idleon-save",
- "serde_json",
-]
-
-[[package]]
 name = "idleon-farming"
 version = "0.2.0"
 dependencies = [
@@ -3754,7 +3745,6 @@ dependencies = [
  "idleon-coral",
  "idleon-damage",
  "idleon-drop-rate",
- "idleon-endgame",
  "idleon-farming",
  "idleon-fishing",
  "idleon-fountain",

@@ -73,7 +73,6 @@ idleon-ladle = { path = "crates/ladle" }
 idleon-jar = { path = "crates/jar" }
 idleon-fountain = { path = "crates/fountain" }
 idleon-farming = { path = "crates/farming" }
-idleon-endgame = { path = "crates/endgame" }
 idleon-coral = { path = "crates/coral" }
 idleon-cooking-mastery = { path = "crates/cooking-mastery" }
 idleon-combat = { path = "crates/combat" }

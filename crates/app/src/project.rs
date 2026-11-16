@@ -1155,7 +1155,7 @@ pub(crate) fn assign(
 
 /// The sections whose page is the save alone: they store no config, and a
 /// config document for one of them has nothing to apply.
-pub(crate) const STATELESS: [&str; 4] = ["cglunko", "coin-multi", "endgame", "shadow"];
+pub(crate) const STATELESS: [&str; 2] = ["cglunko", "coin-multi"];
 
 /// Decode one section's config by registry id, naming the fields this build
 /// does not know in `warnings`.

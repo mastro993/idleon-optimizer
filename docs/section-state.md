@@ -131,7 +131,7 @@ are a typed shim now: the payload type is the section's own `Config`.
 ## 4. What does not move
 
 - The route, the shared header, the import/export dialogs and the session.
-- The decoded `Save`, `save_revision`, `save_loaded`/`save_partial` and the shadow flag.
+- The decoded `Save`, `save_revision` and `save_loaded`/`save_partial`.
 - Cross-section inputs: the research `Simulation` and `SimContext` (All Stats, Damage, Minehead and
   Sushi read them), the character count. They stay on `AppState` and are passed into the hooks
   that need them.
@@ -143,7 +143,7 @@ are a typed shim now: the payload type is the section's own `Config`.
 One section per PR, between feature work. Order by fewest loose fields and no import-order
 coupling first, research last:
 
-1. **Already one struct, add the hooks**: `statue`, `pickle`, `coin-multi`, `endgame`, `drop-rate`,
+1. **Already one struct, add the hooks**: `statue`, `pickle`, `coin-multi`, `drop-rate`,
    `coral-god-rank` (+ `coral_run`), `prisma` (+ `prisma_run`), `cog` (+ two runners).
 2. **A few loose fields**: `cglunko`, `ladle`, `killroy`, `combat-sim`, `sneaking`,
    `cooking-mastery`, `jar`, `fishing`.

@@ -19,7 +19,6 @@ pub(crate) mod cooking_mastery;
 pub(crate) mod coral_god_rank;
 pub(crate) mod damage;
 pub(crate) mod drop_rate;
-pub(crate) mod endgame;
 pub(crate) mod farming;
 pub(crate) mod fishing;
 pub(crate) mod fountain;
@@ -35,7 +34,6 @@ pub(crate) mod prisma;
 pub(crate) mod research;
 pub(crate) mod royal_guardian;
 pub(crate) mod sailing;
-pub(crate) mod shadow;
 pub(crate) mod sneaking;
 pub(crate) mod spelunking;
 pub(crate) mod stats_all;
@@ -185,7 +183,7 @@ impl Section {
 }
 
 /// Every section, grouped like `js/ui/site-nav.js` and ordered by group.
-pub(crate) const SECTIONS: [Section; 30] = [
+pub(crate) const SECTIONS: [Section; 28] = [
     Section {
         id: "combat-sim",
         title: "Combat Simulator",
@@ -208,30 +206,6 @@ pub(crate) const SECTIONS: [Section; 30] = [
         status: Status::Ready,
         dashboard: true,
         view: statue::view,
-        keys: no_keys,
-    },
-    Section {
-        id: "shadow",
-        title: "Am I shadow banned?",
-        icon: "?",
-        group: Group::General,
-        description: "Sign in or load a save for a simple yes or no",
-        spec: "docs/sections/shadow.md",
-        status: Status::Ready,
-        dashboard: true,
-        view: shadow::view,
-        keys: no_keys,
-    },
-    Section {
-        id: "endgame",
-        title: "Are you endgame?",
-        icon: "?",
-        group: Group::General,
-        description: "Find out if you have reached endgame",
-        spec: "docs/sections/endgame.md",
-        status: Status::Ready,
-        dashboard: true,
-        view: endgame::view,
         keys: no_keys,
     },
     Section {
