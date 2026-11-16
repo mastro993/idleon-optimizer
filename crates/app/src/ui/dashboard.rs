@@ -1,7 +1,7 @@
 //! Landing dashboard: the searchable card grid of every section.
 
 use crate::sections::{self, Group, Section};
-use crate::state::AppState;
+use crate::state::{AppState, Route};
 use crate::ui::layout::Breakpoint;
 use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -195,7 +195,9 @@ fn section_card(
         .aria_label(label)
         .cursor_pointer()
         .on_click(move |_event, window, cx| {
-            entity.update(cx, |state, cx| state.open_section(section.id, window, cx));
+            entity.update(cx, |state, cx| {
+                state.open_place(Route::Section(section), window, cx);
+            });
         })
         .child(
             Card::new().child(

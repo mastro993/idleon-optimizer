@@ -132,14 +132,16 @@ try {
   await call('keyboard', { keystroke: 'escape' });
   await waitFor((current) => has(current, 'card-combat-sim'), 'Escape clears the search');
 
-  // A planned card opens its section; Escape and the header's Back both return,
-  // and the dashboard offers to resume the section it remembers.
+  // A card opens its section; Escape stays there, the back shortcut returns to
+  // Home, and the dashboard offers to resume the section it remembers.
   await call('click_element', { id: 'card-fishing' });
   await waitFor((current) => has(current, 'section-fishing'), 'a card opens its section');
   await call('keyboard', { keystroke: 'escape' });
+  check('Escape stays on the section', has(await tree(), 'section-fishing'));
+  await call('keyboard', { keystroke: 'secondary-[' });
   await waitFor(
     (current) => has(current, 'dashboard-resume') && !has(current, 'section-fishing'),
-    'Escape returns to the dashboard',
+    'the back shortcut returns to the dashboard',
   );
   await call('click_element', { id: 'dashboard-resume' });
   await waitFor((current) => has(current, 'section-fishing'), 'resume reopens the section');
@@ -186,7 +188,7 @@ try {
   );
 
   // The router keeps the section's own state and remembers the last section:
-  // switch tabs, leave with the back shortcut, resume the same tab.
+  // switch tabs, go back to Home with the other back shortcut, resume the same tab.
   await call('click_element', { id: 'run' });
   await waitFor((current) => has(current, 'run-optimize'), 'the optimize tab opens');
   await call('keyboard', { keystroke: 'secondary-left' });
