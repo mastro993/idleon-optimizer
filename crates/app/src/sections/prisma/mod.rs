@@ -404,7 +404,7 @@ fn results_card(
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let entity = cx.entity();
-    let compact = Breakpoint::of(window).is_compact();
+    let compact = Breakpoint::of(window, cx).is_compact();
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
 
     let mut metrics: Vec<Choice> = vec![Choice::new("", "Bubble order")];

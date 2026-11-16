@@ -48,26 +48,40 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 
 ## 3. Dashboard and navigation
 
-> **Planned redesign:** [`specs/app-shell.md`](specs/app-shell.md) replaces the header's back button
-> with a sidebar grouped by world, page history and per-section run activity, and moves the compact
-> breakpoint to 1180 px of workspace (§6); the grid below stays as
-> Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)). This
-> section describes the shell as built until its slices land.
+> **Redesign in progress:** [`specs/app-shell.md`](specs/app-shell.md). The header, the sidebar and
+> the workspace breakpoint (slice 1) are built and described below; page history (slice 2),
+> per-section run activity (slice 3) and game-art icons (slice 4) are still planned. The grid stays as
+> Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)).
 
-Landing page:
+Shell (`ui/shell.rs`):
 
-- Header: product title, search field, import button, save status.
+- Header across the window (`ui/header.rs`): sidebar toggle, the open place's icon, title and world
+  badge ("Home" on the dashboard, "Unknown section" for an id the registry lacks), save status,
+  Export and Import.
+- Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
+  World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
+  `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
+  ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
+  clicking it does nothing. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
+  in a tooltip) and back; the fold is saved in the session file as
+  `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
+- The workspace beside the sidebar holds the place and, on a section without a save, the
+  `no-save-state` banner; the status bar runs under both.
+
+Home (the landing page):
+
+- Search field above the grid.
 - Card grid grouped General, W2, W3, W4, W5, W6, W7, Tools; each card has its title, emoji/icon,
   world badge and description.
 - Each card has `id="card-<section>"`, title, badge and description as accessible text.
 - Search matches title, description and group; Escape clears; Enter opens the first match.
-- Last opened section is remembered; Back returns to the dashboard.
+- Last opened section is remembered and offered as Resume.
 - Import accepts a raw save, a project JSON or a section config; it previews the detected format and
   warnings before applying.
 
-Section shell:
+Section pages:
 
-- Back to dashboard, section title, world badge, save status, import/export actions.
+- The header names the section; the sidebar opens any other section in one click.
 - The section owns its tab strip and content; the shell owns only window chrome, status
   bar and global import.
 - Per-section state survives tab switches and dashboard visits for the session, and persists across
@@ -231,11 +245,13 @@ cannot start, the window opens without it.
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
   several trees (the All Stats breakdown card and its formula card, for instance) without the
   accessibility tree collapsing their rows onto one another.
-- One shared page header (back, section title, world badge, save status, import) and one tab strip;
-  a section owns its tab strip and the shell owns only the window chrome and status bar.
+- One shared header (sidebar toggle, place title, world badge, save status, Export, Import), one
+  sidebar and one tab strip; a section owns its tab strip and the shell owns the header, sidebar and
+  status bar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
   borders, `#00d4ff` accent; world badges use per-world colours.
-- Below 1360 px the fixed side rails stack under their main pane; data tables scroll inside a
+- When the workspace (the window minus the sidebar) is narrower than 1180 px, the fixed side rails
+  stack under their main pane; data tables scroll inside a
   height that shrinks with the window, so the 1080×680 minimum stays usable.
 - Images come from `assets/game/` through `manifest.json`: each entry has the path relative to
   that folder, its byte count and sha256. The app loads the first manifest it finds from

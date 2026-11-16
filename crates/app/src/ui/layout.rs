@@ -1,31 +1,32 @@
-//! Shared page chrome and the responsive rules every section follows.
+//! Shared page parts and the responsive rules every section follows.
 //!
-//! A section renders the same header (back, title, world badge, save status,
-//! import) and owns its tab strip. Two-column panes use [`split_pane`],
-//! which stacks them below [`COMPACT_WIDTH`] so the minimum window never clips
-//! a fixed side rail.
+//! Two-column panes use [`split_pane`], which stacks them when the workspace
+//! beside the sidebar is narrower than [`COMPACT_WIDTH`], so the minimum
+//! window never clips a fixed side rail.
 
-use crate::sections::{self, research::Tab};
-use crate::state::{AppState, SaveStatus};
-use crate::ui::theme::WorldBadge;
-use ely_gpui_component::buttons::{Button, IconButton};
+use crate::sections::research::Tab;
+use crate::state::AppState;
 use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Heading;
+use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Div, ElementId, Entity, Hsla, IntoElement, ParentElement, Pixels, Role,
-    SharedString, Stateful, Styled, Window, div, px,
+    AnyElement, App, Context, ElementId, Global, IntoElement, ParentElement, Pixels, Role,
+    SharedString, Styled, Window, div, px,
 };
 
 /// The smallest window the layout is designed for.
 pub(crate) const MIN_WIDTH: f32 = 1080.0;
 /// The smallest window height the layout is designed for.
 pub(crate) const MIN_HEIGHT: f32 = 680.0;
-/// Below this window width, panes stack and fixed side rails drop under content.
-pub(crate) const COMPACT_WIDTH: f32 = 1360.0;
+/// Below this workspace width, panes stack and fixed side rails drop under content.
+pub(crate) const COMPACT_WIDTH: f32 = 1180.0;
+
+/// The sidebar's width, which the shell publishes each frame so the
+/// breakpoint measures the workspace instead of the whole window.
+pub(crate) struct SidebarWidth(pub(crate) Pixels);
+
+impl Global for SidebarWidth {}
 
 /// The room a window leaves for the layout.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,9 +47,17 @@ impl Breakpoint {
         }
     }
 
-    /// The current window's room.
-    pub(crate) fn of(window: &Window) -> Self {
-        Self::from_width(f32::from(window.viewport_size().width))
+    /// The room a `viewport` window leaves beside a `sidebar` wide sidebar.
+    pub(crate) fn of_workspace(viewport: f32, sidebar: f32) -> Self {
+        Self::from_width(viewport - sidebar)
+    }
+
+    /// The current window's room: the workspace beside the sidebar.
+    pub(crate) fn of(window: &Window, cx: &App) -> Self {
+        let sidebar = cx
+            .try_global::<SidebarWidth>()
+            .map_or(0.0, |width| f32::from(width.0));
+        Self::of_workspace(f32::from(window.viewport_size().width), sidebar)
     }
 
     pub(crate) fn is_compact(self) -> bool {
@@ -190,135 +199,6 @@ pub(crate) fn figure(
         .into_any_element()
 }
 
-/// The shared section header: back, icon, title, world badge, save status, import.
-pub(crate) fn page_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(section) = state.current_section() else {
-        return div().into_any_element();
-    };
-    let (border, muted) = {
-        let colors = &cx.theme().colors;
-        (colors.border, colors.fg_muted)
-    };
-    let entity = cx.entity();
-    let back = entity.clone();
-    let import = entity.clone();
-    let export = entity.clone();
-
-    header_bar(border)
-        .child(back_button(back))
-        .child(div().text_size(px(18.0)).child(section.icon))
-        .child(
-            div()
-                .id("section-title")
-                .role(Role::Heading)
-                .aria_label(section.title)
-                .min_w_0()
-                .child(Heading::new(3, section.title)),
-        )
-        .child(WorldBadge::new(section.group))
-        .child(div().flex_1())
-        .child(save_actions(state.save_status(), muted, import, export))
-        .into_any_element()
-}
-
-/// The bar every header sits in. Its left padding leaves room for the macOS
-/// traffic lights in the transparent title bar.
-fn header_bar(border: Hsla) -> Stateful<Div> {
-    div()
-        .id("app-header")
-        .flex()
-        .flex_none()
-        .items_center()
-        .gap_3()
-        .pl(px(84.0))
-        .pr_4()
-        .h(px(48.0))
-        .border_b_1()
-        .border_color(border)
-}
-
-/// The header's way back to the dashboard.
-fn back_button(state: Entity<AppState>) -> IconButton {
-    IconButton::new("back-to-dashboard", IconName::ArrowLeft)
-        .tooltip("Back to dashboard")
-        .on_click(move |_event, window, cx| {
-            state.update(cx, |state, cx| state.back_to_dashboard(window, cx));
-        })
-}
-
-/// The landing page's header: product name, save status and the shared import action.
-pub(crate) fn dashboard_header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let import = cx.entity();
-    let export = cx.entity();
-    header_bar(colors.border)
-        .child(Heading::new(3, "Idleon Optimizer"))
-        .child(
-            div()
-                .id("header-subtitle")
-                .role(Role::Label)
-                .aria_label("Dashboard")
-                .text_size(px(12.0))
-                .text_color(colors.fg_muted)
-                .child("Dashboard"),
-        )
-        .child(div().flex_1())
-        .child(
-            div()
-                .id("header-cards")
-                .role(Role::Label)
-                .aria_label(format!("{} calculators", sections::card_count()))
-                .text_size(px(12.0))
-                .text_color(colors.fg_muted)
-                .child(format!("{} calculators", sections::card_count())),
-        )
-        .child(save_actions(
-            state.save_status(),
-            colors.fg_muted,
-            import,
-            export,
-        ))
-        .into_any_element()
-}
-
-/// The save status and the import action shared by the dashboard and each section.
-fn save_actions(
-    save: SaveStatus,
-    muted: gpui::Hsla,
-    import: gpui::Entity<AppState>,
-    export: gpui::Entity<AppState>,
-) -> impl IntoElement {
-    div()
-        .flex()
-        .items_center()
-        .gap_3()
-        .child(
-            div()
-                .id("header-save")
-                .role(Role::Label)
-                .aria_label(save.label())
-                .text_size(px(12.0))
-                .text_color(muted)
-                .child(save.label()),
-        )
-        .child(
-            Button::new("header-export", "Export")
-                .size(ControlSize::Sm)
-                .icon(IconName::Download)
-                .on_click(move |_event, window, cx| {
-                    export.update(cx, |state, cx| state.open_export(window, cx));
-                }),
-        )
-        .child(
-            Button::new("header-import", "Import")
-                .size(ControlSize::Sm)
-                .icon(IconName::Upload)
-                .on_click(move |_event, window, cx| {
-                    import.update(cx, |state, cx| state.open_import(window, cx));
-                }),
-        )
-}
-
 /// The shared tab strip; the section that owns it passes its active tab in state.
 pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
@@ -331,31 +211,6 @@ pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> impl Int
             entity.update(cx, |state, cx| state.set_tab(tab, cx));
         }
     })
-}
-
-/// The header for an id the registry does not declare.
-pub(crate) fn missing_header(id: &str, state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let (border, muted) = {
-        let colors = &cx.theme().colors;
-        (colors.border, colors.fg_muted)
-    };
-    let entity = cx.entity();
-    let back = entity.clone();
-    let import = entity.clone();
-    let export = entity.clone();
-    header_bar(border)
-        .child(back_button(back))
-        .child(
-            div()
-                .id("section-title")
-                .role(Role::Heading)
-                .aria_label(format!("Unknown section {id}"))
-                .min_w_0()
-                .child(Heading::new(3, "Unknown section")),
-        )
-        .child(div().flex_1())
-        .child(save_actions(state.save_status(), muted, import, export))
-        .into_any_element()
 }
 
 #[cfg(test)]
@@ -380,6 +235,28 @@ mod tests {
         assert_eq!(table_height(680.0), px(280.0));
         assert_eq!(table_height(500.0), px(160.0));
         assert_eq!(table_height(2_000.0), px(520.0));
+    }
+
+    #[test]
+    fn the_breakpoint_measures_the_workspace_beside_the_sidebar() {
+        // (window width, sidebar width, expected room)
+        let rows = [
+            (1440.0, 240.0, Breakpoint::Regular),
+            (1440.0, 56.0, Breakpoint::Regular),
+            (1420.0, 240.0, Breakpoint::Regular),
+            (1419.0, 240.0, Breakpoint::Compact),
+            (1236.0, 56.0, Breakpoint::Regular),
+            (1235.0, 56.0, Breakpoint::Compact),
+            (1080.0, 56.0, Breakpoint::Compact),
+            (1080.0, 240.0, Breakpoint::Compact),
+        ];
+        for (window, sidebar, expected) in rows {
+            assert_eq!(
+                Breakpoint::of_workspace(window, sidebar),
+                expected,
+                "{window} px window, {sidebar} px sidebar"
+            );
+        }
     }
 
     #[test]

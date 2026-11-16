@@ -79,7 +79,7 @@ fn tiers_card(
     let border = cx.theme().colors.border;
     let split = layout::split_pane_reversed(
         "shape-tier-split",
-        Breakpoint::of(window),
+        Breakpoint::of(window, cx),
         div()
             .id("shape-tier-list")
             .flex()

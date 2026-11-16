@@ -150,7 +150,7 @@ pub(crate) fn pane(
     state.research.tree.ensure(&simulation);
     layout::split_pane(
         "decision-tree",
-        Breakpoint::of(window),
+        Breakpoint::of(window, cx),
         ScrollArea::new("dt-tree-scroll")
             .vertical()
             .flex_1()

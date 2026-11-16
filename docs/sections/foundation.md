@@ -12,9 +12,10 @@ Turn the research-only window into a sectioned desktop suite: a dashboard that o
 
 ## UI
 
-- Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with each section's title, icon, world badge and one-line description.
-- Each card opens a section route with a shared header: back to dashboard, section title, world badge, save status and an import button.
-- Section pages keep their own tab strip; the app shell only owns the window chrome and status bar.
+- Home, the landing page, is a searchable card grid grouped by General and W2-W7, with each section's title, icon, world badge and one-line description.
+- A header across the window holds the sidebar toggle, the open place's icon, title and world badge, the save status, and Export and Import.
+- A sidebar lists Home, then every section under its world (General, World 2-7) and the five hidden calculators under Tools; any item opens its section in one click, and the sidebar folds to an icon rail that survives a restart.
+- Section pages keep their own tab strip; the shell owns only the header, sidebar and status bar.
 - Import dialog accepts a file, a paste or drag-and-drop; it previews the detected format before applying.
 
 ## Inputs

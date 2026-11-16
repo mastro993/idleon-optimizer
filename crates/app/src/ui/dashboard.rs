@@ -21,7 +21,7 @@ pub(crate) fn dashboard_pane(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    let breakpoint = Breakpoint::of(window);
+    let breakpoint = Breakpoint::of(window, cx);
     let query = state.search.read(cx).text().trim().to_string();
     let entity = cx.entity();
     let search_focus = state.search.read(cx).focus().clone();

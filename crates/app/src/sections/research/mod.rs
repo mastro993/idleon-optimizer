@@ -328,7 +328,7 @@ fn pane(
             let inspector = inspector::inspector_pane(state, window, cx).into_any_element();
             layout::split_pane(
                 "pane-grid",
-                Breakpoint::of(window),
+                Breakpoint::of(window, cx),
                 grid,
                 inspector,
                 px(360.0),

@@ -52,12 +52,12 @@ use crate::sections::stats_all::State as StatsAllState;
 use crate::sections::statue::State as StatueState;
 use crate::sections::worship_td::{OptimizeRunInputs, PlanRunInputs, State as WorshipState};
 use crate::sections::{self, Section};
-use crate::session::{self, Session};
+use crate::session::{self, Session, SidebarFold};
 use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{AppContext as _, Context, Entity, FocusHandle, Subscription, Window};
+use gpui::{AppContext as _, Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
 #[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
 use idleon_cglunko::Cglunko;
@@ -477,6 +477,8 @@ pub(crate) struct AppState {
     /// The shared formula tree on the Fountain overview.
     pub(crate) fountain_breakdown: Entity<FormulaTree>,
     pub(crate) focus: FocusHandle,
+    /// The sidebar's scroll position, moved to reveal the active item.
+    pub(crate) sidebar_scroll: ScrollHandle,
     /// Held so the automation bridge stays installed while the window lives;
     /// `None` when it could not start.
     #[cfg(feature = "automation")]
@@ -1264,6 +1266,7 @@ impl AppState {
             mastery_breakdown,
             fountain_breakdown,
             focus,
+            sidebar_scroll: ScrollHandle::new(),
             #[cfg(feature = "automation")]
             _bridge: bridge,
             shape_run,
@@ -1373,6 +1376,17 @@ impl AppState {
         cx.notify();
     }
 
+    /// Fold the sidebar to the rail, or expand it again, and remember the choice.
+    pub(crate) fn toggle_sidebar(&mut self, cx: &mut Context<Self>) {
+        let shell = &mut self.session.shell;
+        shell.sidebar = match shell.sidebar {
+            SidebarFold::Expanded => SidebarFold::Rail,
+            SidebarFold::Rail => SidebarFold::Expanded,
+        };
+        self.flush_session();
+        cx.notify();
+    }
+
     /// Reopen the last section, restored to the state it was left in.
     pub(crate) fn resume_last_section(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let Some(id) = self.last_section else {
@@ -1462,6 +1476,29 @@ mod tests {
         let section = route.section().expect("the damage page is registered");
         assert!(!section.dashboard);
         assert_eq!(section.status, sections::Status::Ready);
+    }
+
+    #[test]
+    fn the_sidebar_toggle_folds_to_the_rail_and_the_next_launch_restores_it() {
+        let dir = std::env::temp_dir().join(format!("idleon-sidebar-fold-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut cx = gpui::TestAppContext::single();
+        let window = headless(&mut cx, &dir);
+        let path = Session::path(Some(dir.join("state")));
+        window
+            .update(&mut cx, |state, _, cx| {
+                assert_eq!(state.session.shell.sidebar, SidebarFold::Expanded);
+                state.toggle_sidebar(cx);
+                assert_eq!(state.session.shell.sidebar, SidebarFold::Rail);
+            })
+            .expect("the window is open");
+        assert_eq!(Session::load(path.clone()).shell.sidebar, SidebarFold::Rail);
+
+        window
+            .update(&mut cx, |state, _, cx| state.toggle_sidebar(cx))
+            .expect("the window is open");
+        assert_eq!(Session::load(path).shell.sidebar, SidebarFold::Expanded);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

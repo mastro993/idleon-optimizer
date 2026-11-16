@@ -112,10 +112,12 @@ node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-secti
 `script/mcp-sections.mjs` is the section gate. It reads the registry from
 `idleon-optimizer --list-sections` (so a new registry entry needs no harness edit), opens every
 dashboard card through the search field, opens each hidden tool through its own `--section` lane,
-asserts the section root and shared header ids, drives one interaction and writes
-`target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
-fails loudly; add one to `INTERACTIONS` in the script. After the sections, one extra window proves
-the project round trip: Export opens over the window state and names its size and sections, then a
+asserts the section root, the shared header ids and its active sidebar item, drives one interaction
+and writes `target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an
+interaction check fails loudly; add one to `INTERACTIONS` in the script. After the sections, one
+window checks the shell (Home first and active, a sidebar item per registry entry, an item opening
+its section in the state it was left in, the save actions on every place, the rail toggle), and one
+more proves the project round trip: Export opens over the window state and names its size and sections, then a
 project document and a research section config each preview, apply and leave a visible mark. It also
 asserts the change log (the status line and `import-changes` in the dialog) and five refused imports
 — malformed JSON, an unknown format marker, an unsupported version, an unreadable embedded save and
