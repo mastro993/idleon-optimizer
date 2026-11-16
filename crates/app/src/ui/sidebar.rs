@@ -45,21 +45,15 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
     let scroll = &state.sidebar_scroll;
 
     let home = entity.clone();
-    let mut list = div()
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_2()
-        .when(rail, |list| list.items_center())
-        .child(
-            SidebarItem::new("nav-home", "Home", glyph(IconName::House))
-                .active(state.route.is_dashboard())
-                .folded(rail)
-                .reveal(scroll)
-                .on_click(move |window, cx| {
-                    home.update(cx, |state, cx| state.back_to_dashboard(window, cx));
-                }),
-        );
+    let mut list = div().flex().flex_col().gap_3().p_2().child(
+        SidebarItem::new("nav-home", "Home", glyph(IconName::House))
+            .active(state.route.is_dashboard())
+            .folded(rail)
+            .reveal(scroll)
+            .on_click(move |window, cx| {
+                home.update(cx, |state, cx| state.back_to_dashboard(window, cx));
+            }),
+    );
     for (group, sections) in groups() {
         // Folded, NavGroup renders its items alone; the heading is drawn here
         // because NavGroup's title always carries a fold chevron, and these
@@ -152,7 +146,7 @@ fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
 }
 
 /// A group's title in `NavGroup`'s type, without the fold chevron; the rail
-/// shows its short form, centred over the icons.
+/// shows its short form at the same left edge.
 fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
     let theme = cx.theme();
     div()
@@ -170,12 +164,12 @@ fn heading(group: Group, rail: bool, cx: &App) -> impl IntoElement {
         .text_size(theme.text_size(TextSize::Xs))
         .font_weight(FontWeight::MEDIUM)
         .text_color(theme.colors.fg_subtle)
-        .map(|heading| {
-            if rail {
-                heading.justify_center().child(rail_label(group))
-            } else {
-                heading.px_2().child(group.label())
-            }
+        .px_2()
+        .whitespace_nowrap()
+        .child(if rail {
+            rail_label(group)
+        } else {
+            group.label()
         })
 }
 
@@ -329,21 +323,24 @@ impl RenderOnce for SidebarItem {
             .when_some(reveal, |item, reveal| {
                 item.child(reveal.absolute().top_0().left_0().size_full())
             });
-        if self.folded {
-            return item
-                .justify_center()
-                .w(theme.control_height(ControlSize::Md))
-                .tooltip(Tooltip::text(label));
-        }
-        item.px_2().child(
-            div()
-                .flex_1()
-                .min_w_0()
-                .overflow_hidden()
-                .whitespace_nowrap()
-                .text_ellipsis()
-                .child(label),
-        )
+        // One layout in both states, so only the sidebar's width animates: the
+        // icon keeps its place and the rail hides the label instead of
+        // dropping it, which would reflow the row mid-animation.
+        item.px_2()
+            .overflow_hidden()
+            .when(self.folded, |item| {
+                item.tooltip(Tooltip::text(label.clone()))
+            })
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .overflow_hidden()
+                    .whitespace_nowrap()
+                    .text_ellipsis()
+                    .when(self.folded, |label| label.invisible())
+                    .child(label),
+            )
     }
 }
 

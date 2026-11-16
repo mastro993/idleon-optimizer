@@ -106,8 +106,8 @@ game sprites.
 | Back, forward, history list | Ely `BackForwardNavigation` |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
-| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form centred over the icons |
-| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded |
+| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge |
+| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move |
 | Running mark | Ely `ProgressRing` (14 px expanded, 12 px rail) |
 | Finished / failed mark | Ely `DotBadge` (8 px), accent / danger |
 | Rail corner disc | a circle in the row's current background (`bg`, or `hover` when active or hovered) |
