@@ -47,7 +47,10 @@ pub(crate) fn shell(
     // workspace the sidebar leaves.
     let rail = state.session.shell.sidebar == SidebarFold::Rail;
     let sidebar_width = cx.theme().sidebar_width(rail).to_pixels(window.rem_size());
-    cx.set_global(SidebarWidth(sidebar_width));
+    // Only on a change: setting a global notifies its observers every time.
+    if cx.try_global::<SidebarWidth>().map(|width| width.0) != Some(sidebar_width) {
+        cx.set_global(SidebarWidth(sidebar_width));
+    }
     // Every section carries the same no-save state above its content; importing
     // replaces it with the save status the header already reflects.
     let no_save = match &route {
