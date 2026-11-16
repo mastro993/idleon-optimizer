@@ -28,6 +28,18 @@ pub(crate) struct SidebarWidth(pub(crate) Pixels);
 
 impl Global for SidebarWidth {}
 
+/// The width beside the sidebar that a place renders into; content sized
+/// from the window must measure this, not the viewport.
+pub(crate) fn workspace_width(window: &Window, cx: &App) -> f32 {
+    f32::from(window.viewport_size().width) - sidebar_width(cx)
+}
+
+/// The width the shell last published for the sidebar; none before the first frame.
+fn sidebar_width(cx: &App) -> f32 {
+    cx.try_global::<SidebarWidth>()
+        .map_or(0.0, |width| f32::from(width.0))
+}
+
 /// The room a window leaves for the layout.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Breakpoint {
@@ -54,10 +66,7 @@ impl Breakpoint {
 
     /// The current window's room: the workspace beside the sidebar.
     pub(crate) fn of(window: &Window, cx: &App) -> Self {
-        let sidebar = cx
-            .try_global::<SidebarWidth>()
-            .map_or(0.0, |width| f32::from(width.0));
-        Self::of_workspace(f32::from(window.viewport_size().width), sidebar)
+        Self::of_workspace(f32::from(window.viewport_size().width), sidebar_width(cx))
     }
 
     pub(crate) fn is_compact(self) -> bool {

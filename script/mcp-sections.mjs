@@ -1913,7 +1913,7 @@ const INTERACTIONS = {
       (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
       'farming: clicking a plot moves the detail'
     );
-    await lane.call('click_element', { id: 'nav-home' });
+    await openNav(lane, 'nav-home');
     await waitForNode(lane, 'dashboard', 'farming: Home returns to the dashboard');
     await lane.call('click_element', { id: 'dashboard-resume' });
     await waitFor(
@@ -4854,7 +4854,7 @@ async function visitSection(lane, unit) {
   }
   await interaction(lane);
   await capture(lane, unit);
-  await lane.call('click_element', { id: 'nav-home' });
+  await openNav(lane, 'nav-home');
   await waitForNode(lane, 'dashboard', `${unit.id}: Home opens the dashboard`);
 }
 
@@ -5009,7 +5009,7 @@ async function visitProjectRoundTrip() {
       'project: the change log closes with the dialog',
     );
 
-    await lane.call('click_element', { id: 'nav-home' });
+    await openNav(lane, 'nav-home');
     await waitForNode(lane, 'dashboard', 'project: back on the dashboard');
     await searchFor(lane, 'Research Grid', 'card-research', 'config: search lists the research card');
     await lane.call('click_element', { id: 'card-research' });
@@ -5098,8 +5098,12 @@ async function visitShell(registry) {
       const actions = ['header-save', 'header-export', 'header-import'].filter((action) => !has(nodes, action));
       check(`shell: the save actions stay on ${id}`, actions.length === 0, actions.join(', '));
     }
+    await openNav(lane, 'nav-farming');
+    await waitForNode(lane, 'section-farming', 'shell: farming opens again');
     await lane.call('click_element', { id: 'evolution' });
     await waitForNode(lane, 'farming-chain', 'shell: farming changes tab before leaving');
+    await openNav(lane, 'nav-damage');
+    await waitForNode(lane, 'section-damage', 'shell: damage opens from farming');
     await openNav(lane, 'nav-farming');
     await waitForNode(lane, 'farming-chain', 'shell: farming reopens on the tab it was left on');
 

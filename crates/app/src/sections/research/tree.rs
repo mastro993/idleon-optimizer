@@ -210,7 +210,7 @@ fn tree_card(state: &mut AppState, window: &Window, cx: &mut Context<AppState>) 
     let fit = entity.clone();
     let reset = entity.clone();
     let clear = entity.clone();
-    let viewport_width = (f32::from(window.bounds().size.width) - 420.0 - 88.0).max(320.0);
+    let viewport_width = (layout::workspace_width(window, cx) - 420.0 - 88.0).max(320.0);
     let layout_width = state
         .research
         .tree
