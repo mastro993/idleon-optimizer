@@ -3,7 +3,6 @@
 use idleon_import::Format;
 use idleon_import::ImportError;
 use idleon_import::import;
-use idleon_import::{Shadow, ShadowVerdict};
 use idleon_research::model::{GridState, Mag, MagKind, Observations, Placement, Simulation};
 use idleon_research::sim;
 use serde_json::{Value, json};
@@ -331,88 +330,6 @@ fn garbage_and_a_json_array_are_rejected() {
         import(r#"{"data": {}}"#),
         Err(ImportError::NoSaveFields(_))
     ));
-}
-
-/// A save carrying only the research rows, plus one `OptLacc` shape.
-fn shadow_save(opt_lacc: Option<Value>) -> Value {
-    let mut data = json!({
-        "Research": stringified(&Value::Array(research_rows())),
-    });
-    if let Some(opt_lacc) = opt_lacc {
-        data["OptLacc"] = opt_lacc;
-    }
-    json!({ "data": data, "serverVars": { "A_ResXP": 1.01 } })
-}
-
-/// `OptLacc` with `value` in slot 26, stringified like the game writes it.
-fn opt_lacc(value: Value) -> Value {
-    let mut cells = vec![json!(0.0); 30];
-    cells[26] = value;
-    stringified(&Value::Array(cells))
-}
-
-/// The flag and verdict an import of [`shadow_save`] reports.
-fn shadow(opt_lacc: Option<Value>) -> Shadow {
-    import(&shadow_save(opt_lacc).to_string())
-        .expect("the shadow save imports")
-        .shadow
-}
-
-#[test]
-fn the_shadow_verdict_reaches_all_three_states() {
-    assert_eq!(
-        shadow(Some(opt_lacc(json!(1.0)))).verdict(),
-        ShadowVerdict::Yes
-    );
-    assert_eq!(
-        shadow(Some(opt_lacc(json!(0.0)))).verdict(),
-        ShadowVerdict::No
-    );
-    assert_eq!(shadow(None).verdict(), ShadowVerdict::Unknown);
-}
-
-#[test]
-fn the_shadow_verdict_never_guesses() {
-    // The flag that was read is kept alongside the answer.
-    assert_eq!(shadow(Some(opt_lacc(json!(2.0)))).flag, Some(2.0));
-    assert_eq!(
-        shadow(Some(opt_lacc(json!(-3.0)))).verdict(),
-        ShadowVerdict::Yes,
-        "every nonzero finite flag is a yes"
-    );
-    // A numeric string counts as its number.
-    assert_eq!(
-        shadow(Some(opt_lacc(json!("3")))).verdict(),
-        ShadowVerdict::Yes
-    );
-    assert_eq!(
-        shadow(Some(opt_lacc(json!("0")))).verdict(),
-        ShadowVerdict::No
-    );
-    assert_eq!(
-        shadow(Some(stringified(&json!({ "26": 1 })))).verdict(),
-        ShadowVerdict::Yes,
-        "the lookup also reads an object key"
-    );
-    for unreadable in [
-        json!(null),
-        json!(""),
-        json!("Infinity"),
-        json!("NaN"),
-        json!(true),
-        json!([0.0]),
-    ] {
-        assert_eq!(
-            shadow(Some(opt_lacc(unreadable.clone()))).verdict(),
-            ShadowVerdict::Unknown,
-            "{unreadable} is not a readable flag"
-        );
-    }
-    // A short `OptLacc` has no slot 26 at all.
-    assert_eq!(
-        shadow(Some(stringified(&json!([0.0, 1.0])))).verdict(),
-        ShadowVerdict::Unknown
-    );
 }
 
 /// The same fields without the `data` wrapper, as a plain `save.json` writes them.

@@ -2,7 +2,7 @@
 
 <!-- Generated from docs/roadmap.json. Edit the JSON, then run node script/roadmap.mjs --write. -->
 
-Idleon Optimizer tracks 31 section milestones and 123 feature issues.
+Idleon Optimizer tracks 29 section milestones and 121 feature issues.
 
 The GitHub issue tracker is the working plan. Every feature issue carries its blocked-by and
 blocks links, section contract, acceptance criteria and verification.
@@ -18,8 +18,6 @@ blocks links, section contract, acceptance criteria and verification.
 | M4 | Damage Breakdown | Tools | 3 | done | foundation, stats-all | [damage](sections/damage.md) |
 | M5 | Drop Rate Calculator | Tools | 2 | partial | foundation, stats-all | [drop-rate](sections/drop-rate.md) |
 | M6 | Coin Multiplier Calculator | Tools | 2 | done | foundation, stats-all | [coin-multi](sections/coin-multi.md) |
-| M7 | Shadow Ban Check | General | 1 | done | foundation | [shadow](sections/shadow.md) |
-| M8 | Endgame Check | General | 1 | done | foundation | [endgame](sections/endgame.md) |
 | M9 | Statue Calculator | General | 3 | partial | foundation | [statue](sections/statue.md) |
 | M10 | Fishing Calculator | World 2 | 3 | done | foundation | [fishing](sections/fishing.md) |
 | M11 | Prisma Calculator | World 2 | 2 | partial | foundation | [prisma](sections/prisma.md) |
@@ -49,8 +47,8 @@ blocks links, section contract, acceptance criteria and verification.
 | --- | --- | --- |
 | `wire:all-talent` All-Talent bonus levels (idleon_account::talent::bonus_levels) passed to the sections that read talents | landed | SN-G1, RG-G1 |
 | `wire:gambit` Gambit point chain from the account decoder (idleon_account hole.rs) passed to Sneaking and Research | landed | RES-G1, SN-G1 |
-| `wire:stats-engine` Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps | landed | EG-G1 |
-| `stats:descriptors` Remaining All Stats descriptors (15 of 60 computed) | partial | SA-G1, EG-G1, PR-G1 |
+| `wire:stats-engine` Shared stat engine results (total stats, damage layers) consumed by the sections that name them as gaps | landed | - |
+| `stats:descriptors` Remaining All Stats descriptors (15 of 60 computed) | partial | SA-G1, PR-G1 |
 | `combat:auto-player` Combat simulator auto-mode player (movement, attacks, skills), the source of a character's kill rate and DPS | absent | CS-G1, ST-G1, KL-G1, CW-G1 |
 | `stats:level-tables` Level-table catalogue and the combat-setup save writer behind the per-node formula editor | absent | SA-G3 |
 | `stats:drop-rate-descriptor` The drop-rate pool chain descriptor in the shared stat engine | absent | DR-G1 |

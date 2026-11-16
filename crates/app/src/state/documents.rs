@@ -1,6 +1,5 @@
 //! The import and export dialogs: preview, apply and copy documents.
 
-use crate::sections::endgame;
 use crate::session::RecentImport;
 use crate::state::{AppState, discard_run};
 use crate::ui::export::Export;
@@ -194,7 +193,6 @@ impl AppState {
             self.monument.worksheet.reset(initial);
             self.monument.notice.clear();
         }
-        self.endgame = endgame::State::audit(&imported);
         self.coin_multi.load(&imported, cx);
         self.fishing_save = FishingSave::from_save(&imported.save);
         self.fishing.adopt(&self.fishing_save);
@@ -300,7 +298,6 @@ impl AppState {
         self.sailing_state.goal = Goal::Treasure;
         self.save_loaded = true;
         self.save_partial = !imported.warnings.is_empty();
-        self.shadow = imported.shadow;
         // The stored comparison stays; a save that changes the plan marks it
         // stale through the runner's own input check.
         self.killroy_default_selection();

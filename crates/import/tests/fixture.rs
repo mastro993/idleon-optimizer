@@ -3,7 +3,6 @@
 //! It is test data only. The assertions below pin what the importer decodes
 //! from it, so a change to either side is noticed deliberately.
 
-use idleon_import::ShadowVerdict;
 use idleon_import::import;
 use idleon_research::sim;
 
@@ -43,9 +42,6 @@ fn the_synthetic_account_imports_into_a_usable_run() {
             .count(),
         31
     );
-
-    // `OptLacc[26]` is zero in the fixture, so the check answers NO.
-    assert_eq!(imported.shadow.verdict(), ShadowVerdict::No);
 
     // The dashboard, the observation board and the grid-point breakdown read
     // the same imported run as the simulator, so their figures agree.

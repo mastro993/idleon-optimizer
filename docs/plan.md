@@ -9,7 +9,7 @@ workspaces, the combat simulator's loadout editor and mechanics overrides, the c
 the Clamworks optimizer, the Jelly Operator overview, layout editor, operation simulator and section
 planner, the drop-rate inputs, dungeon total and formula tree, the Coin Multiplier inputs, total
 and formula tree, the
-Damage Breakdown context and summary shell partial, sailing, shadow-ban, endgame, Fishing, Killroy,
+Damage Breakdown context and summary shell partial, sailing, Fishing, Killroy,
 BoneJoePickle, Cglunko, Clamworks and Fountain done, Monument, the All Stats context, breakdowns,
 explorer and input ledger built.** The live breakdown is
 [`docs/roadmap.md`](roadmap.md); the machine-readable source is [`docs/roadmap.json`](roadmap.json);
@@ -107,8 +107,6 @@ and acceptance criteria are generated into [`docs/sections/`](sections/).
 | M4 | Damage Breakdown | Tools | 3 |
 | M5 | Drop Rate Calculator | Tools | 2 |
 | M6 | Coin Multiplier Calculator | Tools | 2 |
-| M7 | Shadow Ban Check | General | 1 |
-| M8 | Endgame Check | General | 1 |
 | M9 | Statue Calculator | General | 3 |
 | M10 | Fishing Calculator | W2 | 3 |
 | M11 | Prisma Calculator | W2 | 2 |
@@ -256,7 +254,7 @@ crates/sushi                        Sushi Station formulas, save inputs and upgr
                                     the account decoder and the Ring of Glory table
 crates/<domain>                     one crate per calculator, no GPUI, testable in isolation:
                                     cglunko, clamworks, cog, coin-multi, combat, cooking-mastery,
-                                    coral, damage, drop-rate, endgame, farming, fishing, fountain,
+                                    coral, damage, drop-rate, farming, fishing, fountain,
                                     jar, jelly, killroy, ladle, monument, opal, pickle, prisma,
                                     royal-guardian, sailing, sneaking, spelunking, stats, statue,
                                     worship; each owns its `data/*.json` and `tests/`
@@ -397,9 +395,6 @@ file is missing) and offers play/pause, scrub, the playback speeds and Den wave 
 practice captures as a version-1 replay document that re-opens and re-runs it. Details:
 [`docs/sections/combat-sim.md`](sections/combat-sim.md).
 
-The shadow-ban check is complete: it reads `OptLacc[26]` from the imported save and shows YES, NO or
-UNKNOWN with the save status under the verdict. Details: [`docs/sections/shadow.md`](sections/shadow.md).
-
 The statue section has its table, its estimates and its batch controls (ST-01 to ST-03). Done: the
 32-row table, the saved level and EXP progress, the next-level requirement including the
 statue-1/2/3 rounding gates, per-row availability, the character selector and search/sort; the
@@ -411,10 +406,6 @@ batch action, and the farming breakdown behind one statue's row through the shar
 Missing: a "Measure statue farming" panel, which needs a character kill rate the combat simulator's
 stand-in player cannot give (its auto-mode player is not built), so rates are manual entries today.
 Details: [`docs/sections/statue.md`](sections/statue.md).
-
-The endgame check is complete: the joke verdict plus the 177-metric leaderboard audit, with the 156
-save-backed metrics computed and the 21 account-stat metrics named instead of guessed.
-Details: [`docs/sections/endgame.md`](sections/endgame.md).
 
 The shared stat engine is `crates/stats-engine` (`idleon-stats-engine`). It owns the total-stat
 computation for STR, AGI, WIS and LUK — the equipment, gallery, obol, stamp, star-sign, sigil,

@@ -29,7 +29,7 @@ in moments.
 
 | Group | Calculators |
 | --- | --- |
-| General | Combat Simulator · All Stats · Statue Calculator · Shadow Ban Check · Endgame Check |
+| General | Combat Simulator · All Stats · Statue Calculator |
 | World 2 | Fishing · Prisma · Killroy |
 | World 3 | Cog Board · Worship Tower Defense |
 | World 4 | Ladle · Cooking Mastery |
