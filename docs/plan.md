@@ -48,6 +48,12 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 
 ## 3. Dashboard and navigation
 
+> **Planned redesign:** [`specs/app-shell.md`](specs/app-shell.md) replaces the header's back button
+> with a sidebar grouped by world, page history and per-section run activity, and moves the compact
+> breakpoint to 1180 px of workspace (§6); the grid below stays as
+> Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)). This
+> section describes the shell as built until its slices land.
+
 Landing page:
 
 - Header: product title, search field, import button, save status.
