@@ -1,15 +1,13 @@
-//! Window chrome: the header, the sidebar, the routed place and the status bar.
+//! Window chrome: the header, the sidebar and the routed place.
 //!
 //! The shell owns the window, the header, the sidebar and the routing
 //! shortcuts; a section owns its own tab strip and content behind the registry
 //! factory.
 
-use crate::sections;
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
 use crate::ui::{dashboard, export, header, import, section, sidebar};
-use ely_gpui_component::shell::{StatusBar, StatusBarItem};
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
@@ -85,36 +83,6 @@ pub(crate) fn shell(
             .into_any_element(),
     };
 
-    let status = match &route {
-        Route::Dashboard => StatusBar::new()
-            .left(
-                StatusBarItem::new("status-view")
-                    .label(format!("{} calculators", sections::card_count())),
-            )
-            .left(
-                StatusBarItem::new("status-detail")
-                    .label("Search by title, description or world; Escape clears the search."),
-            ),
-        Route::Section(section) => StatusBar::new()
-            .left(StatusBarItem::new("status-view").label(format!(
-                "{} · {}",
-                section.title,
-                section.badge()
-            )))
-            .left(StatusBarItem::new("status-detail").label(format!(
-                "{} · {}",
-                section.status.label(),
-                section.spec
-            ))),
-        Route::Missing(id) => StatusBar::new()
-            .left(StatusBarItem::new("status-view").label("Unknown section"))
-            .left(
-                StatusBarItem::new("status-detail").label(format!("{id} is not in the registry")),
-            ),
-    };
-    let status =
-        status.right(StatusBarItem::new("status-assets").label(state.assets.status_label()));
-
     let mut root = div()
         .id("app-root")
         .flex()
@@ -147,16 +115,16 @@ pub(crate) fn shell(
                         .child(div().flex_1().min_h_0().child(body)),
                 ),
         )
-        // The status line is a labelled node of its own: a status bar item has no
-        // aria label, and an agent or a screen reader reads the run's state here.
+        // No status bar is drawn; the last run or import message stays a
+        // labelled node for a screen reader and the harnesses.
         .child(
-            status.right(
-                div()
-                    .id("status-status")
-                    .role(Role::Label)
-                    .aria_label(state.status.clone())
-                    .child(StatusBarItem::new("status-text").label(state.status.clone())),
-            ),
+            div()
+                .id("status-status")
+                .role(Role::Label)
+                .aria_label(state.status.clone())
+                .absolute()
+                .size_0()
+                .overflow_hidden(),
         );
     // The import dialog owns Escape while it is open, so the section's back
     // shortcut waits until it closes.

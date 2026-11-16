@@ -11,7 +11,7 @@ names the game gives them and are not listed here.
 - **Tools**: the sections with no dashboard card (`dashboard: false`). The sidebar lists them in
   its own Tools group; the dashboard still hides them.
 - **Home**: the dashboard card grid, reached from the top of the sidebar (`Route::Dashboard`).
-- **Shell**: the window chrome around a section: header, sidebar and status bar (`ui/shell.rs`).
+- **Shell**: the window chrome around a section: header and sidebar (`ui/shell.rs`).
   A section never renders shell parts itself.
 - **Header**: the bar across the top of the window: sidebar toggle, history arrows, save status,
   Import and Export.

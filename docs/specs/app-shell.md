@@ -26,8 +26,12 @@ In: the header, the sidebar with its groups and game-art icons, the rail toggle 
 persistence, page-level history with shortcuts, the activity marks, a test that proves two
 sections run at once.
 
-Out: how runs work, section content and tab strips, the bottom status bar, the theme, the
-dashboard grid's own layout, persisting history or activity marks.
+Out: how runs work, section content and tab strips, the theme, the dashboard grid's own layout,
+persisting history or activity marks.
+
+The bottom status bar was removed in S1 at the owner's request; the status message stays as a
+zero-size labelled node (`status-status`) for screen readers and the harnesses, and the sidebar's
+activity marks (S3) are what shows a run's state.
 
 ## Behavior
 
@@ -72,7 +76,7 @@ Flows:
   history list button beside them lists every place, newest first. History starts empty at each
   launch.
 - **Run in two sections.** Start the Farming allocation, open Sailing, start its simulation: both
-  run, both items show a ring, and the status line keeps reporting the latest message as today.
+  run, both items show a ring, and the status message (read by screen readers) keeps the latest one.
   When Farming finishes, its ring becomes an accent dot until Farming is opened.
 - **Import a save.** The import discards the runs it invalidates (as today) and clears every
   finished and failed dot, because the results they pointed to may be gone.
@@ -153,7 +157,7 @@ flowchart LR
 ```
 
 - **Shell layout** (`ui/shell.rs`): header across the full width, then a row of sidebar and
-  workspace, then the status bar. `layout::page_header`, `dashboard_header`, `missing_header` and
+  workspace (no status bar). `layout::page_header`, `dashboard_header`, `missing_header` and
   `back_button` merge into one `ui/header.rs`, which holds no place title.
   ([ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md))
 - **Sidebar** (`ui/sidebar.rs`): Ely `Sidebar` with one `NavGroup` per `Group` in `Group::ALL`

@@ -123,7 +123,7 @@
         "Home, the landing page, is a searchable card grid grouped by General and W2-W7, with each section's title, icon, world badge and one-line description.",
         "A header across the window holds the sidebar toggle, the save status, and Export and Import; the active sidebar item marks the open section.",
         "A sidebar lists Home, then every section under its world (General, World 2-7) and the five hidden calculators under Tools; any item opens its section in one click, and the sidebar folds to an icon rail that survives a restart.",
-        "Section pages keep their own tab strip; the shell owns only the header, sidebar and status bar.",
+        "Section pages keep their own tab strip; the shell owns only the header and sidebar.",
         "Import dialog accepts a file, a paste or drag-and-drop; it previews the detected format before applying."
       ],
       "inputs": [

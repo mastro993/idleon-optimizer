@@ -56,7 +56,7 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 Shell (`ui/shell.rs`):
 
 - Header across the window (`ui/header.rs`): sidebar toggle, save status, Export and Import. The
-  open place is named by its active sidebar item and the status bar, not the header.
+  open place is named by its active sidebar item, not the header.
 - Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
@@ -66,7 +66,9 @@ Shell (`ui/shell.rs`):
   in a tooltip) and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
 - The workspace beside the sidebar holds the place and, on a section without a save, the
-  `no-save-state` banner; the status bar runs under both.
+  `no-save-state` banner. There is no status bar: the last run or import message
+  (`AppState::status`) is a zero-size labelled node, `status-status`, for screen readers and the
+  harnesses.
 
 Home (the landing page):
 
@@ -214,7 +216,7 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
 5. Decode everything the document needs while previewing (the embedded save and each section
    config), then apply atomically: either the whole import succeeds or the previous state stays
    intact. A config for a section that stores no config (or one this build does not declare) is
-   named in the preview's warnings instead of applying silently. Log every applied field change as `field: old → new`, summarise it in the status bar and
+   named in the preview's warnings instead of applying silently. Log every applied field change as `field: old → new`, summarise it in the status message and
    keep the list in the dialog.
 6. Persist the imported save metadata and add it to recent imports; the session file keeps the
    whole project so the next launch restores the section, save and section configs together.
@@ -247,8 +249,7 @@ cannot start, the window opens without it.
   several trees (the All Stats breakdown card and its formula card, for instance) without the
   accessibility tree collapsing their rows onto one another.
 - One shared header (sidebar toggle, save status, Export, Import), one
-  sidebar and one tab strip; a section owns its tab strip and the shell owns the header, sidebar and
-  status bar.
+  sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
   borders, `#00d4ff` accent; world badges use per-world colours.
 - When the workspace (the window minus the sidebar) is narrower than 1180 px, the fixed side rails

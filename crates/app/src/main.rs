@@ -105,7 +105,8 @@ fn open_window(
         titlebar: Some(TitlebarOptions {
             title: Some("Idleon Research Optimizer".into()),
             appears_transparent: true,
-            traffic_light_position: Some(point(px(16.0), px(18.0))),
+            // 14 px lights centred in the 48 px header, level with the sidebar toggle.
+            traffic_light_position: Some(point(px(16.0), px(17.0))),
         }),
         window_min_size: Some(size(px(ui::layout::MIN_WIDTH), px(ui::layout::MIN_HEIGHT))),
         ..Default::default()
