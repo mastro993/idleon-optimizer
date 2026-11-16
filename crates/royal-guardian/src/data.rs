@@ -1,9 +1,8 @@
-//! Static Royal Guardian data, extracted from the upstream JS calculator.
+//! Static Royal Guardian data.
 //!
-//! `script/extract-royal-data.mjs` writes `data/royal-guardian.json` from the
-//! upstream `ArmoryUpg`, `OrbletMarket`, `RoyalResources` and `MapDetails`
-//! tables, the talent curve the clearing rate reads, and the Spelunk and Jelly
-//! rows its cross-system factors multiply in.
+//! `data/royal-guardian.json` holds the game's `ArmoryUpg`, `OrbletMarket`,
+//! `RoyalResources` and `MapDetails` tables, the talent curve the clearing rate
+//! reads, and the Spelunk and Jelly rows its cross-system factors multiply in.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -69,7 +68,7 @@ pub struct Orblet {
 }
 
 /// The cross-system rows the global collection rate multiplies in: RG-02 reads
-/// only these three, so the rest of those systems stays out of this port.
+/// only these three, so the rest of those systems stays out of this crate.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Collection {
@@ -188,7 +187,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_extracted_tables_keep_their_upstream_shape() {
+    fn the_extracted_tables_keep_their_game_shape() {
         let data = data();
         assert_eq!(
             data.armory_bonus_per_level.len(),
@@ -231,7 +230,7 @@ mod tests {
         assert_eq!(
             spelunk_shop_per_level(77),
             0.0,
-            "the game data carries no SpelunkUpg[77], so upstream reads zero"
+            "the game data carries no SpelunkUpg[77], so it reads zero"
         );
     }
 
@@ -271,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn the_map_anchors_are_the_ones_the_upstream_reads() {
+    fn the_map_anchors_are_the_ones_the_range_finder_reads() {
         // `MapDetails[1][2]` is the anchor W1's second outpost sits on, and the
         // range finder measures from it.
         let row = map(1).expect("map 1");

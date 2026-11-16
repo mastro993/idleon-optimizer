@@ -2,15 +2,11 @@
 //! the income rates, lucky coins and ducks, coin stacks and the cross-system
 //! bonuses.
 //!
-//! Ported from the upstream `js/stats/systems/w5/fountain.js` and the overview,
-//! income, currency and upgrade halves of `fountain-calc.html`. The upstream
-//! reads a decoded save through `holesData`; here the same rows come from the
-//! `Holes` field of an imported save, so every accessor below is a direct
-//! transcription of one upstream reader.
+//! The cavern's rows come from the `Holes` field of an imported save.
 //!
 //! The upgrade planner and optimizer are FN-03; the marble planner and the
 //! simulated run are FN-04. The external bonuses the overview reports read the
-//! same account systems upstream does, and a source the save does not carry is
+//! account systems they come from, and a source the save does not carry is
 //! named by [`Fountain::missing_bonuses`] instead of silently reading zero.
 
 mod currency;
@@ -38,7 +34,7 @@ pub const CURRENCIES: usize = 9;
 /// How many waters the game implements.
 pub const WATERS: usize = 3;
 
-/// The `holesData` rows the fountain reads, by their upstream index.
+/// The `Holes` rows the fountain reads, by their index.
 mod row {
     /// `Holes[4 + tier][i]`: the Cosmo upgrade levels.
     pub const COSMO: usize = 4;
@@ -157,7 +153,7 @@ pub struct LevelStep {
     pub level: usize,
     pub cost: f64,
     pub currency: usize,
-    /// The spend within this currency type, as upstream accumulates it.
+    /// The running spend within this currency type.
     pub cumulative: f64,
     pub affordable: bool,
 }
@@ -166,11 +162,11 @@ pub struct LevelStep {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CurrencyRow {
     pub currency: usize,
-    /// `currencyBaseValue`: the currency's own upgrade multiplier.
+    /// The currency's own upgrade multiplier.
     pub base: f64,
-    /// `luckyCoinValue`: the multiplier its lucky coins grant.
+    /// The multiplier its lucky coins grant.
     pub lucky: f64,
-    /// `currencyTotalValue`: what one coin is worth at the simulated desired.
+    /// What one coin is worth at the simulated desired.
     pub total: f64,
     /// `total` times a full stack, with the Size Does Matter bonus.
     pub full_stack: f64,
@@ -188,7 +184,7 @@ pub struct CurrencyRow {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WaterMultiplier {
     pub water: usize,
-    /// `currencyAllMulti`, which every row shares.
+    /// The whole currency value multiplier, which every row shares.
     pub shared: f64,
     /// The water's own POW-10 log multiplier (Mythril, Sharp or Rupie).
     pub own: f64,
@@ -240,22 +236,22 @@ pub struct UpgradeRow {
     pub name: &'static str,
     pub level: f64,
     pub marble: f64,
-    /// `marbleBon`: the marble multiplier at `marble`.
+    /// The marble multiplier at `marble`.
     pub marble_bonus: f64,
-    /// `bonTOT`: the percentage the upgrade grants now.
+    /// The percentage the upgrade grants now.
     pub bonus: f64,
-    /// `upgradeAccessible`: the water and the prerequisite are both met.
+    /// The water and the prerequisite are both met.
     pub accessible: bool,
-    /// `upgCost`: what the next level costs.
+    /// What the next level costs.
     pub next_cost: f64,
     /// The currency that pays for it.
     pub currency: usize,
     /// Seconds until the saved balance and the estimated rate can afford it;
     /// infinite when the currency earns nothing yet.
     pub seconds_to_afford: f64,
-    /// `marbleCost`: the marble one marble level costs.
+    /// The marble one marble level costs.
     pub marble_cost: f64,
-    /// `canMarble`: whether the upgrade can be marbled at all.
+    /// Whether the upgrade can be marbled at all.
     pub marbable: bool,
     /// The description with its saved numbers filled in.
     pub description: String,
@@ -266,7 +262,7 @@ pub struct UpgradeRow {
 /// The Fountain state one save carries.
 #[derive(Clone, Debug, Default)]
 pub struct Fountain {
-    /// `holesData`: the cavern's saved rows, missing cells read as zero.
+    /// The cavern's saved rows, missing cells read as zero.
     ///
     /// Shared, so simulating a cavern copies only its upgrade levels.
     holes: Arc<Vec<Value>>,
@@ -324,7 +320,7 @@ pub fn currency_label(currency: usize) -> &'static str {
         .unwrap_or("?")
 }
 
-/// The water names, in upstream order.
+/// The water names, in game order.
 pub fn water_names() -> &'static [String] {
     &data().water_names
 }
@@ -344,14 +340,14 @@ pub fn bell_per_level(index: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `holesMeasBase`: a measurement's base value and whether it is a `TOT` row,
-/// whose bonus decays instead of scaling linearly.
+/// A measurement's base value and whether it is a `TOT` row, whose bonus
+/// decays instead of scaling linearly.
 pub fn measurement(index: usize) -> Option<(f64, bool)> {
     let text = data().holes.measurement_base.get(index)?;
     Some((currency::leading_number(text), text.contains("TOT")))
 }
 
-/// `holesMeasType`: the account quantity a measurement counts.
+/// The account quantity a measurement counts.
 pub fn measurement_type(index: usize) -> u32 {
     data()
         .holes
@@ -361,12 +357,12 @@ pub fn measurement_type(index: usize) -> u32 {
         .unwrap_or(0.0) as u32
 }
 
-/// `_cosmoBonus(1, 3)`'s base: the measurement multiplier each level grants.
+/// The measurement multiplier each cosmo level grants.
 pub fn cosmo_measurement() -> f64 {
     data().cosmo.measurement
 }
 
-/// `cosmoUpgBase(tier, index)`: the base one cosmo upgrade level grants.
+/// The base one cosmo upgrade level grants.
 pub fn cosmo_base(tier: usize, index: usize) -> f64 {
     data()
         .cosmo
@@ -377,7 +373,7 @@ pub fn cosmo_base(tier: usize, index: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `holesBolaiaPerLv`: the Bolaia study bonus per level.
+/// The Bolaia study bonus per level.
 pub fn bolaia_per_level(index: usize) -> f64 {
     data()
         .holes
@@ -387,10 +383,9 @@ pub fn bolaia_per_level(index: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// The page's `fmtNum`: whole numbers under 1000 stay whole, the rest scale.
+/// Whole numbers under 1000 stay whole, the rest scale.
 ///
-/// The upgrade descriptions print their saved numbers through this, so the
-/// port can be compared with the page's own strings.
+/// The upgrade descriptions print their saved numbers through this.
 pub fn short_number(value: f64) -> String {
     if value == 0.0 {
         return "0".into();
@@ -400,7 +395,7 @@ pub fn short_number(value: f64) -> String {
     }
     let magnitude = value.abs();
     if magnitude >= 1e24 {
-        // `toExponential(2)` prints a signed exponent.
+        // Two decimals and an explicitly signed exponent.
         let exponent = magnitude.log10().floor() as i32;
         let mantissa = value / 10_f64.powi(exponent);
         return format!(

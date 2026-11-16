@@ -1,15 +1,11 @@
 //! The Prisma plan: which bubbles can take Prisma, what the save owns, and the
 //! bonus each bubble produces today.
-//!
-//! Ported from `prismaPlan` in `js/stats/prisma.js`, `prismaVariant` for the
-//! saved-state checks, and the bubble bonus in `js/stats/systems/w2/alchemy.js`
-//! (`isBubblePrismad`, `getPrismaBonusMult`, `formulaEval`).
 
 use super::data::{self, Bubble};
 use idleon_save::{Save, at, number};
 use idleon_stats::Snapshot;
 
-/// The cauldron tab labels, in the upstream order.
+/// The cauldron tab labels, in tab order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Cauldron(pub usize);
 
@@ -20,7 +16,7 @@ impl Cauldron {
         self.0
     }
 
-    /// The upstream tab label.
+    /// The tab label.
     pub fn label(self) -> &'static str {
         data::cauldron_label(self.0).unwrap_or("Power")
     }
@@ -77,7 +73,7 @@ impl Status {
     }
 }
 
-/// One character the plan can run for, as the upstream character selector lists it.
+/// One character the plan can run for, as the character selector lists it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Character {
     pub index: usize,
@@ -88,20 +84,20 @@ pub struct Character {
 /// One bubble's saved state and base bonus.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
-    /// The upstream row id, `"<cauldron>:<index>"`.
+    /// The row id, `"<cauldron>:<index>"`.
     pub id: String,
     pub cauldron: usize,
     pub index: usize,
     /// The display label, e.g. `Heart Diggy`.
     pub name: String,
-    /// The upstream row key, e.g. `HEARTY_DIGGY`.
+    /// The game's row key, e.g. `HEARTY_DIGGY`.
     pub key: String,
     /// The effect key downstream formulas read.
     pub effect: String,
     /// The saved level, or `None` when the save carries no usable cell.
     pub level: Option<f64>,
     pub status: Status,
-    /// Why a row is not comparable, in the upstream wording.
+    /// Why a row is not comparable.
     pub reason: String,
     /// Whether a Prisma comparison can run for this row.
     pub comparable: bool,
@@ -153,7 +149,7 @@ pub struct Plan {
     pub fragments: Option<f64>,
     /// `CurrentMap_<character>`.
     pub map: Option<usize>,
-    /// `getPrismaBonusMult`: what a Prisma bubble's bonus is multiplied by.
+    /// What a Prisma bubble's bonus is multiplied by.
     pub multiplier: f64,
 }
 
@@ -163,7 +159,7 @@ impl Plan {
         self.rows.iter().filter(|row| row.comparable).count()
     }
 
-    /// The upstream tab label of this plan's cauldron.
+    /// The tab label of this plan's cauldron.
     pub fn cauldron_label(&self) -> &'static str {
         Cauldron(self.cauldron).label()
     }
@@ -254,7 +250,8 @@ pub fn plan(save: &Save, character: usize, cauldron: usize) -> Result<Plan, Plan
     })
 }
 
-/// The upstream status ladder, in its own order.
+/// A row's status and reason: the first rule that applies, from ineligible to
+/// ready.
 fn status_of(
     bubble: &Bubble,
     level: Option<f64>,
@@ -284,10 +281,10 @@ fn status_of(
 
 /// The saved Prisma ownership text, when the save carries one.
 ///
-/// Upstream reads `OptionsListAccount[384]` and accepts a string or `0`; any
-/// other shape means the list is unavailable. It then searches the text for
-/// `<letter><index>,`, so the raw text is kept rather than split: the fixture's
-/// own list starts with a `0c9,` entry the substring search still matches.
+/// The game stores it in `OptionsListAccount[384]` as a string or `0`; any
+/// other shape means the list is unavailable. The ownership check searches the
+/// text for `<letter><index>,`, so the raw text is kept rather than split: a
+/// list that starts with a `0c9,` entry still matches the substring search.
 fn prime_list(value: &serde_json::Value) -> Option<String> {
     match value {
         serde_json::Value::String(text) => Some(text.clone()),
@@ -296,7 +293,7 @@ fn prime_list(value: &serde_json::Value) -> Option<String> {
     }
 }
 
-/// `N2L[cauldron] + index + ","`, the code `isBubblePrismad` searches for.
+/// `N2L[cauldron] + index + ","`, the code the ownership check searches for.
 fn bubble_code(bubble: &Bubble, cauldron: usize) -> Option<String> {
     let letter = data::letter(cauldron)?;
     Some(format!("{letter}{},", bubble.index))

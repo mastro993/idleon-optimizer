@@ -1,10 +1,5 @@
 //! The Sushi Station: the formulas, the save-derived inputs and the upgrade
 //! ranking the research page's Sushi Station tab renders.
-//!
-//! Ported from `js/stats/systems/w7/sushi.js` and `js/ui/sushi-ui.js`. The
-//! static tables come from `script/extract-sushi-data.mjs`; the tests compare
-//! the port with `script/sushi-oracle.mjs`, which runs the upstream calculator
-//! itself.
 
 pub mod data;
 pub mod inputs;
@@ -16,7 +11,7 @@ pub use inputs::{Inputs, inputs};
 pub use math::{External, Station, combo_multiplier};
 pub use optimize::{Metric, Path, candidates, path};
 
-/// A number as the upstream `fmtNum` prints it: `1.23M`, `12.3K`, `1,235`.
+/// A number in the tab's short format: `1.23M`, `12.3K`, `1,235`.
 pub fn fmt_num(value: f64) -> String {
     if value == 0.0 {
         return "0".into();
@@ -58,7 +53,7 @@ pub fn fmt_num(value: f64) -> String {
     format!("{value:.2}")
 }
 
-/// `toExponential(2)`, with the sign JS prints in the exponent.
+/// Two-decimal exponential notation, with an explicit sign on the exponent.
 fn exponential(value: f64) -> String {
     let text = format!("{value:.2e}");
     match text.split_once('e') {
@@ -87,7 +82,7 @@ fn grouped(value: f64) -> String {
 }
 
 /// The upgrade description with its `{`, `}` and `$` markers filled in, as the
-/// Upgrades table prints it (`_fmtDesc` in `js/ui/sushi-ui.js`).
+/// Upgrades table prints it.
 pub fn upgrade_desc(inputs: &Inputs, upg: usize) -> String {
     let data = game();
     let Some(upgrade) = data.upgrade(upg) else {
@@ -171,8 +166,7 @@ pub fn upgrade_desc(inputs: &Inputs, upg: usize) -> String {
 }
 
 /// A knowledge category's description with its `{`, `}` and `^` markers
-/// replaced by the category total and, when there is one, the per-level gain
-/// (`_fmtKnDesc` in `js/ui/sushi-ui.js`).
+/// replaced by the category total and, when there is one, the per-level gain.
 pub fn knowledge_desc(cat: usize, total: f64, per_level: f64) -> String {
     let Some(text) = game().knowledge_desc_at(cat) else {
         return String::new();

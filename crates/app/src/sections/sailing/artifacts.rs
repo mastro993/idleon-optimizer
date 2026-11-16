@@ -1,10 +1,10 @@
 //! The Artifacts tab: the island ranking and the selected island's artifacts.
 //!
-//! The upstream page ranks every unlocked island by the selected boat and
-//! captain's artifact finds per hour, then lists the selected island's artifacts
-//! with their next-tier denominator and the chance one generated chest finds
-//! them. The ranking only counts islands the save can reach, and a capped
-//! artifact stays capped until Verisimilitude unlocks the seventh tier.
+//! The tab ranks every unlocked island by the selected boat and captain's
+//! artifact finds per hour, then lists the selected island's artifacts with
+//! their next-tier denominator and the chance one generated chest finds them.
+//! The ranking only counts islands the save can reach, and a capped artifact
+//! stays capped until Verisimilitude unlocks the seventh tier.
 
 use super::{artifacts as finds, captain_short, chance, text_kpi, trip};
 use crate::state::AppState;

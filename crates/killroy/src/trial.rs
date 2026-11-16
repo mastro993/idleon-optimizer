@@ -1,13 +1,12 @@
 //! One deterministic Killroy encounter trial.
 //!
-//! Ports the encounter in `js/stats/systems/common/combat-sim-killroy.js`: the
-//! 300 arrivals armed 50 ms in on the `0.05 + 0.15 * i^1.3` schedule, the 60%
-//! queue on every kill, the respawn bonus, the 100 ms spawn tick, the `100 +
-//! Time` duration and the per-kill skull, talent-point, dungeon-credit and pearl
-//! rolls. The stream is the combat simulator's `createRng` (mulberry32), so a
-//! trial is a pure function of its inputs and seed.
+//! The encounter: the 300 arrivals armed 50 ms in on the `0.05 + 0.15 * i^1.3`
+//! schedule, the 60% queue on every kill, the respawn bonus, the 100 ms spawn
+//! tick, the `100 + Time` duration and the per-kill skull, talent-point,
+//! dungeon-credit and pearl rolls. The stream is a seeded mulberry32 generator, so a trial is a pure
+//! function of its inputs and seed.
 //!
-//! The player's damage is the one thing not ported: it belongs to the combat
+//! The player's damage is the one thing not modelled: it belongs to the combat
 //! simulator, which is a later section. [`TrialInputs::kills_per_second`] stands
 //! in for it, so the trial models the encounter's supply and drop maths rather
 //! than the character's power.
@@ -21,7 +20,7 @@ use idleon_common::Rng;
 
 /// Monsters the encounter arms 50 ms into the run.
 const ARRIVALS: usize = 300;
-/// The upstream simulation step, in milliseconds.
+/// The simulation step, in milliseconds.
 const STEP_MS: f64 = 10.0;
 /// The spawn tick: at most one queued arrival enters the map per 100 ms.
 const SPAWN_MS: f64 = 100.0;
@@ -98,9 +97,9 @@ struct Run {
 }
 
 impl Run {
-    /// One kill, and the upstream drop rolls in their own order. Each drop
-    /// burns the same stream calls the game does, so the rolls stay in step;
-    /// only the bag's answer decides whether the drop is collected.
+    /// One kill, and the drop rolls in their own order. Each drop burns the same
+    /// stream calls the game does, so the rolls stay in step; only the bag's
+    /// answer decides whether the drop is collected.
     fn kill(&mut self) {
         if self.random.float() < 0.6 {
             self.queued += 1.0;
@@ -181,8 +180,8 @@ impl Run {
     }
 }
 
-/// The talent-point item a drop rolls up for the pre-increment counter,
-/// matching `k.talentDrops % 9 === 7 ? 'TalentPoint6' : 'TalentPoint' + ...`.
+/// The talent-point item a drop rolls up for the pre-increment counter: every
+/// ninth drop from the eighth on is `TalentPoint6`, the rest cycle by four.
 fn talent_point(drops: f64) -> &'static str {
     if drops % 9.0 == 7.0 {
         return "TalentPoint6";
@@ -198,7 +197,7 @@ fn talent_point(drops: f64) -> &'static str {
     }
 }
 
-/// Run one trial for `seed`, following the upstream timers tick for tick.
+/// Run one trial for `seed`, following the encounter's timers tick for tick.
 pub fn trial(inputs: &TrialInputs, seed: u64) -> Record {
     let mut run = Run {
         levels: inputs.levels,
@@ -314,8 +313,7 @@ mod tests {
     }
 
     #[test]
-    fn the_arrival_schedule_matches_upstream() {
-        // node -e "console.log(JSON.stringify([0,1,2,299].map(i => 50 + 1000*(0.05 + 0.15*i**1.3))))"
+    fn the_arrival_schedule_follows_its_formula() {
         let arrivals: Vec<f64> = [0, 1, 2, 299]
             .iter()
             .map(|index| 50.0 + 1_000.0 * (0.05 + 0.15 * (*index as f64).powf(1.3)))

@@ -1,9 +1,5 @@
 //! Break chances: opals, collectibles and enchants, their tier scaling and the
 //! time each event takes.
-//!
-//! Ported from `opalChance`, `collectibleChance`, `enchantChance`,
-//! `enchantChanceAt`, `enchantMulti`, `expectedBreaksToEvent` and
-//! `expectedHoursToEvent` in `js/stats/systems/w5/jar.js`.
 
 use super::{Jar, upgrade};
 
@@ -40,7 +36,7 @@ impl Jar {
         ]
     }
 
-    /// `opalChance`: 25% × 0.43 per opal already found, raised by the three
+    /// 25% × 0.43 per opal already found, raised by the three
     /// opal collectibles.
     pub fn opal_chance(&self) -> f64 {
         let legend = self.ext.legend_pts;
@@ -50,7 +46,7 @@ impl Jar {
             * (1.0 + self.collectible_bonus(27, legend) / 100.0)
     }
 
-    /// `collectibleChance`: each collectible found makes the next one harder,
+    /// Each collectible found makes the next one harder,
     /// and page two adds 1.5× per find past the sixteenth.
     pub fn collectible_chance(&self) -> f64 {
         let found = self.collectibles_found();
@@ -79,19 +75,19 @@ impl Jar {
         }
     }
 
-    /// `enchantChance`: the base curve falls with every enchant level, and the
+    /// The base curve falls with every enchant level, and the
     /// multipliers raise it back.
     pub fn enchant_chance(&self) -> f64 {
         Self::enchant_chance_at(self.enchant_levels(), self.enchant_multi())
     }
 
-    /// `enchantChanceAt`: the base curve alone, for the simulator to reuse.
+    /// The base curve alone, for the simulator to reuse.
     pub fn enchant_chance_at(levels: u32, multi: f64) -> f64 {
         let levels = f64::from(levels);
         0.35 / (1.0 + levels.powf(1.23) + 1.1_f64.powf(levels)) * multi
     }
 
-    /// `enchantMulti`: everything the enchant chance multiplies the curve by.
+    /// Everything the enchant chance multiplies the curve by.
     pub fn enchant_multi(&self) -> f64 {
         let legend = self.ext.legend_pts;
         let dark_luck = (self.upgrade_value(upgrade::DARK_LUCK, 1.0)
@@ -117,12 +113,12 @@ impl Jar {
         (chance > 0.0).then(|| (1.0 / chance).log10().ceil() as u32 + 1)
     }
 
-    /// `_renderSimResults`' odds table: the hours one enchant takes on each
-    /// bought jar type, per jar tier, at `levels` total enchant levels.
+    /// The simulator's odds table: the hours one enchant takes on each bought
+    /// jar type, per jar tier, at `levels` total enchant levels.
     ///
-    /// The page computes `breaksPerHr = prodHr / (req * 10^tier)` and
-    /// `enchantsPerHr = breaksPerHr * chance`, so the hours per enchant are
-    /// `timeToTier / chance`.
+    /// Breaks per hour are `production / (requirement × 10^tier)` and enchants
+    /// per hour are `breaks × chance`, so the hours per enchant are the time to
+    /// the tier divided by the chance.
     pub fn enchant_tier_hours(&self, levels: u32) -> Vec<Vec<f64>> {
         let chance = Self::enchant_chance_at(levels, self.enchant_multi());
         (1..=6)
@@ -134,7 +130,7 @@ impl Jar {
             .collect()
     }
 
-    /// `expectedBreaksToEvent`: how many breaks the event takes on average.
+    /// How many breaks the event takes on average.
     pub fn expected_breaks(chance: f64) -> f64 {
         if chance <= 0.0 {
             f64::INFINITY
@@ -145,7 +141,7 @@ impl Jar {
         }
     }
 
-    /// `expectedHoursToEvent`: breaks at the jar type's rate, one slot at a time.
+    /// Breaks at the jar type's rate, one slot at a time.
     pub fn expected_hours(&self, jar_type: usize, chance: f64) -> f64 {
         let breaks = Self::expected_breaks(chance);
         if !breaks.is_finite() {

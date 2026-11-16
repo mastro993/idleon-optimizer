@@ -1,6 +1,6 @@
-//! Helpers the ladle parity tests share.
+//! Helpers the ladle tests share.
 
-/// Upstream figures are doubles; compare to the last few bits they share.
+/// Equal to the last few bits two doubles share.
 #[track_caller]
 pub fn close(actual: f64, expected: f64) {
     assert!(

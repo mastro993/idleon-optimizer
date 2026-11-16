@@ -1,16 +1,12 @@
 //! The Jelly Operator multipliers and the steady-state board metrics.
 //!
-//! Ports `jellyCellDamageMultiplier`, `jellyCellSpeedMultiplier`,
-//! `jellyCellExpMultiplier`, `jellyFeverBonus`, `jellyAttackCadence`,
-//! `jellyCurrencyMultiplier` and `jellyLayoutMetrics` from
-//! `js/stats/systems/w7/jelly-operator.js`. The page's `jellyLayoutBreakdown`
-//! tree over the same numbers is JO-03.
+//! The layout breakdown tree over the same numbers is JO-03.
 
 use super::board::{Layout, footprint};
 use super::data::data;
 use super::{Jelly, PROXIMITY_ANCHORS};
 
-/// The upstream's own frame progress constant (`0.65` a frame at 1× speed).
+/// The game's own frame progress constant (`0.65` a frame at 1× speed).
 pub(crate) const PROGRESS_PER_FRAME: f64 = 0.65;
 
 /// The options a layout metric run reads.
@@ -30,7 +26,7 @@ pub struct MetricOptions {
     pub amoeba_stacks: f64,
 }
 
-/// `jellyAttackCadence`: the frame breakpoint between two attacks.
+/// The frame breakpoint between two attacks.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Cadence {
     pub cooldown_progress: f64,
@@ -58,7 +54,7 @@ pub struct CellMetrics {
     pub dps: f64,
 }
 
-/// `jellyLayoutMetrics`: what the whole board does before the runtime starts.
+/// What the whole board does before the runtime starts.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Metrics {
     pub valid: bool,
@@ -76,7 +72,6 @@ pub struct Metrics {
     pub attacks_per_second: f64,
 }
 
-/// `jellyAttackCadence`.
 pub fn attack_cadence(
     base_cooldown: f64,
     cooldown_progress: Option<f64>,
@@ -94,10 +89,10 @@ pub fn attack_cadence(
     }
 }
 
-/// `jellyBestDpsMultiplierFromValue`: the Bloodcell gain a Best DPS buys.
+/// The Bloodcell gain a Best DPS buys.
 ///
-/// The upstream divides by the literal `2.30259` rather than `ln(10)`, so the
-/// port keeps that constant; the parity fixture pins the difference.
+/// The game divides by the literal `2.30259` rather than `ln(10)`, so this
+/// keeps that constant.
 #[allow(clippy::approx_constant)]
 pub fn best_dps_multiplier_from_value(value: f64) -> f64 {
     let dps = value.max(0.0);
@@ -107,9 +102,9 @@ pub fn best_dps_multiplier_from_value(value: f64) -> f64 {
 }
 
 impl Jelly {
-    /// `jellyFeverBonus`: the percentage a fever mode adds for one effect.
+    /// The percentage a fever mode adds for one effect.
     ///
-    /// Effects are the page's own numbering: 0 COLD's ramp, 1 RASH's damage,
+    /// Effects are numbered: 0 COLD's ramp, 1 RASH's damage,
     /// 2 SEPSIS's Bloodcells, 3 NAUSEA's EXP, 4 RABIES' damage (`part` 0) and
     /// speed (`part` 1), 5 PLAGUE's speed.
     pub fn fever_bonus(
@@ -142,7 +137,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyCellDamageMultiplier`.
     pub fn cell_damage_multiplier(&self, options: MetricOptions) -> f64 {
         let fever = options.fever;
         let additive = self.upgrade_quantity(18)
@@ -160,12 +154,10 @@ impl Jelly {
             * (1.0 + fever_factor / 100.0)
     }
 
-    /// `jellyCellSpeedMultiplier`.
     pub fn cell_speed_multiplier(&self, fever: Option<u32>) -> f64 {
         1.0 + (self.fever_bonus(4, 1, 0.0, fever) + self.fever_bonus(5, 0, 0.0, fever)) / 100.0
     }
 
-    /// `jellyCellExpMultiplier`.
     pub fn cell_exp_multiplier(&self, fever: Option<u32>) -> f64 {
         (1.0 + self.fever_bonus(3, 0, 0.0, fever) / 100.0)
             * (1.0
@@ -202,7 +194,7 @@ impl Jelly {
         }
     }
 
-    /// `jellyCurrencyMultiplier`: Bloodcells per point of damage.
+    /// Bloodcells per point of damage.
     pub fn currency_multiplier(
         &self,
         fever: Option<u32>,
@@ -387,7 +379,7 @@ impl CurrencyFactors {
     }
 }
 
-/// `_organelleReachSlots`: the slots an Organelle at `anchor` powers.
+/// The slots an Organelle at `anchor` powers.
 pub(crate) fn organelle_reach_slots(anchor: usize) -> Vec<usize> {
     let cols = data().cols;
     let mut candidates = Vec::with_capacity(8);

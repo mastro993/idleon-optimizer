@@ -1,10 +1,7 @@
-//! The Sneaking formula breakdown trees.
-//!
-//! Ported from `buildStealthBreakdown`, `buildJadeBreakdown`,
-//! `buildSneakingExpBreakdown`, `buildDoorRateBreakdown` and the runtime tree
-//! in `_renderFormulaBreakdowns` (`sneaking-calc.html`). Every group names the
-//! upstream formula it rewrites; additive groups' children sum to the group's
-//! value and multiplier groups' children multiply to it.
+//! The Sneaking formula breakdown trees: stealth, Jade, EXP, door and the
+//! runtime loop. Every group names the formula it rewrites; additive groups'
+//! children sum to the group's value and multiplier groups' children multiply
+//! to it.
 
 use super::{ActionMode, Loadout};
 use idleon_common::formula::{FormulaNode, ValueFormat};
@@ -18,7 +15,7 @@ fn pct_factor(label: &str, bonus: f64, source: &str) -> FormulaNode {
         .with_children([FormulaNode::leaf("Bonus", bonus, ValueFormat::Percent)])
 }
 
-/// The stealth tree from `buildStealthBreakdown`.
+/// The stealth tree.
 pub fn stealth(loadout: &Loadout, twin: usize) -> FormulaNode {
     let Some(entry) = loadout.twin(twin) else {
         return FormulaNode::new("Stealth", 0.0).with_format(ValueFormat::Raw);
@@ -139,11 +136,7 @@ pub fn stealth(loadout: &Loadout, twin: usize) -> FormulaNode {
                 ValueFormat::Percent,
             ),
         ]),
-        pct_factor(
-            "Sneaking Statue",
-            account.statue_26,
-            "Statue 26 · computeStatueBonusGiven",
-        ),
+        pct_factor("Sneaking Statue", account.statue_26, "Statue 26"),
         FormulaNode::new(
             "Crystal 5 Card",
             1.0 + 4.0 * account.card_crystal5_level / 100.0,
@@ -314,7 +307,7 @@ pub fn stealth(loadout: &Loadout, twin: usize) -> FormulaNode {
         .with_children([base_node, core_node, ally_node, flower_node])
 }
 
-/// The Jade tree from `buildJadeBreakdown`.
+/// The Jade tree.
 pub fn jade(loadout: &Loadout, twin: usize) -> FormulaNode {
     let Some(entry) = loadout.twin(twin) else {
         return FormulaNode::new("Jade per Hour", 0.0).with_format(ValueFormat::Rate);
@@ -492,7 +485,7 @@ pub fn jade(loadout: &Loadout, twin: usize) -> FormulaNode {
                 .with_format(ValueFormat::Multiplier)
                 .with_children([
                     FormulaNode::leaf("Rift value", coin.rift, ValueFormat::Raw)
-                        .with_source("computeRiftSkillBonus(16, 1)"),
+                        .with_source("Rift skill 16 · threshold 1"),
                     FormulaNode::leaf("Combined bonus", 10.0 * coin.rift, ValueFormat::Percent),
                 ]),
             pct_factor("Compass: Jade", coin.compass, "CompassUpg 41"),
@@ -552,7 +545,7 @@ pub fn jade(loadout: &Loadout, twin: usize) -> FormulaNode {
             primary,
             equipped,
             slab,
-            pct_factor("Crop Scientist: Jade", coin.crop, "computeCropSC(2)"),
+            pct_factor("Crop Scientist: Jade", coin.crop, "Crop Scientist bonus 2"),
             pct_factor("Summoning Winner: Jade", coin.win, "Sigil bonus 1"),
             account_node,
             rift,
@@ -634,7 +627,7 @@ pub fn jade(loadout: &Loadout, twin: usize) -> FormulaNode {
         .with_children([coin_node, rate])
 }
 
-/// The EXP tree from `buildSneakingExpBreakdown`.
+/// The EXP tree.
 pub fn exp(loadout: &Loadout, twin: usize) -> FormulaNode {
     let Some(entry) = loadout.twin(twin) else {
         return FormulaNode::new("Sneaking EXP", 0.0).with_format(ValueFormat::Raw);
@@ -757,7 +750,7 @@ pub fn exp(loadout: &Loadout, twin: usize) -> FormulaNode {
     ])
 }
 
-/// The door tree from `buildDoorRateBreakdown`.
+/// The door tree.
 pub fn door(loadout: &Loadout, twin: usize) -> FormulaNode {
     let Some(entry) = loadout.twin(twin) else {
         return FormulaNode::new("Door Damage per Hour", 0.0).with_format(ValueFormat::Raw);
@@ -904,7 +897,7 @@ fn damage_tree(damage: &super::DoorDamage, reason: &str) -> FormulaNode {
         ])
 }
 
-/// The runtime tree from `_renderFormulaBreakdowns`.
+/// The runtime tree.
 pub fn runtime(loadout: &Loadout, twin: usize, item_batch_hours: f64) -> FormulaNode {
     let Some(entry) = loadout.twin(twin) else {
         return FormulaNode::new("Runtime", 0.0).with_format(ValueFormat::Raw);

@@ -1,10 +1,9 @@
 //! The saved buffs a Killroy run starts with.
 //!
-//! `initialBuffs` in `js/stats/systems/common/combat-sim-inputs.js` reads the
-//! save's `BuffsActive_<ci>` rows as `[id, stacks, time ?? stacks]`. A run starts
-//! as a fresh map entry, so upstream drops every timed buff and keeps only the
-//! permanent form toggles (`_withStartBuffs`: Wraith 195, Tempest 420, Arcanist
-//! 585) unless the calculator's `useSavedBuffs` option is on.
+//! The save's `BuffsActive_<ci>` rows read as `[id, stacks, time ?? stacks]`. A
+//! run starts as a fresh map entry, so every timed buff is dropped and only the
+//! permanent form toggles (Wraith 195, Tempest 420, Arcanist 585) are kept unless
+//! the run keeps the saved buffs.
 
 use super::number;
 use idleon_save::Save;
@@ -22,7 +21,7 @@ pub struct SavedBuff {
     pub id: usize,
     /// The row's stack count; `None` when the save's cell is not a number.
     pub stacks: Option<f64>,
-    /// The remaining timer, defaulting to the stack count as upstream does.
+    /// The remaining timer, defaulting to the stack count.
     pub time: Option<f64>,
     /// Whether the buff is one of the permanent form toggles.
     pub form: bool,

@@ -1,12 +1,11 @@
-//! The target-aware run: a port of the event loop in upstream `unifiedSim`
-//! (`js/sim-engine.js`).
+//! The target-aware run: an event loop over the research simulation.
 //!
 //! The EXP rate is constant between events, so the loop jumps from one event to
 //! the next: a research level-up, an insight level-up, a tournament registration
 //! or the target's horizon. On a research level-up the run spends the grid
 //! points the new level earned and re-fits the magnifiers and shapes to the new
-//! layout; an insight level-up re-fits them when the grid reads insight for EXP
-//! (`insightAffectsExp`), because that is when which observation holds the
+//! layout; an insight level-up re-fits them when the grid reads insight for EXP,
+//! because that is when which observation holds the
 //! glasses can change.
 
 use crate::data::game;
@@ -158,8 +157,8 @@ pub fn simulate(
             sim::unlock_observations(&mut state);
         }
 
-        // One collection event covers every observation with a monocle, as
-        // upstream `advanceInsightLevels` reads the whole board.
+        // One collection event covers every observation with a monocle, as the
+        // insight advance reads the whole board.
         let insight_before: u32 = state.observations.insight_level.iter().sum();
         insight_gained += sim::advance_insight_hours(&mut state, ctx, step);
         let insight_leveled = state.observations.insight_level.iter().sum::<u32>() > insight_before;
@@ -233,8 +232,7 @@ pub fn simulate(
 /// Whether `candidate` is the better plan for the target.
 ///
 /// A level target ranks by the time it takes to reach the level; an hour target
-/// by the EXP earned in the window, with the level breaking a tie. Upstream's
-/// worker pool sorts its finished simulations the same way.
+/// by the EXP earned in the window, with the level breaking a tie.
 pub fn better(candidate: &Projection, current: &Projection, target: Target) -> bool {
     match target {
         Target::Level(level) => {
@@ -260,9 +258,9 @@ pub fn better(candidate: &Projection, current: &Projection, target: Target) -> b
     }
 }
 
-/// Event jumps a run may take before it gives up, as upstream `MAX_JUMPS`.
+/// Event jumps a run may take before it gives up.
 const MAX_JUMPS: usize = 50_000;
-/// Jumps between progress reports, as upstream yields every 40.
+/// Jumps between progress reports.
 const REPORT_EVERY: usize = 40;
 
 /// Spend what the level earned and fit the magnifiers and shapes to it.
@@ -289,7 +287,7 @@ fn refit_magnifiers(state: &mut Simulation, ctx: &SimContext, options: SimOption
     state.mags = fitted.mags;
 }
 
-/// `insightAffectsExp`: whether the grid reads insight levels for EXP, so an
+/// Whether the grid reads insight levels for EXP, so an
 /// insight level-up is worth re-fitting the layout for.
 fn insight_affects_exp(sim: &Simulation, ctx: &SimContext) -> bool {
     let overlay = sim.overlay();

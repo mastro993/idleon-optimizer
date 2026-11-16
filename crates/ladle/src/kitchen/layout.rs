@@ -1,4 +1,4 @@
-//! `optimizeKitchenReset`: the kitchen assignment search behind one reset batch.
+//! The kitchen assignment search behind one reset batch.
 //!
 //! The reset queue cooks one batch per kitchen, so the whole layout has to be
 //! decided before any of it lands. Whole kitchens are indivisible: the search
@@ -7,11 +7,9 @@
 //! around the leader. The final comparison also applies the Dream 11 discount,
 //! which exactly one purchase can spend.
 //!
-//! The upstream ranks candidates by the chosen objective, then by the kitchen
-//! speed their purchases reach, then by the stock progress they leave. The speed
-//! term needs the meal-level speed engine this build does not have, so the entered
-//! kitchen speed is constant across a batch and the ordering is the objective,
-//! then the stock progress.
+//! Candidates rank by the chosen objective, then by the stock progress they
+//! leave. A kitchen speed term would need the meal-level speed engine this build
+//! does not have, so the entered kitchen speed is constant across a batch.
 
 use super::{CostInputs, Kitchen, Objective, Pins, Problem, meal_level_cost, meal_requirement};
 use std::cmp::Ordering;
@@ -35,7 +33,7 @@ pub enum LayoutMode {
     Saved,
 }
 
-/// The layout inputs upstream keeps in `kitchenLayout`.
+/// The layout inputs.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct LayoutChoice {
@@ -44,7 +42,7 @@ pub struct LayoutChoice {
     pub pins: Pins,
     /// Meals the reset never assigns.
     pub excluded: Vec<usize>,
-    /// The beam width; 0 takes the upstream default of 8.
+    /// The beam width; 0 takes the default of 8.
     pub beam_width: usize,
 }
 
@@ -131,7 +129,7 @@ pub struct Input<'a> {
     pub choice: &'a LayoutChoice,
 }
 
-/// `optimizeKitchenReset`: the batch worth the most meal levels.
+/// The batch worth the most meal levels.
 pub fn optimize(input: &Input) -> Result<Layout, Problem> {
     let kitchens: Vec<&Kitchen> = input
         .kitchens
@@ -391,7 +389,7 @@ struct Placement {
     discounted_meal: i32,
 }
 
-/// The upstream `compare`: the objective first, then more stock progress.
+/// The objective first, then more stock progress.
 fn compare(a: &Placement, b: &Placement) -> Ordering {
     b.primary
         .total_cmp(&a.primary)
@@ -498,7 +496,7 @@ impl Search<'_> {
         }
     }
 
-    /// `primary`: the `_planObjective` term the chosen objective ranks by.
+    /// The term the chosen objective ranks by.
     fn primary(&self, ranks: f64, target: f64) -> f64 {
         match self.objective {
             Objective::Ranks => ranks,

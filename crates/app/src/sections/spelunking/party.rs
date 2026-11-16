@@ -1,9 +1,8 @@
 //! The party panel: one slot per cave capacity and the team's stamina.
 //!
-//! The upstream page picks members from portrait popovers; here each slot is a
-//! select with the same roster. A character another slot already holds, or one
-//! below half stamina while the saved stamina is in use, is shown but cannot be
-//! picked, and the model rejects the same party anyway.
+//! Each slot is a select with the roster. A character another slot already
+//! holds, or one below half stamina while the saved stamina is in use, is shown
+//! but cannot be picked, and the model rejects the same party anyway.
 
 use super::controls;
 use crate::state::AppState;

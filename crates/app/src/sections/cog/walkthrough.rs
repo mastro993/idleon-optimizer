@@ -1,9 +1,8 @@
 //! The swap walkthrough card: the step about to be applied, the Previous,
 //! Next and Done controls and the full list with each row's state.
 //!
-//! Ported from the `SWAP_GUIDE` block in `cog-optimizer.html`: the board starts
-//! at the run's input, Next applies the swap list in order, Previous rebuilds
-//! the prior board and Done keeps the optimized placement.
+//! The board starts at the run's input, Next applies the swap list in order,
+//! Previous rebuilds the prior board and Done keeps the optimized placement.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};

@@ -15,7 +15,7 @@ use gpui::{
 use idleon_fountain as fountain;
 use idleon_fountain::Fountain;
 
-/// The overview pane, in the upstream order: summary, income, bonuses, stacks.
+/// The overview pane, in order: summary, income, bonuses, stacks.
 pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let fountain = state
         .fountain
@@ -442,12 +442,12 @@ fn level_plan(fountain: &Fountain, cx: &mut Context<AppState>) -> AnyElement {
 
 // ----- shared formatting and cards -----
 
-/// The upstream `fmtNum`: whole numbers under 1000 stay whole, the rest scale.
+/// A number: whole numbers under 1000 stay whole, the rest scale.
 pub(super) fn num(value: f64) -> String {
     fountain::short_number(value)
 }
 
-/// The upstream `fmtTimeFull`: hours, minutes, seconds and milliseconds.
+/// A duration: hours, minutes, seconds and milliseconds.
 pub(super) fn time(seconds: f64) -> String {
     if !seconds.is_finite() || seconds <= 0.0 {
         return "0s".into();
@@ -471,12 +471,12 @@ pub(super) fn time(seconds: f64) -> String {
     parts.join(" ")
 }
 
-/// The upstream `fmtPct`: one decimal place.
+/// A percentage: one decimal place.
 pub(super) fn pct(ratio: f64) -> String {
     format!("{:.1}%", 100.0 * ratio)
 }
 
-/// The upstream `fmtOdds`: Locked, Guaranteed or `1 in X`.
+/// Odds: Locked, Guaranteed or `1 in X`.
 pub(super) fn odds(chance: f64) -> String {
     if chance <= 0.0 {
         return "Locked".into();

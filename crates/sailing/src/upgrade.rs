@@ -67,7 +67,7 @@ pub struct Currency {
 }
 
 impl Currency {
-    /// The upstream label: `Gold Bars`, `Island 3 Primary`, `Island 2 Rare`.
+    /// The display label: `Gold Bars`, `Island 3 Primary`, `Island 2 Rare`.
     pub fn name(&self) -> String {
         match self.island {
             None => "Gold Bars".into(),
@@ -88,7 +88,7 @@ impl Currency {
     }
 }
 
-/// The currency an upgrade type spends, upstream `sailingCurrencyMeta`.
+/// The currency an upgrade type spends.
 pub fn currency(kind: usize) -> Currency {
     if kind == 0 {
         return Currency {
@@ -114,8 +114,7 @@ pub(crate) fn next_breakpoint(level: u32, stat: UpgradeStat) -> u32 {
     interval * (level / interval + 1)
 }
 
-/// The currency index a boat's loot or speed upgrade spends, upstream
-/// `boatUpgradeCostType`.
+/// The currency index a boat's loot or speed upgrade spends.
 pub fn upgrade_cost_type(boat: usize, stat: UpgradeStat) -> usize {
     if stat.is_loot() {
         return if boat < 4 {
@@ -133,7 +132,7 @@ pub fn upgrade_cost_type(boat: usize, stat: UpgradeStat) -> usize {
     }
 }
 
-/// One level's upgrade price, upstream `_boatUpgradeCostAtLevel`.
+/// One level's upgrade price.
 ///
 /// The event-shop discount is not part of the save model, so the price stays
 /// the undiscounted one.
@@ -160,7 +159,7 @@ pub struct UpgradeCost {
     pub balance: f64,
 }
 
-/// The next level of `boat`'s `stat`, upstream `boatUpgradeCost`.
+/// The next level of `boat`'s `stat`.
 pub fn upgrade_cost(fleet: &Fleet, boat: usize, stat: UpgradeStat) -> UpgradeCost {
     let entry = fleet.boats.get(boat);
     let level = match (stat, entry) {
@@ -201,7 +200,7 @@ pub struct UpgradeEta {
     pub hours: f64,
 }
 
-/// The next upgrade's ETA, upstream `boatUpgradeEta`.
+/// The next upgrade's ETA.
 pub fn upgrade_eta(
     fleet: &Fleet,
     boat: usize,
@@ -270,7 +269,7 @@ pub struct UpgradeBreakpoint {
     pub speed_capped: bool,
 }
 
-/// One boat's next breakpoint, upstream `boatUpgradeBreakpoint`.
+/// One boat's next breakpoint.
 ///
 /// `routes` is the fleet's plan on the currency's island, so the gains read
 /// the same route the upgrade would sail.
@@ -487,7 +486,7 @@ mod tests {
     }
 
     #[test]
-    fn the_cost_currency_matches_upstream() {
+    fn the_cost_currency_follows_the_boat_and_stat() {
         assert_eq!(upgrade_cost_type(0, UpgradeStat::Loot), 0);
         assert_eq!(upgrade_cost_type(3, UpgradeStat::Loot), 0);
         assert_eq!(upgrade_cost_type(4, UpgradeStat::Loot), 1);
@@ -522,11 +521,7 @@ mod tests {
         assert_eq!(low, low.floor());
         let high = upgrade_cost_at_level(19, UpgradeStat::Loot, 400);
         assert!(high > 1e6);
-        assert_ne!(
-            high,
-            high.floor(),
-            "above a million upstream keeps it exact"
-        );
+        assert_ne!(high, high.floor(), "above a million the price stays exact");
     }
 
     #[test]

@@ -1,12 +1,11 @@
-//! The Cooking Mastery section: the upstream page's two tabs.
+//! The Cooking Mastery section: its two tabs.
 //!
-//! CK-01 builds the Mastery EXP tab's three blocks, ported from
-//! `cooking-mastery-calc.html`: the overview figures (mastery rank, free points,
-//! EXP rate, EXP to the next level and the hours that takes), the upgrade
-//! comparison ordered by what one more point buys, and the EXP rate breakdown in
-//! the shared formula tree. CK-02's daily distribution sits between the
-//! comparison and the breakdown, and CK-03 adds the page's second tab, the
-//! yellow point allocator.
+//! CK-01 builds the Mastery EXP tab's three blocks: the overview figures
+//! (mastery rank, free points, EXP rate, EXP to the next level and the hours
+//! that takes), the upgrade comparison ordered by what one more point buys, and
+//! the EXP rate breakdown in the shared formula tree. CK-02's daily
+//! distribution sits between the comparison and the breakdown, and CK-03 adds
+//! the page's second tab, the yellow point allocator.
 //!
 //! Every figure comes from the import; the only inputs are the distribution's
 //! goal and budget and the allocator's goal, budget and character, which live in

@@ -1,8 +1,5 @@
-//! Static Fountain data, extracted from the upstream JS calculator.
-//!
-//! `script/extract-fountain-data.mjs` writes `data/fountain.json` from the
-//! upstream `UPG_DATA` table and the `HolesInfo`/`CosmoUpgrades` rows the
-//! cross-system bonuses read.
+//! Static Fountain data: the upgrade table and the `HolesInfo`/`CosmoUpgrades`
+//! rows the cross-system bonuses read.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -74,12 +71,12 @@ pub struct Arcade {
     pub denom: f64,
 }
 
-/// The parsed fountain data, extracted once.
+/// The fountain data, parsed once.
 pub(crate) fn data() -> &'static Data {
     static DATA: OnceLock<Data> = OnceLock::new();
     DATA.get_or_init(|| {
         serde_json::from_str(FOUNTAIN_JSON)
-            .expect("crates/fountain/data/fountain.json is extracted")
+            .expect("crates/fountain/data/fountain.json is valid JSON")
     })
 }
 
@@ -88,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_extracted_tables_keep_the_upstream_shape() {
+    fn the_tables_keep_the_game_shape() {
         let data = data();
         assert_eq!(data.water_names.len(), 3);
         assert_eq!(data.currency_names.len(), 9);

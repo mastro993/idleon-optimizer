@@ -1,11 +1,11 @@
 //! The Bonuses tab: every obstruction reward, the account system it feeds and
 //! whether the save has cleared the obstruction that grants it.
 //!
-//! Ported from `bonusesHtml` in `jelly-operator-calc.html`: the page's 72-row
-//! table, whose "corrected account bonus" column is `gameDescription` and whose
-//! effect column is `rewardEffectText`. The page hides the table behind
-//! Operational Bonuses (upgrade 39); the port shows the rows and says the
-//! interface is still locked instead of printing a guessed bonus.
+//! A 72-row table, whose "corrected account bonus" column is the game's
+//! description and whose effect column is its normalised effect text. The game
+//! hides the bonuses behind Operational Bonuses (upgrade 39); the tab shows the
+//! rows and says the interface is still locked instead of printing a guessed
+//! bonus.
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};

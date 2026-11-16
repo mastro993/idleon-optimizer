@@ -10,11 +10,9 @@ use serde_json::Value;
 
 /// A captured Killroy replay: the imported save and the run it opens.
 ///
-/// Ported from `captureKillroyReplay`, `storeKillroyReplay`, `readKillroyReplay`
-/// and `_validate` in `js/ui/killroy-replay.js`. The payload is the same
-/// version-1 document upstream writes to session storage, so a replay captured
-/// from this build's Killroy tab both round-trips through the project and is
-/// checked with the game's own rules.
+/// The payload is a version-1 document, so a replay captured from this build's
+/// Killroy tab both round-trips through the project and is checked with the
+/// game's own rules.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct KillroyReplay {
@@ -35,7 +33,7 @@ pub struct KillroyReplay {
 }
 
 impl KillroyReplay {
-    /// `captureKillroyReplay`: everything a Killroy practice needs to re-open.
+    /// Everything a Killroy practice needs to re-open.
     #[allow(clippy::too_many_arguments)]
     pub fn capture(
         raw: Value,
@@ -64,7 +62,7 @@ impl KillroyReplay {
         }
     }
 
-    /// `_validate`: the rules a payload must pass to be replayed.
+    /// The rules a payload must pass to be replayed.
     pub fn validate(&self) -> Result<(), String> {
         let invalid = || INVALID_KILLROY_REPLAY.to_string();
         if self.version != 1 || !is_truthy(&self.raw) {
@@ -89,7 +87,7 @@ impl KillroyReplay {
     }
 }
 
-/// `readKillroyReplay`: parse and validate a stored payload.
+/// Parse and validate a stored payload.
 pub fn read_killroy_replay(payload: &Value) -> Result<KillroyReplay, String> {
     let replay: KillroyReplay =
         serde_json::from_value(payload.clone()).map_err(|_| INVALID_KILLROY_REPLAY.to_string())?;

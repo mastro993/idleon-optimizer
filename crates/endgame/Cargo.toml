@@ -9,6 +9,3 @@ license.workspace = true
 [dependencies]
 idleon-save = { workspace = true }
 serde_json = { workspace = true }
-
-[dev-dependencies]
-idleon-import = { workspace = true }

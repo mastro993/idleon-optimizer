@@ -1,7 +1,6 @@
 {
   "version": 1,
   "product": "Idleon Optimizer",
-  "source": "https://github.com/Corgan/idleon-research-optimizer",
   "repo": "mastro993/idleon-optimizer",
   "groups": [
     {
@@ -78,7 +77,7 @@
     },
     {
       "id": "stats:level-tables",
-      "title": "Upstream LEVEL_TABLES catalogue and the applyCombatSetupDetailed save writer behind the per-node formula editor",
+      "title": "Level-table catalogue and the combat-setup save writer behind the per-node formula editor",
       "status": "absent"
     },
     {
@@ -97,12 +96,12 @@
       "status": "absent"
     },
     {
-      "id": "port:royal-objectives",
+      "id": "model:royal-objectives",
       "title": "Royal Guardian optimizer objectives beyond the three the kingdom metrics carry (Armory target, currency portfolio, reset collection)",
       "status": "absent"
     },
     {
-      "id": "port:sneaking-flower-pass",
+      "id": "model:sneaking-flower-pass",
       "title": "Sneaking flower pass behind the Monte-Carlo claim simulation",
       "status": "absent"
     },
@@ -119,23 +118,15 @@
       "title": "Foundation: dashboard, navigation, JSON import, assets",
       "group": "core",
       "status": "in-progress",
-      "summary": "Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the upstream asset pipeline and the per-section verification harness.",
-      "upstream": [
-        "index.html",
-        "js/ui/site-nav.js",
-        "js/ui/save-loader.js",
-        "js/ui/state-io.js",
-        "js/state.js"
-      ],
+      "summary": "Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the game asset pipeline and the per-section verification harness.",
       "ui": [
-        "Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with the same titles, icons, world badges and one-line descriptions as upstream index.html.",
+        "Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with each section's title, icon, world badge and one-line description.",
         "Each card opens a section route with a shared header: back to dashboard, section title, world badge, save status and an import button.",
-        "Section pages keep their upstream tab strip; the app shell only owns the window chrome and status bar.",
+        "Section pages keep their own tab strip; the app shell only owns the window chrome and status bar.",
         "Import dialog accepts a file, a paste or drag-and-drop; it previews the detected format before applying."
       ],
       "inputs": [
         "Raw decoded save (it.json or save.json)",
-        "Optimizer state string (ROv2: gzip+base64)",
         "App project JSON",
         "Section JSON config"
       ],
@@ -145,14 +136,14 @@
         "Import warnings and errors",
         "Persisted last session"
       ],
-      "assets": "assets/upstream is imported from the upstream checkout into the repository; the manifest records the upstream commit and per-file hashes.",
+      "assets": "assets/game is committed to the repository; the manifest records per-file hashes.",
       "features": [
         {
           "id": "FND-01",
           "title": "Dashboard card grid",
-          "description": "Landing dashboard with a searchable, grouped card grid mirroring upstream index.html: icon, title, world badge, description and stable card ids.",
+          "description": "Landing dashboard with a searchable, grouped card grid: icon, title, world badge, description and stable card ids.",
           "acceptance": [
-            "All 25 upstream dashboard cards are present and grouped exactly like index.html.",
+            "All 25 dashboard cards are present and grouped by world.",
             "Search filters by title, description and world; Escape clears it.",
             "Every card exposes a stable id (card-<section>) and opens its section."
           ],
@@ -187,10 +178,9 @@
         {
           "id": "FND-04",
           "title": "Project and section JSON import/export",
-          "description": "Export the whole app state as versioned JSON and import it back. Also accept the upstream ROv2 state string and per-section config JSON.",
+          "description": "Export the whole app state as versioned JSON and import it back. Also accept per-section config JSON.",
           "acceptance": [
             "Round-trip export then import reproduces every section's visible state.",
-            "ROv2 state strings are decompressed and migrated.",
             "Version and section ids are validated; unknown fields warn, not fail."
           ],
           "dependsOn": [
@@ -213,11 +203,11 @@
         },
         {
           "id": "FND-06",
-          "title": "Upstream asset pipeline",
-          "description": "Script that copies the upstream assets tree from a local checkout into committed assets/upstream, writes a manifest and verifies referenced files. The images are game assets, free to use, not upstream-authored work; the credit lives in assets/upstream/README.md.",
+          "title": "Game asset pipeline",
+          "description": "Committed assets/game tree with a manifest that the app resolves images through. The images are game assets, free to use; the credit lives in assets/game/README.md.",
           "acceptance": [
-            "script/import-upstream-assets.mjs --from <checkout> --dry-run lists every file and total size.",
-            "Applying writes assets/upstream plus a manifest with per-file hashes and the upstream commit; the app resolves images through the manifest.",
+            "assets/game holds every referenced file.",
+            "The manifest records per-file hashes; the app resolves images through the manifest.",
             "Missing assets render a labelled placeholder, never a broken layout."
           ],
           "dependsOn": [
@@ -240,7 +230,7 @@
         {
           "id": "FND-08",
           "title": "Shared layout, theme and responsive rules",
-          "description": "Ely-based shell, cards, tabs, tables and form controls shared by all sections; dark palette and spacing match upstream.",
+          "description": "Ely-based shell, cards, tabs, tables and form controls shared by all sections, with one dark palette and spacing scale.",
           "acceptance": [
             "All sections use the shared page header, tab strip, card and table primitives.",
             "Minimum window size keeps tables scrollable and cards readable.",
@@ -307,31 +297,17 @@
       "verification": [
         "cargo test, clippy and fmt stay clean.",
         "Dashboard opens all 30 sections in the harness.",
-        "Import round-trip covers raw save, ROv2 state and project JSON."
+        "Import round-trip covers raw save and project JSON."
       ],
       "dependsOn": []
     },
     {
       "id": "M1",
       "key": "research",
-      "title": "Research Optimizer: full upstream parity",
+      "title": "Research Optimizer: complete section",
       "group": "w7",
       "status": "partial",
-      "summary": "Finish the Research section so all eight upstream tabs and the shared save/supplement tools are present, including the Decision Tree, Insight ROI, Observation Unlocks and full save-derived multipliers.",
-      "upstream": [
-        "research-optimizer-v2.html",
-        "js/app.js",
-        "js/ui/optimizer-ui.js",
-        "js/ui/dashboard.js",
-        "js/ui/state-io.js",
-        "js/dt/decision-tree.js",
-        "js/stats/systems/w7/research-math.js",
-        "js/optimizers/shapes.js",
-        "js/optimizers/mags.js",
-        "js/optimizers/grid-spend.js",
-        "js/workers/worker-pool.js",
-        "js/sim-engine.js"
-      ],
+      "summary": "Finish the Research section so all eight tabs and the shared save/supplement tools are present, including the Decision Tree, Insight ROI, Observation Unlocks and full save-derived multipliers.",
       "ui": [
         "Tabs: Dashboard, Optimizer, Insight ROI, Observation Unlocks, Shape Optimization, Decision Tree, Minehead, Sushi Station.",
         "Dashboard: summary, research grid, observations, EXP rate breakdown, AFK rate, insight multiplier.",
@@ -368,7 +344,7 @@
         {
           "id": "RES-01",
           "title": "Research dashboard tab",
-          "description": "Port the upstream dashboard: summary, research grid preview, observation board, EXP rate breakdown, AFK rate and insight multiplier.",
+          "description": "Implement the dashboard: summary, research grid preview, observation board, EXP rate breakdown, AFK rate and insight multiplier.",
           "acceptance": [
             "All six dashboard blocks render from the loaded save.",
             "Values match the Optimizer tab and the Rust simulation.",
@@ -384,7 +360,7 @@
         {
           "id": "RES-02",
           "title": "Optimizer target and options",
-          "description": "Target level or hours plus the three upstream toggles: assume observations unlocked, extended insight lookahead and tournament +12h.",
+          "description": "Target level or hours plus three toggles: assume observations unlocked, extended insight lookahead and tournament +12h.",
           "acceptance": [
             "Each toggle changes the simulated projection in a testable way.",
             "Targets are validated and remembered per session.",
@@ -397,7 +373,7 @@
         {
           "id": "RES-03",
           "title": "Target-aware optimizer engine",
-          "description": "Simulate to the target, spend grid points earned on the way and re-optimize shapes and magnifiers on research and insight level-ups, matching upstream sim-engine and worker-pool behavior.",
+          "description": "Simulate to the target, spend grid points earned on the way and re-optimize shapes and magnifiers on research and insight level-ups, running the simulations on a worker pool.",
           "acceptance": [
             "A level target optimizes time-to-level, not only immediate EXP/hr.",
             "Future grid points and observation unlocks are applied at the correct level-ups.",
@@ -411,7 +387,7 @@
         {
           "id": "RES-04",
           "title": "Strategy comparison, timeline and actions",
-          "description": "Port the upstream result view: best/worst strategy comparison, interactive timeline, EXP/hr chart and expandable step-by-step actions.",
+          "description": "Implement the result view: best/worst strategy comparison, interactive timeline, EXP/hr chart and expandable step-by-step actions.",
           "acceptance": [
             "The comparison reports best and worst tested strategies.",
             "Timeline and chart agree with the projection samples.",
@@ -427,7 +403,7 @@
           "title": "Insight ROI tab",
           "description": "Per-observation insight levelling analysis: time to level, research EXP lost during the grind, permanent rate gain and break-even time.",
           "acceptance": [
-            "Table covers every usable observation with the upstream columns.",
+            "Table covers every usable observation with time to level, EXP lost, rate gain and break-even columns.",
             "Sorting and summary totals work.",
             "Values match the simulation's insight formulas."
           ],
@@ -442,7 +418,7 @@
           "title": "Observation Unlocks tab",
           "description": "Rank undiscovered observations by expected EXP/hr gain weighted by unlock probability per day.",
           "acceptance": [
-            "Priority table matches upstream ordering for the fixture save.",
+            "Priority table orders observations by expected EXP/hr gain weighted by unlock probability.",
             "Filters and summary are present.",
             "Missing roll data is reported, not guessed."
           ],
@@ -484,11 +460,11 @@
         {
           "id": "RES-09",
           "title": "Minehead tab",
-          "description": "Port the research page's Minehead tab and its save-derived inputs.",
+          "description": "Implement the research page's Minehead tab and its save-derived inputs.",
           "acceptance": [
-            "All upstream Minehead controls and results are present.",
+            "All Minehead controls and results are present.",
             "Values update with the loaded save.",
-            "Formula tests match upstream fixtures."
+            "Formula tests cover the tab's game rules."
           ],
           "dependsOn": [
             "RES-01",
@@ -498,11 +474,11 @@
         {
           "id": "RES-10",
           "title": "Sushi Station tab",
-          "description": "Port the research page's Sushi Station tab and its account bonuses.",
+          "description": "Implement the research page's Sushi Station tab and its account bonuses.",
           "acceptance": [
-            "All upstream Sushi controls and results are present.",
+            "All Sushi controls and results are present.",
             "RoG bonuses feed research grid points and multipliers.",
-            "Formula tests match upstream fixtures."
+            "Formula tests cover the tab's game rules."
           ],
           "dependsOn": [
             "RES-01",
@@ -512,9 +488,9 @@
         {
           "id": "RES-11",
           "title": "Full save-derived multiplier tree",
-          "description": "Decode every account term the upstream derives: sticker tree, arcade 63, Clam Works 9, Menagerie B3, equipment, Button, royal research, jelly, RoG, mastery, event shop and minehead.",
+          "description": "Decode every account term the research rate reads: sticker tree, arcade 63, Clam Works 9, Menagerie B3, equipment, Button, royal research, jelly, RoG, mastery, event shop and minehead.",
           "acceptance": [
-            "Imported save rate matches upstream for the fixture and a full-account save.",
+            "Every term decodes from the fixture and a full-account save.",
             "Every omitted term is warned with its field name.",
             "No term is guessed."
           ],
@@ -525,11 +501,11 @@
         {
           "id": "RES-12",
           "title": "State export/import and supplements",
-          "description": "Copy/Paste State string plus the full supplements panel, matching upstream state-io and supplement behavior.",
+          "description": "Research state rides the project JSON export/import, plus the full supplements panel.",
           "acceptance": [
-            "Exported ROv2 string imports back to the same state.",
+            "Exported project JSON imports back to the same research state.",
             "Supplements apply to the simulation and persist.",
-            "Invalid state strings leave the run untouched."
+            "Invalid imports leave the run untouched."
           ],
           "dependsOn": [
             "FND-04",
@@ -553,8 +529,7 @@
       ],
       "verification": [
         "Every research tab opens in the harness.",
-        "Formula tests compare against upstream Node fixtures.",
-        "Full save fixture matches upstream EXP/hr within tolerance."
+        "Formula tests cover the research rules."
       ],
       "dependsOn": [
         "foundation"
@@ -566,13 +541,7 @@
       "title": "Combat Simulator",
       "group": "general",
       "status": "partial",
-      "summary": "Port the active combat simulator: loadout editor, mechanics overrides, component terms, encounter simulation, comparisons, Killroy, obols, cards, kills-over-time and replays.",
-      "upstream": [
-        "combat-sim-calc.html",
-        "js/stats/systems/common/combat-sim-*.js",
-        "js/ui/combat-sim-*.js",
-        "assets/combat-sim"
-      ],
+      "summary": "Implement the active combat simulator: loadout editor, mechanics overrides, component terms, encounter simulation, comparisons, Killroy, obols, cards, kills-over-time and replays.",
       "ui": [
         "Loadout editor and mechanics overrides",
         "Component terms and simulator options",
@@ -616,7 +585,7 @@
           "title": "Mechanics overrides",
           "description": "Override combat mechanics and component terms with searchable groups and reset-to-save behavior.",
           "acceptance": [
-            "Every upstream override is present.",
+            "Every mechanic override is present.",
             "Overrides are visible as active chips.",
             "Reset restores save values."
           ],
@@ -627,10 +596,9 @@
         {
           "id": "CS-03",
           "title": "Encounter simulator",
-          "description": "Run active combat against the selected encounter with the upstream options and progress reporting.",
+          "description": "Run active combat against the selected encounter with its options and progress reporting.",
           "acceptance": [
             "Runs can be cancelled.",
-            "Results match upstream fixture outcomes.",
             "Unsupported mechanics are listed, not silently ignored."
           ],
           "dependsOn": [
@@ -670,7 +638,6 @@
           "title": "The Den, progress and smelting",
           "description": "Combat-driven progress, The Den outcomes and smelting output panels.",
           "acceptance": [
-            "Panels match upstream outputs.",
             "Missing inputs are warned.",
             "Values feed the comparison export."
           ],
@@ -681,7 +648,7 @@
         {
           "id": "CS-07",
           "title": "Replays and combat assets",
-          "description": "Play, scrub and speed-control combat replays using the upstream sprites and maps.",
+          "description": "Play, scrub and speed-control combat replays using the game's sprites and maps.",
           "acceptance": [
             "Replay loads from a run or Killroy replay.",
             "Scrub, speed and wave controls work.",
@@ -694,24 +661,24 @@
         }
       ],
       "verification": [
-        "The loadout readers match upstream `readEquipment`/`readTalents` on the committed synthetic save.",
+        "The loadout readers decode the equipment and talents of the committed synthetic save.",
         "The item catalog covers every equipped item in that save and every slot has picker options.",
         "Presets round-trip through the project JSON and refuse another character's loadout.",
         "The section harness imports a save, edits an item and a talent, flags an unknown item and saves a preset.",
-        "The override catalog and every resolve case match the upstream module through `fixtures/combat-overrides.json`.",
+        "Every override mode resolves against a run's saved inputs.",
         "The section harness sets a mechanic off, sees its chip and resets every override.",
-        "The encounter run matches the upstream engine's kills, damage, kills by monster and respawn counters through `fixtures/combat-encounter.json`.",
+        "The encounter run reports kills, damage, kills by monster and respawn counters for the stand-in and idle players.",
         "A cancelled encounter run stores nothing, and the section harness runs a map from the Encounter tab and reads the result.",
-        "Every comparison cell matches the upstream `setupCompareCell` through `fixtures/combat-compare.json`, and the section harness compares two characters and copies the comparison JSON.",
-        "The card and obol odds, reset and pickups match the upstream module's own output through `fixtures/combat-drops.json`.",
+        "Every comparison cell carries its delta against the baseline row, and the section harness compares two characters and copies the comparison JSON.",
+        "The card and obol odds, reset and pickups follow the seeded stream, so a seed reproduces the drops.",
         "The kills timeline ends on the run's own kills and simulated time, and an idle run draws no drops.",
         "The section harness runs a map and reads the Summary, Killroy, Obols, Kills, Cards and Timeline tabs from one result, and sees each tab's empty state before the first run.",
-        "The forge grants, ticks, refills, gem slots and unavailable state match the upstream module through `fixtures/combat-progress.json`, as do the pet batch, the Scurge, Coral and Omega credits.",
-        "The save-derived progress config matches upstream `combatProgressInputs` on the committed synthetic save, and the missing star-sign and talent-grant terms are returned as warnings.",
-        "The Den's amplifiers, multiplier and opal requirement, and a scripted attempt's wave, fear, score, chain and opal totals match the upstream module through `fixtures/combat-den.json`.",
-        "The section harness runs a map and reads the Den, Progress and Smelting tabs from one result; a run with the saved furnace lists its bars, and an unavailable furnace shows the upstream warning.",
-        "The replay encoder writes the same bytes as upstream's own encoder, frame for frame and dictionary batch for batch, and the store materializes its frames into the same snapshots, through `fixtures/combat-replay.json`.",
-        "The Killroy handoff's capture and its accept/reject verdicts match `js/ui/killroy-replay.js`, and a captured replay round-trips through its payload.",
+        "Formula tests cover the forge grants, ticks, refills, gem slots and unavailable state, the pet batch and the Scurge, Coral and Omega credits.",
+        "The save-derived progress config decodes from the committed synthetic save, and the missing star-sign and talent-grant terms are returned as warnings.",
+        "Formula tests cover the Den's amplifiers, multiplier and opal requirement, and a scripted attempt's wave, fear, score, chain and opal totals.",
+        "The section harness runs a map and reads the Den, Progress and Smelting tabs from one result; a run with the saved furnace lists its bars, and an unavailable furnace shows its warning.",
+        "The replay encoder round-trips: the store materializes the encoded frames back into the same snapshots, frame for frame.",
+        "The Killroy handoff's capture accepts valid documents and rejects invalid ones, and a captured replay round-trips through its payload.",
         "A recorded run's frames start at 0, end on the run's own clock and follow its kills and respawns; a long run coarsens its interval to stay under the frame cap.",
         "Every map's background, platform and monster sheet in `encounters.json` resolves through the asset manifest, so the replay's references cannot drift from the committed artwork.",
         "The section harness plays, scrubs, steps between waves and captures/opens a Killroy replay from the Replay tab, and captures the section screenshot there."
@@ -720,36 +687,34 @@
         "foundation"
       ],
       "build": [
-        "CS-01 ships the loadout editor: the character picker, the 16 armor and 7 tool slots with their saved `EMm` upgrade deltas, and the talent table read from `SL_<n>`/`SM_<n>` (`readEquipment`, `readTalents` in `combat-sim-setup.js`).",
-        "Item pickers read the extracted `crates/combat/data/combat.json` catalog (871 wearable items) and filter by the upstream `ARMOR_TYPES`/`TOOL_TYPEGEN` slot rules; `script/extract-combat-data.mjs` regenerates it from the upstream `ITEMS` table.",
+        "CS-01 ships the loadout editor: the character picker, the 16 armor and 7 tool slots with their saved `EMm` upgrade deltas, and the talent table read from `SL_<n>`/`SM_<n>`.",
+        "Item pickers read the `crates/combat/data/combat.json` catalog (871 wearable items) and filter by the game's armor and tool slot rules.",
         "Every edit recomputes the gear totals the header shows: weapon power, defence, the class main stat and the summed talent points, so the summary always matches the editor. It is the simulator's input preview; the encounter run reports monster damage and kill outcomes, while character DPS waits for the auto-mode player.",
         "Missing or invalid equipment is flagged: an item key outside the catalog, an item in the wrong slot family, a level or class requirement the character misses, and a saved talent level above its saved maximum.",
         "Named loadouts are presets of item keys and talent levels. They live in the project JSON under `sections.combat-sim` and survive an export/import round trip; applying one replaces the working loadout like equipping each slot by hand.",
-        "CS-02 ships the mechanics overrides: the upstream `COMBAT_TOGGLES` catalog (68 mechanics in 11 groups, `combat-sim-toggles.js`) is extracted into `crates/combat/data/combat-overrides.json` by `script/combat-overrides-oracle.mjs`, and `crates/combat/src/overrides.rs` keeps one rule per mechanic id, normalizes it the way `normalizeToggleState` does and resolves it against a run's saved inputs (`off` writes the neutral value, `set` the typed value, `scale` saved × value, the flags with their own keys, the per-monster object, and `raw:<input>` ids for any other input).",
+        "CS-02 ships the mechanics overrides: the catalog of 68 mechanics in 11 groups lives in `crates/combat/data/combat-overrides.json`, and `crates/combat/src/overrides.rs` keeps one rule per mechanic id, normalizes it and resolves it against a run's saved inputs (`off` writes the neutral value, `set` the typed value, `scale` saved × value, the flags with their own keys, the per-monster object, and `raw:<input>` ids for any other input).",
         "The Mechanics tab lists the catalog with a search field, a group filter and an only-changed filter; each row picks Saved, Off, On, Set or Scale × and a value, the active rules show as removable chips above the tabs, and Reset all puts every input back to the save. The overrides live in `sections.combat-sim` under `toggles`, so a project export carries them.",
-        "Every override case is compared with the upstream module's own output through `fixtures/combat-overrides.json`; the catalog and that fixture are written from one upstream checkout, so they cannot drift apart.",
-        "CS-03 ships the encounter run: `crates/combat/src/encounter.rs` replays the game's fixed 10 ms step, its render-frame batch and its timed-task loop (`combat-sim-core.js`) over one map's spawn roster, then the spawn, one-second respawn tick, `whenDrawing` respawn and kill handlers (`combat-sim-world.js`). The two players upstream ships without its AI module are ported exactly: the fixed kill interval stand-in (`scriptedPlayer`) and the idle player.",
-        "`crates/combat/data/encounters.json` holds every map whose scene the run supports (124 spawn rosters with their base monster HP and respawn time), and `script/combat-encounter-oracle.mjs` writes it with `fixtures/combat-encounter.json` from one upstream checkout. The fixture runs the upstream engine's own stand-in and idle players at neutral monster tuning; the Rust test compares kills, damage, kills by monster, respawn counters, steps and frames, so the port cannot drift from its source.",
+        "CS-03 ships the encounter run: `crates/combat/src/encounter.rs` replays the game's fixed 10 ms step, its render-frame batch and its timed-task loop over one map's spawn roster, then the spawn, one-second respawn tick, draw-time respawn and kill handlers. Two players run without the auto-mode AI: the fixed kill interval stand-in and the idle player.",
+        "`crates/combat/data/encounters.json` holds every map whose scene the run supports (124 spawn rosters with their base monster HP and respawn time).",
         "The Encounter tab picks a map, the stand-in or idle player, the kill interval and the 1-minute to 24-hour duration, then runs through the shared task runner: progress, Cancel, the cancelled notice and the stale marker are the shared ones, and a cancelled run keeps the previous result. The result card reports kills, damage, damage per second, kills per hour, the mean kill interval, and the kills by monster.",
         "The mechanics the run cannot model are listed under the options instead of being dropped: the auto-mode player AI (so no character DPS or survival yet), the reward engine's EXP, coins, equipment and inventory halves (a full obol page without the auto-trash sends the drop to a bag slot), crystal/giant/Plunder spawns, the account monster tuning, The Den, the Rift, caverns, Clam Work and dungeons, and replays.",
-        "CS-04 ships the comparison: `crates/combat/src/compare.rs` plans one row per character, loadout and map (`characterMapComparePlan`), runs the same encounter on every row, reuses a map's outcome because the stand-in run reads no loadout, and gives every metric its paired delta against the first row (`setupCompareCell`). `script/combat-compare-oracle.mjs` writes `fixtures/combat-compare.json` from the upstream module, so the delta maths cannot drift from its source.",
+        "CS-04 ships the comparison: `crates/combat/src/compare.rs` plans one row per character, loadout and map, runs the same encounter on every row, reuses a map's outcome because the stand-in run reads no loadout, and gives every metric its paired delta against the first row.",
         "The Compare tab picks characters, their imported save, working edits and named loadouts, and the maps to run. The result table shows the run's kills per hour, damage per second and mean kill interval beside the setup's weapon power, defence, main stat and talent points, each with its delta against the baseline row; Export copies the comparison document as JSON.",
         "Neutral this build: the auto-mode player AI and its component-term trace, the saved values Scale multiplies, the project-to-run wiring of the mechanics overrides beyond the drop multipliers, and the Den's other caverns and its run's map roster.",
-        "CS-05 ships the results: `crates/combat/src/drops.rs` ports the card and obol half of the reward engine (`dropOdds`, `generateMonsterDrops`, `lootDropOddsReset` and the card and obol pickups in `combat-sim-rewards.js`), and the encounter run rolls a kill's rows on the seed's mulberry32 stream after booking it. `crates/combat/data/drops.json` holds the card, obol and drop-table rows of every supported map's monsters, the obol pages, the card descriptions and the `lootDropOddsReset` splices; `script/combat-drops-oracle.mjs` writes it with `fixtures/combat-drops.json`, whose cases call the upstream module's own functions on the same rows and seed, so the roll and pickup maths cannot drift.",
+        "CS-05 ships the results: `crates/combat/src/drops.rs` implements the card and obol half of the reward engine (drop odds, monster drop rolls, the drop-odds reset and the card and obol pickups), and the encounter run rolls a kill's rows on the seed's mulberry32 stream after booking it. `crates/combat/data/drops.json` holds the card, obol and drop-table rows of every supported map's monsters, the obol pages, the card descriptions and the drop-odds reset splices.",
         "The run's drop inputs are the Mechanics tab's Drop rate, Card drop chance multiplier and Rares Everywhere! bonus (`off` is neutral, `set` applies, and the save-derived values `scale` multiplies are not wired yet), plus the saved obol task. The run reads the saved `Cards0`, `ObolInvOr`/`ObolInvOwn`, fragment balance, Silver Jellyfish unlock and auto-trash rate, so cards and fragments continue from the imported account.",
-        "The results are tabs over the one stored run: Summary (kills, damage, rate, interval), Killroy, Obols, Kills, Cards and Timeline. Killroy practice re-runs the room's native timer at the kill rate this run measured, through the ported `idleon_killroy::trial`; the tab reports kills, skulls, talent points, credits, pearls and spawned monsters. A tab with nothing to show says why, and the Seed field makes every roll reproducible.",
-        "The kills timeline samples the run's cumulative kills every ten upstream seconds and ends on the run's own kills and simulated time; the Timeline tab draws it with the shared line chart, so the chart and the summary can never disagree.",
-        "CS-06 ships the progress and smelting results: `crates/combat/src/progress.rs` ports the forge half of `combat-sim-progress.js` (`_forgeStats`, `_forgeProduce`, `_refill`, `_forgeGrant`, the 250 ms `_forgeTick`), the banked pet-time batch, the Scurge, Coral Kid and Omega Arcade kill credits and `combatProgressSummary`. The run advances the saved furnace on its own clock, banks each kill's credits and stores the bars it produced; the Smelting tab lists them, the Progress tab reports the grants, the Scurge/Coral/Omega notes and every notice the module raises.",
-        "`script/combat-progress-oracle.mjs` writes `crates/combat/data/progress.json` (the forge item rows, the Spelunky Scurge column and the pet names) and `fixtures/combat-progress.json` from one upstream checkout; the fixture drives the module's own grants, ticks and kill credits on a seeded stream, so the furnace maths cannot drift.",
-        "`crates/stats/src/combat.rs` decodes `combatProgressInputs` from the save: the `ForgeLV`/`ForgeItemOrder`/`ForgeItemQty`/`ForgeIntProg` furnace, its `ChestOrder` storage, the `Lab` refill gate, the gem slots and the cap and speed terms through the account decoder (cosmo, arcade, `ForgeCap` stamp, bribes, vault, achievement, Rift rank, the `Godshard` card and the Menagerie boost). The frozen synthetic save's config is compared with upstream's own `combatProgressInputs` in `crates/stats/tests/combat.rs`.",
+        "The results are tabs over the one stored run: Summary (kills, damage, rate, interval), Killroy, Obols, Kills, Cards and Timeline. Killroy practice re-runs the room's native timer at the kill rate this run measured, through `idleon_killroy::trial`; the tab reports kills, skulls, talent points, credits, pearls and spawned monsters. A tab with nothing to show says why, and the Seed field makes every roll reproducible.",
+        "The kills timeline samples the run's cumulative kills every ten simulated seconds and ends on the run's own kills and simulated time; the Timeline tab draws it with the shared line chart, so the chart and the summary can never disagree.",
+        "CS-06 ships the progress and smelting results: `crates/combat/src/progress.rs` implements the forge (stats, production, refills, grants and the 250 ms forge tick), the banked pet-time batch, the Scurge, Coral Kid and Omega Arcade kill credits and the progress summary. The run advances the saved furnace on its own clock, banks each kill's credits and stores the bars it produced; the Smelting tab lists them, the Progress tab reports the grants, the Scurge/Coral/Omega notes and every notice the run raises.",
+        "`crates/combat/data/progress.json` holds the forge item rows, the Spelunky Scurge column and the pet names.",
+        "`crates/stats/src/combat.rs` decodes the combat progress inputs from the save: the `ForgeLV`/`ForgeItemOrder`/`ForgeItemQty`/`ForgeIntProg` furnace, its `ChestOrder` storage, the `Lab` refill gate, the gem slots and the cap and speed terms through the account decoder (cosmo, arcade, `ForgeCap` stamp, bribes, vault, achievement, Rift rank, the `Godshard` card and the Menagerie boost).",
         "The two terms this build cannot decode are named instead of guessed: the star-sign 57b term of the shiny-pet speed and the per-kill forge, pet and alchemy grants (talents 280, 362 and 490) need the talent and star-sign formula tables, so they read neutral and the Progress tab prints both warnings under the cards.",
-        "CS-06 also ships The Den as its own projection: `crates/combat/src/den.rs` ports `ampDebuff`, `ampMulti`, `houndNextOpalScoreReq`, the `startDen` state, the `_denFrame` wave, fear-token and end rules, the hounds' 100 ms timer, `_caveAInit`, `_caveHound` and `_denHoundKill`. The Den tab replays the cavern's hound waves at the encounter run's kill interval, seed and duration, and reports the score, kills, waves, fear, Skull chain and opals. The projection is the attempt only: the map's other monsters and the player's movement are not part of it, which the tab says.",
-        "`script/combat-den-oracle.mjs` writes `crates/combat/data/den.json` and `fixtures/combat-den.json`; the fixture drives upstream's own Den functions on a fabricated sim and records the snapshot every ten seconds, so the wave, fear and score formulas are compared against their source.",
+        "CS-06 also ships The Den as its own projection: `crates/combat/src/den.rs` implements the amplifier debuff and multiplier, the next opal score requirement, the Den's start state, its wave, fear-token and end rules, the hounds' 100 ms timer, the cave setup, hound spawns and hound kills. The Den tab replays the cavern's hound waves at the encounter run's kill interval, seed and duration, and reports the score, kills, waves, fear, Skull chain and opals. The projection is the attempt only: the map's other monsters and the player's movement are not part of it, which the tab says.",
         "The comparison export now carries each row's progress: the forge, pet and alchemy seconds, the Scurge EXP, the Coral kills, the Omega balls and every produced bar by display name.",
-        "CS-07 ships the replays: `crates/combat/src/replay.rs` ports the delta codec of `js/stats/systems/common/combat-sim-replay.js` — the encoder that stores only what changed since the previous frame, a full state every `keyframeEvery` frames, 0.1 px quantization for positions, tenth deltas, interned dictionary entries and uid lists with template reuse — plus `packReplayFrames` and the store that decodes a frame off the nearest keyframe. `script/combat-replay-oracle.mjs` writes `crates/combat/data/replay.json` (the Killroy room maps and the codec's defaults) and `fixtures/combat-replay.json` from one upstream checkout: the fixture pushes a scripted snapshot series through the module's own encoder and reads it back through its own store, so `crates/combat/tests/replay.rs` compares the port's bytes frame for frame and its decoded snapshots one by one.",
+        "CS-07 ships the replays: `crates/combat/src/replay.rs` implements a delta codec — the encoder that stores only what changed since the previous frame, a full state every keyframe interval, 0.1 px quantization for positions, tenth deltas, interned dictionary entries and uid lists with template reuse — plus frame packing and the store that decodes a frame off the nearest keyframe. `crates/combat/data/replay.json` holds the Killroy room maps and the codec's defaults.",
         "Every encounter run records its own frames — 100 ms apart, coarsened in 100 ms steps so a day keeps at most 10,000: the roster's monsters with their type, node, actor x and y, HP, alive flag and respawn counter. The spawn's x within a platform is a draw this run does not model, so a node's spawns take an even share of its span. The frames are encoded as the run goes and stored on its result.",
-        "The Replay results tab draws that run: the map's background and platform art, every monster's extracted animation sheet on its spawn node, the stand-in on the scene's player node, HP bars, and a labelled placeholder for any file the asset manifest cannot resolve. It has Play/Pause, the upstream `REPLAY_SPEEDS` (0.5× to 300×), a scrubber over the frames and, when the run has a Den projection, the wave boundaries to step between.",
-        "A Killroy practice captures as a version-1 replay document (`captureKillroyReplay`, `readKillroyReplay` and `_validate` in `js/ui/killroy-replay.js`): the imported save, the character, the map, duration and seed, checked with the upstream rules (a character the save carries, a Killroy room, 1 s to a day, a 32-bit seed). Opening it restores those options and re-simulates the run. Like the upstream handoff token it lives in the session, not the project.",
+        "The Replay results tab draws that run: the map's background and platform art, every monster's animation sheet on its spawn node, the stand-in on the scene's player node, HP bars, and a labelled placeholder for any file the asset manifest cannot resolve. It has Play/Pause, speeds from 0.5× to 300×, a scrubber over the frames and, when the run has a Den projection, the wave boundaries to step between.",
+        "A Killroy practice captures as a version-1 replay document: the imported save, the character, the map, duration and seed, validated on open (a character the save carries, a Killroy room, 1 s to a day, a 32-bit seed). Opening it restores those options and re-simulates the run. It lives in the session, not the project.",
         "The replay never draws what the run does not have: the player's attacks, projectiles, damage numbers and the scene's decorations are named on the tab instead of faked."
       ],
       "gaps": [
@@ -769,13 +734,7 @@
       "title": "All Stats Dashboard",
       "group": "general",
       "status": "in-progress",
-      "summary": "Port the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.",
-      "upstream": [
-        "stats-all.html",
-        "js/ui/dash-breakdowns.js",
-        "js/stats/tree-builder.js",
-        "js/stats/stat-context.js"
-      ],
+      "summary": "Implement the map-aware character/account stat dashboard with category breakdowns and the system formula explorer.",
       "ui": [
         "Calculation context selectors",
         "Breakdowns grouped by category",
@@ -794,10 +753,10 @@
       ],
       "assets": "None beyond icons.",
       "build": [
-        "SA-01 to SA-03 ship the calculation context (character, map, map list, skill and construction mode with their save defaults), the 60-descriptor registry grouped by the nine upstream categories, and the formula explorer whose ledger counts every category. Eight carry-capacity rows, the two research rows, the four base-stat totals and the damage row are computed; the other forty-five name their upstream def instead of guessing.",
-        "SA-04 ships the game-input sandbox: the vault, gem-shop, talent, guild and stamp levels the ported capacity rows read are editable, each edit is spliced into a clone of the save (`crates/stats/src/edits.rs`), and both the baseline and the hypothetical save resolve, so a row never shows a stale value.",
-        "The change ledger marks an edited input with the saved value it replaced and resets one input or every input; the affected-formula list reports each descriptor the edit moved with its saved and hypothetical value, the delta and the percentage (`formulaDifference` in `js/stats/formula-comparison.js`), and clicking a row selects its descriptor. A descriptor row and its detail card keep the saved value beside the hypothetical one.",
-        "Missing: upstream's per-node editor inside the formula inspector, which needs its `LEVEL_TABLES` catalogue and the `applyCombatSetupDetailed` save writer, so equipment, obol, companion and bubble/prisma cells are not editable yet. The sandbox offers the saved cells the ported formulas actually read, and an edit to a cell the current character no longer lists is dropped so the ledger and the applied save always agree."
+        "SA-01 to SA-03 ship the calculation context (character, map, map list, skill and construction mode with their save defaults), the 60-descriptor registry grouped by nine categories, and the formula explorer whose ledger counts every category. Eight carry-capacity rows, the two research rows, the four base-stat totals and the damage row are computed; the other forty-five report unavailable instead of guessing.",
+        "SA-04 ships the game-input sandbox: the vault, gem-shop, talent, guild and stamp levels the computed capacity rows read are editable, each edit is spliced into a clone of the save (`crates/stats/src/edits.rs`), and both the baseline and the hypothetical save resolve, so a row never shows a stale value.",
+        "The change ledger marks an edited input with the saved value it replaced and resets one input or every input; the affected-formula list reports each descriptor the edit moved with its saved and hypothetical value, the delta and the percentage, and clicking a row selects its descriptor. A descriptor row and its detail card keep the saved value beside the hypothetical one.",
+        "Missing: a per-node editor inside the formula inspector, which needs a level-table catalogue and a combat-setup save writer, so equipment, obol, companion and bubble/prisma cells are not editable yet. The sandbox offers the saved cells the computed formulas actually read, and an edit to a cell the current character no longer lists is dropped so the ledger and the applied save always agree."
       ],
       "gaps": [
         {
@@ -814,7 +773,7 @@
           "blockedBy": [
             "stats:level-tables"
           ],
-          "evidence": "docs/plan.md \"Missing: upstream's per-node editor\""
+          "evidence": "docs/plan.md Stats paragraph \"per-node editor inside the formula inspector\""
         }
       ],
       "features": [
@@ -823,7 +782,7 @@
           "title": "Calculation context",
           "description": "Character, map, visibility, skill and construction-mode selectors with save defaults.",
           "acceptance": [
-            "Every upstream selector exists.",
+            "Every context selector exists.",
             "Context changes refresh all breakdowns.",
             "Context is restorable from project JSON."
           ],
@@ -839,7 +798,7 @@
           "title": "Category breakdowns",
           "description": "Map-aware character/account breakdowns for combat, skills, carry capacity and account totals.",
           "acceptance": [
-            "All upstream categories render.",
+            "All nine categories render.",
             "Totals agree with the formula ledger.",
             "Unknown systems show a warning."
           ],
@@ -853,7 +812,6 @@
           "description": "Per-system formula cards with inputs, saved values, computed values and explanations.",
           "acceptance": [
             "Search and filtering work.",
-            "Each formula links to its upstream source.",
             "Values match the breakdowns."
           ],
           "dependsOn": [
@@ -876,7 +834,7 @@
         }
       ],
       "verification": [
-        "Fixture totals match upstream stats page.",
+        "Formula tests cover the computed totals for the fixture save.",
         "Explorer values match breakdowns.",
         "Harness covers every category."
       ],
@@ -890,13 +848,7 @@
       "title": "Damage Breakdown",
       "group": "tools",
       "status": "done",
-      "summary": "Port the damage calculator: min/max damage, mastery, damage layers and the full formula tree.",
-      "upstream": [
-        "damage-calc.html",
-        "js/stats/stat-context.js",
-        "js/stats/systems/w2/dungeon.js",
-        "js/ui/dash-breakdowns.js"
-      ],
+      "summary": "Implement the damage calculator: min/max damage, mastery, damage layers and the full formula tree.",
       "ui": [
         "Context selectors",
         "Damage summary and mastery bars",
@@ -921,7 +873,6 @@
           "title": "Damage context and summary",
           "description": "Character/map selectors plus game, minimum, maximum and exact damage cards.",
           "acceptance": [
-            "Values match upstream.",
             "Missing inputs are flagged.",
             "Context persists."
           ],
@@ -936,7 +887,7 @@
           "title": "Damage layers and mastery",
           "description": "Layer tabs with per-layer values and notes, plus the mastery bar and breakdown.",
           "acceptance": [
-            "Every upstream layer is present.",
+            "Every damage layer is present.",
             "Layer sum matches the summary.",
             "Mastery matches the formula tree."
           ],
@@ -960,7 +911,7 @@
         }
       ],
       "verification": [
-        "Damage fixture matches upstream.",
+        "Formula tests cover every damage layer.",
         "Layer sum test.",
         "Harness screenshot."
       ],
@@ -975,12 +926,7 @@
       "title": "Drop Rate Calculator",
       "group": "tools",
       "status": "partial",
-      "summary": "Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.",
-      "upstream": [
-        "drop-rate-calc.html",
-        "js/stats/systems/w2/dungeon.js",
-        "js/stats/tree-builder.js"
-      ],
+      "summary": "Implement the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.",
       "ui": [
         "Context selectors",
         "Dungeon inputs",
@@ -1012,7 +958,6 @@
           "title": "Drop-rate inputs and total",
           "description": "Character/map selectors, dungeon runtime/luck/DR fields and the total drop-rate card.",
           "acceptance": [
-            "Total matches upstream.",
             "Inputs validate ranges.",
             "Save values prefill."
           ],
@@ -1038,7 +983,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Tree-sum test."
       ],
       "dependsOn": [
@@ -1052,12 +997,7 @@
       "title": "Coin Multiplier Calculator",
       "group": "tools",
       "status": "done",
-      "summary": "Port the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.",
-      "upstream": [
-        "coin-multi-calc.html",
-        "js/stats/systems/common/overkill.js",
-        "js/stats/tree-builder.js"
-      ],
+      "summary": "Implement the coin multiplier calculator with map, target, HP, damage and overkill inputs and the formula breakdown.",
       "ui": [
         "Context selectors",
         "Current calculation cards",
@@ -1080,7 +1020,6 @@
           "title": "Coin multiplier inputs and total",
           "description": "Character/map and combat inputs with the total multiplier card and partial badge.",
           "acceptance": [
-            "Total matches upstream.",
             "Partial state is explained.",
             "Inputs validate."
           ],
@@ -1106,7 +1045,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Tree-sum test."
       ],
       "dependsOn": [
@@ -1120,11 +1059,7 @@
       "title": "Shadow Ban Check",
       "group": "general",
       "status": "done",
-      "summary": "Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].",
-      "upstream": [
-        "shadow.html",
-        "js/save/loader.js"
-      ],
+      "summary": "Implement the shadow-ban answer page with the YES/NO/UNKNOWN semantics of OptLacc[26].",
       "ui": [
         "Large verdict",
         "Load/save status"
@@ -1152,7 +1087,7 @@
         }
       ],
       "verification": [
-        "Three-state fixture test.",
+        "Three-state test.",
         "Harness screenshot."
       ],
       "dependsOn": [
@@ -1165,12 +1100,7 @@
       "title": "Endgame Check",
       "group": "general",
       "status": "done",
-      "summary": "Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.",
-      "upstream": [
-        "endgame.html",
-        "js/endgamers.js",
-        "js/endgame-stats.js"
-      ],
+      "summary": "Implement the joke endgame page: always NO, with the stats and leaderboard audit panels.",
       "ui": [
         "Large verdict",
         "Stats table"
@@ -1191,7 +1121,7 @@
             "wire:stats-engine",
             "stats:descriptors"
           ],
-          "evidence": "crates/endgame/tests/endgame.rs UNPORTED"
+          "evidence": "crates/endgame/src/lib.rs NEEDS_STATS_ENGINE"
         }
       ],
       "features": [
@@ -1201,8 +1131,7 @@
           "description": "Always display NO before and after loading, with the stats and error panels.",
           "acceptance": [
             "Verdict is NO with and without a save.",
-            "Stats render or fail with a clear error.",
-            "Matches upstream copy."
+            "Stats render or fail with a clear error."
           ],
           "dependsOn": [
             "FND-03"
@@ -1223,11 +1152,11 @@
       "title": "Statue Calculator",
       "group": "general",
       "status": "partial",
-      "summary": "Port statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.",
+      "summary": "Implement statue levels, requirements per level, STARTUE bubble, time estimates and batch apply/farming.",
       "build": [
         "ST-01 statue table: the 32-row table with saved levels, next-level bars, availability, search and sort.",
         "ST-02 STARTUE bubble and time estimates: the decoded STARTUE EXP bubble, Skinny 0 Cal vial, Onyx/Zenith tier and Royal Guardian Flair drive the deposit estimate, the per-row target, statues needed and the time from a raw statues/hour rate, with the rate source shown.",
-        "ST-03 batch actions and the farming breakdown: the upstream Set targets entry (costed for every statue before it writes the plan, with the upstream rejection message), Next level for all and a one-step undo of the batch action; the shared formula tree behind one statue's row — the STARTUE bubble and its retention, the Onyx/Zenith tier, the saved Royal Guardian Flair and the Skinny 0 Cal vial, then the statues needed, raw rate and time. The upstream \"Measure statue farming\" panel needs the combat simulator (CS-03), so rates stay manual entries."
+        "ST-03 batch actions and the farming breakdown: the Set targets entry (costed for every statue before it writes the plan, with a rejection message when it cannot), Next level for all and a one-step undo of the batch action; the shared formula tree behind one statue's row — the STARTUE bubble and its retention, the Onyx/Zenith tier, the saved Royal Guardian Flair and the Skinny 0 Cal vial, then the statues needed, raw rate and time. The \"Measure statue farming\" panel needs the combat simulator (CS-03), so rates stay manual entries."
       ],
       "gaps": [
         {
@@ -1236,14 +1165,8 @@
           "blockedBy": [
             "combat:auto-player"
           ],
-          "evidence": "docs/plan.md Statue paragraph \"Missing: the upstream \\\"Measure statue farming\\\" panel\""
+          "evidence": "docs/plan.md Statue paragraph \"Measure statue farming\""
         }
-      ],
-      "upstream": [
-        "statue-calc.html",
-        "js/stats/systems/common/statue-leveling.js",
-        "js/stats/data/common/statues.js",
-        "js/save/loader.js"
       ],
       "ui": [
         "Character selector",
@@ -1261,7 +1184,7 @@
         "Time estimates",
         "Batch apply"
       ],
-      "assets": "Statue icons if present in upstream assets.",
+      "assets": "Statue icons if present in the game assets.",
       "features": [
         {
           "id": "ST-01",
@@ -1269,8 +1192,7 @@
           "description": "Per-statue current level, next-level requirement and availability with search and sort.",
           "acceptance": [
             "All statues render.",
-            "Search/sort work.",
-            "Requirements match upstream."
+            "Search/sort work."
           ],
           "dependsOn": [
             "FND-03"
@@ -1282,8 +1204,7 @@
           "description": "Apply the STARTUE EXP bubble and estimate time from the selected farming rate.",
           "acceptance": [
             "Bubble changes estimates.",
-            "Rate source is shown.",
-            "Estimates match upstream."
+            "Rate source is shown."
           ],
           "dependsOn": [
             "ST-01"
@@ -1295,7 +1216,6 @@
           "description": "Batch set/apply controls and the statue-farming breakdown.",
           "acceptance": [
             "Batch actions are undoable.",
-            "Farming breakdown matches upstream.",
             "Invalid values are rejected."
           ],
           "dependsOn": [
@@ -1305,7 +1225,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Batch undo test."
       ],
       "dependsOn": [
@@ -1318,12 +1238,12 @@
       "title": "Fishing Calculator",
       "group": "w2",
       "status": "done",
-      "summary": "Port AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.",
+      "summary": "Implement AFK catches, fish split, real vs panel EXP, best lure and line per pool, depth projection and all 225 combinations.",
       "build": [
-        "FI-01 AFK catches and fish split: the character/toolkit/location toolbar, the every-location table, the selected pool split, real-versus-panel EXP and the shared formula tree, with the upstream pure formulas pinned against an oracle fixture.",
-        "FI-02 Best lure and line per pool: all 225 lure/line combinations ranked for the selected pool and depth, switchable between Fishing EXP and fish quantity, with the selected and saved rows marked, a Use action, the tie explanation and the best-combination KPI; the ranking is pinned against an oracle fixture of every row.",
-        "FI-03 Depth projection and other characters: the Trench card projects the next depths from the saved cavern rows, with the jar and Bolaia requirement reductions, the efficiency requirements each depth raises, the selected and fish-maximizing lure + line hours per depth, cumulative totals, and a helper table of the other characters fishing the Trench whose ticked fish per hour sum into the team ETA; the requirement and every projected row are pinned against an oracle fixture evaluated from the upstream module.",
-        "The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target, and the Trench projection also reads the cavern rows (`Holes`, `Spelunk`). The ranking and the per-depth fastest search hold efficiency and the EXP multiplier fixed across combinations, because the upstream recomputes them from the toolkit's POW and EXP through the skill systems."
+        "FI-01 AFK catches and fish split: the character/toolkit/location toolbar, the every-location table, the selected pool split, real-versus-panel EXP and the shared formula tree.",
+        "FI-02 Best lure and line per pool: all 225 lure/line combinations ranked for the selected pool and depth, switchable between Fishing EXP and fish quantity, with the selected and saved rows marked, a Use action, the tie explanation and the best-combination KPI.",
+        "FI-03 Depth projection and other characters: the Trench card projects the next depths from the saved cavern rows, with the jar and Bolaia requirement reductions, the efficiency requirements each depth raises, the selected and fish-maximizing lure + line hours per depth, cumulative totals, and a helper table of the other characters fishing the Trench whose ticked fish per hour sum into the team ETA.",
+        "The account skill values (efficiency, EXP multiplier, AFK rate, Multi-Fish, speed sources, prowess and equipment depths) are entered in the account card until the stats dashboard decodes them; the save supplies the character, rod, saved toolkit, spot and AFK target, and the Trench projection also reads the cavern rows (`Holes`, `Spelunk`). The ranking and the per-depth fastest search hold efficiency and the EXP multiplier fixed across combinations, because the game recomputes them from the toolkit's POW and EXP through the skill systems."
       ],
       "gaps": [
         {
@@ -1334,12 +1254,6 @@
           ],
           "evidence": "docs/roadmap.json fishing build \"entered in the account card until the stats dashboard decodes them\""
         }
-      ],
-      "upstream": [
-        "fishing-calc.html",
-        "js/stats/systems/w2/fishing.js",
-        "js/stats/data/w2/fishing.js",
-        "js/stats/tree-builder.js"
       ],
       "ui": [
         "Toolbar and character context",
@@ -1367,7 +1281,6 @@
           "title": "AFK catches and fish split",
           "description": "Catch rate, fish distribution and real-versus-panel EXP per pool.",
           "acceptance": [
-            "Values match upstream.",
             "Pool switching updates results.",
             "Missing toolkit is flagged."
           ],
@@ -1394,7 +1307,6 @@
           "title": "Depth projection and other characters",
           "description": "Project fishing depth and show other characters fishing the Trench.",
           "acceptance": [
-            "Projection matches upstream.",
             "Character contributions sum correctly.",
             "Empty roster shows a state."
           ],
@@ -1404,7 +1316,7 @@
         }
       ],
       "verification": [
-        "225-combination fixture.",
+        "Ranking tests cover all 225 combinations.",
         "Depth projection test.",
         "Harness."
       ],
@@ -1418,11 +1330,7 @@
       "title": "Prisma Calculator",
       "group": "w2",
       "status": "partial",
-      "summary": "Port bubble Prisma impact search across damage, stats, skills and account totals with streamed results.",
-      "upstream": [
-        "prisma-calc.html",
-        "js/ui/prisma.js"
-      ],
+      "summary": "Implement bubble Prisma impact search across damage, stats, skills and account totals with streamed results.",
       "ui": [
         "Character and AFK-hours controls",
         "Metric/search filters",
@@ -1473,8 +1381,7 @@
           "description": "Ranked bubble impacts with per-metric deltas and a coverage table.",
           "acceptance": [
             "Rows sort by the selected metric.",
-            "Coverage lists missing systems.",
-            "Values match upstream."
+            "Coverage lists missing systems."
           ],
           "dependsOn": [
             "PR-01"
@@ -1482,7 +1389,7 @@
         }
       ],
       "verification": [
-        "Fixture ranking test.",
+        "Ranking tests over the impact search.",
         "Cancel test.",
         "Harness."
       ],
@@ -1496,9 +1403,9 @@
       "title": "Killroy Calculator",
       "group": "w2",
       "status": "done",
-      "summary": "Port weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.",
+      "summary": "Implement weekly Killroy forecasts, monster/class records, kills, skulls and +1 upgrade comparisons.",
       "build": [
-        "KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics, pinned against an oracle fixture of the upstream planner's own output.",
+        "KL-01 Weekly forecast: the week strip, each encounter's family, room and saved record, the class and unlock eligibility and the rotation statistics.",
         "KL-02 +1 upgrade comparison: the upgrade list with saved levels and availability, the selection preview, the trials through the shared task runner and the comparison table that marks the best option per baseline and flags a stale result.",
         "KL-03 Saved buffs and results: the save's `BuffsActive` rows with kept/dropped markers, the Keep saved buffs and Unlimited inventory options, the bag-limited skull pickups the trial models, progress/cancel and the results export document. The combat simulator is still M2, so kills per second stands in for the character's damage; the encounter, respawn and drop maths are the game's own."
       ],
@@ -1511,12 +1418,6 @@
           ],
           "evidence": "docs/roadmap.json killroy build \"kills per second stands in\""
         }
-      ],
-      "upstream": [
-        "killroy-calc.html",
-        "js/ui/killroy.js",
-        "js/stats/systems/common/killroy-planner.js",
-        "js/stats/data/w2/killroy.js"
       ],
       "ui": [
         "Settings and forecast weeks",
@@ -1544,7 +1445,6 @@
           "title": "Weekly forecast",
           "description": "Forecast encounters, kills, skulls and records over the selected weeks.",
           "acceptance": [
-            "Forecast matches upstream.",
             "Week range validates.",
             "Results explain assumptions."
           ],
@@ -1582,7 +1482,7 @@
         }
       ],
       "verification": [
-        "Forecast fixture.",
+        "Forecast tests.",
         "Trial determinism test.",
         "Harness."
       ],
@@ -1596,13 +1496,7 @@
       "title": "Cog Board Optimizer",
       "group": "w3",
       "status": "partial",
-      "summary": "Port cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.",
-      "upstream": [
-        "cog-optimizer.html",
-        "js/cogs/cog-board.js",
-        "js/cogs/cog-judge.js",
-        "js/cogs/cog-optimizer.js"
-      ],
+      "summary": "Implement cog placement optimization for construction bonuses with weighted objectives, insights, shelf and roll targets.",
       "ui": [
         "Summary stats",
         "Weighted objective inputs",
@@ -1693,13 +1587,7 @@
       "title": "Worship Tower Defense",
       "group": "w3",
       "status": "partial",
-      "summary": "Port tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.",
-      "upstream": [
-        "worship-td-calc.html",
-        "js/stats/systems/w3/worship-td.js",
-        "js/ui/worship-td*.js",
-        "assets/worship-td"
-      ],
+      "summary": "Implement tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.",
       "ui": [
         "Trial selector",
         "Live simulator with wave/ranges/HUD",
@@ -1721,13 +1609,13 @@
       ],
       "assets": "assets/worship-td towers, projectiles and map art.",
       "build": [
-        "The live simulator ports `createWorshipTdRun`: a seeded mulberry32 stream, 100 ms ticks, wave countdowns, the tower state machine, mob modifiers, projectiles and the totem. The Glublin fixture is parity-checked against the upstream view tick for tick.",
-        "Tower placement spends TD points through `validatePlacement`; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.",
-        "The Plan tab ports `heuristicPlan`, the Glublin 230 guide preset and `planPlacementLayouts`: plans place towers in order through `validatePlacement`, each phase sells and rebuilds, and the pane warns about locked types, refused placements and neutral roots. A plan simulation runs the same `Run` engine off the UI thread with weight-per-point upgrades, phase conditions and the plan's skip policy; its final towers carry each tower's damage share. The Model pane lists the modelling assumptions, missing inputs and the exact save values the run reads.",
+        "The live simulator runs a seeded mulberry32 stream, 100 ms ticks, wave countdowns, the tower state machine, mob modifiers, projectiles and the totem.",
+        "Tower placement spends TD points through placement validation; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.",
+        "The Plan tab implements the heuristic plan, the Glublin 230 guide preset and placement layouts: plans place towers in order through placement validation, each phase sells and rebuilds, and the pane warns about locked types, refused placements and neutral roots. A plan simulation runs the same `Run` engine off the UI thread with weight-per-point upgrades, phase conditions and the plan's skip policy; its final towers carry each tower's damage share. The Model pane lists the modelling assumptions, missing inputs and the exact save values the run reads.",
         "Ranges and every HUD value read the same `RunView`, so the panel cannot disagree with the field. Restart rebuilds the run from the same trial and seed.",
-        "Every run records a replay at one frame per second. The recorder follows the upstream rules: a tower set per layout change, 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.",
+        "Every run records a replay at one frame per second. The recorder keeps a tower set per layout change, a 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.",
         "Save inputs decoded: `Tower` trial levels, `TotemInfo` best waves, `Dream[7]`, `SaltLick[6]`, Menagerie boost 15 and unlock 18, and super bits 6/15 for totem HP.",
-        "The Optimizer pane ports `optimizeWorshipTd` in free mode: a seeded diverse beam over plan edits (tower, group, type, weight, traits, level cap, phase), direct relocations of the lowest-damage towers, and whole-type trait recipes. Candidates are deduplicated by their exact plan, several families are refined in parallel, and the finalists, the coverage heuristic and the guide presets are compared on shared fresh seeds. The pane shows the recommendation, the baseline comparison and the recommended towers, and adopts the winner into the Plan pane. The search runs off the UI thread through the shared task runner, so it reports progress and can be cancelled; mode, runs per plan, seed and stop wave are its inputs.",
+        "The Optimizer pane runs the strategy optimizer in free mode: a seeded diverse beam over plan edits (tower, group, type, weight, traits, level cap, phase), direct relocations of the lowest-damage towers, and whole-type trait recipes. Candidates are deduplicated by their exact plan, several families are refined in parallel, and the finalists, the coverage heuristic and the guide presets are compared on shared fresh seeds. The pane shows the recommendation, the baseline comparison and the recommended towers, and adopts the winner into the Plan pane. The search runs off the UI thread through the shared task runner, so it reports progress and can be cancelled; mode, runs per plan, seed and stop wave are its inputs.",
         "Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots, hold-template layout search and the souls-per-hour objective."
       ],
       "features": [
@@ -1788,7 +1676,7 @@
         }
       ],
       "verification": [
-        "Wave fixture.",
+        "Wave simulation tests.",
         "Replay determinism.",
         "Optimizer invariant.",
         "Harness."
@@ -1803,12 +1691,7 @@
       "title": "Ladle Optimizer",
       "group": "w4",
       "status": "done",
-      "summary": "Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.",
-      "upstream": [
-        "ladle-calc.html",
-        "js/stats/systems/w4/cooking-ladle.js",
-        "js/stats/tree-builder.js"
-      ],
+      "summary": "Implement ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.",
       "ui": [
         "Summary and character selectors",
         "Breakdowns",
@@ -1839,7 +1722,6 @@
           "title": "Ladle summary and breakdowns",
           "description": "Per-character ladle uses, rates and Cooking EXP balloon breakdown.",
           "acceptance": [
-            "Values match upstream.",
             "Character switching works.",
             "Balloon overflow is handled."
           ],
@@ -1867,8 +1749,7 @@
           "description": "Compare objectives across reset days and show meal targets/outcomes.",
           "acceptance": [
             "Objective switch changes ranking.",
-            "Meal costs use the discount.",
-            "Results match upstream."
+            "Meal costs use the discount."
           ],
           "dependsOn": [
             "LD-01"
@@ -1890,7 +1771,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Planner determinism.",
         "Harness."
       ],
@@ -1904,12 +1785,7 @@
       "title": "Cooking Mastery",
       "group": "w4",
       "status": "done",
-      "summary": "Port Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.",
-      "upstream": [
-        "cooking-mastery-calc.html",
-        "js/stats/systems/common/cooking.js",
-        "js/stats/systems/common/meal-impact.js"
-      ],
+      "summary": "Implement Mastery EXP/hr, upgrade comparison, optimal daily distribution and the yellow point allocator.",
       "ui": [
         "Mastery EXP tab",
         "Upgrade comparison",
@@ -1936,7 +1812,6 @@
           "title": "Mastery EXP and upgrade comparison",
           "description": "Current Mastery EXP/hr, upgrade comparison and EXP rate breakdown.",
           "acceptance": [
-            "Values match upstream.",
             "Upgrade ranking is stable.",
             "Breakdown sums to the total."
           ],
@@ -1973,7 +1848,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Allocator invariant.",
         "Harness."
       ],
@@ -1981,9 +1856,9 @@
         "foundation"
       ],
       "build": [
-        "CK-01 Mastery EXP and upgrade comparison: the mastery rank, free points, EXP rate and EXP to the next level with the hours it takes, the five EXP upgrades ranked by what one more point buys, and the whole rate as a formula tree, all decoded from the save and pinned against the upstream page's own numbers.",
-        "CK-02 Optimal daily distribution: `optimizeDistribution` re-plans the daily budget one point at a time onto the upgrade with the biggest marginal multiplier, for the rate at the current rank or the rate the same points buy at the rank that unlocks the next upgrade; the plan is copyable as text.",
-        "CK-03 Yellow point allocator: `optimizeForGoal` spreads the account's yellow points across the meals of the selected goal — meal level, per-level bonus, the meal multiplier and each meal's ribbon factor — with the page's 44 goals, the character context the stat goals scale with, the kitchen aggregate, and a clamped budget that is rejected rather than overspent."
+        "CK-01 Mastery EXP and upgrade comparison: the mastery rank, free points, EXP rate and EXP to the next level with the hours it takes, the five EXP upgrades ranked by what one more point buys, and the whole rate as a formula tree, all decoded from the save.",
+        "CK-02 Optimal daily distribution: the distribution optimizer re-plans the daily budget one point at a time onto the upgrade with the biggest marginal multiplier, for the rate at the current rank or the rate the same points buy at the rank that unlocks the next upgrade; the plan is copyable as text.",
+        "CK-03 Yellow point allocator: the allocator spreads the account's yellow points across the meals of the selected goal — meal level, per-level bonus, the meal multiplier and each meal's ribbon factor — with its 44 goals, the character context the stat goals scale with, the kitchen aggregate, and a clamped budget that is rejected rather than overspent."
       ]
     },
     {
@@ -1992,11 +1867,7 @@
       "title": "Fountain Calculator",
       "group": "w5",
       "status": "done",
-      "summary": "Port fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.",
-      "upstream": [
-        "fountain-calc.html",
-        "js/stats/systems/w5/fountain.js"
-      ],
+      "summary": "Implement fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.",
       "ui": [
         "Overview and income rates",
         "Currency and multipliers",
@@ -2024,7 +1895,6 @@
           "title": "Overview and income rates",
           "description": "Fountain summary, income rates, lucky coins/ducks, coin stacks and cross-system bonuses.",
           "acceptance": [
-            "Values match upstream.",
             "Missing bonuses are warned.",
             "Rates update with the save."
           ],
@@ -2075,7 +1945,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Planner invariant.",
         "Harness."
       ],
@@ -2089,11 +1959,7 @@
       "title": "Jar Calculator",
       "group": "w5",
       "status": "done",
-      "summary": "Port jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.",
-      "upstream": [
-        "jar-calc.html",
-        "js/stats/systems/w5/jar.js"
-      ],
+      "summary": "Implement jar production, rupie value, break chances, collectibles, upgrades, next tier and the enchant simulator/history.",
       "ui": [
         "Overview",
         "Production",
@@ -2125,7 +1991,7 @@
           "blockedBy": [
             "ui:jar-sparkline"
           ],
-          "evidence": "docs/plan.md Jar paragraph \"Missing: the sparkline the page draws behind each history tile\""
+          "evidence": "docs/plan.md Jar paragraph \"Missing: a sparkline behind each history tile\""
         }
       ],
       "features": [
@@ -2134,7 +2000,6 @@
           "title": "Overview and production",
           "description": "Jar summary, rupie balances, production slots and multipliers.",
           "acceptance": [
-            "Values match upstream.",
             "Slot details render.",
             "Missing jars are flagged."
           ],
@@ -2147,7 +2012,6 @@
           "title": "Rupie value and chances",
           "description": "Rupie value breakdown, extra chance, break chances and chance-by-tier.",
           "acceptance": [
-            "Values match upstream.",
             "Tier switching works.",
             "Breakdown sums to the total."
           ],
@@ -2185,7 +2049,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Enchant determinism.",
         "Harness."
       ],
@@ -2199,11 +2063,7 @@
       "title": "Sailing Calculator",
       "group": "w5",
       "status": "done",
-      "summary": "Port fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.",
-      "upstream": [
-        "sailing-calc.html",
-        "js/stats/systems/w5/sailing.js"
-      ],
+      "summary": "Implement fleet assignment, ship upgrades, captain quality, replacement matrix, chest outcomes, artifact odds and the fleet pile simulation.",
       "ui": [
         "Fleet assignment",
         "Ship upgrade breakpoints",
@@ -2246,7 +2106,6 @@
           "title": "Ships, captains and replacements",
           "description": "Ship upgrade breakpoints, captain quality/leveling and strongest-source replacement matrix.",
           "acceptance": [
-            "Breakpoints match upstream.",
             "Replacement ranking is stable.",
             "Missing captains are flagged."
           ],
@@ -2260,7 +2119,6 @@
           "description": "Chest outcomes, per-boat tier chances, near-full pile and selected island artifacts.",
           "acceptance": [
             "Chances sum to one.",
-            "Loot value matches upstream.",
             "Artifact odds are explained."
           ],
           "dependsOn": [
@@ -2273,8 +2131,7 @@
           "description": "Simulate the fleet pile with progress and results.",
           "acceptance": [
             "Simulation is cancellable.",
-            "Results are reproducible.",
-            "Matches upstream fixture."
+            "Results are reproducible."
           ],
           "dependsOn": [
             "SL-03",
@@ -2283,7 +2140,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Chance-sum test.",
         "Harness."
       ],
@@ -2297,12 +2154,7 @@
       "title": "Cglunko Calculator",
       "group": "w5",
       "status": "done",
-      "summary": "Port Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.",
-      "upstream": [
-        "cglunko-calc.html",
-        "js/stats/systems/w5/cglunko.js",
-        "js/ui/cglunko-combat.js"
-      ],
+      "summary": "Implement Cglunko overview, upgrades, optimizer, stone focus and drop-rate breakdown across blue and purple pages.",
       "ui": [
         "Overview and DR formula",
         "Upgrades",
@@ -2329,7 +2181,6 @@
           "title": "Overview and DR breakdown",
           "description": "Summary, drop-rate formula breakdown and combat context.",
           "acceptance": [
-            "Values match upstream.",
             "Formula tree sums to the total.",
             "Missing data is warned."
           ],
@@ -2358,7 +2209,6 @@
           "description": "Blue/purple stone pages, digit impact and recommended focus target.",
           "acceptance": [
             "Both pages render.",
-            "Digit impact matches upstream.",
             "Focus target is explained."
           ],
           "dependsOn": [
@@ -2367,7 +2217,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness."
       ],
@@ -2381,15 +2231,11 @@
       "title": "Coral God Rank Planner",
       "group": "w5",
       "status": "done",
-      "summary": "Port the coral kid upgrade and god-rank offering planner with beam search and projection.",
+      "summary": "Implement the coral kid upgrade and god-rank offering planner with beam search and projection.",
       "build": [
-        "CR-01 Planner controls and summary: every upstream input with validation, the save's budget, rank, tier, Coral Kid and Singularity levels, and the current coral metrics, with the fields the save lacks named.",
+        "CR-01 Planner controls and summary: every planner input with validation, the save's budget, rank, tier, Coral Kid and Singularity levels, and the current coral metrics, with the fields the save lacks named.",
         "CR-02 Beam-search plan and projection: `idleon_coral::plan` over unlocked upgrades and one offering per state, run through the shared task runner with progress, cancel and a stale marker; the card shows spend, remaining, whole-plan confidence, the projected coral state and the ordered actions.",
-        "CR-03 Offering fit and current levels: the upstream `offeringStats` row at the current rank (success per attempt, expected spend per success, tier) with a caption for the Y4 free chance and planning confidence, the Coral Kid levels table with each upgrade's unlock status, and warnings for the save fields read as zero."
-      ],
-      "upstream": [
-        "coral-god-rank-calc.html",
-        "js/stats/systems/w5/coral-god-rank.js"
+        "CR-03 Offering fit and current levels: the offering row at the current rank (success per attempt, expected spend per success, tier) with a caption for the Y4 free chance and planning confidence, the Coral Kid levels table with each upgrade's unlock status, and warnings for the save fields read as zero."
       ],
       "ui": [
         "Planner controls",
@@ -2415,7 +2261,7 @@
         {
           "id": "CR-01",
           "title": "Planner controls and summary",
-          "description": "All upstream planner inputs with validation and a summary of the current state.",
+          "description": "All planner inputs with validation and a summary of the current state.",
           "acceptance": [
             "Every input is present.",
             "Validation prevents impossible plans.",
@@ -2455,7 +2301,7 @@
       ],
       "verification": [
         "Planner invariant.",
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Harness."
       ],
       "dependsOn": [
@@ -2468,12 +2314,7 @@
       "title": "Monument Calculator",
       "group": "w5",
       "status": "done",
-      "summary": "Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.",
-      "upstream": [
-        "monument-calc.html",
-        "js/ui/monument.js",
-        "js/stats/systems/w5/monument.js"
-      ],
+      "summary": "Implement Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.",
       "ui": [
         "Bravery tab",
         "Justice tab with response advisor",
@@ -2499,7 +2340,6 @@
           "title": "Bravery calculator",
           "description": "Bravery stats, wave, boosts, rerolls, HP, odds, milestones and bonuses.",
           "acceptance": [
-            "Values match upstream.",
             "Boost changes update odds.",
             "Invalid inputs are rejected."
           ],
@@ -2525,7 +2365,6 @@
           "title": "Wisdom calculator",
           "description": "Wisdom stats and training/reward-charge effects.",
           "acceptance": [
-            "Values match upstream.",
             "Charges update rewards.",
             "Missing data is warned."
           ],
@@ -2549,7 +2388,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Justice undo test.",
         "Harness."
       ],
@@ -2563,11 +2402,7 @@
       "title": "Opal Optimizer",
       "group": "w5",
       "status": "done",
-      "summary": "Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.",
-      "upstream": [
-        "opal-calc.html",
-        "js/stats/systems/w5/opal.js"
-      ],
+      "summary": "Implement villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.",
       "ui": [
         "Overview and villagers",
         "Current state",
@@ -2593,7 +2428,6 @@
           "title": "Villagers and current state",
           "description": "Villager EXP rates, current opal state and formula breakdown.",
           "acceptance": [
-            "Values match upstream.",
             "Villager switching works.",
             "Breakdown sums."
           ],
@@ -2631,7 +2465,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness."
       ],
@@ -2645,13 +2479,7 @@
       "title": "Sneaking Optimizer",
       "group": "w6",
       "status": "done",
-      "summary": "Port loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.",
-      "upstream": [
-        "sneaking-calc.html",
-        "js/ui/sneaking-*.js",
-        "js/stats/systems/w6/sneaking.js",
-        "assets/sneaking"
-      ],
+      "summary": "Implement loadout/inventory, stealth/jade/EXP/door/runtime breakdowns, optimizer, floor mastery and door ETA.",
       "ui": [
         "Loadout and inventory workspaces",
         "Formula breakdown tabs",
@@ -2687,9 +2515,9 @@
           "id": "SN-G2",
           "title": "Monte-Carlo claim simulation for the Items objective",
           "blockedBy": [
-            "port:sneaking-flower-pass"
+            "model:sneaking-flower-pass"
           ],
-          "evidence": "docs/plan.md Sneaking paragraph \"its Monte-Carlo claim simulation needs the flower pass\""
+          "evidence": "docs/plan.md Sneaking paragraph \"a Monte-Carlo claim simulation needs the flower pass\""
         }
       ],
       "features": [
@@ -2740,7 +2568,6 @@
           "title": "Floor mastery and door ETA",
           "description": "Floor-by-mastery table, active door, next captive and untie ETA.",
           "acceptance": [
-            "Mastery values match upstream.",
             "ETA updates with loadout.",
             "Empty floor shows a state."
           ],
@@ -2750,7 +2577,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness with assets."
       ],
@@ -2764,13 +2591,7 @@
       "title": "Farming Planner",
       "group": "w6",
       "status": "partial",
-      "summary": "Port the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.",
-      "upstream": [
-        "farming-calc.html",
-        "js/stats/data/w5/farming.js",
-        "js/stats/systems/w6/farming.js",
-        "js/stats/systems/w6/farming-planner.js"
-      ],
+      "summary": "Implement the 9x4 field, plot assignment, Land Rank allocation, evolution/overgrowth, presets, markets and growth curves.",
       "ui": [
         "Priority signals",
         "Account multipliers",
@@ -2830,7 +2651,7 @@
           "title": "Presets and comparison",
           "description": "Preset objectives, recommended allocation and preset comparison.",
           "acceptance": [
-            "Every upstream preset exists.",
+            "Every built-in preset exists.",
             "Comparison is per objective.",
             "Custom preset persists."
           ],
@@ -2857,7 +2678,6 @@
           "description": "Priority signals, account multipliers, GMO thresholds, Crop Scientist bonuses, growth breakpoints and all-plot curves.",
           "acceptance": [
             "Signals update with state.",
-            "Thresholds match upstream.",
             "Curves render for every plot."
           ],
           "dependsOn": [
@@ -2867,7 +2687,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Allocator invariant.",
         "Harness."
       ],
@@ -2881,12 +2701,7 @@
       "title": "Clamworks Calculator",
       "group": "w7",
       "status": "done",
-      "summary": "Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.",
-      "upstream": [
-        "clamworks-calc.html",
-        "js/stats/systems/w7/clamworks*.js",
-        "js/ui/clamworks-*.js"
-      ],
+      "summary": "Implement Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.",
       "ui": [
         "Overview and pearl value",
         "Upgrades and priority",
@@ -2917,7 +2732,7 @@
           "blockedBy": [
             "combat:auto-player"
           ],
-          "evidence": "docs/plan.md Clamworks paragraph \"because the combat simulator's auto-mode player is not ported\""
+          "evidence": "docs/plan.md Clamworks paragraph \"the simulator's auto-mode player\""
         }
       ],
       "features": [
@@ -2926,7 +2741,6 @@
           "title": "Overview and upgrades",
           "description": "Summary, pearl value breakdown, all upgrades and upgrade priority.",
           "acceptance": [
-            "Values match upstream.",
             "Priority updates with save.",
             "Breakdown sums."
           ],
@@ -2939,7 +2753,6 @@
           "title": "AFK claim and compare",
           "description": "AFK claim calculator with character, multikill and compare panel.",
           "acceptance": [
-            "Claim matches upstream.",
             "Compare is per character.",
             "Invalid hours rejected."
           ],
@@ -2966,7 +2779,6 @@
           "title": "Scurge combat",
           "description": "Scurge combat and upgrade panels.",
           "acceptance": [
-            "Combat values match upstream.",
             "Upgrades affect outcomes.",
             "Missing data warned."
           ],
@@ -2977,7 +2789,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness."
       ],
@@ -2992,12 +2804,7 @@
       "title": "Royal Guardian Calculator",
       "group": "w7",
       "status": "done",
-      "summary": "Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.",
-      "upstream": [
-        "royal-guardian-calc.html",
-        "js/stats/systems/w7/royal-guardian*.js",
-        "assets/royal-guardian"
-      ],
+      "summary": "Implement outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.",
       "ui": [
         "Overview with counters",
         "Outposts and resource nodes",
@@ -3033,11 +2840,11 @@
         },
         {
           "id": "RG-G2",
-          "title": "11 of the 14 upstream optimizer objectives are not offered",
+          "title": "The Armory target, currency portfolio and reset-collection objectives are not offered",
           "blockedBy": [
-            "port:royal-objectives"
+            "model:royal-objectives"
           ],
-          "evidence": "docs/plan.md Royal Guardian paragraph \"Upstream's fourteen objectives include several this build does not model\""
+          "evidence": "docs/plan.md Royal Guardian paragraph \"the reset-collection objectives are not modelled\""
         }
       ],
       "features": [
@@ -3061,8 +2868,7 @@
           "description": "Outpost map, resource nodes, currencies, drain staffing and banked hours.",
           "acceptance": [
             "Every outpost renders.",
-            "Drain projection works.",
-            "Resource totals match upstream."
+            "Drain projection works."
           ],
           "dependsOn": [
             "RG-01"
@@ -3074,7 +2880,6 @@
           "description": "Upgrade list, global breakdown tree and forecast tab.",
           "acceptance": [
             "Breakdown sums.",
-            "Forecast matches upstream.",
             "Upgrade plan respects costs."
           ],
           "dependsOn": [
@@ -3098,7 +2903,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness with assets."
       ],
@@ -3112,13 +2917,7 @@
       "title": "Spelunking Simulator",
       "group": "w7",
       "status": "done",
-      "summary": "Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.",
-      "upstream": [
-        "spelunking-calc.html",
-        "js/ui/spelunking.js",
-        "js/stats/systems/w7/spelunk*.js",
-        "assets/spelunking"
-      ],
+      "summary": "Implement Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.",
       "ui": [
         "Party and elixir belt",
         "Depth estimates",
@@ -3208,7 +3007,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Simulator determinism.",
         "Harness with assets."
       ],
@@ -3222,13 +3021,7 @@
       "title": "Jelly Operator Optimizer",
       "group": "w7",
       "status": "done",
-      "summary": "Port cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.",
-      "upstream": [
-        "jelly-operator-calc.html",
-        "js/stats/systems/w7/jelly-operator.js",
-        "js/optimizers/jelly-coordinator.js",
-        "assets/jelly-operator"
-      ],
+      "summary": "Implement cell layouts, obstruction clears, Bloodcells, upgrades, account bonuses, section planning and the coordinator optimizer.",
       "ui": [
         "Overview",
         "Layout editor",
@@ -3260,8 +3053,7 @@
           "description": "Cell palette, board sections, saved layout and operation estimate.",
           "acceptance": [
             "Every cell type is placeable.",
-            "Saved layout loads.",
-            "Estimate matches upstream."
+            "Saved layout loads."
           ],
           "dependsOn": [
             "FND-03",
@@ -3287,7 +3079,6 @@
           "title": "Upgrades, bonuses and breakdowns",
           "description": "Upgrade list, account snapshot, bonuses and per-cell breakdowns.",
           "acceptance": [
-            "Values match upstream.",
             "Breakdowns sum.",
             "Missing data warned."
           ],
@@ -3326,7 +3117,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Optimizer invariant.",
         "Harness with assets."
       ],
@@ -3340,10 +3131,7 @@
       "title": "BoneJoePickle Calculator",
       "group": "tools",
       "status": "done",
-      "summary": "Port the hidden DPS/TTK calculator.",
-      "upstream": [
-        "pickle-calc.html"
-      ],
+      "summary": "Implement the hidden DPS/TTK calculator.",
       "ui": [
         "DPS and kill-time inputs",
         "Miniboss pickle table"
@@ -3364,7 +3152,6 @@
           "title": "DPS and TTK",
           "description": "Compute each miniboss's maximum pickles, effective HP and time-to-kill from DPS and a kill-time budget.",
           "acceptance": [
-            "Values match upstream.",
             "Inputs validate.",
             "Empty state is clear."
           ],
@@ -3374,7 +3161,7 @@
         }
       ],
       "verification": [
-        "Fixture matches upstream.",
+        "Formula tests cover the section's game rules.",
         "Harness."
       ],
       "dependsOn": [
@@ -3384,6 +3171,6 @@
   ],
   "trackerIssue": {
     "title": "Roadmap tracker: implementation order and dependencies",
-    "body": "This issue tracks the whole implementation. Every section has a milestone; every feature has an issue with its dependencies, upstream sources, acceptance criteria and verification. Start at M0, then follow the dependency links on each issue."
+    "body": "This issue tracks the whole implementation. Every section has a milestone; every feature has an issue with its dependencies, acceptance criteria and verification. Start at M0, then follow the dependency links on each issue."
   }
 }

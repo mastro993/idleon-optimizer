@@ -1,4 +1,4 @@
-//! The Mastery EXP tab's maths, checked against the page's own formulas.
+//! The Mastery EXP tab's maths.
 
 use super::*;
 
@@ -136,7 +136,7 @@ fn a_locked_upgrade_gains_nothing_until_the_rank_unlocks_it() {
     assert_eq!(source.required_level, 25);
     assert_eq!(source.gain, 0.0);
     assert!((source.rate_after - locked.exp_rate()).abs() < 1e-9);
-    // A locked row still reports the bonus a point would give, like the page.
+    // A locked row still reports the bonus a point would give.
     assert!(source.next_bonus > source.bonus);
     // SAVORY needs rank 100 and is ranked too, also without a gain.
     let savoury = ranking
@@ -160,7 +160,7 @@ fn a_locked_upgrade_gains_nothing_until_the_rank_unlocks_it() {
 }
 
 #[test]
-fn exp_required_follows_the_page_curve() {
+fn exp_required_follows_its_curve() {
     let mastery = Mastery {
         level: 18.0,
         ..sample()
@@ -226,7 +226,7 @@ fn the_tree_carries_the_source_of_every_factor() {
         "Canteen Read (Vial)",
         "Salt Lick: Cooking Mastery EXP",
         "RandoListo2[8]",
-        "cooking-mastery-calc.html · computeExternalMulti",
+        "Cooking mastery external multipliers",
     ] {
         assert!(
             text.contains(expected),
@@ -234,7 +234,7 @@ fn the_tree_carries_the_source_of_every_factor() {
         );
     }
     // Every factor is named, so the tree is searchable by its source too.
-    assert!(tree.match_count("superBitType(68)") >= 1);
+    assert!(tree.match_count("Gaming superbit 68") >= 1);
     assert_eq!(tree.keys().len(), tree.node_count());
 }
 
@@ -254,11 +254,11 @@ fn the_distribution_spends_the_budget_and_never_more() {
             "request {request} cannot overspend"
         );
     }
-    // The page's input is a whole number of points, so the plan floors.
+    // The input is a whole number of points, so the plan floors.
     let fractional = mastery.distribution(Goal::Now, 6.7);
     assert_eq!(fractional.budget, 6.0);
     assert_eq!(fractional.requested, 6.7);
-    // A negative request is the page's zero: nothing is spent and the plan is
+    // A negative request is zero: nothing is spent and the plan is
     // the bare base rate with every upgrade at zero.
     let empty = mastery.distribution(Goal::Now, -5.0);
     assert_eq!(empty.budget, 0.0);
@@ -296,8 +296,8 @@ fn the_distribution_rate_is_its_own_factors_multiplied() {
     // against the table's rate rather than a second algorithm.
     assert!((plan.current_rate - mastery.exp_rate()).abs() < 1e-9);
     assert!((plan.improvement - (plan.rate / plan.current_rate - 1.0) * 100.0).abs() < 1e-9);
-    // Hours follow the page's `optTimeToLevel`: the saved level's requirement
-    // over the plan's rate, so both goals stay comparable.
+    // Hours are the saved level's requirement over the plan's rate, so both
+    // goals stay comparable.
     assert!((plan.hours * plan.rate - mastery.exp_required()).abs() < 1e-6);
 }
 
@@ -316,7 +316,7 @@ fn the_first_point_goes_to_the_biggest_marginal_multiplier() {
         .copied()
         .filter(|index| mastery.level >= f64::from(REQUIRED_LEVEL[*index]))
         .collect();
-    // Ties keep the game's order, like the page's strict `>`.
+    // Ties keep the game's order.
     let best = unlocked.iter().copied().fold(unlocked[0], |best, index| {
         if ratio(index) > ratio(best) {
             index

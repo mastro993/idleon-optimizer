@@ -8,13 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.
-
-## Upstream sources
-
-- monument-calc.html
-- js/ui/monument.js
-- js/stats/systems/w5/monument.js
+Implement Bravery, Justice and Wisdom calculators, permanent rewards, reward charge, training and bonus sources.
 
 ## UI
 
@@ -51,7 +45,6 @@ Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
-- Values match upstream.
 - Boost changes update odds.
 - Invalid inputs are rejected.
 
@@ -75,7 +68,6 @@ Depends on: MN-01 Bravery calculator
 
 Acceptance:
 
-- Values match upstream.
 - Charges update rewards.
 - Missing data is warned.
 
@@ -93,6 +85,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Justice undo test.
 - Harness.

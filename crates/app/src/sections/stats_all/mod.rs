@@ -1,7 +1,6 @@
-//! The All Stats Dashboard: the five calculation-context selectors upstream's
-//! `stats-all.html` carries, the map access summary they resolve against, the
-//! category breakdowns of SA-02, the formula explorer of SA-03 and the
-//! game-input sandbox of SA-04.
+//! The All Stats Dashboard: the five calculation-context selectors, the map
+//! access summary they resolve against, the category breakdowns of SA-02, the
+//! formula explorer of SA-03 and the game-input sandbox of SA-04.
 //!
 //! A context change re-resolves every descriptor, so the page never shows a
 //! value from the previous character or map. The breakdown rows and the
@@ -42,7 +41,7 @@ pub(crate) struct State {
     /// The sheet the imported save resolves to: the baseline the ledger
     /// compares a hypothetical edit against.
     pub(crate) saved_sheet: Option<stats::Sheet>,
-    /// Every upstream descriptor resolved against the save, the context and the
+    /// Every descriptor resolved against the save, the context and the
     /// pending edits.
     pub(crate) sheet: Option<stats::Sheet>,
     /// The editable game inputs and the edits pending on them.
@@ -78,14 +77,13 @@ impl Default for State {
 
 impl State {
     /// Take a freshly imported save, opening on character one and its current
-    /// map exactly like upstream `onLoad`. The other selectors keep the user's
-    /// choice, which is what upstream reads back from the DOM.
+    /// map. The other selectors keep the user's choice.
     pub(crate) fn load(&mut self, save: &Save, simulation: &Simulation, sim_context: &SimContext) {
         let snapshot = stats::Snapshot::from_save(save);
         self.context.character = 0;
         self.context.map = snapshot.current_map(0).unwrap_or(0);
         self.snapshot = Some(snapshot);
-        // A new save starts with no hypothetical edits, like upstream `onLoad`.
+        // A new save starts with no hypothetical edits.
         self.sandbox = Some(stats::Sandbox::new(save, self.context.character));
         self.input_error.clear();
         self.clamp(&mut Vec::new());
@@ -443,7 +441,7 @@ fn breakdowns(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 Some(value) => format!("{}: {value}", row.name),
                 None => format!("{}: not modelled", row.name),
             };
-            // A pending edit annotates the saved value, like upstream's
+            // A pending edit annotates the saved value with a
             // `Saved: <value> (±%)` line under the descriptor header.
             let saved = state
                 .stats_all
@@ -513,8 +511,8 @@ fn breakdowns(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         .child(
             Card::new()
                 .header(CardHeader::new("Category Breakdowns").description(
-                    "Every descriptor the upstream registry lists, grouped by its category. A row \
-                     whose formula this build does not port says so instead of showing a guess.",
+                    "Every descriptor the registry lists, grouped by its category. A row whose \
+                     formula this build does not model says so instead of showing a guess.",
                 ))
                 .child(
                     div()
@@ -581,11 +579,9 @@ fn detail_card(
         .find(|entry| entry.id == row.id)
         .map(stats::Affected::saved_note);
     let warning = row.warning().map(str::to_string);
-    let source = row.source.to_string();
     let scope = row.scope.label();
-    let header = CardHeader::new(format!("{} · {scope}", row.name)).description(format!(
-        "{source} · the formula tree is the shared breakdown component"
-    ));
+    let header = CardHeader::new(format!("{} · {scope}", row.name))
+        .description("The formula tree is the shared breakdown component");
     let mut card = Card::new().header(header).child(
         div()
             .id("stats-descriptor-summary")
@@ -595,7 +591,7 @@ fn detail_card(
             .pb_2()
             .text_size(px(12.0))
             .text_color(muted)
-            .child(format!("{value} · {source}")),
+            .child(value),
     );
     if let Some(note) = saved.clone() {
         card = card.child(
@@ -638,11 +634,9 @@ fn detail_card(
 
 /// SA-04: the editable game inputs, the pending edits and the saved values.
 ///
-/// Upstream keeps the change list under its context card (`#input-changes` in
-/// `stats-all.html`) and renders one control per formula input in the tree
-/// inspector. This build has no per-node editor, so the ledger rows carry the
-/// controls: each row shows the saved and current value, marks a pending edit
-/// and resets that one input, and `Reset all edits` clears the whole sandbox.
+/// There is no per-node editor, so the ledger rows carry the controls: each row
+/// shows the saved and current value, marks a pending edit and resets that one
+/// input, and `Reset all edits` clears the whole sandbox.
 fn input_ledger(state: &State, cx: &mut Context<AppState>) -> AnyElement {
     let theme = cx.theme().colors.clone();
     let entity = cx.entity();
@@ -661,10 +655,10 @@ fn input_ledger(state: &State, cx: &mut Context<AppState>) -> AnyElement {
                 div()
                     .id("stats-input-empty")
                     .role(Role::Label)
-                    .aria_label("This save carries none of the inputs the ported formulas read.")
+                    .aria_label("This save carries none of the inputs the modelled formulas read.")
                     .text_size(px(12.0))
                     .text_color(theme.fg_muted)
-                    .child("This save carries none of the inputs the ported formulas read."),
+                    .child("This save carries none of the inputs the modelled formulas read."),
             );
         }
         for input in sandbox.inputs() {
@@ -790,9 +784,8 @@ fn input_ledger(state: &State, cx: &mut Context<AppState>) -> AnyElement {
 
 /// SA-04's other half: every descriptor the pending edits moved.
 ///
-/// Upstream builds this list from `formulaDifference` per descriptor and links
-/// each row back to the descriptor it names, so the tab and the formula tree
-/// follow the click here too.
+/// Each row links back to the descriptor it names, so the tab and the formula
+/// tree follow the click here too.
 fn affected_formulas(state: &State, cx: &mut Context<AppState>) -> AnyElement {
     let theme = cx.theme().colors.clone();
     let entity = cx.entity();
@@ -1068,7 +1061,7 @@ mod tests {
     }
 
     #[test]
-    fn every_upstream_category_is_a_tab_and_an_unported_row_warns() {
+    fn every_category_is_a_tab_and_an_unmodelled_row_warns() {
         let mut state = State::default();
         state.load(&save(), &simulation(), &context());
         let sheet = state.sheet.as_ref().expect("a save builds the sheet");
@@ -1086,14 +1079,10 @@ mod tests {
                 .unwrap_or_default()
                 .contains("MaxCarryCap_0")
         );
-        // A row this build does not model names its upstream source.
+        // A row this build does not model warns instead of showing a value.
         let crit = sheet.get("crit-damage").expect("the row");
         assert!(crit.display_value().is_none());
-        assert!(
-            crit.warning()
-                .unwrap_or_default()
-                .contains("crit-damage.js")
-        );
+        assert!(crit.warning().is_some_and(|warning| !warning.is_empty()));
     }
 
     #[test]

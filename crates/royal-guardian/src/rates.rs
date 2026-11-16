@@ -1,29 +1,23 @@
 //! The collection rate: what one outpost harvests per hour before the node's
 //! grade, and the account-wide multiplier every outpost shares.
 //!
-//! Ported from `TotalStatz`, `globalResourceRateBreakdown`,
-//! `outpostResourceRateBreakdown`, `resourceProductionWithGrade`,
-//! `supportCollection`, `savageCollection` and the collection halves of
-//! `royalGuardianDerivedInputs`.
-//!
-//! The upstream folds the whole account into ten factors. Two of them read
-//! systems this port does not decode yet - the W14 alchemy bubble's Prisma
+//! The game folds the whole account into ten factors. Two of them read
+//! systems this crate does not decode yet - the W14 alchemy bubble's Prisma
 //! multiplier and the companion roster - so [`CollectionInputs`] reports them as
 //! missing and leaves their factor at one instead of guessing. The rest come
 //! from the Royal Guardian rows, the four talents the section extracts and the
 //! three single-row cross-system constants in `royal-guardian.json`.
 //!
-//! Supplying the inputs directly is how the oracle test compares the port with
-//! the upstream JS: [`RoyalGuardian::global_collection_rate_with`] and its
-//! outpost and production siblings take the whole set, so the two unread sources
-//! can be handed in without the port claiming to read them.
+//! [`RoyalGuardian::global_collection_rate_with`] and its outpost and production
+//! siblings take the whole input set, so the two unread sources can be handed in
+//! without the crate claiming to read them.
 
 use super::*;
 
 /// How much the additive collection bonuses cap the W14 bubble at.
 const ALCHEMY_CAP: f64 = 50.0;
 
-/// The account-wide counts the global rate multiplies in: upstream `TotalStatz`.
+/// The account-wide counts the global rate multiplies in.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct TotalStats {
     /// Every resource grade the save holds, summed.
@@ -36,8 +30,8 @@ pub struct TotalStats {
     pub outposts: f64,
 }
 
-/// The cross-system inputs a collection rate reads: upstream
-/// `royalGuardianDerivedInputs`, narrowed to the six the rate uses.
+/// The cross-system inputs a collection rate reads, narrowed to the six the rate
+/// uses.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CollectionInputs {
     /// The Royal Guardian character's level.
@@ -57,11 +51,11 @@ pub struct CollectionInputs {
     pub alchemy_w14: f64,
     /// `floor(ZenithMarket[10] × Spelunk[45][10])`.
     pub zenith_10: f64,
-    /// The sources the port does not read yet, and so leaves at zero.
+    /// The sources the crate does not read yet, and so leaves at zero.
     pub missing: Vec<String>,
 }
 
-/// One multiplier in a rate, with the upstream factor name and its label.
+/// One multiplier in a rate, with its factor name and its label.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Factor {
     pub name: &'static str,
@@ -88,7 +82,7 @@ impl RoyalGuardian {
 
     /// A saved talent's effect: its curve at the highest purchased level.
     ///
-    /// Upstream adds the all-talent bonus levels before the curve; those are not
+    /// The game adds the all-talent bonus levels before the curve; those are not
     /// decoded yet, so this reads the purchased level alone.
     pub fn talent_value(&self, talent: usize) -> f64 {
         if !self.has_character() {
@@ -104,7 +98,7 @@ impl RoyalGuardian {
         idleon_common::curve::eval(&curve.formula, curve.x1, curve.x2, level)
     }
 
-    /// The unique sushi the save has discovered: upstream `computeUniqueSushi`.
+    /// The unique sushi the save has discovered.
     fn unique_sushi(&self) -> f64 {
         let Some(tiers) = self.sushi.get(5).and_then(Value::as_array) else {
             return 0.0;
@@ -124,8 +118,8 @@ impl RoyalGuardian {
         self.arcade.get(index).and_then(json::number).unwrap_or(0.0)
     }
 
-    /// An arcade upgrade's effect: upstream `arcadeBonus`, with the companion 27
-    /// doubling it starts from left unread like the other companion factors.
+    /// An arcade upgrade's effect, with the companion 27 doubling it starts from
+    /// left unread like the other companion factors.
     fn arcade_bonus(&self, index: usize) -> f64 {
         if index != 70 {
             return 0.0;
@@ -206,7 +200,7 @@ impl RoyalGuardian {
                 purified += 1.0;
             }
         }
-        // Upstream sums eight worlds' first currency, one past the seven outpost
+        // The game sums eight worlds' first currency, one past the seven outpost
         // worlds: the eighth slot is a real row `RoyalG[1]` carries.
         let log_currencies = (0..WORLDS + 1)
             .map(|world| idleon_common::curve::log(self.g_cell(row::CURRENCIES, 10 * world)))
@@ -220,29 +214,26 @@ impl RoyalGuardian {
         }
     }
 
-    /// What one Support outpost adds to a linked outpost: upstream
-    /// `supportCollection`.
+    /// What one Support outpost adds to a linked outpost.
     pub fn support_collection(&self) -> f64 {
         200.0 * (1.0 + self.armory_bonus(43) / 100.0) + self.jelly_bonus(41)
     }
 
-    /// What a Savage outpost multiplies its drain by: upstream `savageCollection`.
+    /// What a Savage outpost multiplies its drain by.
     pub fn savage_collection(&self) -> f64 {
         5.0 * (1.0 + self.armory_bonus(69) / 100.0)
     }
 
-    /// The account-wide collection multiplier: upstream
-    /// `globalResourceRateBreakdown`.
+    /// The account-wide collection multiplier.
     pub fn global_collection_rate(&self) -> Rate {
         self.global_collection_rate_with(&self.collection_inputs())
     }
 
-    /// The account-wide collection multiplier with every input supplied, which
-    /// is how the oracle compares the port against the upstream JS.
+    /// The account-wide collection multiplier with every input supplied.
     pub fn global_collection_rate_with(&self, inputs: &CollectionInputs) -> Rate {
         let totals = self.total_stats();
         let orblet = self.orblet_bonus(1);
-        // The W14 bubble is an alchemy value the port does not decode, so it
+        // The W14 bubble is an alchemy value the crate does not decode, so it
         // stays at zero and the rate names it as missing.
         let alchemy = inputs.alchemy_w14.min(ALCHEMY_CAP);
         let additive =
@@ -303,8 +294,7 @@ impl RoyalGuardian {
         rate(factors, inputs.missing.clone())
     }
 
-    /// What one built outpost collects per hour, by world and node link:
-    /// upstream `outpostResourceRateBreakdown`.
+    /// What one built outpost collects per hour, by world and node link.
     pub fn outpost_collection_rate(&self, map: usize) -> Rate {
         self.outpost_collection_rate_with(map, &self.collection_inputs())
     }
@@ -378,7 +368,7 @@ impl RoyalGuardian {
     }
 
     /// What one outpost drains from a node once its grade is applied, with every
-    /// input supplied: upstream `resourceProductionWithGrade`.
+    /// input supplied.
     pub fn resource_production_with(
         &self,
         map: usize,
@@ -397,8 +387,7 @@ impl RoyalGuardian {
         rate
     }
 
-    /// How full an outpost's purification rank leaves it, as a 0/1 flag: upstream
-    /// `outpostPurification`.
+    /// How full an outpost's purification rank leaves it, as a 0/1 flag.
     pub fn purification(&self, map: usize) -> f64 {
         if self.purified(map) { 1.0 } else { 0.0 }
     }

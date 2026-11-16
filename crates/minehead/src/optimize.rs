@@ -1,15 +1,14 @@
-//! The strategy search and the greedy upgrade path, ported from
-//! `js/minehead/sim.js`.
+//! The strategy search and the greedy upgrade path.
 //!
 //! Both searches run the same [`simulate_game`] the Play tab drives. The
 //! optimizer scores win rate first and damage as a fraction of the boss's
-//! health second, exactly as upstream's `_optimizerScore`.
+//! health second.
 
 use crate::math::floor_hp;
 use crate::sim::{MonteCarlo, Options, Params, monte_carlo};
 use idleon_common::{Control, Progress};
 
-/// One knob's search values, in the upstream `expandGrid` order.
+/// One knob's search values, in expansion order.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Grid {
     pub knobs: Vec<(&'static str, Vec<f64>)>,
@@ -21,7 +20,7 @@ impl Grid {
         self.knobs.iter().map(|(_, values)| values.len()).product()
     }
 
-    /// Every combination, the last knob varying fastest, as upstream.
+    /// Every combination, the last knob varying fastest.
     pub fn expand(&self) -> Vec<Params> {
         let mut combos = vec![Params::default()];
         for (key, values) in &self.knobs {
@@ -87,7 +86,7 @@ pub fn inference_grid() -> Grid {
     }
 }
 
-/// Set one knob by its upstream key. An unknown key leaves the params alone.
+/// Set one knob by its key. An unknown key leaves the params alone.
 pub fn set(params: &mut Params, key: &str, value: f64) -> bool {
     let flag = value != 0.0;
     match key {
@@ -122,7 +121,7 @@ fn flag(value: bool) -> f64 {
     if value { 1.0 } else { 0.0 }
 }
 
-/// Read one knob by its upstream key.
+/// Read one knob by its key.
 pub fn get(params: &Params, key: &str) -> f64 {
     match key {
         "ev_multiplier" => params.ev_multiplier,
@@ -167,7 +166,7 @@ pub struct Optimized {
     pub total_combos: usize,
 }
 
-/// `_optimizerScore`: win rate first, damage fraction second.
+/// Win rate first, damage fraction second.
 pub fn score(result: &MonteCarlo, hp: f64) -> f64 {
     result.win_rate + result.avg_dmg / if hp == 0.0 { 1.0 } else { hp } * 0.001
 }
@@ -257,8 +256,7 @@ pub struct Path {
 /// The Path tab's search: each step buys the affordable +1 with the best
 /// damage gained per currency spent, stopping when nothing is affordable.
 ///
-/// The scoring is the upstream `_runPathStep` rule: `dmg increase / cost` plus
-/// `0.01 × win-rate increase`.
+/// Each step scores `dmg increase / cost` plus `0.01 × win-rate increase`.
 pub fn cost_path(
     options: &Options,
     params: &Params,

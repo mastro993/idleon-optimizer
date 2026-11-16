@@ -1,6 +1,5 @@
 //! The farming side of a save: plots, crop quantities, Land Rank and market
-//! levels, as the upstream decoder reads `FarmPlot`, `FarmCrop`, `FarmRank` and
-//! `FarmUpg`.
+//! levels, read from `FarmPlot`, `FarmCrop`, `FarmRank` and `FarmUpg`.
 
 use idleon_farming::{Farm, PLOTS, Plot, RANK_UPGRADES};
 use idleon_save::json;

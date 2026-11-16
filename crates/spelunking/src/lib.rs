@@ -1,24 +1,17 @@
 //! Spelunking (W7): expedition controls, party, elixir belt, depth estimates and
 //! the run simulator.
 //!
-//! Ported from `spelunking-calc.html`, `js/ui/spelunking.js`,
-//! `js/stats/systems/w7/spelunking.js`, `spelunk-inputs.js`,
-//! `spelunk-expedition.js` (the config normaliser, the elixir effects and the
-//! expedition run) and `spelunk-depth.js`. The static tables come from
-//! `script/extract-spelunk-data.mjs`.
-//!
-//! The upstream page derives four account multipliers from its whole stat
-//! context: Spelunking Power, the amber multiplier, stamina regeneration and the
-//! Grand Discovery chance. This port does not decode that context yet, so
-//! [`Account`] carries the values the user reads in game. Everything the save
-//! itself holds — characters and saved stamina, caves, tools, elixirs, shop
-//! upgrades and depth records — comes from [`Save`]. Nothing is guessed.
+//! Four account multipliers come from the whole stat context: Spelunking Power,
+//! the amber multiplier, stamina regeneration and the Grand Discovery chance.
+//! This crate does not decode that context yet, so [`Account`] carries the
+//! values the user reads in game. Everything the save itself holds — characters
+//! and saved stamina, caves, tools, elixirs, shop upgrades and depth records —
+//! comes from [`Save`]. Nothing is guessed.
 //!
 //! Depth estimates are pure: given the same [`Inputs`] and [`Requested`]
-//! configuration they produce the same [`Profile`] the upstream calculator
-//! prints, which `fixtures/spelunking.json` pins against the JS. A run is
-//! deterministic by seed: [`sim::Run`] replays the upstream 10 ms tick with the
-//! same seeded generator, so the same inputs and seed give the same result.
+//! configuration they produce the same [`Profile`]. A run is deterministic by
+//! seed: [`sim::Run`] advances a 10 ms tick with a seeded generator, so the
+//! same inputs and seed give the same result.
 
 pub mod config;
 pub mod data;
@@ -46,10 +39,10 @@ pub use sim::{
 use std::fmt;
 
 pub(crate) use idleon_common::curve::js_round;
-/// The base-10 logarithm the upstream `getLOG` uses.
+/// The game's base-10 logarithm.
 pub(crate) use idleon_common::curve::log as game_log;
 
-/// The account values the upstream stat context would supply.
+/// The account values the stat context would supply.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Account {
@@ -117,7 +110,7 @@ pub struct Inputs {
     pub caves: Vec<Cave>,
     pub tools: Vec<Tool>,
     pub elixirs: Vec<Elixir>,
-    /// `shopUpgBonus(i, S)` for every shop row, so the formulas read the same array.
+    /// The shop upgrade bonus for every shop row, indexed by upgrade.
     pub shop: Vec<f64>,
     /// The account inputs the save cannot supply.
     pub power: f64,
@@ -165,7 +158,7 @@ pub struct Inputs {
     pub partial: bool,
 }
 
-/// The six expedition policies, in the upstream menu order.
+/// The six expedition policies, in menu order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Policy {
@@ -185,8 +178,8 @@ pub enum Policy {
 }
 
 impl Policy {
-    /// The ids upstream's `SPELUNK_POLICIES` lists, with the legacy `push-farm`
-    /// alias it maps to `efficient`.
+    /// Every policy, in menu order; [`Policy::from_id`] also maps the legacy
+    /// `push-farm` id to `efficient`.
     pub const ALL: [Policy; 6] = [
         Policy::Auto,
         Policy::Dive,
@@ -207,7 +200,7 @@ impl Policy {
         }
     }
 
-    /// The menu label, matching the upstream page.
+    /// The menu label.
     pub fn label(self) -> &'static str {
         match self {
             Policy::Auto => "Native Auto",
@@ -223,7 +216,7 @@ impl Policy {
         match id {
             "auto" => Some(Policy::Auto),
             "dive" => Some(Policy::Dive),
-            // Upstream still accepts the retired `push-farm` id.
+            // The retired `push-farm` id is still accepted.
             "efficient" | "push-farm" => Some(Policy::Efficient),
             "clear-fifth" => Some(Policy::ClearFifth),
             "clear" => Some(Policy::Clear),
@@ -343,7 +336,7 @@ impl<'de> serde::Deserialize<'de> for ToolChoice {
     }
 }
 
-/// The amber-farming phase limits, ported from `normalizeSpelunkConfig`.
+/// The amber-farming phase limits.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AmberPolicy {

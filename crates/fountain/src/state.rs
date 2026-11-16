@@ -1,7 +1,6 @@
 //! Reading the fountain state out of an imported save.
 //!
-//! The upstream calculator receives one decoded save object; this module does
-//! the same reads from `Holes`, the options list and the other account rows the
+//! This module reads `Holes`, the options list and the other account rows the
 //! overview consumes, and records which bonus sources the save does not carry.
 
 use super::saved;
@@ -116,7 +115,7 @@ impl Fountain {
 
     // ----- raw readers -----
 
-    /// A cell of a `holesData` row; a missing row or cell reads as zero.
+    /// A cell of a `Holes` row; a missing row or cell reads as zero.
     pub(super) fn cell(&self, row: usize, cell: usize) -> f64 {
         nested_cell(&self.holes, row, cell)
     }
@@ -134,7 +133,7 @@ impl Fountain {
         nested_cell(&self.spelunk, row, cell)
     }
 
-    /// `_bUpg`: a schematic's value once owned, zero before.
+    /// A schematic's value once owned, zero before.
     pub(super) fn schematic(&self, index: usize, value: f64) -> f64 {
         if self.cell(row::SCHEMATICS, index) >= 1.0 {
             value
@@ -143,7 +142,7 @@ impl Fountain {
         }
     }
 
-    /// `_cosmoBonus(t, i)`: `floor(base × level)`.
+    /// `floor(base × level)`.
     pub(super) fn cosmo_bonus(&self, tier: usize, index: usize) -> f64 {
         let base = match (tier, index) {
             (0, cosmo::MAX_STACK) => data().cosmo.max_stack,
@@ -155,12 +154,12 @@ impl Fountain {
 
     // ----- saved state -----
 
-    /// `fountainLv`: the fountain level, the first cell of row 15 in row 7.
+    /// The fountain level, the first cell of row 15 in row 7.
     pub fn level(&self) -> f64 {
         self.cell(row::LEVEL, 15)
     }
 
-    /// `upgLvs`: one water's upgrade levels.
+    /// One water's upgrade levels.
     pub fn upgrade_level(&self, water: usize, upgrade: usize) -> f64 {
         self.upg_lvs
             .get(water)
@@ -169,7 +168,7 @@ impl Fountain {
             .unwrap_or(0.0)
     }
 
-    /// `marbleLvs`: one water's marble upgrade levels.
+    /// One water's marble upgrade levels.
     pub fn marble_level(&self, water: usize, upgrade: usize) -> f64 {
         self.marble_lvs
             .get(water)
@@ -178,42 +177,42 @@ impl Fountain {
             .unwrap_or(0.0)
     }
 
-    /// `marbleCurrency`: the marble balance.
+    /// The marble balance.
     pub fn marble(&self) -> f64 {
         self.cell(row::STATE, saved::MARBLE)
     }
 
-    /// `desiredCurrency`: the currency the save has desired.
+    /// The currency the save has desired.
     pub fn desired_currency(&self) -> usize {
         self.cell(row::STATE, saved::DESIRED).max(0.0) as usize
     }
 
-    /// `fountCurrencyAvail`: the opal balance a fountain level is paid with.
+    /// The opal balance a fountain level is paid with.
     pub fn level_currency_balance(&self, currency: usize) -> f64 {
         self.cell(row::CURRENCY, 30 + currency)
     }
 
-    /// `luckyCoinCount`: the lucky coins collected for a currency.
+    /// The lucky coins collected for a currency.
     pub fn lucky_coin_count(&self, currency: usize) -> f64 {
         self.cell(row::LUCKY, currency).max(0.0)
     }
 
-    /// `duckCount`: the rubber ducks owned, `OptLacc[601]`.
+    /// The rubber ducks owned, `OptLacc[601]`.
     pub fn duck_count(&self) -> f64 {
         self.option(601)
     }
 
-    /// `duckBarProgress`: the saved duck bar progress in seconds.
+    /// The saved duck bar progress in seconds.
     pub fn duck_bar_progress(&self) -> f64 {
         self.cell(row::BARS, 2)
     }
 
-    /// `marbleBarProgress`: the saved marble bar progress in seconds.
+    /// The saved marble bar progress in seconds.
     pub fn marble_bar_progress(&self) -> f64 {
         self.cell(row::BARS, 1)
     }
 
-    /// `coinStacks`: the stacks on the ground, in slot order.
+    /// The stacks on the ground, in slot order.
     pub fn stacks(&self) -> Vec<CoinStack> {
         let Some(rows) = self.holes.get(row::STACKS).and_then(Value::as_array) else {
             return Vec::new();
@@ -254,7 +253,7 @@ fn nested_cell(rows: &[Value], row: usize, cell: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `upgLvs`/`marbleLvs`: twenty levels per water, missing cells read as zero.
+/// Upgrade or marble levels: twenty per water, missing cells read as zero.
 fn levels(holes: &[Value], row: usize) -> Vec<Vec<f64>> {
     let rows = holes.get(row).and_then(Value::as_array);
     (0..WATERS)

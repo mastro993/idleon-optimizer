@@ -1,5 +1,5 @@
 //! The Minehead currency pane: every factor the currency/hr formula reads, as
-//! one breakdown tree (`renderCurrencyTab`, `js/ui/minehead-dashboard.js`).
+//! one breakdown tree.
 
 use crate::state::AppState;
 use ely_gpui_component::layout::{Card, CardHeader};

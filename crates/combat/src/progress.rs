@@ -1,27 +1,20 @@
 //! Combat-driven account progress and smelting output (CS-06).
 //!
-//! Ported from `js/stats/systems/common/combat-sim-progress.js`:
-//!
-//! - [`State::grant`] is the page's `sim.progress.grant`: forge time advances the
+//! - [`State::grant`] pays a kill's progress credit: forge time advances the
 //!   saved furnace, pet time banks toward the shiny-pet batch and alchemy time is
 //!   only credited;
-//! - [`State::tick`] is `_forgeTick`, the 250 ms furnace task (`_forgeStats`,
-//!   `_forgeProduce` and `_refill` are the helpers behind it);
+//! - [`State::tick`] is the 250 ms furnace task;
 //! - [`State::pet_batch`] is the scene updater that spends banked pet time on
-//!   deployed shiny pets (`shinyPetLevel`'s curve included);
+//!   deployed shiny pets (the shiny level curve included);
 //! - [`State::scurge_kill`], [`State::coral_kill`] and [`State::omega_kill`] are
 //!   the Clamworks Scurge, Coral Kid and Omega Arcade kill credits;
-//! - [`State::summary`] is `combatProgressSummary`, the panel's rows.
+//! - [`State::summary`] is the panel's rows.
 //!
-//! `crates/combat/data/progress.json` and `fixtures/combat-progress.json` are
-//! written by `script/combat-progress-oracle.mjs` from one upstream checkout:
-//! the fixture runs the module's own methods on a seeded stream, so the port
-//! cannot drift from its source. The save-derived [`Config`] is decoded by
-//! `idleon_stats::combat::progress` and compared with the same fixture.
+//! The save-derived [`Config`] is decoded by `idleon_stats::combat::progress`.
 //!
 //! Not modelled: the Omega ball's dropped item (the reward engine's item
 //! actors), the pet boosts outside the shiny table and the Menagerie EXP the
-//! Scurge levels would process (menu-gated upstream too). Each one is named in
+//! Scurge levels would process (menu-gated in the game too). Each one is named in
 //! the summary's notices when it is reached.
 
 use idleon_common::Rng;
@@ -38,7 +31,7 @@ const NO_COOLDOWN: f64 = 9_999_999.0;
 #[serde(rename_all = "camelCase")]
 struct Data {
     items: BTreeMap<String, Item>,
-    /// `Spelunky[28]`: the Scurge upgrade column `scurgeKill` reads.
+    /// `Spelunky[28]`: the Scurge upgrade column a Scurge kill reads.
     scurge_column: Vec<f64>,
     /// `PET_NAMES[world][pet]`, for the shiny table's rows.
     pet_names: Vec<Vec<String>>,
@@ -64,13 +57,13 @@ fn data() -> &'static Data {
     DATA.get_or_init(|| serde_json::from_str(PROGRESS_JSON).expect("progress.json is valid"))
 }
 
-/// One item's forge fields; an unknown key reads as the upstream `ITEMS[key] || {}`.
+/// One item's forge fields; an unknown key has none.
 fn item(key: &str) -> Option<&'static Item> {
     data().items.get(key)
 }
 
 /// The display name of a forge item or bar, with the game data's underscores as
-/// spaces; the upstream `itemName`.
+/// spaces.
 pub fn item_name(key: &str) -> String {
     item(key)
         .map(|item| item.name.clone())
@@ -212,7 +205,7 @@ pub struct Omega {
     pub drops: f64,
 }
 
-/// The progress inputs a run reads, matching `combatProgressInputs`.
+/// The progress inputs a run reads.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Config {
@@ -223,13 +216,13 @@ pub struct Config {
     pub omega: Omega,
 }
 
-/// How a kill credits combat progress, matching the `monsterKill` gates.
+/// How a kill credits combat progress.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase", default)]
 pub struct Grants {
     /// The character's drop rate, which scales the Omega ball chance.
     pub drop_rate: f64,
-    /// `killCreditPerKill`: the KLA credit each kill banks for the Coral Kid.
+    /// The KLA credit each kill banks for the Coral Kid.
     pub kill_credit: f64,
     /// The scene the run is on, which gates the Omega roll.
     pub map: usize,
@@ -284,7 +277,7 @@ pub struct ScurgeState {
     pub requirement: f64,
 }
 
-/// The panel's rows, matching `combatProgressSummary`.
+/// The panel's rows.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Summary {
     pub forge_seconds: f64,
@@ -317,7 +310,7 @@ impl Summary {
     }
 }
 
-/// The forge statistics one slot's production reads; `_forgeStats`.
+/// The forge statistics one slot's production reads.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Stats {
     interval: f64,
@@ -388,7 +381,7 @@ fn add(map: &mut BTreeMap<String, f64>, key: &str, amount: f64) {
 }
 
 impl State {
-    /// Start a run from the resolved config; `initCombatProgress`.
+    /// Start a run from the resolved config.
     pub fn new(config: Config) -> Self {
         let mut state = Self {
             config,
@@ -425,7 +418,7 @@ impl State {
         });
     }
 
-    /// `sim.progress.grant`: pay one kill's progress credit.
+    /// Pay one kill's progress credit.
     pub fn grant(&mut self, rng: &mut Rng, kind: Grant, seconds: f64) {
         if !seconds.is_finite() || seconds < 0.0 {
             return;
@@ -467,7 +460,7 @@ impl State {
     }
 
     /// The reward engine's kill hook: the Coral credit, the Scurge EXP and the
-    /// Omega ball roll, in the order `monsterKill` and its tail run them. The
+    /// Omega ball roll, in the order a monster kill runs them. The
     /// per-kill forge, pet and alchemy grants need the talent formulas and are
     /// reported as missing by the config decoder instead.
     pub fn kill(&mut self, rng: &mut Rng, grants: &Grants, kind: &str) {
@@ -478,7 +471,7 @@ impl State {
         self.omega_kill(rng, grants);
     }
 
-    /// `sim.progress.scurgeKill`: the Clamworks Scurge's EXP per kill.
+    /// The Clamworks Scurge's EXP per kill.
     pub fn scurge_kill(&mut self) {
         if !self.config.scurge.unlocked {
             return;
@@ -515,7 +508,7 @@ impl State {
         }
     }
 
-    /// `sim.progress.coralKill`: the Coral Kid's banked KLA credit.
+    /// The Coral Kid's banked KLA credit.
     pub fn coral_kill(&mut self, credit: f64) {
         if !self.config.coral.unlocked {
             return;
@@ -524,7 +517,7 @@ impl State {
         self.coral_kills += credit;
     }
 
-    /// `sim.progress.omegaKill`: the Omega Arcade ball roll. Returns whether a
+    /// The Omega Arcade ball roll. Returns whether a
     /// ball dropped; the item itself belongs to the reward engine.
     pub fn omega_kill(&mut self, rng: &mut Rng, grants: &Grants) -> bool {
         let omega = &mut self.config.omega;
@@ -547,7 +540,7 @@ impl State {
         true
     }
 
-    /// The 250 ms furnace task: `_forgeTick`.
+    /// The 250 ms furnace task.
     pub fn tick(&mut self, rng: &mut Rng) {
         if !self.config.forge.available {
             return;
@@ -572,7 +565,7 @@ impl State {
         }
     }
 
-    /// `_forgeGrant`: an AFK-style lump of forge seconds.
+    /// An AFK-style lump of forge seconds.
     fn forge_grant(&mut self, rng: &mut Rng, seconds: f64) {
         for slot in 0..16 {
             let forge = &self.config.forge;
@@ -624,7 +617,7 @@ impl State {
         }
     }
 
-    /// `_forgeProduce`: one slot pays its bars and spends its ore and oil.
+    /// One slot pays its bars and spends its ore and oil.
     fn produce(&mut self, rng: &mut Rng, slot: usize, count: f64, afk: bool) {
         let forge = &self.config.forge;
         let at = 3 * slot;
@@ -675,7 +668,7 @@ impl State {
         }
     }
 
-    /// `_refill`: pull replacement ore or oil from the saved chest.
+    /// Pull replacement ore or oil from the saved chest.
     fn refill(&mut self, slot: usize, index: usize, empty_only: bool, reset_progress: bool) {
         let at = 3 * slot + index;
         let forge = &self.config.forge;
@@ -769,7 +762,7 @@ impl State {
         self.pet_pending_seconds = 0.0;
     }
 
-    /// The panel's rows; `combatProgressSummary`.
+    /// The panel's rows.
     pub fn summary(&self) -> Summary {
         let forge = &self.config.forge;
         let scurge = &self.config.scurge;
@@ -844,7 +837,7 @@ fn shiny_thresholds(menagerie: &[Vec<f64>]) -> usize {
     (19.0 + if unlock >= 1.0 { 10.0 } else { 0.0 }) as usize
 }
 
-/// `shinyPetLevel`: the level a shiny EXP value reaches on the game's curve.
+/// The level a shiny EXP value reaches on the game's curve.
 pub fn shiny_pet_level(exp: f64, thresholds: usize) -> f64 {
     if exp <= 0.0 {
         return 0.0;

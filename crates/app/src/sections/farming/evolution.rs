@@ -1,11 +1,11 @@
 //! The Evolution & OG tab: the chain to the target crop, its hardest remaining
 //! steps, the overgrowth stopping advice and the evolution assignment.
 //!
-//! Ported from `renderEvolution` in `farming-calc.html`: the chain cards and the
-//! "Hardest Remaining Steps" table come from `evolutionChainPlan`, the stopping
-//! cards from `optimalOvergrowthTarget`, and the plot grid from the evolution
-//! objective's `plotAssignmentPlan`. The per-plot action table and the selected
-//! plot's curve are the shared overgrowth card below them.
+//! The chain cards and the "Hardest Remaining Steps" table come from the
+//! evolution chain plan, the stopping cards from the optimal overgrowth target,
+//! and the plot grid from the evolution objective's plot assignment. The
+//! per-plot action table and the selected plot's curve are the shared
+//! overgrowth card below them.
 
 use crate::sections::farming::assignment::assignment_card;
 use crate::sections::farming::curves::curves_card;
@@ -25,8 +25,7 @@ use idleon_farming::{
 };
 use idleon_ui::format;
 
-/// How many of the slowest stages the table lists, as the upstream page slices
-/// its own list.
+/// How many of the slowest stages the table lists.
 const HARDEST_STEPS: usize = 20;
 
 /// The chain, the stopping advice and the evolution assignment.

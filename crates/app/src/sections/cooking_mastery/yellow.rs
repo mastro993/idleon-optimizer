@@ -1,11 +1,11 @@
-//! The Yellow Point Allocator pane: the page's `meal-alloc` tab.
+//! The Yellow Point Allocator pane.
 //!
-//! The page renders one table under a "Points to spend" input and a goal select,
-//! both re-planning on every change, and keeps the character context the stat
-//! goals scale with beside them. The card keeps those controls, shows the
-//! selected goal's value against the saved points, and offers the table and the
-//! context the plan was computed with. Planning itself is
-//! [`idleon_cooking_mastery::Yellow::allocation`]; this module only draws it.
+//! The card draws one table under a "Points to spend" input and a goal select,
+//! both re-planning on every change, keeps the character context the stat goals
+//! scale with beside them, shows the selected goal's value against the saved
+//! points, and offers the table and the context the plan was computed with.
+//! Planning itself is [`idleon_cooking_mastery::Yellow::allocation`]; this
+//! module only draws it.
 
 use super::whole;
 use crate::state::AppState;

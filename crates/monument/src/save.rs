@@ -1,7 +1,6 @@
 //! The raw save fields the Monument formulas read.
 //!
-//! The upstream calculator receives one decoded save object with every system's
-//! rows already parsed. This type mirrors that object for the monument helpers:
+//! This type holds every system's rows already parsed for the monument helpers:
 //! arrays of `serde_json::Value` where a row mixes numbers and strings, and
 //! small numeric accessors so the formulas stay readable.
 
@@ -197,7 +196,7 @@ impl Save {
             .unwrap_or_default()
     }
 
-    /// `computeUniqueSushi`: the discovered tiers, counted until the first miss.
+    /// The discovered tiers, counted until the first miss.
     pub fn unique_sushi(&self) -> usize {
         let tiers = self.sushi.get(5).and_then(Value::as_array);
         let Some(tiers) = tiers else {
@@ -213,9 +212,9 @@ impl Save {
         count
     }
 
-    /// `klaData[character][map]`: a number, or a one-element row's first cell.
-    /// A missing or null cell is `None`, as the upstream `map250 == null` check
-    /// treats both as unknown; an empty row reads as zero kills left.
+    /// The kills left on a character's map: a number, or a one-element row's
+    /// first cell. A missing or null cell is `None`, as both are unknown; an
+    /// empty row reads as zero kills left.
     pub fn kla_map(&self, character: usize, map: usize) -> Option<f64> {
         match self.kla.get(character).and_then(|row| at(row, map))? {
             Value::Null => None,
@@ -301,7 +300,7 @@ fn rows(save: &Value, prefix: &str) -> Vec<Value> {
         .collect()
 }
 
-/// `TaskZZ0`-`TaskZZ5`, the six task groups `tasksGlobalData` holds.
+/// `TaskZZ0`-`TaskZZ5`, the six task groups.
 fn task_groups(save: &Value) -> Vec<Value> {
     (0..=5)
         .map(|group| {

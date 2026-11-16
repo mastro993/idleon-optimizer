@@ -1,13 +1,9 @@
 //! SN-03: the charm placement search.
 //!
-//! Ported from `optimizeSneakingLoadout` in
-//! `js/stats/systems/w6/sneaking-loadout-search.js` (its `_context`, `_saved`,
-//! `_capture` and `_metric`) with the pair rules of `canEquipCharmPair` in
-//! `js/stats/systems/w6/sneaking-optimizer.js`. The saved placement is measured
-//! first, so a run always has a baseline; then every untied twin is offered the
-//! legal charm pairs the owned pool can supply, the whole layout is measured
-//! again, and the pair is kept when it beats what the twin had. Passes repeat
-//! until nothing improves.
+//! The saved placement is measured first, so a run always has a baseline; then
+//! every untied twin is offered the legal charm pairs the owned pool can supply,
+//! the whole layout is measured again, and the pair is kept when it beats what
+//! the twin had. Passes repeat until nothing improves.
 //!
 //! The search moves charms only: the saved floors, hats and weapons stay put, so
 //! a recommendation is always a loadout the player's own floors can run. A charm
@@ -15,11 +11,11 @@
 //! and a pair is only offered when the owned copies can cover it — and the
 //! account-unique Scroll of Power can still only be worn once.
 //!
-//! The objective is upstream's `_metric`: Jade per hour, EXP per hour, the item
-//! claim rate, the door hits the remaining HP still needs, and untie progress per
-//! hour. The item objective scores the deterministic rate upstream shortlists
-//! loadouts with (successful actions × item find), not its Monte-Carlo claim
-//! simulation, which needs the flower pass this section does not build yet.
+//! The objective is one of Jade per hour, EXP per hour, the item claim rate, the
+//! door hits the remaining HP still needs, and untie progress per hour. The item
+//! objective scores the deterministic rate (successful actions × item find), not
+//! a Monte-Carlo claim simulation, which needs the flower pass this section does
+//! not build yet.
 
 use super::data::ItemDef;
 use super::loadout::SCROLL_OF_POWER;
@@ -28,9 +24,8 @@ use idleon_common::{Control, Progress};
 
 /// How many candidate placements one run may measure.
 ///
-/// Upstream caps its search at 2048, but every one of its evaluations simulates a
-/// batch of items; this port scores analytically, so a wider budget still lands in
-/// well under a second on a full roster.
+/// The search scores analytically, so this budget still lands in well under a
+/// second on a full roster.
 const MAX_EVALUATIONS: usize = 24_000;
 /// How many improving sweeps the search may take over the roster.
 const MAX_PASSES: usize = 3;

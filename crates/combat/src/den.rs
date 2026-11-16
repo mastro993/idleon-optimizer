@@ -1,21 +1,14 @@
 //! The Den's hound-wave attempt (CS-06).
 //!
-//! Ported from the `The Den (map 216, cavern 2)` section of
-//! `js/stats/systems/common/combat-sim-special.js`: `ampDebuff`, `ampMulti`
-//! and `houndNextOpalScoreReq` are the amplifier formulas, and
-//! [`project`] replays the cavern's attempt — `startDen`, the `_denFrame`
-//! scene updater, the hounds' 100 ms timer (`_caveAInit`), the kill's score
-//! and Skull chain (`_denHoundKill`) and the fear-maximum end (`_denEnd`).
+//! The Den is map 216, cavern 2. [`amp_debuff`], [`amp_multi`] and
+//! [`next_opal_score`] are the amplifier formulas, and [`project`] replays the
+//! cavern's attempt — its start, the scene's per-frame update, the hounds'
+//! 100 ms timer, the kill's score and Skull chain and the fear-maximum end.
 //!
 //! The projection runs the attempt on its own: the map's other monsters, the
 //! reward stream and the player's movement are not part of the censused
 //! outcome, so the attempt is driven by the run's kill interval instead. The
 //! Den panel says so.
-//!
-//! `crates/combat/data/den.json` and `fixtures/combat-den.json` are written by
-//! `script/combat-den-oracle.mjs` from one upstream checkout. The fixture
-//! drives upstream's own Den functions on a fabricated sim, so the wave, fear,
-//! score and opal formulas cannot drift from their source.
 
 use idleon_common::Rng;
 use serde::Deserialize;
@@ -68,7 +61,7 @@ pub fn hound_respawn() -> f64 {
     data().hound.respawn
 }
 
-/// `holesBolaiaPerLv(2)`: the Skull-chain score bonus per Bolaia level.
+/// The Skull-chain score bonus per Bolaia level (`HolesInfo[70]` entry 2).
 pub fn bolaia_per_level() -> f64 {
     data().bolaia.get(2).copied().unwrap_or(0.0)
 }
@@ -78,7 +71,7 @@ pub fn amp_names() -> &'static [String] {
     &data().amp_names
 }
 
-/// `ampDebuff(Holes[12], t)`: what each amplifier adds to the attempt.
+/// What each `Holes[12]` amplifier adds to the attempt.
 pub fn amp_debuff(levels: &[f64; 8], kind: usize) -> f64 {
     let h = levels.get(kind).copied().unwrap_or(0.0);
     match kind {
@@ -94,7 +87,7 @@ pub fn amp_debuff(levels: &[f64; 8], kind: usize) -> f64 {
     }
 }
 
-/// `ampMulti`: the Den score multiplier `AmpMulti`.
+/// The Den score multiplier `AmpMulti`.
 pub fn amp_multi(levels: &[f64; 8], b_upg23: f64) -> f64 {
     let total: f64 = levels.iter().sum();
     0.5 * b_upg23 * (total / 10.0).floor()
@@ -108,7 +101,7 @@ pub fn amp_multi(levels: &[f64; 8], b_upg23: f64) -> f64 {
         + 1.0
 }
 
-/// `houndNextOpalScoreReq(Holes[7][2])`: the score the next opal needs.
+/// The score the next opal needs at opal level `Holes[7][2]`.
 pub fn next_opal_score(level: f64) -> f64 {
     12.0 * (150.0 + (30.0 + level) * level) * 1.5f64.powf(level)
 }
@@ -118,7 +111,7 @@ pub fn next_opal_score(level: f64) -> f64 {
 pub struct Config {
     /// `Holes[12]`, the eight amplifier levels (or the edited ones).
     pub amps: [f64; 8],
-    /// `computeBUpg(23, 1)`: the amplifier-multi upgrade built.
+    /// `Holes[13][23]`: 1 once the amplifier-multi cavern building upgrade is built.
     pub b_upg23: f64,
     /// `Holes[26][2]`: the Bolaia level that scales the Skull chain.
     pub bolaia_level: f64,
@@ -143,7 +136,7 @@ impl Default for Config {
     }
 }
 
-/// The Den panel's rows; `denSnapshot`.
+/// The Den panel's rows.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Snapshot {
     /// `1` in progress, `0.5` ending, `0` ended or not started.
@@ -247,7 +240,7 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
         ..Totals::default()
     };
     snapshot.active = 1.0;
-    // `startDen`: the first hound carries the Bolaia Skull chain.
+    // The attempt's start: the first hound carries the Bolaia Skull chain.
     let mut chain_pending = chain_pending;
     snapshot.fear = (FEAR_MAX * amp(6) / 100.0).min(FEAR_MAX - 1.0);
     let mut countdown = 0.0;
@@ -299,7 +292,7 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
                 continue;
             }
             hound.tick += 100;
-            // `_caveAInit`, the per-hound 100 ms task.
+            // The per-hound 100 ms task.
             let p = hound.pers.max(0.0);
             if p % 30.0 == 29.0 && amp(2) > 0.0 {
                 hound.hp = hound.hp_tot.min(hound.hp + hound.hp_tot * amp(2) / 100.0);
@@ -330,12 +323,12 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
             }
         }
 
-        // `_denFrame`, the scene updater.
+        // The scene's per-frame update.
         if flash > 0.0 {
             flash = (flash - 9.0).max(0.0);
         }
         if snapshot.active == 1.0 && snapshot.fear >= FEAR_MAX {
-            // `_denEnd`.
+            // Maximum fear ends the attempt.
             snapshot.active = 0.5;
             if snapshot.score > best {
                 best = snapshot.score;
@@ -348,8 +341,8 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
                 totals.opals += gained;
             }
             reset_in = Some(RESET_MS);
-            // `later(1e3, () => later(2200, …))`: the inner task is created by
-            // a scheduler callback, so it fires one step earlier than 2.2 s.
+            // The next kill waits 1 s, then 2.2 s; the second wait is armed
+            // from inside a timer callback, so it fires one step early.
             player_kill_in = Some(1_000 + 2_190);
             for hound in &mut hounds {
                 if hound.alive {
@@ -384,8 +377,8 @@ pub fn project(config: &Config, kill_every_ms: u64, duration_ms: u64, seed: u64)
             });
             countdown = (snapshot.wave + 200.0) / (5.0 * snapshot.wave + 80.0) * 150.0;
             let hp = config.hound_hp * (amp(3) * amped).max(1.0) * 1.08f64.powf(snapshot.wave);
-            // `createMonster(sim, 'caveA', 1, randomInt(99, 861), 'CaveHound')`:
-            // the x roll, `_init`'s velocity roll, then `_caveHound`'s size roll.
+            // A hound's spawn draws its x (99..=861), then its velocity, then
+            // its size.
             rng.int(99, 861);
             rng.int(-1, 1);
             rng.int(0, 70);

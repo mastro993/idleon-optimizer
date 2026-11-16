@@ -145,8 +145,8 @@ pub fn compare(
     }
 }
 
-/// Maximum-weight rectangular assignment, a port of the upstream Hungarian
-/// solver. The result maps each row to a column index.
+/// Maximum-weight rectangular assignment with the Hungarian method. The result
+/// maps each row to a column index.
 fn hungarian_max(weights: &[Vec<f64>]) -> Vec<usize> {
     let rows = weights.len();
     if rows == 0 {

@@ -165,7 +165,7 @@ fn a_support_outpost_cannot_link_resources() {
 fn the_militia_rate_multiplies_the_talent_and_the_cross_system_factors() {
     let royal = RoyalGuardian::from_save(&save(json!(vec![json!([]); 24]), json!([])), None)
         .expect("the rows read");
-    // No Royal Guardian character: upstream reads the talent at one, and the
+    // No Royal Guardian character: the talent reads at one, and the
     // clearing factors are zero.
     assert_eq!(royal.talent_multi(), 1.0);
     assert_eq!(royal.xtra_clear_killz(), 1.0);
@@ -466,7 +466,7 @@ fn the_two_fixed_first_level_prices_hold_until_their_level() {
     let g = blank_rows();
     let royal = RoyalGuardian::from_save(&save(json!(g), json!([])), None).expect("the rows read");
     // Shelf 46 at its first two levels is a flat 2, and shelf 58 at level 0 is
-    // a flat 3: the source hard-codes both.
+    // a flat 3: the game hard-codes both.
     let cheap = royal
         .armory_unlock_order()
         .iter()

@@ -1,9 +1,9 @@
 //! SN-04: the Floor & Mastery workspace.
 //!
-//! Ported from the floor table and decision cards in `sneaking-calc.html`: the
-//! active door with the saved placement's ETA, the next captive with its untie
-//! ETA, and one row per floor and mastery level with the floor's mastery values
-//! and the loadout's own detection, Jade, EXP, door and untie rates.
+//! The floor table and decision cards: the active door with the saved
+//! placement's ETA, the next captive with its untie ETA, and one row per floor
+//! and mastery level with the floor's mastery values and the loadout's own
+//! detection, Jade, EXP, door and untie rates.
 //!
 //! A floor with no twin is a state, not a blank row: it says so, its detection
 //! is a dash, and its door names the floor that locks it. The rows read the
@@ -444,7 +444,7 @@ fn rate(value: f64) -> String {
     }
 }
 
-/// Hours as the upstream `timeStr` shape, or a dash when there is no estimate.
+/// Hours as a duration, or a dash when there is no estimate.
 fn hours(eta: Option<f64>) -> String {
     match eta {
         Some(hours) if hours > 0.0 && hours.is_finite() => format::duration(hours * 3600.0),

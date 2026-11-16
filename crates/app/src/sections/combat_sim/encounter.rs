@@ -1,14 +1,13 @@
 //! The encounter workspace (CS-03) and its results (CS-05).
 //!
-//! Ported from the Simulator options and the Run/Cancel pair in
-//! `combat-sim-calc.html` (`startRun`, `cancelRun`, `setProgress`) and run
-//! through the shared [`idleon_ui::runner::TaskRunner`], so the progress card,
-//! the cancel action and the stale marker are the ones every other section
-//! uses. The run itself is [`idleon_combat::encounter`]; the results tabs read
-//! the one stored run: the summary, the Killroy practice, the obol fragments,
-//! the kills by monster, the cards and the kills timeline. Tabs with nothing to
-//! show say why, and the mechanics the run cannot model are listed beside the
-//! options instead of being dropped.
+//! The Simulator options and the Run/Cancel pair run through the shared
+//! [`idleon_ui::runner::TaskRunner`], so the progress card, the cancel action
+//! and the stale marker are the ones every other section uses. The run itself
+//! is [`idleon_combat::encounter`]; the results tabs read the one stored run:
+//! the summary, the Killroy practice, the obol fragments, the kills by monster,
+//! the cards and the kills timeline. Tabs with nothing to show say why, and the
+//! mechanics the run cannot model are listed beside the options instead of
+//! being dropped.
 
 use super::ResultsTab;
 use crate::state::AppState;
@@ -30,7 +29,7 @@ use gpui::{
 use idleon_combat::encounter::{self, Outcome};
 use idleon_ui::format;
 
-/// The upstream duration presets, in seconds.
+/// The duration presets, in seconds.
 const DURATIONS: [u64; 8] = [60, 300, 600, 1800, 3600, 21_600, 43_200, 86_400];
 
 /// The encounter pane: options, the run in flight and its result.
@@ -209,7 +208,7 @@ fn options_card(
             CardHeader::new("Encounter")
                 .description(
                     "Normal combat on one map. Every results tab below reads this run; the \
-                     auto-mode player AI is not ported yet, so a run cannot measure character DPS.",
+                     auto-mode player AI is not modelled yet, so a run cannot measure character DPS.",
                 )
                 .action(Badge::new("Normal combat").tone(Tone::Accent)),
         )
@@ -832,7 +831,7 @@ fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     panel.into_any_element()
 }
 
-/// The kills by monster, sorted the way the upstream summary sorts them.
+/// The kills by monster, most kills first and ties by monster id.
 fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     if run.kills_by_type.is_empty() {
         return empty_panel(
@@ -967,8 +966,8 @@ fn unsupported_card(cx: &mut Context<AppState>) -> AnyElement {
         .header(
             CardHeader::new("Not simulated")
                 .description(
-                    "A run reports only what this build models. These parts of the upstream \
-                     simulator are left out on purpose and listed here, not silently ignored.",
+                    "A run reports only what this build models. These parts of the game's \
+                     combat are left out on purpose and listed here, not silently ignored.",
                 )
                 .action(
                     Badge::new(format!("{} items", encounter::unsupported().len()))

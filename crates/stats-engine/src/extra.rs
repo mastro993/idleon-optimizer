@@ -1,8 +1,7 @@
 //! The remaining save-derived providers the damage descriptor and the Max HP,
-//! Max MP and Movement Speed descriptors read, ported from the same upstream
-//! `js/stats/systems/` modules.
+//! Max MP and Movement Speed descriptors read.
 //!
-//! Every method here is one upstream function. A value that needs a table this
+//! Every method here is one game system. A value that needs a table this
 //! build does not carry is recorded in [`Ctx::missing`] rather than guessed.
 
 use crate::systems::Ctx;
@@ -91,7 +90,7 @@ impl Ctx<'_, '_> {
         1.0 + stats / 100.0
     }
 
-    /// `computeCardSetBonus(charIdx, setKey)`: `CSetEq_<char>[IDforCardSETbonus]`.
+    /// The equipped card set's bonus: `CSetEq_<char>[IDforCardSETbonus]`.
     pub(crate) fn card_set_bonus(&self, set: &str) -> f64 {
         let Some(name) = self.data.cards.id_for_set.get(set) else {
             return 0.0;
@@ -102,7 +101,7 @@ impl Ctx<'_, '_> {
             .unwrap_or(0.0)
     }
 
-    /// `computeChipBonus(effectKey, charIdx)`: the summed value of the chips
+    /// A lab chip effect: the summed value of the chips
     /// with that effect equipped in the character's lab slots.
     pub(crate) fn chip_bonus(&self, key: &str) -> f64 {
         let chips = fields::field(self.save(), "Lab")
@@ -153,7 +152,7 @@ impl Ctx<'_, '_> {
         card * ((level - 1.0) * per_level + base)
     }
 
-    /// `computeSaltLick(index)`.
+    /// The Salt Lick upgrade at `index`.
     pub(crate) fn salt_lick(&self, index: usize) -> f64 {
         let purchased = fields::at(self.save(), "SaltLick", &[index]).unwrap_or(0.0);
         if purchased <= 0.0 {
@@ -162,7 +161,7 @@ impl Ctx<'_, '_> {
         purchased * self.data.salt_licks.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `computePetArenaBonus(index)`: one arena tier, as a flag.
+    /// One pet arena tier, as a flag.
     pub(crate) fn pet_arena(&self, index: usize) -> f64 {
         if self.decoder.pet_arena(index) > 0.0 {
             1.0
@@ -171,12 +170,12 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `mainframeBonus(index)`.
+    /// The lab mainframe bonus at `index`.
     pub(crate) fn mainframe(&mut self, index: usize) -> f64 {
         self.decoder.mainframe(index).unwrap_or(0.0)
     }
 
-    /// `computeArtifactBonus(index, character)`.
+    /// The Sailing artifact bonus at `index`.
     pub(crate) fn artifact(&mut self, index: usize) -> f64 {
         let tier = fields::at(self.save(), "Sailing", &[3, index]).unwrap_or(0.0);
         if tier <= 0.0 {
@@ -233,17 +232,17 @@ impl Ctx<'_, '_> {
             .fold(0.0, f64::max)
     }
 
-    /// `computeCompassBonus(index)`.
+    /// The Compass upgrade bonus at `index`.
     pub(crate) fn compass(&self, index: usize) -> f64 {
         self.decoder.compass(index)
     }
 
-    /// `computeExoticBonus(index)`.
+    /// The exotic upgrade bonus at `index`.
     pub(crate) fn exotic(&self, index: usize) -> f64 {
         self.decoder.exotic(index)
     }
 
-    /// `computeShinyBonusS(category)`.
+    /// The Breeding shiny bonus of a category.
     pub(crate) fn shiny(&self, category: u32) -> f64 {
         self.decoder.shiny_bonus(category)
     }
@@ -271,7 +270,7 @@ impl Ctx<'_, '_> {
         base * (1.0 + (self.decoder.grimoire_level(17) + troll) / 100.0)
     }
 
-    /// `computeMonumentROGbonus(t, i)`.
+    /// The monument Ring of Glory bonus at `tier` and `index`.
     pub(crate) fn monument_rog(&mut self, tier: usize, index: usize) -> f64 {
         let slot = 10 * tier + index;
         let level = fields::at(self.save(), "Holes", &[15, slot]).unwrap_or(0.0);
@@ -295,7 +294,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `bonTOT`: one fountain upgrade's bonus at the save's levels.
+    /// One fountain upgrade's bonus at the save's levels.
     pub(crate) fn fountain_bon(&self, water: usize, upgrade: usize) -> f64 {
         let level = fields::at(self.save(), "Holes", &[31, water, upgrade]).unwrap_or(0.0);
         let marble = fields::at(self.save(), "Holes", &[32, water, upgrade]).unwrap_or(0.0);
@@ -310,17 +309,17 @@ impl Ctx<'_, '_> {
         (marble * level * per_level).round()
     }
 
-    /// `jellyRewardBonus(index)`.
+    /// The jelly reward bonus at `index`.
     pub(crate) fn jelly_reward(&self, index: usize) -> f64 {
         self.decoder.jelly(index)
     }
 
-    /// `mineheadBonusQTY(index)`.
+    /// The Minehead bonus at `index`.
     pub(crate) fn minehead_bonus(&self, index: usize) -> f64 {
         self.decoder.minehead_bonus(index)
     }
 
-    /// `coralKidUpgradeEffect(index, level)`.
+    /// The Coral Kid upgrade's effect at `index` and `level`.
     pub(crate) fn coral_kid(&self, index: usize, level: f64) -> f64 {
         let lv = level.max(0.0);
         match index {
@@ -340,7 +339,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `statueBonus(S, index)`: the Royal Guardian outpost's statue value.
+    /// The Royal Guardian outpost's statue value at `index`.
     pub(crate) fn royal_statue(&self, index: usize) -> f64 {
         let level = fields::at(self.save(), "RoyalG", &[0, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -353,7 +352,7 @@ impl Ctx<'_, '_> {
                 + self.data.outpost_cost(index) * (level - 1.0).max(0.0))
     }
 
-    /// `computeDivinityBless(index)`.
+    /// The Divinity god blessing at `index`.
     pub(crate) fn divinity_bless(&self, index: usize) -> f64 {
         let level = fields::at(self.save(), "Divinity", &[28 + index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -372,12 +371,12 @@ impl Ctx<'_, '_> {
         level * base * emp
     }
 
-    /// `computeDivinityMinor(character, style)`.
+    /// The character's Divinity minor link bonus for `style`.
     pub(crate) fn divinity_minor(&self, style: i32) -> f64 {
         idleon_account::divinity::minor_for(self.decoder, self.character, style)
     }
 
-    /// `computeEclipseSkulls()`.
+    /// The Eclipse skulls count.
     pub(crate) fn eclipse_skulls(&mut self) -> f64 {
         let rift = self.rift_level();
         let mut count = 0.0;
@@ -407,7 +406,7 @@ impl Ctx<'_, '_> {
         5.0 * count
     }
 
-    /// `computeKillroyDMG()`.
+    /// The Killroy damage bonus.
     pub(crate) fn killroy_dmg(&mut self) -> f64 {
         let Some(best) = fields::field(self.save(), "KRbest") else {
             return 0.0;
@@ -424,7 +423,7 @@ impl Ctx<'_, '_> {
         total.max(0.0).powf(0.4).floor()
     }
 
-    /// `computeRiftSkillETC(idx)`.
+    /// The Rift skill bonus at `index`.
     pub(crate) fn rift_skill_etc(&mut self, index: usize) -> f64 {
         let ranks = self.skill_ranks();
         let threshold = (index as f64 + 2.0).round();
@@ -478,7 +477,7 @@ impl Ctx<'_, '_> {
         ranks
     }
 
-    /// `computeSummUpgBonus(t)`.
+    /// The Summoning upgrade bonus at `index`.
     pub(crate) fn summ_upg(&mut self, index: usize) -> f64 {
         let level = fields::at(self.save(), "Summon", &[0, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -527,7 +526,7 @@ impl Ctx<'_, '_> {
         self.option(630 + 19) * self.data.cglunko_per_level(19)
     }
 
-    /// `computeStickerDmgMulti()`.
+    /// The sticker damage multiplier.
     pub(crate) fn sticker_dmg(&self) -> f64 {
         let grid = self.decoder.grid_bonus(47);
         if grid < 1.0 {
@@ -545,7 +544,7 @@ impl Ctx<'_, '_> {
         1.0 + grid * stickers / 100.0
     }
 
-    /// `computeAllShimmerBonuses()`.
+    /// The shimmer bonus of every source.
     pub(crate) fn shimmer(&self) -> f64 {
         let tier = fields::at(self.save(), "Sailing", &[3, 31]).unwrap_or(0.0);
         if tier > 0.0 {
@@ -555,7 +554,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `totalGreenSigils()`.
+    /// The number of green sigils.
     pub(crate) fn green_sigils(&self) -> f64 {
         let mut total = 0.0;
         for sigil in 0..24 {
@@ -566,7 +565,7 @@ impl Ctx<'_, '_> {
         total
     }
 
-    /// `computeConstMasteryBonus(1)`: the Rift-gated tower mastery.
+    /// Construction mastery 1: the Rift-gated tower mastery.
     pub(crate) fn const_mastery(&self) -> f64 {
         if self.rift_level() < 40.0 {
             return 0.0;
@@ -577,17 +576,17 @@ impl Ctx<'_, '_> {
         (2.0 * ((total - 750.0) / 10.0).floor()).max(0.0)
     }
 
-    /// `computeFamBonusQTYs(ci)[key]`.
+    /// The class-family bonus at `key`.
     pub(crate) fn family(&mut self, key: usize) -> f64 {
         self.family_bonuses().get(&key).copied().unwrap_or(0.0)
     }
 
-    /// `computeRooBonus(index)`.
+    /// The Roo bonus at `index`.
     pub(crate) fn roo(&self, index: usize) -> f64 {
         self.decoder.roo(index)
     }
 
-    /// `bubbaRoGBonuses(index)`.
+    /// Bubba's Ring of Glory bonus at `index`.
     pub(crate) fn bubba_rog(&mut self, index: usize) -> f64 {
         let mascot = self.decoder.companion(51);
         let megaflesh = |i: f64| -> f64 {
@@ -609,7 +608,7 @@ impl Ctx<'_, '_> {
         ((1.0 + all / 100.0) * (1.0 + mascot) * base * factor).max(0.0)
     }
 
-    /// `farmRankUpgBonus(index)`.
+    /// The Farming rank upgrade bonus at `index`.
     pub(crate) fn farm_rank_upgrade(&mut self, index: usize) -> f64 {
         let level = fields::at(self.save(), "FarmRank", &[2, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -625,7 +624,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `getBuffBonus(id, tab)`: the talent's value on `tab` while the
+    /// A buff talent's value on `tab` while the
     /// character has it among its active buffs (`BuffsActive_{character}`,
     /// rows of `[id, remaining, duration]`), otherwise 0.
     pub(crate) fn buff(&mut self, id: usize, tab: usize) -> f64 {
@@ -648,7 +647,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `weeklyBossData.g`.
+    /// The weekly boss value `g` from the `WeeklyBoss` save field.
     pub(crate) fn weekly_boss(&self) -> f64 {
         idleon_save::json::parsed_field(self.decoder.save(), "WeeklyBoss")
             .and_then(|value| value.get("g").cloned())
@@ -688,7 +687,7 @@ impl Ctx<'_, '_> {
         self.decoder.quest_total()
     }
 
-    /// `computeMSABonus(index)`.
+    /// The MSA bonus at `index`.
     pub(crate) fn msa(&mut self, index: usize) -> f64 {
         // [gate, gate index, multiplier, offset]; gate 0 = superbit, 1 = emporium.
         const CONFIG: [(u8, usize, f64, f64); 11] = [
@@ -724,7 +723,7 @@ impl Ctx<'_, '_> {
     }
 }
 
-/// `deathNoteRank`.
+/// The Death Note rank of a kill count.
 fn death_note_rank(kills: f64, rift: f64) -> f64 {
     if kills < 25_000.0 {
         0.0
@@ -747,7 +746,7 @@ fn death_note_rank(kills: f64, rift: f64) -> f64 {
     }
 }
 
-/// `primaryStatForClass`'s index in [`crate::Stat`].
+/// A class's primary stat, as a [`crate::Stat`].
 pub(crate) fn primary_stat_index(class: usize) -> crate::Stat {
     if class < 1 {
         return crate::Stat::Str;
@@ -850,7 +849,7 @@ impl Ctx<'_, '_> {
 }
 
 impl Ctx<'_, '_> {
-    /// `computeConstMasteryBonus(2)`: the tower-level mastery share.
+    /// Construction mastery 2: the tower-level mastery share.
     fn const_mastery_for(&self, kind: usize) -> f64 {
         if self.rift_level() < 40.0 {
             return 0.0;
@@ -890,7 +889,7 @@ impl Ctx<'_, '_> {
         }
     }
 
-    /// `computeOwnedItemCount(name)`: chest quantity plus refinery storage.
+    /// An owned item's count: chest quantity plus refinery storage.
     fn owned_item_count(&self, name: &str) -> f64 {
         let order = fields::field(self.save(), "ChestOrder")
             .and_then(|value| value.as_array().cloned())
@@ -924,8 +923,8 @@ impl Ctx<'_, '_> {
         total
     }
 
-    /// `computePlayerBuildSpd(character, { noArt32: true })`, the only way
-    /// artifact 8 reads it.
+    /// A character's build speed without artifact 32, the only way artifact 8
+    /// reads it.
     fn player_build_spd(&mut self, character: usize) -> f64 {
         let level = fields::char_field(self.save(), "Lv0", character)
             .and_then(|value| idleon_save::json::index(&value, &[8]).cloned())
@@ -976,7 +975,7 @@ impl Ctx<'_, '_> {
         base * bubble_multi * (1.0 + add / 100.0) * true_multi * talent
     }
 
-    /// `computeArtifactBonus(8)`: the build-speed logarithm.
+    /// Artifact 8: the build-speed logarithm.
     fn artifact_build_speed(&mut self) -> f64 {
         let mut total = 0.0;
         for character in 0..self.characters() {

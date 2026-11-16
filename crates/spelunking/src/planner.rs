@@ -1,12 +1,9 @@
 //! The expedition optimizer: the search scope, the exhaustive configuration
-//! search and the bounded Amber phase search, ported from
-//! `js/stats/systems/w7/spelunk-planner.js`.
+//! search and the bounded Amber phase search.
 //!
-//! Upstream drives both searches as generators: it yields expedition requests
-//! and receives the runs the workers simulated. This port runs the same search
-//! synchronously with [`simulate`], reporting the upstream progress fractions,
-//! and returns `None` when the reporter asks to stop. The seeds, the candidate
-//! order and the summary arithmetic are the upstream ones, so the same inputs,
+//! Both searches run synchronously with [`simulate`], reporting progress
+//! fractions, and return `None` when the reporter asks to stop. The seeds, the
+//! candidate order and the summary arithmetic are fixed, so the same inputs,
 //! scope and seed reproduce the recommendation and every row behind it.
 
 use super::sim::{RunOptions, RunResult};
@@ -15,7 +12,7 @@ use idleon_common::{Control, Progress};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-/// The objectives the optimizer compares, in the upstream menu order.
+/// The objectives the optimizer compares, in menu order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Objective {
@@ -173,8 +170,8 @@ impl Enabled {
     }
 }
 
-/// A requested search scope; every field falls back to the full upstream
-/// default for the captured configuration.
+/// A requested search scope; every field falls back to the full default for
+/// the captured configuration.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct ScopeRequest {
@@ -190,7 +187,7 @@ pub struct ScopeRequest {
     pub enabled: Option<Enabled>,
 }
 
-/// The search scope the upstream normaliser accepts.
+/// The search scope the normaliser accepts.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchScope {
@@ -212,7 +209,7 @@ impl SearchScope {
     }
 }
 
-/// The upstream `normalizeSpelunkSearchScope`.
+/// Fill a requested search scope's defaults and reject an invalid one.
 pub fn normalize_scope(
     input: &Inputs,
     baseline: &Config,
@@ -407,7 +404,7 @@ fn mean(values: impl IntoIterator<Item = f64>) -> f64 {
     values.iter().sum::<f64>() / values.len() as f64
 }
 
-/// The upstream seed derivation.
+/// The seed one candidate's runs draw from.
 fn seed_of(seed: u32, index: usize, final_trials: bool) -> u32 {
     seed.wrapping_add((index as u32 + 1).wrapping_mul(0x9e37_79b9))
         .wrapping_add(if final_trials { 0x4f1b_bcdc } else { 0 })
@@ -894,7 +891,7 @@ pub struct Row {
     pub matching_strategies: usize,
 }
 
-/// The upstream search details the result explains.
+/// The Amber search details the result explains.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AmberSearchInfo {
     pub from: usize,
@@ -937,7 +934,7 @@ pub struct SearchResult {
     pub amber_search: Option<AmberSearchInfo>,
 }
 
-/// The upstream `createSpelunkSearch` options.
+/// The configuration search options.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct SearchOptions {
@@ -960,7 +957,7 @@ impl Default for SearchOptions {
     }
 }
 
-/// The upstream `createSpelunkAmberSearch` options.
+/// The Amber phase search options.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AmberSearchOptions {
@@ -1024,8 +1021,7 @@ fn measure(
     })
 }
 
-/// The upstream `createSpelunkSearch`: screen every allowed configuration and
-/// compare the finalists on fresh seeds.
+/// Screen every allowed configuration and compare the finalists on fresh seeds.
 pub fn search(
     input: &Inputs,
     requested: &Requested,
@@ -1542,8 +1538,8 @@ fn belts_into(
         return;
     }
     // An empty slot is legal only while the unfilled slots can still hold every
-    // remaining elixir. Upstream's enumerator rejects an underfilled pool; this
-    // keeps the exhaustive count and the enumeration in agreement.
+    // remaining elixir, which keeps the exhaustive count and the enumeration in
+    // agreement.
     if slots - belt.len() > remaining {
         belt.push(-1);
         belts_into(ids, slots, dupes, remaining, belt, counts, out);
@@ -1657,7 +1653,7 @@ fn choose(n: usize, k: usize) -> u128 {
     value
 }
 
-/// The configuration count the upstream page prints before a search.
+/// The configuration count shown before a search.
 pub fn search_space(
     input: &Inputs,
     requested: &Requested,
@@ -1668,7 +1664,7 @@ pub fn search_space(
     Ok((configuration_count(input, &base, &scope), scope))
 }
 
-/// The upstream `spelunkRunMetric`, public for callers that rank stored runs.
+/// The objective's score for a run, public for callers that rank stored runs.
 pub fn metric(run: &RunResult, input: &Inputs, objective: Objective) -> f64 {
     run_metric(run, input, objective)
 }
@@ -2048,8 +2044,8 @@ fn amber_rope_uncertain(row: &Summary, minimum: usize) -> bool {
     center - radius <= target && center + radius >= target
 }
 
-/// The upstream `createSpelunkAmberSearch`: a bounded diverse phase search with
-/// two local-refinement rounds and a fresh-seed adaptive comparison.
+/// A bounded diverse phase search with two local-refinement rounds and a
+/// fresh-seed adaptive comparison.
 pub fn amber_search(
     input: &Inputs,
     requested: &Requested,

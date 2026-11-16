@@ -373,14 +373,14 @@ fn the_shadow_verdict_reaches_all_three_states() {
 
 #[test]
 fn the_shadow_verdict_never_guesses() {
-    // The flag the page reads is kept alongside the answer.
+    // The flag that was read is kept alongside the answer.
     assert_eq!(shadow(Some(opt_lacc(json!(2.0)))).flag, Some(2.0));
     assert_eq!(
         shadow(Some(opt_lacc(json!(-3.0)))).verdict(),
         ShadowVerdict::Yes,
         "every nonzero finite flag is a yes"
     );
-    // The page accepts a numeric string the way `Number(value)` does.
+    // A numeric string counts as its number.
     assert_eq!(
         shadow(Some(opt_lacc(json!("3")))).verdict(),
         ShadowVerdict::Yes
@@ -392,7 +392,7 @@ fn the_shadow_verdict_never_guesses() {
     assert_eq!(
         shadow(Some(stringified(&json!({ "26": 1 })))).verdict(),
         ShadowVerdict::Yes,
-        "the upstream lookup also reads an object key"
+        "the lookup also reads an object key"
     );
     for unreadable in [
         json!(null),

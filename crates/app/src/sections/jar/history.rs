@@ -1,10 +1,8 @@
 //! JR-04: the Enchant History tab.
 //!
-//! Ported from `_renderEnchantHistory` in `jar-calc.html`. The page draws a
-//! sparkline behind each tile and keeps the snapshots in `localStorage`; here
-//! the snapshots are part of the project document and the spread reads as a
-//! table, which is the same information the sparkline's endpoint gives without
-//! a canvas the section cannot describe to assistive technology.
+//! The snapshots are part of the project document and the spread reads as a
+//! table rather than a sparkline, so the section can describe it to assistive
+//! technology.
 
 use crate::sections::jar::metric;
 use crate::session::time_label;
@@ -19,7 +17,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
 use idleon_jar::{COLLECTIBLES, Jar, collectible_name};
 
-/// How many snapshots the recent table lists, the page's own tail.
+/// How many snapshots the recent table lists.
 const RECENT: usize = 20;
 
 /// The history pane: its count, the current spread, the recent snapshots and

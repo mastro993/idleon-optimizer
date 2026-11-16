@@ -1,10 +1,9 @@
 //! The offering fit: what one God Rank offering costs and what a success is
 //! expected to spend, with the save fields the model had to assume.
 //!
-//! The three figures are the upstream `Offering fit` card's
-//! (`totalSuccessChancePerAttempt`, `expectedSpendForOneSuccess` and the tier in
-//! use); the caption spells out how the tier odds, the Y4 free chance and the
-//! planning confidence combine.
+//! The three figures are the success chance per attempt, the expected spend for
+//! one success and the tier in use; the caption spells out how the tier odds,
+//! the Y4 free chance and the planning confidence combine.
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{KpiCard, Statistic};

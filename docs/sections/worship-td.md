@@ -8,25 +8,18 @@
 - Status: `partial`
 - Depends on: `foundation`
 
-Port tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.
+Implement tower layouts, live wave simulation, replays, plan/model tabs and the strategy optimizer.
 
 ## Current build
 
-- The live simulator ports `createWorshipTdRun`: a seeded mulberry32 stream, 100 ms ticks, wave countdowns, the tower state machine, mob modifiers, projectiles and the totem. The Glublin fixture is parity-checked against the upstream view tick for tick.
-- Tower placement spends TD points through `validatePlacement`; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.
-- The Plan tab ports `heuristicPlan`, the Glublin 230 guide preset and `planPlacementLayouts`: plans place towers in order through `validatePlacement`, each phase sells and rebuilds, and the pane warns about locked types, refused placements and neutral roots. A plan simulation runs the same `Run` engine off the UI thread with weight-per-point upgrades, phase conditions and the plan's skip policy; its final towers carry each tower's damage share. The Model pane lists the modelling assumptions, missing inputs and the exact save values the run reads.
+- The live simulator runs a seeded mulberry32 stream, 100 ms ticks, wave countdowns, the tower state machine, mob modifiers, projectiles and the totem.
+- Tower placement spends TD points through placement validation; a click on a standing tower upgrades it one level (all-A trait recipe this build), and selling refunds 60%.
+- The Plan tab implements the heuristic plan, the Glublin 230 guide preset and placement layouts: plans place towers in order through placement validation, each phase sells and rebuilds, and the pane warns about locked types, refused placements and neutral roots. A plan simulation runs the same `Run` engine off the UI thread with weight-per-point upgrades, phase conditions and the plan's skip policy; its final towers carry each tower's damage share. The Model pane lists the modelling assumptions, missing inputs and the exact save values the run reads.
 - Ranges and every HUD value read the same `RunView`, so the panel cannot disagree with the field. Restart rebuilds the run from the same trial and seed.
-- Every run records a replay at one frame per second. The recorder follows the upstream rules: a tower set per layout change, 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.
+- Every run records a replay at one frame per second. The recorder keeps a tower set per layout change, a 4000-frame cap, and rate halving; scrub and speed read those frames through the same `RunView`.
 - Save inputs decoded: `Tower` trial levels, `TotemInfo` best waves, `Dream[7]`, `SaltLick[6]`, Menagerie boost 15 and unlock 18, and super bits 6/15 for totem HP.
-- The Optimizer pane ports `optimizeWorshipTd` in free mode: a seeded diverse beam over plan edits (tower, group, type, weight, traits, level cap, phase), direct relocations of the lowest-damage towers, and whole-type trait recipes. Candidates are deduplicated by their exact plan, several families are refined in parallel, and the finalists, the coverage heuristic and the guide presets are compared on shared fresh seeds. The pane shows the recommendation, the baseline comparison and the recommended towers, and adopts the winner into the Plan pane. The search runs off the UI thread through the shared task runner, so it reports progress and can be cancelled; mode, runs per plan, seed and stop wave are its inputs.
+- The Optimizer pane runs the strategy optimizer in free mode: a seeded diverse beam over plan edits (tower, group, type, weight, traits, level cap, phase), direct relocations of the lowest-damage towers, and whole-type trait recipes. Candidates are deduplicated by their exact plan, several families are refined in parallel, and the finalists, the coverage heuristic and the guide presets are compared on shared fresh seeds. The pane shows the recommendation, the baseline comparison and the recommended towers, and adopts the winner into the Plan pane. The search runs off the UI thread through the shared task runner, so it reports progress and can be cancelled; mode, runs per plan, seed and stop wave are its inputs.
 - Neutral this build: start points beyond the base 5, meals/Meritocracy kill points, boss-hold roots, hold-template layout search and the souls-per-hour objective.
-
-## Upstream sources
-
-- worship-td-calc.html
-- js/stats/systems/w3/worship-td.js
-- js/ui/worship-td*.js
-- assets/worship-td
 
 ## UI
 
@@ -60,7 +53,7 @@ assets/worship-td towers, projectiles and map art.
 
 Run waves with tower placement, ranges, HUD and restart controls.
 
-Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline, FND-12 Background task runner with progress and cancel
+Depends on: FND-03 Shared save JSON import, FND-06 Game asset pipeline, FND-12 Background task runner with progress and cancel
 
 Acceptance:
 
@@ -106,7 +99,7 @@ Acceptance:
 
 ## Verification
 
-- Wave fixture.
+- Wave simulation tests.
 - Replay determinism.
 - Optimizer invariant.
 - Harness.

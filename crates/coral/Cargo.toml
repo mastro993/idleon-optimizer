@@ -12,4 +12,3 @@ serde = { workspace = true }
 
 [dev-dependencies]
 idleon-import = { workspace = true }
-serde_json = { workspace = true }

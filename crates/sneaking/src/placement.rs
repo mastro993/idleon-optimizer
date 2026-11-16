@@ -1,10 +1,8 @@
 //! Where each twin stands and what its next action does.
 //!
-//! Ported from `sneakingActionMode`, `captiveTargetForFloor`, `doorHP` and
-//! `doorState` in `js/stats/systems/w6/sneaking-math.js`: an untied-less twin
-//! feeds its captive, floor zero trains, a Nunchaku hits an unfinished door, a
-//! Kunai frees the captive waiting on the floor, and any other weapon does the
-//! floor's Jade action.
+//! An untied-less twin feeds its captive, floor zero trains, a Nunchaku hits an
+//! unfinished door, a Kunai frees the captive waiting on the floor, and any other
+//! weapon does the floor's Jade action.
 
 use super::data;
 use super::{FLOOR_COUNT, Job, Loadout};
@@ -34,8 +32,7 @@ impl Loadout {
             .map(|floor| floor.max(0.0) as usize)
     }
 
-    /// `captiveTargetForFloor`: the first untied-less twin whose captive waits
-    /// on `floor`, or `None`.
+    /// The first untied-less twin whose captive waits on `floor`, or `None`.
     pub(super) fn captive_target(&self, floor: usize) -> Option<usize> {
         self.twins
             .iter()
@@ -44,8 +41,7 @@ impl Loadout {
             .map(|twin| twin.index)
     }
 
-    /// The floor whose door is unfinished, if any: upstream `doorState`'s
-    /// `activeFloor` for the saved mastery.
+    /// The floor whose door is unfinished at the saved mastery, if any.
     fn active_door_floor(&self) -> Option<usize> {
         (1..FLOOR_COUNT).find(|floor| {
             let max = door_hp(*floor, self.mastery);
@@ -54,7 +50,6 @@ impl Loadout {
         })
     }
 
-    /// `doorHP(floor, mastery)`: the door's maximum HP at a mastery level.
     /// Whether this floor's door still needs hits.
     fn door_active(&self, floor: usize) -> bool {
         if floor == 0 || floor >= FLOOR_COUNT {
@@ -66,7 +61,7 @@ impl Loadout {
         self.mastery >= self.mastery_max && self.active_door_floor() == Some(floor)
     }
 
-    /// `sneakingActionMode`: what the twin's next action does.
+    /// What the twin's next action does.
     pub fn job(&self, twin: usize) -> Job {
         let Some(entry) = self.twins.get(twin) else {
             return Job::Jade;
@@ -85,7 +80,7 @@ impl Loadout {
     }
 }
 
-/// `doorHP`: the door's maximum HP at a mastery level.
+/// The door's maximum HP at a mastery level.
 pub fn door_hp(floor: usize, mastery: u32) -> f64 {
     let raw = data::data().info.door_hp.get(floor).copied().unwrap_or(0.0);
     if mastery == 0 {

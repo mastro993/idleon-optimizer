@@ -1,11 +1,10 @@
 //! The bounded deterministic beam search behind the planner and its projection.
 //!
-//! Ports `optimizeCoralGodRank` from
-//! `js/stats/systems/w5/coral-god-rank.js`. The search starts from the save's
-//! Coral Kid levels, expands every unlocked upgrade and one God Rank offering
-//! per state, keeps only candidates that strictly improve the goal, dedupes the
-//! states that share a signature, sorts by the goal and keeps the best beam.
-//! Every choice is a total order, so the same inputs always produce the plan.
+//! The search starts from the save's Coral Kid levels, expands every unlocked
+//! upgrade and one God Rank offering per state, keeps only candidates that
+//! strictly improve the goal, dedupes the states that share a signature, sorts
+//! by the goal and keeps the best beam. Every choice is a total order, so the
+//! same inputs always produce the plan.
 
 use super::{CORAL_KID_UNLOCK_LEVELS, Goal, Inputs, Metrics, offer, upgrade_cost};
 use idleon_common::Progress;
@@ -39,7 +38,7 @@ impl Projection {
     }
 }
 
-/// The six metrics the projection table shows, in upstream order.
+/// The six metrics the projection table shows, in display order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProjectionKey {
     DivinityPoints,
@@ -263,7 +262,7 @@ fn objective(goal: Goal, metrics: &Metrics, baseline: &Metrics) -> f64 {
     total / ProjectionKey::ALL.len() as f64
 }
 
-/// `coralStateDominates`: one state is as good and no more expensive.
+/// One state is as good and no more expensive.
 fn dominates(a: &State, b: &State, score_a: f64, score_b: f64) -> bool {
     if a.signature != b.signature {
         return false;

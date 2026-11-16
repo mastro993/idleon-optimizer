@@ -1,8 +1,8 @@
 //! The forecast card: each week's three encounters and who can enter them.
 //!
-//! Ports the forecast half of `js/ui/killroy.js`: the week rows, the family and
-//! room of every encounter, the save's records, the class eligibility and the
-//! character selector that queues an encounter for the run.
+//! The week rows, the family and room of every encounter, the save's records,
+//! the class eligibility and the character selector that queues an encounter
+//! for the run.
 
 use crate::sections::killroy::Mode;
 use crate::state::AppState;
@@ -221,7 +221,7 @@ fn encounter_cell(
         .iter()
         .filter_map(|character| character.encounters.get(slot))
         .collect();
-    // Upstream draws a room for every slot not known to be locked, so an
+    // A room is drawn for every slot not known to be locked, so an
     // unknown unlock still shows its map and record.
     let offered: Vec<&idleon_killroy::Encounter> = entries
         .iter()

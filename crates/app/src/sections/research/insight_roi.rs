@@ -1,11 +1,10 @@
 //! Insight ROI: what one observation's next insight levels buy.
 //!
-//! Ported from the upstream `Insight ROI` tab (`js/analysis.js`,
-//! `js/renderers/render-analysis.js`). One row per usable observation reports
-//! how long its grind takes, the research EXP it gives up, the permanent
-//! EXP/hour the new insight level adds and how long that gain needs to earn the
-//! loss back. The analysis runs through the shared task runner, and the baseline
-//! rate reads through the shared formula tree.
+//! One row per usable observation reports how long its grind takes, the
+//! research EXP it gives up, the permanent EXP/hour the new insight level adds
+//! and how long that gain needs to earn the loss back. The analysis runs
+//! through the shared task runner, and the baseline rate reads through the
+//! shared formula tree.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, SegmentedControl};
@@ -84,7 +83,7 @@ fn effort_id(effort: Effort) -> &'static str {
     }
 }
 
-/// The monocle count and the baseline rate, in the upstream summary's order.
+/// The monocle count and the baseline rate, in the summary's order.
 fn monocle_line(result: &Outcome, colors: &ely_gpui_component::theme::Palette) -> AnyElement {
     div()
         .id("insight-monocles")
@@ -323,7 +322,7 @@ fn baseline_card(
         .into_any_element()
 }
 
-/// The upstream triage buckets: rate gain per hour of break-even time.
+/// The triage buckets: rate gain per hour of break-even time.
 #[derive(Clone, Copy, Debug, Default)]
 struct Triage {
     high: usize,
@@ -452,7 +451,7 @@ fn table_card(
         .into_any_element()
 }
 
-/// Whether the hide-free filter keeps the row: the upstream filter drops rows
+/// Whether the hide-free filter keeps the row: the filter drops rows
 /// whose one-level grind loses no EXP.
 fn keeps(row: &Row, hide_free: bool) -> bool {
     if !hide_free {
@@ -486,7 +485,7 @@ fn scenario_row(
     );
     let recoup = format::projection(scenario.recoup_hours);
     let break_even = format::projection(scenario.break_even_hours);
-    // The upstream text: a gain with no break-even to pay is forever ahead.
+    // A gain with no break-even to pay is forever ahead.
     let efficiency = if scenario.rate_gain <= 0.0 {
         "No gain".to_string()
     } else if scenario.break_even_hours == 0.0 {
@@ -638,7 +637,7 @@ mod tests {
     }
 
     #[test]
-    fn the_triage_buckets_follow_the_upstream_thresholds() {
+    fn the_triage_buckets_follow_their_thresholds() {
         let result = Outcome {
             monocles: 2,
             base_rate: 1.0,

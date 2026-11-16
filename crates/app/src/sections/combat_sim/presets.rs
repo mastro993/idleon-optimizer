@@ -1,10 +1,8 @@
 //! The named loadouts: the bar that saves, applies and deletes presets.
 //!
-//! Upstream keeps named setups in browser storage (`js/ui/combat-sim-loadouts.js`,
-//! `combat-sim-loadout:<ci>:<name>`). This build keeps them in the project JSON
-//! instead, so an export carries the loadouts and an import restores them. A
-//! preset holds item keys and talent levels; applying one is the same edit as
-//! equipping each slot by hand.
+//! The named setups live in the project JSON, so an export carries the loadouts
+//! and an import restores them. A preset holds item keys and talent levels;
+//! applying one is the same edit as equipping each slot by hand.
 
 use crate::sections::presets;
 use crate::state::AppState;
@@ -25,8 +23,7 @@ pub(crate) struct Presets {
 
 impl Presets {
     /// Save `loadout` under `name`, replacing a loadout of the same name for
-    /// the same character, the way upstream's storage key does. Returns the
-    /// status line the window shows.
+    /// the same character. Returns the status line the window shows.
     pub(crate) fn store(&mut self, loadout: &Loadout, name: &str) -> Result<String, String> {
         let name = presets::clean_name(name);
         if name.is_empty() {

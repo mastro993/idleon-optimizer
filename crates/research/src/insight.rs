@@ -1,8 +1,7 @@
 //! Insight ROI: what one observation's next insight levels are worth.
 //!
-//! Ported from `computeInsightROI` in the upstream `js/analysis.js` and
-//! `buildConcentratedLayout` in `js/optimizers/monos.js`. Every row grinds one
-//! observation by moving the monocles onto it, then asks what the level buys:
+//! Every row grinds one observation by moving the monocles onto it, then asks
+//! what the level buys:
 //!
 //! - `grind_hours`: how long the concentrated layout needs for the level;
 //! - `total_exp_lost`: the research EXP/hour the grind gives up, times those
@@ -46,7 +45,7 @@ pub struct Scenario {
 }
 
 /// One observation's row: its level, the layouts the grind uses and both
-/// scenarios upstream shows.
+/// scenarios the table shows.
 #[derive(Clone, Debug)]
 pub struct Row {
     pub obs: usize,
@@ -91,7 +90,7 @@ impl Outcome {
     }
 }
 
-/// The upstream sort modes for the table.
+/// The sort modes for the table.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Sort {
@@ -132,7 +131,7 @@ impl Sort {
         }
     }
 
-    /// The upstream comparator, read against each row's one-level scenario.
+    /// The comparator, read against each row's one-level scenario.
     fn compare(self, left: &Row, right: &Row) -> std::cmp::Ordering {
         let left = &left.scenarios[0];
         let right = &right.scenarios[0];
@@ -243,7 +242,7 @@ fn row(
     // The grind layout: the monocles moved onto this observation.
     let grind_mags = concentrated::build(sim, ctx, base_mags, obs, &current);
     // Shapes that pay insight instead of EXP, blended with research value so the
-    // grind does not give up more EXP than it has to (upstream 70/30 split).
+    // grind does not give up more EXP than it has to (a 70/30 split).
     let insight_values = insight_cell_values(sim, ctx, &grind_mags, obs);
     let insight_overlay = insight_shapes(sim, ctx, &grind_mags, &insight_values, research_values);
     let grind_mags_shaped = concentrated::build(sim, ctx, base_mags, obs, &insight_overlay);
@@ -302,7 +301,7 @@ fn row(
     }
 }
 
-/// The rates for one grind scenario, ported from `evalLayout`.
+/// The rates for one grind scenario.
 #[allow(clippy::too_many_arguments)]
 fn evaluate(
     sim: &Simulation,
@@ -331,8 +330,8 @@ fn evaluate(
     }
     let grind_rate = rate(sim, ctx, grind_mags, overlay);
     let exp_lost_per_hour = (base_rate - grind_rate).max(0.0);
-    // A layout that loses nothing loses nothing however long it grinds. Upstream
-    // multiplies anyway, which yields NaN for an endless free grind.
+    // A layout that loses nothing loses nothing however long it grinds;
+    // multiplying anyway would yield NaN for an endless free grind.
     let total_exp_lost = if exp_lost_per_hour > 0.0 {
         exp_lost_per_hour * grind_hours
     } else {
@@ -364,7 +363,7 @@ fn evaluate(
 }
 
 /// The layout the observation is left with after the grind: magnifiers and
-/// shapes re-optimized for its new insight level, as upstream `optimizePostGrind`.
+/// shapes re-optimized for its new insight level.
 fn after_layout(
     sim: &Simulation,
     ctx: &SimContext,
@@ -383,7 +382,7 @@ fn after_layout(
     }
 }
 
-/// EXP/hour as `simTotalExpWith` reads it: the layout, not the saved state.
+/// EXP/hour as the simulator reads it: the layout, not the saved state.
 fn rate(sim: &Simulation, ctx: &SimContext, mags: &[Mag], overlay: &[i32]) -> f64 {
     let trial = layout(sim, mags, overlay);
     sim::exp_rate(&trial, ctx).total
@@ -406,29 +405,15 @@ fn layout(sim: &Simulation, mags: &[Mag], overlay: &[i32]) -> Simulation {
     }
 }
 
-/// The layouts that move every monocle onto one observation, as upstream
-/// `buildConcentratedLayout` does.
-///
-/// Public so the fixture test can compare the layout the oracle built.
-pub fn concentrated_layout(
-    sim: &Simulation,
-    ctx: &SimContext,
-    base: &[Mag],
-    target: usize,
-    overlay: &[i32],
-) -> Vec<Mag> {
-    concentrated::build(sim, ctx, base, target, overlay)
-}
-
 /// EXP the layout earns from observations alone, before every multiplier.
-/// Upstream `evalMagScoreWith`, which ranks evicted magnifiers by EXP.
+/// The score evicted magnifiers are ranked by.
 fn observation_score(sim: &Simulation, ctx: &SimContext, mags: &[Mag], overlay: &[i32]) -> f64 {
     let trial = layout(sim, mags, overlay);
     sim::exp_rate(&trial, ctx).obs_base
 }
 
 /// Each live cell's contribution to one observation's insight rate, at the 25%
-/// baseline shape bonus (upstream `computeInsightCellValues`).
+/// baseline shape bonus.
 fn insight_cell_values(sim: &Simulation, ctx: &SimContext, mags: &[Mag], obs: usize) -> Vec<f64> {
     let cells = game().cells();
     let mut bare = vec![-1; cells];
@@ -477,9 +462,9 @@ fn insight_shapes(
 mod concentrated {
     use super::*;
 
-    /// Port of `buildConcentratedLayout`: monocles onto the target up to its
-    /// cap, evicted magnifiers onto the next best slot, then the kaleidoscopes
-    /// one move at a time while that costs less EXP per insight.
+    /// Monocles onto the target up to its cap, evicted magnifiers onto the
+    /// next best slot, then the kaleidoscopes one move at a time while that
+    /// costs less EXP per insight.
     pub(super) fn build(
         sim: &Simulation,
         ctx: &SimContext,

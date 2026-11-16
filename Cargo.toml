@@ -38,8 +38,6 @@ serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 rayon = "1"
 jiff = "0.2"
 directories = "6"
-base64 = "0.22"
-flate2 = "1"
 
 idleon-common = { path = "crates/common" }
 idleon-save = { path = "crates/save" }

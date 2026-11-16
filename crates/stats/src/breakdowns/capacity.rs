@@ -1,10 +1,9 @@
-//! Carry capacity, ported from `js/stats/defs/carry-capacity.js` and
-//! `js/stats/systems/common/carry-capacity.js`.
+//! Carry capacity.
 //!
-//! `computeMaxCapacity` reads the saved row, the account flat sources, the
+//! The maximum capacity reads the saved row, the account flat sources, the
 //! category and all-carry stamps, the gem-shop multiplier, the material talent
 //! and the common multiplier chain. Every contributor whose formula this build
-//! does not port is named in the row's partial reason instead of being guessed;
+//! does not model is named in the row's partial reason instead of being guessed;
 //! the value is the product of exactly the terms the tree lists.
 
 use super::{Inputs, Resolution};
@@ -14,10 +13,10 @@ use idleon_save::{Save, at, number, row_values};
 use idleon_stats_data::{self as data, StampRow};
 use serde_json::Value;
 
-/// The hard cap `computeMaxCapacity` applies after flooring.
+/// The hard cap the maximum capacity applies after flooring.
 const HARD_CAP: f64 = 2_050_000_000.0;
 
-/// The eight carry-capacity descriptors, in the upstream `CAPACITY_ROWS` order.
+/// The eight carry-capacity descriptors, in row order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CapacityKind {
     Mining,
@@ -64,12 +63,12 @@ impl CapacityKind {
         Self::ALL.get(index).copied()
     }
 
-    /// The upstream descriptor id.
+    /// The descriptor id.
     pub fn id(self) -> String {
         format!("carry-capacity-{}", Self::IDS[self.index()])
     }
 
-    /// The upstream descriptor name.
+    /// The descriptor name.
     pub fn name(self) -> &'static str {
         match self {
             CapacityKind::Mining => "Mining Carry Capacity",
@@ -104,7 +103,7 @@ impl CapacityKind {
         }
     }
 
-    /// The stamp group upstream's `TYPE_CONFIG` names, when the row has one.
+    /// The row's carry stamp group, when it has one.
     fn stamp(self) -> Option<&'static str> {
         match self {
             CapacityKind::Mining => Some("MinCap"),
@@ -187,7 +186,7 @@ fn capacity(inputs: &Inputs<'_>, kind: CapacityKind) -> Resolution {
             ValueFormat::Count.format(saved_base),
             ValueFormat::Count.format(account_flat)
         ))
-        .with_source("js/stats/systems/common/carry-capacity.js · computeMaxCapacity")
+        .with_source("Max carry capacity")
         .with_children([
             FormulaNode::leaf("Saved bag capacity", saved_base, ValueFormat::Count)
                 .with_source(format!("{key} · {}", kind.field())),
@@ -278,7 +277,7 @@ fn capacity(inputs: &Inputs<'_>, kind: CapacityKind) -> Resolution {
     }
 }
 
-/// The factors `capacityFromFactors` multiplies.
+/// The factors the capacity multiplies.
 struct Factors {
     category_stamp: f64,
     gem_purchases: f64,
@@ -287,7 +286,7 @@ struct Factors {
     common_multiplier: f64,
 }
 
-/// `capacityFromFactors`: the base and flat sources scaled by every factor.
+/// The base and flat sources scaled by every factor.
 fn capacity_from_factors(base_capacity: f64, factors: &Factors) -> f64 {
     let raw = base_capacity.max(0.0)
         * (1.0 + factors.category_stamp / 100.0)
@@ -298,7 +297,7 @@ fn capacity_from_factors(base_capacity: f64, factors: &Factors) -> f64 {
     raw.min(HARD_CAP).floor()
 }
 
-/// The unmodelled upstream systems a row met, named once each.
+/// The unmodelled systems a row met, named once each.
 #[derive(Default)]
 struct Partial {
     reasons: Vec<&'static str>,
@@ -340,7 +339,7 @@ struct StampTotal {
     children: Vec<FormulaNode>,
 }
 
-/// `computeCarryStampBonus` for one stamp group.
+/// The carry stamp bonus of one stamp group.
 fn stamps(save: &Save, character: usize, group: &str, partial: &mut Partial) -> StampTotal {
     let table = data::capacity();
     let levels = save.get("StampLv");
@@ -393,14 +392,14 @@ fn stamps(save: &Save, character: usize, group: &str, partial: &mut Partial) -> 
     total
 }
 
-/// The stamp key upstream's `stampKey` builds: category letter plus index.
+/// The stamp key: category letter plus index.
 fn stamp_key(stamp: &StampRow) -> String {
     format!("{}{}", number_letter(stamp.cat).unwrap_or('_'), stamp.idx)
 }
 
-/// `computeStampDoublerSources`: the exalted multiplier behind one stamp.
+/// The exalted multiplier behind one stamp.
 ///
-/// Upstream adds ten account sources to a 100% base. The four this build does
+/// Ten account sources add to a 100% base. The four this build does
 /// not decode are named in the partial reason; the rest are plain save reads.
 fn stamp_doubler(save: &Save) -> f64 {
     let table = data::capacity();
@@ -442,7 +441,7 @@ fn stamp_doubler(save: &Save) -> f64 {
     total
 }
 
-/// `computePaletteBonus(23)`: the palette's own level and its multipliers.
+/// Palette bonus 23: the palette's own level and its multipliers.
 fn palette_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
     let level = nested_number(save, "Spelunk", &[9, index]).unwrap_or(0.0);
     if level <= 0.0 {
@@ -465,14 +464,14 @@ fn palette_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
     raw * legend * black_star * lore
 }
 
-/// `legendPTSbonus(idx)`: the points invested in a Legend talent.
+/// The points invested in a Legend talent.
 fn legend_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
     let points = nested_number(save, "Spelunk", &[18, index]).unwrap_or(0.0);
     let per_point = table.legend_per_point.get(index).copied().unwrap_or(0.0);
     (points * per_point).round().max(0.0)
 }
 
-/// `computeShinyBonusS(cat)`: the Breeding shiny levels that raise a category.
+/// The Breeding shiny levels that raise a category.
 pub(crate) fn shiny_bonus(save: &Save, category: u64) -> f64 {
     let table = data::capacity();
     let unlock = save
@@ -514,7 +513,7 @@ pub(crate) fn shiny_bonus(save: &Save, category: u64) -> f64 {
     total
 }
 
-/// `shinyPetLevel`: the level a shiny EXP value reaches on the game's curve.
+/// The level a shiny EXP value reaches on the game's curve.
 pub(crate) fn shiny_pet_level(exp: f64, thresholds: usize) -> f64 {
     let mut level = 1.0;
     for step in 0..thresholds {
@@ -535,7 +534,7 @@ pub(crate) fn shiny_pet_worlds() -> Vec<usize> {
         .collect()
 }
 
-/// `rogBonusQTY(idx, uniqueSushi)`: the Ring of Glory bonus once its tier is met.
+/// The Ring of Glory bonus once its unique-sushi tier is met.
 fn rog_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
     let sushi = save.get("Sushi");
     let unique = sushi
@@ -559,13 +558,13 @@ fn rog_bonus(save: &Save, index: usize, table: &data::CapacityData) -> f64 {
     }
 }
 
-/// `eventShopOwned(t, OptLacc[311])`: `N2L` membership in the event shop string.
+/// Event shop ownership: `N2L` membership in the `OptLacc[311]` string.
 fn event_shop_owned(save: &Save, index: usize) -> bool {
     let flags = row_text(save, "OptLacc", 311);
     number_letter(index).is_some_and(|letter| flags.contains(letter))
 }
 
-/// `_stampOverLevel`: over-level stamps scale by the skill level behind them.
+/// Over-level stamps scale by the skill level behind them.
 fn stamp_over_level(save: &Save, character: usize, stamp: &StampRow, raw_level: f64) -> f64 {
     if stamp.skill_idx <= 0 || emporium_owned(save, 5) {
         return raw_level;
@@ -584,7 +583,7 @@ fn stamp_over_level(save: &Save, character: usize, stamp: &StampRow, raw_level: 
     adjusted.min(raw_level)
 }
 
-/// `emporiumBonus(t, Ninja[102][9])`: `N2L` membership.
+/// Emporium ownership: `N2L` membership in `Ninja[102][9]`.
 fn emporium_owned(save: &Save, index: usize) -> bool {
     let flags = save
         .get("Ninja")
@@ -601,7 +600,7 @@ fn number_letter(index: usize) -> Option<char> {
     data::capacity().number_letter.chars().nth(index)
 }
 
-/// `isExalted`: the compass's exalted stamp list.
+/// Whether a stamp is in the compass's exalted stamp list.
 fn is_exalted(compass: Option<&Value>, stamp: &StampRow) -> bool {
     let Some(row) = compass.and_then(|compass| at(compass, 4)) else {
         return false;
@@ -613,7 +612,7 @@ fn is_exalted(compass: Option<&Value>, stamp: &StampRow) -> bool {
     })
 }
 
-/// `pristineBon(idx)`: the charm bonus when `Ninja[107][idx]` is set.
+/// The pristine charm bonus when `Ninja[107][idx]` is set.
 fn pristine_bonus(save: &Save, index: usize) -> f64 {
     let owned = save
         .get("Ninja")
@@ -629,9 +628,9 @@ fn pristine_bonus(save: &Save, index: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// `computeStarSignBonus('CarryCap', char)`.
+/// The character's `CarryCap` star-sign bonus.
 ///
-/// The sign values and the active-sign rules are upstream's; the Seraph Cosmos
+/// The sign values and the active-sign rules are the game's; the Seraph Cosmos
 /// multiplier applies when its extra stars are unlocked, with the one factor
 /// this build does not decode named in the partial reason.
 fn carry_stars(save: &Save, character: usize, partial: &mut Partial) -> f64 {
@@ -668,7 +667,7 @@ fn carry_stars(save: &Save, character: usize, partial: &mut Partial) -> f64 {
     total
 }
 
-/// `getEnabledStarSigns`: infinite signs start at five on a Rift level 10,
+/// The enabled infinite star signs: they start at five on a Rift level 10,
 /// and every Breeding shiny level in category 3 widens the limit.
 fn enabled_star_signs(save: &Save) -> usize {
     if row_number(save, "Rift", 0).unwrap_or(0.0) < 10.0 {
@@ -677,7 +676,7 @@ fn enabled_star_signs(save: &Save) -> usize {
     (5.0 + shiny_bonus(save, 3)) as usize
 }
 
-/// `isStarSignActive`: an unlocked sign below the infinite-sign limit.
+/// Whether a star sign is active: unlocked and below the infinite-sign limit.
 fn star_owned(unlocked: Option<&Value>, sign: usize, enabled: usize) -> bool {
     let Some(unlocked) = unlocked else {
         return false;
@@ -695,7 +694,7 @@ fn star_owned(unlocked: Option<&Value>, sign: usize, enabled: usize) -> bool {
         .is_some_and(|fields| fields.contains_key(name))
 }
 
-/// `computeSeraphMulti`: chip and Seraph Cosmos factors on the sign total.
+/// The Seraph multiplier: chip and Seraph Cosmos factors on the sign total.
 fn seraph_multi(save: &Save, character: usize, enabled: usize, partial: &mut Partial) -> f64 {
     if save.get("StarSg").is_none() {
         return 1.0;
@@ -726,7 +725,7 @@ fn meritoc_star_vote(save: &Save, character: usize) -> bool {
     nested_number(save, &format!("KLA_{character}"), &[250, 0]).unwrap_or(0.0) <= 0.0
 }
 
-/// `hasStarChip`: the Silkrode Nanochip sits in one of a character's lab slots.
+/// Whether the Silkrode Nanochip sits in one of a character's lab slots.
 fn star_chip(save: &Save, character: usize) -> bool {
     save.get("Lab")
         .and_then(|rows| at(&rows, 1 + character).cloned())
@@ -765,7 +764,7 @@ fn talent(save: &Save, character: usize, index: usize) -> f64 {
     eval(&curve.formula, curve.x1, curve.x2, level)
 }
 
-/// `companionBonusForSave(id)` from the wrapper's roster.
+/// A companion's bonus, from the wrapper's roster.
 fn companion_bonus(save: &Save, index: usize, partial: &mut Partial) -> f64 {
     let roster = idleon_save::Roster::read(
         save.root()
@@ -814,7 +813,7 @@ fn shrine_bonus(inputs: &Inputs<'_>, index: usize, partial: &mut Partial) -> f64
     ((level - 1.0) * per_level + base) * card
 }
 
-/// `computeCardLv('Boss3B')`: the critter card's level behind the shrine boost.
+/// The `Boss3B` card's level behind the shrine boost.
 fn boss3b_card_level(save: &Save) -> f64 {
     let Some(cards) = save.get("Cards0") else {
         return 0.0;
@@ -849,14 +848,14 @@ fn boss3b_card_level(save: &Save) -> f64 {
     level
 }
 
-/// `computePrayerReal(idx, costIdx, char)`: equipped, else the no-prayer passive.
+/// A prayer's bonus: equipped, else the no-prayer passive.
 fn prayer(save: &Save, character: usize, index: usize, curse_column: bool) -> f64 {
     save.as_object().map_or(0.0, |fields| {
         idleon_account::prayer(fields, character, index, curse_column)
     })
 }
 
-/// `getBribeBonus(idx)`: the bribe's flat percentage when it is active.
+/// The bribe's flat percentage when it is active.
 pub(crate) fn bribe_bonus(save: &Save, index: usize) -> f64 {
     if row_number(save, "BribeStatus", index).unwrap_or(0.0) != 1.0 {
         return 0.0;
@@ -905,7 +904,7 @@ fn row_text(save: &Save, key: &str, index: usize) -> String {
 /// The numbers in a comma-separated save string, or in a row.
 ///
 /// `PVtStarSign_<char>` is the one field the game writes as `69,55,20,`
-/// rather than JSON; upstream splits it before reading the signs.
+/// rather than JSON; it is split before reading the signs.
 fn csv_numbers(value: &Value) -> Vec<f64> {
     match value {
         Value::String(text) => text
@@ -916,7 +915,7 @@ fn csv_numbers(value: &Value) -> Vec<f64> {
     }
 }
 
-/// A row's entry, read as upstream's `rowValues` reads it.
+/// A row's entry, read through `row_values`.
 fn row_number_in(row: &Value, index: usize) -> f64 {
     row_values(row).get(index).and_then(number).unwrap_or(0.0)
 }

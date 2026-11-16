@@ -8,18 +8,13 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port the coral kid upgrade and god-rank offering planner with beam search and projection.
+Implement the coral kid upgrade and god-rank offering planner with beam search and projection.
 
 ## Current build
 
-- CR-01 Planner controls and summary: every upstream input with validation, the save's budget, rank, tier, Coral Kid and Singularity levels, and the current coral metrics, with the fields the save lacks named.
+- CR-01 Planner controls and summary: every planner input with validation, the save's budget, rank, tier, Coral Kid and Singularity levels, and the current coral metrics, with the fields the save lacks named.
 - CR-02 Beam-search plan and projection: `idleon_coral::plan` over unlocked upgrades and one offering per state, run through the shared task runner with progress, cancel and a stale marker; the card shows spend, remaining, whole-plan confidence, the projected coral state and the ordered actions.
-- CR-03 Offering fit and current levels: the upstream `offeringStats` row at the current rank (success per attempt, expected spend per success, tier) with a caption for the Y4 free chance and planning confidence, the Coral Kid levels table with each upgrade's unlock status, and warnings for the save fields read as zero.
-
-## Upstream sources
-
-- coral-god-rank-calc.html
-- js/stats/systems/w5/coral-god-rank.js
+- CR-03 Offering fit and current levels: the offering row at the current rank (success per attempt, expected spend per success, tier) with a caption for the Y4 free chance and planning confidence, the Coral Kid levels table with each upgrade's unlock status, and warnings for the save fields read as zero.
 
 ## UI
 
@@ -51,7 +46,7 @@ Coral icons if present.
 
 ### CR-01 — Planner controls and summary
 
-All upstream planner inputs with validation and a summary of the current state.
+All planner inputs with validation and a summary of the current state.
 
 Depends on: FND-03 Shared save JSON import
 
@@ -88,5 +83,5 @@ Acceptance:
 ## Verification
 
 - Planner invariant.
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Harness.

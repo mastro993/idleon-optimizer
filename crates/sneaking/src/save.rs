@@ -1,12 +1,12 @@
 //! Reading the sneaking loadout out of an imported save.
 //!
-//! Ported from the save reads in `sneaking-calc.html`: `Ninja[0..12]` is each
-//! twin's placement row, `Ninja[12..60]` the four equipment rows per twin,
-//! `Ninja[60..100]` the inventory, `Ninja[100]` the door progress, `Ninja[102]`
-//! the emporium row and `Ninja[103]` the Ninja Knowledge levels. `Spelunk[14]`
-//! holds the slot symbols, `[15]` the floor flowers and `[18]` the legend talent
-//! levels; `Menagerie[7]` the Omni-Jade levels; `Lv0_<n>[17]` each twin's
-//! Sneaking level; `OptLacc[231..242]` the mastery pair and the gemstone levels.
+//! `Ninja[0..12]` is each twin's placement row, `Ninja[12..60]` the four
+//! equipment rows per twin, `Ninja[60..100]` the inventory, `Ninja[100]` the door
+//! progress, `Ninja[102]` the emporium row and `Ninja[103]` the Ninja Knowledge
+//! levels. `Spelunk[14]` holds the slot symbols, `[15]` the floor flowers and
+//! `[18]` the legend talent levels; `Menagerie[7]` the Omni-Jade levels;
+//! `Lv0_<n>[17]` each twin's Sneaking level; `OptLacc[231..242]` the mastery pair
+//! and the gemstone levels.
 //!
 //! Rows are read positionally: a cell the save leaves blank becomes zero, it
 //! never shifts the cells after it. The account-wide terms the breakdown trees

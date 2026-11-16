@@ -63,7 +63,7 @@ fn status(trial: &Trial) -> &'static str {
     }
 }
 
-/// `roidTimingText`: how one attempt describes its Stronkroid activation.
+/// How one attempt describes its Stronkroid activation.
 fn roid_label(trial: &Trial) -> String {
     match trial.roid_start {
         None => "Not used".to_string(),

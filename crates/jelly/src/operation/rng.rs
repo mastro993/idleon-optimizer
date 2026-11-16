@@ -1,14 +1,11 @@
 //! The seeded generator and the projectile geometry the runtime reads.
 //!
-//! Ports `seededRandom`, `randomInt`, `backIn`, `_jellyProjectileGeometry`,
-//! `_jellyProjectileHitFrame` and `jellyProjectileHitDelay` from
-//! `js/stats/systems/w7/jelly-operator.js`. The generator is the upstream's
-//! Mulberry32: a 32-bit state wrapped on every draw, so a seed is the same
-//! attempt on both sides.
+//! The generator is Mulberry32: a 32-bit state wrapped on every draw, so a seed
+//! is always the same attempt.
 
 use crate::data::data;
 
-/// Mulberry32, the upstream's own seeded generator (`seededRandom`).
+/// Mulberry32, the seeded generator every attempt draws from.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Rng {
     state: u32,
@@ -27,7 +24,7 @@ impl Rng {
         f64::from(value ^ (value >> 14)) / 4_294_967_296.0
     }
 
-    /// The upstream skips one generated value without using it.
+    /// Skips one generated value without using it.
     pub(super) fn advance(&mut self, count: u32) {
         self.state = self.state.wrapping_add(0x6D2B_79F5u32.wrapping_mul(count));
     }
@@ -49,7 +46,7 @@ fn back_in(value: f64) -> f64 {
     }
 }
 
-/// The projectile's launch geometry, fixed per cell (`_jellyProjectileGeometry`).
+/// The projectile's launch geometry, fixed per cell.
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Geometry {
     anchor_x: f64,
@@ -61,7 +58,6 @@ pub(super) struct Geometry {
     frames: u32,
 }
 
-/// `_jellyProjectileGeometry`.
 pub(super) fn geometry(anchor: usize, cell_type: usize) -> Geometry {
     let cols = data().cols;
     let projectile = data().projectile(cell_type);
@@ -81,7 +77,7 @@ pub(super) fn geometry(anchor: usize, cell_type: usize) -> Geometry {
     }
 }
 
-/// `_jellyProjectileHitFrame`: how many frames until the shot reaches the boss.
+/// How many frames until the shot reaches the boss.
 pub(super) fn hit_frame(geometry: Geometry, rng: &mut Rng) -> u32 {
     let roll = rng.next();
     let roll2 = rng.next();
@@ -116,8 +112,8 @@ fn hit_frame_with(geometry: Geometry, roll_x: f64, roll_y: f64) -> u32 {
     last
 }
 
-/// `jellyProjectileHitDelay`: the travel time with the upstream's fixed 0.5
-/// launch roll, which the deterministic surrogate reads.
+/// The travel time with a fixed 0.5 launch roll, which the deterministic
+/// surrogate reads.
 pub fn projectile_hit_delay(anchor: usize, cell_type: usize) -> f64 {
     f64::from(hit_frame_with(geometry(anchor, cell_type), 0.5, 0.5)) / 60.0
 }

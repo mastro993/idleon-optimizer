@@ -75,7 +75,7 @@ fn all_upgrades_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
         .into_any_element()
 }
 
-/// The upstream `_fmtDesc` line for an upgrade, with the saved values filled in.
+/// The game's description line for an upgrade, with the saved values filled in.
 pub(super) fn effect(clamworks: &Clamworks, index: usize, multikill: f64) -> String {
     let bonus = clamworks.upgrade_bonus(index, multikill);
     match index {

@@ -1,12 +1,5 @@
 //! The Sneaking (W6) loadout and inventory: the save-backed charm and ninja kit
-//! model behind `sneaking-calc.html`'s loadout workspace.
-//!
-//! Ported from `js/stats/systems/w6/sneaking-math.js` (the twin, equipment,
-//! charm and Ninja Knowledge reads) and the loadout half of
-//! `js/stats/systems/w6/sneaking-stealth.js` (`twinCharmBonuses`,
-//! `goldInventoryBonusDetails`, `computeActionSpeed`, `computeTwinStealth`),
-//! with the slot rules in `sneaking-calc.html` and
-//! `js/stats/systems/w6/sneaking-optimizer.js` (`canEquipCharmPair`).
+//! model behind the loadout workspace.
 //!
 //! The model edits a copy of the save's `Ninja` rows: a slot swap moves the two
 //! items, never clones them, so the editor cannot invent a charm the account
@@ -42,7 +35,7 @@ pub use loadout::{
 };
 pub use math::{
     AllyContribution, action_speed, charm_stat, detection_base, detection_chance, ko_duration,
-    ninja_bonus, stealth_for_detection, stealth_value, weapon_stat,
+    ninja_bonus, stealth_value, weapon_stat,
 };
 pub use optimizer::{Layout, Objective, Outcome, Request, TwinScore};
 pub use placement::door_hp;
@@ -58,8 +51,8 @@ pub const FLOOR_COUNT: usize = 12;
 pub const TWIN_COUNT: usize = 12;
 /// The visible inventory slots, the game's native `InvSpace`.
 pub const INVENTORY_SLOTS: usize = 39;
-/// The inventory rows the Gold scan walks: upstream reads one row further than
-/// the visible grid, because `NJbonusPerms` does.
+/// The inventory rows the Gold scan walks: one row further than the visible
+/// grid, because the game's `NJbonusPerms` does.
 pub const INVENTORY_SCAN: usize = 40;
 /// The four equipment slots one twin carries.
 pub const SLOT_COUNT: usize = 4;
@@ -73,7 +66,7 @@ pub const KNOWLEDGE_ROW: usize = 103;
 pub const DOOR_ROW: usize = 100;
 /// The emporium row, whose cell 9 carries the unlocked bonuses.
 pub const EMPORIUM_ROW: usize = 102;
-/// The Charmed emporium bonus: `emporiumBonus(3, …)`.
+/// The Charmed emporium bonus index.
 pub const CHARMED_PERK: usize = 3;
 
 /// One ninja item: its catalog key and its level. `Blank` is an empty slot.
@@ -110,7 +103,7 @@ impl Item {
         item(&self.key)
     }
 
-    /// The name the calculator prints, or the raw key for an unknown item.
+    /// The display name, or the raw key for an unknown item.
     pub fn name(&self) -> String {
         self.def()
             .map_or_else(|| self.key.clone(), ItemDef::display_name)
@@ -148,7 +141,7 @@ impl SlotKind {
         }
     }
 
-    /// The label upstream prints above the slot.
+    /// The label printed above the slot.
     pub fn label(self) -> &'static str {
         match self {
             SlotKind::Hat => "Hat",

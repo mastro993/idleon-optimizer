@@ -1,5 +1,5 @@
 //! The Overview tab: counters, world progress, raw clearing values and range
-//! targets, in the upstream page's order.
+//! targets.
 
 use super::world_rail;
 use crate::state::AppState;
@@ -16,7 +16,7 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Clear, ClearState, RangeTarget};
 
-/// The overview pane, in the upstream order: counters, world progress, the
+/// The overview pane, in order: counters, world progress, the
 /// clearing values and the range targets.
 pub(crate) fn overview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let royal = state
@@ -327,7 +327,7 @@ fn range_targets(
     .into_any_element()
 }
 
-/// The selected outpost's next range target, as the upstream panel draws it.
+/// The selected outpost's next range target, as the panel draws it.
 fn panel(royal: &RoyalGuardian, map: usize) -> AnyElement {
     let outpost = royal.outpost(map);
     let mut body = div()
@@ -385,7 +385,7 @@ fn panel(royal: &RoyalGuardian, map: usize) -> AnyElement {
     body.into_any_element()
 }
 
-/// The plan as the upstream panel words it.
+/// The plan as the panel words it.
 pub(super) fn plan_text(target: Option<&RangeTarget>) -> String {
     let Some(target) = target else {
         return "—".to_owned();
@@ -406,7 +406,7 @@ pub(super) fn plan_text(target: Option<&RangeTarget>) -> String {
     )
 }
 
-/// The clearing rate's factors, and the one factor the port does not read yet.
+/// The clearing rate's factors, and the one factor this build does not read yet.
 fn rate_note(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     Card::new()
@@ -462,7 +462,7 @@ pub(super) fn kpi(
         .into_any_element()
 }
 
-/// A figure as the card prints it: whole numbers grouped, rates as `fmtVal`.
+/// A figure as the card prints it: whole numbers grouped, rates as compact values.
 pub(super) fn figure_text(value: f64) -> String {
     if value.fract() == 0.0 && value.abs() < 1e15 {
         format::count(value.max(0.0) as u64)
@@ -528,7 +528,7 @@ pub(super) fn eta_cell(hours: Option<f64>) -> AnyElement {
         .into_any_element()
 }
 
-/// An outpost's type, by the upstream names.
+/// An outpost's type, by its game name.
 pub(super) fn type_label(kind: f64) -> &'static str {
     match kind as i64 {
         1 => "Support",

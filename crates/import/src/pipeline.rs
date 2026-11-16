@@ -1,13 +1,9 @@
 //! The one import pipeline: detect the format, parse it, migrate it to the
 //! current schema and hand back a document nothing has to read twice.
 //!
-//! Ported from the upstream `js/ui/save-loader.js`, which loads a file or a
-//! paste into `js/state.js`, and `js/ui/state-io.js`, whose state box reads the
-//! gzip+base64 `ROv2:` string. The upstream loader takes whatever JSON it is
-//! given; this pipeline decides first, in one place:
+//! The pipeline decides what a pasted or dropped text is, in one place:
 //!
-//! 1. [`idleon_project::read`] recognizes a project, a section config and an
-//!    upstream state string, and migrates a state string to the project schema.
+//! 1. [`idleon_project::read`] recognizes a project and a section config.
 //! 2. Anything else goes through [`crate::import`], which reads a raw
 //!    `it.json`/`save.json` or a decoded research/farming state export.
 //! 3. A project's embedded save is decoded here, not when it is applied, so a
@@ -28,17 +24,14 @@ use serde_json::Value;
 pub struct ProjectImport {
     pub document: Project,
     /// The save the document carries, decoded during [`read`]. `None` when the
-    /// document is research-only, e.g. a migrated `ROv2:` state string.
+    /// document is research-only.
     pub save: Option<Imported>,
 }
 
 impl ProjectImport {
-    /// The format the preview names: a plain project file or a migrated state.
+    /// The format the preview names.
     pub fn format(&self) -> &'static str {
-        match self.document.origin {
-            project::Origin::Project => "project",
-            project::Origin::UpstreamState => "upstream state",
-        }
+        "project"
     }
 
     /// How many characters the embedded save carries.
@@ -122,12 +115,12 @@ impl Document {
 /// Why an import text could not be read.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
-    /// The text is not JSON, even after decompressing a state string.
+    /// The text is not JSON.
     NotJson(String),
     /// JSON, but an object carrying none of the fields a save or a document has.
     NoSaveFields(String),
-    /// A project, a section config or an upstream state string this build
-    /// rejects: an unknown format marker or a version it cannot migrate.
+    /// A project or a section config this build rejects: an unknown format
+    /// marker or a version it cannot migrate.
     Document(project::Error),
     /// Save-shaped text the save reader rejected.
     Save(ImportError),

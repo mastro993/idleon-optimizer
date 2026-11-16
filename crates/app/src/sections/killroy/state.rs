@@ -279,7 +279,7 @@ impl AppState {
         if on {
             self.killroy.selection.push(selection);
             self.killroy.selection.sort_unstable();
-            // Selecting an encounter queues its week, as the upstream list does.
+            // Selecting an encounter queues its week.
             if !self.killroy.checked_weeks.contains(&selection.week_offset) {
                 self.killroy.checked_weeks.push(selection.week_offset);
                 self.killroy.checked_weeks.sort_unstable();

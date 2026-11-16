@@ -1,5 +1,4 @@
-//! The prayer bonus a character holds, ported from `computePrayerReal`
-//! (`js/stats/systems/w3/prayer.js`).
+//! The prayer bonus a character holds.
 //!
 //! A prayer pays its base bonus scaled by its level while it is equipped. With
 //! the character's every slot empty it pays the no-prayer passive instead: a
@@ -11,7 +10,8 @@ use idleon_save::fields;
 use idleon_stats_data as data;
 use serde_json::{Map, Value};
 
-/// `computePrayerReal(index, costColumn, character, saveData)`.
+/// What prayer `index` pays `character`: its bonus, or its curse cost when
+/// `cost_column` is set.
 pub fn prayer(save: &Map<String, Value>, character: usize, index: usize, cost_column: bool) -> f64 {
     let Some(row) = data::capacity().prayers.get(index) else {
         return 0.0;
@@ -22,7 +22,7 @@ pub fn prayer(save: &Map<String, Value>, character: usize, index: usize, cost_co
         return 0.0;
     }
     let scale = (1.0 + (level - 1.0) / 10.0).max(1.0);
-    // `Number(cell)` reads a hole as 0, so a sparse slot counts as prayer 0.
+    // A hole reads as 0, so a sparse slot counts as prayer 0.
     let equipped: Vec<f64> = fields::numbers(save, &format!("Prayers_{character}"))
         .unwrap_or_default()
         .into_iter()

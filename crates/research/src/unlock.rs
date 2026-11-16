@@ -1,7 +1,6 @@
 //! Observation Unlocks: which undiscovered observation is worth rolling for.
 //!
-//! Ported from `computeObsUnlockPriority` in the upstream `js/analysis.js`. Each
-//! day gives a fixed number of observation rolls; a roll lands on an integer
+//! Each day gives a fixed number of observation rolls; a roll lands on an integer
 //! between a minimum (raised by the failed-roll pity) and a maximum (raised by
 //! Sharp Eye, Ring of Glory, Jelly and mastery). An observation unlocks when a
 //! roll reaches its roll requirement, so the chance of unlocking it today — and
@@ -9,7 +8,7 @@
 //!
 //! The reward side is the research EXP/hour the observation adds once it is
 //! found, measured against the save's own layout with the glasses and
-//! kaleidoscopes re-placed, as upstream `optimizeMagsFor` leaves them.
+//! kaleidoscopes re-placed for the EXP rate.
 
 use crate::data::game;
 use crate::model::{Effort, SimContext, Simulation};
@@ -23,7 +22,7 @@ const SMART_EYE: usize = 31;
 const SHARP_EYE: usize = 51;
 const OBSERVATIONALISTIC: usize = 90;
 
-/// Days the expected-time loop walks before giving up, the upstream bound.
+/// Days the expected-time loop walks before giving up.
 const MAX_DAYS: u32 = 365;
 
 /// The roll state one day of hunting is priced with.
@@ -127,7 +126,7 @@ pub struct Row {
     pub score: Option<f64>,
 }
 
-/// The priority label the tab shows, following the upstream cutoffs.
+/// The priority label the tab shows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Priority {
     /// Not usable at this research level yet.
@@ -183,7 +182,7 @@ pub struct Outcome {
     pub rolls: Rolls,
     /// The save fields the estimate needs and the save does not carry.
     pub missing: Vec<String>,
-    /// One row per undiscovered observation, the upstream order.
+    /// One row per undiscovered observation: usable rows first, then by score.
     pub rows: Vec<Row>,
 }
 

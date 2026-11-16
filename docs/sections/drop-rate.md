@@ -8,17 +8,11 @@
 - Status: `partial`
 - Depends on: `foundation`, `stats-all`
 
-Port the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.
+Implement the drop-rate calculator with dungeon runtime/luck/drop-rate inputs and the formula breakdown.
 
 ## Known gaps
 
 - `DR-G1` No total for non-dungeon maps — blocked by `stats:drop-rate-descriptor` (absent)
-
-## Upstream sources
-
-- drop-rate-calc.html
-- js/stats/systems/w2/dungeon.js
-- js/stats/tree-builder.js
 
 ## UI
 
@@ -51,7 +45,6 @@ Depends on: FND-03 Shared save JSON import, FND-08 Shared layout, theme and resp
 
 Acceptance:
 
-- Total matches upstream.
 - Inputs validate ranges.
 - Save values prefill.
 
@@ -69,5 +62,5 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Tree-sum test.

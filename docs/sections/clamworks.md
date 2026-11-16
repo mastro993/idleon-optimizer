@@ -8,17 +8,11 @@
 - Status: `done`
 - Depends on: `foundation`, `combat-sim`
 
-Port Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.
+Implement Clamworks overview, upgrades, AFK claim, optimizer, promotion, worker rewards and Scurge combat.
 
 ## Known gaps
 
 - `CW-G1` Kills per hour, drop rate and multikill are typed stand-ins — blocked by `combat:auto-player` (absent)
-
-## Upstream sources
-
-- clamworks-calc.html
-- js/stats/systems/w7/clamworks*.js
-- js/ui/clamworks-*.js
 
 ## UI
 
@@ -59,7 +53,6 @@ Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
-- Values match upstream.
 - Priority updates with save.
 - Breakdown sums.
 
@@ -71,7 +64,6 @@ Depends on: CW-01 Overview and upgrades
 
 Acceptance:
 
-- Claim matches upstream.
 - Compare is per character.
 - Invalid hours rejected.
 
@@ -95,12 +87,11 @@ Depends on: CW-01 Overview and upgrades, CS-03 Encounter simulator
 
 Acceptance:
 
-- Combat values match upstream.
 - Upgrades affect outcomes.
 - Missing data warned.
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness.

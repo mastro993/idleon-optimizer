@@ -30,7 +30,3 @@ idleon-spelunking = { workspace = true }
 idleon-statue = { workspace = true }
 idleon-worship = { workspace = true }
 serde_json = { workspace = true }
-
-[dev-dependencies]
-base64 = { workspace = true }
-flate2 = { workspace = true }

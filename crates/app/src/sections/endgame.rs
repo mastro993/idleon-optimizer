@@ -1,9 +1,8 @@
 //! The Endgame Check section: the joke verdict and the leaderboard audit.
 //!
-//! Ported from the upstream `endgame.html`: a huge red `NO` over the account's
-//! leaderboard statistics. The verdict never changes; the audit renders the save
-//! table metrics [`idleon_endgame`] can read and says why the rest are
-//! unavailable, standing in for the upstream grid and its `Unavailable` cells.
+//! A huge red `NO` over the account's leaderboard statistics. The verdict never
+//! changes; the audit renders the save table metrics [`idleon_endgame`] can
+//! read and marks the rest `Unavailable`, saying why.
 
 use crate::state::AppState;
 use ely_gpui_component::feedback::{Alert, EmptyState};
@@ -26,7 +25,7 @@ pub(crate) struct State {
 }
 
 impl State {
-    /// Audit an applied save, exactly as the upstream page does on load.
+    /// Audit an applied save on load.
     pub(crate) fn audit(imported: &idleon_import::Imported) -> Self {
         Self {
             stats: Some(idleon_endgame::collect(
@@ -135,7 +134,7 @@ fn stats_card(state: &AppState, muted: gpui::Hsla) -> impl IntoElement {
     }
 }
 
-/// One row per leaderboard metric, in the upstream category order.
+/// One row per leaderboard metric, in category order.
 fn stats_table(stats: &[idleon_endgame::Stat], muted: gpui::Hsla) -> AnyElement {
     let mut table = Table::new(["Category", "Metric", "Value", "Note"]);
     for stat in stats {

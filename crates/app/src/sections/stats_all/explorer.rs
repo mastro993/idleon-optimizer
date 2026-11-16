@@ -2,11 +2,9 @@
 //! registry declares, the filters its list applies and the card of the formula
 //! it shows.
 //!
-//! Upstream `js/ui/stats-explorer.js` searches the system catalogue and
-//! `js/ui/formula-ledger.js` reports source coverage. This build keeps one
-//! catalogue — the breakdown descriptors — so a card can never disagree with
-//! the breakdowns above it, and the ledger reports the coverage this port can
-//! prove instead of a source audit. The formula itself is the shared
+//! The explorer reads one catalogue — the breakdown descriptors — so a card
+//! can never disagree with the breakdowns above it, and the ledger reports the
+//! coverage the registry can prove. The formula itself is the shared
 //! [`FormulaTree`], which carries each term's saved input, multiplier and source.
 
 use crate::state::AppState;
@@ -61,9 +59,10 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
     let stats = &mut state.stats_all;
     let Some(sheet) = stats.sheet.as_ref() else {
         return Card::new()
-            .header(CardHeader::new("System Formula Explorer").description(
-                "Every formula the registry declares, the terms it reads and where it is defined.",
-            ))
+            .header(
+                CardHeader::new("System Formula Explorer")
+                    .description("Every formula the registry declares and the terms it reads."),
+            )
             .child(
                 div()
                     .id("stats-explorer-empty")
@@ -167,18 +166,14 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                 Some(value) => format!("{}: {value}", row.name),
                 None => format!("{}: not modelled", row.name),
             };
-            let source = row.source;
             let is_selected = selected.is_some_and(|selected| selected.id == id);
             let click = entity.clone();
             let row_id = id.to_string();
-            // The same path the card footer shows, opened in the repository the
-            // port reads, so "where does this formula come from" is one click.
-            let url = row.source_url();
             list.child(
                 div()
                     .id(format!("stats-formula-{id}"))
                     .role(Role::Button)
-                    .aria_label(format!("{label} · {} · {source}", row.category.label()))
+                    .aria_label(format!("{label} · {}", row.category.label()))
                     .flex()
                     .items_center()
                     .gap_3()
@@ -196,21 +191,7 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                     .when_some(value, |row, value| row.child(div().child(value)))
                     .when(row.display_value().is_none(), |row| {
                         row.child(Badge::new("Not modelled").tone(Tone::Warning))
-                    })
-                    .child(
-                        div()
-                            .id(format!("stats-formula-{id}-source"))
-                            .role(Role::Link)
-                            .aria_label(format!("Open {source} in the upstream repository"))
-                            .text_size(px(11.0))
-                            .text_color(muted)
-                            .hover(|style| style.text_color(accent))
-                            .on_click(move |_event, _window, cx| {
-                                cx.stop_propagation();
-                                cx.open_url(&url);
-                            })
-                            .child(source),
-                    ),
+                    }),
             )
         },
     );
@@ -223,8 +204,8 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
             Card::new()
                 .header(CardHeader::new("System Formula Explorer").description(
                     "Every formula the descriptor registry declares, grouped by category. A card \
-                     shows the same value the breakdown resolves, the saved inputs behind its \
-                     terms, and the upstream definition it ports.",
+                     shows the same value the breakdown resolves and the saved inputs behind its \
+                     terms.",
                 ))
                 .child(
                     div()
@@ -279,14 +260,13 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
 }
 
 /// The selected formula's card: its value, its saved inputs and its tree, or
-/// the source it still needs.
+/// why it is unavailable.
 fn formula_card(
     row: Option<&Breakdown>,
     tree: Entity<FormulaTree>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
     let Some(row) = row else {
         return Card::new()
             .header(
@@ -310,14 +290,11 @@ fn formula_card(
         .display_value()
         .unwrap_or_else(|| "not modelled".to_string());
     let scope = row.scope.label();
-    let source = row.source;
-    let url = row.source_url();
     let explanation = describe(row);
 
     let mut card = Card::new()
         .header(
-            CardHeader::new(format!("{} · {scope}", row.name))
-                .description(format!("{source} · {}", row.category.label())),
+            CardHeader::new(format!("{} · {scope}", row.name)).description(row.category.label()),
         )
         .child(
             div()
@@ -327,7 +304,7 @@ fn formula_card(
                 .px_3()
                 .pb_1()
                 .text_size(px(12.0))
-                .child(format!("{value} · {source}")),
+                .child(value),
         )
         .when(!explanation.is_empty(), |card| {
             card.child(
@@ -341,21 +318,7 @@ fn formula_card(
                     .text_color(muted)
                     .child(explanation),
             )
-        })
-        .child(
-            div().px_3().pb_3().child(
-                div()
-                    .id("stats-formula-source")
-                    .role(Role::Link)
-                    .aria_label(format!("Open {source} in the upstream repository"))
-                    .text_size(px(11.0))
-                    .text_color(muted)
-                    .cursor_pointer()
-                    .hover(|style| style.text_color(accent))
-                    .on_click(move |_event, _window, cx| cx.open_url(&url))
-                    .child(format!("Upstream source · {source}")),
-            ),
-        );
+        });
     if let Some(root) = row.resolution.tree() {
         let root = root.clone();
         tree.update(cx, |tree, cx| tree.set_root(root, cx));
@@ -406,7 +369,6 @@ mod tests {
             name: id,
             category: BreakdownCategory::Combat,
             scope: idleon_stats::Scope::Account,
-            source: "js/stats/defs/drop-rate.js",
             resolution: idleon_stats::Resolution::Unavailable {
                 reason: "not modelled".into(),
             },

@@ -12,11 +12,6 @@
 //! atomically through a temporary sibling. A file that cannot be read back as a
 //! session is renamed to `session.corrupt-<timestamp>.json` and the app starts
 //! clean instead of refusing to open.
-//!
-//! Ported from the browser persistence the upstream spreads over
-//! `js/ui/state-io.js` and `js/renderers/upgrade-eval.js`, where the research
-//! state and shape layout survive a reload in `localStorage`; the session file
-//! gives every section the same treatment and keeps the save with it.
 
 use crate::project::{self, Config};
 use crate::state::AppState;
@@ -351,7 +346,6 @@ mod tests {
                 .into_iter()
                 .collect(),
             warnings: Vec::new(),
-            origin: core_project::Origin::Project,
             has_research: true,
             has_supplements: true,
         };

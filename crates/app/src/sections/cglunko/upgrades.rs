@@ -1,11 +1,10 @@
 //! The Cglunko upgrades: every upgrade on the selected page, in the game's
 //! order.
 //!
-//! Ports the Upgrades tab of `cglunko-calc.html`: the upstream `_fmtDesc` line
-//! with the saved bonus filled in, the level, the bonus, the per-level value and
-//! the `upgNextCost` the next level charges. The stone each upgrade is paid from
-//! is added here, because the plan on the Optimizer tab spends exactly those
-//! saved balances.
+//! The Upgrades tab: the game's description line with the saved bonus filled
+//! in, the level, the bonus, the per-level value and the cost the next level
+//! charges. The stone each upgrade is paid from is added here, because the plan
+//! on the Optimizer tab spends exactly those saved balances.
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
@@ -35,7 +34,7 @@ pub(crate) fn upgrades_pane(
         .child(page_card(&cglunko, page))
         .child(
             Caption::new(
-                "Next Cost is the upstream upgNextCost at the next level: the base raised to that level plus the level, divided by the Active Drops discount, five times as much on the odd indexes, and paid from the upgrade's own stone. The Optimizer tab spends these saved balances.",
+                "Next Cost is the cost of the next level: the base raised to that level plus the level, divided by the Active Drops discount, five times as much on the odd indexes, and paid from the upgrade's own stone. The Optimizer tab spends these saved balances.",
             )
             .text_color(muted),
         );
@@ -117,7 +116,7 @@ fn page_card(cglunko: &idleon_cglunko::Cglunko, page: Page) -> AnyElement {
         .into_any_element()
 }
 
-/// The upstream `_fmtDesc` line, with `{` the saved bonus, `}` the multiplier it
+/// The game's description line, with `{` the saved bonus, `}` the multiplier it
 /// buys and `$` the cost reduction it applies.
 pub(super) fn effect(cglunko: &idleon_cglunko::Cglunko, index: usize) -> String {
     let bonus = cglunko.bonus(index);
@@ -150,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn the_effect_fills_the_upstream_placeholders() {
+    fn the_effect_fills_the_description_placeholders() {
         let cglunko = sample();
         assert_eq!(
             effect(&cglunko, 1),
@@ -165,7 +164,7 @@ mod tests {
             effect(&cglunko, 7),
             "Decrease the cost of all upgrades here by 15.0%"
         );
-        // The locked upgrade still carries its upstream line.
+        // The locked upgrade still carries its own line.
         assert_eq!(effect(&cglunko, 23), "World 7 Skill 3 my man, not yet.");
     }
 }

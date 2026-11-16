@@ -1,9 +1,8 @@
-//! The static tables the engine reads, extracted from the upstream JS by
-//! `script/extract-engine-data.mjs`.
+//! The static tables the engine reads, from the game's data.
 //!
-//! Every row keeps the shape the upstream lookup uses: bubbles and vials by
-//! their effect key, sigil tiers by index, card bonuses by card key, and the
-//! post-office, guild, achievement and statue tables by their upstream index.
+//! Every row keeps the shape its lookup uses: bubbles and vials by their effect
+//! key, sigil tiers by index, card bonuses by card key, and the post-office,
+//! guild, achievement and statue tables by their game index.
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
@@ -79,7 +78,7 @@ pub struct Data {
     /// `RandoListo2[13]`: each Cove upgrade's per-level value.
     #[serde(rename = "cglunkoPerLevel", default)]
     pub cglunko_per_level: Vec<f64>,
-    /// The Royal Guardian outpost rows `statueBonus` reads.
+    /// The Royal Guardian outpost rows the statue bonus reads.
     #[serde(rename = "royalOutpost", default)]
     pub royal_outpost: RoyalOutpost,
 }
@@ -203,7 +202,7 @@ pub struct TomeBonus {
     pub unlock_index: usize,
 }
 
-/// The Royal Guardian tables `statueBonus` reads.
+/// The Royal Guardian tables the statue bonus reads.
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default)]
 pub struct RoyalOutpost {
@@ -268,12 +267,12 @@ impl Data {
             .map(String::as_str)
     }
 
-    /// `guildBonusParams(index)`.
+    /// The guild bonus curve at `index`.
     pub fn guild(&self, index: usize) -> Option<&Curve> {
         self.guilds.get(index)
     }
 
-    /// `achieveStatus`'s tiered value for a completed achievement.
+    /// The tiered value for a completed achievement.
     pub fn achievement(&self, index: usize) -> f64 {
         self.achievements
             .get(&index.to_string())
@@ -300,7 +299,7 @@ impl Data {
                 .unwrap_or(false)
     }
 
-    /// `artifactBase(index)`.
+    /// The Sailing artifact's base bonus at `index`.
     pub fn artifact(&self, index: usize) -> f64 {
         self.artifacts.get(index).copied().unwrap_or(0.0)
     }
@@ -318,7 +317,7 @@ impl Data {
             .unwrap_or(0.0)
     }
 
-    /// `cosmoUpgBase(tier, index)`.
+    /// The Cosmos upgrade's base bonus at `tier` and `index`.
     pub fn cosmo(&self, tier: usize, index: usize) -> f64 {
         self.cosmo
             .get(tier)
@@ -337,7 +336,7 @@ impl Data {
         self.stamps.iter().filter(move |stamp| stamp.kind == kind)
     }
 
-    /// `sigilTiers(index)`.
+    /// The sigil's tier values at `index`.
     pub fn sigil(&self, index: usize) -> Option<&[f64]> {
         self.sigils.get(index).map(Vec::as_slice)
     }
@@ -357,7 +356,7 @@ impl Data {
         self.gold_food.info.get(item)
     }
 
-    /// `ninjaInfo(36)[rank]`: the Land Rank bonus per level.
+    /// The Land Rank bonus per level.
     pub fn farm_rank_per_level(&self, rank: usize) -> f64 {
         self.farm_rank_per_level.get(rank).copied().unwrap_or(0.0)
     }
@@ -372,12 +371,12 @@ impl Data {
         self.bubba_base.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `shrineBase(idx)`.
+    /// The shrine's base bonus at `index`.
     pub fn shrine_base(&self, index: usize) -> f64 {
         self.shrine_base.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `shrinePerLevel(idx)`.
+    /// The shrine's bonus per level at `index`.
     pub fn shrine_per_level(&self, index: usize) -> f64 {
         self.shrine_per_level.get(index).copied().unwrap_or(0.0)
     }
@@ -392,7 +391,7 @@ impl Data {
         self.god_bless_base.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `computeChipBonus(key, ci)`: the summed value of every equipped chip
+    /// A lab chip effect: the summed value of every equipped chip
     /// with this effect key.
     pub fn chip_value(&self, key: &str) -> f64 {
         self.chips
@@ -401,7 +400,7 @@ impl Data {
             .map_or(0.0, |chip| chip.value)
     }
 
-    /// `Cglunko_upgBon(i)`: the per-level value of one Cove upgrade.
+    /// The per-level value of one Cove upgrade (`RandoListo2[13]`).
     pub fn cglunko_per_level(&self, index: usize) -> f64 {
         self.cglunko_per_level.get(index).copied().unwrap_or(0.0)
     }
@@ -425,7 +424,7 @@ impl Data {
         self.royal_outpost.costs.get(index).copied().unwrap_or(0.0)
     }
 
-    /// `ARMORY_UPGRADES[idx].bonusPerLevel`.
+    /// One armory upgrade's bonus per level.
     pub fn armory_per_level(&self, index: usize) -> f64 {
         self.royal_outpost
             .armory_per_level

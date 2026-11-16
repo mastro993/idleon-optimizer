@@ -1,9 +1,8 @@
 //! The Breakdowns tab: the loot, trip, artifact and chest formula trees.
 //!
-//! One selector picks the boat, as upstream's breakdown tab does, and every tree
-//! reads that boat's route from the active assignment. The trees themselves come
-//! from the domain crates, so the searched and copied numbers are the ones the other
-//! tabs report.
+//! One selector picks the boat, and every tree reads that boat's route from the
+//! active assignment. The trees themselves come from the domain crates, so the
+//! searched and copied numbers are the ones the other tabs report.
 
 use super::{captain_short, trip};
 use crate::state::AppState;

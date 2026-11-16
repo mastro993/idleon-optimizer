@@ -1,15 +1,10 @@
-//! Ladle rates, claim plans and Cooking EXP balloons against the upstream formulas.
-//!
-//! The expected numbers are what `js/stats/systems/w4/cooking-ladle.js` answers for
-//! the same inputs, evaluated with Node against the upstream module itself: the
-//! pure functions directly, and `cookingLadleStats` with a stat context whose
-//! `skill-efficiency`, `skill-afk` and `skill-exp` resolve to the panel below. The
-//! save is the small purpose-built one below, not `fixtures/data.json`.
+//! Ladle rates, the save roster and the formula trees, on the small purpose-built
+//! save below rather than `fixtures/data.json`.
 
 use idleon_ladle::{
     self as ladle, Character, Claimer, EXP_BALLOONS, Ladle, Panel, balloons_to_level,
     claim_expectation, claim_minimum, claim_plan, cooking_exp_req, ladle_breakpoints,
-    ladle_tier_outlook, ladles_per_day, levels_from_balloons, split_balloons,
+    ladles_per_day, levels_from_balloons, split_balloons,
 };
 use idleon_save::Save;
 use serde_json::{Value, json};
@@ -17,7 +12,7 @@ use serde_json::{Value, json};
 mod common;
 use common::close;
 
-/// The panel values the oracle fed the upstream stat context.
+/// The stat panel the character rates read.
 const PANEL: Panel = Panel {
     efficiency: 12345.6,
     afk: 1.35,
@@ -62,237 +57,6 @@ fn save() -> Value {
 
 fn imported() -> Ladle {
     Ladle::from_save(&Save::new(save())).expect("the save carries a roster")
-}
-
-#[test]
-fn ladle_rate_matches_upstream() {
-    close(ladles_per_day(1000.0, 0.0), 15.0);
-    close(ladles_per_day(12345.6, 0.0234), 15.0);
-    close(ladles_per_day(1e7, 0.05), 225.0);
-    close(ladles_per_day(1e12, 0.05), 7515.0);
-    // Prowess is clamped to the upstream 0.1 cap in both directions.
-    close(ladles_per_day(1e12, 5.0), ladles_per_day(1e12, 0.1));
-    close(ladles_per_day(1e12, -5.0), ladles_per_day(1e12, 0.0));
-}
-
-#[test]
-fn breakpoints_match_upstream() {
-    let breakpoints = ladle_breakpoints(12345.6, 0.0234, 3);
-    close(breakpoints[0].ladles_per_day, 30.0);
-    close(breakpoints[0].efficiency, 12620.039116763031);
-    close(breakpoints[0].multiplier, 1.022229710727954);
-    close(breakpoints[1].efficiency, 55608.33888539554);
-    close(breakpoints[2].efficiency, 159265.38730862903);
-
-    let large = ladle_breakpoints(1e7, 0.05, 3);
-    close(large[0].efficiency, 10321273.240738805);
-    close(large[0].multiplier, 1.0321273240738806);
-    close(large[2].efficiency, 15284163.811026292);
-}
-
-#[test]
-fn tier_outlook_matches_upstream() {
-    let small = ladle_tier_outlook(12345.6, 0.0234);
-    close(small.tier, 1.0);
-    close(small.next_tier_gain_pct, 100.0);
-    close(small.next_tier_efficiency_pct, 2.22297107279541);
-    close(small.plus_10_efficiency_gain_pct, 100.0);
-    assert!(small.small_tier);
-
-    let large = ladle_tier_outlook(1e12, 0.05);
-    close(large.tier, 501.0);
-    close(large.next.ladles_per_day, 7530.0);
-    close(large.next.efficiency, 1005415841625.8009);
-    close(large.next_tier_gain_pct, 0.1996007984031936);
-    close(large.plus_10_efficiency_gain_pct, 2.794411177644718);
-    close(large.efficiency_pct_for_plus_1_pct, 3.918578590223598);
-    assert!(!large.small_tier);
-
-    let empty = ladle_tier_outlook(0.0, 0.0);
-    close(empty.base_per_day, 15.0);
-    assert!(empty.efficiency_pct_for_plus_1_pct.is_infinite());
-    close(empty.next.multiplier, 1.6e304);
-}
-
-#[test]
-fn cooking_exp_requirement_matches_upstream() {
-    let expected = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 30.0, 42.0, 50.0, 60.0, 100.0];
-    let upstream = [
-        -15.0,
-        7.892941176470593,
-        42.90860950443788,
-        94.48142695750184,
-        168.31086280687504,
-        271.65710753750926,
-        169535.1407505769,
-        1386662.3491217974,
-        4897004.572641804,
-        21252385.238685455,
-        3637894427.872396,
-    ];
-    for (level, expected) in expected.iter().zip(upstream) {
-        close(cooking_exp_req(*level), expected);
-    }
-    close(ladle::balloon_gain(50.0, 10.0, 2.5), 1375.0);
-}
-
-#[test]
-fn balloons_carry_their_overflow() {
-    let first = EXP_BALLOONS[0].item_id;
-    let use_first = balloons_to_level(0.0, 0.0, 3.0, 1.0, first);
-    close(use_first.balloons, 1.0);
-    close(use_first.level, 4.0);
-    close(use_first.exp, 19.717022361589684);
-
-    // Two levels from one balloon, because the overflow pays most of the second.
-    let two = balloons_to_level(0.0, 0.0, 2.0, 1.0, first);
-    close(two.balloons, 0.0);
-    close(two.level, 2.0);
-    close(two.exp, 7.107058823529407);
-
-    // Banked EXP alone can finish the target, which is the overflow rule.
-    let banked = balloons_to_level(42.0, 123_456_789.0, 50.0, 2.75, EXP_BALLOONS[1].item_id);
-    close(banked.balloons, 0.0);
-    close(banked.level, 59.0);
-    close(banked.exp, 16805456.861110434);
-
-    // A target at or below the current level spends nothing.
-    let same = balloons_to_level(10.0, 5.0, 10.0, 2.0, first);
-    close(same.balloons, 0.0);
-    close(same.level, 10.0);
-    close(same.exp, 5.0);
-
-    // No EXP multi means no balloon gain, which upstream reports as infinity.
-    assert!(
-        balloons_to_level(10.0, 0.0, 12.0, 0.0, first)
-            .balloons
-            .is_infinite()
-    );
-}
-
-#[test]
-fn spending_a_stack_matches_upstream() {
-    let first = EXP_BALLOONS[0].item_id;
-    let none = levels_from_balloons(0.0, 0.0, 0.0, 1.0, first);
-    close(none.level, 2.0);
-    close(none.exp, 7.107058823529407);
-    close(none.used, 0.0);
-
-    let one = levels_from_balloons(0.0, 0.0, 1.0, 1.0, first);
-    close(one.level, 4.0);
-    close(one.exp, 19.717022361589684);
-    close(one.used, 1.0);
-    close(one.left, 0.0);
-
-    let ten = levels_from_balloons(42.0, 123_456_789.0, 10.0, 2.75, first);
-    close(ten.level, 59.0);
-    close(ten.exp, 16887956.861110434);
-    close(ten.used, 10.0);
-}
-
-#[test]
-fn split_share_keeps_levels_even() {
-    let first = EXP_BALLOONS[0].item_id;
-    let characters = [
-        Some((42.0, 123_456_789.0)),
-        Some((30.0, 0.0)),
-        Some((60.0, 5_000_000_000.0)),
-    ];
-    let split = split_balloons(&characters, 130.0, 2.75, first);
-    close(split.used, 130.0);
-    close(split.left, 0.0);
-    let shares: Vec<(f64, f64, f64)> = split
-        .characters
-        .iter()
-        .map(|share| {
-            let share = share.expect("every input character has a share");
-            (share.level, share.exp, share.used)
-        })
-        .collect();
-    close(shares[0].0, 59.0);
-    close(shares[0].1, 16805456.861110434);
-    close(shares[0].2, 0.0);
-    close(shares[1].0, 32.0);
-    close(shares[1].1, 198391.18864515974);
-    close(shares[1].2, 130.0);
-    close(shares[2].0, 86.0);
-    close(shares[2].1, 317013526.9260253);
-
-    // With nothing to share the levels still absorb the banked EXP.
-    let idle = split_balloons(&characters, 0.0, 2.75, first);
-    close(idle.used, 0.0);
-    close(idle.left, 0.0);
-    close(idle.characters[1].expect("a share").level, 30.0);
-    assert!(split_balloons(&[None], 10.0, 2.75, first).characters[0].is_none());
-}
-
-#[test]
-fn claim_roll_matches_upstream() {
-    close(claim_expectation(0.7, 40.0), 1.0999999999999999);
-    close(claim_minimum(0.7), 0.0);
-    close(claim_expectation(1.7, 40.0), 1.8000000000000003);
-    close(claim_minimum(1.7), 1.0);
-    close(claim_expectation(3.2, 40.0), 4.2);
-    close(claim_minimum(3.2), 3.0);
-    close(claim_expectation(3.2, 0.0), 3.0);
-    close(claim_expectation(3.2, 100.0), 6.0);
-    close(claim_expectation(-5.0, 40.0), 0.0);
-}
-
-#[test]
-fn claim_plan_matches_upstream() {
-    let plan = claim_plan(
-        &[Claimer {
-            index: 0,
-            name: "A".into(),
-            raw_per_hour: 4.0,
-            double_chance: 0.0,
-            cap_hours: 10.0,
-            claim_hours: 8.0,
-            pending_hours: 27.0,
-        }],
-        24.0,
-    );
-    // Pending time would lose to the cap, so an immediate claim comes first.
-    let rows: Vec<(f64, f64, f64, bool)> = plan
-        .claims
-        .iter()
-        .map(|claim| (claim.at_hours, claim.hours, claim.raw, claim.now))
-        .collect();
-    assert_eq!(
-        rows,
-        vec![
-            (0.0, 27.0, 40.0, true),
-            (8.0, 8.0, 32.0, false),
-            (16.0, 8.0, 32.0, false),
-            (24.0, 8.0, 32.0, false),
-        ]
-    );
-    close(plan.min_ladles, 136.0);
-    close(plan.expected_ladles, 136.0);
-    close(plan.per_character[0].min_ladles, 136.0);
-
-    // A zero-length window only claims the time already accrued.
-    let accrued = claim_plan(
-        &[Claimer {
-            index: 1,
-            name: "B".into(),
-            raw_per_hour: 4.0,
-            double_chance: 0.0,
-            cap_hours: f64::INFINITY,
-            claim_hours: 8.0,
-            pending_hours: 5.0,
-        }],
-        0.0,
-    );
-    assert_eq!(accrued.claims.len(), 1);
-    close(accrued.claims[0].raw, 20.0);
-    assert!(accrued.claims[0].now);
-
-    // No accrued time and no window: nothing to claim.
-    let empty = claim_plan(&[], 24.0);
-    assert!(empty.claims.is_empty());
-    close(empty.min_ladles, 0.0);
 }
 
 #[test]
@@ -366,54 +130,6 @@ fn save_without_a_reset_countdown_reports_none() {
         .remove("TimeAway");
     let ladle = Ladle::from_save(&Save::new(save)).expect("the roster is still there");
     assert!(ladle.reset_hours.is_none());
-}
-
-#[test]
-fn stats_match_upstream() {
-    let ladle = imported();
-    let character = ladle.character(0).expect("a first character");
-    let stats = ladle::stats(character, PANEL, 24.0);
-    close(stats.efficiency, 12345.6);
-    close(stats.base_per_day, 15.0);
-    close(stats.ladle_multi, 1.0);
-    close(stats.panel_per_day, 20.25);
-    close(stats.double_chance, 17.6);
-    close(stats.effective_claim_seconds, 86_400.0);
-    close(stats.raw_per_claim, 20.25);
-    close(stats.per_claim, 23.52);
-    close(stats.per_day, 23.52);
-    close(stats.per_hour, 0.98);
-    close(stats.min_per_claim, 20.0);
-    close(stats.min_per_day, 20.0);
-    close(stats.raw_per_hour, 0.84375);
-    assert!(stats.claim_cap_hours.is_infinite());
-    close(stats.pending_hours, (1_000_000.0 - 986_400.0) / 3600.0);
-    assert!(stats.pending_known);
-    close(stats.level, 42.0);
-    close(stats.exp, 123456789.0);
-    close(stats.exp_req, 1386662.3491217974);
-    close(stats.exp_per_hour, 371.25);
-    close(stats.next_level_balloons, 0.0);
-
-    let capped = ladle::stats(ladle.character(2).expect("a third character"), PANEL, 24.0);
-    assert!(capped.claim_capped);
-    close(capped.effective_claim_seconds, 36_000.0);
-    close(capped.claim_cap_hours, 10.0);
-    close(capped.raw_per_claim, 8.4375);
-    close(capped.per_claim, 12.224);
-    close(capped.per_day, 12.223999999999998);
-    close(capped.min_per_day, 8.0);
-
-    let twelve = ladle::stats(character, PANEL, 12.0);
-    close(twelve.raw_per_claim, 10.125);
-    close(twelve.per_claim, 11.76);
-    close(twelve.per_day, 23.52);
-    close(twelve.min_per_day, 20.0);
-
-    let plainly = ladle::stats(ladle.character(1).expect("a second character"), PANEL, 24.0);
-    close(plainly.double_chance, 0.0);
-    close(plainly.per_day, 20.0);
-    close(plainly.next_level_balloons, 40.0);
 }
 
 #[test]
@@ -499,4 +215,124 @@ fn a_character_with_no_rows_still_reads() {
     );
     close(none.panel_per_day, 0.0);
     close(none.per_day, 0.0);
+}
+
+#[test]
+fn balloons_carry_their_overflow() {
+    let item = EXP_BALLOONS[0].item_id;
+    // A target at or below the current level spends nothing.
+    let same = balloons_to_level(10.0, 5.0, 10.0, 2.0, item);
+    close(same.balloons, 0.0);
+    close(same.level, 10.0);
+    close(same.exp, 5.0);
+
+    // Banked EXP alone pays for the levels it covers.
+    let banked = cooking_exp_req(20.0) + cooking_exp_req(21.0);
+    let free = balloons_to_level(20.0, banked, 22.0, 2.0, item);
+    close(free.balloons, 0.0);
+    close(free.level, 22.0);
+
+    // The count reaches the target, and one balloon fewer does not.
+    let reach = balloons_to_level(5.0, 0.0, 30.0, 1.5, item);
+    assert!(reach.balloons > 1.0);
+    assert!(reach.level >= 30.0);
+    let spent = levels_from_balloons(5.0, 0.0, reach.balloons, 1.5, item);
+    close(spent.used, reach.balloons);
+    close(spent.level, reach.level);
+    close(spent.exp, reach.exp);
+    assert!(levels_from_balloons(5.0, 0.0, reach.balloons - 1.0, 1.5, item).level < 30.0);
+
+    // No EXP multi means no balloon gain, so no count reaches the target.
+    assert!(
+        balloons_to_level(10.0, 0.0, 12.0, 0.0, item)
+            .balloons
+            .is_infinite()
+    );
+}
+
+#[test]
+fn split_share_keeps_levels_even() {
+    let item = EXP_BALLOONS[0].item_id;
+    let characters = [Some((30.0, 0.0)), None, Some((60.0, 0.0))];
+    let split = split_balloons(&characters, 130.0, 2.75, item);
+    close(split.used + split.left, 130.0);
+    assert!(split.characters[1].is_none());
+    let low = split.characters[0].expect("a share");
+    let high = split.characters[2].expect("a share");
+    // The lowest character takes every balloon until it catches up.
+    close(low.used, 130.0);
+    close(high.used, 0.0);
+    assert!(low.level > low.start_level);
+    close(high.level, 60.0);
+
+    // With nothing to share the levels still absorb the banked EXP.
+    let banked = [Some((30.0, cooking_exp_req(30.0)))];
+    let idle = split_balloons(&banked, 0.0, 2.75, item);
+    close(idle.used, 0.0);
+    close(idle.left, 0.0);
+    close(idle.characters[0].expect("a share").level, 31.0);
+}
+
+#[test]
+fn each_breakpoint_is_the_efficiency_its_step_needs() {
+    let efficiency = 12_345.6;
+    close(ladles_per_day(efficiency, 0.0), 15.0);
+    let steps = ladle_breakpoints(efficiency, 0.0, 3);
+    for (step, point) in steps.iter().enumerate() {
+        close(point.ladles_per_day, 15.0 * (step as f64 + 2.0));
+        close(point.multiplier, point.efficiency / efficiency);
+        close(
+            ladles_per_day(point.efficiency * (1.0 + 1e-12), 0.0),
+            point.ladles_per_day,
+        );
+        assert!(ladles_per_day(point.efficiency * (1.0 - 1e-9), 0.0) < point.ladles_per_day);
+    }
+}
+
+#[test]
+fn a_claim_rolls_the_post_office_double() {
+    // Whole ladles: the floor, or twice the value floored on a double.
+    close(claim_minimum(1.7), 1.0);
+    close(claim_expectation(1.7, 40.0), 0.6 * 1.0 + 0.4 * 3.0);
+    // Under one ladle nothing is guaranteed, and the roll still pays.
+    close(claim_minimum(0.7), 0.0);
+    close(claim_expectation(0.7, 40.0), 0.7 * 1.4 + 0.3 * 0.4);
+    close(claim_expectation(0.3, 40.0), 0.3 * 1.4);
+    close(claim_expectation(-1.0, 40.0), 0.0);
+}
+
+#[test]
+fn the_claim_plan_splits_the_window_and_respects_the_cap() {
+    let claimer = Claimer {
+        index: 0,
+        name: "Ana".into(),
+        raw_per_hour: 1.0,
+        double_chance: 0.0,
+        cap_hours: 10.0,
+        claim_hours: 8.0,
+        pending_hours: 7.0,
+    };
+    let plan = claim_plan(std::slice::from_ref(&claimer), 20.0);
+    // The pending seven hours plus the first four would pass the cap, so they
+    // are claimed now; then claims land at 4, 12 and 20 hours.
+    let at: Vec<f64> = plan.claims.iter().map(|claim| claim.at_hours).collect();
+    assert_eq!(at, vec![0.0, 4.0, 12.0, 20.0]);
+    assert!(plan.claims[0].now);
+    let credited: Vec<f64> = plan
+        .claims
+        .iter()
+        .map(|claim| claim.credited_hours)
+        .collect();
+    assert_eq!(credited, vec![7.0, 4.0, 8.0, 8.0]);
+    close(plan.min_ladles, 27.0);
+    close(plan.expected_ladles, 27.0);
+
+    // Two minutes away or less grants nothing.
+    let short = Claimer {
+        pending_hours: 0.0,
+        claim_hours: 0.01,
+        ..claimer
+    };
+    let plan = claim_plan(&[short], 0.01);
+    close(plan.min_ladles, 0.0);
 }

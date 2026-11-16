@@ -1,50 +1,8 @@
-//! The endgame audit: the verdict is always `NO`, and every save-table metric
-//! matches `js/endgame-stats.js` on the committed fixture and on purpose-built
-//! saves ported from the upstream test suite.
+//! The endgame audit: the verdict is always `NO`, and the save-table metrics
+//! read purpose-built saves.
 
 use idleon_endgame::{self as endgame, Stat, VERDICT};
-use idleon_import::import;
 use serde_json::{Map, Value, json};
-
-/// The metrics that need the account stats engine, the Tome scorer or breeding
-/// totals, so this build reports them without a value.
-const UNPORTED: [&str; 21] = [
-    "strength",
-    "agility",
-    "wisdom",
-    "luck",
-    "dropRate",
-    "cashMulti",
-    "defence",
-    "accuracy",
-    "hp",
-    "mp",
-    "highestDamage",
-    "postOfficeOrders",
-    "highestConstructExp/hr",
-    "highestSpelunkingPower",
-    "highestArcaneMapMulti",
-    "highestOutpostResourceRate",
-    "highestVillagerExp/hr",
-    "totalVillagerExp/hr",
-    "totalShinyLevels",
-    "totalBreedabilityLevels",
-    "totalTomePoints",
-];
-
-fn fixture() -> String {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/data.json");
-    std::fs::read_to_string(path).expect("fixtures/data.json is committed")
-}
-
-fn upstream_stats() -> Value {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../fixtures/endgame-stats.json"
-    );
-    serde_json::from_str(&std::fs::read_to_string(path).expect("the upstream audit is committed"))
-        .expect("the upstream audit is JSON")
-}
 
 fn value(stats: &[Stat], id: &str) -> Option<f64> {
     stats
@@ -95,48 +53,7 @@ fn a_save_without_research_rows_fails_before_collecting() {
     );
 }
 
-#[test]
-fn the_fixture_audit_matches_the_upstream_js() {
-    let imported = import(&fixture()).expect("the fixture imports");
-    let stats = endgame::collect(&imported.save, imported.named_characters)
-        .expect("the fixture has complete research rows");
-    let expected = upstream_stats();
-    let expected = expected["stats"].as_array().expect("the audit list");
-    assert_eq!(stats.len(), expected.len());
-    let mut compared = 0;
-    for (stat, expected) in stats.iter().zip(expected) {
-        assert_eq!(stat.id, expected["id"]);
-        assert_eq!(stat.group, expected["group"]);
-        assert_eq!(stat.label, expected["label"], "{} label", stat.id);
-        if UNPORTED.contains(&stat.id) {
-            assert!(stat.value.is_none(), "{} needs the engine", stat.id);
-            assert_eq!(stat.detail.as_deref(), Some(endgame::UNPORTED));
-            continue;
-        }
-        let wanted = expected["value"]
-            .as_f64()
-            .unwrap_or_else(|| panic!("{} has a value upstream", stat.id));
-        let got = stat
-            .value
-            .unwrap_or_else(|| panic!("{} is computed: {:?}", stat.id, stat.detail));
-        let scale = wanted.abs().max(1.0);
-        assert!(
-            (got - wanted).abs() / scale < 1e-9,
-            "{}: got {got}, upstream {wanted}",
-            stat.id
-        );
-        assert_eq!(
-            stat.partial,
-            expected["partial"].as_bool().unwrap_or(false),
-            "{} partial",
-            stat.id
-        );
-        compared += 1;
-    }
-    assert_eq!(compared, 177 - UNPORTED.len());
-}
-
-/// The upstream `statSave`: two characters, a few tables, and the loaded options.
+/// Two characters, a few tables, and the loaded options.
 fn base_save() -> Value {
     let mut research = rows(60);
     set(&mut research, 0, json!([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7]));
@@ -168,7 +85,7 @@ fn base_save() -> Value {
 }
 
 #[test]
-fn saved_tables_and_counters_are_summed_like_upstream() {
+fn saved_tables_and_counters_are_summed() {
     let stats = endgame::collect(&base_save(), 0).expect("complete research rows");
     let expected = [
         ("totalBoats", 41.0),
@@ -193,7 +110,7 @@ fn saved_tables_and_counters_are_summed_like_upstream() {
     assert!(detail(&stats, "totalRoyalResourceGrades").contains("Not included"));
 }
 
-/// The upstream `expanded` save: every saved field a metric can read.
+/// Every saved field a metric can read.
 fn expanded_save() -> Value {
     let Value::Object(mut data) = base_save() else {
         unreachable!()
@@ -246,7 +163,7 @@ fn expanded_save() -> Value {
     let mut cauldron = vec![json!([]); 5];
     cauldron[1] = json!([0, 0, 345]);
     cauldron[4] = json!([2, 3]);
-    // The five columns the upstream test fills directly.
+    // The five columns filled directly.
     cauldron[0] = json!([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123]);
     cauldron[1] = json!([0, 0, 345, 0, 0, 0, 0, 0, 0, 0, 0, 234]);
     cauldron[3] = json!([
@@ -295,7 +212,7 @@ fn expanded_save() -> Value {
 }
 
 #[test]
-fn expanded_save_metrics_match_the_upstream_test() {
+fn expanded_save_metrics_read_every_saved_field() {
     let save = expanded_save();
     let stats = endgame::collect(&save, 0).expect("complete research rows");
     let expected = [

@@ -1,8 +1,5 @@
 //! The plan edits: random construction, mutations over towers, groups, types and
 //! phases, and the beam's direct relocations and recipe retries.
-//!
-//! Ported from `randomPlan`, `_mutateRaw`, `_tdPlanNeighbors` and their helpers in
-//! `js/stats/systems/w3/worship-td.js`.
 
 use super::Candidate;
 use super::plans::{

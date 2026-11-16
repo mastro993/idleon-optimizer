@@ -1,9 +1,8 @@
 //! The Ships tab: loot and speed breakpoints, their costs and ETAs.
 //!
-//! Upstream targets the island that pays each upgrade's currency, prices every
-//! level up to the breakpoint and reads what the route gains once the boat is
-//! there. The plan for that island always optimises direct loot value, as the
-//! upstream levels tab does.
+//! Each upgrade targets the island that pays its currency, prices every level
+//! up to the breakpoint and reads what the route gains once the boat is there.
+//! The plan for that island always optimises direct loot value.
 
 use super::{gain, hours_or_ready, text_kpi};
 use crate::state::AppState;
@@ -33,8 +32,8 @@ pub(crate) fn ships_tab(
     table_height: Pixels,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    // One plan per currency island, exactly as `activeFleet(targetIsland)`
-    // resolves it upstream: the currency decides the route, not the selector.
+    // One plan per currency island: the currency decides the route, not the
+    // selector.
     let mut plans: BTreeMap<usize, FleetPlan> = BTreeMap::new();
     for (boat, stat) in stats(state) {
         let island = currency(upgrade_cost_type(boat, stat)).island.unwrap_or(0);

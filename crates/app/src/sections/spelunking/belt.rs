@@ -1,10 +1,9 @@
 //! The elixir belt: equipped and memorized slots, the built-in presets and the
 //! selected effects.
 //!
-//! Upstream taps a belt slot to open a portrait popover; here each slot is a
-//! select with the unlocked elixirs. The duplicate and memory rules are enforced
-//! by the normaliser as well, so an overfilled belt is reported instead of
-//! silently rewritten.
+//! Each slot is a select with the unlocked elixirs. The duplicate and memory
+//! rules are enforced by the normaliser as well, so an overfilled belt is
+//! reported instead of silently rewritten.
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image;

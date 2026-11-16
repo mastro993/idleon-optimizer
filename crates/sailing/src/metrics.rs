@@ -6,7 +6,7 @@ use super::{
     island_distance,
 };
 
-/// The six chest tiers' cumulative thresholds, as upstream stores them.
+/// The six chest tiers' cumulative thresholds.
 const CHEST_CUMULATIVE_THRESHOLDS: [f64; 6] = [1.0, 0.2, 0.04, 0.006, 0.00023, 0.00000001];
 /// Chest loot multipliers for tiers 0 through 5.
 const CHEST_LOOT_MULTIS: [f64; 6] = [
@@ -140,7 +140,7 @@ pub struct TreasureShares {
 }
 
 impl Default for TreasureShares {
-    /// Below Sailing level 5 every payout is gold bars, as upstream splits it.
+    /// Below Sailing level 5 every payout is gold bars.
     fn default() -> Self {
         Self {
             gold: 1.0,
@@ -208,7 +208,7 @@ pub(crate) fn davey_jones_bonus(boat: &Boat, context: &RouteContext) -> f64 {
     training * (1.0 + if active { 2.0 } else { 0.0 })
 }
 
-/// A boat's loot value, matching upstream `boatLootValue`.
+/// A boat's loot value.
 pub(crate) fn boat_loot_value(
     fleet: &Fleet,
     boat_idx: usize,
@@ -245,7 +245,7 @@ pub(crate) fn boat_loot_value(
     }
 }
 
-/// A boat's speed, matching upstream `boatSpeed`.
+/// A boat's speed.
 pub(crate) fn boat_speed(
     fleet: &Fleet,
     boat_idx: usize,
@@ -295,13 +295,13 @@ pub(crate) fn boat_speed(
     }
 }
 
-/// Boat loot at a level, upstream `boatBaseLoot`.
+/// Boat loot at a level.
 pub(crate) fn boat_base_loot(level: u32) -> f64 {
     let level = level as f64;
     5.0 + (2.0 + (level / 8.0).floor().powi(2)) * level
 }
 
-/// Boat speed at a level, upstream `boatBaseSpeed`.
+/// Boat speed at a level.
 pub(crate) fn boat_base_speed(level: u32) -> f64 {
     let level = level as f64;
     10.0 + (5.0 + (level / 7.0).floor().powi(2)) * level
@@ -402,7 +402,7 @@ pub(crate) fn chest_artifact_multiplier(tier: usize) -> f64 {
     CHEST_ARTIFACT_MULTIS.get(tier).copied().unwrap_or(0.0)
 }
 
-/// A boat's artifact-find multiplier, matching upstream `boatArtifactMultiplier`.
+/// A boat's artifact-find multiplier.
 pub(crate) fn boat_artifact_multiplier(
     fleet: &Fleet,
     boat_idx: usize,

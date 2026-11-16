@@ -1,16 +1,15 @@
 //! The bag a Killroy run drops into.
 //!
 //! A Killroy encounter drops `Quest69` skulls plus the talent-point,
-//! dungeon-credit and pearl items (`js/stats/systems/common/combat-sim-killroy.js`).
-//! Every one of those is a big-stack type: `maxCapacityFor` in
-//! `combat-sim-inputs.js` caps `dQuest` and `dCurrency` at 9,999,999, so a run
+//! dungeon-credit and pearl items. Every one of those is a big-stack type: the
+//! game caps `dQuest` and `dCurrency` stacks at 9,999,999, so a run
 //! needs one bag slot per item type and a stack never overflows inside a run.
 //!
-//! `ItemPickupInTheFirstPlace` in `combat-sim-rewards.js` fills an existing
-//! stack first, then a blank slot, and loses the drop when neither is free.
-//! `unlimitedInventory` sends what the bag cannot hold to a virtual overflow
-//! instead. A save without `InventoryOrder_<ci>` starts from the upstream
-//! default bag: an empty inventory padded with sixteen Blank slots.
+//! The game's `ItemPickupInTheFirstPlace` fills an existing stack first, then a
+//! blank slot, and loses the drop when neither is free. Unlimited inventory
+//! sends what the bag cannot hold to a virtual overflow instead. A save without
+//! `InventoryOrder_<ci>` starts from the default bag: an empty inventory padded
+//! with sixteen Blank slots.
 
 use super::row_values;
 use idleon_save::Save;
@@ -34,7 +33,7 @@ const PICKUPS: [&str; 12] = [
 /// The skull item, the one drop the comparison ranks.
 pub const SKULLS: &str = "Quest69";
 
-/// The upstream default bag: an empty inventory padded with Blank slots.
+/// The default bag: an empty inventory padded with Blank slots.
 const DEFAULT_BLANKS: usize = 16;
 
 /// The bag space a run has: its blank slots and the pickup stacks it already holds.
@@ -56,7 +55,7 @@ impl Default for Bag {
 }
 
 impl Bag {
-    /// Unlimited inventory: every pickup fits, as the calculator's overflow store does.
+    /// Unlimited inventory: every pickup fits into a virtual overflow store.
     pub fn unlimited() -> Self {
         Self {
             unlimited: true,
@@ -105,7 +104,7 @@ fn index(item: &str) -> Option<u16> {
 /// The bag a save starts a character's run with, from `InventoryOrder_<ci>`.
 ///
 /// The game's inventory order spans every owned slot, so the array itself is the
-/// capacity; a save without it runs the upstream default bag.
+/// capacity; a save without it runs the default bag.
 pub(super) fn bag(save: &Save, ci: usize) -> Bag {
     let Some(order) = save.get(&format!("InventoryOrder_{ci}")) else {
         return Bag::default();

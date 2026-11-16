@@ -1466,7 +1466,6 @@
   }
  ],
  "coverage": {
-  "sourceHash": "955b2ebe976e85f48b1de2ed14c61c9b2514703be0dca9d47516bc00fc110206",
   "scope": "Direct native cache reads and literal BubbleBonus calls, not a proof of complete downstream numerical coverage.",
   "reads": [
    {
@@ -2975,14 +2974,5 @@
    }
   ],
   "unresolved": 8
- },
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/data/w2/alchemy.js",
-   "js/stats/data/common/encoding.js",
-   "js/stats/entity-names.js",
-   "js/stats/data/prisma-source-coverage.js"
-  ]
  }
 }

@@ -1,14 +1,7 @@
 //! SN-04: the floor × mastery table, the active door and the next captive.
 //!
-//! Ported from the floor table in `sneaking-calc.html` (`_cellData`, `_thresholds`,
-//! `doorStateLabel`), the saved-placement rates in `_savedFloorsHtml` and the
-//! decision cards in `_recommendationHtml`, with the formulas of
-//! `js/stats/systems/w6/sneaking-math.js` (`floorDetectionBase`, `floorJadeBase`,
-//! `floorExpMult`, `doorHP`, `doorState`, `captiveTargetForFloor`, `untieReq`,
-//! `funeralStealthBonus`) and `computeDoorClearEstimate` in `sneaking-jade.js`.
-//!
 //! Each row is one floor at one mastery level. The save's own mastery carries the
-//! saved placement and its flowers; a projected mastery is upstream's what-if:
+//! saved placement and its flowers; a projected mastery is a what-if:
 //! the flowers reset to zero and every door reads fresh at its full HP, because
 //! the game relocks the floors when the mastery advances. Detection, Jade, EXP,
 //! door damage and untie progress all come from the loadout's own runtime loop,
@@ -27,7 +20,7 @@ pub struct FloorMastery {
     pub current: bool,
     /// The saved Funeral Flowers on the floor, zero on a projected mastery.
     pub flowers: f64,
-    /// `funeralStealthBonus`: the flowers times Ninja Knowledge 21, in percent.
+    /// The flowers times Ninja Knowledge 21, in percent.
     pub funeral_percent: f64,
     pub detection_base: f64,
     pub jade_base: f64,
@@ -98,7 +91,7 @@ struct TwinMetric {
 }
 
 impl Loadout {
-    /// The saved mastery and its neighbours: upstream's `M-1`, `M (cur)`, `M+1`.
+    /// The saved mastery and its neighbours: `M-1`, `M (cur)`, `M+1`.
     pub fn mastery_levels(&self) -> Vec<u32> {
         let mastery = self.mastery;
         let mut levels = vec![mastery.saturating_sub(1), mastery, mastery + 1];
@@ -314,7 +307,7 @@ impl Loadout {
         }
     }
 
-    /// The word upstream prints in the Door column.
+    /// The word printed in the Door column.
     fn door_label(&self, floor: usize, state: &DoorState) -> String {
         if floor == 0 {
             return "No door".into();
@@ -342,10 +335,9 @@ impl Loadout {
     }
 }
 
-/// `computeDoorClearEstimate`: the hours of successful hits the remaining HP
-/// needs. A finished door is `0`; `None` when the door still needs hits but
-/// nothing on the floor can land them, which reads as the door's state instead
-/// of an endless ETA.
+/// The hours of successful hits the remaining HP needs. A finished door is `0`;
+/// `None` when the door still needs hits but nothing on the floor can land
+/// them, which reads as the door's state instead of an endless ETA.
 pub fn door_eta(remaining_hp: f64, damage_per_hour: f64, hits_per_hour: f64) -> Option<f64> {
     if remaining_hp.max(0.0) <= 0.0 {
         return Some(0.0);

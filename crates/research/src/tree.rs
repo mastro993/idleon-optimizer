@@ -5,8 +5,7 @@
 //! it there and the hours from its parent. Saving a node steps its state to the
 //! next research or insight level-up and appends the child that event opens;
 //! branching copies the node and steps the copy, so two layouts race from the
-//! same point. Ported from upstream `js/dt/dt-sim.js` and
-//! `js/dt/decision-tree.js`.
+//! same point.
 
 use crate::data::game;
 use crate::model::{Effort, Mag, MagKind, SimContext, Simulation};
@@ -14,10 +13,9 @@ use crate::optimize::{mags, monos, shapes};
 use crate::sim::{self, Event};
 use idleon_common::{Control, Progress};
 
-/// Event jumps one step may take before it gives up, as upstream `dtStepSim`.
+/// Event jumps one step may take before it gives up.
 const MAX_JUMPS: usize = 50_000;
-/// Insight level-ups one auto-insight chain may skip before it gives up, as
-/// upstream `dtAdvanceAutoInsight`.
+/// Insight level-ups one auto-insight chain may skip before it gives up.
 const MAX_AUTO_STEPS: usize = 500;
 
 /// One research or insight level-up.
@@ -227,7 +225,7 @@ pub struct Node {
 pub struct Tree {
     nodes: Vec<Node>,
     next_id: u64,
-    /// Hide the insight level-up nodes, as the upstream level-ups-only toggle.
+    /// Hide the insight level-up nodes: the level-ups-only toggle.
     pub level_ups_only: bool,
     /// The compared nodes, in the order they were picked; the first is the
     /// baseline every delta is measured against.
@@ -263,7 +261,7 @@ pub struct Comparison {
     pub hours_delta: f64,
 }
 
-/// Canvas constants, as upstream `dt-state.js`.
+/// Canvas constants.
 const NODE_W: f32 = 120.0;
 const NODE_H: f32 = 58.0;
 const COL_W: f32 = 140.0;
@@ -480,8 +478,8 @@ impl Tree {
         changes
     }
 
-    /// Where every visible node sits, in the upstream time-column and
-    /// depth-first row layout. Time gaps grow with the square root of the hours
+    /// Where every visible node sits, in a time-column and depth-first row
+    /// layout. Time gaps grow with the square root of the hours
     /// they cover, so a day does not dwarf an hour.
     pub fn layout(&self) -> Layout {
         let Some(root) = self.root() else {
@@ -804,7 +802,7 @@ impl Tree {
         }
     }
 
-    /// The upstream Auto Mags action: place glasses and kaleidoscopes for the
+    /// The Auto Mags action: place glasses and kaleidoscopes for the
     /// EXP rate, then spread the monocles with [`monos::choose_mono_targets`].
     pub fn auto_mags(&mut self, id: u64, ctx: &SimContext) -> usize {
         let Some(node) = self.node_mut(id) else {
@@ -835,7 +833,7 @@ impl Tree {
             .count()
     }
 
-    /// The upstream Auto Shapes action: place the owned shapes for the rate.
+    /// The Auto Shapes action: place the owned shapes for the rate.
     ///
     /// The optimiser returns its best layout so far when stopped, so this
     /// returns `Some` after a stop too; a caller that asked for the stop must

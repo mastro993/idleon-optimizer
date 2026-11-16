@@ -1,10 +1,10 @@
-//! The Depth Charge floor simulation, ported from `js/minehead/sim.js`.
+//! The Depth Charge floor simulation.
 //!
 //! The engine is one state machine: [`Game`] holds a game's grid, lives and
 //! per-turn state, and both the Monte Carlo search and the Play tab drive it
-//! through the same `reveal`/`golden`/`attack` calls. The random stream is the
-//! upstream `mulberry32`, consumed in the same order, so a seeded run lands on
-//! the same numbers as the JS calculator.
+//! through the same `reveal`/`golden`/`attack` calls. The random stream is a
+//! seeded `mulberry32`, consumed in a fixed order, so a seeded run is
+//! reproducible.
 
 use idleon_common::curve::js_round;
 
@@ -29,7 +29,7 @@ impl Decision {
     }
 }
 
-/// The context one decision reads, mirroring upstream `tunableStrategy`'s.
+/// The context one decision reads.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Ctx {
     pub safe_revealed_this_turn: u32,
@@ -50,7 +50,7 @@ pub struct Ctx {
     pub last_turn_mine_hit: bool,
 }
 
-/// Every knob of the parameterized EV strategy, with upstream's defaults.
+/// Every knob of the parameterized EV strategy, with its defaults.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Params {
     pub ev_multiplier: f64,
@@ -254,7 +254,7 @@ pub struct Options {
     pub grid_bonus_166_1: f64,
     pub damage: DamageInputs,
     pub svar_hp: f64,
-    /// Zero means no cap, as upstream.
+    /// Zero means no cap.
     pub max_turns: u32,
     pub mine_reduction: f64,
     pub legend40_pts: f64,
@@ -790,7 +790,7 @@ pub fn simulate_game(options: &Options, params: &Params, rng: &mut Rng) -> GameR
         game.start_turn(rng);
         game.use_instas(rng, params.insta_mode);
         loop {
-            // `safe <= 0` covers both upstream exits: every tile revealed, and
+            // `safe <= 0` covers both exits: every tile revealed, and
             // only depth charges left.
             if game.remaining().1 <= 0.0 {
                 game.attack();
@@ -880,7 +880,7 @@ pub fn monte_carlo(options: &Options, params: &Params, trials: u32, seed: u32) -
     }
 }
 
-/// `generateGrid`: the game's own tile rolls.
+/// The game's own tile rolls.
 pub fn generate_grid(
     num_tiles: usize,
     mines: f64,
@@ -990,7 +990,7 @@ pub fn generate_grid(
     (grid, crowns)
 }
 
-/// `_placeGoldens`: golden tiles on safe positions, up to the budget.
+/// Golden tiles on safe positions, up to the budget.
 pub fn place_goldens(
     grid: &[u32],
     num_tiles: usize,
@@ -1017,7 +1017,7 @@ pub fn place_goldens(
     positions
 }
 
-/// The upstream seeded PRNG, `mulberry32`.
+/// The seeded PRNG, `mulberry32`.
 pub struct Rng {
     state: u32,
 }

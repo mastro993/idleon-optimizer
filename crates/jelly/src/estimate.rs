@@ -1,13 +1,8 @@
 //! The operation estimate: the seeded Monte Carlo the overview shows.
 //!
-//! Ports `jellyOperationEstimate`, `simulateJellyTrials` and
-//! `summarizeJellyTrials` from `js/stats/systems/w7/jelly-operator.js`. One
-//! trial is [`super::operation::simulate`]; the aggregate keeps the upstream's
-//! statistics, including its Wilson interval for the clear probability.
-//!
-//! The upstream batched, cached and resumable trial runners are search
-//! optimizations for its optimizer; this port runs the trials directly, so the
-//! numbers are the same and a run stays cancellable at a trial boundary.
+//! One trial is [`super::operation::simulate`]; the aggregate reports the
+//! trials' statistics, including a Wilson interval for the clear probability.
+//! The trials run directly, so a run stays cancellable at a trial boundary.
 
 use super::Jelly;
 use super::board::Layout;
@@ -56,12 +51,12 @@ pub struct Estimate {
     pub mean_contribution_by_type: Vec<Contribution>,
     pub min_damage: f64,
     pub max_damage: f64,
-    /// The first trial, which the page's contribution table and timeline show.
+    /// The first trial, which the contribution table and timeline show.
     pub representative: Trial,
 }
 
 impl Estimate {
-    /// `jellyOperationEstimate`: `trials` seeded attempts and their aggregate.
+    /// `trials` seeded attempts and their aggregate.
     pub fn run(jelly: &Jelly, layout: &Layout, trials: u32, seed: u32) -> Estimate {
         Self::run_with(jelly, layout, trials, seed, |_done| true)
             .expect("a run that never cancels finishes")
@@ -96,7 +91,6 @@ impl Estimate {
     }
 }
 
-/// `summarizeJellyTrials`.
 pub fn summarize(results: &[Trial], seed: u32) -> Estimate {
     let trials = results.len() as u32;
     if let Some(invalid) = results.iter().find(|trial| !trial.valid) {
@@ -229,7 +223,6 @@ pub fn quantile(values: &[f64], fraction: f64) -> Option<f64> {
     Some(sorted[lower] + (sorted[upper] - sorted[lower]) * (position - lower as f64))
 }
 
-/// `standardError`.
 pub fn standard_error(values: &[f64]) -> f64 {
     if values.len() < 2 {
         return 0.0;
@@ -243,7 +236,7 @@ pub fn standard_error(values: &[f64]) -> f64 {
     (variance / values.len() as f64).sqrt()
 }
 
-/// `wilsonInterval`: the 95% Wilson score interval.
+/// The 95% Wilson score interval.
 pub fn wilson(successes: f64, trials: f64) -> (f64, f64) {
     if trials <= 0.0 {
         return (0.0, 0.0);

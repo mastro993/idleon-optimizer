@@ -1,25 +1,19 @@
 //! The Clamworks AFK claim and the `+1` upgrade comparison beside it.
 //!
-//! Ports `clamworksAfkSummary` from `js/stats/systems/w7/clamworks-afk.js`, the
-//! drop distribution it is built on (`afkDropRollDistribution` and the
-//! Clamworks rows of `afkMonsterDropOutcomes`, both in
-//! `js/stats/systems/common/combat-afk.js`) and the comparison in
-//! `js/stats/systems/w7/clamworks-combat.js`.
-//!
 //! One claim is one ordinary AFK trip on Clamworks: every kill rolls the map's
 //! pearl rows once, and every pearl is worth [`Clamworks::pearl_value`] with the
 //! LUCKY DAY ten-times chance folded in. What the game derives from combat —
 //! monsters killed per hour and the drop-rate stat — is an input here until the
 //! combat simulator lands (`CS-02`/`CS-03`), just like the multikill total.
 //!
-//! Two parts of the upstream tab are not ported. The reroll-for-pure-pearls
+//! Two parts of the AFK claim are not modelled. The reroll-for-pure-pearls
 //! policy needs the talent and guild bonuses the stats context resolves, and
 //! Time Candy cannot be used on this map at all, so neither is an input.
 
 use super::{Clamworks, PURE_PEARLS, UPGRADE_COUNT};
 use crate::data::clamworks;
 
-/// The pearl drop table a claim starts from, as the upstream page asks.
+/// The pearl drop table a claim starts from.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Phase {
@@ -77,14 +71,14 @@ impl Default for Inputs {
 /// Why a claim cannot be calculated.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClaimError {
-    /// The upstream range is 0 to 55,555 hours (`hours × 3600 <= 2e8`).
+    /// The accepted range is 0 to 55,555 hours (`hours × 3600 <= 2e8`).
     Hours,
     /// A kill rate or drop rate that is negative or not a number.
     Rates,
 }
 
 impl ClaimError {
-    /// The message the upstream page shows for the same rejected entry.
+    /// The message shown for the rejected entry.
     pub fn message(self) -> &'static str {
         match self {
             ClaimError::Hours => "Enter AFK hours between 0 and 55,555.",
@@ -175,8 +169,7 @@ impl Compare {
 }
 
 impl Clamworks {
-    /// `clamworksAfkSummary`: one ordinary claim's pearl drops and what they are
-    /// worth.
+    /// One ordinary claim's pearl drops and what they are worth.
     ///
     /// The claim starts from the selected pearl table and always keeps the same
     /// kills; a reroll would replace the claim, not add to it, which is why the
@@ -232,12 +225,12 @@ impl Clamworks {
         })
     }
 
-    /// `buildClamworksAfkPlan` and `summarizeClamworksAfk`: every unlocked `+1`
-    /// upgrade's claim beside the current one, with its cost and payback.
+    /// Every unlocked `+1` upgrade's claim beside the current one, with its cost
+    /// and payback.
     ///
-    /// The candidates are the upstream's: at most the saved unlock progress,
-    /// never the two cost reducers (they change no pearl yield) and never CLAM
-    /// COMRADES once it already caps the map's clams.
+    /// The candidates are at most the saved unlock progress, never the two cost
+    /// reducers (they change no pearl yield) and never CLAM COMRADES once it
+    /// already caps the map's clams.
     pub fn afk_compare(&self, inputs: Inputs, multikill_total: f64) -> Result<Compare, ClaimError> {
         let current = self.afk_claim(inputs, multikill_total)?;
         let mut rows = vec![CompareRow {
@@ -251,8 +244,7 @@ impl Clamworks {
         let mut warnings = Vec::new();
         for index in self.compare_candidates() {
             let level = self.upgrades[index];
-            // The upstream row costs `upgradeCostAt`'s default level, the saved
-            // one, not the level the row buys.
+            // The row costs the saved level, not the level the row buys.
             let cost = self.upgrade_cost_at(index, f64::from(level));
             if !cost.is_finite() || cost <= 0.0 {
                 warnings.push(format!(
@@ -322,7 +314,7 @@ impl Clamworks {
     }
 }
 
-/// One drop row over `batch` rolls: `afkDropRollDistribution`, then the row's
+/// One drop row over `batch` rolls: the roll distribution, then the row's
 /// expected quantity, chance and guaranteed minimum.
 fn drop_row(batch: f64, probability: f64, value: f64, lucky: f64, multiplier: f64) -> Drop {
     let distribution = roll_distribution(batch, probability);
@@ -344,8 +336,8 @@ fn drop_row(batch: f64, probability: f64, value: f64, lucky: f64, multiplier: f6
     }
 }
 
-/// `afkDropRollDistribution`: one batch roll per row, capped at two drops until
-/// its mean is strictly above two, where the game hands out a fixed quantity.
+/// One batch roll per row, capped at two drops until its mean is strictly above
+/// two, where the game hands out a fixed quantity.
 fn roll_distribution(batch: f64, probability: f64) -> Vec<(f64, f64)> {
     if batch <= 0.0 {
         return vec![(0.0, 1.0)];

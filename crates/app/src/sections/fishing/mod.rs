@@ -2,12 +2,11 @@
 //! versus panel EXP of every pool, the all-combination lure/line ranking and the
 //! Trench depth projection.
 //!
-//! FI-01 ports the upstream `fishing-calc.html` toolbar, the character context
-//! and the per-pool outcome from `js/stats/systems/w2/fishing.js`; FI-02 adds the
-//! lure/line ranking over all 225 combinations; FI-03 adds the Trench depth
-//! projection, the fastest lure + line per projected depth and the other
-//! characters fishing alongside. The account values the upstream derives from
-//! the skill systems are entered in the account card until those systems are
+//! FI-01 builds the toolbar, the character context and the per-pool outcome;
+//! FI-02 adds the lure/line ranking over all 225 combinations; FI-03 adds the
+//! Trench depth projection, the fastest lure + line per projected depth and the
+//! other characters fishing alongside. The account values that come from the
+//! skill systems are entered in the account card until those systems are
 //! decoded.
 
 mod actions;
@@ -34,14 +33,14 @@ use idleon_fishing::{
 };
 
 /// The section's live state: the character, toolkit, location, hours and the
-/// account values the upstream derives.
+/// account values the skill systems would supply.
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub(crate) struct State {
     pub(crate) character: usize,
     pub(crate) lure: usize,
     pub(crate) line: usize,
-    /// The upstream location id, `map:spot` or `x:pool`.
+    /// The location id, `map:spot` or `x:pool`.
     pub(crate) location: String,
     /// Hours away; the AFK claim length.
     pub(crate) hours: f64,
@@ -325,7 +324,7 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// The missing-toolkit and missing-spot flags the upstream page shows.
+/// The missing-toolkit and missing-spot flags.
 fn warnings(state: &AppState, character: &fishing::Character) -> Option<AnyElement> {
     if !state.save_loaded {
         return None;

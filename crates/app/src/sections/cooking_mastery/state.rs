@@ -1,10 +1,8 @@
 //! The section's controls: the Mastery EXP tab's distribution goal and budget,
 //! and the yellow point allocator's tab, goal, budget and character.
 //!
-//! The page keeps the budget in module-level variables
-//! (`_masteryBudgetOverride`, `_selectedGoal`, `_yellowBudgetOverride`,
-//! `_yellowCharIdx`), so a tab switch keeps them; this struct does the same for
-//! the app and is what a project document carries.
+//! A tab switch keeps the budgets, the goal and the character; this struct holds
+//! them for the app and is what a project document carries.
 
 use super::Tab;
 use idleon_cooking_mastery::{Allocation, Goal, Mastery, Plan, Yellow};

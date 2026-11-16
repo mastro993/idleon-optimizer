@@ -8,12 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port the shadow-ban answer page with the upstream YES/NO/UNKNOWN semantics from OptLacc[26].
-
-## Upstream sources
-
-- shadow.html
-- js/save/loader.js
+Implement the shadow-ban answer page with the YES/NO/UNKNOWN semantics of OptLacc[26].
 
 ## UI
 
@@ -48,5 +43,5 @@ Acceptance:
 
 ## Verification
 
-- Three-state fixture test.
+- Three-state test.
 - Harness screenshot.

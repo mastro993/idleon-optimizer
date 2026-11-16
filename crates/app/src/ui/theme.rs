@@ -1,7 +1,7 @@
-//! The app's dark palette and the upstream world badges.
+//! The app's dark palette and the world badges.
 //!
-//! Ely owns the component tokens; this layer only pins the colors the upstream
-//! `index.html` and `site-nav.js` use, so every section reads the same values.
+//! Ely owns the component tokens; this layer only pins the app's own colors, so
+//! every section reads the same values.
 
 use crate::sections::Group;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, Palette, Radius, TextSize};
@@ -9,10 +9,10 @@ use gpui::{
     App, FontWeight, Hsla, IntoElement, ParentElement, RenderOnce, Styled, Window, div, rgb, rgba,
 };
 
-/// Ely's dark palette with the upstream site colors on top.
+/// Ely's dark palette with the app's colors on top.
 ///
-/// The ground, surfaces, borders and accent come from `index.html`
-/// (`#1a1a2e`, `#16213e`, `#0f3460`, `#00d4ff`); the remaining semantic
+/// The ground, surfaces, borders and accent are pinned (`#1a1a2e`, `#16213e`,
+/// `#0f3460`, `#00d4ff`); the remaining semantic
 /// colors stay Ely's so success, warning and danger keep their contrast.
 pub(crate) fn palette() -> Palette {
     let mut palette = Palette::dark(false);
@@ -42,7 +42,7 @@ pub(crate) fn palette() -> Palette {
     palette
 }
 
-/// The fill and text of one upstream world badge.
+/// The fill and text of one world badge.
 pub(crate) fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
     let (fill, text) = match group {
         Group::General => (0x78909c44, 0xb0bec5),
@@ -57,9 +57,9 @@ pub(crate) fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
     (rgba(fill).into(), rgb(text).into())
 }
 
-/// A world badge in the upstream color, sized like Ely's `Badge`.
+/// A world badge in its world's color, sized like Ely's `Badge`.
 ///
-/// Ely's badge tones are semantic, while the upstream world badges each keep a
+/// Ely's badge tones are semantic, while the world badges each keep a
 /// hue; this is the one specialization the dashboard and page header share.
 #[derive(IntoElement)]
 pub(crate) struct WorldBadge {
@@ -96,7 +96,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn palette_pins_the_upstream_ground_and_accent() {
+    fn palette_pins_the_ground_and_accent() {
         let palette = palette();
         assert_eq!(palette.bg, rgb(0x1a1a2e).into());
         assert_eq!(palette.surface, rgb(0x16213e).into());
@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn every_world_badge_keeps_its_upstream_hue() {
+    fn every_world_badge_keeps_its_hue() {
         let expected = [
             (Group::General, 0x78909c44, 0xb0bec5),
             (Group::W2, 0x0288d144, 0x81d4fa),

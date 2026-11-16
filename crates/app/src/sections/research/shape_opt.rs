@@ -1,11 +1,10 @@
 //! Shape Optimization: priority tiers, presets and the optimized placement.
 //!
-//! Ported from the upstream `Shape Optimization` tab in
-//! `js/renderers/upgrade-eval.js`. The two stored lists come from
-//! [`idleon_research::tiers`]: `above` is pinned ahead of the Res EXP divider and
-//! `below` holds the non-EXP nodes the leftover shapes cover. Editing a tier
-//! detaches the active preset; a built-in preset is never rewritten, and a
-//! custom one only changes when the user saves it again.
+//! The two stored lists come from [`idleon_research::tiers`]: `above` is
+//! pinned ahead of the Res EXP divider and `below` holds the non-EXP nodes the
+//! leftover shapes cover. Editing a tier detaches the active preset; a
+//! built-in preset is never rewritten, and a custom one only changes when the
+//! user saves it again.
 //!
 //! The preview and the breakdown are the real optimizer's output
 //! ([`idleon_research::optimize::shapes`]), run through the shared task runner, so
@@ -35,7 +34,7 @@ use idleon_research::tiers::{Tier, is_exp_node};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
 
-/// Logical pixels per preview cell; the board keeps the 20×12 upstream shape.
+/// Logical pixels per preview cell; the board keeps the 20×12 shape.
 const PREVIEW_CELL: f32 = 22.0;
 
 /// The Shape Optimization pane: tiers, presets, placement preview, breakdown.
@@ -764,7 +763,7 @@ fn breakdown_card(
         .into_any_element()
 }
 
-/// The cells of the three zones, as the upstream tier list renders them.
+/// The cells of the three zones, as the tier list renders them.
 fn zones(state: &mut AppState) -> (Vec<usize>, Vec<usize>, Vec<usize>) {
     let tiers = state.simulation.shape_tiers.clone();
     let fresh = state

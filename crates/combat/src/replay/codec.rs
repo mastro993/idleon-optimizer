@@ -40,7 +40,7 @@ impl Writer {
         self.bytes.push(value);
     }
 
-    /// Unsigned varint, exact up to 2^53 like upstream's `uv`.
+    /// Unsigned varint, exact up to 2^53.
     fn uv(&mut self, mut value: u64) {
         while value >= 128 {
             self.byte((value % 128) as u8 | 128);
@@ -91,13 +91,12 @@ pub struct Encoder {
     sent: usize,
     prev: Ordered<Prev>,
     count: usize,
-    bytes: usize,
     writer: Writer,
 }
 
 impl Encoder {
-    /// `createReplayEncoder`: at least one frame between keyframes, defaulting
-    /// to the extracted interval.
+    /// A new encoder with at least one frame between keyframes; `0` takes the
+    /// default interval.
     pub fn new(keyframe_every: usize) -> Self {
         let keyframe_every = if keyframe_every == 0 {
             super::keyframe_every()
@@ -111,14 +110,8 @@ impl Encoder {
             sent: 0,
             prev: Ordered::new(),
             count: 0,
-            bytes: 0,
             writer: Writer::default(),
         }
-    }
-
-    /// The whole dictionary, in the order keys were first seen.
-    pub fn keys(&self) -> &[String] {
-        &self.keys
     }
 
     /// Frames pushed so far.
@@ -126,12 +119,7 @@ impl Encoder {
         self.count
     }
 
-    /// Bytes the frames have taken.
-    pub fn bytes(&self) -> usize {
-        self.bytes
-    }
-
-    /// Dictionary entries added since the previous call (`newKeys`).
+    /// Dictionary entries added since the previous call.
     pub fn new_keys(&mut self) -> Keys {
         let from = self.sent;
         self.sent = self.keys.len();
@@ -151,7 +139,7 @@ impl Encoder {
         index
     }
 
-    /// `push`: one snapshot in, one delta-encoded frame out.
+    /// One snapshot in, one delta-encoded frame out.
     pub fn push(&mut self, snapshot: &Value) -> Vec<u8> {
         let snapshot = snapshot.as_object().cloned().unwrap_or_default();
         let keyframe = self.count.is_multiple_of(self.keyframe_every);
@@ -257,7 +245,6 @@ impl Encoder {
         }
         self.prev = next;
         self.count += 1;
-        self.bytes += self.writer.bytes.len();
         self.writer.bytes.clone()
     }
 
@@ -282,7 +269,7 @@ impl Encoder {
                     self.writer.byte(5);
                     self.writer.f64(raw);
                 }
-                // JSON cannot carry an infinity or a NaN; upstream writes null.
+                // JSON cannot carry an infinity or a NaN; it is written as null.
                 _ => self.writer.byte(0),
             },
             Value::String(text) => {
@@ -309,7 +296,7 @@ impl Encoder {
         }
     }
 
-    /// `objDelta`: the changed fields of `value` against `old`, plus deletes.
+    /// The changed fields of `value` against `old`, plus deletes.
     fn obj_delta(
         &mut self,
         old: Option<&Map<String, Value>>,
@@ -355,7 +342,7 @@ impl Encoder {
         next
     }
 
-    /// `fieldVal`: quantized numbers as absolute or differential tenths.
+    /// Quantized numbers as absolute or differential tenths.
     fn field_value(&mut self, field: &str, value: &Value, old: Option<&Value>) {
         if QUANTIZED.contains(&field)
             && let Value::Number(entry) = value
@@ -378,7 +365,7 @@ impl Encoder {
         self.write_value(value);
     }
 
-    /// `uidVal`: a list uid as `prefix + number`, interned and delta-encoded.
+    /// A list uid as `prefix + number`, interned and delta-encoded.
     fn uid_value(&mut self, value: &Value, uid_prefix: &mut Option<String>, uid_number: &mut i64) {
         let Some((prefix, number_value)) = split_uid(value) else {
             self.write_value(value);
@@ -543,7 +530,7 @@ fn split_uid(value: &Value) -> Option<(String, i64)> {
         .map(|number| (digits.to_string(), number))
 }
 
-/// `_uidOrder`: matching uids sort by prefix then number, ahead of the rest.
+/// Matching uids sort by prefix then number, ahead of the rest.
 fn uid_order(left: &str, right: &str) -> std::cmp::Ordering {
     use std::cmp::Ordering;
     let left_uid = split_uid(&Value::String(left.to_string()));
@@ -558,7 +545,7 @@ fn uid_order(left: &str, right: &str) -> std::cmp::Ordering {
     }
 }
 
-/// `packReplayFrames`: the frames concatenated, plus each one's length.
+/// The frames concatenated, plus each one's length.
 pub fn pack_frames(frames: &[Vec<u8>]) -> (Vec<u8>, Vec<u32>) {
     let mut packed = Vec::with_capacity(frames.iter().map(Vec::len).sum());
     let mut lens = Vec::with_capacity(frames.len());

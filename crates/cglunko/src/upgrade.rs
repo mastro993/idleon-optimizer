@@ -1,17 +1,12 @@
 //! The upgrade list, the DR priority and the budgeted plan.
 //!
-//! Ports the Upgrades and Optimizer tabs of `cglunko-calc.html` and the
-//! `upgNextCost`, `drMarginalGain` and `rankUpgrades` functions of
-//! `js/stats/systems/w5/cglunko.js`. Each of the two pages is paid with its own
-//! six stones: an upgrade's cost comes out of the stone its index maps to
-//! (`floor(index / 2)`), which is what the upstream progression planner spends.
+//! Each of the two pages is paid with its own six stones: an upgrade's cost
+//! comes out of the stone its index maps to (`floor(index / 2)`).
 //!
-//! The plan itself is this app's addition (the upstream page only ranks single
-//! upgrades): repeat the ranking at the levels and balances each purchase
-//! reaches, so every step pays the price `upgNextCost` would charge there and
-//! never overdraws a stone. A purchase that spends a stone past a digit would
-//! lower the drop rate that reads it; the plan skips it, the same guard the
-//! upstream progression planner applies with `dr > drFarm`.
+//! The plan repeats the ranking at the levels and balances each purchase
+//! reaches, so every step pays the price [`Cglunko::next_cost`] would charge
+//! there and never overdraws a stone. A purchase that spends a stone past a
+//! digit would lower the drop rate that reads it; the plan skips it.
 
 use super::{Cglunko, STONE_COUNT, UPGRADE_COUNT, data};
 use idleon_common::Control;
@@ -32,12 +27,12 @@ pub enum Page {
 }
 
 impl Page {
-    /// The two pages, in the order the upstream page lists them.
+    /// The two pages, in display order.
     pub const ALL: [Page; 2] = [Page::Blue, Page::Purple];
     /// The upgrades on one page.
     pub const SIZE: usize = 12;
 
-    /// The page's position in the upstream page list.
+    /// The page's position in the page list.
     pub fn index(self) -> usize {
         match self {
             Page::Blue => 0,
@@ -45,7 +40,7 @@ impl Page {
         }
     }
 
-    /// The page as a stable id, for the page selector and the oracle.
+    /// The page as a stable id, for the page selector.
     pub fn id(self) -> &'static str {
         match self {
             Page::Blue => "blue",
@@ -53,7 +48,7 @@ impl Page {
         }
     }
 
-    /// The page's name, as the upstream tables title it.
+    /// The page's name, as the tables title it.
     pub fn label(self) -> &'static str {
         match self {
             Page::Blue => "Blue",
@@ -94,7 +89,7 @@ fn slot(index: usize) -> usize {
     stone(index) % STONE_COUNT
 }
 
-/// One upgrade's row in the upstream priority table.
+/// One upgrade's row in the priority table.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rank {
     /// The upgrade index in the game's order.
@@ -103,11 +98,11 @@ pub struct Rank {
     pub page: Page,
     /// The saved level.
     pub level: u32,
-    /// `upgNextCost`: what one more level costs at the saved levels.
+    /// What one more level costs at the saved levels.
     pub next_cost: f64,
-    /// `drMarginalGain`: the fractional drop-rate gain one more level adds.
+    /// The fractional drop-rate gain one more level adds.
     pub dr_gain: f64,
-    /// `drGain / nextCost`, the upstream rank's sort key.
+    /// `dr_gain / next_cost`, the rank's sort key.
     pub dr_efficiency: f64,
     /// Whether the upgrade feeds the drop rate (`dr-*` category).
     pub is_dr: bool,
@@ -131,7 +126,7 @@ pub struct Step {
     pub from_level: u32,
     /// What the level costs at the plan's levels when it is bought.
     pub cost: f64,
-    /// The upstream marginal DR gain at the levels before the purchase.
+    /// The marginal DR gain at the levels before the purchase.
     pub dr_gain: f64,
     /// The stone balance before the purchase.
     pub balance_before: f64,
@@ -216,8 +211,8 @@ impl Cglunko {
         self.page_stones(page)[slot(index)]
     }
 
-    /// Spend one purchase's cost on its stone, keeping the upstream's native
-    /// 0.1 balance when the cost empties it.
+    /// Spend one purchase's cost on its stone, keeping the game's native 0.1
+    /// balance when the cost empties it.
     fn spend(&mut self, index: usize, cost: f64) {
         let Some(page) = Page::of(index) else {
             return;
@@ -231,18 +226,17 @@ impl Cglunko {
         *stone = if left <= 0.0 { 0.1 } else { left };
     }
 
-    /// `upgNextCost`: what one more level of `index` costs at the saved levels.
+    /// What one more level of `index` costs at the saved levels.
     ///
     /// The Active Drops discount divides the price and every odd index costs
-    /// five times as much, both exactly as the upstream `upgNextCost` applies
-    /// them. The upstream page's `bolaia17discount` extension is left off while
-    /// Bolaia study 17 is not decoded, the way the page itself does.
+    /// five times as much. The Bolaia study 17 discount is left off while that
+    /// study is not decoded.
     pub fn next_cost(&self, index: usize) -> f64 {
         cost_at(self.level(index).saturating_add(1), index, self.bonus(7))
     }
 
-    /// `drMarginalGain`: the fractional drop-rate gain one more level of
-    /// `index` adds, or zero for an upgrade outside the drop rate.
+    /// The fractional drop-rate gain one more level of `index` adds, or zero
+    /// for an upgrade outside the drop rate.
     pub fn dr_gain(&self, index: usize) -> f64 {
         if index >= UPGRADE_COUNT || !data::is_dr(index) {
             return 0.0;
@@ -256,9 +250,9 @@ impl Cglunko {
         next.dr() / before - 1.0
     }
 
-    /// The upstream `rankUpgrades` table for one page: marginal drop-rate gain
-    /// per unit cost, best first, then the page's non-DR upgrades. The locked
-    /// upgrade is left out, as the upstream `rankUpgrades` skips it.
+    /// The priority table for one page: marginal drop-rate gain per unit cost,
+    /// best first, then the page's non-DR upgrades. The locked upgrade is left
+    /// out.
     pub fn priority(&self, page: Page) -> Vec<Rank> {
         let mut rows: Vec<Rank> = page
             .upgrades()
@@ -378,7 +372,7 @@ impl Cglunko {
 /// The best affordable DR purchase on `page`, as (index, cost, marginal gain).
 ///
 /// Non-DR upgrades rank at zero gain, so the greedy pass leaves them alone; the
-/// upstream priority table lists them separately for exactly that reason. A
+/// priority table lists them separately for exactly that reason. A
 /// refused purchase is skipped: its ratio is multiplicative, so a state change
 /// that leaves its own factor and the stone digits alone cannot make it good.
 fn best_purchase(
@@ -407,9 +401,8 @@ fn best_purchase(
     best.map(|(index, cost, gain, _)| (index, cost, gain))
 }
 
-/// `upgNextCost`'s curve at one level: `(base^level + level)` over the Active
-/// Drops discount, five times as much on the odd indexes, rounded below a
-/// million the way the upstream cost is.
+/// The cost curve at one level: `(base^level + level)` over the Active Drops
+/// discount, five times as much on the odd indexes, rounded below a million.
 fn cost_at(level: u32, index: usize, cost_reduction: f64) -> f64 {
     let base = (data::cost_base(index).powf(f64::from(level)) + f64::from(level))
         / (1.0 + cost_reduction / 100.0);
@@ -472,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn the_next_cost_follows_the_upstream_curve() {
+    fn the_next_cost_follows_the_game_curve() {
         let cglunko = sample();
         // Droplier's next level is 11: (1.55^11 + 11) / 1.15, five times on an
         // odd index.
@@ -492,7 +485,7 @@ mod tests {
     }
 
     #[test]
-    fn the_marginal_gain_is_the_upstream_factor_ratio() {
+    fn the_marginal_gain_is_the_factor_ratio() {
         let cglunko = sample();
         let factors = cglunko.factors();
         // Upgrading Droplier from 10 to 11 levels adds 8 bonus points to a

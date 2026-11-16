@@ -1,6 +1,5 @@
-//! The evolution chain to a target crop, from `evolutionChainPlan` and
-//! `evolutionStepPlan`: the chance every eligible plot of the family rolls the
-//! next depth, and the growth cycles each step takes.
+//! The evolution chain to a target crop: the chance every eligible plot of the
+//! family rolls the next depth, and the growth cycles each step takes.
 //!
 //! A step plants the crop before its target on every eligible plot of the
 //! family and rolls each plot independently, so the step's chance is the chance
@@ -13,7 +12,7 @@ use super::allocation::at_least_one_chance;
 use super::{Farm, Plot, SeedFamily, data};
 
 impl Farm {
-    /// `evolutionChainPlan(targetCropId)`: every remaining step to the target.
+    /// Every remaining step to the target.
     ///
     /// `None` only when the target belongs to no seed family. A target at the
     /// family's first crop is a chain of no steps: it has no predecessor to
@@ -41,7 +40,7 @@ impl Farm {
         })
     }
 
-    /// `evolutionStepPlan(targetCropId)`: one depth's chance and cost.
+    /// One depth's chance and cost.
     ///
     /// Every eligible plot of the family rolls it after growing the crop before
     /// the target, whatever depth it sits at now, so the plot's own depth only
@@ -82,7 +81,7 @@ impl Farm {
     }
 }
 
-/// `growthCycleSeconds` at the family's own requirement: the Medal family runs a
+/// The growth cycle at the family's own requirement: the Medal family runs a
 /// fixed seven-hour cycle, the rest scale with the growth rate, and the active
 /// cadence floors them at one second.
 fn cycle_seconds(family: &SeedFamily, snapshot: &Snapshot) -> f64 {
@@ -93,8 +92,7 @@ fn cycle_seconds(family: &SeedFamily, snapshot: &Snapshot) -> f64 {
     }
 }
 
-/// `probabilityPlan`: one stage's chance, its cycle and the attempts each
-/// quantile needs.
+/// One stage's chance, its cycle and the attempts each quantile needs.
 fn probability_plan(chance: f64, cycle_seconds: f64) -> ProbabilityPlan {
     let chance = if chance.is_nan() {
         0.0
@@ -142,7 +140,7 @@ fn attempts_for(chance: f64, quantile: f64) -> f64 {
     }
 }
 
-/// One stage of a chain, as `evolutionStepPlan` builds it.
+/// One stage of a chain.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct EvolutionStep {
     /// The crop this step evolves into.
@@ -192,8 +190,7 @@ impl EvolutionChain {
         self.steps.len()
     }
 
-    /// The summed expectation of every stage, which the page reports as the
-    /// chain's ETA.
+    /// The summed expectation of every stage, reported as the chain's ETA.
     pub fn expected_seconds(&self) -> f64 {
         self.total(|plan| plan.expected_seconds)
     }
@@ -214,7 +211,7 @@ impl EvolutionChain {
         self.steps.iter().map(|step| field(&step.plan)).sum()
     }
 
-    /// The upstream "Hardest Remaining Steps": the slowest stages first.
+    /// The "Hardest Remaining Steps": the slowest stages first.
     pub fn hardest_steps(&self, limit: usize) -> Vec<&EvolutionStep> {
         let mut steps: Vec<&EvolutionStep> = self.steps.iter().collect();
         steps.sort_by(|a, b| b.plan.expected_seconds.total_cmp(&a.plan.expected_seconds));
@@ -228,7 +225,7 @@ mod tests {
     use super::*;
     use crate::Plot;
 
-    /// A farm that can roll evolutions: the upstream gate is Farming level 2.
+    /// A farm that can roll evolutions: the game's gate is Farming level 2.
     fn planted(plots: &[(usize, i64, u32, bool)]) -> Farm {
         let mut farm = Farm {
             farm_level: 2,

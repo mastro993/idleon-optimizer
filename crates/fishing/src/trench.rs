@@ -3,15 +3,12 @@
 //! takes with the selected and the fastest lure + line, and the other
 //! characters fishing alongside.
 //!
-//! Ported from the upstream `trenchPlan` in `js/stats/systems/w2/fishing.js` and
-//! the cavern helpers it calls in `js/stats/systems/w5/motherlode.js`
-//! (`motherlodeEffBase`, `trenchFishingEffReqs`, `cavernLayerRequirement`). The
-//! save rows are the upstream `holesData[11]` (progress and cleared layers),
-//! `holesData[24][5]` (the jar collectible) and `holesData[26]` (Bolaia), plus
-//! `spelunkData[18][29]` (Legend 29).
+//! The save rows are `Holes[11]` (progress and cleared layers), `Holes[24][5]`
+//! (the jar collectible) and `Holes[26]` (Bolaia), plus `Spelunk[18][29]`
+//! (Legend 29).
 //!
-//! The upstream recomputes each toolkit's efficiency and EXP multiplier through
-//! the skill systems; this port holds them in [`AccountInputs`] and therefore
+//! The game recomputes each toolkit's efficiency and EXP multiplier through the
+//! skill systems; the plan holds them in [`AccountInputs`] and therefore
 //! searches the fastest lure + line with the account values fixed, exactly as
 //! the FI-02 ranking does.
 
@@ -22,7 +19,7 @@ use idleon_save::Save;
 use idleon_save::at;
 use idleon_save::number;
 
-/// The `holesData` rows the Trench requirement reads.
+/// The `Holes` rows the Trench requirement reads.
 mod row {
     /// `Holes[11]`: the per-cavern cleared layers and collected amounts.
     pub const STATE: usize = 11;
@@ -70,9 +67,9 @@ pub struct Trench {
     pub cavern_layers: [f64; 4],
     /// `Holes[11][6]`: the Trench's collected amount at the current depth.
     pub progress: f64,
-    /// `legendPTSbonus(29)`.
+    /// Legend 29's bonus.
     pub legend: f64,
-    /// `collectibleBonus(save, 5, legend)`.
+    /// The jar's collectible 5 bonus, scaled by Legend 29.
     pub jar: f64,
     /// `Holes[26]` levels for the four Bolaia layer studies.
     pub bolaia: Vec<BolaiaStudy>,
@@ -80,7 +77,7 @@ pub struct Trench {
 
 impl Trench {
     /// Read the Trench out of a decoded save, or `None` when it has no `Holes`
-    /// rows — the upstream `base.trench`.
+    /// rows.
     pub fn from_save(save: &Save) -> Option<Self> {
         let holes = save.get("Holes")?;
         let holes = holes.as_array()?;
@@ -123,23 +120,22 @@ impl Trench {
         })
     }
 
-    /// `cavernLayersCleared(save, 3)`: the Trench depth already cleared.
+    /// The Trench depth already cleared.
     pub fn layers(&self) -> f64 {
         self.cavern_layers[TRENCH]
     }
 
-    /// `trenchFishingEffReqs(save, layers)`: the three efficiency requirements
-    /// `fishingPoolOutcome` applies to the Trench pool in place of FishPools'.
+    /// The three efficiency requirements the pool outcome applies to the Trench
+    /// pool in place of FishPools'.
     pub fn eff_reqs(&self, layers: f64) -> [f64; 3] {
-        // `motherlodeEffBase(save, 3, layers) / 4`, with `1 + 99 × ⌊3 / 3⌋`
+        // The cavern's efficiency base over 4, with `1 + 99 × ⌊3 / 3⌋`
         // folded in: 2e4 × 100 / 4 = 5e5.
         let quarter = 5e5 * 1.8_f64.powf(1.0 + layers);
         [quarter, quarter + 100.0, quarter + 200.0]
     }
 
-    /// `cavernLayerRequirement(save, 3, layers)`. `layers` projects the Trench
-    /// at a different depth, which zeroes the saved progress, as the upstream
-    /// override does.
+    /// The Trench's fish requirement. `layers` projects the Trench at a
+    /// different depth, which zeroes the saved progress.
     pub fn requirement(&self, layers: Option<f64>) -> TrenchRequirement {
         let projected = layers.is_some();
         let layers = layers.unwrap_or_else(|| self.layers());
@@ -183,7 +179,7 @@ impl Trench {
     }
 }
 
-/// `cavernLayerRequirement(save, 3, layers)`: one depth's fish requirement.
+/// One depth's fish requirement.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TrenchRequirement {
     pub cavern: String,
@@ -201,8 +197,7 @@ pub struct TrenchRequirement {
     pub remaining: f64,
 }
 
-/// How a helper character's lure and line are chosen, the upstream
-/// `state.trenchHelperMode`.
+/// How a helper character's lure and line are chosen.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum HelperMode {
@@ -214,7 +209,7 @@ pub enum HelperMode {
 }
 
 impl HelperMode {
-    /// The control label the upstream select shows.
+    /// The control label the select shows.
     pub fn label(self) -> &'static str {
         match self {
             HelperMode::Saved => "Their saved lure + line",
@@ -306,7 +301,7 @@ pub struct TrenchRequest<'a> {
     pub character: usize,
     pub lure: usize,
     pub line: usize,
-    /// How many depths to project, clamped to the upstream `1..=25`.
+    /// How many depths to project, clamped to `1..=25`.
     pub depths: usize,
     pub mode: HelperMode,
     /// One tick per character; the selected character's entry is ignored.
@@ -403,7 +398,7 @@ struct Claim {
     outcome: PoolOutcome,
 }
 
-/// The upstream `trenchPlan` row loop: one row per projected depth.
+/// The plan's row loop: one row per projected depth.
 fn plan_rows(
     trench: &Trench,
     account: &AccountInputs,
@@ -454,8 +449,8 @@ fn plan_rows(
     rows
 }
 
-/// The fish-maximizing lure + line at one projected depth, the upstream loop
-/// inside `trenchPlan`. Ties keep the earlier combination and rank by EXP.
+/// The fish-maximizing lure + line at one projected depth. Ties keep the
+/// earlier combination and rank by EXP.
 fn fastest(
     account: &AccountInputs,
     character: &Character,
@@ -571,7 +566,7 @@ fn team(rows: &[TrenchRow], helpers: &[TrenchHelper], character: usize) -> Trenc
     }
 }
 
-/// `spelunkData[row][column]`.
+/// `Spelunk[row][column]`.
 fn spelunk(save: &Save, row: usize, column: usize) -> f64 {
     save.get("Spelunk")
         .and_then(|spelunk| spelunk.as_array().and_then(|rows| rows.get(row).cloned()))

@@ -1,28 +1,26 @@
 //! The encounter run (CS-03): a headless replay of the game's active-combat loop
 //! over one map's spawn roster.
 //!
-//! Ported from `js/stats/systems/common/combat-sim-core.js` (the fixed 10 ms
-//! step, the render-frame batch and the timed-task loop) and the parts of
-//! `combat-sim-world.js` a run needs to spawn, respawn and kill monsters: the
-//! scene spawn loop (`SceneEvents` init), the one-second respawn tick
-//! (`_event_1second`), the `whenDrawing` respawn handler and the kill handler
-//! (`_respawnHandler`, `_killHandler`). The two players upstream ships without
-//! its AI module are ported exactly: [`Player::Idle`] (`idlePlayer`) and
-//! [`Player::StandIn`] (`scriptedPlayer`), which kills one live monster per
-//! interval for its remaining HP.
+//! It runs the fixed 10 ms step, the render-frame batch and the timed-task loop,
+//! plus the parts of the world a run needs to spawn, respawn and kill monsters:
+//! the scene spawn loop (`SceneEvents` init), the one-second respawn tick
+//! (`_event_1second`), the `whenDrawing` respawn handler and the kill handler.
+//! Two players drive it without the player AI: [`Player::Idle`] and
+//! [`Player::StandIn`], which kills one live monster per interval for its
+//! remaining HP.
 //!
 //! Since CS-05 the run also rolls the kill's card and obol drops through
 //! [`drops`], the extracted half of the reward tables, and samples its kills on
-//! the upstream 10-second timeline. Since CS-06 it advances the saved furnace on
+//! a 10-second timeline. Since CS-06 it advances the saved furnace on
 //! its 250 ms clock ([`crate::progress`]), banks the kills' Scurge, Coral and
 //! Omega credits and reports the furnace and the bars it produced.
 //!
 //! Not modelled, and listed by [`unsupported`]:
 //!
 //! - the auto-mode player AI: movement, auto attack, skills, projectiles and
-//!   contact damage (`combat-sim-player.js`);
+//!   contact damage;
 //! - the rest of the reward engine: EXP, coins, equipment, the inventory,
-//!   crystals, giants and plunder spawns (`combat-sim-rewards.js`);
+//!   crystals, giants and plunder spawns;
 //! - the account tuning of monster HP and respawn time (W7 tasks, achievements,
 //!   Death Note), held at the base values in `data/encounters.json`;
 //! - The Den, the Rift, caverns, Clam Work and dungeon-specific state; Killroy
@@ -31,11 +29,6 @@
 //!
 //! The run is deterministic: the modelled paths draw no random numbers, so a
 //! map, player and duration fully describe it.
-//!
-//! `fixtures/combat-encounter.json` and `data/encounters.json` are written by
-//! `script/combat-encounter-oracle.mjs` from one upstream checkout; the fixture
-//! is the upstream engine's own kills, damage and respawn counters at neutral
-//! monster tuning.
 
 use crate::drops::{self, Inputs, Snapshot};
 use crate::progress::{self, Config as ProgressConfig, Grants, Summary as ProgressSummary};
@@ -47,7 +40,7 @@ use std::sync::OnceLock;
 
 /// The game's fixed update step, in milliseconds.
 pub const STEP_MS: u64 = 10;
-/// Upstream's default render frame length (`1000 / 60`), in milliseconds.
+/// The default render frame length (`1000 / 60`), in milliseconds.
 const FRAME_MS: f64 = 1000.0 / 60.0;
 
 const ENCOUNTERS_JSON: &str = include_str!("../data/encounters.json");
@@ -65,7 +58,7 @@ struct EncounterData {
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct Map {
-    /// The map index the save and the upstream page use.
+    /// The map index the save uses.
     pub index: usize,
     /// `MapDispName`, with the underscores the game data uses.
     pub name: String,
@@ -147,8 +140,7 @@ pub struct Sprite {
     pub death_frame: usize,
 }
 
-/// The tables the encounter run reads, written by
-/// `script/combat-encounter-oracle.mjs`.
+/// The tables the encounter run reads.
 fn data() -> &'static EncounterData {
     static DATA: OnceLock<EncounterData> = OnceLock::new();
     DATA.get_or_init(|| serde_json::from_str(ENCOUNTERS_JSON).expect("encounters.json is valid"))
@@ -174,13 +166,12 @@ pub fn map_name(map: &Map) -> String {
     map.name.replace('_', " ")
 }
 
-/// What drives the run. Both are upstream players the simulator ships without
-/// its AI module.
+/// What drives the run. Neither needs the player AI.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Player {
-    /// `scriptedPlayer`: one live monster per interval, for its remaining HP.
+    /// One live monster per interval, for its remaining HP.
     StandIn { kill_every_ms: u64 },
-    /// `idlePlayer`: never attacks.
+    /// Never attacks.
     Idle,
 }
 
@@ -238,13 +229,13 @@ impl Options {
         }
     }
 
-    /// The run in 10 ms steps, as upstream's `_run` counts them.
+    /// The run in 10 ms steps.
     pub fn steps(&self) -> u64 {
         (self.duration_ms + STEP_MS / 2) / STEP_MS
     }
 }
 
-/// The upstream timeline's sampling period: `timelineEveryMs`.
+/// The timeline's sampling period.
 pub const TIMELINE_MS: u64 = 10_000;
 
 /// One kills-over-time sample, taken every ten simulated seconds.
@@ -274,7 +265,7 @@ pub struct Outcome {
     /// Kills per monster type, in spawn-order key order.
     pub kills_by_type: BTreeMap<String, u64>,
     /// Damage the player dealt: the stand-in hits for the monster's remaining
-    /// HP plus one, which is what the upstream `damage` events sum.
+    /// HP plus one, which is what the `damage` events sum.
     pub damage: f64,
     /// Stand-in kill ticks that found no live monster.
     pub idle_ticks: u64,
@@ -321,7 +312,7 @@ impl Outcome {
     }
 }
 
-/// Why this build's run leaves part of the upstream simulator out. The UI lists
+/// Why this build's run leaves part of the game's combat out. The UI lists
 /// it beside the options and keeps it in the exported result.
 pub fn unsupported() -> &'static [&'static str] {
     &[
@@ -346,7 +337,7 @@ pub fn unsupported() -> &'static [&'static str] {
 /// One roster entry's live state.
 struct Live {
     kind: String,
-    /// `m.id`, the roster's spawn-order index plus one.
+    /// The roster's spawn-order index plus one.
     id: usize,
     /// The node the scene stages it on.
     node: usize,
@@ -371,7 +362,7 @@ impl Live {
     /// node's spawn order, out of `node_count`, so the replay spreads a
     /// platform's monsters instead of stacking them at its centre.
     fn new(monster: &Monster, index: usize, map: &Map, on_node: usize, node_count: usize) -> Self {
-        // `_spawnY` plus the node's platform. The spawn's x draw is not part of
+        // The spawn y plus the node's platform. The spawn's x draw is not part of
         // this run, so the actor takes its even share of the platform.
         let node = map.art.nodes.get(monster.node).copied().unwrap_or(Node {
             x: 0.0,
@@ -415,9 +406,9 @@ struct Timer {
 }
 
 enum TimerKind {
-    /// The stand-in's kill tick (`scriptedPlayer`).
+    /// The stand-in's kill tick.
     Kill,
-    /// `_forgeTick`: the saved furnace advances every 250 ms.
+    /// The saved furnace advances every 250 ms.
     Forge,
     /// `_event_1second`: every live respawn counter drops by one.
     Respawn,
@@ -521,7 +512,7 @@ impl Sim {
                 kind: TimerKind::Kill,
             });
         }
-        // `initCombatProgress` registers the furnace before the scene starts.
+        // The furnace task is registered before the scene starts.
         timers.push(Timer {
             remaining: 250,
             interval: 250,
@@ -624,12 +615,12 @@ impl Sim {
         }
     }
 
-    /// `_step`: plan the frame's steps, fire due timers, advance the clock and
-    /// draw when the batch is spent.
+    /// One 10 ms step: plan the frame's steps, fire due timers, advance the
+    /// clock and draw when the batch is spent.
     fn step(&mut self) {
         self.begin_frame();
         self.fire_timers();
-        // `initCombatProgress`'s scene updater spends banked pet time.
+        // The progress scene updater spends banked pet time.
         self.progress.pet_batch();
         self.time_ms += STEP_MS;
         self.steps += 1;
@@ -648,7 +639,7 @@ impl Sim {
         }
     }
 
-    /// One kills-over-time sample, the upstream timeline push.
+    /// One kills-over-time sample.
     fn sample(&mut self) {
         self.timeline.push(Sample {
             t_ms: self.time_ms,
@@ -656,8 +647,8 @@ impl Sim {
         });
     }
 
-    /// `_beginFrame`: accumulate frame time, take whole steps while the
-    /// accumulator is strictly above one step, and draw a frame that has none.
+    /// Accumulate frame time, take whole steps while the accumulator is
+    /// strictly above one step, and draw a frame that has none.
     fn begin_frame(&mut self) {
         let mut guard = 0;
         while self.frame_steps_left == 0 && guard < 1000 {
@@ -708,8 +699,9 @@ impl Sim {
         }
     }
 
-    /// `scriptedPlayer`: first live crystal or giant, otherwise the first live
-    /// monster, for its remaining HP. A tick with nothing alive is an idle tick.
+    /// The stand-in hits the first live crystal or giant, otherwise the first
+    /// live monster, for its remaining HP. A tick with nothing alive is an idle
+    /// tick.
     fn stand_in_kill(&mut self) {
         let Some(index) = self
             .mobs
@@ -725,7 +717,7 @@ impl Sim {
         mob.will_die = true;
     }
 
-    /// `drawFrame`: every monster's respawn handler, then its kill handler.
+    /// One drawn frame: every monster's respawn handler, then its kill handler.
     fn draw(&mut self) {
         self.frames += 1;
         for index in 0..self.mobs.len() {
@@ -734,7 +726,7 @@ impl Sim {
         }
     }
 
-    /// `_respawnHandler`: a dead, untempered monster comes back once its
+    /// The respawn handler: a dead, untempered monster comes back once its
     /// counter is spent.
     fn respawn_handler(&mut self, index: usize) {
         let mob = &mut self.mobs[index];
@@ -746,9 +738,9 @@ impl Sim {
         mob.alive = true;
     }
 
-    /// `_killHandler`: book the kill and arm the respawn counter. The reward
-    /// engine's call sits inside the same handler upstream, in the reward gate
-    /// this build does not run.
+    /// The kill handler: book the kill and arm the respawn counter. The reward
+    /// engine's call sits inside the same handler, in the reward gate, which
+    /// this build models only in part.
     fn kill_handler(&mut self, index: usize) {
         let mob = &mut self.mobs[index];
         if !mob.alive || mob.counter > 0.0 || mob.hp > 0.0 {
@@ -761,7 +753,7 @@ impl Sim {
         self.kills += 1;
         self.damage += mob.hit;
         *self.kills_by_type.entry(kind.clone()).or_insert(0) += 1;
-        // The reward gate's `monsterKill` and drop branch run inside the kill
+        // The reward gate's kill credits and drop branch run inside the kill
         // handler; the progress credits and the card and obol rows are modelled.
         if drops::rolls(&kind) {
             let grants = self.grants.clone();

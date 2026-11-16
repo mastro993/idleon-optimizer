@@ -1,9 +1,8 @@
 //! The Resources tab: the world's resource nodes, what drains them, the banked
 //! hours and the daily reset projection.
 //!
-//! The upstream page's resource workspace is a list plus an inspector; here the
-//! inspector is driven by a node selector so the harness can read it without a
-//! pointer, and the drain staffing is the stream table under it.
+//! The inspector is driven by a node selector so the harness can read it
+//! without a pointer, and the drain staffing is the stream table under it.
 
 use super::overview::{figure_text, kpi, number_cell, rate_cell};
 use super::world_rail;
@@ -470,7 +469,7 @@ fn reset_chip(detail: &NodeAllocation) -> String {
     }
 }
 
-/// The collection rate's factors, and the sources this port leaves out.
+/// The collection rate's factors, and the sources this build leaves out.
 fn rate_card(rate: &Rate, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let mut table = Table::new(["Factor", "Value"]);
@@ -513,7 +512,7 @@ fn rate_card(rate: &Rate, cx: &mut Context<AppState>) -> AnyElement {
                 .gap_1()
                 .px_3()
                 .pb_3()
-                .child(Caption::new("Sources this port does not read yet:").text_color(muted))
+                .child(Caption::new("Sources this build does not read yet:").text_color(muted))
                 .child(lines),
         );
     }
@@ -553,7 +552,7 @@ pub(super) fn selected_resource(
         .unwrap_or(0)
 }
 
-/// A node's one-word state, in the upstream page's words.
+/// A node's one-word state.
 fn status(node: &ResourceNode, detail: Option<&NodeAllocation>) -> String {
     if node.drained {
         return "Ready to reset".to_owned();

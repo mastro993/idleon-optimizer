@@ -1,22 +1,18 @@
 //! The raw clearing values: the militia rate, the talent behind it and the
 //! cross-system factors it multiplies.
-//!
-//! Ported from `outpostClearMetrics`, `XtraClearKillz`, `unitSpecEffect`,
-//! `computeBigFishBonus` and `jellyCompletionBonus`.
 
 use super::*;
 
 impl RoyalGuardian {
-    /// Whether the save carries the Jelly Operator rows the reward table reads:
-    /// upstream `hasJellyData`.
+    /// Whether the save carries the Jelly Operator rows the reward table reads.
     pub(super) fn jelly_available(&self) -> bool {
         self.jelly
             .as_ref()
             .is_some_and(idleon_jelly::Jelly::has_data)
     }
 
-    /// The Jelly Operator reward at an obstruction index: upstream
-    /// `jellyCompletionBonus`, which the shared Jelly port owns.
+    /// The Jelly Operator reward at an obstruction index, which the shared Jelly
+    /// crate owns.
     pub fn jelly_bonus(&self, index: usize) -> f64 {
         self.jelly
             .as_ref()
@@ -24,7 +20,7 @@ impl RoyalGuardian {
             .map_or(0.0, |jelly| jelly.completion_bonus(index))
     }
 
-    /// A Spelunk big-fish level's bonus: upstream `computeBigFishBonus`.
+    /// A Spelunk big-fish level's bonus.
     pub fn big_fish_bonus(&self, index: usize) -> f64 {
         let level = self.spelunk_cell(11, index);
         if level <= 0.0 {
@@ -43,19 +39,19 @@ impl RoyalGuardian {
         self.talent_level(XTRA_CLEAR_KILLZ)
     }
 
-    /// The talent's effect: upstream's `decayMulti` curve on the purchased level.
+    /// The talent's effect: the `decayMulti` curve on the purchased level.
     pub fn talent_multi(&self) -> f64 {
         self.talent_value(XTRA_CLEAR_KILLZ).max(1.0)
     }
 
-    /// The militia kill multiplier: upstream `XtraClearKillz`.
+    /// The militia kill multiplier.
     pub fn xtra_clear_killz(&self) -> f64 {
         self.talent_multi()
             * (1.0 + (self.orblet_bonus(3) + self.big_fish_bonus(6)) / 100.0)
             * (1.0 + self.jelly_bonus(2) / 100.0)
     }
 
-    /// An outpost stat's effect, by the upstream `unitSpecEffect` index.
+    /// An outpost stat's effect, by its stat index.
     pub fn unit_spec(&self, index: usize) -> f64 {
         match index {
             0 => 50.0 + self.armory_bonus(19),
@@ -75,7 +71,7 @@ impl RoyalGuardian {
         self.militia_assignment_count(map) * self.unit_spec(4)
     }
 
-    /// One outpost's raw clearing values: upstream `outpostClearMetrics`.
+    /// One outpost's raw clearing values.
     pub fn clear(&self, map: usize) -> Clear {
         let requirement = self.kill_requirement(map);
         let assignments = self.militia_assignment_count(map);

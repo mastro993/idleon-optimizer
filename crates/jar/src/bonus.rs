@@ -1,22 +1,22 @@
-//! The bonuses other systems grant the cavern, as `jar-calc.html` reads them.
+//! The bonuses other systems grant the cavern.
 //!
-//! Each function is one upstream reader: the lamp's Infinite Resources, the
-//! Evertree synergy, the Fountain totals, the monument retelling chain, the
-//! Sailing palette and the measurement scale. They live here, away from the
-//! save readers, so the formulas in [`super`] read as the upstream page does.
+//! Each function reads one bonus: the lamp's Infinite Resources, the Evertree
+//! synergy, the Fountain totals, the monument retelling chain, the Sailing
+//! palette and the measurement scale. They live here, away from the save
+//! readers, so the formulas in [`super`] read as plain arithmetic.
 
 use super::data::data;
 use super::{Jar, row, spelunk, state, upgrade};
 
 impl Jar {
-    /// `_lampBonus99`: Infinite Resources' rupie value, from the lamp level and
+    /// Infinite Resources' rupie value, from the lamp level and
     /// the Spelunking upgrade that scales it.
     pub(super) fn lamp_bonus(&self) -> f64 {
         let lamp = self.cell(row::LAMP, 7);
         25.0 * lamp * (1.0 + self.spelunk(spelunk::LAMP, 2) / 100.0)
     }
 
-    /// `evertreeTrunks`: the trunks Big Jar's rupie synergy counts.
+    /// The trunks Big Jar's rupie synergy counts.
     pub(super) fn evertree_trunks(&self) -> f64 {
         self.cell(row::STATE, state::EVERTREE_TRUNKS)
     }
@@ -27,12 +27,12 @@ impl Jar {
             .max(1.0)
     }
 
-    /// `marbleBon`: what a Fountain marble level multiplies an upgrade by.
+    /// What a Fountain marble level multiplies an upgrade by.
     pub(super) fn marble_bonus(level: f64) -> f64 {
         if level <= 0.0 { 1.0 } else { 1.5 + 0.5 * level }
     }
 
-    /// `bonTOT`: a Fountain upgrade's total at its marble level.
+    /// A Fountain upgrade's total at its marble level.
     fn fountain_upgrade_total(&self, water: usize, index: usize, per_level: f64) -> f64 {
         let saved = |rows: &[Vec<f64>]| {
             rows.get(water)
@@ -45,17 +45,17 @@ impl Jar {
         (Self::marble_bonus(marbles) * level * per_level).round()
     }
 
-    /// `bonTOT(water, 13)`: the Fountain's monument boost.
+    /// The Fountain's monument boost.
     pub(super) fn fountain_bonus(&self, water: usize, per_level: f64) -> f64 {
         self.fountain_upgrade_total(water, 13, per_level)
     }
 
-    /// `bonTOT(water, 15)`: the Fountain's cavern-resource boost.
+    /// The Fountain's cavern-resource boost.
     pub(super) fn fountain_total(&self, water: usize) -> f64 {
         self.fountain_upgrade_total(water, 15, data().fountain_per_level.total)
     }
 
-    /// `computeMonumentROGbonus`: one monument bonus, through the retelling
+    /// One monument bonus, through the retelling
     /// chain that multiplies every bonus below the last.
     pub(super) fn monument_bonus(&self, water: usize, index: usize) -> f64 {
         let slot = 10 * water + index;
@@ -82,14 +82,14 @@ impl Jar {
         }
     }
 
-    /// `computePaletteBonus(2)`: the palette that grants collectible chance.
+    /// The palette that grants collectible chance.
     pub(super) fn palette_bonus(&self) -> f64 {
         let level = self.spelunk(spelunk::PALETTES, 2);
         if level <= 0.0 {
             return 0.0;
         }
         let palette = &data().palette2;
-        // `paletteParams` fixes the decay denominator at 25.
+        // The game fixes the decay denominator at 25.
         let raw = if palette.is_decay {
             level / (level + 25.0) * palette.coeff
         } else {
@@ -106,7 +106,7 @@ impl Jar {
         raw * (1.0 + legend / 100.0) * black_star * lore
     }
 
-    /// `legendPTSbonus`: a legend talent's points times its per-level value.
+    /// A legend talent's points times its per-level value.
     pub(super) fn legend_points(&self, index: usize) -> f64 {
         (self.spelunk(spelunk::LEGEND, index) * data().legend_per_point(index)).round()
     }

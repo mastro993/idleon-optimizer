@@ -1,11 +1,11 @@
 //! The Blue Jellyfish donation planner and the No Meal Left Behind steering
 //! panel.
 //!
-//! The planner is the upstream `optimizeBlueJellyfish` search: it compares
-//! donation splits against direct spending off the UI thread through the shared
-//! runner, so a cancel keeps the result the tab already shows. The steering panel
-//! is `nmlbFloorPlan`: the meal split, tonight's pick, the floor's blockers and the
-//! rotation holding it predicts.
+//! The planner is a search that compares donation splits against direct
+//! spending off the UI thread through the shared runner, so a cancel keeps the
+//! result the tab already shows. The steering panel is
+//! [`idleon_ladle::kitchen::steer::floor_plan`]: the meal split, tonight's
+//! pick, the floor's blockers and the rotation holding it predicts.
 
 use super::summary;
 use crate::state::AppState;

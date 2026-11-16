@@ -1,8 +1,7 @@
 //! Lab connectivity and mainframe bonuses.
 //!
-//! Ports `computeLabConnectivity` and `mainframeBonus` from
-//! `js/stats/systems/w4/lab.js`. The lab is a graph of players, mainframe
-//! bonuses and jewels; a bonus is active when a connected player reaches it.
+//! The lab is a graph of players, mainframe bonuses and jewels; a bonus is
+//! active when a connected player reaches it.
 
 use super::Decoder;
 use idleon_save::fields;
@@ -34,7 +33,7 @@ impl Decoder<'_> {
         self.deriving_lab = false;
         let value = lab.mainframe(index)?;
         if index == 9 {
-            // `mainframeBonus(9)` scales its row by the account's millions of
+            // Mainframe bonus 9 scales its row by the account's millions of
             // Green Mushroom kills, on top of jewel 113.
             let base = value + lab.mainframe(113).unwrap_or(0.0);
             let millions = self.mush_kills() / 1e6;
@@ -64,7 +63,7 @@ impl Decoder<'_> {
         Some(value)
     }
 
-    /// `_greenStackCount`: the chest items stacked past ten million.
+    /// The green stack count: the chest items stacked past ten million.
     fn green_stacks(&self) -> f64 {
         if let Some(stacks) =
             fields::field(self.save, "GreenStacks").and_then(|value| value.as_array().map(Vec::len))
@@ -87,7 +86,7 @@ impl Decoder<'_> {
         seen.len() as f64
     }
 
-    /// `_totalMushGKills`: every character's kills on the map that fights `mushG`.
+    /// The Green Mushroom kill total: every character's kills on the map that fights `mushG`.
     fn mush_kills(&self) -> f64 {
         let Some(map) = (0..idleon_stats_data::map_count())
             .find(|map| idleon_stats_data::afk_target(*map) == Some("mushG"))
@@ -235,7 +234,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `buildLabMainBonus`: the fixed rows plus the dynamic emporium rows.
+    /// The lab main bonus table: the fixed rows plus the dynamic emporium rows.
     fn lab_bonuses(&self) -> Vec<[f64; 5]> {
         let mut rows: Vec<[f64; 5]> = self
             .data
@@ -251,14 +250,14 @@ impl Decoder<'_> {
         rows
     }
 
-    /// `labJewelUnlocked`: `Lab[14][idx] == 1`.
+    /// Whether a lab jewel is unlocked: `Lab[14][idx] == 1`.
     fn jewel_unlocked(&self, index: usize) -> bool {
         fields::row(self.save, "Lab", &[14])
             .map(|row| fields::number_at(&row, index) == 1.0)
             .unwrap_or(false)
     }
 
-    /// `computePlayerDist`, the range mainframe links reach from a player.
+    /// The player's lab link distance, the range mainframe links reach from a player.
     fn player_distance(&mut self, player: usize) -> f64 {
         let lab_level = fields::char_field(self.save, "Lv0", player)
             .and_then(|row| {
@@ -287,7 +286,7 @@ impl Decoder<'_> {
         flat * (1.0 + (bubonic + line + chip_6 + arena + line_width + shiny) / 100.0)
     }
 
-    /// `computeBubonicPurple`. Its talent system is not ported; a save with
+    /// The Bubonic Conjuror's purple link range. Its talent system is not modelled; a save with
     /// any Bubonic Conjuror levels is warned about instead of guessed.
     fn bubonic_purple(&mut self, _player: usize) -> f64 {
         let has_bubonic = (0..self.characters.len()).any(|index| {
@@ -306,7 +305,7 @@ impl Decoder<'_> {
         0.0
     }
 
-    /// `computeMealBonusLinePct`.
+    /// The meal bonus to lab line width, in percent.
     fn meal_line_pct(&mut self) -> f64 {
         let eel = self.nested("Meals", &[0, 40]);
         if eel <= 0.0 {
@@ -317,7 +316,7 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
-    /// `computeChip6Count`: chips of type 6 in a player's slots.
+    /// How many chips of type `chip` are in a player's slots.
     pub fn chip_count(&self, player: usize, chip: usize) -> f64 {
         fields::row(self.save, "Lab", &[1 + player])
             .map(|row| {
@@ -328,7 +327,7 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
-    /// `computePetArenaBonus`: whether the arena's wave count clears the tier.
+    /// The pet arena bonus at `index`: whether the arena's wave count clears the tier.
     pub fn pet_arena(&self, index: usize) -> f64 {
         let waves = self.ola(89);
         let mut tier = 0;
@@ -342,7 +341,7 @@ impl Decoder<'_> {
         if tier > index { 1.0 } else { 0.0 }
     }
 
-    /// `computeBonusLineWidth`.
+    /// The lab bonus line width for a player.
     fn bonus_line_width(&self, player: usize) -> f64 {
         let gem_slots = 2.0 * self.row_at("GemItemsPurchased", 123);
         let mut lab_characters = Vec::new();
@@ -372,7 +371,6 @@ impl Decoder<'_> {
         })
     }
 
-    /// `hasBonusMajor` from `js/stats/systems/w5/divinity.js`.
     fn has_bonus_major(&self, player: usize, god_type: f64) -> bool {
         if self.companion(0) > 0.0
             && self
@@ -412,7 +410,6 @@ impl Decoder<'_> {
 }
 
 impl Lab {
-    /// `mainframeBonus` from `js/stats/systems/w4/lab.js`.
     fn mainframe(&self, index: usize) -> Option<f64> {
         if self.bonus.is_empty() {
             return None;

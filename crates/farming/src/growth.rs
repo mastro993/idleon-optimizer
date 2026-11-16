@@ -1,13 +1,11 @@
-//! Growth breakpoints: the raw and active cycle each seed family takes, from
-//! `growthBreakpointRows`.
+//! Growth breakpoints: the raw and active cycle each seed family takes.
 
 use super::account::Snapshot;
 use super::{Farm, data};
 
 impl Farm {
-    /// `growthBreakpointRows`: one row per seed family with its raw cycle, the
-    /// active cycle the scheduler allows and the rate the one-second floor
-    /// would need.
+    /// One row per seed family with its raw cycle, the active cycle the
+    /// scheduler allows and the rate the one-second floor would need.
     pub fn growth_breakpoints(&self, snapshot: &Snapshot) -> Vec<GrowthBreakpoint> {
         data()
             .seeds

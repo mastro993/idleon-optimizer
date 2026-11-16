@@ -1,9 +1,7 @@
 //! Import a game save into a simulation, its multipliers, the farming field,
 //! the account multiplier tree and the Clamworks state.
 //!
-//! The upstream calculators read the game's save through Google sign-in and a
-//! decode step; this app takes the decoded object as text. The layout follows
-//! the upstream decoder in `js/save/loader.js`:
+//! The app takes the game's decoded save object as text. Its layout:
 //!
 //! - `it.json` wraps the save in `data`; a plain `save.json` is flat. The
 //!   server constants (`serverVars`) and the companion list sit beside `data`.
@@ -67,8 +65,8 @@ use idleon_sailing::{Fleet, RouteContext};
 use idleon_save::{Character, character_count, characters};
 use serde_json::{Map, Value};
 
-/// The shape the imported text had, as the upstream loader detects it
-/// (`raw.data ? 'it.json' : 'save.json'`).
+/// The shape the imported text had: `it.json` when the save sits under `data`,
+/// `save.json` otherwise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Format {
     /// `it.json`: the decoded save under `data`, with `serverVars` and the
@@ -153,7 +151,7 @@ pub struct Imported {
     pub named_characters: usize,
     /// Save fields the import could not read or had to drop.
     pub warnings: Vec<String>,
-    /// The shadow-ban flag (`OptLacc[26]`) and the answer the upstream page gives.
+    /// The shadow-ban flag (`OptLacc[26]`) and the answer it gives.
     pub shadow: Shadow,
     /// The coin multiplier calculator's per-character cards and groups.
     pub coin: idleon_coin_multi::Snapshot,

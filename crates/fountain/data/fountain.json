@@ -826,18 +826,5 @@
   "denom": 100
  },
  "lampPerLevel": 25,
- "cardsPerMeasurementUnit": 150,
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/systems/w5/fountain.js",
-   "js/stats/data/game/customlists.js"
-  ],
-  "holesRows": [
-   52,
-   55,
-   59,
-   70
-  ]
- }
+ "cardsPerMeasurementUnit": 150
 }

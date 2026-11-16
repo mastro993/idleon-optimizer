@@ -162,7 +162,7 @@ impl Store {
         &self.keys
     }
 
-    /// `append`: the dictionary entries first, then the frames.
+    /// Add a batch: the dictionary entries first, then the frames.
     pub fn append(&mut self, batch: Batch) {
         if !batch.keys.is_empty() || batch.keys_from.is_some() {
             let from = batch.keys_from.unwrap_or(0);
@@ -197,7 +197,7 @@ impl Store {
         self.chunks.push(frame);
     }
 
-    /// `time(k)`: a frame's simulated time without decoding the frame.
+    /// A frame's simulated time without decoding the frame.
     pub fn time(&self, index: usize) -> Option<&Value> {
         self.times.get(index)
     }
@@ -207,7 +207,7 @@ impl Store {
         self.times.get(index).and_then(Value::as_f64)
     }
 
-    /// `get(k)`: frame `k` decoded into its snapshot shape.
+    /// Frame `index` decoded into its snapshot shape.
     pub fn get(&mut self, index: usize) -> Option<Value> {
         if index >= self.len() {
             return None;
@@ -312,7 +312,7 @@ impl Store {
     }
 }
 
-/// `fields(r, e)`: the changed fields, with deletes.
+/// The changed fields, with deletes.
 fn read_fields(
     keys: &[String],
     reader: &mut Reader<'_>,
@@ -365,7 +365,7 @@ fn read_list(
     }
 }
 
-/// `fieldVal`: absolute or differential tenths, or a plain value.
+/// Absolute or differential tenths, or a plain value.
 fn read_field_value(
     keys: &[String],
     reader: &mut Reader<'_>,
@@ -386,7 +386,7 @@ fn read_field_value(
     }
 }
 
-/// `val(r)`: one tagged value.
+/// One tagged value.
 fn read_value(keys: &[String], reader: &mut Reader<'_>, uid: &mut UidState) -> Value {
     let tag = reader.byte();
     if tag >= SMALL {

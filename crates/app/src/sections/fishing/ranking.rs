@@ -2,8 +2,7 @@
 //! best first, with the objective switch, the selected/saved markers and the
 //! `Use` action that applies a row to the toolbar.
 //!
-//! Ported from `renderRanking` in the upstream `fishing-calc.html`. The table
-//! shows all 225 rows instead of the upstream top ten, because the section
+//! The table shows all 225 rows instead of a top ten, because the section
 //! contract asks for the all-combination table.
 
 use crate::state::AppState;

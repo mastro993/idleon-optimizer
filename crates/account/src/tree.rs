@@ -1,10 +1,9 @@
-//! The research EXP multiplier tree, ported from
-//! `js/stats/defs/research-exp.js`.
+//! The research EXP multiplier tree.
 //!
-//! The additive list and the true multipliers are built in the upstream order
+//! The additive list and the true multipliers are built in the descriptor's order
 //! so a term missing from a save leaves the rest of the tree intact. The grid,
 //! sticker and mastery terms are taken back out of the additive total at the
-//! end, because `simTotalExpWith` applies them itself.
+//! end, because the simulator applies them itself.
 
 use super::{BonusTerm, BonusTree, Decoder, fields};
 use idleon_research::data::game;
@@ -29,7 +28,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// The descriptor's additive pool, in upstream order.
+    /// The descriptor's additive pool, in order.
     fn additive_terms(&mut self, context: &SimContext) -> Vec<BonusTerm> {
         let mut items = Vec::new();
 
@@ -238,7 +237,7 @@ impl Decoder<'_> {
         items
     }
 
-    /// The descriptor's true multipliers, in upstream order.
+    /// The descriptor's true multipliers, in order.
     fn multiplier_terms(&mut self, context: &SimContext) -> Vec<BonusTerm> {
         let mut items = Vec::new();
 
@@ -357,7 +356,7 @@ impl Decoder<'_> {
     }
 
     /// `(observations found, total insight levels)` over the cells that can
-    /// hold an observation, as `recomputeDerivedBonuses` counts them.
+    /// hold an observation.
     fn observation_totals(&self) -> (f64, f64) {
         let level = self.research_level;
         let observations = game().observations.len() as f64;

@@ -80,7 +80,7 @@ impl AppState {
         self.jar_state.inputs(levels)
     }
 
-    /// `_saveSnapshot`: record the applied save's spread once.
+    /// Record the applied save's spread once.
     pub(crate) fn record_jar_snapshot(&mut self) {
         let Some(jar) = self.jar.as_ref() else {
             return;

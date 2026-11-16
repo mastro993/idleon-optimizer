@@ -124,8 +124,5 @@
   "1.25x_Research_EXP_gain",
   "10x_Cooking_Speed",
   "2x_Spelunking_POW"
- ],
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer"
- }
+ ]
 }

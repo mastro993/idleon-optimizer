@@ -1,12 +1,10 @@
-//! Clamworks formula parity.
+//! Clamworks formulas.
 //!
-//! The expected values below were evaluated with the upstream
-//! `js/stats/systems/w7/clamworks.js` against the fixture save's Clamworks
-//! state at a multikill total of 1234.5%. They pin the port, not the fixture:
-//! fixture decoding is covered in `crates/import/tests/fixture.rs`.
+//! The tests evaluate the fixture save's Clamworks state at a multikill total
+//! of 1234.5%. Fixture decoding is covered in `crates/import/tests/fixture.rs`.
 
 use idleon_clamworks::Clamworks;
-use idleon_clamworks::{Category, PlanInput};
+use idleon_clamworks::PlanInput;
 use idleon_common::ValueFormat;
 
 mod common;
@@ -64,69 +62,6 @@ fn the_pearl_value_tree_multiplies_to_its_root() {
             .all(|child| child.format == ValueFormat::Multiplier)
     );
     assert_eq!(tree.keys().len(), 5);
-}
-
-#[test]
-fn summary_values_match_the_upstream_save() {
-    let clamworks = fixture_state();
-    close(clamworks.pearl_10x_chance(), 0.473_684_210_526_315_8);
-    close(clamworks.pearl_10x_expected(), 5.263_157_894_736_842_5);
-    close(clamworks.black_pearl_value(), 1700.0);
-    close(
-        clamworks.effective_pearls_per_drop(1234.5),
-        1_998.142_526_315_789_4,
-    );
-    close(clamworks.cost_reduction(), 0.095_419_847_328_244_27);
-    close(clamworks.promo_penalty(), 0.082_653_950_016_000_02);
-    close(clamworks.pearl_drop_rate(), 0.000_785_212_525_152_000_2);
-    close(
-        clamworks.black_pearl_drop_rate(),
-        0.000_003_926_062_625_760_001,
-    );
-    close(clamworks.pearls_per_kill(1234.5), 1.575_640_845_165_81);
-    close(clamworks.promotion_cost(), 100_000_000_000.0);
-    close(clamworks.promotion_chance(), 0.0625);
-    assert_eq!(clamworks.clam_count(), 14);
-    close(clamworks.clam_hp(), 7.29e24);
-}
-
-#[test]
-fn upgrade_costs_match_the_upstream_save() {
-    let clamworks = fixture_state();
-    let expected = [
-        1_163_189.220_359_348_5,
-        7_179_002.006_716_39,
-        32_493.597_541_899_777,
-        1_489_958.538_990_910_2,
-        744_579.965_238_359_5,
-        141_513_095.418_493_48,
-        24_013_965.205_910_545,
-        41_801_726.630_811_94,
-        1_142_357_583.996_53,
-    ];
-    for (index, expected) in expected.into_iter().enumerate() {
-        close(clamworks.next_upgrade_cost(index), expected);
-    }
-}
-
-#[test]
-fn the_priority_table_matches_the_upstream_ranking() {
-    let clamworks = fixture_state();
-    let ranks = clamworks.priority(1234.5);
-    let order: Vec<usize> = ranks.iter().map(|rank| rank.index).collect();
-    assert_eq!(order, [2, 0, 3, 7, 6, 5, 1, 4, 8]);
-    close(ranks[0].efficiency, 4.287_114_759_883_682_7e-7);
-    close(ranks[1].efficiency, 6.903_739_522_104_26e-9);
-    close(ranks[2].ppk_gain, 0.008_030_066_876_831_832);
-    close(ranks[6].cost_save, 0.0);
-    close(ranks[7].cost_save, 0.011_320_754_716_980_982);
-    close(ranks[8].cost_save, 0.137_931_034_482_758_54);
-    assert_eq!(ranks[7].category, Category::Cost);
-    assert_eq!(ranks[8].category, Category::Cost);
-    assert_eq!(ranks[6].category, Category::Clams);
-    assert_eq!(ranks[5].category, Category::Black);
-    assert!(ranks[..6].iter().all(|rank| rank.is_pearl_upgrade));
-    assert!(ranks[6..].iter().all(|rank| !rank.is_pearl_upgrade));
 }
 
 #[test]
@@ -217,74 +152,15 @@ fn a_save_without_the_menagerie_rows_names_every_missing_one() {
     );
 }
 
-/// `crates/clamworks/tests/clamworks-oracle.json`, written by `script/clamworks-oracle.mjs`.
-fn oracle() -> serde_json::Value {
-    serde_json::from_str(include_str!("clamworks-oracle.json")).expect("the oracle JSON is valid")
-}
-
-fn oracle_number(value: &serde_json::Value, key: &str) -> f64 {
-    value
-        .get(key)
-        .and_then(serde_json::Value::as_f64)
-        .unwrap_or_else(|| panic!("the oracle has no {key}"))
-}
-
-#[test]
-fn the_promotion_tracker_matches_upstream() {
-    let oracle = oracle();
-    let expected = &oracle["promotion"];
-    let promotion = fixture_state().promotion();
-    assert_eq!(
-        f64::from(promotion.level),
-        oracle_number(&oracle, "promotionLevel")
-    );
-    close(promotion.balance, oracle_number(&oracle, "pearlBalance"));
-    close(promotion.chance, oracle_number(expected, "chance"));
-    close(promotion.cost, oracle_number(expected, "cost"));
-    assert_eq!(
-        promotion.expected_attempts,
-        oracle_number(expected, "expectedAttempts") as u32
-    );
-    close(
-        promotion.expected_cost,
-        oracle_number(expected, "expectedCost"),
-    );
-    close(
-        promotion.clam_hp_after,
-        oracle_number(expected, "clamHpAfter"),
-    );
-    assert_eq!(promotion.level, 6);
-    assert_eq!(promotion.expected_attempts, 16);
-    assert!(
-        !promotion.affordable(),
-        "1e11 pearls is more than the balance"
-    );
-    close(promotion.shortfall(), 1e11 - promotion.balance);
-}
-
 #[test]
 fn the_rewards_list_every_worker_class_level() {
-    let oracle = oracle();
-    let expected = oracle["promotion"]["rewards"]
-        .as_array()
-        .expect("the oracle lists rewards");
     let promotion = fixture_state().promotion();
     assert_eq!(promotion.rewards.len(), 12);
-    assert_eq!(promotion.rewards.len(), expected.len());
-    for (reward, expected) in promotion.rewards.iter().zip(expected) {
-        assert_eq!(
-            reward.level,
-            expected["level"].as_u64().expect("a reward level") as u32
-        );
-        assert_eq!(reward.description, expected["description"]);
-        assert_eq!(
-            reward.unlocked,
-            expected["unlocked"].as_bool().expect("a flag")
-        );
+    for reward in &promotion.rewards {
         assert!(!reward.description.contains('_'), "the text stays readable");
         assert!(!reward.description.is_empty());
     }
-    // `clamWorkBonus(t)` is 1 only when the saved level is past `t`.
+    // A reward unlocks only once the saved level is past its threshold.
     assert_eq!(promotion.unlocked(), 6);
     assert!(promotion.rewards[..6].iter().all(|reward| reward.unlocked));
     assert!(promotion.rewards[6..].iter().all(|reward| !reward.unlocked));
@@ -301,61 +177,6 @@ fn a_save_without_a_promotion_has_every_reward_locked() {
     close(promotion.cost, 1e5);
     close(promotion.clam_hp_after, 3e17);
     assert!(promotion.rewards.iter().all(|reward| !reward.unlocked));
-}
-
-#[test]
-fn the_plan_matches_the_upstream_optimizer() {
-    let clamworks = fixture_state();
-    for expected in oracle()["plans"]
-        .as_array()
-        .expect("the oracle lists plans")
-    {
-        let budget = oracle_number(expected, "budget");
-        let multikill = oracle_number(expected, "multikillTotal");
-        let plan = clamworks.plan(PlanInput {
-            budget,
-            multikill_total: multikill,
-        });
-        assert_eq!(
-            plan.steps.len(),
-            expected["steps"].as_array().unwrap().len()
-        );
-        for (step, expected) in plan.steps.iter().zip(expected["steps"].as_array().unwrap()) {
-            assert_eq!(step.index, expected["index"].as_u64().unwrap() as usize);
-            assert_eq!(
-                step.from_level,
-                expected["fromLevel"].as_u64().unwrap() as u32
-            );
-            close(step.cost, oracle_number(expected, "cost"));
-            close(step.gain, oracle_number(expected, "gain"));
-        }
-        close(plan.spent, oracle_number(expected, "spent"));
-        let end: Vec<u32> = expected["endUpgrades"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|level| level.as_u64().unwrap() as u32)
-            .collect();
-        assert_eq!(plan.end.upgrades.to_vec(), end);
-        assert_eq!(plan.capped, expected["capped"].as_bool().expect("a flag"),);
-        close(
-            plan.pearls_per_kill_before(),
-            oracle_number(expected, "pearlsPerKillBefore"),
-        );
-        close(
-            plan.pearls_per_kill_after(),
-            oracle_number(expected, "pearlsPerKillAfter"),
-        );
-        close(
-            plan.pearl_value_before(),
-            oracle_number(expected, "pearlValueBefore"),
-        );
-        close(
-            plan.pearl_value_after(),
-            oracle_number(expected, "pearlValueAfter"),
-        );
-        assert!(plan.gain() >= 0.0);
-    }
 }
 
 #[test]

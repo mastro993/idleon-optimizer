@@ -1,12 +1,12 @@
 //! The replay tab (CS-07): the run's recorded frames, scrubbed and played.
 //!
-//! The frames come from [`idleon_combat::encounter`]'s recorder and the
-//! delta codec in [`idleon_combat::replay`]; the scene art, monster sheets and
+//! The frames come from [`idleon_combat::encounter`]'s recorder and the delta
+//! codec in [`idleon_combat::replay`]; the scene art, monster sheets and
 //! platform come from the extracted map table and resolve through the shared
 //! asset manifest, so a missing file draws a labelled placeholder instead of
-//! breaking the replay. The controls are the upstream ones: play/pause, the
-//! `REPLAY_SPEEDS` buttons, a scrubber over the frames and, for a run whose
-//! Den was projected, the wave boundaries to step between.
+//! breaking the replay. The controls are play/pause, the speed buttons, a
+//! scrubber over the frames and, for a run whose Den was projected, the wave
+//! boundaries to step between.
 
 use super::RunResult;
 use crate::assets::{Artwork, Manifest};
@@ -29,7 +29,7 @@ use idleon_combat::replay::Recording;
 use idleon_ui::format;
 use serde_json::Value as Json;
 
-/// The upstream playback speeds (`REPLAY_SPEEDS`).
+/// The playback speeds.
 const SPEEDS: [f64; 7] = [0.5, 1.0, 2.0, 5.0, 20.0, 60.0, 300.0];
 
 /// The replay pane: the scene, its controls and what the run cannot draw.
@@ -415,8 +415,7 @@ fn capture_row(result: &RunResult, state: &AppState, cx: &mut Context<AppState>)
                 Caption::new(
                     "A Killroy practice run can be captured as a replay: it stores the map, \
                      duration and seed, and opening it re-runs them. The capture is checked with \
-                     the upstream rules and lives in this session, like the upstream page's \
-                     handoff token.",
+                     the Killroy rules and lives in this session.",
                 )
                 .text_color(muted),
             );

@@ -1,8 +1,6 @@
 //! The Trench card: the saved depth and its fish requirement, the fastest lure
 //! and line at each projected depth, the depth projection table and the other
 //! characters fishing alongside.
-//!
-//! Ported from `renderTrench` in the upstream `fishing-calc.html`.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
@@ -22,7 +20,7 @@ use gpui::{
 use idleon_fishing::{self as fishing, HelperMode, TrenchPlan};
 use idleon_ui::format;
 
-/// The depth choices the upstream selector offers.
+/// The depth choices the selector offers.
 const DEPTH_CHOICES: [usize; 5] = [3, 5, 10, 15, 25];
 
 /// The Trench card, or the state that explains why it has nothing to show.

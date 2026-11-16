@@ -1,12 +1,11 @@
 //! The 18×10 Jelly Operator board: its slots, cells and obstruction.
 //!
-//! Ports the page's `gridHtml`: the slot classes for locked and obstruction
-//! slots, the footprint joins, the cell sprites placed over their footprint
-//! area and the obstruction sprite the page draws at column 7, row 3. Slots are
-//! buttons, so a click places the picked palette cell or removes the cell under
-//! the pointer. The layout tab and the simulator share the board and its
-//! palette; only the unlocked slots, the obstruction and the click handler
-//! differ.
+//! The slot classes for locked and obstruction slots, the footprint joins, the
+//! cell sprites placed over their footprint area and the obstruction sprite at
+//! column 7, row 3. Slots are buttons, so a click places the picked palette
+//! cell or removes the cell under the pointer. The layout tab and the simulator
+//! share the board and its palette; only the unlocked slots, the obstruction
+//! and the click handler differ.
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image_sized;
@@ -28,10 +27,10 @@ pub(crate) enum BoardAction {
     ReadOnly,
 }
 
-/// The page's cell pitch and grid padding, in pixels (`JELLY_CELL_PITCH`).
+/// The cell pitch and grid padding, in pixels.
 const PITCH: f32 = 37.0;
 const PADDING: f32 = 4.0;
-/// The game's sprite sizes per cell type (`CELL_SPRITE_SIZES`).
+/// The game's sprite sizes per cell type.
 const SPRITE_SIZES: [(f32, f32); 8] = [
     (36.0, 36.0),
     (73.0, 36.0),
@@ -42,10 +41,10 @@ const SPRITE_SIZES: [(f32, f32); 8] = [
     (147.0, 147.0),
     (184.0, 183.0),
 ];
-/// The obstruction sprite is the 50 px source drawn at 300% (`JELLY_OBSTRUCTION_SIZE`).
+/// The obstruction sprite is the 50 px source drawn at 300%.
 const OBSTRUCTION_SIZE: f32 = 150.0;
 
-/// The upstream `.t0..t7` cell colours, background and border.
+/// The cell colours per type, background and border.
 const CELL_COLORS: [(&str, &str); 8] = [
     ("#96767b", "#f8eadc"),
     ("#487154", "#edf9b3"),
@@ -64,7 +63,7 @@ pub(crate) struct BoardView<'a> {
     pub(crate) prefix: &'static str,
     pub(crate) layout: &'a Layout,
     pub(crate) unlocked: &'a [bool],
-    /// The slots a plan's sections newly unlock, drawn with the page's ring.
+    /// The slots a plan's sections newly unlock, drawn with a ring.
     pub(crate) highlight: &'a [usize],
     pub(crate) obstruction: usize,
     pub(crate) selected: Option<usize>,
@@ -165,7 +164,7 @@ pub(crate) fn board(
                     slot.border_color(format::hex("#ffd166"))
                 })
                 .when(cell.is_some_and(|(anchor, _)| anchor == slot), |slot| {
-                    // The core slot carries a small marker, as the page's `.core` does.
+                    // The core slot carries a small marker.
                     slot.child(
                         div()
                             .absolute()
@@ -288,7 +287,7 @@ pub(crate) fn board(
         .into_any_element()
 }
 
-/// The upstream legend: one chip per unlocked cell type.
+/// The legend: one chip per unlocked cell type.
 pub(crate) fn legend(state: &AppState) -> AnyElement {
     let Some(jelly) = state.jelly.as_ref() else {
         return div().into_any_element();

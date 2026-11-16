@@ -1,7 +1,7 @@
 //! The section's selection rules: the tab ids and what a new cavern keeps.
 //!
-//! The numbers themselves are pinned in `crates/fountain/tests/fountain.rs` against
-//! the upstream JS; these cover what the section decides on top of them.
+//! The numbers themselves are pinned in `crates/fountain/tests/fountain.rs`;
+//! these cover what the section decides on top of them.
 
 use super::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, STEP_CHOICES, State, Tab};
 use idleon_fountain::{Fountain, Goal};

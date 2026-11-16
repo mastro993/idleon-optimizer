@@ -12,7 +12,7 @@ impl Farm {
             .collect()
     }
 
-    /// `plotMetrics(plotIdx)` from the planner.
+    /// Every metric of one plot.
     pub fn plot_metrics_with(&self, index: usize, snapshot: &Snapshot) -> PlotMetrics {
         let plot = self.plots.get(index).copied().unwrap_or_default();
         let crop_value = self.crop_value(index, &plot, snapshot);
@@ -41,7 +41,7 @@ impl Farm {
         }
     }
 
-    /// `cropType(plotIdx)`: the family start plus its evolution depth.
+    /// The family start plus its evolution depth.
     pub(crate) fn crop_type(&self, plot: &Plot) -> i64 {
         if plot.seed_family < 0 {
             return -1;
@@ -52,7 +52,7 @@ impl Farm {
             .unwrap_or(-1)
     }
 
-    /// `growthRequirement`: $14400 \cdot 1.5^{family}$, and the fixed
+    /// The growth requirement: $14400 \cdot 1.5^{family}$, and the fixed
     /// seven-hour Medal cycle scaled by the growth rate.
     pub fn growth_requirement(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if plot.seed_family < 0 {
@@ -65,7 +65,7 @@ impl Farm {
         }
     }
 
-    /// `growthSeconds`: the remaining requirement over the growth rate.
+    /// The remaining requirement over the growth rate.
     pub fn growth_seconds(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
         let required = self.growth_requirement(plot, snapshot);
         if required <= 0.0 {
@@ -74,8 +74,8 @@ impl Farm {
         (required - plot.growth_progress).max(0.0) / snapshot.growth_rate
     }
 
-    /// `growthCycleSeconds`: the whole cycle at the active cadence, floored at
-    /// one second so an instantaneous cycle stays finite.
+    /// The whole cycle at the active cadence, floored at one second so an
+    /// instantaneous cycle stays finite.
     pub(crate) fn growth_cycle_seconds(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
         let required = self.growth_requirement(plot, snapshot);
         if required <= 0.0 || snapshot.growth_rate <= 0.0 {
@@ -84,7 +84,7 @@ impl Farm {
         (required / snapshot.growth_rate).max(1.0)
     }
 
-    /// `nextCropChance`: the per-growth-tick evolution roll.
+    /// The per-growth-tick evolution roll.
     pub fn next_crop_chance(&self, index: usize, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if plot.seed_family < 0 {
             return 0.0;
@@ -96,8 +96,7 @@ impl Farm {
             return 0.0;
         }
         let rank = self.rank_ranks.get(index).copied().unwrap_or(0);
-        // The upstream guards a denormal data entry with an effectively zero
-        // denominator; keep that guard.
+        // Guard a denormal data entry with an effectively zero denominator.
         let denom = if family.evolution_denom == 0.000_069_42 {
             1e-110
         } else {
@@ -108,13 +107,13 @@ impl Farm {
             * (1.0 + (snapshot.rank.bonuses[0] * f64::from(rank) + snapshot.voting29) / 100.0)
     }
 
-    /// `nextOvergrowthChance`: the halving roll per overgrowth level.
+    /// The halving roll per overgrowth level.
     pub fn next_overgrowth_chance(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
         0.4_f64.powf(f64::from(plot.overgrowth) + 1.0) * snapshot.overgrowth_common
     }
 
-    /// `cropValueDetails(plotIdx)`: base value, the cap, the doubled-harvest
-    /// roll and the expected harvest.
+    /// The crop value: base value, the cap, the doubled-harvest roll and the
+    /// expected harvest.
     pub fn crop_value(&self, index: usize, plot: &Plot, snapshot: &Snapshot) -> CropValue {
         let rank = self.rank_ranks.get(index).copied().unwrap_or(0);
         let base = (1.0 + snapshot.rank.crop_value / 100.0)
@@ -146,7 +145,7 @@ impl Farm {
         }
     }
 
-    /// `farmingExpPerHarvest`: family depth, evolution and overgrowth.
+    /// Farming EXP per harvest: family depth, evolution and overgrowth.
     pub(crate) fn farming_exp_per_harvest(&self, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if plot.seed_family < 0 {
             return 0.0;
@@ -157,13 +156,13 @@ impl Farm {
             * overgrowth_multiplier(plot.overgrowth)
     }
 
-    /// `rankXpPerHarvest`: the previous plot's rank and the Land Rank bonuses.
+    /// Rank XP per harvest: the previous plot's rank and the Land Rank bonuses.
     pub(crate) fn rank_xp_per_harvest(&self, index: usize, snapshot: &Snapshot) -> f64 {
         let plot = self.plots.get(index).copied().unwrap_or_default();
         self.rank_xp_for(index, &plot, snapshot)
     }
 
-    /// `rankXpPerHarvest` for a plot the farm may not carry, which the
+    /// The rank XP per harvest for a plot the farm may not carry, which the
     /// assignment scores as a hypothetical crop.
     pub(crate) fn rank_xp_for(&self, index: usize, plot: &Plot, snapshot: &Snapshot) -> f64 {
         if self.basket_upgrade(99, 5) < 1.0 {
@@ -206,7 +205,7 @@ pub struct PlotMetrics {
     pub rank_xp: f64,
 }
 
-/// `cropValueDetails` result.
+/// A plot's crop value breakdown.
 #[derive(Clone, Debug)]
 pub struct CropValue {
     pub base: f64,
@@ -227,7 +226,7 @@ pub fn overgrowth_multiplier(overgrowth: u32) -> f64 {
     (2_f64.powi(overgrowth as i32)).clamp(1.0, 1e9)
 }
 
-/// `landRankRequirement(rank)`: the rank XP the next plot rank needs.
+/// The rank XP the next plot rank needs.
 pub fn land_rank_requirement(rank: u32) -> f64 {
     let rank = f64::from(rank);
     (7.0 * rank + 25.0 * (rank / 5.0).floor() + 10.0) * 1.11_f64.powf(rank)

@@ -8,27 +8,18 @@
 - Status: `in-progress`
 - Depends on: nothing
 
-Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the upstream asset pipeline and the per-section verification harness.
-
-## Upstream sources
-
-- index.html
-- js/ui/site-nav.js
-- js/ui/save-loader.js
-- js/ui/state-io.js
-- js/state.js
+Turn the research-only window into a sectioned desktop suite: a dashboard that opens every calculator, one shared save/state model, JSON import/export, the game asset pipeline and the per-section verification harness.
 
 ## UI
 
-- Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with the same titles, icons, world badges and one-line descriptions as upstream index.html.
+- Dashboard replaces the three-tab shell as the landing page: searchable card grid grouped by General, W2-W7 and Tools, with each section's title, icon, world badge and one-line description.
 - Each card opens a section route with a shared header: back to dashboard, section title, world badge, save status and an import button.
-- Section pages keep their upstream tab strip; the app shell only owns the window chrome and status bar.
+- Section pages keep their own tab strip; the app shell only owns the window chrome and status bar.
 - Import dialog accepts a file, a paste or drag-and-drop; it previews the detected format before applying.
 
 ## Inputs
 
 - Raw decoded save (it.json or save.json)
-- Optimizer state string (ROv2: gzip+base64)
 - App project JSON
 - Section JSON config
 
@@ -41,19 +32,19 @@ Turn the research-only window into a sectioned desktop suite: a dashboard that o
 
 ## Assets
 
-assets/upstream is imported from the upstream checkout into the repository; the manifest records the upstream commit and per-file hashes.
+assets/game is committed to the repository; the manifest records per-file hashes.
 
 ## Feature issues
 
 ### FND-01 — Dashboard card grid
 
-Landing dashboard with a searchable, grouped card grid mirroring upstream index.html: icon, title, world badge, description and stable card ids.
+Landing dashboard with a searchable, grouped card grid: icon, title, world badge, description and stable card ids.
 
 Depends on: None; this is an entry point.
 
 Acceptance:
 
-- All 25 upstream dashboard cards are present and grouped exactly like index.html.
+- All 25 dashboard cards are present and grouped by world.
 - Search filters by title, description and world; Escape clears it.
 - Every card exposes a stable id (card-<section>) and opens its section.
 
@@ -83,14 +74,13 @@ Acceptance:
 
 ### FND-04 — Project and section JSON import/export
 
-Export the whole app state as versioned JSON and import it back. Also accept the upstream ROv2 state string and per-section config JSON.
+Export the whole app state as versioned JSON and import it back. Also accept per-section config JSON.
 
 Depends on: FND-03 Shared save JSON import
 
 Acceptance:
 
 - Round-trip export then import reproduces every section's visible state.
-- ROv2 state strings are decompressed and migrated.
 - Version and section ids are validated; unknown fields warn, not fail.
 
 ### FND-05 — Import preview, migration and errors
@@ -105,16 +95,16 @@ Acceptance:
 - Warnings name the field and the fallback used.
 - Applying is atomic and logs what changed.
 
-### FND-06 — Upstream asset pipeline
+### FND-06 — Game asset pipeline
 
-Script that copies the upstream assets tree from a local checkout into committed assets/upstream, writes a manifest and verifies referenced files. The images are game assets, free to use, not upstream-authored work; the credit lives in assets/upstream/README.md.
+Committed assets/game tree with a manifest that the app resolves images through. The images are game assets, free to use; the credit lives in assets/game/README.md.
 
 Depends on: FND-02 Section registry and routing
 
 Acceptance:
 
-- script/import-upstream-assets.mjs --from <checkout> --dry-run lists every file and total size.
-- Applying writes assets/upstream plus a manifest with per-file hashes and the upstream commit; the app resolves images through the manifest.
+- assets/game holds every referenced file.
+- The manifest records per-file hashes; the app resolves images through the manifest.
 - Missing assets render a labelled placeholder, never a broken layout.
 
 ### FND-07 — Session persistence and recent imports
@@ -131,7 +121,7 @@ Acceptance:
 
 ### FND-08 — Shared layout, theme and responsive rules
 
-Ely-based shell, cards, tabs, tables and form controls shared by all sections; dark palette and spacing match upstream.
+Ely-based shell, cards, tabs, tables and form controls shared by all sections, with one dark palette and spacing scale.
 
 Depends on: FND-01 Dashboard card grid
 
@@ -193,4 +183,4 @@ Acceptance:
 
 - cargo test, clippy and fmt stay clean.
 - Dashboard opens all 30 sections in the harness.
-- Import round-trip covers raw save, ROv2 state and project JSON.
+- Import round-trip covers raw save and project JSON.

@@ -4,7 +4,7 @@ use super::*;
 use std::path::Path;
 
 #[test]
-fn keeps_every_upstream_page_once_and_grouped() {
+fn keeps_every_page_once_and_grouped() {
     assert_eq!(SECTIONS.len(), 30);
     let mut ids: Vec<&str> = SECTIONS.iter().map(|section| section.id).collect();
     ids.sort_unstable();
@@ -39,7 +39,7 @@ fn keeps_every_upstream_page_once_and_grouped() {
 }
 
 #[test]
-fn the_dashboard_shows_the_upstream_cards_and_hides_the_tools() {
+fn the_dashboard_shows_the_cards_and_hides_the_tools() {
     assert_eq!(card_count(), 25);
     let counts: Vec<usize> = Group::ALL
         .iter()

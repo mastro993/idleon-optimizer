@@ -1,11 +1,9 @@
 //! FN-04: the marble upgrade planner and optimizer.
 //!
-//! Ported from `_renderMarblePlanner` and `_renderMarbleOptimizer` in
-//! `fountain-calc.html`, with `marbleBon`, `marbleCost` and `canMarble` from
-//! `js/stats/systems/w5/fountain.js`. Only an upgrade the save owns can be
-//! marbled, and a marble level multiplies that upgrade's bonus by
-//! `1.5 + 0.5 × level`; both planners raise one marble level on a copy of the
-//! cavern and read the same goal the upgrade planner reads.
+//! Only an upgrade the save owns can be marbled, and a marble level multiplies
+//! that upgrade's bonus by `1.5 + 0.5 × level`; both planners raise one marble
+//! level on a copy of the cavern and read the same goal the upgrade planner
+//! reads.
 
 use super::data::UPGRADES_PER_WATER;
 use super::planner::pct_gain;
@@ -110,7 +108,7 @@ pub struct MarblePlan {
 }
 
 impl Fountain {
-    /// `_renderMarblePlanner`'s candidates, ranked by gain per marble.
+    /// The marble planner's candidates, ranked by gain per marble.
     ///
     /// One marble level of every upgrade the save owns, when the upgrade has a
     /// marble track, is measured on a copy of the cavern. A goal the marble
@@ -228,13 +226,13 @@ impl Fountain {
         rows
     }
 
-    /// `_renderMarbleOptimizer` without a progress report.
+    /// The marble optimizer without a progress report.
     pub fn marble_optimize(&self, request: MarbleRequest) -> MarblePlan {
         self.marble_optimize_with(request, |_| Control::Continue)
             .expect("a plan without reports is never asked to stop")
     }
 
-    /// `_renderMarbleOptimizer`: greedily buy the best marble level.
+    /// Greedily buy the best marble level.
     ///
     /// The saved marble balance is the budget. With `affordable` only levels
     /// the balance covers are considered. Without it a level may wait for the

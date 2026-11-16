@@ -5,7 +5,7 @@ use idleon_jelly::operation::{RevivePolicy, RoidTiming};
 use idleon_jelly::{Jelly, OperationOptions, boss_time, data, fever_mode_name};
 use std::collections::BTreeSet;
 
-/// The last obstruction the page offers (`Math.min(71, …)`).
+/// The last obstruction the simulator offers.
 pub(crate) const MAX_STAGE: usize = 71;
 
 /// The simulator's own board and knobs. It starts from the save and never
@@ -45,7 +45,7 @@ impl Default for Simulator {
 }
 
 impl Simulator {
-    /// The upstream `makeSimulatorState`: the save's board, stage, plots and
+    /// The initial simulator state: the save's board, stage, plots and
     /// Fever, with Stronkroid off and remove mode not selected.
     pub(crate) fn new(jelly: &Jelly) -> Self {
         let modes = fever_modes(jelly);
@@ -106,8 +106,8 @@ impl Simulator {
         }
     }
 
-    /// Re-place every cell against the sandbox's unlocked slots, as
-    /// `normalizeSimulatorLayout` does, and say how many no longer fit.
+    /// Re-place every cell against the sandbox's unlocked slots and say how
+    /// many no longer fit.
     pub(crate) fn normalize(&mut self, jelly: &Jelly, message: &str) {
         let sandbox = self.sandbox(jelly);
         let (layout, removed) = board::normalize(&sandbox, &self.layout);
@@ -227,8 +227,7 @@ impl Simulator {
     }
 
     /// Place the picked cell, or remove the cell under the pointer in remove
-    /// mode. A placement over an occupied footprint replaces what it covers,
-    /// like `jellyPlaceCell`.
+    /// mode. A placement over an occupied footprint replaces what it covers.
     pub(crate) fn click(&mut self, jelly: &Jelly, slot: usize) {
         let Some(cell_type) = self.selected else {
             let Some((anchor, _)) = board::occupancy(&self.layout).get(&slot).copied() else {

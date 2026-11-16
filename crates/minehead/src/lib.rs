@@ -1,11 +1,6 @@
 //! Minehead (Depth Charge): the formulas, the floor simulation, the strategy
 //! optimizer and the save-derived inputs the research page's Minehead tab
 //! renders.
-//!
-//! Ported from `js/stats/systems/w7/minehead.js`, `js/stats/data/w7/minehead.js`
-//! and `js/minehead/sim.js`. The static tables come from
-//! `script/extract-minehead-data.mjs`; the tests compare the port with
-//! `script/minehead-oracle.mjs`, which runs the upstream calculator itself.
 
 pub mod data;
 pub mod infer;
@@ -29,7 +24,7 @@ pub use sim::{
 };
 
 /// The upgrade description with its markers filled in, as the dashboard shows
-/// it. Ported from `fmtUpgDesc` (`js/ui/minehead-helpers.js`).
+/// it.
 pub fn upgrade_desc(inputs: &Inputs, t: usize) -> String {
     let data = game();
     let Some(upgrade) = data.upgrade(t) else {
@@ -138,7 +133,7 @@ pub fn upgrade_desc(inputs: &Inputs, t: usize) -> String {
     desc
 }
 
-/// A number with the thousands separators `toLocaleString` writes.
+/// A number with thousands separators.
 pub fn thousands(value: f64) -> String {
     let rounded = value.round();
     let negative = rounded < 0.0;

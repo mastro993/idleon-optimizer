@@ -1,17 +1,15 @@
 //! The drop-rate formula tree: the arithmetic expansion behind the total card.
 //!
-//! A dungeon map ignores every saved term, so the descriptor's `combine` hands
-//! back the expression `computeDungeonDropRate` evaluates:
+//! A dungeon map ignores every saved term, so the total is the dungeon drop-rate
+//! expression:
 //!
 //! ```text
 //! Dungeon Drop Rate = 1 + (Dungeon Total LUK + Dungeon Drop Rate stat) / 100
 //! ```
 //!
-//! This is the `formulaDetails` branch of `js/stats/defs/drop-rate.js`
-//! (`combine`), the tree upstream's formula inspector renders: the same node
-//! names, operation order and constants, one per operand. Every node also
-//! carries where its value comes from, so the breakdown names the two live run
-//! entries and the constants the formula adds.
+//! The tree keeps the formula's node names, operation order and constants, one
+//! per operand. Every node also carries where its value comes from, so the
+//! breakdown names the two live run entries and the constants the formula adds.
 //!
 //! Any other map's tree is the descriptor's whole pool chain - the account stats
 //! engine this build does not decode - so [`tree`] returns `None` for it and the
@@ -21,11 +19,11 @@ use idleon_common::formula::{FormulaNode, ValueFormat};
 
 use super::{NEEDS_RUNTIME, Runtime, dungeon_total, is_dungeon_map};
 
-/// The descriptor branch the tree expands: `drop-rate.js` `combine`.
-const COMBINE: &str = "js/stats/defs/drop-rate.js · combine (dungeon map)";
+/// The drop-rate branch the tree expands.
+const COMBINE: &str = "Drop rate · dungeon map";
 
-/// `js/stats/systems/w2/dungeon.js` `computeDungeonDropRate`.
-const FORMULA: &str = "js/stats/systems/w2/dungeon.js · computeDungeonDropRate";
+/// The dungeon drop-rate formula.
+const FORMULA: &str = "Dungeon drop rate formula";
 
 /// The expansion of the page's total for `map`, or `None` when there is nothing
 /// to expand: a map outside the dungeons needs the account stats engine, and an
@@ -40,7 +38,6 @@ pub fn tree(map: usize, runtime: Runtime) -> Option<FormulaNode> {
     }
 }
 
-/// `formulaOperation('Dungeon Drop Rate', 'add', constant 1, …)`.
 fn expansion(luk: f64, drop_rate: f64) -> FormulaNode {
     let bonuses = luk + drop_rate;
     FormulaNode::new("Dungeon Drop Rate", dungeon_total(luk, drop_rate))
@@ -65,19 +62,13 @@ fn expansion(luk: f64, drop_rate: f64) -> FormulaNode {
                         .with_note("The two values the active run shows, added.")
                         .with_children([
                             FormulaNode::leaf("Dungeon Total LUK", luk, ValueFormat::Raw)
-                                .with_source(
-                                    "drop-rate-calc.html #dungeon-luk · \
-                                     Live dungeon Total LUK input",
-                                ),
+                                .with_source("Live dungeon Total LUK input"),
                             FormulaNode::leaf(
                                 "Dungeon Drop Rate stat",
                                 drop_rate,
                                 ValueFormat::Raw,
                             )
-                            .with_source(
-                                "drop-rate-calc.html #dungeon-dr · \
-                                     Live dungeon Drop Rate input",
-                            ),
+                            .with_source("Live dungeon Drop Rate input"),
                         ]),
                     FormulaNode::leaf("Constant", 100.0, ValueFormat::Raw)
                         .with_source(FORMULA)
@@ -86,7 +77,7 @@ fn expansion(luk: f64, drop_rate: f64) -> FormulaNode {
         ])
 }
 
-/// `combine`'s `unavailable` branch: the run values the save cannot carry.
+/// The unavailable branch: the run values the save cannot carry.
 fn required_inputs() -> FormulaNode {
     FormulaNode::new("Drop Rate", 0.0)
         .with_format(ValueFormat::Multiplier)
@@ -202,7 +193,7 @@ mod tests {
             "the value and the inputs it feeds"
         );
         assert_eq!(
-            root.match_count("computeDungeonDropRate"),
+            root.match_count("dungeon drop rate formula"),
             2,
             "the constants"
         );
@@ -223,7 +214,7 @@ mod tests {
             },
         ] {
             for map in DUNGEON_MAPS {
-                let root = tree(map, runtime).expect("the upstream unavailable branch");
+                let root = tree(map, runtime).expect("the unavailable branch");
                 assert_eq!(root.label, "Drop Rate");
                 assert_eq!(root.value, 0.0);
                 assert_eq!(root.source.as_deref(), Some(COMBINE));

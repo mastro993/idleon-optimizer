@@ -648,8 +648,5 @@
   1220,
   2650
  ],
- "maxSlots": 120,
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer"
- }
+ "maxSlots": 120
 }

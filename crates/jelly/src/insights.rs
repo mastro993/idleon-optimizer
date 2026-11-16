@@ -1,10 +1,7 @@
 //! What one estimate means for the next obstructions, the daily cycle and the
 //! cell levels.
 //!
-//! Ports `jellyOperationInsights` and `clearProbabilityProxy` from
-//! `js/stats/systems/w7/jelly-operator.js`. The page also accepts a board to
-//! project the outlook with the deterministic surrogate; this port always reads
-//! the surrogate, so the outlook rows match the page's default.
+//! The outlook rows are always projected with the deterministic surrogate.
 
 use super::estimate::Estimate;
 use super::surrogate::{Objective, Surrogate, SurrogateOptions};
@@ -36,7 +33,6 @@ pub struct ObstructionOutlook {
     pub clear_within_daily_attempts: Option<f64>,
 }
 
-/// `jellyOperationInsights`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Insights {
     pub valid: bool,
@@ -58,11 +54,11 @@ pub struct Insights {
     pub critical_damage_share: Option<f64>,
     pub exp_rows: Vec<ExpOutlook>,
     pub obstruction_outlook: Vec<ObstructionOutlook>,
-    /// How the outlook rows were projected; the page names the method too.
+    /// How the outlook rows were projected.
     pub method: &'static str,
 }
 
-/// `clearProbabilityProxy`: the bounded probability a damage ratio buys.
+/// The bounded probability a damage ratio buys.
 pub fn clear_probability_proxy(damage_ratio: f64) -> f64 {
     let ratio = damage_ratio.max(0.0);
     if ratio < 1.0 {

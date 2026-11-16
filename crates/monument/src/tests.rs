@@ -1,8 +1,5 @@
 //! Monument formula edges: run-state effects, reward charge branches, partial
 //! saves and rejected inputs.
-//!
-//! The saved cards, the odds for every run state and the reward charges are
-//! compared against the upstream calculator in `crates/monument/tests/monument.rs`.
 
 use super::*;
 use serde_json::{Value, json};
@@ -95,14 +92,31 @@ fn a_partial_save_gets_milestone_etas_instead_of_infinities() {
     assert_eq!(rows[7].real_hours, 23_900.0);
 }
 
-/// The wave, rethrow and zero-HP rejections are compared with the upstream
-/// messages in `tests/monument.rs`; a non-finite HP is the case it leaves out.
 #[test]
-fn a_non_finite_remaining_hp_is_rejected() {
+fn rejected_odds_inputs_report_their_error() {
     let save = fixture();
     assert_eq!(
-        bravery_odds(&save, 0, Runtime::default(), Some(f64::NAN)),
-        Err(Error::RemainingHp)
+        bravery_odds(&save, 1001, Runtime::default(), None),
+        Err(Error::WaveTooLarge)
+    );
+    for hp in [0.0, -1.0, f64::NAN, f64::INFINITY] {
+        assert_eq!(
+            bravery_odds(&save, 0, Runtime::default(), Some(hp)),
+            Err(Error::RemainingHp)
+        );
+    }
+    let too_many = Runtime {
+        rerolls: Some(u32::MAX),
+        ..Runtime::default()
+    };
+    assert_eq!(
+        bravery_odds(&save, 0, too_many, None),
+        Err(Error::RerollsExceedMaximum)
+    );
+    // The run stats are checked first, so two bad inputs report the run-stat one.
+    assert_eq!(
+        bravery_odds(&save, 0, too_many, Some(0.0)),
+        Err(Error::RerollsExceedMaximum)
     );
 }
 
@@ -302,23 +316,19 @@ fn the_charge_reads_the_meritoc_vote_and_warns_when_its_map_is_unknown() {
     assert_eq!(reward_charge(&save, 2, 0, 0.0).map(|c| c.meritoc), Ok(0.0));
     assert_eq!(meritoc(&save, 7, 0), 0.0);
 
-    // An empty row reads as zero kills left, the upstream `Number(undefined) || 0`.
+    // An empty row reads as zero kills left.
     save.kla = vec![json!({ "250": [] })];
     assert_eq!(save.kla_map(0, 250), Some(0.0));
     close(meritoc(&save, 7, 0), 200.0 * 1.05);
 }
 
-/// The unknown monument and the negative wait are compared with the upstream
-/// message in `tests/monument.rs`; a non-finite wait is the case it leaves out.
 #[test]
-fn a_non_finite_charge_wait_is_rejected() {
+fn rejected_charge_inputs_report_invalid_charge() {
     let save = wisdom_save();
-    assert_eq!(
-        reward_charge(&save, 2, 0, f64::NAN),
-        Err(Error::InvalidCharge)
-    );
-    assert_eq!(
-        reward_charge(&save, 2, 0, f64::INFINITY),
-        Err(Error::InvalidCharge)
-    );
+    for (monument, wait) in [(3, 0.0), (2, -1.0), (2, f64::NAN), (2, f64::INFINITY)] {
+        assert_eq!(
+            reward_charge(&save, monument, 0, wait),
+            Err(Error::InvalidCharge)
+        );
+    }
 }

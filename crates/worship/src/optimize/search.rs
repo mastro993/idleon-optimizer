@@ -1,8 +1,5 @@
 //! The search driver: the beam's queue, its progress reports, its cancellation
 //! and the shared final comparison.
-//!
-//! Ported from `_searchTdLayouts` (free mode) in
-//! `js/stats/systems/w3/worship-td.js`.
 
 use super::edits::{mutate, pick, plan_neighbors, random_plan, unlocked_types};
 use super::plans::{Ctx, legalize_plan};

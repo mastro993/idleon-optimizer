@@ -1,8 +1,7 @@
 //! Shape priority tiers: the nodes shapes cover before Res EXP, and the nodes
 //! only a leftover shape may cover.
 //!
-//! Ported from the tier list in the upstream `js/renderers/upgrade-eval.js`.
-//! The stored lists are the two the upstream state persists:
+//! The stored lists are the two the state persists:
 //!
 //! - `above` holds nodes forced ahead of the Res EXP divider. Any node may sit
 //!   there, including a Res EXP node dragged up to pin a shape onto it.
@@ -17,8 +16,7 @@
 use crate::data::game;
 use serde::{Deserialize, Serialize};
 
-/// The goal names the upstream counts as Res EXP nodes, the keys of
-/// `NODE_GOAL_COLORS` in `js/game-data.js`.
+/// The goal names that count as Res EXP nodes.
 pub(crate) const EXP_GOALS: [&str; 8] = [
     "Res EXP",
     "Res True×",
@@ -42,8 +40,8 @@ pub fn is_exp_node(cell: usize) -> bool {
         .is_some_and(|node| is_exp_goal(node.goal.as_deref()))
 }
 
-/// Whether a cell has a goal, and so can sit in a tier list. One upstream grid
-/// index has no `NODE_GOAL` entry and never appears in the tier list.
+/// Whether a cell has a goal, and so can sit in a tier list. One grid index has
+/// no goal and never appears in the tier list.
 pub(crate) fn is_tiered(cell: usize) -> bool {
     game().node_at(cell).is_some_and(|node| node.goal.is_some())
 }
@@ -53,8 +51,8 @@ pub fn is_below_node(cell: usize) -> bool {
     is_tiered(cell) && !is_exp_node(cell)
 }
 
-/// Every node that is not a Res EXP node, in cell order: the upstream
-/// `UE_NON_EXP_NODES` and the default `below` list.
+/// Every node that is not a Res EXP node, in cell order: the default `below`
+/// list.
 pub(crate) fn non_exp_nodes() -> Vec<usize> {
     game()
         .nodes
@@ -106,7 +104,7 @@ impl Tiers {
         tiers
     }
 
-    /// Read the upstream preset form, `above|below` coordinates such as
+    /// Read the preset form, `above|below` coordinates such as
     /// `J6,I5|N4,M4`; every non-EXP node the string leaves out joins `below`.
     pub fn parse(data: &str) -> Option<Self> {
         let (above, below) = data.split_once('|')?;
@@ -138,7 +136,7 @@ impl Tiers {
         Some(tiers)
     }
 
-    /// The upstream preset form, in the lists' order.
+    /// The preset form, in the lists' order.
     pub fn label(&self) -> String {
         let coords = |list: &[usize]| {
             list.iter()
@@ -150,8 +148,7 @@ impl Tiers {
     }
 
     /// Drop unknown and duplicate nodes, keep EXP nodes out of `below`, and
-    /// put every non-EXP node the lists miss at the end of `below`, the
-    /// upstream `_loadShapeTiers` reconciliation.
+    /// put every non-EXP node the lists miss at the end of `below`.
     pub(crate) fn reconcile(&mut self) {
         let nodes = game().cells();
         let mut seen = vec![false; nodes];
@@ -194,7 +191,7 @@ impl Tiers {
     /// zone, otherwise to the end. Returns whether the lists changed.
     ///
     /// Only a non-EXP node can go below the divider, and only an EXP node can
-    /// return to the Res EXP zone, matching the upstream drop rules. The moved
+    /// return to the Res EXP zone. The moved
     /// node is one copy: the built-in preset it came from is never touched.
     pub fn move_node(&mut self, cell: usize, to: Tier, before: Option<usize>) -> bool {
         if game().node_at(cell).is_none() || before == Some(cell) {

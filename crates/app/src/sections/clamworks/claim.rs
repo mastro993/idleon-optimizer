@@ -1,15 +1,14 @@
 //! The Clamworks AFK claim: one trip's pearls and the `+1` comparison.
 //!
-//! Ports the AFK claim tab of `clamworks-calc.html` and
-//! `js/ui/clamworks-afk.js`: the character and pearl-table pickers, the hours
-//! away, the expected pearl currency and the two drop rows. The `+1` comparison
-//! from `js/stats/systems/w7/clamworks-combat.js` is beside it in [`super::compare`].
+//! The AFK claim tab: the character and pearl-table pickers, the hours away,
+//! the expected pearl currency and the two drop rows. The `+1` comparison is
+//! beside it in [`super::compare`].
 //!
-//! The upstream page runs the claim in a combat worker and compares a reroll
-//! policy on top of it. Neither is here: the combat simulator supplies the kills
-//! and the drop rate as entries until `CS-02`/`CS-03` land, and the reroll
-//! policy needs the talent and guild bonuses the stats context resolves. What is
-//! left is the claim itself, which is the upstream summary's first-claim payout.
+//! A full claim would also run in combat and compare a reroll policy on top of
+//! it. Neither is here: the combat simulator supplies the kills and the drop
+//! rate as entries until `CS-02`/`CS-03` land, and the reroll policy needs the
+//! talent and guild bonuses the stats context resolves. What is left is the
+//! claim itself: the first-claim payout.
 
 use super::compare::compare_card;
 use crate::state::AppState;
@@ -344,7 +343,7 @@ fn claim_figures(
         .into_any_element()
 }
 
-/// The upstream `dropRow` table: both pearl types over the claim.
+/// The drop table: both pearl types over the claim.
 fn drops_table(claim: &Claim) -> AnyElement {
     let mut table = Table::new([
         "Drop",
@@ -406,7 +405,7 @@ fn kpi(
         .into_any_element()
 }
 
-/// A quantity as the upstream page prints it (`fmt`, with `fmtVal`'s tiers): a
+/// A quantity as the claim prints it: a
 /// fraction below one percent in scientific notation, everything else scaled.
 pub(super) fn quantity(value: f64) -> String {
     if value > 0.0 && value < 0.01 {

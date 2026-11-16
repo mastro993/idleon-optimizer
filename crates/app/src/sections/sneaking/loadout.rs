@@ -1,10 +1,9 @@
 //! The loadout cards and the saved floor assignments.
 //!
-//! Ported from the loadout panel in `sneaking-calc.html`: the scenario strip, the
-//! saved floor assignments (which floors the twins stand on, what each of them
-//! does there) and the per-twin card with the hat, the weapon and the two charm
-//! slots. Upstream also prints the jade and EXP rate of each floor; those rates
-//! and their breakdown trees are SN-02, so the floor cards show what the loadout
+//! The scenario strip, the saved floor assignments (which floors the twins
+//! stand on, what each of them does there) and the per-twin card with the hat,
+//! the weapon and the two charm slots. The jade and EXP rate of each floor and
+//! their breakdown trees are SN-02, so the floor cards show what the loadout
 //! itself decides: the action, the attempt time and the detection chance.
 
 use crate::state::AppState;
@@ -543,7 +542,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn times_read_like_the_upstream_panel() {
+    fn times_read_in_seconds_minutes_or_hours() {
         assert_eq!(time(12.34), "12.3s");
         assert_eq!(time(245.0), "4m 5s");
         assert_eq!(time(22_700.0), "6.3h");

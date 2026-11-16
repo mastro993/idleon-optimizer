@@ -1307,13 +1307,5 @@
    "value": 1
   }
  ],
- "atomJellyPerLevel": 1,
- "generatedFrom": {
-  "repo": "Corgan/idleon-research-optimizer",
-  "files": [
-   "js/stats/data/w7/jelly-operator.js",
-   "js/stats/data/game/customlists.js",
-   "js/stats/data/game/hardcoded.js"
-  ]
- }
+ "atomJellyPerLevel": 1
 }

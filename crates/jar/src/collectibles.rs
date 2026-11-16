@@ -1,9 +1,7 @@
 //! The collectibles tab: the forty collectibles, their bonuses and the order an
 //! enchant should target them in.
 //!
-//! Ported from `COLLECTIBLE_DATA`, `collectibleBonus`, `enchantPriority` and
-//! `_collectibleEffect` in `jar-calc.html`. The data rows are extracted from the
-//! upstream JS into `crates/jar/data/jar.json`.
+//! The data rows live in `crates/jar/data/jar.json`.
 
 use super::{COLLECTIBLES, Jar, data};
 
@@ -13,7 +11,7 @@ pub struct Collectible {
     /// The save index, `0..40`.
     pub index: usize,
     pub name: &'static str,
-    /// The upstream category key, e.g. `rupie-mul`.
+    /// The category key, e.g. `rupie-mul`.
     pub category: &'static str,
     pub category_label: &'static str,
     pub category_color: &'static str,
@@ -23,7 +21,7 @@ pub struct Collectible {
     pub enchant_levels: u32,
     /// `COLLECTIBLE_DATA[index][1]`.
     pub per_level: f64,
-    /// `collectibleBonus`: the total effect at the saved level and legend points.
+    /// The total effect at the saved level and legend points.
     pub bonus: f64,
     /// The effect text at the saved bonus, e.g. `+180.0% rupie value`.
     pub effect: String,
@@ -31,7 +29,7 @@ pub struct Collectible {
     pub per_level_effect: String,
 }
 
-/// The collectibles of one category, in the upstream display order.
+/// The collectibles of one category, in display order.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CollectibleGroup {
     pub category: &'static str,
@@ -40,7 +38,7 @@ pub struct CollectibleGroup {
     pub items: Vec<Collectible>,
 }
 
-/// One row of `enchantPriority`: a found collectible and what one more enchant
+/// One row of the enchant priority: a found collectible and what one more enchant
 /// level adds.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EnchantPriority {
@@ -57,7 +55,7 @@ pub struct EnchantPriority {
 }
 
 impl Jar {
-    /// `collectibleLevels` for the slots this save can find.
+    /// The collectibles at their saved levels, for the slots this save can find.
     pub fn collectibles(&self) -> Vec<Collectible> {
         (0..self.collectible_slots())
             .filter_map(|index| self.collectible(index))
@@ -65,7 +63,7 @@ impl Jar {
     }
 
     /// The collectibles grouped by category, in the order their first row
-    /// appears (the upstream `_renderCollectibles` scan).
+    /// appears.
     pub fn collectible_groups(&self) -> Vec<CollectibleGroup> {
         let mut groups: Vec<CollectibleGroup> = Vec::new();
         for item in self.collectibles() {
@@ -85,7 +83,7 @@ impl Jar {
         groups
     }
 
-    /// `collectibleLevels`: every collectible's saved level, in save order.
+    /// Every collectible's saved level, in save order.
     pub fn collectible_levels(&self) -> [u32; COLLECTIBLES] {
         std::array::from_fn(|index| self.collectible_level(index))
     }
@@ -111,7 +109,7 @@ impl Jar {
         })
     }
 
-    /// `enchantPriority`: found collectibles sorted by what the next enchant
+    /// Found collectibles sorted by what the next enchant
     /// level adds, then by the fewest enchant levels.
     pub fn enchant_priority(&self) -> Vec<EnchantPriority> {
         let mut rows: Vec<EnchantPriority> = (0..COLLECTIBLES)
@@ -148,7 +146,7 @@ pub fn collectible_name(index: usize) -> &'static str {
     data().collectible_name(index)
 }
 
-/// `_collectibleEffect`: the upstream effect text at `bonus`, filling its
+/// The effect text at `bonus`, filling its
 /// `{%` or `}x` placeholder.
 pub fn collectible_effect(index: usize, bonus: f64) -> String {
     let Some(row) = data().collectible(index) else {

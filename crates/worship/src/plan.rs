@@ -1,10 +1,8 @@
 //! Worship TD build plans: the coverage heuristic, the community guide preset,
 //! staged layouts and the checks the Plan pane lists.
 //!
-//! Ported from `heuristicPlan`, `guidePresetPlan`, `planPlacementLayouts` and
-//! `validatePlanningPlacement` in `js/stats/systems/w3/worship-td.js`. A plan's
-//! towers carry a slot, a weight, a trait string and an optional level cap; the
-//! simulator places them in order and upgrades by weight per point.
+//! A plan's towers carry a slot, a weight, a trait string and an optional level
+//! cap; the simulator places them in order and upgrades by weight per point.
 
 use super::{
     Inputs, Placement, Spot, TOWER_COUNT, Trial, distance, placement_bands, tower_centers,
@@ -549,7 +547,7 @@ pub fn plan_issues(inputs: &Inputs, trial: &Trial, plan: &Plan) -> Vec<PlanIssue
 }
 
 /// The coverage plan: the highest-coverage legal slots, cycling the preferred
-/// tower types in the order the upstream heuristic uses.
+/// tower types in a fixed preference order.
 pub fn heuristic_plan(inputs: &Inputs, trial: &Trial) -> Plan {
     let types: Vec<usize> = (0..TOWER_COUNT)
         .filter(|index| *index != 5 && inputs.unlocked(*index))

@@ -1,6 +1,6 @@
-//! The strongest-source replacement matrix, from upstream `sailing-chests.js`.
+//! The strongest-source replacement matrix.
 //!
-//! A banked chest stores no source boat or captain, so upstream answers a
+//! A banked chest stores no source boat or captain, so the matrix answers a
 //! hypothetical: if the near-full scan reached a chest with this boat's value,
 //! what would replace it? Two ordinary paths exist — the same tier promoted by
 //! Unending Loot Search, and a naturally higher tier on the same island.
@@ -78,16 +78,14 @@ pub fn strongest(routes: &[RouteMetrics]) -> Option<&RouteMetrics> {
     ranked(routes).into_iter().next()
 }
 
-/// The conditional Unending Loot Search promotion at `tier`, upstream
-/// `overflowUpgradeChance`.
+/// The conditional Unending Loot Search promotion at `tier`.
 pub(crate) fn overflow_upgrade_chance(tier: u32, unending_loot_search: f64) -> f64 {
     const BASE: [f64; 5] = [0.25, 0.05, 0.007, 0.0003, 0.0];
     let base = BASE.get(tier as usize).copied().unwrap_or(0.0);
     base * (0.6 + unending_loot_search / 100.0).min(1.0)
 }
 
-/// What `incoming` needs to replace a banked chest of `reference_tier`,
-/// upstream `chestReplacementThreshold`.
+/// What `incoming` needs to replace a banked chest of `reference_tier`.
 pub(crate) fn replacement_threshold(
     incoming: &RouteMetrics,
     reference: &RouteMetrics,
@@ -135,8 +133,7 @@ pub(crate) fn replacement_threshold(
     }
 }
 
-/// How likely `incoming` is to replace a banked chest of `reference_tier`,
-/// upstream `chestReplacementOutcome`.
+/// How likely `incoming` is to replace a banked chest of `reference_tier`.
 pub fn replacement_outcome(
     incoming: &RouteMetrics,
     reference: &RouteMetrics,

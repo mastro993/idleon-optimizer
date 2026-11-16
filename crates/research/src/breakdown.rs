@@ -38,7 +38,7 @@ pub fn exp(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
             ValueFormat::Rate.format(rate.obs_base)
         ))
         .with_multiplier(rate.multi)
-        .with_source("research-math.js · total research EXP")
+        .with_source("Total research EXP")
         .with_note("Observation base × additive bonus × Takin' Notes × account multiplier.")
         .with_children([observations, additive, takin, account])
 }
@@ -227,7 +227,7 @@ fn grid_term(sim: &Simulation, ctx: &SimContext, overlay: &[i32], cell: usize) -
     }
 }
 
-/// The research AFK gains rate tree, from `buildAFKBreakdownTree`.
+/// The research AFK gains rate tree.
 pub fn afk(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     let afk = sim::afk_rate(sim, ctx);
     let overlay = sim.overlay();
@@ -250,7 +250,7 @@ pub fn afk(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     let mut root = FormulaNode::new("Research AFK Rate", afk.rate * 100.0)
         .with_format(ValueFormat::Percent)
         .with_input("1% + the terms below, capped at 100%")
-        .with_source("research-afk-gains.js · AFK gains rate")
+        .with_source("AFK gains rate")
         .with_children(children);
     if capped {
         root = root.with_note("Capped at 100%.");
@@ -262,7 +262,7 @@ pub fn afk(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     root
 }
 
-/// The insight multiplier tree, from `buildInsightBreakdownTree`.
+/// The insight multiplier tree.
 pub fn insight(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     let insight = crate::dashboard::insight_multiplier(sim, ctx);
     let overlay = sim.overlay();
@@ -298,21 +298,21 @@ pub fn insight(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     FormulaNode::new("Insight/hr per Monocle", insight.per_monocle)
         .with_format(ValueFormat::Rate)
         .with_multiplier(insight.multi)
-        .with_source("research-math.js · insight EXP rate")
+        .with_source("Insight EXP rate")
         .with_note(
             "Grid 91 and 92 add; Emperor 46 and Jelly reward 7 multiply. Kaleidoscopes on neighbouring observations add their own factor.",
         )
         .with_children(children)
 }
 
-/// The grid point split, from `buildGridPointsBreakdownTree`.
+/// The grid point split.
 pub fn grid_points(sim: &Simulation, ctx: &SimContext) -> FormulaNode {
     let breakdown = crate::dashboard::grid_points(sim, ctx);
     let points = breakdown.points;
     FormulaNode::new("Grid points", points.free as f64)
         .with_format(ValueFormat::Count)
         .with_input(format!("{} earned − {} spent", points.earned, points.spent))
-        .with_source("research-math.js · grid points")
+        .with_source("Grid points")
         .with_children([
             FormulaNode::new("Total earned", points.earned as f64)
                 .with_format(ValueFormat::Count)
@@ -426,7 +426,7 @@ mod tests {
         let tree = exp(&sim, &ctx);
         assert!(tree.match_count("Takin' Notes") >= 1);
         assert!(tree.match_count("grid") > 0);
-        assert!(tree.match_count("research-math") >= 1);
+        assert!(tree.match_count("Total research EXP") >= 1);
         assert_eq!(tree.match_count("note that cannot exist"), 0);
     }
 

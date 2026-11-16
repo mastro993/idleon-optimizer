@@ -1,11 +1,11 @@
 //! The Opal Optimizer (W5): the current villagers, their EXP rates, the account
 //! bonuses behind them, the distribution optimizer and the manual simulator.
 //!
-//! `Current state` is the upstream page's first tab: the villager overview and
-//! table, the current opal state and the shared formula tree, with a villager
-//! picker that switches the tree between the total and one villager. `Optimizer`
-//! splits a total across the unlocked villagers for the selected target, and
-//! `Manual simulator` reads a hand-typed split against the save.
+//! `Current state` is the first tab: the villager overview and table, the
+//! current opal state and the shared formula tree, with a villager picker that
+//! switches the tree between the total and one villager. `Optimizer` splits a
+//! total across the unlocked villagers for the selected target, and `Manual
+//! simulator` reads a hand-typed split against the save.
 //!
 //! Every save-derived figure comes from the import; the section keeps only its
 //! visible selections, on its own [`State`].

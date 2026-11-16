@@ -553,7 +553,7 @@
       "group": "Crystals",
       "kind": "chance",
       "label": "Crystal spawn chance cap",
-      "desc": "Cap on the per-kill crystal spawn chance (0.1 in the source).",
+      "desc": "Cap on the per-kill crystal spawn chance (0.1 in the game).",
       "keys": [
         "crystalSpawnCap"
       ],

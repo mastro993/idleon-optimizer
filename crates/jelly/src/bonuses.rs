@@ -1,13 +1,9 @@
 //! The obstruction reward table: every `Research[45..47]` row, the account
 //! system it feeds and whether the save has cleared it.
 //!
-//! Ports `jellyRewards`, `jellyRewardTarget`, `jellyRewardBonus`,
-//! `gameDescription` and `rewardEffectText` from `jelly-operator-calc.html` and
-//! `js/stats/data/w7/jelly-operator.js`.
-//!
 //! The game's reward text is written against the game's own number format and
 //! two placeholders: `{`/`$` are the reward's value and `}` the multiplier it
-//! buys. The effect column is the page's normalisation of that text, because the
+//! buys. The effect column is a normalisation of that text, because the
 //! 72 descriptions are not written in one consistent unit.
 
 use super::{Jelly, fmt_val};
@@ -24,12 +20,12 @@ pub struct Bonus {
     pub value: f64,
     /// Whether the obstruction that grants it has been cleared.
     pub active: bool,
-    /// The reward in one line, as the page normalises it.
+    /// The reward in one line, normalised.
     pub effect: String,
 }
 
 impl Jelly {
-    /// `jellyRewards`: every obstructions' reward, cleared or not.
+    /// Every obstruction's reward, cleared or not.
     pub fn bonuses(&self) -> Vec<Bonus> {
         super::data()
             .rewards
@@ -53,7 +49,7 @@ impl Jelly {
     }
 }
 
-/// `gameDescription`: the game text with `{`/`$` as the value, `}` as the
+/// The game text with `{`/`$` as the value, `}` as the
 /// multiplier and `@` as a line break.
 fn game_description(description: &str, value: f64) -> String {
     let amount = fmt_val(value);
@@ -66,7 +62,7 @@ fn game_description(description: &str, value: f64) -> String {
         .join(" ")
 }
 
-/// `rewardEffectText`: the reward in one line, in the unit its text means.
+/// The reward in one line, in the unit its text means.
 fn effect_text(index: usize, description: &str, value: f64) -> String {
     let text = description.to_lowercase();
     let multiplier = || format!("{:.2}x", 1.0 + value / 100.0);

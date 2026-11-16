@@ -2,17 +2,14 @@
 //! response advisor, the shared training pool and the reward charge all three
 //! monuments pay out.
 //!
-//! Ported from the upstream `js/stats/systems/w5/monument.js` and the helper
-//! systems those tabs read: hole upgrades, the fountain, jar measurements and
-//! collectibles, summoning victories, arcade, achievements, the compass,
-//! Minehead, Meritoc voting, sushi tiers and the gaming superbits. The static
-//! tables come from `script/extract-monument-data.mjs`; the Justice worksheet is
-//! [`justice`].
+//! The tabs read several helper systems: hole upgrades, the fountain, jar
+//! measurements and collectibles, summoning victories, arcade, achievements,
+//! the compass, Minehead, Meritoc voting, sushi tiers and the gaming superbits.
+//! The Justice worksheet is [`justice`].
 //!
-//! The formulas follow the upstream order of operations exactly, including its
-//! rounding and flooring, because the calculator reports the game's displayed
-//! values. A save missing the monument rows reports [`Snapshot::available`]
-//! false instead of guessing.
+//! The formulas keep the game's order of operations, rounding and flooring,
+//! because the calculator reports the game's displayed values. A save missing
+//! the monument rows reports [`Snapshot::available`] false instead of guessing.
 
 mod data;
 pub mod justice;
@@ -33,7 +30,7 @@ pub struct Runtime {
     pub boosts: u32,
 }
 
-/// The upstream monument names, indexed by `t` (Bravery 0, Justice 1, Wisdom 2).
+/// The monument names, indexed by `t` (Bravery 0, Justice 1, Wisdom 2).
 const NAMES: [&str; 3] = ["Bravery", "Justice", "Wisdom"];
 
 /// One additive training source.
@@ -137,7 +134,7 @@ pub struct WisdomStats {
     pub seconds_per_match: f64,
 }
 
-/// `monumentRewardCharge`: the reward multiplier a wait has built up.
+/// The reward multiplier a wait has built up.
 #[derive(Clone, Debug, Default, PartialEq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Charge {
@@ -147,9 +144,9 @@ pub struct Charge {
     pub max_linear: f64,
     /// The wait's own multiplier, before the Meritoc and Legend factors.
     pub base: f64,
-    /// `computeMeritocBonusz(7)`. Zero unless vote 7 is active and its map is cleared.
+    /// The Meritoc vote 7 bonus. Zero unless vote 7 is active and its map is cleared.
     pub meritoc: f64,
-    /// `legendPTSbonus(27)`.
+    /// The Legend talent 27 bonus.
     pub legend: f64,
     pub multi: f64,
     pub can_start: bool,
@@ -167,7 +164,7 @@ pub struct WisdomSnapshot {
     pub bonuses: Vec<BonusRow>,
     /// The charge saved waiting has built so far.
     pub charge: Charge,
-    /// The charge after another 24 hours, the upstream "tomorrow" preview.
+    /// The charge after another 24 hours, the "tomorrow" preview.
     pub tomorrow: Charge,
 }
 
@@ -213,7 +210,7 @@ pub struct MonumentSummary {
 pub struct Summary {
     pub available: bool,
     pub notes: Vec<String>,
-    /// `rewardLevelMulti`: the companion factor applied after each reward roll.
+    /// The companion factor applied after each reward roll.
     pub reward_level_multi: f64,
     pub monuments: Vec<MonumentSummary>,
     pub training: Training,
@@ -348,8 +345,8 @@ pub fn bravery_odds(
     if wave > 1000 {
         return Err(Error::WaveTooLarge);
     }
-    // The run stats come first so a run with two bad inputs reports the same
-    // error the upstream calculator does.
+    // The run stats come first, so a run with two bad inputs reports the
+    // run-stat error.
     let stats = bravery_stats(save, runtime)?;
     if remaining_hp.is_some_and(|hp| !hp.is_finite() || hp <= 0.0) {
         return Err(Error::RemainingHp);
@@ -588,7 +585,7 @@ pub fn summary(save: &Save, char_idx: usize) -> Summary {
     }
 }
 
-/// `rewardLevelMulti`: companion 135's multiplier on the permanent reward
+/// Companion 135's multiplier on the permanent reward
 /// levels, never below the unowned one.
 fn reward_level_multi(save: &Save) -> f64 {
     (1.0 + companion_bonus_for_save(save, 135) / 100.0).max(1.0)
@@ -601,7 +598,7 @@ fn has_rows(save: &Save) -> bool {
         .all(|row| save.holes.get(*row).is_some_and(Value::is_array))
 }
 
-/// The partial-save warnings the upstream snapshot prints for every tab.
+/// The partial-save warnings the snapshot prints for every tab.
 fn notes(save: &Save, char_idx: usize) -> Vec<String> {
     let mut notes = Vec::new();
     if !save.companion_available {
@@ -625,9 +622,9 @@ fn notes(save: &Save, char_idx: usize) -> Vec<String> {
     notes
 }
 
-/// `monumentRewardCharge`: the reward multiplier a monument's saved wait pays.
+/// The reward multiplier a monument's saved wait pays.
 ///
-/// `monument` is the upstream `t` (Bravery 0, Justice 1, Wisdom 2) and
+/// `monument` is the index `t` (Bravery 0, Justice 1, Wisdom 2) and
 /// `extra_seconds` the additional wait the caller previews. Waiting past the
 /// linear window keeps paying out a diminished cube-root tail.
 pub fn reward_charge(
@@ -726,7 +723,7 @@ fn fountain_bon_tot(save: &Save, water: usize) -> f64 {
     (marble_bonus * level * per_level).round()
 }
 
-/// `computeBUpg`: a cavern upgrade's value, gated on the building.
+/// A cavern upgrade's value, gated on the building.
 fn compute_bupg(save: &Save, index: usize, value: f64) -> f64 {
     if save.hole(13, index) < 1.0 {
         return 0.0;
@@ -745,7 +742,7 @@ fn compute_bupg(save: &Save, index: usize, value: f64) -> f64 {
     }
 }
 
-/// `computeMeasurementBonus`: a measurement's total bonus.
+/// A measurement's total bonus.
 fn measurement_bonus(save: &Save, index: usize) -> f64 {
     let level = save.hole(22, index);
     if level <= 0.0 {
@@ -767,7 +764,7 @@ fn parse_base(text: &str) -> f64 {
 }
 
 /// `MeasurementMulti(type)`. The monument formulas only reach types 0, 4, 5, 7,
-/// 9 and 10; the remaining upstream types read systems outside this section.
+/// 9 and 10; the remaining types read systems outside this section.
 fn measurement_multi(save: &Save, kind: usize) -> f64 {
     let quantity = match kind {
         4 => {
@@ -848,7 +845,7 @@ fn arcade_bonus(save: &Save, index: usize) -> f64 {
     maxed * companion * raw
 }
 
-/// `achieveStatus`: a completed achievement's fixed bonus.
+/// A completed achievement's fixed bonus.
 fn achieve_status(save: &Save, index: usize) -> f64 {
     if save.achievement(index) != -1.0 {
         return 0.0;
@@ -881,7 +878,7 @@ fn compass_bonus(save: &Save, index: usize) -> f64 {
     }
 }
 
-/// `collectibleBonus`: a jar collectible's level times its per-level effect.
+/// A jar collectible's level times its per-level effect.
 fn collectible_bonus(save: &Save, index: usize, legend_pts: f64) -> f64 {
     let level = save.hole(24, index);
     let per_level = if index == 19 {
@@ -892,12 +889,12 @@ fn collectible_bonus(save: &Save, index: usize, legend_pts: f64) -> f64 {
     level * per_level * (1.0 + legend_pts / 100.0)
 }
 
-/// `legendPTSbonus`: a Legend talent's points times its per-point effect.
+/// A Legend talent's points times its per-point effect.
 fn legend_pts_bonus(save: &Save, index: usize) -> f64 {
     (save.spelunk(18, index) * data().legend_per_point(index)).round()
 }
 
-/// `computeMeritocBonusz`: the bonus of the active Meritoc vote. A vote only
+/// The bonus of the active Meritoc vote. A vote only
 /// pays once its map is cleared, and a missing clear row leaves it unknown.
 fn meritoc(save: &Save, option: usize, char_idx: usize) -> f64 {
     if save.options.is_empty() {
@@ -929,7 +926,7 @@ fn meritoc(save: &Save, option: usize, char_idx: usize) -> f64 {
     base * (1.0 + companion_bonus_for_save(save, 161) / 100.0) * multi
 }
 
-/// `eventShopOwned`: whether an event shop item's letter is in `OptLacc[311]`.
+/// Whether an event shop item's letter is in `OptLacc[311]`.
 fn event_shop(save: &Save, index: usize) -> f64 {
     let Some(letter) = data().encoding_letter(index) else {
         return 0.0;
@@ -941,7 +938,7 @@ fn event_shop(save: &Save, index: usize) -> f64 {
     }
 }
 
-/// `superBitType`: whether a gaming superbit's letter is in `Gaming[12]`.
+/// Whether a gaming superbit's letter is in `Gaming[12]`.
 fn superbit(save: &Save, index: usize) -> f64 {
     let Some(letter) = data().encoding_letter(index) else {
         return 0.0;
@@ -953,7 +950,7 @@ fn superbit(save: &Save, index: usize) -> f64 {
     }
 }
 
-/// `rogBonusQTY`: a sushi tier's bonus, paid once that many tiers are found.
+/// A sushi tier's bonus, paid once that many tiers are found.
 fn rog_bonus_qty(save: &Save, index: usize) -> f64 {
     if save.unique_sushi() > index {
         data().rog_bonus_qty(index)
@@ -962,7 +959,7 @@ fn rog_bonus_qty(save: &Save, index: usize) -> f64 {
     }
 }
 
-/// `mineheadBonusQTY`: a Minehead floor reward's bonus.
+/// A Minehead floor reward's bonus.
 fn minehead_bonus_qty(index: usize, floor: f64) -> f64 {
     if floor > index as f64 {
         data().minehead_bonus(index)
@@ -975,7 +972,7 @@ fn state_r7_floor(save: &Save) -> f64 {
     save.state_r7.get(4).map(number).unwrap_or(0.0)
 }
 
-/// `computeWinBonus`: a summoning winner bonus, including its account
+/// A summoning winner bonus, including its account
 /// multipliers.
 fn win_bonus(save: &Save, index: usize, char_idx: usize) -> f64 {
     let wins = summon_win_bonus(save);
@@ -1012,7 +1009,7 @@ fn win_bonus(save: &Save, index: usize, char_idx: usize) -> f64 {
         * (1.0 + winner_sum / 100.0)
 }
 
-/// `computeSummWinBonus`: the 32 winner bonus types from normal and endless
+/// The 32 winner bonus types from normal and endless
 /// victories.
 fn summon_win_bonus(save: &Save) -> [f64; 32] {
     let mut bonus = [0.0; 32];
@@ -1041,7 +1038,7 @@ fn summon_win_bonus(save: &Save) -> [f64; 32] {
     bonus
 }
 
-/// `computeEmperorBon`: the emperor-kill bonus of one type.
+/// The emperor-kill bonus of one type.
 fn emperor_bonus(save: &Save, index: usize) -> f64 {
     let kills = save.option(369).max(0.0) as usize;
     let mut sum = 0.0;
@@ -1056,7 +1053,7 @@ fn emperor_bonus(save: &Save, index: usize) -> f64 {
     (sum * multi).floor()
 }
 
-/// `arcaneUpgBonus(48)`; index 48 skips the mastery multiplier.
+/// Arcane upgrade 48's bonus; index 48 skips the mastery multiplier.
 fn arcane_48_bonus(save: &Save) -> f64 {
     let level = save.arcane(48);
     if level <= 0.0 {
@@ -1066,7 +1063,7 @@ fn arcane_48_bonus(save: &Save) -> f64 {
     }
 }
 
-/// `jellyRewardBonus`: a jelly reward is active once its obstruction is cleared.
+/// A jelly reward is active once its obstruction is cleared.
 fn jelly_reward(save: &Save, index: usize) -> f64 {
     if save.research(7, 9) > index as f64 {
         data().jelly_reward(index)
@@ -1075,7 +1072,7 @@ fn jelly_reward(save: &Save, index: usize) -> f64 {
     }
 }
 
-/// `getSetBonus`: a permanent set or the same set actively equipped.
+/// A permanent set or the same set actively equipped.
 fn get_set_bonus(save: &Save, set_name: &str, char_idx: usize) -> f64 {
     let Some(set) = data().godshard_set() else {
         return 0.0;
@@ -1090,7 +1087,7 @@ fn get_set_bonus(save: &Save, set_name: &str, char_idx: usize) -> f64 {
     }
 }
 
-/// The upstream `checkSetEquipped` fallback for the permanent set check.
+/// The equipped-set fallback for the permanent set check.
 fn set_equipped(save: &Save, set: &data::GodshardSet<'_>, char_idx: usize) -> bool {
     let Some(equipment) = save.equipment(char_idx) else {
         return false;
@@ -1139,7 +1136,7 @@ fn set_equipped(save: &Save, set: &data::GodshardSet<'_>, char_idx: usize) -> bo
     equipped >= required
 }
 
-/// `companionBonusForSave`: a companion's bonus, preferring its level-two value.
+/// A companion's bonus, preferring its level-two value.
 fn companion_bonus_for_save(save: &Save, index: usize) -> f64 {
     if !save.owns_companion(index as u32) {
         return 0.0;

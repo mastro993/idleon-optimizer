@@ -1,8 +1,8 @@
 //! Raw access to a decoded Legends of Idleon save.
 //!
 //! The game writes some fields as JSON strings and others as one character per
-//! key; [`Save`] and the [`json`] helpers read both the way the upstream loader
-//! does, so the calculators never re-implement the codec.
+//! key; [`Save`] and the [`json`] helpers read both, so the calculators never
+//! re-implement the codec.
 
 mod character;
 mod companion;

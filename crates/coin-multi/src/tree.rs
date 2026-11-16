@@ -1,18 +1,18 @@
 //! The coin multiplier formula tree: the 23 groups behind the total card.
 //!
-//! `combine` in `js/stats/defs/coin-multi.js` multiplies 23 `1 + bonus / 100`
-//! groups and returns them as the tree's children, so a breakdown multiplies
-//! back to the number the total card shows instead of adding up to it. A group
-//! whose own formula sums several sources expands into those terms, in
-//! upstream's units; a group this build cannot resolve is neutral (`×1`) and
-//! carries the source it still needs, so the partial total stays explained.
+//! The total multiplies 23 `1 + bonus / 100` groups, which are the tree's
+//! children, so a breakdown multiplies back to the number the total card shows
+//! instead of adding up to it. A group whose own formula sums several sources
+//! expands into those terms, in the game's units; a group this build cannot
+//! resolve is neutral (`×1`) and carries the source it still needs, so the
+//! partial total stays explained.
 
 use idleon_common::formula::{FormulaNode, ValueFormat};
 
 use crate::{Evaluation, Group, Term};
 
-/// The descriptor whose `combine` builds the tree.
-const COMBINE: &str = "js/stats/defs/coin-multi.js · combine";
+/// The root's source: the product of the groups.
+const COMBINE: &str = "Coin multiplier · product of 23 groups";
 
 /// The expansion of the total card's number, group by group.
 pub fn tree(evaluation: &Evaluation) -> FormulaNode {
@@ -153,7 +153,8 @@ mod tests {
         assert_eq!(tree.match_count("mainframe and vault"), 1);
         assert_eq!(tree.match_count("recipe for profit"), 1);
         // Every node that names a source is searchable by it.
-        assert_eq!(tree.match_count("js/stats/"), 24);
+        assert_eq!(tree.match_count("coin multiplier · product"), 1);
+        assert_eq!(tree.match_count("lab grid 149"), 1);
         assert_eq!(tree.match_count("nope"), 0);
     }
 }

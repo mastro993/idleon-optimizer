@@ -1,4 +1,4 @@
-//! Captain quality and leveling, from the upstream `sailing-chests.js`.
+//! Captain quality and leveling.
 //!
 //! Each bonus a captain rolls is fixed when they are recruited: a level only
 //! multiplies the roll. [`roll_bounds`] is the recruitment range the roll sits
@@ -57,8 +57,7 @@ pub struct CaptainLevelTime {
     pub hours: f64,
 }
 
-/// The weakest roll a bonus type can have at `rarity`, upstream
-/// `captainRollBounds`.
+/// The weakest and strongest roll a bonus type can have at `rarity`.
 pub(crate) fn roll_bounds(rarity: u32, bonus_type: i32) -> RollBounds {
     if !(0..=4).contains(&bonus_type) {
         return RollBounds::default();
@@ -78,7 +77,7 @@ pub(crate) fn roll_bounds(rarity: u32, bonus_type: i32) -> RollBounds {
     RollBounds { min, max }
 }
 
-/// One captain's rolled bonus in `slot`, upstream `captainRollQuality`.
+/// One captain's rolled bonus in `slot`.
 pub fn roll_quality(captain: &Captain, slot: usize) -> RollQuality {
     let bonus_type = captain.bonus_types.get(slot).copied().unwrap_or(-1);
     if bonus_type < 0 {
@@ -99,17 +98,16 @@ pub fn roll_quality(captain: &Captain, slot: usize) -> RollQuality {
     }
 }
 
-/// The experience a captain level needs, upstream `captainExpRequirement`.
+/// The experience a captain level needs.
 pub fn exp_requirement(level: u32) -> f64 {
     let level = level as f64;
     (9.0 + level.powi(3)) * 1.5_f64.powf(level) * 1.5_f64.powf((level - 10.0).max(0.0))
 }
 
-/// The account-wide captain-EXP multiplier, upstream
-/// `captainExpMultiplierDetail` with its unmodelled factors left neutral.
+/// The account-wide captain-EXP multiplier, with its unmodelled factors left
+/// neutral.
 ///
-/// Upstream reads the Davey Jones gate from boat 0 whatever boat the captain
-/// sails; this keeps that behaviour rather than guessing a better one.
+/// The Davey Jones gate is read from boat 0 whatever boat the captain sails.
 pub fn exp_multiplier(fleet: &Fleet, context: &RouteContext) -> CaptainExpMultiplier {
     let davey = davey_jones_bonus(fleet.boats.first().unwrap_or(&Boat::default()), context);
     let (additive, multiplier) = (context.captain_exp.additive, context.captain_exp.multiplier);
@@ -121,13 +119,12 @@ pub fn exp_multiplier(fleet: &Fleet, context: &RouteContext) -> CaptainExpMultip
     }
 }
 
-/// The captain EXP one trip to `island` brings, upstream `captainExpPerTrip`.
+/// The captain EXP one trip to `island` brings.
 pub fn exp_per_trip(island: usize, fleet: &Fleet, context: &RouteContext) -> f64 {
     island_captain_exp(island) * exp_multiplier(fleet, context).value
 }
 
-/// One captain's level time on `boat` and `island`, upstream
-/// `captainLevelTime`.
+/// One captain's level time on `boat` and `island`.
 pub fn level_time(
     fleet: &Fleet,
     captain: usize,
@@ -171,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn the_roll_range_matches_upstream_bounds() {
+    fn the_roll_range_follows_the_rarity_bounds() {
         // A common loot captain rolls 4 to 7; a legendary one 51 to 79.
         assert_eq!(roll_bounds(0, 1), RollBounds { min: 4.0, max: 7.0 });
         assert_eq!(

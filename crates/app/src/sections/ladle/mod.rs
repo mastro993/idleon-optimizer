@@ -1,12 +1,11 @@
 //! The Ladle Optimizer section: the ladle summary, its characters and the Cooking
 //! EXP balloons.
 //!
-//! Ported from `ladle-calc.html` and `js/stats/systems/w4/cooking-ladle.js`. LD-01
-//! builds the Ladles and Cooking EXP tabs; LD-02 adds the Kitchens & Jellyfish
-//! reset, with each reset's layout and its copyable instructions. LD-03 adds the
-//! forecast comparison and the meal outcomes, and LD-04 the Blue Jellyfish
-//! donation planner and the No Meal Left Behind steering panel, both on the same
-//! tab.
+//! LD-01 builds the Ladles and Cooking EXP tabs; LD-02 adds the Kitchens &
+//! Jellyfish reset, with each reset's layout and its copyable instructions.
+//! LD-03 adds the forecast comparison and the meal outcomes, and LD-04 the Blue
+//! Jellyfish donation planner and the No Meal Left Behind steering panel, both
+//! on the same tab.
 //!
 //! The four values a ladle rate needs and a save cannot answer (Cooking
 //! efficiency, AFK gain rate, EXP multiplier and skill prowess) are the panel
@@ -165,7 +164,7 @@ impl State {
     }
 
     /// Adopt a new roster: keep the selections the save still carries and, when
-    /// nothing is checked yet, count the characters AFK-ing Cooking like upstream.
+    /// nothing is checked yet, count the characters AFK-ing Cooking.
     /// A schedule applied from the previous save no longer describes this one.
     pub(crate) fn adopt(&mut self, ladle: &idleon_ladle::Ladle) {
         let characters = ladle.characters.len();
@@ -267,7 +266,7 @@ fn toggle(assigned: &mut Vec<usize>, index: usize) {
 }
 
 /// Adopt a new roster: keep the checked characters it still carries, and count
-/// the ones AFK-ing Cooking when nothing is checked yet, as upstream does.
+/// the ones AFK-ing Cooking when nothing is checked yet.
 fn adopt(assigned: &mut Vec<usize>, ladle: &idleon_ladle::Ladle) {
     let characters = ladle.characters.len();
     if assigned.is_empty() {
@@ -372,7 +371,7 @@ fn no_roster(cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The upstream toolbar: who uses the ladles, whose breakdown is drawn, and how
+/// The toolbar: who uses the ladles, whose breakdown is drawn, and how
 /// often the player claims.
 fn toolbar(state: &mut AppState, _window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
     let Some(ladle) = state.ladle.clone() else {

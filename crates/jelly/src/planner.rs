@@ -1,14 +1,9 @@
 //! The board section planner: which plot tokens to buy, in what order, and how
 //! the board fills around them.
 //!
-//! Ports `planJellySections` and its helpers from
-//! `js/stats/systems/w7/jelly-operator.js`: `jellySectionGeometry`,
-//! `jellyCompleteLayout`, `jellyQualityOptions`, `jellyStrategyOptions`,
-//! `proxyObjectiveScore`, `simulateSectionCandidates`, `compareSectionRows`,
-//! `pairedOperationConfidence` and `upgradeMarginalScore`. A plan screens every
-//! unpurchased section by geometry, keeps the strongest with a bounded beam,
-//! and compares the finalists with shared-seed trials so one section's luck
-//! cannot outrank a better board.
+//! A plan screens every unpurchased section by geometry, keeps the strongest
+//! with a bounded beam, and compares the finalists with shared-seed trials so
+//! one section's luck cannot outrank a better board.
 //!
 //! The planner is deterministic: the trials are seeded, every sort breaks its
 //! ties on plot ids, and no map iteration order reaches the result.
@@ -22,7 +17,7 @@ use super::{Jelly, PROXIMITY_ANCHORS, data};
 use idleon_common::Progress;
 use std::cmp::Ordering;
 
-/// What a plan maximizes (`objectiveOptions`).
+/// What a plan maximizes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Objective {
@@ -72,7 +67,7 @@ impl Objective {
         .find(|objective| objective.id() == id)
     }
 
-    /// The metric the page's chooseable objectives require: Bloodcells need
+    /// The metric the chooseable objectives require: Bloodcells need
     /// the Currency upgrade, EXP the Cell EXP upgrade and Survival Critical.
     pub fn visible(self, jelly: &Jelly) -> bool {
         match self {
@@ -94,7 +89,7 @@ impl Objective {
     }
 }
 
-/// The ranking preset (`JELLY_STRATEGY_PROFILES`).
+/// The ranking preset.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Strategy {
@@ -102,7 +97,7 @@ pub enum Strategy {
     #[default]
     Balanced,
     Aggressive,
-    /// The page's default: progress now.
+    /// The default: progress now.
     Progression,
     Bloodcells,
     Exp,
@@ -140,7 +135,7 @@ impl Strategy {
         }
     }
 
-    /// The six presets the page offers, in its order.
+    /// The six presets the planner offers, in order.
     pub const PAGE: [Strategy; 6] = [
         Strategy::Progression,
         Strategy::Bloodcells,
@@ -166,7 +161,7 @@ impl Strategy {
         .find(|strategy| strategy.id() == id)
     }
 
-    /// `strategyObjective`: the strategy a pick names, or `None` to keep the
+    /// The strategy a pick names, or `None` to keep the
     /// current objective.
     pub fn objective(self) -> Option<Objective> {
         match self {
@@ -196,7 +191,7 @@ impl Strategy {
     }
 }
 
-/// The screening stages a plan runs (`JELLY_QUALITY_PROFILES`).
+/// The screening stages a plan runs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Quality {
@@ -273,7 +268,7 @@ impl Default for PlanOptions {
     }
 }
 
-/// The quality profile the plan ran (`jellyQualityOptions`).
+/// The quality profile the plan ran.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct QualityProfile {
     pub screening_trials: u32,
@@ -290,8 +285,7 @@ pub struct FootprintPlacement {
     pub count: usize,
 }
 
-/// The paired confidence one candidate has against the baseline
-/// (`pairedOperationConfidence`).
+/// The paired confidence one candidate has against the baseline.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Confidence {
     pub trials: usize,
@@ -337,7 +331,7 @@ pub struct SectionRow {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Plan {
     pub objective: Objective,
-    /// `None` is total EXP, as the page's `-1` target is.
+    /// `None` is total EXP, as the save's `-1` target is.
     pub exp_cell_type: Option<usize>,
     pub quality: Quality,
     pub quality_profile: QualityProfile,
@@ -358,7 +352,7 @@ pub struct Plan {
     pub recommended: Option<SectionRow>,
     pub final_layout: Layout,
     pub final_operation: Option<Estimate>,
-    /// The page's one-line explanation of the method.
+    /// A one-line explanation of the method.
     pub note: String,
 }
 
@@ -630,12 +624,12 @@ fn quality_options(quality: Quality) -> QualityProfile {
     }
 }
 
-/// `normalizeExpCellType`: the save's own `-1` target, else a owned cell type.
+/// The save's own `-1` target, else an owned cell type.
 fn normalize_exp_cell_type(jelly: &Jelly, value: Option<usize>) -> Option<usize> {
     value.map(|cell_type| cell_type.min(jelly.units_owned().saturating_sub(1)))
 }
 
-/// The save with the plots bought (`saveWithJellyPlots`).
+/// The save with the plots bought.
 pub fn save_with_plots(jelly: &Jelly, plot_ids: &[usize]) -> Jelly {
     let mut expanded = jelly.clone();
     for plot_id in plot_ids {
@@ -646,7 +640,7 @@ pub fn save_with_plots(jelly: &Jelly, plot_ids: &[usize]) -> Jelly {
     expanded
 }
 
-/// `jellyLegalPlacementAnchors`: every anchor whose footprint is unlocked.
+/// Every anchor whose footprint is unlocked.
 fn legal_placement_anchors(jelly: &Jelly, cell_type: usize) -> Vec<usize> {
     let unlocked = board::unlocked_slots(jelly);
     (0..data().size())
@@ -660,7 +654,7 @@ fn legal_placement_anchors(jelly: &Jelly, cell_type: usize) -> Vec<usize> {
         .collect()
 }
 
-/// One section's geometry (`jellySectionGeometry`).
+/// One section's geometry.
 struct Geometry {
     plot_ids: Vec<usize>,
     new_slots: Vec<usize>,
@@ -705,7 +699,7 @@ fn section_geometry(jelly: &Jelly, plot_ids: &[usize]) -> Geometry {
     }
 }
 
-/// `proxyObjectiveScore`: the deterministic projection a layout ranks by.
+/// The deterministic projection a layout ranks by.
 fn proxy_score(jelly: &Jelly, layout: &Layout, options: &PlanOptions) -> f64 {
     super::surrogate::proxy_score(
         jelly,
@@ -716,7 +710,7 @@ fn proxy_score(jelly: &Jelly, layout: &Layout, options: &PlanOptions) -> f64 {
     )
 }
 
-/// `jellyCompleteLayout`: fill every unlocked slot with the best one-slot cell,
+/// Fill every unlocked slot with the best one-slot cell,
 /// then try the new large-cell anchors the section opens.
 fn complete_layout_with(
     jelly: &Jelly,
@@ -790,7 +784,7 @@ fn complete_layout_with(
     completed
 }
 
-/// The operation's objective value for the ranking (`operationObjectiveValue`).
+/// The operation's objective value for the ranking.
 pub(crate) fn operation_value(
     operation: &Estimate,
     objective: Objective,
@@ -819,7 +813,7 @@ pub(crate) fn exp_value(operation: &Estimate, exp_cell_type: Option<usize>) -> f
     }
 }
 
-/// `trialObjectiveValue`: one trial's contribution to the paired difference.
+/// One trial's contribution to the paired difference.
 fn trial_value(
     trial: &super::operation::Trial,
     objective: Objective,
@@ -898,7 +892,6 @@ pub(crate) fn trial_set(
     }
 }
 
-/// `pairedOperationConfidence`.
 pub(crate) fn paired_confidence(candidate: &[f64], baseline: &[f64]) -> Option<Confidence> {
     let count = candidate.len().min(baseline.len());
     if count == 0 {
@@ -927,7 +920,7 @@ pub(crate) fn paired_confidence(candidate: &[f64], baseline: &[f64]) -> Option<C
     })
 }
 
-/// `upgradeMarginalScore`: what one candidate adds over the baseline.
+/// What one candidate adds over the baseline.
 fn marginal_score(
     baseline: &Estimate,
     candidate: &Estimate,
@@ -960,7 +953,6 @@ fn marginal_score(
     }
 }
 
-/// `simulatedObjectiveScore`.
 pub(crate) fn simulated_score(
     operation: &Estimate,
     objective: Objective,
@@ -985,7 +977,6 @@ pub(crate) fn simulated_score(
     }
 }
 
-/// `sectionSimulationTieBreak`.
 fn simulation_tie_break(
     row: &SectionRow,
     objective: Objective,
@@ -1001,7 +992,6 @@ fn simulation_tie_break(
     }
 }
 
-/// `sectionStrategyScore`.
 fn strategy_score(row: &SectionRow, profile: &StrategyProfile) -> f64 {
     let Some(confidence) = &row.confidence else {
         return row.objective_gain;
@@ -1015,7 +1005,7 @@ fn strategy_score(row: &SectionRow, profile: &StrategyProfile) -> f64 {
     row.objective_gain + (confidence.high - row.objective_gain).max(0.0) * 0.25
 }
 
-/// The plot ids, joined as the page's `plotIds.join(',')` does.
+/// The plot ids, joined with commas.
 fn plot_key(ids: &[usize]) -> String {
     ids.iter()
         .map(usize::to_string)
@@ -1036,7 +1026,7 @@ fn difference(before: f64, after: f64) -> Option<Ordering> {
     })
 }
 
-/// The `compareSectionRows` comparator: `Less` when `a` ranks before `b`.
+/// The section row comparator: `Less` when `a` ranks before `b`.
 fn compare_rows(
     a: &SectionRow,
     b: &SectionRow,
@@ -1080,7 +1070,7 @@ fn compare_rows(
     plot_key(&a.plot_ids).cmp(&plot_key(&b.plot_ids))
 }
 
-/// The staged comparison (`simulateSectionCandidates`). Returns the final
+/// The staged comparison. Returns the final
 /// baseline aggregate, or `None` when the run was stopped.
 fn simulate_candidates(
     rows: &mut [SectionRow],

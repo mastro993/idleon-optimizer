@@ -1,4 +1,4 @@
-//! Static Sushi Station data, extracted from the upstream calculator.
+//! Static Sushi Station data.
 
 use serde::Deserialize;
 use std::sync::OnceLock;

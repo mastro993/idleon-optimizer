@@ -1,9 +1,8 @@
 //! The Currencies tab: each slot's balance, the nodes that pay it and what the
 //! daily reset collects.
 //!
-//! Upstream splits the tab into "Sources" and a "Collection Breakdown" tree; the
-//! tree belongs to RG-03, so this pane shows the sources with the same figures
-//! the tree resolves to.
+//! The "Collection Breakdown" tree belongs to RG-03, so this pane shows the
+//! sources with the same figures the tree resolves to.
 
 use super::overview::{figure_text, kpi, number_cell, rate_cell};
 use super::world_rail;
@@ -75,7 +74,7 @@ fn picker(slots: &[i64], slot: i64, cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
-/// The inputs this save or this port leaves out of the rate, when any are.
+/// The inputs this save or this build leaves out of the rate, when any are.
 fn partials(income: &CurrencyIncome, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     if !income.partial {

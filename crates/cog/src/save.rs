@@ -1,14 +1,13 @@
 //! The cog board and shelf a save carries.
 //!
-//! Ported from `boardFromSave`, `extractAllCogs` and `recoverRawPlayerStats`
-//! in `js/cogs/cog-board.js`. `CogO` is the 252-slot name list (`0..96` board,
-//! `96..108` player slots, `108..228` shelf, `228..252` tiny board) and `CogM`
-//! is the stat row per slot. The board keeps only the 96 board slots; the shelf
+//! `CogO` is the 252-slot name list (`0..96` board, `96..108` player slots,
+//! `108..228` shelf, `228..252` tiny board) and `CogM` is the stat row per
+//! slot. The board keeps only the 96 board slots; the shelf
 //! keeps the 120 shelf slots and the non-tiny cogs among them.
 //!
 //! The game stores a player cog's `b` *after* its board bonuses. The optimizer
 //! scores from raw stats, so [`CogSave::from_save`] divides those bonuses out
-//! once, as upstream does, and every later placement is scored from raw.
+//! once, and every later placement is scored from raw.
 
 use serde_json::{Map, Value};
 
@@ -34,13 +33,13 @@ pub struct CogSave {
     pub shelf: Vec<Cog>,
     /// The 120 shelf slots by position, blanks included, for the shelf view.
     pub shelf_slots: Vec<Option<Cog>>,
-    /// The highest saved Construction level (`Lv0_<n>[8]`), or the upstream
-    /// fallback of 100 when the save carries none.
+    /// The highest saved Construction level (`Lv0_<n>[8]`), or a fallback of
+    /// 100 when the save carries none.
     pub construction_level: u32,
-    /// The effective level the board's own rolls reveal, from `findMaxConLevel`:
-    /// talents, stamps and star signs lift it above the saved level, and a roll
-    /// that could only have happened at a higher level raises it. Roll ranges
-    /// and roll targets use this one.
+    /// The effective level the board's own rolls reveal: talents, stamps and
+    /// star signs lift it above the saved level, and a roll that could only
+    /// have happened at a higher level raises it. Roll ranges and roll targets
+    /// use this one.
     pub max_construction_level: u32,
     /// Whether the save carried `CogO` at all, even if every slot is Blank.
     pub loaded: bool,
@@ -140,8 +139,7 @@ impl CogSave {
     }
 }
 
-/// One `CogM` row as a cog. A missing row is a cog with zero stats, which is
-/// what upstream's `boardFromSave` builds.
+/// One `CogM` row as a cog. A missing row is a cog with zero stats.
 fn cog(name: &str, slot: usize, row: Option<&Value>) -> Cog {
     let mut cog = Cog::named(name, slot);
     let Some(row) = row.and_then(Value::as_object) else {
@@ -166,8 +164,7 @@ fn cog(name: &str, slot: usize, row: Option<&Value>) -> Cog {
 }
 
 /// Divide each player's stored `b` by the bonuses its board position already
-/// applied, so later placements score from raw stats. Ported from
-/// `recoverRawPlayerStats`.
+/// applied, so later placements score from raw stats.
 fn recover_raw_player_stats(board: &mut Board) {
     let totals = compute_totals(board);
     for slot in 0..BOARD_SIZE {
@@ -188,7 +185,7 @@ fn recover_raw_player_stats(board: &mut Board) {
     }
 }
 
-/// `findMaxConLevel`: the saved level, raised when a cog's own `d` could only
+/// The saved level, raised when a cog's own `d` could only
 /// have rolled at a higher level. The player and tiny-board slots carry no stat
 /// tier, so the board and shelf the section decodes hold every cog that counts.
 fn effective_construction_level(

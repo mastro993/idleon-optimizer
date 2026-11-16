@@ -1,19 +1,18 @@
 //! Cglunko (The Cove, W5): the overview metrics, the upgrade priority, the
 //! upgrade plan and the stone focus.
 //!
-//! Ports the Overview, Upgrades, Optimizer and Stones tabs of
-//! `cglunko-calc.html` and `js/stats/systems/w5/cglunko.js`. Save fields:
-//! `OptionsListAccount` (or `OptLacc`), where 630..=653 are the 24 upgrade
-//! levels over two pages, 654..=659 the blue shape counts, 660..=665 the purple
-//! ones, 666 and 667 the focused blue and purple stone slots, 668 the Glunko
-//! kills and 200 the account's highest drop rate the formula reads.
+//! Save fields: `OptionsListAccount` (or `OptLacc`), where 630..=653 are the
+//! 24 upgrade levels over two pages, 654..=659 the blue shape counts, 660..=665
+//! the purple ones, 666 and 667 the focused blue and purple stone slots, 668
+//! the Glunko kills and 200 the account's highest drop rate the formula reads.
 //!
-//! [`Page`] and [`Cglunko::priority`] carry the priority table; [`Cglunko::plan`]
-//! spends one page's saved stones with [`Cglunko::next_cost`], never overdrawing
-//! a stone and never ending below the state it started from. [`Cglunko::stone_rows`]
-//! and [`Cglunko::best_focus`] carry the stone focus the Stones tab prints.
-//! `Option`-less decoding matches the upstream page: a missing `OptLacc` row
-//! reads as zero and is reported once by [`Cglunko::from_save`].
+//! [`Page`] and [`Cglunko::priority`] carry the priority table;
+//! [`Cglunko::plan`] spends one page's saved stones with
+//! [`Cglunko::next_cost`], never overdrawing a stone and never ending below the
+//! state it started from. [`Cglunko::stone_rows`] and [`Cglunko::best_focus`]
+//! carry the stone focus the Stones tab prints. Decoding is `Option`-less: a
+//! missing `OptLacc` row reads as zero and is reported once by
+//! [`Cglunko::from_save`].
 
 mod data;
 mod stone;
@@ -24,7 +23,6 @@ use idleon_common::formula::{FormulaNode, ValueFormat};
 use idleon_save::json;
 use serde_json::{Map, Value};
 
-pub use data::cost_base as upgrade_cost_base;
 pub use data::description as upgrade_description;
 pub use data::name as upgrade_name;
 pub use data::per_lv as upgrade_per_lv;
@@ -72,7 +70,7 @@ pub struct Cglunko {
     pub saved: bool,
 }
 
-/// The seven factors of [`Cglunko::dr`], one per upstream breakdown node.
+/// The seven factors of [`Cglunko::dr`], one per breakdown node.
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct DrFactors {
     /// `1 + (upgrade 1 + 17 + 21) / 100`.
@@ -107,8 +105,8 @@ impl DrFactors {
 impl Cglunko {
     /// Read the Cglunko slice of a decoded save.
     ///
-    /// A save without `OptLacc` keeps the zero state and says so once, the way
-    /// the upstream page leaves a fresh account at zero.
+    /// A save without `OptLacc` keeps the zero state and says so once, leaving
+    /// a fresh account at zero.
     pub fn from_save(save: &Map<String, Value>, warnings: &mut Vec<String>) -> Self {
         let Some(options) = ["OptionsListAccount", "OptLacc"]
             .into_iter()
@@ -173,7 +171,7 @@ impl Cglunko {
         digits(self.normal_dr)
     }
 
-    /// The seven drop-rate factors in upstream display order.
+    /// The seven drop-rate factors in display order.
     fn factors(&self) -> DrFactors {
         DrFactors {
             additive_base: 1.0 + (self.bonus(1) + self.bonus(17) + self.bonus(21)) / 100.0,
@@ -280,7 +278,6 @@ impl Cglunko {
         FormulaNode::new("Cglunko DR", factors.product())
             .with_format(ValueFormat::Multiplier)
             .with_input("Product of the seven factors")
-            .with_source("cglunko.js · drBonusAt")
             .with_note("Multiplies out to the Cove's drop rate.")
             .with_children([
                 additive_base,

@@ -8,18 +8,11 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.
+Implement Normal/Manic expeditions, auto speeds, manual strategies, parties, elixirs, amber policies and the depth optimizer.
 
 ## Known gaps
 
 - `SP-G1` Spelunking Power, amber multiplier, stamina regeneration and Grand Discovery chance are explicit inputs — blocked by `stats:spelunking-descriptors` (absent)
-
-## Upstream sources
-
-- spelunking-calc.html
-- js/ui/spelunking.js
-- js/stats/systems/w7/spelunk*.js
-- assets/spelunking
 
 ## UI
 
@@ -54,7 +47,7 @@ assets/spelunking cave tiles, rocks, doors, bosses, class icons and elixirs.
 
 Character, cave, mode, policy, full-clear, speed, party stamina and elixir belt.
 
-Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+Depends on: FND-03 Shared save JSON import, FND-06 Game asset pipeline
 
 Acceptance:
 
@@ -100,6 +93,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Simulator determinism.
 - Harness with assets.

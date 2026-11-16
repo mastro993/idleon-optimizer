@@ -1,13 +1,12 @@
 //! The Cog Board Optimizer section: the save board, the objective controls,
 //! the optimized placement, its insight, roll ranges and the read-only shelf.
 //!
-//! Ported from `cog-optimizer.html` and `js/cogs/cog-optimizer.js`. CG-01
-//! covers the three single-objective runs (build speed, construction EXP and
-//! Flaggy rate), the shared background runner and reset; CG-02 adds the custom
-//! weights and the perfect board; CG-03 adds the board insights, the roll
-//! ranges and the shelf; CG-04 adds the step-by-step swap walkthrough: Next
-//! applies the run's swap list in order, Previous restores the prior board and
-//! Done keeps the optimized board.
+//! CG-01 covers the three single-objective runs (build speed, construction EXP
+//! and Flaggy rate), the shared background runner and reset; CG-02 adds the
+//! custom weights and the perfect board; CG-03 adds the board insights, the
+//! roll ranges and the shelf; CG-04 adds the step-by-step swap walkthrough:
+//! Next applies the run's swap list in order, Previous restores the prior board
+//! and Done keeps the optimized board.
 
 mod actions;
 
@@ -135,7 +134,7 @@ impl State {
 
     /// The inputs the perfect board would use.
     ///
-    /// Upstream's perfect board reads the active stat overlay, not the custom
+    /// The perfect board reads the active stat overlay, not the custom
     /// weights, so it always maximises the selected single goal. Its stats use
     /// the effective construction level the save's own rolls reveal, as the
     /// roll ranges do.
@@ -974,7 +973,7 @@ mod tests {
         assert_eq!(
             inputs.goal,
             Goal::Build,
-            "upstream's perfect board uses the selected goal, not the weights"
+            "the perfect board uses the selected goal, not the weights"
         );
     }
 

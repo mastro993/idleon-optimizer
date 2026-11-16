@@ -1,12 +1,9 @@
 //! Statue levels, EXP requirements and availability.
 //!
-//! Ported from the upstream statue calculator:
-//! `js/stats/data/common/statues.js` (the 32-row table) and
-//! `js/stats/systems/common/statue-leveling.js` (`statueExpRequirement`).
-//! The per-level EXP is `level^1.17 * 1.35^(level/10) + 1`, rounded unless the
-//! rounding gate statue is above level 300. Statues 10-19, 20-29 and 30-31 round
-//! with the saved level of statue 1, 2 and 3; single-digit statues gate on the
-//! level being computed.
+//! The game has 32 statues. The EXP a level needs is
+//! `level^1.17 * 1.35^(level/10) + 1`, rounded unless the rounding gate statue
+//! is above level 300. Statues 10-19, 20-29 and 30-31 round with the saved level
+//! of statue 1, 2 and 3; single-digit statues gate on the level being computed.
 
 pub mod batch;
 pub mod breakdown;
@@ -19,7 +16,7 @@ use std::sync::OnceLock;
 
 const STATUES_JSON: &str = include_str!("../data/statues.json");
 
-/// One row of the upstream `StatueInfo` table.
+/// One row of the `StatueInfo` table.
 #[derive(Clone, Debug, Deserialize)]
 pub struct StatueInfo {
     pub index: usize,
@@ -182,7 +179,7 @@ pub struct NextLevel {
     pub remaining: f64,
 }
 
-/// The upstream `statueExpRequirement`: the EXP bar for `level` on `statue`.
+/// The EXP bar for `level` on `statue`.
 ///
 /// `level` is the level being computed. For single-digit statues the rounding
 /// gate is that same level; for 10-19, 20-29 and 30-31 it is the saved level of
@@ -232,11 +229,9 @@ pub fn next_level(
 
 /// The account multipliers a statue deposit carries.
 ///
-/// Ported from `statueLevelingInputs` in
-/// `js/stats/systems/common/statue-leveling.js`: the STARTUE EXP bubble lowers
-/// the EXP a level consumes, the Skinny 0 Cal vial doubles deposits, the Onyx
-/// and Zenith statue tiers multiply them, and Royal Guardian Flair multiplies
-/// them per statue.
+/// The STARTUE EXP bubble lowers the EXP a level consumes, the Skinny 0 Cal
+/// vial doubles deposits, the Onyx and Zenith statue tiers multiply them, and
+/// Royal Guardian Flair multiplies them per statue.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Leveling {
     /// The bubble's bonus, `25 × level / (level + 60)` times its Prisma bonus.
@@ -277,7 +272,7 @@ impl Default for Leveling {
 
 impl Leveling {
     /// The inputs from their decoded parts; the bubble, vial and tier
-    /// multipliers are clamped exactly as `statueLevelingInputs` does.
+    /// multipliers are clamped to the game's ranges.
     pub fn new(
         bubble_pct: f64,
         double_chance: f64,
@@ -321,7 +316,7 @@ impl Leveling {
     }
 }
 
-/// `statueFlairMultiplier`: Flair 0 / 1 / 2 / 3 / 4 gives 1× / 7× / 15× / 25× / 33×.
+/// Flair 0 / 1 / 2 / 3 / 4 gives 1× / 7× / 15× / 25× / 33×.
 pub fn flair_multiplier(level: u32) -> f64 {
     let level = f64::from(level);
     let bonus =
@@ -343,7 +338,7 @@ pub enum Estimate {
 impl Estimate {
     pub const ALL: [Estimate; 2] = [Estimate::Guaranteed, Estimate::Average];
 
-    /// The selector label, as the upstream `<option>`s read.
+    /// The selector label.
     pub fn label(self) -> &'static str {
         match self {
             Estimate::Guaranteed => "Guaranteed EXP",
@@ -399,9 +394,9 @@ pub struct TargetCost {
     pub statues_average: u64,
 }
 
-/// `statueTargetCost`: the EXP a target level needs and how many statues that
-/// is, with the STARTUE bubble's retention applied. A target at or below the
-/// saved level needs nothing, as the upstream loop reads.
+/// The EXP a target level needs and how many statues that is, with the
+/// STARTUE bubble's retention applied. A target at or below the saved level
+/// needs nothing.
 pub fn target_cost(
     save: &StatueSave,
     leveling: &Leveling,
@@ -452,7 +447,7 @@ pub fn target_cost(
     })
 }
 
-/// `Math.ceil(needed / deposit)`, saturating instead of wrapping.
+/// `needed / deposit` rounded up, saturating instead of wrapping.
 fn statue_count(needed: f64, deposit: f64) -> u64 {
     let count = (needed / deposit).ceil();
     if !count.is_finite() || count <= 0.0 {
@@ -462,7 +457,7 @@ fn statue_count(needed: f64, deposit: f64) -> u64 {
 }
 
 /// The farm time for `statues` at `rate` raw statues per hour: zero when the
-/// target is met, endless when no rate is entered, as the upstream `time()`.
+/// target is met, endless when no rate is entered.
 pub fn hours(statues: u64, rate: f64) -> f64 {
     if statues == 0 {
         0.0
@@ -483,7 +478,7 @@ pub enum RateError {
 }
 
 impl RateError {
-    /// The message the UI shows, as the upstream rate parser writes it.
+    /// The message the UI shows.
     pub fn message(self) -> &'static str {
         match self {
             RateError::Invalid => "Enter a nonnegative rate, such as 500K, 1.2M or 1e9.",
@@ -492,8 +487,8 @@ impl RateError {
     }
 }
 
-/// The upstream `parseRate`: a nonnegative number with an optional exponent and
-/// `K`, `M`, `B` or `T` suffix. An empty entry is no rate (zero).
+/// A nonnegative number with an optional exponent and `K`, `M`, `B` or `T`
+/// suffix. An empty entry is no rate (zero).
 pub fn parse_rate(text: &str) -> Result<f64, RateError> {
     let text = text.trim();
     if text.is_empty() {
@@ -524,7 +519,7 @@ pub fn parse_rate(text: &str) -> Result<f64, RateError> {
     Ok(value)
 }
 
-/// The upstream rate regex, without the regex: `\d+(\.\d*)?|\.\d+`, then an
+/// The rate number pattern, without a regex: `\d+(\.\d*)?|\.\d+`, then an
 /// optional signed exponent, and nothing else.
 fn rate_number(text: &str) -> bool {
     let bytes = text.as_bytes();

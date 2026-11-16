@@ -26,7 +26,7 @@ use gpui::{
 use idleon_monument::{BonusRow, Milestone, Snapshot};
 use idleon_ui::format;
 
-/// The upstream monument tab strip.
+/// The monument tab strip.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {
@@ -70,7 +70,7 @@ pub(crate) struct State {
     pub(crate) tab: Tab,
     /// The character whose Summoning access the Meritoc charge reads.
     pub(crate) character: usize,
-    /// The enemy number, 1 for the first enemy; the upstream wave is one less.
+    /// The enemy number, 1 for the first enemy; the zero-based wave is one less.
     pub(crate) wave: u32,
     /// Damage-boost stacks already earned this story.
     pub(crate) boosts: u32,
@@ -156,8 +156,8 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// The character the Summoning access and Charge read, as the upstream page's
-/// page-level selector.
+/// The character the Summoning access and Charge read, as a page-level
+/// selector.
 fn character_select(state: &AppState, cx: &mut Context<AppState>) -> Option<AnyElement> {
     let save = state.save.as_ref()?;
     let count = save.character_count();
@@ -426,7 +426,7 @@ fn effect_text(text: &str, value: f64) -> String {
         .replace('}', &format::value(1.0 + value / 100.0))
 }
 
-/// A metric card with a formatted value, matching the upstream cards.
+/// A metric card with a formatted value.
 pub(crate) fn metric_card(
     id: &'static str,
     title: &str,
@@ -461,7 +461,7 @@ pub(crate) fn metric_card(
         .into_any_element()
 }
 
-/// Upstream `clean`: underscores and pipes read as spaces.
+/// Underscores and pipes read as spaces.
 pub(crate) fn clean_text(text: &str) -> String {
     text.replace(['_', '|'], " ")
 }
@@ -482,7 +482,7 @@ mod tests {
     }
 
     #[test]
-    fn reward_labels_and_effects_follow_the_upstream_cleanup() {
+    fn reward_labels_and_effects_follow_the_text_cleanup() {
         assert_eq!(bonus_label("+{% Mining Efficiency"), "Mining Efficiency");
         assert_eq!(bonus_label("x Bucket Fill Rate"), "Bucket Fill Rate");
         assert_eq!(

@@ -1,7 +1,4 @@
 //! Depth-estimate edges: exit odds, rock scaling and rejected configurations.
-//!
-//! The save-derived inputs and every profile are compared against the upstream
-//! calculator in `crates/spelunking/tests/spelunking.rs`.
 
 use super::*;
 use crate::fixture_inputs;

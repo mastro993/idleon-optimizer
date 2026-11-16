@@ -1,29 +1,27 @@
 //! The game's cog roll maths: the raw magnitude a roll starts from, the
 //! per-roll stat conversions and the roll ranges the section prints.
 //!
-//! Ported from `_rawMag`, `_maxRolls`, `_statFromVal` and `_inferConLvFromD`
-//! in `js/cogs/cog-judge.js`, and from `_rollRangeStats` in
-//! `cog-optimizer.html`. The range card shows the two rolls the optimizer's
-//! targets name, Ulti (tier 3) and Jewelled (tier 4).
+//! The range card shows the two rolls the optimizer's targets name, Ulti
+//! (tier 3) and Jewelled (tier 4).
 
 use super::Goal;
 
 /// The tiers the roll-range card shows: Ulti and Jewelled.
 pub(crate) const SHOWN_TIERS: [usize; 2] = [3, 4];
 
-/// `_rawMag`: the value a single roll scales, at a stat tier and construction
+/// The value a single roll scales, at a stat tier and construction
 /// level.
 pub fn raw_magnitude(tier: usize, construction_level: f64) -> f64 {
     let tier = tier as f64;
     3_f64.powf(tier.min(3.4)) + 0.25 * (construction_level / 3.0 + 0.7).powf(1.4 + 0.05 * tier)
 }
 
-/// `_maxRolls`: tiers 0-1 roll three stats, tiers 2 and up four.
+/// Tiers 0-1 roll three stats, tiers 2 and up four.
 pub(crate) fn max_rolls(tier: usize) -> usize {
     if tier < 2 { 3 } else { 4 }
 }
 
-/// `_statFromVal`: one roll's raw value as the goal's stat.
+/// One roll's raw value as the goal's stat.
 ///
 /// Build rounds the value, Flaggy rounds its 0.8 power and construction EXP
 /// compresses it to the game's small integer with a floor of 2.
@@ -35,10 +33,10 @@ pub(crate) fn stat_from_value(value: f64, goal: Goal) -> f64 {
     }
 }
 
-/// The upstream page's truncated ln(10), `2.30259`; the exact constant shifts
-/// the last digit of a long construction EXP roll, so the port keeps theirs.
+/// The game's truncated ln(10), `2.30259`; the exact constant shifts the last
+/// digit of a long construction EXP roll.
 #[allow(clippy::approx_constant)]
-const UPSTREAM_LN_10: f64 = 2.30259;
+const GAME_LN_10: f64 = 2.30259;
 
 /// The construction EXP a roll value becomes, with the game's floor of 2.
 fn con_exp(value: f64) -> f64 {
@@ -46,14 +44,14 @@ fn con_exp(value: f64) -> f64 {
         return 2.0;
     }
     let value = value.max(1.0);
-    (value.powf(0.4) + 10.0 * value.ln() / UPSTREAM_LN_10 - 5.0)
+    (value.powf(0.4) + 10.0 * value.ln() / GAME_LN_10 - 5.0)
         .floor()
         .max(2.0)
 }
 
-/// `_inferConLvFromD`: the construction level whose perfect roll would just
-/// reach a saved `d`. A board's own rolls reveal the effective level the save
-/// does not carry (talents, stamps and star signs move it).
+/// The construction level whose perfect roll would just reach a saved `d`. A
+/// board's own rolls reveal the effective level the save does not carry
+/// (talents, stamps and star signs move it).
 pub(crate) fn infer_construction_level(d: f64, tier: usize) -> u32 {
     if d <= 0.0 {
         return 0;
@@ -97,8 +95,8 @@ pub struct RollRange {
     pub next_max_value: f64,
 }
 
-/// `_rollRangeStats`: a tier's range at `construction_level`, with the next
-/// level each per-roll bound rises at.
+/// A tier's range at `construction_level`, with the next level each per-roll
+/// bound rises at.
 pub(crate) fn roll_range(goal: Goal, tier: usize, construction_level: u32) -> RollRange {
     let level = f64::from(construction_level);
     let magnitude = raw_magnitude(tier, level);
@@ -143,7 +141,7 @@ fn bounds(goal: Goal, tier: usize, construction_level: f64) -> (f64, f64) {
     )
 }
 
-/// The surround range a stat tier rolls, from `_rollRangeStats`.
+/// The surround range a stat tier rolls.
 fn surround_range(tier: usize) -> (f64, f64) {
     match tier {
         0 => (5.0, 10.0),
@@ -155,8 +153,8 @@ fn surround_range(tier: usize) -> (f64, f64) {
     }
 }
 
-/// `_findConForPlus1`: the next construction level within 500 at which the
-/// goal's per-roll bound rises, or the cap with a bound one higher.
+/// The next construction level within 500 at which the goal's per-roll bound
+/// rises, or the cap with a bound one higher.
 fn next_level(
     goal: Goal,
     tier: usize,

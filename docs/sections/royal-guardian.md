@@ -8,18 +8,12 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.
+Implement outposts, resource nodes, currencies, upgrades, breakdowns, forecasts, optimizer, unit EXP and shelf layout.
 
 ## Known gaps
 
 - `RG-G1` Talent rates read the purchased level only, without the All-Talent bonus levels — blocked by `wire:all-talent` (landed)
-- `RG-G2` 11 of the 14 upstream optimizer objectives are not offered — blocked by `port:royal-objectives` (absent)
-
-## Upstream sources
-
-- royal-guardian-calc.html
-- js/stats/systems/w7/royal-guardian*.js
-- assets/royal-guardian
+- `RG-G2` The Armory target, currency portfolio and reset-collection objectives are not offered — blocked by `model:royal-objectives` (absent)
 
 ## UI
 
@@ -57,7 +51,7 @@ assets/royal-guardian maps, resources, units and lines.
 
 Raw clearing values, range targets, world progress and counters.
 
-Depends on: FND-03 Shared save JSON import, FND-06 Upstream asset pipeline
+Depends on: FND-03 Shared save JSON import, FND-06 Game asset pipeline
 
 Acceptance:
 
@@ -75,7 +69,6 @@ Acceptance:
 
 - Every outpost renders.
 - Drain projection works.
-- Resource totals match upstream.
 
 ### RG-03 — Upgrades, breakdowns and forecast
 
@@ -86,7 +79,6 @@ Depends on: RG-02 Outposts, resources and currencies, FND-11 Shared formula tree
 Acceptance:
 
 - Breakdown sums.
-- Forecast matches upstream.
 - Upgrade plan respects costs.
 
 ### RG-04 — Optimizer, unit EXP and shelf
@@ -103,6 +95,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness with assets.

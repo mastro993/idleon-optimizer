@@ -1,9 +1,8 @@
 //! The Upgrades tab: every Armory shelf, every Orblet and the cost plan for the
 //! next levels of one shelf.
 //!
-//! The upstream page splits this into Armory, Statues, Flair and Orblets. The
-//! Royal statues and the statue flair are the Statue section's own tables, so
-//! this pane carries the two upgrades the Royal Guardian owns.
+//! The Royal statues and the statue flair are the Statue section's own tables,
+//! so this pane carries the two upgrades the Royal Guardian owns.
 
 use super::State;
 use super::overview::{figure_text, kpi, number_cell};
@@ -243,7 +242,7 @@ fn armory_card(royal: &RoyalGuardian, cx: &mut Context<AppState>) -> AnyElement 
         .into_any_element()
 }
 
-/// The cost plan for one shelf: upstream `armoryCostProjection`.
+/// The cost plan for one shelf.
 fn plan_card(royal: &RoyalGuardian, state: &State, cx: &mut Context<AppState>) -> AnyElement {
     if state.upgrade_view != View::Armory {
         return div().into_any_element();

@@ -1,9 +1,8 @@
 //! The Breakdowns tab: the account-wide rules as the shared formula tree, one
 //! category at a time.
 //!
-//! The upstream page opens this tree from any factor that names a global rule
-//! (`data-breakdown-link`); here the category is a selector on the pane and the
-//! tree below it is the same tree the page draws.
+//! The category is a selector on the pane and the tree below it is the same
+//! tree the page draws.
 
 use crate::state::AppState;
 use ely_gpui_component::layout::{Card, CardHeader};

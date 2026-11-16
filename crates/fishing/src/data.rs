@@ -1,14 +1,13 @@
 //! The fishing tables: pools, lures, lines, spots, locations and rods.
 //!
-//! Extracted from the upstream `js/stats/data/w2/fishing.js` and the game data
-//! it reads by `script/extract-fishing-data.mjs`; nothing here is hand-typed.
+//! Every table comes from the game's own data; nothing here is hand-typed.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
 
 const FISHING_JSON: &str = include_str!("../data/fishing.json");
 
-/// One toolkit piece's stats, as the upstream `FISHING_TOOLKIT_STATS` keys them.
+/// One toolkit piece's stats.
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "UPPERCASE", default)]
 pub struct ToolkitStats {
@@ -53,7 +52,7 @@ impl ToolkitStats {
     }
 }
 
-/// One lure or line from the upstream toolkit list.
+/// One lure or line from the toolkit list.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 pub struct ToolkitOption {
     pub idx: usize,
@@ -108,24 +107,25 @@ pub struct Rod {
     pub speed: f64,
 }
 
-/// The Trench depth requirement's data, from the upstream `holesBolaiaPerLv`,
-/// `legendTalentPerPt(29)` and the jar's collectible 5.
+/// The Trench depth requirement's data: the Bolaia studies' per-level values,
+/// Legend 29's per-point value and the jar's collectible 5.
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TrenchData {
-    /// `SKILLING_CAVERNS`, in the order a Bolaia study scales.
+    /// The skilling caverns, in the order a Bolaia study scales.
     pub caverns: Vec<String>,
     /// The Bolaia studies whose per-layer value scales with each cavern.
     pub studies: Vec<usize>,
-    /// `holesBolaiaPerLv(study)`, one per entry of [`Self::studies`].
+    /// The per-level value of each study, one per entry of [`Self::studies`].
     pub bolaia_per_level: Vec<f64>,
-    /// `legendTalentPerPt(29)`, the multiplier the jar collectible shares.
+    /// Legend 29's per-point value, the multiplier the jar collectible shares.
     pub legend_per_point: f64,
-    /// `COLLECTIBLE_DATA[5][1]`, the skilling cavern requirement reduction.
+    /// Collectible 5's per-level value, the skilling cavern requirement
+    /// reduction.
     pub collectible5_per_level: f64,
 }
 
-/// Everything the calculator reads from the upstream game data.
+/// Everything the calculator reads from the game data.
 #[derive(Debug, Deserialize)]
 pub struct FishingData {
     pub pools: Vec<Pool>,
@@ -137,7 +137,7 @@ pub struct FishingData {
 }
 
 impl FishingData {
-    /// A pool by its upstream key.
+    /// A pool by its game key.
     pub fn pool(&self, key: &str) -> Option<&Pool> {
         self.pools.iter().find(|pool| pool.key == key)
     }
@@ -189,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    fn the_toolkit_lists_are_the_upstream_fifteen() {
+    fn the_toolkit_lists_are_the_game_fifteen() {
         let data = data();
         assert_eq!(data.lures.len(), 15);
         assert_eq!(data.lines.len(), 15);
@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn the_trench_data_is_the_upstream_four_caverns() {
+    fn the_trench_data_is_the_four_skilling_caverns() {
         let trench = &data().trench;
         assert_eq!(trench.caverns, ["Motherlode", "Hive", "Evertree", "Trench"]);
         assert_eq!(trench.studies, [1, 7, 11, 16]);

@@ -1,11 +1,6 @@
 //! The upgrade list: every Armory shelf and every Orblet, what the next level
 //! costs and how far the current currency goes.
 //!
-//! Ported from `armoryRows`, `armoryUnlockOrder`, `armoryUnlockedCount`,
-//! `armoryUpgradeCost`, `armoryCostProjection`, `allMasterclassCostRedux*`,
-//! `orbletRows`, `orbletCost`, `orbletUnlocked`, `orbletMax` and
-//! `orbletOwnedDetail`.
-//!
 //! The Armory price is the product of seven factors: a base of 25, the daily
 //! Masterclass reduction (the Legend talent's daily-purchase counter against the
 //! Spelunk unlock, the bundle prefix and the Orblet BARGAIN reduction), the two
@@ -13,14 +8,13 @@
 //! coefficient, the shelf's base cost and its growth at the level being priced.
 //! Two shelves carry a hard-coded first-level price instead of that product.
 //!
-//! The upstream prices a shelf's currency slot from the row at its *order*
-//! position, not at its own index. That is the game's own lookup, so the port
-//! copies it and the currency column can name a different slot than the shelf's
-//! own row.
+//! A shelf's currency slot is priced from the row at its *order* position, not
+//! at its own index. That is the game's own lookup, so the currency column can
+//! name a different slot than the shelf's own row.
 //!
-//! The shelf descriptions upstream prints read systems this build does not
-//! decode (Hole, Guild, Star Sign and prayer bonuses among them), so the list
-//! shows each shelf's own bonus instead of the templated sentence.
+//! The game's shelf descriptions read systems this build does not decode (Hole,
+//! Guild, Star Sign and prayer bonuses among them), so the list shows each
+//! shelf's own bonus instead of the templated sentence.
 
 use super::*;
 use crate::rates::Factor;
@@ -28,8 +22,7 @@ use crate::rates::Factor;
 /// The first shelf's price: every Armory cost starts here.
 const ARMORY_BASE: f64 = 25.0;
 
-/// The two shelves with a fixed first-level price: upstream hard-codes both as
-/// a source special case.
+/// The two shelves with a fixed first-level price.
 const SPECIAL_PRICES: [(usize, f64, f64); 2] = [(46, 3.0, 2.0), (58, 1.0, 3.0)];
 
 /// A purchase counter past any daily limit, so the price reads at full.
@@ -38,7 +31,7 @@ const MAX_COUNTER: f64 = 9_007_199_254_740_991.0;
 /// How many levels a cost projection lists when the caller does not say.
 pub const PROJECTION_LEVELS: usize = 50;
 
-/// The daily Masterclass reduction: upstream `allMasterclassCostReduxDetail`.
+/// The daily Masterclass reduction.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Redux {
     /// The whole reduction, prefix times BARGAIN.
@@ -75,7 +68,7 @@ pub struct Cost {
     pub missing: Vec<String>,
 }
 
-/// One Armory shelf, as the list prints it: upstream `armoryRows` entry.
+/// One Armory shelf, as the list prints it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ArmoryRow {
     /// The `ArmoryUpg` index.
@@ -110,8 +103,7 @@ pub struct CostStep {
     pub cumulative_full: f64,
 }
 
-/// The next levels of one shelf priced one at a time: upstream
-/// `armoryCostProjection`.
+/// The next levels of one shelf priced one at a time.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CostPlan {
     pub index: usize,
@@ -146,7 +138,7 @@ impl CostPlan {
     }
 }
 
-/// One Orblet market row: upstream `orbletRows` entry.
+/// One Orblet market row.
 #[derive(Clone, Debug, PartialEq)]
 pub struct OrbletRow {
     pub index: usize,
@@ -170,7 +162,7 @@ pub struct OrbletRow {
     pub missing: Vec<String>,
 }
 
-/// The Orblets the save owns: upstream `itemCount('Orblet')`.
+/// The Orblets the save owns.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Owned {
     pub value: f64,
@@ -184,13 +176,12 @@ impl RoyalGuardian {
         self.armory_levels()
     }
 
-    /// The shelf order: upstream `armoryUnlockOrder`.
+    /// The shelf order.
     pub fn armory_unlock_order(&self) -> &'static [f64] {
         data::armory_order()
     }
 
-    /// How many shelves the Armory level total has reached: upstream
-    /// `armoryUnlockedCount`.
+    /// How many shelves the Armory level total has reached.
     pub fn armory_unlocked_count(&self) -> usize {
         let total = self.armory_total_levels();
         let unlocked = data::data()
@@ -201,8 +192,7 @@ impl RoyalGuardian {
         unlocked.min(self.armory_unlock_order().len())
     }
 
-    /// How many discounted purchases the Legend talent allows today:
-    /// upstream `legendPTSbonus(23)`.
+    /// How many discounted purchases the Legend talent allows today.
     pub fn daily_discount_limit(&self) -> f64 {
         (self.spelunk_cell(18, 23) * data::data().legend_talent_per_point23).round()
     }
@@ -231,8 +221,7 @@ impl RoyalGuardian {
         })
     }
 
-    /// The daily Masterclass reduction: upstream `allMasterclassCostReduxDetail`
-    /// at the saved purchase counter.
+    /// The daily Masterclass reduction at the saved purchase counter.
     pub fn masterclass_redux(&self) -> Redux {
         self.masterclass_redux_at(self.daily_purchase_counter())
     }
@@ -261,8 +250,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// What the shelf at `order` costs at its saved level: upstream
-    /// `armoryUpgradeCost`.
+    /// What the shelf at `order` costs at its saved level.
     pub fn armory_upgrade_cost(&self, order: usize) -> Cost {
         let index = self.shelf_index(order);
         let level = self
@@ -276,8 +264,7 @@ impl RoyalGuardian {
     /// the same function the cost projection prices every level with.
     pub fn armory_upgrade_cost_at(&self, order: usize, level: f64, counter: f64) -> Cost {
         let index = self.shelf_index(order);
-        // The upstream reads the currency slot from the order position, not the
-        // shelf index; the port keeps that lookup.
+        // The currency slot comes from the order position, not the shelf index.
         let currency_slot = data::data()
             .armory
             .get(order)
@@ -304,14 +291,14 @@ impl RoyalGuardian {
                 level,
                 currency_slot,
                 factors: vec![Factor {
-                    name: "source special case",
+                    name: "fixed price",
                     label: "Fixed first-level price",
                     value: *price,
                 }],
                 missing: Vec::new(),
             };
         }
-        // Upstream searches the order table for the *number* `order`, which is
+        // The order table is searched for the *number* `order`, which is
         // only a hit when the shelf order happens to contain it.
         let position = self
             .armory_unlock_order()
@@ -363,7 +350,7 @@ impl RoyalGuardian {
         ];
         let value = factors.iter().map(|factor| factor.value).product();
         // The first factor is the base price; it is kept so a breakdown can show
-        // every term the upstream multiplies.
+        // every term the price multiplies.
         factors[0].value = ARMORY_BASE;
         Cost {
             value,
@@ -375,8 +362,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// The shelf index at an order position: upstream `ARMORY_ORDER[order] ??
-    /// order`.
+    /// The shelf index at an order position, or `order` itself past the table.
     fn shelf_index(&self, order: usize) -> usize {
         self.armory_unlock_order()
             .get(order)
@@ -389,7 +375,7 @@ impl RoyalGuardian {
         data::armory(index)
     }
 
-    /// Every shelf in the order the list prints: upstream `armoryRows`.
+    /// Every shelf in the order the list prints.
     pub fn armory_rows(&self) -> Vec<ArmoryRow> {
         let unlocked_count = self.armory_unlocked_count();
         self.armory_unlock_order()
@@ -421,8 +407,7 @@ impl RoyalGuardian {
             .collect()
     }
 
-    /// The next levels of one shelf, priced one at a time: upstream
-    /// `armoryCostProjection`.
+    /// The next levels of one shelf, priced one at a time.
     pub fn armory_cost_plan(&self, order: usize, count: usize) -> Option<CostPlan> {
         let index = self.shelf_index(order);
         let shelf = data::armory(index)?;
@@ -471,7 +456,7 @@ impl RoyalGuardian {
         })
     }
 
-    /// What one orblet level costs: upstream `orbletCost`.
+    /// What one orblet level costs.
     pub fn orblet_cost(&self, index: usize) -> f64 {
         let Some(orblet) = data::orblet(index) else {
             return f64::INFINITY;
@@ -481,7 +466,7 @@ impl RoyalGuardian {
         if value < 1e6 { value.floor() } else { value }
     }
 
-    /// An orblet's level cap: upstream `orbletMax`.
+    /// An orblet's level cap.
     pub fn orblet_max(&self, index: usize) -> f64 {
         data::orblet(index)
             .map(|orblet| orblet.max_level)
@@ -494,12 +479,12 @@ impl RoyalGuardian {
     }
 
     /// The Orblets the save owns, counted across the chest and every character's
-    /// inventory: upstream `itemCount('Orblet')`.
+    /// inventory.
     pub fn orblet_owned(&self) -> Owned {
         self.item_count("Orblet")
     }
 
-    /// Every Orblet market row: upstream `orbletRows`.
+    /// Every Orblet market row.
     pub fn orblet_rows(&self) -> Vec<OrbletRow> {
         let owned = self.orblet_owned();
         (0..data::data().orblets.len())
@@ -538,8 +523,7 @@ impl RoyalGuardian {
             .collect()
     }
 
-    /// How many of one item the chest and every character inventory hold:
-    /// upstream `itemCount`.
+    /// How many of one item the chest and every character inventory hold.
     fn item_count(&self, item: &str) -> Owned {
         let mut value = 0.0;
         let mut missing = Vec::new();
@@ -561,7 +545,7 @@ impl RoyalGuardian {
     }
 }
 
-/// How many of `item` one inventory pair holds: upstream `_itemPairCount`.
+/// How many of `item` one inventory pair holds.
 fn pair_count(order: &[Value], quantity: &[Value], item: &str) -> f64 {
     order
         .iter()

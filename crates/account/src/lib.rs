@@ -1,16 +1,15 @@
 //! The account side of a save: every multiplier the research simulator reads.
 //!
-//! This is a port of the upstream save context (`js/save/context.js`) and the
-//! research EXP descriptor (`js/stats/defs/research-exp.js`). Each term is
-//! derived from the save field that carries it; when a save does not carry the
-//! field, the term is omitted and warned about with that field's name. No term
-//! is guessed.
+//! Each term of the save context and the research EXP descriptor is derived
+//! from the save field that carries it; when a save does not carry the field,
+//! the term is omitted and warned about with that field's name. No term is
+//! guessed.
 //!
 //! The tree is reported alongside the context so the UI can show where a
 //! multiplier came from: [`BonusTree::additive`] and [`BonusTree::multipliers`]
-//! hold the upstream descriptor's items, and `SimContext::extra_pct` is the
-//! additive total with the grid, sticker and mastery terms removed, exactly as
-//! `simTotalExpWith` expects.
+//! hold the descriptor's items, and `SimContext::extra_pct` is the additive
+//! total with the grid, sticker and mastery terms removed, exactly as the
+//! research simulator expects.
 
 mod bonuses;
 mod cooking;
@@ -55,7 +54,7 @@ const OBSERVATION_FAILED_ROLLS: usize = 514;
 /// One line of the save-derived multiplier tree.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BonusTerm {
-    /// What the term is called in the upstream breakdown.
+    /// What the term is called in the breakdown.
     pub name: &'static str,
     /// Its value: a percentage in the additive list, a factor in the list of
     /// true multipliers.
@@ -129,7 +128,7 @@ pub struct Decoder<'a> {
     /// The save's own research level, which the mastery forecast starts from.
     pub(crate) save_research_level: u32,
     /// Whether the lab graph is being derived; the mainframe lookup is 0 while
-    /// it is, as it is before `computeLabConnectivity` finishes upstream.
+    /// it is, as it is before the connectivity pass finishes.
     pub(crate) deriving_lab: bool,
     pub(crate) warnings: &'a mut Vec<String>,
 }
@@ -191,7 +190,7 @@ impl<'a> Decoder<'a> {
         BonusTerm::omitted(name, field)
     }
 
-    /// The grid bonus of one cell, as `gbWith` computes it.
+    /// The grid bonus of one cell.
     pub fn grid_bonus(&self, cell: usize) -> f64 {
         let Some(node) = game().node_at(cell) else {
             return 0.0;
@@ -244,8 +243,8 @@ pub fn class_tree(class: usize) -> Option<&'static [u32]> {
 
 /// Decode the Cooking Mastery state the section reads.
 ///
-/// The page's `computeExternalMulti` reads systems the same decoder owns, so
-/// this runs one on the same save instead of a second parser.
+/// The external multiplier reads systems the same decoder owns, so this runs
+/// one on the same save instead of a second parser.
 pub fn cooking_mastery(
     save: &Map<String, Value>,
     root: &Map<String, Value>,
@@ -290,7 +289,7 @@ pub fn yellow(
 
 /// Decode the Jelly Operator slice the section reads.
 ///
-/// The page also reads systems this decoder already owns (the research grid
+/// The slice also reads systems this decoder already owns (the research grid
 /// nodes, Spelunking palettes, arcade, event shop, Sushi and Menagerie), so it
 /// runs one on the same save instead of a second parser.
 pub fn jelly(
@@ -460,7 +459,6 @@ impl Decoder<'_> {
         context
     }
 
-    /// `gridPointSources` from `js/stats/systems/w7/research-math.js`.
     fn grid_point_sources(&self, context: &SimContext) -> Vec<f64> {
         vec![
             if self.companion(153) > 0.0 { 10.0 } else { 0.0 },

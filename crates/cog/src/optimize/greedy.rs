@@ -1,9 +1,8 @@
 //! Phase 1: the greedy construction that gives the annealer a strong start.
 //!
-//! Ported from `_greedyConstruct` in `js/cogs/cog-optimizer.js`: collect every
-//! movable cog, rebuild the board around each possible player slot for
-//! construction EXP, place Yin blocks, directionals and non-directionals, then
-//! refine with pairwise and board↔shelf swaps.
+//! Collect every movable cog, rebuild the board around each possible player
+//! slot for construction EXP, place Yin blocks, directionals and
+//! non-directionals, then refine with pairwise and board↔shelf swaps.
 
 use idleon_common::Control;
 use idleon_common::Progress;

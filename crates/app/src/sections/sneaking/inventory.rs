@@ -1,10 +1,10 @@
 //! The inventory grid: the game's 39 ninja slots, the Gold charm markers and the
 //! swap into the selected loadout slot.
 //!
-//! Ported from the inventory half of `sneaking-calc.html`: the 39-slot grid, the
-//! mark on the Gold charm the game's cache actually selects, and the
-//! `NJbonusPerms` scan behind it. The grid is read-only unless a loadout slot
-//! is selected, and a swap moves the two items rather than cloning them.
+//! The 39-slot grid, the mark on the Gold charm the game's cache actually
+//! selects, and the `NJbonusPerms` scan behind it. The grid is read-only unless
+//! a loadout slot is selected, and a swap moves the two items rather than
+//! cloning them.
 
 use crate::state::AppState;
 use crate::ui::assets::asset_image;

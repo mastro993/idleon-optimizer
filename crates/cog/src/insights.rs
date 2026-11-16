@@ -1,14 +1,14 @@
 //! The board insights: every movable cog's marginal contribution to the
 //! objective, and what to roll to replace the weakest ones.
 //!
-//! Ported from `computeBoardInsights` in `cog-optimizer.html`. A cog's
-//! contribution is measured the way the game's surround pass makes it: the cog
-//! is removed from a copy of the board and the objective is scored again, so a
-//! directional cog's value includes the surrounds it gave its neighbours.
+//! A cog's contribution is measured the way the game's surround pass makes it:
+//! the cog is removed from a copy of the board and the objective is scored
+//! again, so a directional cog's value includes the surrounds it gave its
+//! neighbours.
 //!
 //! Player, Yin and Yang cogs are not movable advice targets — the optimizer
 //! repositions them, but there is nothing to re-roll on them — so the insight
-//! table skips them exactly as upstream does.
+//! table skips them.
 
 use super::{
     Board, Cog, CogKind, Goal, affects_player, classify, goal_score, slot_to_pos, stat_tier,
@@ -108,10 +108,10 @@ pub fn board_insights(board: &Board, goal: Goal) -> Option<BoardInsights> {
     })
 }
 
-/// The replacement one measured weak cog suggests, in upstream's wording.
+/// The replacement one measured weak cog suggests.
 fn roll_target(board: &Board, goal: Goal, insight: &Insight) -> RollTarget {
     let cog = &insight.cog;
-    // The goal's base and surround stat keys, as the page prints them.
+    // The goal's base and surround stat keys, as the roll targets print them.
     let (base_key, surround_key, surround_label) = match goal {
         Goal::Build => ("a", "e", "Build Speed Surround"),
         Goal::ConExp => ("d", "f", "Construction EXP Surround"),
@@ -181,7 +181,7 @@ fn roll_target(board: &Board, goal: Goal, insight: &Insight) -> RollTarget {
     }
 }
 
-/// The page's own `fmtBig` formatter, used in the roll targets' wording.
+/// The number formatter used in the roll targets' wording.
 ///
 /// It rounds up at each suffix rather than to the nearest, so `12 345` reads
 /// `12.4K`; the app's own formatter deliberately differs and is not used here.
@@ -201,8 +201,8 @@ fn fmt_big(n: f64) -> String {
     if magnitude < 1e3 {
         return format!("{sign}{}", magnitude.floor());
     }
-    // The page rounds up at a tenth or a hundredth before naming the suffix:
-    // `Math.ceil(v / 10) / 100 + 'K'` for 1 000-9 999, and so on.
+    // Round up at a tenth or a hundredth before naming the suffix:
+    // `ceil(v / 10) / 100` K for 1 000-9 999, and so on.
     let (ceil_divisor, post_divisor, suffix) = if magnitude < 1e4 {
         (10.0, 100.0, "K")
     } else if magnitude < 1e5 {

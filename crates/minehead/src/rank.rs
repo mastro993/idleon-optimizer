@@ -1,5 +1,5 @@
 //! The Rank Upgrades tab: what one more level of each unlocked upgrade does to
-//! a floor run, ported from `_runUpgradeRank` (`js/ui/minehead-ui.js`).
+//! a floor run.
 
 use crate::data::game;
 use crate::math::{can_buy, upg_cost, upg_lv_req};

@@ -1,9 +1,5 @@
 //! Run edges: determinism by seed, party stamina, cancelling and the rejected
 //! policies.
-//!
-//! `crates/spelunking/tests/spelunking.rs` compares whole runs against the upstream
-//! calculator's own output; these tests pin the behaviour that has no upstream
-//! counterpart (the same seed twice, a cancelled run, a rejected policy).
 
 use super::*;
 use crate::{Requested, fixture_inputs, normalize};

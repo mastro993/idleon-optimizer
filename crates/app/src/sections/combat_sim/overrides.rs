@@ -1,11 +1,10 @@
 //! The mechanics overrides pane (CS-02).
 //!
-//! Ported from the Mechanics overrides tab in `combat-sim-calc.html` and
-//! `js/stats/systems/common/combat-sim-toggles.js`: a searchable catalog grouped
-//! by mechanic family, one mode per row (Saved, Off, Set, Scale ×), a value field
-//! for the two valued modes, and a reset that puts every mechanic back to its
-//! saved value. The active rules are also chips above the editor, so what a run
-//! would change is visible from any tab.
+//! The Mechanics overrides tab: a searchable catalog grouped by mechanic
+//! family, one mode per row (Saved, Off, Set, Scale ×), a value field for the
+//! two valued modes, and a reset that puts every mechanic back to its saved
+//! value. The active rules are also chips above the editor, so what a run would
+//! change is visible from any tab.
 //!
 //! The saved values the Scale mode multiplies, and the stat context that applies
 //! a rule to a run, arrive with the component-term trace; the encounter run this

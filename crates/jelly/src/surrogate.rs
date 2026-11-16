@@ -1,7 +1,6 @@
 //! The deterministic operation surrogate.
 //!
-//! Ports `jellyOperationSurrogate` from
-//! `js/stats/systems/w7/jelly-operator.js`: a closed-form projection of one
+//! A closed-form projection of one
 //! operation from the board metrics, the projectile travel time and the boss
 //! attack cadence. The overview's obstruction outlook reads it for every row
 //! instead of running a Monte Carlo per obstruction.
@@ -37,7 +36,6 @@ pub struct SurrogateOptions {
     pub opening_fraction: Option<f64>,
 }
 
-/// `jellyOperationSurrogate`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Surrogate {
     pub valid: bool,
@@ -58,7 +56,7 @@ pub struct Surrogate {
     pub score: f64,
 }
 
-/// `proxyObjectiveScore`: the deterministic projection a layout ranks by.
+/// The deterministic projection a layout ranks by.
 ///
 /// Steady DPS reads the board metrics; every other objective reads the
 /// surrogate's score. `obstruction` defaults to the save's own stage.

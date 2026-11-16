@@ -47,7 +47,6 @@ fn trimmed(value: f64, precision: usize) -> String {
     if value == 0.0 {
         return "0".into();
     }
-    // The tiers above a billion follow upstream `fmtVal` (`js/renderers/format.js`).
     let value = if value.abs() >= 1e24 {
         return exponent(value);
     } else if value.abs() >= 1e21 {

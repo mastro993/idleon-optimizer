@@ -1,10 +1,9 @@
 //! Statue levels from a decoded save: one `StatueLevels_<n>` row per character,
 //! each holding `[level, exp]` pairs in statue order.
 //!
-//! The upstream loader (`js/save/loader.js`) reads the same key and stores the
-//! rows as `statueLvAllData`; the decoded app-state export is accepted as a
-//! fallback. A row the save does not carry stays `None` so the section can show
-//! it as unavailable instead of treating it as level zero.
+//! The decoded app-state export, which stores the rows as `statueLvAllData`, is
+//! accepted as a fallback. A row the save does not carry stays `None` so the
+//! section can show it as unavailable instead of treating it as level zero.
 
 use idleon_save::json;
 use idleon_statue::{self as statue, Progress, StatueSave};

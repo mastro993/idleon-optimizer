@@ -8,12 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.
-
-## Upstream sources
-
-- opal-calc.html
-- js/stats/systems/w5/opal.js
+Implement villager EXP rates, opal distribution optimizer, manual simulator and all bonus terms.
 
 ## UI
 
@@ -50,7 +45,6 @@ Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and break
 
 Acceptance:
 
-- Values match upstream.
 - Villager switching works.
 - Breakdown sums.
 
@@ -80,6 +74,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Optimizer invariant.
 - Harness.

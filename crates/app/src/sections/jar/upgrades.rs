@@ -110,7 +110,7 @@ fn summary(jar: &Jar, plan: &UpgradePlan, cx: &mut Context<AppState>) -> AnyElem
     row.into_any_element()
 }
 
-/// `_renderUpgrades`' schematic tables, one per upstream group.
+/// The schematic tables, one per group.
 fn schematics(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let rows = jar.schematics();
     let muted = cx.theme().colors.fg_muted;
@@ -233,7 +233,7 @@ fn status_tone(status: UpgradeStatus) -> Tone {
     }
 }
 
-/// `doublerTierValue`: the six gilded tiers and their multipliers.
+/// The six gilded tiers and their multipliers.
 fn gilded(jar: &Jar, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let mut table = Table::new(["Tier", "Gilded %", "Multiplier"]);

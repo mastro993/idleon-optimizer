@@ -2,7 +2,7 @@
 //!
 //! The readers, edits, totals, flags and presets are exercised here; the
 //! committed synthetic account is covered by `tests/combat.rs`. Expected values
-//! come from the upstream readers in `combat-sim-setup.js`, not from a fixture.
+//! come from the saved equipment and talent layout, not from a fixture.
 
 use idleon_combat::{IssueKind, Loadout, Preset, PresetError};
 use idleon_save::Save;

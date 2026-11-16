@@ -1,17 +1,17 @@
-//! The Farming Planner section: the upstream Overview tab, the 9×4 field with
-//! the selected plot's detail, the plot assignment, the Land Rank allocation,
-//! the named presets and the preset comparison.
+//! The Farming Planner section: the Overview tab, the 9×4 field with the
+//! selected plot's detail, the plot assignment, the Land Rank allocation, the
+//! named presets and the preset comparison.
 //!
-//! FM-01 ports the upstream field tab: every plot renders from `farmPlotData`
-//! and the right rail reads the selected plot's saved row and formulas. FM-02
-//! adds `plotAssignmentPlan` and `optimizeLandRank`: the objective decides the
+//! FM-01 builds the field tab: every plot renders from `farmPlotData` and the
+//! right rail reads the selected plot's saved row and formulas. FM-02 adds the
+//! plot assignment and the Land Rank allocation: the objective decides the
 //! crop each plot should grow, and the allocator spends the account's Land Rank
 //! points off the UI thread through the shared task runner. FM-03 adds the
-//! upstream "Preset Comparison" table — every goal planned from the current
-//! baseline — and the named presets the project document keeps. FM-04 adds the
+//! "Preset Comparison" table — every goal planned from the current baseline —
+//! and the named presets the project document keeps. FM-04 adds the
 //! Evolution & OG tab — the evolution chain to the target crop, its hardest
 //! remaining steps, the overgrowth stopping advice, every plot's overgrowth
-//! curve and the evolution assignment. FM-05 adds the upstream Overview tab —
+//! curve and the evolution assignment. FM-05 adds the Overview tab —
 //! the priority signals, account multipliers, GMO thresholds, Crop Scientist
 //! bonuses and growth breakpoints.
 
@@ -43,7 +43,7 @@ mod presets;
 
 pub(crate) use presets::CustomPreset;
 
-/// The farming page's tabs, in the upstream order.
+/// The farming page's tabs, in order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {
@@ -245,7 +245,7 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// The upstream tab strip, driven by the state's own tab.
+/// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let mut strip =

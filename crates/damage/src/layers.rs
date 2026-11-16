@@ -1,11 +1,11 @@
 //! The three damage layers and the mastery ratio behind the summary.
 //!
 //! The damage descriptor returns `Max Damage`, `Min Damage` and `Mastery` beside
-//! three layers, and `damage-calc.html` prints one card per layer: `DDL0: Base
+//! three layers, and the page prints one card per layer: `DDL0: Base
 //! Damage`, `DDL1: Percentage Damage Multiplier` and `DDL2: Multiplicative
 //! Damage Bonuses`. Each card shows the layer's value, the descriptor's own
 //! `note` (`after softcaps` on the last two) and the `preSoftcap` value the
-//! descriptor keeps in `_debug` for the card's second line. The maximum damage
+//! engine records for the card's second line. The maximum damage
 //! is the three multiplied together.
 //!
 //! The mastery ratio is the descriptor's
@@ -42,7 +42,7 @@ impl LayerId {
         }
     }
 
-    /// The card title, as `damage-calc.html` writes it.
+    /// The card title the page shows.
     pub fn title(self) -> &'static str {
         match self {
             LayerId::Base => "DDL0: Base Damage",
@@ -86,7 +86,7 @@ impl Default for LayerId {
 pub struct Layer {
     /// The value the summary multiplies.
     pub value: f64,
-    /// `_debug.preSoftcap`: the same layer before its softcap chain.
+    /// `preSoftcap`: the same layer before its softcap chain.
     pub pre_softcap: f64,
 }
 
@@ -124,18 +124,18 @@ impl Layers {
 pub struct Mastery {
     /// `talent(113, tab 2)`'s penalty: the descriptor's `talent113 / 100`.
     pub penalty: f64,
-    /// The `Mastery` bubble: `bubbleValByKey('Mastery') / 100`.
+    /// The `Mastery` bubble's value / 100.
     pub bubble: f64,
-    /// `computeCardBonusByType(21) / 100`.
+    /// The Mastery cards: card bonus 21 / 100.
     pub cards: f64,
     /// Talent 123, `talent(123) / 100`.
     pub talent: f64,
-    /// `etcBonus('21') / 100`.
+    /// The combined item sources' MASTERY bonus: etc bonus 21 / 100.
     pub etc: f64,
 }
 
 impl Mastery {
-    /// The ratio's starting value, `Base Mastery` upstream.
+    /// The ratio's starting value, `Base Mastery`.
     pub const BASE: f64 = 0.35;
     /// The ratio's cap, the `0.8` the descriptor's `min` holds.
     pub const CAP: f64 = 0.8;
@@ -164,14 +164,13 @@ impl Mastery {
                 FormulaNode::new("Base Mastery minus talent", self.base())
                     .with_note("Starting mastery value 0.35, less talent 113's penalty")
                     .with_source("0.35 - talent(113, tab 2) / 100"),
-                FormulaNode::new("Mastery Bubble", self.bubble)
-                    .with_source("bubbleValByKey('Mastery') / 100"),
+                FormulaNode::new("Mastery Bubble", self.bubble).with_source("Mastery bubble / 100"),
                 FormulaNode::new("Card Bonus: Mastery", self.cards)
-                    .with_source("computeCardBonusByType(21) / 100"),
+                    .with_source("Card bonus 21 / 100"),
                 FormulaNode::new("Talent: Mastery Up", self.talent)
                     .with_source("talent(123) / 100"),
                 FormulaNode::new("Combined Item Sources: MASTERY", self.etc)
-                    .with_source("etcBonus('21') / 100"),
+                    .with_source("Etc bonus 21 / 100"),
             ])
     }
 }
@@ -225,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn every_layer_keeps_the_upstream_card_text() {
+    fn every_layer_keeps_its_card_text() {
         assert_eq!(LayerId::Base.title(), "DDL0: Base Damage");
         assert_eq!(LayerId::Base.note(), "");
         assert_eq!(LayerId::Percent.note(), "after softcaps");

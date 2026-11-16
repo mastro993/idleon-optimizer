@@ -1,9 +1,9 @@
-//! The upstream "Am I shadow banned?" page: one large verdict from `OptLacc[26]`.
+//! The "Am I shadow banned?" page: one large verdict from `OptLacc[26]`.
 //!
-//! `shadow.html` reads the multiplayer restriction flag and shows YES for any
-//! finite nonzero value, NO for zero and UNKNOWN when the save has no readable
-//! flag. The shared header already names the save status; the line under the
-//! verdict says which flag the loaded save carried.
+//! The page reads the multiplayer restriction flag and shows YES for any finite
+//! nonzero value, NO for zero and UNKNOWN when the save has no readable flag.
+//! The shared header already names the save status; the line under the verdict
+//! says which flag the loaded save carried.
 
 use crate::state::{AppState, SaveStatus};
 use ely_gpui_component::layout::{Card, CardHeader};

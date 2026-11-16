@@ -1,10 +1,10 @@
-//! The Clamworks optimizer: the budgeted upgrade plan and the upstream priority table.
+//! The Clamworks optimizer: the budgeted upgrade plan and the priority table.
 //!
-//! `clamworks.plan` repeats the upstream ranking (`rankUpgrades`) at the levels
-//! each purchase reaches, so every step pays the `upgNextCost` the game would
-//! charge there. The plan runs through the shared [`idleon_ui::runner::TaskRunner`]:
-//! its progress and cancel chrome come from `idleon_ui::run_chrome`, and a result whose
-//! budget or multikill changed is marked stale instead of dropped.
+//! `clamworks.plan` repeats the priority ranking at the levels each purchase
+//! reaches, so every step pays the next-level cost the game would charge there.
+//! The plan runs through the shared [`idleon_ui::runner::TaskRunner`]: its
+//! progress and cancel chrome come from `idleon_ui::run_chrome`, and a result
+//! whose budget or multikill changed is marked stale instead of dropped.
 
 use super::kpi;
 use super::upgrades::{effect, money};
@@ -312,7 +312,7 @@ fn purchases(steps: &[PlanStep]) -> Vec<Bought> {
     rows
 }
 
-/// The upstream rank table: pearl upgrades first, then the utility upgrades.
+/// The rank table: pearl upgrades first, then the utility upgrades.
 fn priority_card(clamworks: &Clamworks, multikill: f64) -> AnyElement {
     let ranks = clamworks.priority(multikill);
     let mut table = Table::new([

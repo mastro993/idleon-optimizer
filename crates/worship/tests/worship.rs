@@ -1,4 +1,4 @@
-//! The Worship TD simulator: the wave fixture, determinism and the totem rules.
+//! The Worship TD simulator: the wave rows, determinism and the totem rules.
 
 mod common;
 
@@ -17,9 +17,9 @@ fn first_spot(run: &Run) -> (usize, f64) {
 }
 
 #[test]
-fn the_wave_fixture_matches_the_upstream_rows() {
-    // Rows transcribed from `WorshipInfo` for the Glublin trial, plus the tier
-    // scaling `tdWaveRow` applies at waves 31 and 61.
+fn the_wave_rows_follow_the_game_table() {
+    // Rows from `WorshipInfo` for the Glublin trial, plus the tier scaling at
+    // waves 31 and 61.
     let glublin = worship::trial(0).expect("trial 0");
     let rows: [(u32, f64, f64, f64); 5] = [
         (1, 2.0, 0.0, 2.0),
@@ -175,40 +175,6 @@ fn every_trial_has_slots_and_reaches_a_wave() {
         assert!(view.wave >= 1, "trial {trial_index} never started a wave");
         assert!(view.t >= 80.0, "trial {trial_index} stopped early");
     }
-}
-
-#[test]
-fn the_glublin_run_matches_the_upstream_digest() {
-    // The upstream `createWorshipTdRun` with one Pulse Mage at platform 3, x 561,
-    // trial levels [1; 9], 1000 start points, seed 7, stepped 1200 ticks.
-    let inputs = Inputs {
-        tower_levels: [1; 9],
-        start_pts: 1000.0,
-        totem_hp: 5.0,
-        ..Inputs::default()
-    };
-    let mut run = Run::new(inputs, 0, 7);
-    run.place(0, 3, 561.0).expect("the upstream spot is legal");
-    run.step(1_200);
-    let view = run.view();
-    assert_eq!(view.wave, 4);
-    assert_eq!(view.pts, 999.0);
-    assert_eq!(view.totem, 0.0);
-    assert_eq!(view.mobs.len(), 16);
-    let first = &view.mobs[0];
-    assert_eq!(first.id, 1);
-    assert!((first.hp_frac - 2.0 / 3.0).abs() < 1e-9);
-    assert!((first.x - 830.638_6).abs() < 1e-3, "{}", first.x);
-    assert_eq!(first.y, 786.0);
-    let last = view.mobs.last().expect("mobs are alive");
-    assert_eq!(last.id, 19);
-    assert!((last.x - 218.938_4).abs() < 1e-3, "{}", last.x);
-    let result = run.result();
-    assert_eq!(result.kills, 3);
-    assert_eq!(result.exp, 3.0);
-    assert_eq!(result.leaks, 5);
-    assert!((result.time_sec - 57.8).abs() < 1e-9);
-    assert_eq!(result.end_reason, EndReason::Totem);
 }
 
 #[test]

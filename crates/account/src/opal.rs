@@ -1,17 +1,17 @@
-//! `buildExt` for an imported save: the Opal Optimizer's villager state.
+//! The Opal Optimizer's villager state for an imported save.
 //!
-//! `opal-calc.html` builds its account bonuses inline from a handful of
-//! upstream systems. This module reads them with the account decoder, so the
-//! game tables and the field names live in one place:
+//! The villager bonuses draw on a handful of account systems. This module reads
+//! them with the account decoder, so the game tables and the field names live
+//! in one place:
 //!
 //! - the villager rows are `Holes[1]` (levels), `Holes[3]` (opals) and
 //!   `Holes[23]` (stars), with the cosmo levels in `Holes[4 + tier]`;
-//! - the cross-system terms come from the decoder's own ports of compass,
+//! - the cross-system terms come from the decoder's own readers of compass,
 //!   pristine charms, legend points, the vault, meritocracy, arcane and
 //!   grimoire upgrades, the arcade, the exotic market, companions, the summing
 //!   sigil, the event shop and the jar's collectibles;
-//! - the monument, statue and measurement terms follow `hole.js`, `fountain.js`
-//!   and the statue chain in `opal-calc.html` itself.
+//! - the monument, statue and measurement terms follow the Hole, the fountain
+//!   and the statue chain.
 //!
 //! A save without `Holes` has no villager state, and the section says so.
 
@@ -22,11 +22,11 @@ use idleon_save::fields;
 use idleon_save::json;
 use serde_json::Value;
 
-/// The jar collectibles the Villager EXP jar sums, in the page's order.
+/// The jar collectibles the Villager EXP jar sums.
 const JAR_COLLECTIBLES: [usize; 6] = [4, 10, 12, 22, 29, 35];
 
 impl Decoder<'_> {
-    /// `buildExt`: the villagers and every account bonus their EXP rates apply.
+    /// The villagers and every account bonus their EXP rates apply.
     pub(crate) fn opal(&mut self) -> Option<Opal> {
         let holes = fields::field(self.save, "Holes")?;
         let holes = holes.as_array()?;
@@ -118,7 +118,7 @@ impl Decoder<'_> {
         })
     }
 
-    /// `holeozDxp`: the per-villager Holeoz multiplier.
+    /// The per-villager Holeoz multiplier.
     ///
     /// The Explorer's is 1.5^Rupie Slugs until thirteen caverns are owned; the
     /// Conjuror's reads the fountain's Cosmo EXP upgrade; the rest stay at 1.
@@ -136,10 +136,10 @@ impl Decoder<'_> {
         }
     }
 
-    /// `_measBonus`: one measurement's bonus, with the page's own `_measMulti`.
+    /// One measurement's bonus, with its measurement multiplier.
     ///
-    /// The opal page only implements measurement types 0 and 7; every other
-    /// type reads as a multiplier of 1, as its `switch` does.
+    /// Only measurement types 0 and 7 are modelled; every other type reads as
+    /// a multiplier of 1.
     fn measurement(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Holes", &[22, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -159,7 +159,7 @@ impl Decoder<'_> {
         base * self.measurement_multi(index)
     }
 
-    /// The page's `_measMulti`, for the two types it implements.
+    /// The measurement multiplier, for the two types modelled.
     fn measurement_multi(&self, index: usize) -> f64 {
         let qty = match idleon_fountain::measurement_type(index) {
             0 => {
@@ -187,7 +187,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeCompassBonus`: a compass upgrade's value.
+    /// A compass upgrade's value.
     pub fn compass(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Compass", &[0, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -204,7 +204,7 @@ impl Decoder<'_> {
         level * per_level
     }
 
-    /// `grimoireUpgBonus`: a grimoire upgrade's value.
+    /// A grimoire upgrade's value.
     pub fn grimoire(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "Grimoire", &[index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -217,11 +217,11 @@ impl Decoder<'_> {
         level * per_level * (1.0 + self.grimoire(36) / 100.0)
     }
 
-    /// The statue chain's `_statueBonusGiven(idx)`.
+    /// The bonus statue `idx` gives.
     ///
     /// The statue's own level × its per-level base, then the Zenith, artifact,
     /// vault, Dragon statue, event shop, All Statues talent and meritocracy
-    /// factors, in the page's order.
+    /// factors, in that order.
     pub fn statue(&self, index: usize) -> f64 {
         let level = self.statue_level(index);
         if level <= 0.0 {
@@ -255,15 +255,15 @@ impl Decoder<'_> {
         value
     }
 
-    /// `statueData[idx]`: the first character's saved statue level.
+    /// The first character's saved statue level.
     ///
     /// The game writes `StatueLevels_<char>` as `[level, exp]` pairs, and the
-    /// page reads the first character's row.
+    /// first character's row is the one read.
     pub(crate) fn statue_level(&self, index: usize) -> f64 {
         fields::at(self.save, "StatueLevels_0", &[index, 0]).unwrap_or(0.0)
     }
 
-    /// `maxTalentBonus(56, -1)`: the All Statues talent at its best character.
+    /// Talent 56, the All Statues talent at its best character.
     pub(crate) fn statue_talent(&self) -> f64 {
         let curve = data::talent_curve();
         (0..self.save_character_count())
@@ -300,7 +300,7 @@ impl Decoder<'_> {
             .unwrap_or(0)
     }
 
-    /// `_loreEpiBon`: a Lore Episode's Villager EXP.
+    /// A Lore Episode's Villager EXP.
     fn lore_episode(&mut self, index: usize) -> f64 {
         let episodes = fields::at(self.save, "Spelunk", &[13, 2]).unwrap_or(0.0);
         if episodes <= index as f64 {
@@ -337,7 +337,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// `computeMonumentROGbonus(t, index)`: a monument's villager EXP.
+    /// A monument slot's villager EXP.
     pub(crate) fn monument(&self, row: usize, index: usize) -> f64 {
         let slot = 10 * row + index;
         let level = fields::at(self.save, "Holes", &[15, slot]).unwrap_or(0.0);
@@ -363,7 +363,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeMonumentROGbonus(t, 9)`: the monument slot that boosts the rest.
+    /// Monument slot 9 of a row: the slot that boosts the rest.
     fn monument_dragon(&self, row: usize) -> f64 {
         let slot = 10 * row + 9;
         let level = fields::at(self.save, "Holes", &[15, slot]).unwrap_or(0.0);

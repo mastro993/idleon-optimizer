@@ -1,5 +1,5 @@
 //! The Minehead dashboard: the floor's stat cards, the upgrade table and the
-//! floor rewards, as `renderDashboard` in `js/ui/minehead-dashboard.js`.
+//! floor rewards.
 
 use super::boss_name;
 use crate::state::AppState;

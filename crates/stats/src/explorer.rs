@@ -1,14 +1,11 @@
 //! The system formula explorer: the filters its list applies and the coverage
 //! its ledger reports.
 //!
-//! Upstream `js/ui/stats-explorer.js` searches the catalogue
-//! `js/stats/inspection-catalog.js` builds from every system resolver, and
-//! `js/ui/formula-ledger.js` reports how far those resolvers reach into the
-//! native JS. This build keeps no second catalogue: the explorer lists the
-//! descriptor registry behind the breakdowns, so a card can only show the value
-//! the breakdown already resolved. The ledger reports what the port can prove —
-//! every descriptor, its category, and whether the formula is computed here or
-//! names the source it still needs.
+//! The explorer keeps no second catalogue: it lists the descriptor registry
+//! behind the breakdowns, so a card can only show the value the breakdown
+//! already resolved. The ledger reports what this build can prove — every
+//! descriptor, its category, and whether the formula is computed here or names
+//! the system it still needs.
 
 use super::breakdowns::{Breakdown, Category, Sheet};
 
@@ -20,20 +17,20 @@ pub enum Status {
     All,
     /// Only the descriptors whose formula this build resolves.
     Computed,
-    /// Only the descriptors that name the source they still need.
-    Unported,
+    /// Only the descriptors that name the inputs they still need.
+    NotModelled,
 }
 
 impl Status {
     /// Every status, in the order the filter lists them.
-    pub const ALL: [Status; 3] = [Status::All, Status::Computed, Status::Unported];
+    pub const ALL: [Status; 3] = [Status::All, Status::Computed, Status::NotModelled];
 
     /// The stable id the filter stores.
     pub fn id(self) -> &'static str {
         match self {
             Status::All => "all",
             Status::Computed => "computed",
-            Status::Unported => "unported",
+            Status::NotModelled => "not-modelled",
         }
     }
 
@@ -42,7 +39,7 @@ impl Status {
         match self {
             Status::All => "All formulas",
             Status::Computed => "Computed",
-            Status::Unported => "Not modelled",
+            Status::NotModelled => "Not modelled",
         }
     }
 
@@ -56,7 +53,7 @@ impl Status {
         match self {
             Status::All => true,
             Status::Computed => row.display_value().is_some(),
-            Status::Unported => row.display_value().is_none(),
+            Status::NotModelled => row.display_value().is_none(),
         }
     }
 }

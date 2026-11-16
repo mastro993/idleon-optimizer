@@ -1,14 +1,12 @@
 //! Plot assignment: which crop each of the 36 plots should carry.
 //!
-//! Ported from `bestCropForObjective` and `plotAssignmentPlan` in
-//! `js/stats/systems/w6/farming-planner.js`. Each candidate is scored as a
-//! hypothetical plot at evolution zero, so the assignment reads the objective's
-//! own per-plot formula, while the evolution objective aims every plot at the
-//! crop before its target.
+//! Each candidate is scored as a hypothetical plot at evolution zero, so the
+//! assignment reads the objective's own per-plot formula, while the evolution
+//! objective aims every plot at the crop before its target.
 
 use super::{Farm, PLOTS, Plot, Snapshot, data};
 
-/// The objectives the Farming calculator plans for, in the upstream order.
+/// The objectives the Farming calculator plans for, in display order.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Objective {
@@ -34,7 +32,7 @@ impl Objective {
         Objective::Growth,
     ];
 
-    /// The upstream id, used by the project document.
+    /// The stable id, used by the project document.
     pub fn id(self) -> &'static str {
         match self {
             Objective::RankXp => "rankXp",
@@ -47,7 +45,7 @@ impl Objective {
         }
     }
 
-    /// The upstream tab label.
+    /// The tab label.
     pub fn label(self) -> &'static str {
         match self {
             Objective::RankXp => "Land Rank XP",
@@ -60,7 +58,7 @@ impl Objective {
         }
     }
 
-    /// The objective behind an upstream id.
+    /// The objective behind an id.
     pub fn from_id(id: &str) -> Option<Self> {
         Self::ALL
             .iter()
@@ -83,8 +81,8 @@ fn hypothetical_plot(crop_id: i64) -> Option<Plot> {
     Some(Plot {
         seed_family: family.id as i64,
         evolution: (crop_id - family.start) as u32,
-        // Upstream writes `evolutionBlocked = 1`; only the evolution planner
-        // reads it, and it must not count these candidate plots.
+        // Only the evolution planner reads the blocked flag, and it must not
+        // count these candidate plots.
         evolution_blocked: true,
         crops_on_vine: 1,
         ..Plot::default()
@@ -162,9 +160,9 @@ impl Farm {
             Objective::FarmingExp => self.farming_exp_per_harvest(plot, snapshot) / cycle,
             Objective::RankXp => self.rank_xp_for(index, plot, snapshot) / cycle,
             Objective::Overgrowth => self.next_overgrowth_chance(plot, snapshot) / cycle,
-            // Growth, evolution and the account rows have no per-crop formula
-            // upstream, so they rank by crop value; Magic Beans weigh it by how
-            // much the crop is worth in beans.
+            // Growth, evolution and the account rows have no per-crop formula,
+            // so they rank by crop value; Magic Beans weigh it by how much the
+            // crop is worth in beans.
             _ => {
                 let value = self.crop_value(index, plot, snapshot).expected_harvest / cycle;
                 if objective == Objective::Beans {
@@ -176,9 +174,9 @@ impl Farm {
         }
     }
 
-    /// `bestCropForObjective`: the discovered crop with the highest score.
+    /// The discovered crop with the highest score.
     ///
-    /// Ties keep the earlier crop id, as the upstream strict comparison does.
+    /// Ties keep the earlier crop id: the comparison is strict.
     pub(crate) fn best_crop(
         &self,
         index: usize,
@@ -198,7 +196,7 @@ impl Farm {
         best.map(|(candidate, _)| candidate)
     }
 
-    /// `plotAssignmentPlan`: every plot's target crop for one objective.
+    /// Every plot's target crop for one objective.
     ///
     /// The evolution objective plants the crop before its target on every plot,
     /// because that is the crop whose growth rolls the target.

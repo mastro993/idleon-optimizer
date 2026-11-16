@@ -1,10 +1,8 @@
 //! The selection, the upgrade list and the plan the trials run.
 //!
-//! Ports `killroyUpgradeChoices` and `buildKillroyPlan` from
-//! `js/stats/systems/common/killroy-planner.js`. A plan turns the checked
-//! encounters into one baseline row each plus one `+1` row per comparable
-//! upgrade, so every option is compared against the same baseline with the same
-//! seeds.
+//! A plan turns the checked encounters into one baseline row each plus one `+1`
+//! row per comparable upgrade, so every option is compared against the same
+//! baseline with the same seeds.
 
 use super::buffs::{self, CharacterBuffs};
 use super::forecast::{Encounter, encounter, rotation};
@@ -24,7 +22,7 @@ pub struct UpgradeChoice {
     pub name: String,
     pub effect: String,
     pub level: Option<f64>,
-    /// Killroy runs needed to unlock the level, matching the upstream table.
+    /// Killroy runs needed to unlock the level.
     pub runs_required: f64,
     /// `None` when the save does not carry the run count or the Dream level.
     pub unlocked: Option<bool>,
@@ -81,7 +79,7 @@ pub enum Comparisons {
 }
 
 /// What to plan: the checked encounters, the trials, the upgrade filter and the
-/// two calculator options.
+/// two run options.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PlanInput {
     pub selections: Vec<Selection>,
@@ -90,9 +88,9 @@ pub struct PlanInput {
     /// The stand-in for the combat simulator's kill rate.
     pub kills_per_second: f64,
     /// Keep the save's `BuffsActive` timers instead of starting from a fresh map
-    /// entry (`useSavedBuffs` upstream).
+    /// entry.
     pub keep_buffs: bool,
-    /// Lift the bag-space limit on the run's pickups (`unlimitedInventory`).
+    /// Lift the bag-space limit on the run's pickups.
     pub unlimited_inventory: bool,
 }
 
@@ -109,7 +107,7 @@ pub struct Row {
     pub week_offset: usize,
     pub character: String,
     pub encounter: Encounter,
-    /// The run limit the upstream plan computes: `103 + Time`, plus the `+1`.
+    /// The run limit: `103 + Time`, plus the `+1`.
     pub seconds: f64,
     /// The trial the row's seed runs with.
     pub trial: super::TrialInputs,
@@ -443,7 +441,7 @@ fn killroy_levels(save: &Save) -> super::TrialInputs {
             .and_then(|values| at(values, 114))
             .and_then(number)
             .unwrap_or(0.0),
-        // `computeMeritocBonusz(18)` needs the voter, companion, legend, arcade,
+        // Meritocracy bonus 18 needs the voter, companion, legend, arcade,
         // event-shop and sushi trees, which are later sections; a save outside
         // them runs the base skull factor.
         meritoc: 0.0,
@@ -687,7 +685,7 @@ mod tests {
     }
 
     #[test]
-    fn the_upgrade_table_matches_upstream() {
+    fn the_upgrade_table_reads_runs_and_levels() {
         let save = save();
         let choices = upgrade_choices(&save);
         let runs: Vec<f64> = choices.iter().map(|choice| choice.runs_required).collect();

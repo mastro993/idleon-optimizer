@@ -1,8 +1,5 @@
 //! Phase 2 to 4: the annealer's moves, its goal-aware bias and the finishing
 //! refinements.
-//!
-//! Ported from the smart-move, bias-slot, greedy-finish and swap-back passes of
-//! `js/cogs/cog-optimizer.js`.
 
 use super::swap_slot_pool;
 use crate::{

@@ -1,11 +1,10 @@
 //! The Upgrades tab: the `Research[44]` purchase list, what the next level
 //! costs and what the save's own levels buy.
 //!
-//! Ported from `upgradesHtml` in `jelly-operator-calc.html`: one row per
-//! purchase slot with its game description, level, current effect, gain per
-//! level and next price. A slot the Research level has not revealed yet says so
-//! instead of printing a price the game hides, and the doubler card names every
-//! upgrade Menagerie's Upgrade Doubler covers.
+//! One row per purchase slot with its game description, level, current effect,
+//! gain per level and next price. A slot the Research level has not revealed
+//! yet says so instead of printing a price the game hides, and the doubler card
+//! names every upgrade Menagerie's Upgrade Doubler covers.
 
 use super::estimate::stat;
 use crate::state::AppState;

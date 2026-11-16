@@ -1,10 +1,7 @@
 //! The editable loadout: the twins, their four equipment slots, the inventory
 //! and the slot rules.
 //!
-//! Ported from `parseTwinData`, `parseTwinEquip` and `isTwinUntied` in
-//! `js/stats/systems/w6/sneaking-math.js`, the slot model in `sneaking-calc.html`
-//! and `canEquipCharmPair` in `js/stats/systems/w6/sneaking-optimizer.js`. The
-//! formulas the editor's numbers come from live in [`super::math`], and where
+//! The formulas the editor's numbers come from live in [`super::math`], and where
 //! each twin stands in [`super::placement`].
 //!
 //! An edit moves two items, so the editor never clones a charm the account does
@@ -557,8 +554,8 @@ impl Loadout {
     }
 }
 
-/// `canEquipCharmPair`: a same-key pair needs the Charmed emporium bonus, and
-/// Scroll of Power is account-unique.
+/// A same-key pair needs the Charmed emporium bonus, and Scroll of Power is
+/// account-unique.
 pub fn can_equip_pair(first: &str, second: &str, charmed: bool) -> bool {
     if first.is_empty() || first == "Blank" || second.is_empty() || second == "Blank" {
         return true;
@@ -569,8 +566,7 @@ pub fn can_equip_pair(first: &str, second: &str, charmed: bool) -> bool {
     first != second || charmed
 }
 
-/// `equipInfo`: the type, the readable name and the effect line upstream prints
-/// in a slot's tooltip.
+/// The type, the readable name and the effect line printed in a slot's tooltip.
 pub fn equip_info(item: &Item) -> Option<EquipInfo> {
     let def: &ItemDef = item.def()?;
     let name = def.display_name();
@@ -610,7 +606,7 @@ pub fn equip_info(item: &Item) -> Option<EquipInfo> {
     }
 }
 
-/// One item's tooltip text, as `equipInfo` describes it.
+/// One item's tooltip text.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EquipInfo {
     pub label: String,

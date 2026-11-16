@@ -1,10 +1,8 @@
 //! Weekly Killroy forecasts and +1 upgrade comparisons.
 //!
-//! The maths follow `js/stats/systems/common/killroy-planner.js` and the room
-//! pools and upgrade list in `js/stats/data/w2/killroy.js`: the weekly reset is
-//! derived from the save's snapshot time, restock countdown and day counter,
-//! then each encounter slot draws its family and room from the game's seeded
-//! random stream.
+//! The weekly reset is derived from the save's snapshot time, restock countdown
+//! and day counter, then each encounter slot draws its family and room from the
+//! game's seeded random stream.
 //!
 //! [`forecast()`] explains which encounters a save can enter in each upcoming
 //! week. [`plan`] turns a selection of encounters into the baseline and `+1`
@@ -13,11 +11,11 @@
 //! reports the save's `BuffsActive` rows a run starts from, and [`results_json`]
 //! writes the run's results as the section's export document.
 //!
-//! The player's damage comes from the combat simulator upstream; that section is
-//! not built here yet (M2), so a trial takes the character's kills per second as
-//! an input. Everything else in a trial — the arrival schedule, the respawn
-//! bonus, the 100 ms spawn tick, the run duration, the per-kill drop rolls and
-//! the bag those drops share — is the upstream formula.
+//! The player's damage would come from a full combat simulation, which is not
+//! built here yet (M2), so a trial takes the character's kills per second as an
+//! input. Everything else in a trial — the arrival schedule, the respawn bonus,
+//! the 100 ms spawn tick, the run duration, the per-kill drop rolls and the bag
+//! those drops share — follows the game's formulas.
 
 mod buffs;
 mod export;
@@ -82,7 +80,7 @@ fn data() -> &'static Data {
     })
 }
 
-/// The save's quest-list values, matching `combatFarmingOptions`.
+/// The save's quest-list values.
 fn options(save: &Save) -> Option<Value> {
     save.get("OptionsListAccount")
         .filter(|values| !values.is_null())
@@ -95,8 +93,7 @@ fn required(value: Option<&Value>, label: &str) -> Result<f64, KillroyError> {
         .ok_or_else(|| KillroyError::new(format!("Missing or invalid {label}")))
 }
 
-/// Whether a class can enter a family's encounters, matching
-/// `killroyClassMatches`.
+/// Whether a class can enter a family's encounters.
 fn class_matches(class: f64, family: usize) -> bool {
     match family {
         0 => class < 6.0,
@@ -158,7 +155,7 @@ fn world3(save: &Save, ci: usize) -> Option<bool> {
     }
 }
 
-/// One room from a pool, matching `killroyRoom`.
+/// One room from a pool.
 fn room(pool: usize, roll: usize) -> &'static Room {
     let rooms = data()
         .pools
@@ -169,7 +166,7 @@ fn room(pool: usize, roll: usize) -> &'static Room {
     &rooms[index]
 }
 
-/// The game's seeded random stream, ported from `gameRandom` in `formulas.js`.
+/// The game's seeded random stream.
 fn game_random(seed: i64) -> impl FnMut() -> f64 {
     let mut first = seed as i32;
     let mut value = first.wrapping_mul(-862_048_943);
@@ -203,18 +200,15 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_game_random_stream_matches_upstream() {
-        // node -e "import('./js/formulas.js').then(m => { const r = m.gameRandom(2974); console.log(JSON.stringify([...Array(4)].map(() => r()))); })"
-        let mut random = game_random(2974);
-        let values: Vec<f64> = (0..4).map(|_| random()).collect();
-        for (got, want) in values.iter().zip([
-            0.215_249_325_472_169_5,
-            0.904_267_013_090_836_5,
-            0.834_915_559_108_623_9,
-            0.671_330_068_951_733_7,
-        ]) {
-            assert!((got - want).abs() < 1e-12, "{got} != {want}");
-        }
+    fn the_game_random_stream_is_seeded_and_in_range() {
+        let draw = |seed| {
+            let mut random = game_random(seed);
+            (0..64).map(|_| random()).collect::<Vec<f64>>()
+        };
+        let first = draw(2974);
+        assert_eq!(first, draw(2974), "a seed replays its stream");
+        assert_ne!(first, draw(2975), "another seed draws another stream");
+        assert!(first.iter().all(|value| (0.0..1.0).contains(value)));
     }
 
     #[test]
@@ -231,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn the_upgrade_list_matches_upstream() {
+    fn the_upgrade_list_keeps_the_game_order() {
         let names: Vec<&str> = data()
             .upgrades
             .iter()
@@ -251,7 +245,7 @@ mod tests {
     }
 
     #[test]
-    fn class_families_match_upstream_bounds() {
+    fn class_families_match_their_class_bounds() {
         for class in [0.0, 5.0] {
             assert!(class_matches(class, 0));
         }

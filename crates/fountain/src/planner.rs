@@ -1,10 +1,8 @@
 //! FN-03: the upgrade planner and the greedy upgrade optimizer.
 //!
-//! Ported from `_renderPlanner` and `_renderOptimizer` in `fountain-calc.html`
-//! and `measureGoal`/`optimalStackValue` in
-//! `js/stats/systems/w5/fountain.js`. Both simulate one or more upgrades on a
-//! cloned cavern, so every measured value comes from the same accessors as the
-//! page instead of a second implementation of the fountain's maths.
+//! Both simulate one or more upgrades on a cloned cavern, so every measured
+//! value comes from the same accessors as the overview instead of a second
+//! implementation of the fountain's maths.
 //!
 //! The planner ranks the next level of every accessible upgrade by the gain it
 //! makes toward one goal. The optimizer repeats that ranking, buys the best
@@ -16,7 +14,7 @@ use super::data::UPGRADES_PER_WATER;
 use super::{CURRENCIES, Fountain, WATERS};
 use idleon_common::{Control, Progress};
 
-/// The goals `measureGoal` implements and the page's planner lists.
+/// The goals the planner can measure.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Goal {
@@ -45,7 +43,7 @@ pub enum Goal {
 }
 
 impl Goal {
-    /// Every goal the page's selector lists, in page order.
+    /// Every goal, in display order.
     pub const ALL: [Goal; 13] = [
         Goal::Currency,
         Goal::Fill,
@@ -62,7 +60,7 @@ impl Goal {
         Goal::Optimal,
     ];
 
-    /// The `measureGoal` case name.
+    /// The goal's stable id.
     pub fn id(self) -> &'static str {
         match self {
             Goal::Currency => "currency",
@@ -81,7 +79,7 @@ impl Goal {
         }
     }
 
-    /// The option text the page prints.
+    /// The goal's display label.
     pub fn label(self) -> &'static str {
         match self {
             Goal::Currency => "Total Currency Value",
@@ -100,7 +98,7 @@ impl Goal {
         }
     }
 
-    /// Resolve the `value` of the page's goal selector.
+    /// Resolve a goal from its id.
     pub fn from_id(id: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|goal| goal.id() == id)
     }
@@ -119,7 +117,7 @@ impl Goal {
     }
 }
 
-/// The planner and optimizer controls the page shares.
+/// The controls the planner and optimizer share.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PlanRequest {
     pub goal: Goal,
@@ -225,7 +223,7 @@ pub struct OptimizerPlan {
 }
 
 impl Fountain {
-    /// `measureGoal`: the value one goal reads at the current levels.
+    /// The value one goal reads at the current levels.
     pub fn measure_goal(&self, goal: Goal, desired: usize) -> f64 {
         if let Some(currency) = goal.currency() {
             return self.currency_total_value_with(currency, currency)
@@ -250,7 +248,7 @@ impl Fountain {
         }
     }
 
-    /// `_renderPlanner`'s candidates, ranked by efficiency.
+    /// The planner's candidates, ranked by efficiency.
     ///
     /// One level of every accessible upgrade is measured on a copy of the
     /// cavern. A goal the upgrade does not move is skipped, and so is an
@@ -355,13 +353,13 @@ impl Fountain {
         rows
     }
 
-    /// `_renderOptimizer` without a progress report.
+    /// The optimizer without a progress report.
     pub fn optimize(&self, request: PlanRequest) -> OptimizerPlan {
         self.optimize_with(request, |_| Control::Continue)
             .expect("a plan without reports is never asked to stop")
     }
 
-    /// `_renderOptimizer`: greedily buy the best step for the goal.
+    /// Greedily buy the best step for the goal.
     ///
     /// The saved opal balances are the budget. With `affordable` only steps the
     /// current balance covers are considered. Without it a step may wait for
@@ -494,7 +492,7 @@ impl Fountain {
         simulated
     }
 
-    /// `duckBarFillTime` at the active rate, or `None` while the bar is locked.
+    /// The duck bar fill time at the active rate, or `None` while the bar is locked.
     fn duck_bar_fill(&self) -> Option<f64> {
         self.duck_bar_unlocked()
             .then(|| Self::duck_bar_fill_time() / self.active_speed())
@@ -575,7 +573,7 @@ struct Candidate {
     efficiency: f64,
 }
 
-/// `pctGainFrom`: the gain as a percentage of the baseline.
+/// The gain as a percentage of the baseline.
 pub(super) fn pct_gain(baseline: f64, delta: f64) -> f64 {
     if delta <= 0.0 {
         return 0.0;

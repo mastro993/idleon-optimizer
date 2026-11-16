@@ -1,13 +1,13 @@
-//! The multiplayer restriction flag behind the upstream "Am I shadow banned?" page.
+//! The multiplayer restriction flag behind the "Am I shadow banned?" check.
 //!
-//! `shadow.html` reads `OptLacc[26]`: a finite zero answers NO, any other finite
+//! The flag is `OptLacc[26]`: a finite zero answers NO, any other finite
 //! number answers YES, and a save without a readable flag stays UNKNOWN. The
 //! importer reports what it read instead of guessing an answer.
 
 use idleon_save::json;
 use serde_json::{Map, Value};
 
-/// The three answers the upstream page shows.
+/// The three answers the check gives.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ShadowVerdict {
     /// No save yet, or the save has no readable `OptLacc[26]`.
@@ -20,7 +20,7 @@ pub enum ShadowVerdict {
 }
 
 impl ShadowVerdict {
-    /// The word the page shows.
+    /// The word the check shows.
     pub fn label(self) -> &'static str {
         match self {
             Self::Unknown => "UNKNOWN",
@@ -52,7 +52,7 @@ impl Shadow {
         Self { flag: flag(save) }
     }
 
-    /// The upstream answer for the flag that was read.
+    /// The answer for the flag that was read.
     pub fn verdict(self) -> ShadowVerdict {
         ShadowVerdict::of(self.flag)
     }
@@ -60,8 +60,8 @@ impl Shadow {
 
 /// `OptLacc[26]`, when the save carries it as a finite number.
 ///
-/// `parseSaveKey` turns a stringified `OptLacc` back into its array, and the
-/// page accepts a numeric string in slot 26 the way `Number(value)` does.
+/// A stringified `OptLacc` is parsed back into its array, and a numeric string
+/// in slot 26 counts as its number.
 fn flag(save: &Map<String, Value>) -> Option<f64> {
     let options = json::parsed_field(save, "OptLacc")?;
     let value = match &options {

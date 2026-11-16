@@ -1,11 +1,10 @@
 //! FN-04: the Marble tab, the marble planner and the greedy marble optimizer.
 //!
-//! Ported from the `#tab-marble` half of `fountain-calc.html`. The planner
-//! measures one marble level of every upgrade the save owns and ranks the gain
-//! per marble; the optimizer buys the best affordable marble level and ranks
-//! again at the levels that purchase reached. The optimizer runs through the
-//! shared [`idleon_ui::runner::TaskRunner`], so its progress and cancel chrome
-//! match every other long job.
+//! The planner measures one marble level of every upgrade the save owns and
+//! ranks the gain per marble; the optimizer buys the best affordable marble
+//! level and ranks again at the levels that purchase reached. The optimizer
+//! runs through the shared [`idleon_ui::runner::TaskRunner`], so its progress
+//! and cancel chrome match every other long job.
 
 use super::overview::{num, odds, time};
 use super::planner::{afford, desired_select, eta, flag, goal_select};
@@ -194,7 +193,7 @@ fn planner_table(rows: &[MarbleRow], goal: Goal) -> AnyElement {
         .into_any_element()
 }
 
-/// The goal's extra column, transcribed from the page's headers.
+/// The goal's extra column header.
 fn marble_detail_label(goal: Goal) -> &'static str {
     match goal {
         Goal::Fill => "Coin / Marble / Duck Δ",

@@ -1,7 +1,6 @@
 //! The simulator's seeded random stream.
 //!
-//! Ported from `createRng` in `js/stats/systems/common/combat-sim-core.js`: a
-//! mulberry32 generator with a call counter. Every path that rolls dice shares
+//! A mulberry32 generator with a call counter. Every path that rolls dice shares
 //! one stream, so a seed plus a run's inputs reproduce its results exactly.
 
 /// One seeded stream.
@@ -12,7 +11,7 @@ pub struct Rng {
 }
 
 impl Rng {
-    /// The stream `seed` starts, matching the upstream zero fallback.
+    /// The stream `seed` starts; a zero seed falls back to a fixed state.
     pub fn new(seed: u64) -> Self {
         let state = seed as u32;
         Self {
@@ -36,8 +35,8 @@ impl Rng {
         f64::from(value ^ (value >> 14)) / 4_294_967_296.0
     }
 
-    /// The upstream `randomInt`: an inclusive integer roll with its swapped
-    /// bounds and float truncation, so an inverted range still returns a value.
+    /// An inclusive integer roll with swapped bounds and float truncation, so
+    /// an inverted range still returns a value.
     pub fn int(&mut self, low: i64, high: i64) -> i64 {
         let roll = self.float();
         let (start, span) = if low <= high {
@@ -48,7 +47,7 @@ impl Rng {
         start + (roll * span as f64).floor() as i64
     }
 
-    /// The upstream `randomFloatBetween`, with the same swapped bounds.
+    /// A float between two bounds, with the same swapped bounds.
     pub fn between(&mut self, low: f64, high: f64) -> f64 {
         let roll = self.float();
         if low <= high {
@@ -64,8 +63,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_stream_matches_upstream_mulberry32() {
-        // node -e "const {createRng} = await import('./js/stats/systems/common/combat-sim-core.js'); const r = createRng(1); console.log(JSON.stringify([0,1,2,3].map(() => r.randomFloat())))"
+    fn seed_one_yields_the_mulberry32_stream() {
+        // The first four outputs of the public-domain mulberry32 for seed 1.
         let mut rng = Rng::new(1);
         let values: Vec<f64> = (0..4).map(|_| rng.float()).collect();
         let want = [
@@ -81,7 +80,7 @@ mod tests {
     }
 
     #[test]
-    fn a_zero_seed_falls_back_like_upstream() {
+    fn a_zero_seed_falls_back_to_a_fixed_state() {
         let mut zero = Rng::new(0);
         let mut fallback = Rng::new(0x9e37_79b9);
         assert_eq!(zero.float(), fallback.float());

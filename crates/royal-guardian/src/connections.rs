@@ -1,11 +1,6 @@
 //! The outposts' saved connections: which resource a Normal or Savage outpost
 //! drains, which outpost a Support outpost links, and what each one reaches.
 //!
-//! Ported from `parseConnectionEndpoint`, `outpostConnections`, `outpostSupports`,
-//! `outpostSupportLinks`, `supportCount`, `outpostDistance`,
-//! `reachableResourcesForOutpost`, `reachableOutpostsForResource` and
-//! `supportTargetsForOutpost`.
-//!
 //! A saved cell encodes both endpoint kinds: a value from 1,000 up is a map
 //! (minus the offset), a smaller non-negative value is a resource index, and
 //! anything else - including the `-1` the game writes for an empty slot - is no
@@ -26,15 +21,6 @@ pub enum Endpoint {
 }
 
 impl Endpoint {
-    /// The upstream endpoint kind, for the oracle comparison.
-    pub fn kind(self) -> &'static str {
-        match self {
-            Endpoint::Empty => "empty",
-            Endpoint::Resource(_) => "resource",
-            Endpoint::Map(_) => "map",
-        }
-    }
-
     /// The raw endpoint value the game writes back for this target.
     pub fn encode(self) -> i64 {
         match self {
@@ -105,7 +91,7 @@ pub struct SupportTarget {
 }
 
 impl RoyalGuardian {
-    /// Decode one saved endpoint: upstream `parseConnectionEndpoint`.
+    /// Decode one saved endpoint.
     pub fn parse_endpoint(value: Option<f64>) -> Endpoint {
         let Some(value) = value else {
             return Endpoint::Empty;
@@ -120,7 +106,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// An outpost's two saved connections: upstream `outpostConnections`.
+    /// An outpost's two saved connections.
     pub fn outpost_connections(&self, map: usize) -> [Connection; 2] {
         std::array::from_fn(|slot| {
             let raw = self.map_saved(map, cell::LINKS + slot);
@@ -132,14 +118,14 @@ impl RoyalGuardian {
         })
     }
 
-    /// Whether either slot carries a connection: upstream `outpostSupports`.
+    /// Whether either slot carries a connection.
     pub fn outpost_supports(&self, map: usize) -> bool {
         self.outpost_connections(map)
             .iter()
             .any(|connection| connection.endpoint != Endpoint::Empty)
     }
 
-    /// Every Support outpost that links `target`: upstream `outpostSupportLinks`.
+    /// Every Support outpost that links `target`.
     pub fn support_links(&self, target: usize) -> Vec<SupportLink> {
         let mut links = Vec::new();
         for map in 0..self.maps.len() {
@@ -159,12 +145,12 @@ impl RoyalGuardian {
         links
     }
 
-    /// How many Support outposts link `target`: upstream `supportCount`.
+    /// How many Support outposts link `target`.
     pub fn support_count(&self, target: usize) -> usize {
         self.support_links(target).len()
     }
 
-    /// How far two map anchors sit apart: upstream `outpostDistance`.
+    /// How far two map anchors sit apart.
     pub fn outpost_distance(from: usize, to: usize) -> f64 {
         let (Some((x1, y1)), Some((x2, y2))) =
             (Self::outpost_position(from), Self::outpost_position(to))
@@ -174,8 +160,7 @@ impl RoyalGuardian {
         ((x1 - x2).powi(2) + (y1 - y2).powi(2)).sqrt()
     }
 
-    /// The resource nodes an outpost can link, nearest first: upstream
-    /// `reachableResourcesForOutpost`.
+    /// The resource nodes an outpost can link, nearest first.
     pub fn reachable_resources(&self, map: usize) -> Vec<ReachableResource> {
         let range = self.range(map);
         let connected_slots = self
@@ -198,8 +183,7 @@ impl RoyalGuardian {
         nodes
     }
 
-    /// The built outposts that can link a resource node, nearest first:
-    /// upstream `reachableOutpostsForResource`.
+    /// The built outposts that can link a resource node, nearest first.
     pub fn reachable_outposts(&self, resource: usize) -> Vec<ReachableOutpost> {
         let world = Self::resource_world(resource);
         let mut outposts: Vec<ReachableOutpost> = (0..self.maps.len())
@@ -232,7 +216,7 @@ impl RoyalGuardian {
         outposts
     }
 
-    /// The maps a Support outpost can link: upstream `supportTargetsForOutpost`.
+    /// The maps a Support outpost can link.
     ///
     /// The connection editor accepts a target whose row has grown to its second
     /// cell - in progress or built - within `floor(range) + 8` of the anchors.

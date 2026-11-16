@@ -1,11 +1,10 @@
 //! The Drop Rate Calculator: the character and map context, the live dungeon
 //! inputs, the total card and the formula tree behind it.
 //!
-//! Ported from `drop-rate-calc.html`: the context card that
-//! `populateMapSel`/`switchChar`/`switchMap` drive, the runtime panel that only
-//! a dungeon map shows, the `#result-card` total and the `#tree` breakdown. The
-//! maths and the tree live in [`idleon_drop_rate`]; the breakdown renders through
-//! the shared formula tree.
+//! The context card that picks the character and map, the runtime panel that
+//! only a dungeon map shows, the total card and the breakdown. The maths and
+//! the tree live in [`idleon_drop_rate`]; the breakdown renders through the
+//! shared formula tree.
 
 mod actions;
 
@@ -30,7 +29,7 @@ use idleon_ui::formula::FormulaTree;
 pub(crate) struct State {
     pub(crate) selection: Selection,
     pub(crate) snapshot: Option<Snapshot>,
-    /// Dungeon Total LUK; a blank field is upstream's "not entered".
+    /// Dungeon Total LUK; a blank field means "not entered".
     pub(crate) luk: Entity<TextInput>,
     /// Dungeon Drop Rate stat.
     pub(crate) rate: Entity<TextInput>,
@@ -74,7 +73,7 @@ impl State {
         }
     }
 
-    /// The formula tree's root: the upstream expansion of the total, or nothing
+    /// The formula tree's root: the expansion of the total, or nothing
     /// to expand on a map whose pool chain this build does not decode.
     pub(crate) fn breakdown(&self, cx: &App) -> Option<FormulaNode> {
         drop_rate::tree(self.selection.map, self.runtime(cx).ok()?)

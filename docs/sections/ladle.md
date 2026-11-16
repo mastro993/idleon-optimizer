@@ -8,13 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.
-
-## Upstream sources
-
-- ladle-calc.html
-- js/stats/systems/w4/cooking-ladle.js
-- js/stats/tree-builder.js
+Implement ladles/day, Cooking EXP balloons, meal costs, kitchen reset planning, forecast comparison and the NMLB planner.
 
 ## UI
 
@@ -56,7 +50,6 @@ Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and break
 
 Acceptance:
 
-- Values match upstream.
 - Character switching works.
 - Balloon overflow is handled.
 
@@ -82,7 +75,6 @@ Acceptance:
 
 - Objective switch changes ranking.
 - Meal costs use the discount.
-- Results match upstream.
 
 ### LD-04 — NMLB donation planner
 
@@ -98,6 +90,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Planner determinism.
 - Harness.

@@ -1,21 +1,21 @@
-//! The save-table metrics of `js/endgame-stats.js`.
+//! The save-table metrics of the endgame audit.
 //!
-//! Every arm below is the upstream expression with its reads made explicit.
-//! Metrics that need the account stats engine (`createStatContext`), the Tome
-//! scorer, breeding totals or game-data tables this build does not ship return
-//! `None`, so [`super::collect`] reports them as unavailable with a reason.
+//! Every arm below is one metric's expression with its reads made explicit.
+//! Metrics that need the account stats engine, the Tome scorer, breeding totals
+//! or game-data tables this build does not ship return `None`, so
+//! [`super::collect`] reports them as unavailable with a reason.
 
 use super::{Access, Computed, max_zero, number};
 use serde_json::Value;
 
-/// `STATUE_COUNT`, from `js/stats/data/common/statues.js`.
+/// How many statues the game has.
 const STATUE_COUNT: usize = 32;
-/// `DreamUpg.length`, from `js/stats/data/game/customlists.js`.
+/// `DreamUpg.length`: how many Dream upgrades the game has.
 const DREAM_UPGRADES: usize = 14;
 /// `MapDetails[2][0][0]`: Blunder Hills' Green Mushroom spawn count.
 const GREEN_MUSHROOM_KILLS: f64 = 25.0;
 
-/// The skill levels `Lv0_<n>[1..=20]` carry, in the upstream `CATEGORIES.Skills` order.
+/// The skill levels `Lv0_<n>[1..=20]` carry, in the `Skills` category order.
 const SKILLS: [&str; 20] = [
     "mining",
     "smithing",
@@ -244,7 +244,7 @@ pub(super) fn compute(access: &Access, id: &str) -> Result<Option<Computed>, Str
         "totalStatues" => return statues(access).map(Some),
 
         // The metrics that need the account stats engine, the Tome scorer or
-        // breeding totals this build does not port yet.
+        // breeding totals this build does not model yet.
         "strength"
         | "agility"
         | "wisdom"
@@ -288,7 +288,7 @@ fn character(index: usize) -> String {
     format!("Lv0_{index}")
 }
 
-/// `characters(compute).reduce(sum)`: the sum over every character.
+/// `compute` summed over every character.
 fn characters_sum(
     access: &Access,
     mut compute: impl FnMut(usize) -> Result<f64, String>,
@@ -329,7 +329,7 @@ fn rows_sum(access: &Access, key: &str, path: &[usize]) -> Result<f64, String> {
     Ok(total)
 }
 
-/// `_sum` over the `count` options starting at `start`.
+/// The signed sum of the `count` options starting at `start`.
 fn options_sum(access: &Access, start: usize, count: usize) -> Result<f64, String> {
     let mut total = 0.0;
     for index in start..start + count {
@@ -400,7 +400,7 @@ fn highest_cog_exp(access: &Access) -> Result<f64, String> {
     Ok(max)
 }
 
-/// `_entries(KRbest)` without the summoning rows, summed.
+/// The `KRbest` entries without the summoning rows, summed.
 fn prime_kills(access: &Access) -> Result<f64, String> {
     let mut total = 0.0;
     for (key, value) in access.entries("KRbest")? {

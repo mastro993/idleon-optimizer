@@ -53,7 +53,7 @@ fn missing_rows_read_as_zero_instead_of_panicking() {
     assert_eq!(empty.rupie_value(), 1.0);
     assert_eq!(empty.extra_rupie_chance(), 0.0);
     assert_eq!(empty.avg_rupies_per_break(), 1.0);
-    // Nothing found: the collectible chance falls back to the upstream quarter.
+    // Nothing found: the collectible chance falls back to a quarter.
     assert_eq!(empty.collectible_chance(), 0.25);
     assert_eq!(empty.opal_chance(), 0.25);
 }
@@ -168,7 +168,7 @@ fn the_rupies_per_break_count_the_extra_chance_and_the_tier() {
 }
 
 #[test]
-fn a_rupies_colors_escalate_at_the_upstream_thresholds() {
+fn a_rupies_colors_escalate_at_their_thresholds() {
     let mut rows = blank_rows();
     assert_eq!(jar(json!(rows.clone())).rupie_colors(0), vec![0]);
     rows[9][20] = 100.0;
@@ -296,7 +296,7 @@ fn the_bonuses_other_systems_grant_are_read_from_the_save() {
     assert_eq!(jar.ext.lore_episodes, 3.0);
     assert_eq!(jar.ext.super_bit, 1.0);
     assert_eq!(jar.ext.monument, 100.0 * 3.0);
-    // The two systems this app has not ported stay at the upstream default.
+    // The two systems this app does not model yet stay at zero.
     assert_eq!(jar.ext.stamp_cavern_res, 0.0);
     assert_eq!(jar.ext.exotic, 0.0);
 }
@@ -425,4 +425,54 @@ fn the_saved_collectible_levels_are_the_forty_rows() {
     assert_eq!(levels[36], 5);
     assert_eq!(levels[1], 0);
     assert_eq!(jar.enchant_levels(), 2 + 4);
+}
+
+#[test]
+fn the_enchant_priority_ranks_by_marginal_then_fewest_enchant_levels() {
+    let mut rows = blank_rows();
+    rows[13][75] = 1.0;
+    for (index, level) in rows[24].iter_mut().take(COLLECTIBLES).enumerate() {
+        *level = (index % 4) as f64;
+    }
+    let jar = jar(json!(rows));
+    let priority = jar.enchant_priority();
+    // Level 0 is not found yet, so a quarter of the rows stay out.
+    assert_eq!(priority.len(), COLLECTIBLES - COLLECTIBLES / 4);
+    assert!(priority.iter().all(|row| row.level >= 1));
+    assert!(priority.windows(2).all(|pair| {
+        pair[0].marginal > pair[1].marginal
+            || (pair[0].marginal == pair[1].marginal
+                && pair[0].enchant_levels <= pair[1].enchant_levels)
+    }));
+}
+
+#[test]
+fn the_collectible_groups_cover_every_findable_slot() {
+    let mut rows = blank_rows();
+    let count = |jar: &Jar| -> usize {
+        jar.collectible_groups()
+            .iter()
+            .map(|group| group.items.len())
+            .sum()
+    };
+    let first_page = jar(json!(rows.clone()));
+    assert_eq!(count(&first_page), first_page.collectible_slots());
+    rows[13][75] = 1.0;
+    let both_pages = jar(json!(rows));
+    assert_eq!(count(&both_pages), COLLECTIBLES);
+    assert_eq!(both_pages.collectible_groups()[0].label, "Rupie +%");
+}
+
+#[test]
+fn the_schematics_list_every_group_in_order_with_its_ownership() {
+    let mut rows = blank_rows();
+    let first = jar(json!(rows.clone())).schematics()[0].index;
+    rows[13][first] = 1.0;
+    let schematics = jar(json!(rows)).schematics();
+    assert_eq!(schematics[0].group, "Rupie Value");
+    assert_eq!(schematics[0].name, "Big Jar Mach II");
+    assert!(schematics[0].owned);
+    assert!(schematics[1..].iter().all(|row| !row.owned));
+    let groups: std::collections::BTreeSet<_> = schematics.iter().map(|row| row.group).collect();
+    assert_eq!(groups.len(), 6);
 }

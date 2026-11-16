@@ -2,11 +2,11 @@
 //! table every outpost the world lists reports, and the selected outpost's
 //! connections.
 //!
-//! The map follows the upstream page's own coordinate space: an 811×433 image
+//! The map follows the game's own coordinate space: an 811×433 image
 //! (`royal-guardian/UImap<world>.png`) whose anchors are offset by 75 and 27
 //! pixels. The connection lines are drawn rather than stamped from the game's
-//! line art, because a rotated image edge would blur the 1-pixel upstream line;
-//! the colour still tells the three families apart.
+//! line art, because a rotated image edge would blur the 1-pixel line; the
+//! colour still tells the three families apart.
 
 use super::overview::{number_cell, rate_cell, selected_outpost, type_label};
 use super::world_rail;
@@ -23,7 +23,7 @@ use idleon_royal_guardian::RoyalGuardian;
 use idleon_royal_guardian::{self as royal_guardian, Endpoint};
 use idleon_ui::format;
 
-/// Resolve one upstream artwork reference, or `None` when the import skipped it.
+/// Resolve one game artwork reference, or `None` when the import skipped it.
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
     match manifest.artwork(reference) {
         Artwork::Ready(path) => Some(path.to_path_buf()),
@@ -31,10 +31,10 @@ fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
     }
 }
 
-/// The map image's own coordinate space, as the upstream page draws it.
+/// The map image's own coordinate space.
 const MAP_WIDTH: f64 = 811.0;
 const MAP_HEIGHT: f64 = 433.0;
-/// The image's anchor offset: upstream `mapPoint` subtracts these.
+/// The image's anchor offset, subtracted from every map point.
 const MAP_LEFT: f64 = 75.0;
 const MAP_TOP: f64 = 27.0;
 /// How much of the image's pixel space the board shows.
@@ -106,7 +106,7 @@ fn map(
         );
     }
 
-    // The connection lines sit under the markers, like the upstream layers.
+    // The connection lines sit under the markers.
     let lines = connection_lines(royal, world);
     let palette = (colors.success, colors.info, colors.warning);
     board = board.child(

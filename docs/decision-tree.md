@@ -1,6 +1,6 @@
 # Decision Tree
 
-The research page's Decision Tree sandbox, ported from the upstream calculator. The maths lives in
+The research page's Decision Tree sandbox. The maths lives in
 `crates/research/src/tree.rs` and the tab itself is `crates/app/src/sections/research/tree.rs`.
 
 ![A branched tree with the branch comparison open](decision-tree.png)
@@ -13,31 +13,18 @@ layout from the same state, and compare the branches side by side. Every node ca
 simulation state — grid levels, observation insight, magnifiers and shapes — so a step is exactly
 the next event that state reaches, not an interpolation.
 
-## Upstream sources
-
-| Part | Upstream |
-| --- | --- |
-| The stepper and node model | `js/dt/dt-sim.js` (`dtStepSim`, `dtAdvanceAutoInsight`, `dtResimChildrenOf`) |
-| The tree, layout and comparison | `js/dt/decision-tree.js` |
-| The node board | `js/dt/dt-grid.js` |
-| The observation editor | `js/dt/dt-obs-editor.js` |
-| Auto Insight's monocle targets | `js/optimizers/monos.js` (`chooseMonoTargets`) |
-| The auto magnifier fit | `js/optimizers/magnifiers.js` (`optimizeMagsFor`) |
-| The auto shape fit | `js/sim-engine.js` (`optimizeShapesFor`) |
-| The formulas | `js/stats/systems/w7/research-math.js` |
-
 ## Nodes and events
 
 The root is the loaded save, or a run's result when it was opened from the Optimizer tab. Saving a
 node jumps its state to the closest of:
 
-- the next research level-up (`researchExpReq` against the node's EXP/hour), or
-- the next insight level-up (the soonest `insightExpReqAt` over every observation holding a
+- the next research level-up (`research_exp_req` against the node's EXP/hour), or
+- the next insight level-up (the soonest `insight_exp_required` over every observation holding a
   monocle).
 
 The EXP rate is constant between events, so the step applies the EXP that jump earns and the one
-insight collection it causes, as upstream `dtStepSim` does. The new node records which event opened
-it, the hours from its parent and the observations whose insight level rose.
+insight collection it causes. The new node records which event opened it, the hours from its parent
+and the observations whose insight level rose.
 
 Nodes are drawn in time columns: each event is a column, placed `140px` apart plus a square-root
 scaled gap, capped so a years-long level does not push the next column off the canvas. Siblings
@@ -48,16 +35,16 @@ to.
 ## Auto Insight
 
 A node can be marked **Auto Insight**. Saving it then steps through every insight level-up on the
-way, re-fitting the monocles at each with upstream `chooseMonoTargets`, and stops at the next
-research level-up. The skipped insight nodes stay in the model but are hidden from the canvas; the
-level-up node carries the timeline of everything the chain passed through (hours, observation, old
-and new insight level, EXP/hour after the re-fit).
+way, re-fitting the monocles at each with `choose_mono_targets`, and stops at the next research
+level-up. The skipped insight nodes stay in the model but are hidden from the canvas; the level-up
+node carries the timeline of everything the chain passed through (hours, observation, old and new
+insight level, EXP/hour after the re-fit).
 
-Monocle targeting is the port of `js/optimizers/monos.js`: each usable observation is priced by how
+Monocle targeting (`crates/research/src/optimize/monos.rs`) prices each usable observation by how
 soon it levels insight and, where the grid reads insight for EXP, by the EXP/hour that level
 permanently buys, with the regular magnifiers re-fitted for the projected insight. Auto Mags places
-glasses and kaleidoscopes for the rate with `optimizeMagsFor`'s reservation for monocles, then spreads
-the monocles with the same targeting.
+glasses and kaleidoscopes for the rate, reserving room for monocles, then spreads the monocles with
+the same targeting.
 
 ## The node editor
 
@@ -82,18 +69,8 @@ deltas.
 
 ## Verification
 
-`fixtures/decision-tree.json` is written by `script/decision-tree-oracle.mjs` from upstream
-`dtBuildInitState`, `dtStepSim` and `dtAdvanceAutoInsight`:
-
-```console
-node script/decision-tree-oracle.mjs /path/to/idleon-research-optimizer
-```
-
-It carries two chains. The first steps the committed `fixtures/data.json` account twelve events
-through the upstream stepper; the second uses a small synthetic state that reaches insight level-ups
-within hours, so the auto-insight chain (including its monocle re-fits and timeline) is compared
-against the calculator too. `crates/research/tests/tree.rs` rebuilds both states from the fixture and
-compares every event's type, hours, level and EXP/hour, and the auto chain's nodes and timeline.
+`crates/research/tests/tree.rs` builds a tree from the committed account fixture and checks that a
+stopped Auto Insight chain returns nothing and leaves the tree as it was.
 
 The research lane in `script/mcp-sections.mjs` drives the tab end to end: it opens the tree from the
 loaded save, assigns a glass, saves a node, compares two branches, branches and deletes a fork, runs

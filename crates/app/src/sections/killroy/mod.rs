@@ -1,13 +1,12 @@
 //! The Killroy Calculator: the weekly forecast, the `+1` upgrade comparison and
 //! the run's results.
 //!
-//! Ported from `js/ui/killroy.js` and
-//! `js/stats/systems/common/killroy-planner.js`. KL-01 ported the forecast; KL-02
-//! added the Baseline and Upgrade comparisons tabs, the upgrade list, the
-//! selection preview, the trials and the comparison that highlights the best
-//! option; KL-03 adds the run options (saved buffs and unlimited inventory), the
-//! saved-buff table, the results export and the assumptions the numbers rest on.
-//! The shared [`idleon_ui::runner::TaskRunner`] runs the trials off the UI thread.
+//! KL-01 built the forecast; KL-02 added the Baseline and Upgrade comparisons
+//! tabs, the upgrade list, the selection preview, the trials and the comparison
+//! that highlights the best option; KL-03 adds the run options (saved buffs and
+//! unlimited inventory), the saved-buff table, the results export and the
+//! assumptions the numbers rest on. The shared
+//! [`idleon_ui::runner::TaskRunner`] runs the trials off the UI thread.
 
 mod comparison;
 mod forecast_view;
@@ -23,7 +22,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
 use idleon_killroy::{self as killroy, Selection};
 
-/// The section's two halves, as the upstream tab strip splits them.
+/// The section's two halves, as the tab strip splits them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Mode {

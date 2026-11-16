@@ -1,11 +1,10 @@
 //! The raw save fields the Spelunking inputs read.
 //!
-//! Ported from `buildSpelunkInputs` and `buildSpelunkStaticInputs` in
-//! `js/stats/systems/w7/spelunk-inputs.js`: the decoded `Spelunk` rows, the
-//! account options and gem purchases, the character roster, and the
-//! `shopUpgBonus` array the depth formulas index. A save without the stamina
-//! and shop rows carries no expedition state, so [`Save::from_parts`] returns
-//! `None` and the section shows its import prompt instead of zeros.
+//! The decoded `Spelunk` rows, the account options and gem purchases, the
+//! character roster, and the shop upgrade bonuses the depth formulas index. A
+//! save without the stamina and shop rows carries no expedition state, so
+//! [`Save::from_parts`] returns `None` and the section shows its import prompt
+//! instead of zeros.
 
 use super::{Account, Character, Inputs, data, game_log, js_round};
 use idleon_common::curve as formula;
@@ -24,11 +23,11 @@ pub struct Save {
     /// `OptionsListAccount`: `[478]` tutorial progress, `[538]` full-clear.
     options: Vec<Value>,
     characters: Vec<Row>,
-    /// `shopUpgBonus` for all 80 rows.
+    /// The shop upgrade bonus for all 80 rows.
     shop: Vec<f64>,
     /// `Gaming[12]`: the Super Bit keys the account owns.
     gaming: String,
-    /// `Sailing[3][35]`: the Pointagon tier `chapterBonus` reads.
+    /// `Sailing[3][35]`: the Pointagon tier the chapter bonuses read.
     pointagon: f64,
     /// Menagerie unlock 1, which the saved shortcut entry needs.
     shortcut: bool,
@@ -51,7 +50,7 @@ impl Save {
     pub fn from_parts(save: &idleon_save::Save) -> Option<Self> {
         let spelunk = save.get("Spelunk")?;
         let rows: Vec<Vec<Value>> = row_values(&spelunk).iter().map(row_values).collect();
-        // Upstream requires the stamina row and the shop row before it simulates.
+        // A run needs the stamina row and the shop row before it simulates.
         if rows.len() <= 5 || rows[3].is_empty() || rows[5].is_empty() {
             return None;
         }
@@ -112,7 +111,7 @@ impl Save {
         })
     }
 
-    /// `buildSpelunkInputs`, with the account inputs the stat context would supply.
+    /// The section inputs, with the account inputs the stat context would supply.
     pub fn inputs(&self, account: &Account) -> Inputs {
         let spelunk = data();
         let characters = self
@@ -236,8 +235,8 @@ impl Save {
         ((self.shop_at(26) + self.chapter_bonus(3, 2)) / 100.0).min(0.6)
     }
 
-    /// `chapterBonus`: `Spelunk[8]` holds one level per chapter bonus, and a row
-    /// flagged with the artifact scales by Pointagon's bonus.
+    /// `Spelunk[8]` holds one level per chapter bonus, and a row flagged with
+    /// the artifact scales by Pointagon's bonus.
     fn chapter_bonus(&self, chapter: usize, bonus: usize) -> f64 {
         let Some(row) = data()
             .chapters
@@ -288,7 +287,7 @@ impl Save {
     }
 }
 
-/// `companionDataAvailable`: the wrapper carries a companion roster.
+/// Whether the wrapper carries a companion roster.
 fn companion_roster(save: &idleon_save::Save) -> bool {
     save.get("companion")
         .as_ref()
@@ -307,8 +306,8 @@ fn field_text(save: &idleon_save::Save, field: &str, index: usize) -> String {
         .unwrap_or_default()
 }
 
-/// `shopUpgBonus` for every row: `SpelunkUpg[idx][4] * level`, with the
-/// account-wide multipliers the upstream function applies.
+/// The shop upgrade bonus for every row: `SpelunkUpg[idx][4] * level`, with the
+/// account-wide multipliers applied.
 fn shop_upgrades(rows: &[Vec<Value>], characters: &[Row]) -> Vec<f64> {
     let per_level = &data().upgrade_per_level;
     let total_spelunk_level: f64 = characters.iter().map(|row| row.skill.max(0.0)).sum();

@@ -23,7 +23,7 @@ use idleon_monument::justice::{self, Response, State};
 pub(crate) use idleon_monument::justice::{Action, Effect};
 use idleon_ui::format;
 
-/// One of the worksheet's six stats, in the upstream order.
+/// One of the worksheet's six stats, in worksheet order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Field {
     Round,
@@ -56,7 +56,7 @@ impl Field {
         }
     }
 
-    /// The stat's label, as the upstream worksheet names it.
+    /// The stat's label, as the worksheet names it.
     pub(crate) fn label(self) -> &'static str {
         match self {
             Field::Round => "Case number",
@@ -81,7 +81,7 @@ impl Field {
     }
 
     /// Writes a typed value, clamped the way the input is; the case number is
-    /// the round plus one, as upstream shows it.
+    /// the round plus one, as the worksheet shows it.
     pub(crate) fn set(self, state: &mut State, value: f64) {
         match self {
             Field::Round => state.round = (value.round() - 1.0).max(0.0) as i64,
@@ -358,7 +358,7 @@ fn advisor_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
     let case_id = worksheet.case_id;
     let state_now = worksheet.state.clone();
 
-    // The upstream search matches the visitor and the request wording, keeps the
+    // The search matches the visitor and the request wording, keeps the
     // selected case in the list, and de-duplicates rows with the same wording.
     let mut visible: Vec<usize> = Vec::new();
     for case in justice::cases() {

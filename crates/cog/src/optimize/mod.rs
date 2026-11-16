@@ -1,16 +1,15 @@
 //! The cog board optimizer: greedy construction, simulated annealing and a
 //! greedy finish.
 //!
-//! Ported from `js/cogs/cog-optimizer.js`. The upstream algorithm has four
-//! phases: build a strong greedy starting board, anneal it with moves biased
-//! toward the slots the goal reads, refine it with exhaustive pairwise and
-//! board↔shelf swaps, then restore as many original cogs as the score allows so
-//! the user sees the fewest possible swaps. All four are kept here.
+//! The algorithm has four phases: build a strong greedy starting board, anneal
+//! it with moves biased toward the slots the goal reads, refine it with
+//! exhaustive pairwise and board↔shelf swaps, then restore as many original
+//! cogs as the score allows so the user sees the fewest possible swaps.
 //!
-//! Two differences are deliberate:
+//! Two choices keep runs testable:
 //!
 //! - the random source is a seeded xorshift, so a run is reproducible and tests
-//!   are stable (upstream uses `Math.random`);
+//!   are stable;
 //! - the greedy player-position sweep is scored without its per-candidate
 //!   refinement pass; the winner still gets the full refinement. That keeps a
 //!   debug build inside the harness's wait budget without changing the board
@@ -64,7 +63,7 @@ pub struct SwapStep {
 }
 
 impl SwapStep {
-    /// Where the arriving cog came from, as the upstream swap list shows it.
+    /// Where the arriving cog came from, as the swap list shows it.
     pub fn source_label(&self) -> String {
         match self.src_slot {
             Some(slot) => {
@@ -118,7 +117,7 @@ pub fn optimize(
     if !greedy_construct(&mut working, &mut pool, goal, objective, report) {
         return None;
     }
-    // Upstream keeps the save board when the greedy rebuild is not better: it
+    // Keep the save board when the greedy rebuild is not better: it
     // is a better annealing start, not an unconditional replacement.
     if score(&working, objective) <= initial_score {
         working = original.clone();

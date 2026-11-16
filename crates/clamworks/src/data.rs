@@ -1,12 +1,11 @@
-//! The Clamworks game tables, extracted from the upstream `Spelunky` list by
-//! `script/extract-clamworks-data.mjs`.
+//! The Clamworks game tables, extracted from the game's `Spelunky` list.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
 
 const CLAMWORKS_JSON: &str = include_str!("../data/clamworks.json");
 
-/// The Clamworks game tables, extracted from the upstream `Spelunky` list.
+/// The Clamworks game tables, extracted from the game's `Spelunky` list.
 #[derive(Debug, Deserialize)]
 pub struct ClamworksData {
     /// The nine pearl upgrades, in the game's order.

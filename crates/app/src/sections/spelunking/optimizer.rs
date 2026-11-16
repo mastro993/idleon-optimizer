@@ -3,7 +3,7 @@
 //!
 //! The exhaustive configuration search and the bounded Amber phase search both
 //! run through the shared task runner, so progress and cancel behave like the
-//! expedition run. The result keeps the upstream rows, the winner against the
+//! expedition run. The result keeps the ranked rows, the winner against the
 //! baseline, the party-size advice and a copyable plan.
 
 use crate::state::AppState;

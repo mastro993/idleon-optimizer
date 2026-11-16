@@ -1,4 +1,4 @@
-//! The Research Optimizer section: its upstream tab strip and its panes.
+//! The Research Optimizer section: its tab strip and its panes.
 
 mod actions;
 pub(crate) mod colors;
@@ -30,7 +30,7 @@ use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled,
 use idleon_research::edit::{History, Snapshot};
 use idleon_ui::format;
 
-/// The research page's tabs; the dashboard opens first, as upstream.
+/// The research page's tabs; the dashboard opens first.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Tab {
@@ -167,9 +167,9 @@ pub(crate) struct State {
     pub(crate) tree: tree::State,
     /// The Insight ROI table's sort mode.
     pub(crate) insight_sort: idleon_research::insight::Sort,
-    /// Whether the Insight ROI table hides rows that lose no EXP. Upstream
-    /// starts hidden; a first run here would then show an empty table, so this
-    /// build starts with every usable observation listed.
+    /// Whether the Insight ROI table hides rows that lose no EXP. Starting
+    /// hidden would show an empty table on a first run, so every usable
+    /// observation starts listed.
     pub(crate) insight_hide_free: bool,
     /// Which undiscovered observations the Unlocks table lists.
     pub(crate) unlock_filter: idleon_research::unlock::Filter,

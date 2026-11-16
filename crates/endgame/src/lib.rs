@@ -1,31 +1,26 @@
 //! The joke endgame check: the verdict, and the leaderboard audit behind it.
 //!
-//! Ported from the upstream `endgame.html`, `js/endgamers.js` and
-//! `js/endgame-stats.js`. The verdict is `NO` for every save: upstream only
-//! answers `YES` for a handful of character names whose SHA-256 hashes are
-//! sealed in `endgamers.js`, and three of those unlock an AES-GCM message. The
-//! names behind those hashes are the upstream authors' own accounts, so the
-//! gate cannot be reproduced meaningfully and this build always answers `NO`.
+//! The verdict is `NO` for every save: the check is a joke, so no save passes
+//! it.
 //!
-//! The stats are the save-table half of `collectEndgameStats`: every metric it
-//! reads straight out of the decoded save, with the upstream ids, labels and
-//! group order. Metrics that need the account stats engine (damage, drop rate,
-//! coin multiplier, tome score, villager rates, …) come back without a value and
-//! say why, exactly like a metric whose computation threw upstream.
+//! The stats are the save-table half of the leaderboard audit: every metric
+//! read straight out of the decoded save, with its id, label and group order.
+//! Metrics that need the account stats engine (damage, drop rate, coin
+//! multiplier, tome score, villager rates, …) come back without a value and say
+//! why, like a metric whose computation failed.
 
 mod stats;
 
 use idleon_save::json;
 use serde_json::{Map, Value};
 
-/// The endgame verdict. Upstream's sealed-name gate can only ever reject a
-/// player's save, so the port answers this unconditionally.
+/// The endgame verdict, the same for every save.
 pub const VERDICT: &str = "NO";
 
 /// Why a metric has no value in this build.
-pub const UNPORTED: &str = "Needs the account stats engine, which is not built yet.";
+pub const NEEDS_STATS_ENGINE: &str = "Needs the account stats engine, which is not built yet.";
 
-/// The leaderboard categories, in the upstream `CATEGORIES` order.
+/// The leaderboard categories, in order.
 pub const GROUPS: [(&str, &[&str]); 7] = [
     ("General", GENERAL),
     ("Tasks", TASKS),
@@ -51,11 +46,11 @@ pub struct Stat {
     pub detail: Option<String>,
 }
 
-/// Collect every upstream leaderboard metric from a decoded save object.
+/// Collect every leaderboard metric from a decoded save object.
 ///
 /// `save` is the `data` object of an `it.json`, or a flat save; `char_names` is
 /// the length of the `charNames` roster that sits beside `data`. A save without
-/// complete research rows is rejected, as upstream does before it collects.
+/// complete research rows is rejected before anything is collected.
 pub fn collect(save: &Value, char_names: usize) -> Result<Vec<Stat>, String> {
     let Some(data) = save.as_object() else {
         return Err("No save data provided.".into());
@@ -88,7 +83,7 @@ pub fn collect(save: &Value, char_names: usize) -> Result<Vec<Stat>, String> {
                     stat.value = Some(computed.value);
                     stat.partial = computed.partial;
                 }
-                Ok(None) => stat.detail = Some(UNPORTED.into()),
+                Ok(None) => stat.detail = Some(NEEDS_STATS_ENGINE.into()),
                 Err(detail) => stat.detail = Some(detail),
             }
             collected.push(stat);
@@ -97,8 +92,8 @@ pub fn collect(save: &Value, char_names: usize) -> Result<Vec<Stat>, String> {
     Ok(collected)
 }
 
-/// A metric's label: the upstream `LABELS` overrides, then the camel-case split
-/// and capitalisation `collectEndgameStats` falls back to.
+/// A metric's label: the label overrides, then the camel-case split and
+/// capitalisation as the fallback.
 pub fn label(id: &str) -> String {
     let label = match id {
         "totalMoney" => "Total money",
@@ -120,8 +115,8 @@ pub fn label(id: &str) -> String {
     label.into()
 }
 
-/// `id.replace(/([a-z0-9])([A-Z])/g, '$1 $2')`, the `w<N>Colo` rename, then a
-/// capitalised first letter.
+/// A space before every capital that follows a lowercase letter or a digit, the
+/// `w<N>Colo` rename, then a capitalised first letter.
 fn derived_label(id: &str) -> String {
     let chars: Vec<char> = id.chars().collect();
     let mut split = String::with_capacity(id.len() + 4);
@@ -170,8 +165,8 @@ const MISSING: &str = "Not included in this save.";
 const INVALID: &str = "Saved value is missing or invalid.";
 const BAD_TABLE: &str = "Saved table is invalid.";
 
-/// The decoded save, read the way `endgame-stats.js` reads it: `parseSaveKey`
-/// for every field, unsigned numbers unless a metric is explicitly signed.
+/// The decoded save: every field parsed from its saved JSON string, unsigned
+/// numbers unless a metric is explicitly signed.
 pub(crate) struct Access<'a> {
     data: &'a Map<String, Value>,
     options_key: &'static str,
@@ -192,12 +187,12 @@ impl<'a> Access<'a> {
         }
     }
 
-    /// How many characters the save carries, as `_characterCount` counts them.
+    /// How many characters the save carries.
     pub(crate) fn character_count(&self) -> usize {
         self.characters
     }
 
-    /// The character count, or the upstream error when the save has none.
+    /// The character count, or an error when the save has none.
     pub(crate) fn characters(&self) -> Result<usize, String> {
         match self.characters {
             0 => Err("No character data available.".into()),
@@ -210,12 +205,12 @@ impl<'a> Access<'a> {
         self.data.contains_key(key)
     }
 
-    /// A `parseSaveKey` field.
+    /// A field parsed from its saved JSON string.
     pub(crate) fn field(&self, key: &str) -> Result<Value, String> {
         json::parsed_field(self.data, key).ok_or_else(|| MISSING.to_string())
     }
 
-    /// A field drilled through array indexes, like `_read(save, key, ...path)`.
+    /// A field drilled through array indexes.
     pub(crate) fn at(&self, key: &str, path: &[usize]) -> Result<Value, String> {
         let mut value = self.field(key)?;
         for step in path {
@@ -237,7 +232,7 @@ impl<'a> Access<'a> {
         number(&self.at(key, path)?, signed)
     }
 
-    /// `option(index)` from `collectEndgameStats`.
+    /// The account option at `index`.
     pub(crate) fn option(&self, index: usize) -> Result<f64, String> {
         self.number_at(self.options_key, &[index], false)
     }
@@ -255,13 +250,13 @@ impl<'a> Access<'a> {
         entries(&self.at(key, path)?)
     }
 
-    /// `table(key, ...path)`: the recursive sum of a saved table.
+    /// The recursive sum of a saved table.
     pub(crate) fn sum_at(&self, key: &str, path: &[usize]) -> Result<f64, String> {
         sum(&self.at(key, path)?)
     }
 
-    /// `sumSlice(key, path, start, end)`: the sum of the numbered entries in a
-    /// half-open index range, as `totalDayMarketLevels` reads `FarmUpg`.
+    /// The sum of the numbered entries in a half-open index range, as
+    /// `totalDayMarketLevels` reads `FarmUpg`.
     pub(crate) fn slice_sum(
         &self,
         key: &str,
@@ -340,7 +335,7 @@ fn entries(value: &Value) -> Result<Vec<(String, Value)>, String> {
         .collect())
 }
 
-/// `_sum`: recurse into nested tables, add every scalar as a signed number.
+/// Recurse into nested tables, add every scalar as a signed number.
 fn sum(value: &Value) -> Result<f64, String> {
     let mut total = 0.0;
     for (_, entry) in entries(value)? {
@@ -352,7 +347,7 @@ fn sum(value: &Value) -> Result<f64, String> {
     Ok(total)
 }
 
-/// `_max`: the largest unsigned entry, never below zero.
+/// The largest unsigned entry, never below zero.
 pub(crate) fn max_zero(value: &Value) -> Result<f64, String> {
     let mut max = 0.0_f64;
     for (_, entry) in entries(value)? {
@@ -361,7 +356,7 @@ pub(crate) fn max_zero(value: &Value) -> Result<f64, String> {
     Ok(max)
 }
 
-/// `_number`: a finite number or numeric string; negatives only when `signed`.
+/// A finite number or numeric string; negatives only when `signed`.
 pub(crate) fn number(value: &Value, signed: bool) -> Result<f64, String> {
     let parsed = match value {
         Value::Number(number) => number.as_f64(),
@@ -377,12 +372,12 @@ pub(crate) fn number(value: &Value, signed: bool) -> Result<f64, String> {
     }
 }
 
-/// The saved row element at `step`, or the upstream missing-field error.
+/// The saved row element at `step`, or the missing-field error.
 pub(crate) fn element(value: &Value, step: usize) -> Result<Value, String> {
     step_value(value, step).ok_or_else(missing)
 }
 
-/// The upstream `_read` error for a field the save does not carry.
+/// The error for a field the save does not carry.
 pub(crate) fn missing() -> String {
     MISSING.into()
 }
@@ -396,7 +391,7 @@ fn step_value(value: &Value, step: usize) -> Option<Value> {
     }
 }
 
-/// `General` — the upstream leaderboard category.
+/// `General` — a leaderboard category.
 const GENERAL: &[&str] = &[
     "totalMoney",
     "totalLevels",
@@ -461,7 +456,7 @@ const GENERAL: &[&str] = &[
     "totalMenagerieBoostLevels",
 ];
 
-/// `Tasks` — the upstream leaderboard category.
+/// `Tasks` — a leaderboard category.
 const TASKS: &[&str] = &[
     "highestDamage",
     "afkTime",
@@ -476,7 +471,7 @@ const TASKS: &[&str] = &[
     "highestNugget",
 ];
 
-/// `Skills` — the upstream leaderboard category.
+/// `Skills` — a leaderboard category.
 const SKILLS: &[&str] = &[
     "totalSkillsLevels",
     "mining",
@@ -501,7 +496,7 @@ const SKILLS: &[&str] = &[
     "research",
 ];
 
-/// `Character` — the upstream leaderboard category.
+/// `Character` — a leaderboard category.
 const CHARACTER: &[&str] = &[
     "strength",
     "agility",
@@ -516,7 +511,7 @@ const CHARACTER: &[&str] = &[
     "mp",
 ];
 
-/// `Miscellaneous` — the upstream leaderboard category.
+/// `Miscellaneous` — a leaderboard category.
 const MISCELLANEOUS: &[&str] = &[
     "w1Colo",
     "w2Colo",
@@ -561,7 +556,7 @@ const MISCELLANEOUS: &[&str] = &[
     "highestMegaFlesh",
 ];
 
-/// `Masterclass` — the upstream leaderboard category.
+/// `Masterclass` — a leaderboard category.
 const MASTERCLASS: &[&str] = &[
     "totalGrimoireUpgrades",
     "totalBonesCollected",
@@ -578,7 +573,7 @@ const MASTERCLASS: &[&str] = &[
     "highestOutpostResourceRate",
 ];
 
-/// `Caverns` — the upstream leaderboard category.
+/// `Caverns` — a leaderboard category.
 const CAVERNS: &[&str] = &[
     "totalMeasurementLevels",
     "totalOpals",
@@ -606,7 +601,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn every_upstream_metric_appears_once_in_its_group() {
+    fn every_metric_appears_once_in_its_group() {
         let ids: Vec<&str> = GROUPS
             .iter()
             .flat_map(|(_, ids)| ids.iter().copied())
@@ -633,7 +628,7 @@ mod tests {
     }
 
     #[test]
-    fn labels_match_the_upstream_overrides_and_derivation() {
+    fn labels_use_their_overrides_then_the_camel_case_split() {
         assert_eq!(label("totalMoney"), "Total money");
         assert_eq!(label("totalLevels"), "Total character levels");
         assert_eq!(label("choppin"), "Chopping");

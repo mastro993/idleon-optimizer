@@ -449,7 +449,7 @@ fn magnifiers_card(state: &mut AppState, cx: &mut Context<AppState>) -> impl Int
         .child(assign_row)
 }
 
-/// The pool colour of a magnifier kind, as upstream's observation editor draws it.
+/// The pool colour of a magnifier kind, as the observation editor draws it.
 fn mag_color(kind: MagKind) -> gpui::Hsla {
     use gpui::rgb;
     match kind {

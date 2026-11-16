@@ -8,12 +8,7 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.
-
-## Upstream sources
-
-- fountain-calc.html
-- js/stats/systems/w5/fountain.js
+Implement fountain overview, currency values, upgrades, planner, marble planner, simulation, lucky coins/ducks and cost curves.
 
 ## UI
 
@@ -52,7 +47,6 @@ Depends on: FND-03 Shared save JSON import, FND-11 Shared formula tree and break
 
 Acceptance:
 
-- Values match upstream.
 - Missing bonuses are warned.
 - Rates update with the save.
 
@@ -94,6 +88,6 @@ Acceptance:
 
 ## Verification
 
-- Fixture matches upstream.
+- Formula tests cover the section's game rules.
 - Planner invariant.
 - Harness.

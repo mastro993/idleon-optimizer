@@ -1,6 +1,5 @@
 //! The Sushi tab: the knowledge totals and the tier table with each tier's
-//! perfecto odds, knowledge bonus and Ring of Glory reward, as `_renderSushi`
-//! in `js/ui/sushi-ui.js`.
+//! perfecto odds, knowledge bonus and Ring of Glory reward.
 
 use crate::state::AppState;
 use ely_gpui_component::forms::Checkbox;

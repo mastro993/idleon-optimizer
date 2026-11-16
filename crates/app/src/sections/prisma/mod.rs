@@ -1,16 +1,16 @@
 //! The Prisma Calculator: the plan, the streamed impact search and its coverage.
 //!
-//! Ported from `prisma-calc.html` and `js/ui/prisma.js`. The search runs off the
-//! UI thread through the shared task runner, so it reports progress and can be
-//! cancelled; cancelling keeps the result already on screen, and changing the
-//! save, character, cauldron or AFK hours marks it stale.
+//! The search runs off the UI thread through the shared task runner, so it
+//! reports progress and can be cancelled; cancelling keeps the result already
+//! on screen, and changing the save, character, cauldron or AFK hours marks it
+//! stale.
 //!
 //! Each row compares the saved scope without this bubble's Prisma with the
 //! scope with it, so the columns are per-metric deltas: the bubble's own bonus
 //! (an intermediate) and every downstream outcome the build models, today the
 //! Statue EXP retention the STARTUE EXP bubble buys. The coverage table names
-//! every effect, the native systems upstream's source audit traced for it and
-//! whether this build computes a downstream metric for it.
+//! every effect, the native game systems that consume it and whether this build
+//! computes a downstream metric for it.
 
 mod actions;
 
@@ -34,7 +34,7 @@ use idleon_prisma::{self as prisma, Cauldron, Change, Consumer, Outcome, Plan, R
 use idleon_ui::format;
 use idleon_ui::run_chrome;
 
-/// The AFK claim range upstream validates, in hours.
+/// The AFK claim range the calculator accepts, in hours.
 pub(crate) const MIN_HOURS: f64 = 0.034;
 pub(crate) const MAX_HOURS: f64 = 55_555.0;
 
@@ -108,7 +108,7 @@ pub(crate) struct RunInputs {
     pub(crate) afk_seconds: u64,
 }
 
-/// Whether the AFK claim is inside the upstream range.
+/// Whether the AFK claim is inside the accepted range.
 pub(crate) fn valid_hours(hours: f64) -> bool {
     hours.is_finite() && (MIN_HOURS..=MAX_HOURS).contains(&hours)
 }
@@ -715,8 +715,8 @@ fn change_text(change: &Change, compact: bool) -> String {
     }
 }
 
-/// The native reference a consumer row names, trimmed the way the upstream
-/// detail list prints it.
+/// The native reference a consumer row names, trimmed the way the detail list
+/// prints it.
 fn consumer_text(consumer: &Consumer) -> String {
     let method = consumer
         .method
@@ -847,7 +847,7 @@ fn coverage_card(outcome: Option<&Outcome>, muted: gpui::Hsla) -> AnyElement {
         .child(
             div().px_3().pb_3().child(
                 Caption::new(
-                    "Native consumers are the game scripts upstream's audit traced for each effect; \
+                    "Native consumers are the game scripts that read each effect; \
                      they do not mean this build computes them. A missing effect has no damage, \
                      stats, skills or account-total outcome yet: its bubble bonus is only an \
                      intermediate.",

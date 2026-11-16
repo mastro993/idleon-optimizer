@@ -1,10 +1,9 @@
 //! The save side of the Minehead tab: the upgrade levels, the current floor
 //! and every account term the currency and damage formulas read.
 //!
-//! Upstream keeps these on `saveData` (`js/save/loader.js`): `stateR7` is
-//! `Research[7]`, `mineheadUpgLevels` is `Research[8]`, and the rest come from
-//! the account systems the shared decoder already reads. A field the save does
-//! not carry is reported, never guessed.
+//! `Research[7]` holds the floor state, `Research[8]` the upgrade levels, and
+//! the rest come from the account systems the shared decoder already reads. A
+//! field the save does not carry is reported, never guessed.
 
 use crate::data::{GameData, game};
 use crate::math::{
@@ -335,7 +334,7 @@ fn research_rows(save: &Save, warnings: &mut Vec<String>) -> Vec<Vec<serde_json:
         .collect()
 }
 
-/// `serverVars.A_MineHP` and `A_MineCost`, defaulting to one upstream.
+/// `serverVars.A_MineHP` and `A_MineCost`, each defaulting to one.
 fn server_vars(save: &Save) -> (f64, f64) {
     let decoded = |key: &str| save.get(key).and_then(|value| json::number(&value));
     let wrapper = |key: &str| {

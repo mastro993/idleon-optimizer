@@ -1,30 +1,27 @@
 //! The God Rank offering model: its odds, its Divinity point cost and the
 //! attempts a plan budgets for a target confidence.
-//!
-//! Ports `offeringOdds`, `offeringCost` and the attempt rows of `offeringStats`
-//! from `js/stats/systems/w5/coral-god-rank.js`.
 
 use super::Inputs;
 
-/// `offeringOdds`: the success chance of one offering per offer tier.
+/// The success chance of one offering per offer tier.
 const OFFERING_ODDS: [f64; 6] = [0.01, 0.05, 0.1, 0.25, 0.5, 1.0];
 
-/// The highest free-offering chance `Y4` grants, as `offeringStats` caps it.
+/// The highest free-offering chance `Y4` grants.
 const MAX_FREE_CHANCE: f64 = 0.35;
 
 /// The planning confidence bounds the beam search clamps to.
 const MIN_CONFIDENCE: f64 = 0.5;
 const MAX_CONFIDENCE: f64 = 0.999_999;
 
-/// `offeringOdds`: the tier caps at the six-row odds table.
+/// The tier caps at the six-row odds table.
 fn offering_odds(tier: u32) -> f64 {
     OFFERING_ODDS[tier.min(5) as usize]
 }
 
 /// What one offering attempt costs in Divinity points.
 ///
-/// `offeringCost` returns the cost an offering at `god_rank` carries; from rank
-/// 3 the server's `DivCostAfter3` percent compounds, capped at 80%.
+/// An offering at `god_rank` carries this cost; from rank 3 the server's
+/// `DivCostAfter3` percent compounds, capped at 80%.
 fn offering_cost(god_rank: u32, div_cost_after3: f64, tier: u32) -> f64 {
     let rank = f64::from(god_rank);
     let odds = offering_odds(tier);
@@ -51,8 +48,8 @@ pub struct Offer {
     pub cost: f64,
     /// The chance an offering costs nothing, from the Y4 bubble.
     pub free_chance: f64,
-    /// `expectedSpendForOneSuccess`: the Divinity points one successful
-    /// offering expects to spend, counting the free attempts.
+    /// The Divinity points one successful offering expects to spend, counting
+    /// the free attempts.
     pub expected_spend_per_success: f64,
     /// Attempts to reach the planning confidence.
     pub attempts: u32,
@@ -88,7 +85,7 @@ pub fn offer(inputs: &Inputs, god_rank: u32) -> Offer {
     }
 }
 
-/// `offeringStats`: the attempts a confidence needs at these odds.
+/// The attempts a confidence needs at these odds.
 fn attempts(odds: f64, confidence: f64) -> u32 {
     if odds >= 1.0 {
         1
@@ -114,7 +111,6 @@ mod tests {
     #[test]
     fn a_cost_is_floored_at_one_and_ceiled_below_a_million() {
         assert_eq!(offering_cost(0, 0.0, 0), 1.0);
-        // Values upstream's `offeringStats` reports at tier 1.
         assert_eq!(offering_cost(0, 0.0, 1), 5.0);
         assert_eq!(offering_cost(1, 0.0, 1), 18.0);
     }

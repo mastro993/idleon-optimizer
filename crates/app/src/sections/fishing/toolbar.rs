@@ -206,7 +206,7 @@ pub(super) fn formula_card(tree: &gpui::Entity<idleon_ui::formula::FormulaTree>)
         .into_any_element()
 }
 
-/// The toolkit stats the selectors list, as the upstream `toolkitStatText`.
+/// The toolkit stats the selectors list.
 fn stats_text(stats: &fishing::ToolkitStats) -> String {
     [
         ("D0", stats.d0),
@@ -239,7 +239,7 @@ fn depth_text(bonus: &[f64; 4]) -> String {
     }
 }
 
-/// The upstream "Reset to saved" action.
+/// The "Reset to saved" action.
 pub(crate) fn reset(cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     Button::new("fishing-reset", "Reset to saved")

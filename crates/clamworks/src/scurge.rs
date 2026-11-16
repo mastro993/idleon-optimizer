@@ -1,37 +1,34 @@
 //! Scurge combat: the EXP a Clamworks kill banks, the Self Affliction
 //! comparison and the allocation of unspent Scurge points.
 //!
-//! Ports `js/stats/systems/w7/clamworks-scurge.js` and the `scurgeKill` half of
-//! `js/stats/systems/common/combat-sim-progress.js`: one Clamworks kill banks
-//! `(1 + RECKONING) × (1 + EVEN BETTER / 100) × (1 + SELF AFFLICTION / 100) ×
-//! (1 + SWARMING × other players / 100)` Scurge EXP.
+//! One Clamworks kill banks `(1 + RECKONING) × (1 + EVEN BETTER / 100) × (1 +
+//! SELF AFFLICTION / 100) × (1 + SWARMING × other players / 100)` Scurge EXP.
 //!
-//! The two upstream panels are one plan in two modes. The affliction mode moves
-//! only SELF AFFLICTION, from zero to the selected limit, and leaves every other
-//! upgrade saved; the upgrade mode holds SELF AFFLICTION and spends the unspent
-//! points across the unlocked RECKONING, EVEN BETTER and SWARMING to maximise
-//! immediate EXP per kill. Points freed by a lower SELF AFFLICTION stay unspent,
-//! as upstream's own note says.
+//! The two comparison panels are one plan in two modes. The affliction mode
+//! moves only SELF AFFLICTION, from zero to the selected limit, and leaves
+//! every other upgrade saved; the upgrade mode holds SELF AFFLICTION and spends
+//! the unspent points across the unlocked RECKONING, EVEN BETTER and SWARMING
+//! to maximise immediate EXP per kill. Points freed by a lower SELF AFFLICTION
+//! stay unspent.
 //!
-//! Upstream measures both panels by running the combat simulator. Clam Work is
-//! not a map that simulator runs here, so the app multiplies
-//! [`Row::exp_per_kill`] by the character's kills per hour, the same stand-in the
-//! AFK claim takes.
+//! Clam Work is not a map the combat simulator runs here, so the app multiplies
+//! [`Row::exp_per_kill`] by the character's kills per hour, the same stand-in
+//! the AFK claim takes.
 
 use super::{Clamworks, SCURGE_COUNT};
 use crate::data::clamworks;
 
-/// The most Self Affliction levels upstream accepts.
+/// The most Self Affliction levels the plan accepts.
 pub const MAX_AFFLICTION: u32 = 150;
-/// The most other players upstream accepts.
+/// The most other players the plan accepts.
 pub const MAX_OTHER_PLAYERS: u32 = 50;
 
 /// SELF AFFLICTION, the one upgrade the affliction mode moves.
 const SELF_AFFLICTION: usize = 2;
-/// The EXP upgrades the allocation may spend on, in upstream order.
+/// The EXP upgrades the allocation may spend on, in the game's order.
 const ALLOCATED: [usize; 3] = [0, 4, 7];
 
-/// The two upstream comparison panels.
+/// The two comparison panels.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
@@ -258,8 +255,8 @@ impl Plan {
     }
 
     /// The row banking the most Scurge EXP per kill. Every row shares one
-    /// kills-per-hour input, so this is also upstream's best EXP an hour; ties
-    /// keep the earlier row, as upstream's own reduction does.
+    /// kills-per-hour input, so this is also the best EXP an hour; ties keep
+    /// the earlier row.
     pub fn best(&self) -> &Row {
         let mut best = self.baseline();
         for row in &self.rows[1..] {
@@ -270,8 +267,8 @@ impl Plan {
         best
     }
 
-    /// The extra Scurge EXP an hour the row banks over the saved allocation, as
-    /// upstream's `expGainPerHour` prints it, zero for the baseline.
+    /// The extra Scurge EXP an hour the row banks over the saved allocation,
+    /// zero for the baseline.
     pub fn gain(&self, row: &Row, kills_per_hour: f64) -> f64 {
         row.exp_per_hour(kills_per_hour) - self.baseline().exp_per_hour(kills_per_hour)
     }

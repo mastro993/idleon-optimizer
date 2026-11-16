@@ -1,10 +1,9 @@
 //! The forecast: an event projection over the native collect pass.
 //!
-//! Ported from `js/stats/systems/w7/royal-forecast.js`. State changes only at
-//! the collects the player places, the menu-open windows that collect
-//! continuously, and the daily reset; between them time banks and "ghost"
-//! markers show what a collect at that moment would commit. Layout, points and
-//! currency are never spent.
+//! State changes only at the collects the player places, the menu-open windows
+//! that collect continuously, and the daily reset; between them time banks and
+//! "ghost" markers show what a collect at that moment would commit. Layout,
+//! points and currency are never spent.
 //!
 //! The engine walks the horizon boundary by boundary. A collect commits one
 //! native pass over the banked time; a reset refills the drained nodes when
@@ -46,7 +45,7 @@ pub struct ForecastOptions {
 }
 
 impl Default for ForecastOptions {
-    /// The upstream defaults: a three-day horizon, no collects and no windows.
+    /// The defaults: a three-day horizon, no collects and no windows.
     fn default() -> Self {
         Self {
             horizon_hours: HORIZON.2,
@@ -56,8 +55,7 @@ impl Default for ForecastOptions {
     }
 }
 
-/// One Armory shelf a collect would make affordable: upstream
-/// `_armoryCandidates` entry.
+/// One Armory shelf a collect would make affordable.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Affordable {
     pub index: usize,
@@ -69,7 +67,7 @@ pub struct Affordable {
     pub at: f64,
 }
 
-/// What one collect committed: upstream `_commit`.
+/// What one collect committed.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Commit {
     pub at: f64,
@@ -83,7 +81,7 @@ pub struct Commit {
     pub affordable: Vec<Affordable>,
 }
 
-/// What happened across one menu-open window: upstream `_active` summary.
+/// What happened across one menu-open window.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct WindowSummary {
     pub currency: BTreeMap<i64, f64>,
@@ -95,7 +93,7 @@ pub struct WindowSummary {
     pub resets: Vec<ResetEvent>,
 }
 
-/// One menu-open window: upstream `_active`.
+/// One menu-open window.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Window {
     pub start: f64,
@@ -114,7 +112,7 @@ pub struct Missed {
     pub maps: Vec<usize>,
 }
 
-/// One daily reset: upstream `_reset`.
+/// One daily reset.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ResetEvent {
     pub at: f64,
@@ -152,7 +150,7 @@ pub struct ClearGhost {
     pub at: f64,
 }
 
-/// The events a collect would commit at each segment: upstream `_segment` ghosts.
+/// The events a collect would commit at each segment.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Ghosts {
     pub fills: Vec<FillGhost>,
@@ -190,7 +188,7 @@ pub struct Segment {
     pub currency: BTreeMap<i64, Vec<(f64, f64)>>,
 }
 
-/// The forecast's own totals: upstream `_summary`.
+/// The forecast's own totals.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Summary {
     pub collects: usize,
@@ -205,7 +203,7 @@ pub struct Summary {
     pub banked_at_horizon: f64,
 }
 
-/// The projection: upstream `forecastRoyal` result.
+/// The projection.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Forecast {
     pub horizon_hours: f64,
@@ -234,7 +232,7 @@ pub(crate) use engine::{Boundary, BoundaryKind, active, commit, reset, segment};
 pub(crate) use model::{armory_candidates, balances, fill_hours, gains, model_of, rank_ghosts};
 
 impl RoyalGuardian {
-    /// The forecast over the current state: upstream `forecastRoyal`.
+    /// The forecast over the current state.
     pub fn forecast(&self, options: &ForecastOptions) -> Forecast {
         let horizon = clamp_horizon(options.horizon_hours);
         let mut state = self.clone();
@@ -391,7 +389,7 @@ impl RoyalGuardian {
     }
 }
 
-/// The forecast's totals: upstream `_summary`.
+/// The forecast's totals.
 fn summary(forecast: &Forecast) -> Summary {
     let mut summary = Summary {
         collects: forecast.collects.len(),
@@ -441,7 +439,7 @@ fn summary(forecast: &Forecast) -> Summary {
     summary
 }
 
-/// Clamp the horizon the way upstream `_clamp` does.
+/// Clamp the horizon to its allowed range.
 fn clamp_horizon(value: f64) -> f64 {
     let (min, max, fallback) = HORIZON;
     if value.is_finite() {
@@ -451,8 +449,7 @@ fn clamp_horizon(value: f64) -> f64 {
     }
 }
 
-/// The requested collect hours, rounded to a microsecond and deduplicated:
-/// upstream `_times`.
+/// The requested collect hours, rounded to a microsecond and deduplicated.
 fn round_times(list: &[f64], horizon: f64) -> Vec<f64> {
     let mut hours: Vec<f64> = list
         .iter()
@@ -465,7 +462,7 @@ fn round_times(list: &[f64], horizon: f64) -> Vec<f64> {
     hours
 }
 
-/// Clamp and merge the menu-open windows: upstream `_windows`.
+/// Clamp and merge the menu-open windows.
 fn merge_windows(list: &[(f64, f64)], horizon: f64) -> Vec<(f64, f64)> {
     let mut items: Vec<(f64, f64)> = list
         .iter()

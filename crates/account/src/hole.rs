@@ -1,7 +1,7 @@
-//! The Hole's Gambit chain, from `js/stats/systems/w5/hole.js`.
+//! The Hole's Gambit chain.
 //!
 //! Gambit points are the six saved scores, each weighted by its world and
-//! multiplied by `gambitPTSmulti`: measurement 13, the Bolaia study, cavern
+//! multiplied by the Gambit point multiplier: measurement 13, the Bolaia study, cavern
 //! upgrade 78, the W5 monument slot, the two DR jars, legend 29 and arcane
 //! upgrade 47. [`Decoder::gambit_bonus7`] pays `HolesInfo[71][7]`'s base times
 //! the log of those points once they clear the bonus-8 threshold, which is the
@@ -11,7 +11,7 @@ use super::Decoder;
 use idleon_common::curve;
 use idleon_save::fields;
 
-/// `deathNoteRank(kills, 0, rift)`: the overkill tier one mob's kills buy.
+/// The Death Note rank: the overkill tier one mob's kills buy.
 fn death_note_rank(kills: f64, rift: f64) -> f64 {
     if kills < 25_000.0 {
         0.0
@@ -34,13 +34,13 @@ fn death_note_rank(kills: f64, rift: f64) -> f64 {
     }
 }
 
-/// `marbleBon`: the multiplier a marble level grants.
+/// The fountain marble bonus: the multiplier a marble level grants.
 fn marble_bonus(level: f64) -> f64 {
     if level <= 0.0 { 1.0 } else { 1.5 + 0.5 * level }
 }
 
 impl Decoder<'_> {
-    /// `computeGambitBonus7`: the Monster Cash percentage Gambit tier 7 pays.
+    /// Gambit bonus 7: the Monster Cash percentage Gambit tier 7 pays.
     pub fn gambit_bonus7(&self) -> f64 {
         let points = self.gambit_points();
         let threshold = 2000.0 + 1000.0 * 8.0 * (1.0 + 7.0 / 5.0) * 1.26_f64.powf(7.0);
@@ -68,7 +68,7 @@ impl Decoder<'_> {
         raw * self.gambit_multi()
     }
 
-    /// `gambitPTSmulti`: the multiplier the Gambit point total reads.
+    /// The Gambit point multiplier: the multiplier the Gambit point total reads.
     fn gambit_multi(&self) -> f64 {
         let legend = self.legend(29);
         let jar = |index: usize| {
@@ -107,11 +107,11 @@ impl Decoder<'_> {
         base * self.measurement_multiplier(idleon_fountain::measurement_type(index))
     }
 
-    /// `_measurementMulti`: 18 % a unit, then 8 % more past the fifth.
+    /// The measurement multiplier: 18 % a unit, then 8 % more past the fifth.
     ///
-    /// Only the Death Note quantity is ported, because measurement 13 is its one
+    /// Only the Death Note quantity is modelled, because measurement 13 is its one
     /// `HolesInfo[52]` type in the tables this build carries.
-    /// shortcut: measurement types 0, 1, 3, 8 and 9 read zero; port them when a
+    /// shortcut: measurement types 0, 1, 3, 8 and 9 read zero; add them when a
     /// Gambit bonus starts reading one.
     fn measurement_multiplier(&self, kind: u32) -> f64 {
         let qty = if kind == 6 {
@@ -126,7 +126,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `_computeOverkillQTY`: every Death Note mob's overkill tier, summed.
+    /// The overkill total: every Death Note mob's overkill tier, summed.
     fn overkill_qty(&self) -> f64 {
         let rift = self.row_at("Rift", 0);
         let rift_bonus = if rift >= 20.0 { rift } else { 0.0 };
@@ -148,7 +148,7 @@ impl Decoder<'_> {
         total
     }
 
-    /// `computeMonumentROGbonus(tier, index)`: one W5 monument slot's bonus.
+    /// One W5 monument slot's bonus at `tier` and `index`.
     fn monument_rog(&self, tier: usize, index: usize) -> f64 {
         let slot = 10 * tier + index;
         let level = self.nested("Holes", &[15, slot]);
@@ -168,7 +168,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `bonTOT(Holes[31], Holes[32], tier, 13)`: the monument upgrade's level,
+    /// Fountain upgrade 13 of `tier` (`Holes[31]` levels, `Holes[32]` marbles): its level,
     /// scaled by its marble level.
     fn fountain_monument(&self, tier: usize) -> f64 {
         let level = self.nested("Holes", &[31, tier, 13]);
@@ -179,7 +179,7 @@ impl Decoder<'_> {
         (marble_bonus(marble) * level * per_level).round()
     }
 
-    /// `cosmoBonus(tier, index)`: the bonus one cosmo upgrade level grants.
+    /// The cosmo upgrade bonus: the bonus one cosmo upgrade level grants.
     pub fn cosmo_bonus(&self, tier: usize, index: usize) -> f64 {
         let level = self.nested("Holes", &[4 + tier, index]);
         (idleon_fountain::cosmo_base(tier, index) * level).floor()
@@ -248,7 +248,7 @@ mod tests {
     }
 
     #[test]
-    fn the_death_note_ranks_follow_the_upstream_thresholds() {
+    fn the_death_note_ranks_follow_the_game_thresholds() {
         assert_eq!(death_note_rank(24_999.0, 0.0), 0.0);
         assert_eq!(death_note_rank(25_000.0, 0.0), 1.0);
         assert_eq!(death_note_rank(100_000_000.0, 0.0), 10.0);

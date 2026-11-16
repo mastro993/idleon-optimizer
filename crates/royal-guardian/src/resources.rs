@@ -1,12 +1,6 @@
 //! The resource nodes: their grade, capacity, collected progress and the drain
 //! projection that turns a collection rate into hours.
 //!
-//! Ported from `resourceGrade`, `resourceRawProgress`, `resourceCapacityAtGrade`,
-//! `resourceCapacity`, `resourceCollected`, `resourceRemaining`,
-//! `resourceDrained`, `resourceDrainHours`, `resourceCollectedWithin`,
-//! `resourceEmptiedWithin`, `resourceWindowMetrics` and
-//! `nextResourceCycleMetrics`.
-//!
 //! `RoyalG[4]` is the node's collected progress, not its inventory: the game
 //! writes `-1` once the node is drained, so the saved cell reads the full
 //! capacity instead and the collection rate fills the node towards it.
@@ -32,7 +26,7 @@ pub struct ResourceNode {
     pub currency_slot: i64,
 }
 
-/// One node's fixed-window projection: upstream `resourceWindowMetrics`.
+/// One node's fixed-window projection.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct WindowMetrics {
     pub remaining: f64,
@@ -47,7 +41,7 @@ pub struct WindowMetrics {
     pub already_empty: bool,
 }
 
-/// One node's next refill: upstream `nextResourceCycleMetrics`.
+/// One node's next refill.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct NodeCycle {
     pub grade: f64,
@@ -74,18 +68,17 @@ pub struct NodeCycle {
 }
 
 impl RoyalGuardian {
-    /// A node's saved grade: upstream `resourceGrade`.
+    /// A node's saved grade.
     pub fn resource_grade(&self, resource: usize) -> f64 {
         self.g_cell(row::GRADES, resource)
     }
 
-    /// A node's saved progress, drained sentinel included: upstream
-    /// `resourceRawProgress`.
+    /// A node's saved progress, drained sentinel included.
     pub fn resource_raw_progress(&self, resource: usize) -> f64 {
         self.g_cell(row::RESOURCES, resource)
     }
 
-    /// A node's capacity at one grade: upstream `resourceCapacityAtGrade`.
+    /// A node's capacity at one grade.
     pub fn resource_capacity_at_grade(resource: usize, grade: f64) -> f64 {
         let grade = if grade.is_finite() {
             grade.max(0.0).floor()
@@ -97,14 +90,14 @@ impl RoyalGuardian {
             * 5f64.powf(Self::resource_world(resource) as f64)
     }
 
-    /// A node's capacity at its saved grade: upstream `resourceCapacity`.
+    /// A node's capacity at its saved grade.
     pub fn resource_capacity(&self, resource: usize) -> f64 {
         5.0 * base_capacity(resource)
             * 1.5f64.powf(self.resource_grade(resource))
             * 5f64.powf(Self::resource_world(resource) as f64)
     }
 
-    /// What the node holds, clamped to its capacity: upstream `resourceCollected`.
+    /// What the node holds, clamped to its capacity.
     pub fn resource_collected(&self, resource: usize) -> f64 {
         let capacity = self.resource_capacity(resource);
         let raw = self.resource_raw_progress(resource);
@@ -115,17 +108,17 @@ impl RoyalGuardian {
         raw.max(0.0).min(capacity.max(0.0))
     }
 
-    /// What is still missing from a full node: upstream `resourceRemaining`.
+    /// What is still missing from a full node.
     pub fn resource_remaining(&self, resource: usize) -> f64 {
         (self.resource_capacity(resource) - self.resource_collected(resource)).max(0.0)
     }
 
-    /// Whether the node carries the drained sentinel: upstream `resourceDrained`.
+    /// Whether the node carries the drained sentinel.
     pub fn resource_drained(&self, resource: usize) -> bool {
         self.resource_raw_progress(resource) == -1.0
     }
 
-    /// Hours for `rate` to drain what is left: upstream `resourceDrainHours`.
+    /// Hours for `rate` to drain what is left.
     pub fn resource_drain_hours(&self, resource: usize, rate: f64) -> f64 {
         let remaining = self.resource_remaining(resource);
         if remaining == 0.0 {
@@ -137,7 +130,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// What `rate` collects inside `hours`: upstream `resourceCollectedWithin`.
+    /// What `rate` collects inside `hours`.
     pub fn resource_collected_within(&self, resource: usize, rate: f64, hours: f64) -> f64 {
         if self.resource_drained(resource) {
             return 0.0;
@@ -147,8 +140,7 @@ impl RoyalGuardian {
             .max(0.0)
     }
 
-    /// Whether `rate` empties the node inside `hours`: upstream
-    /// `resourceEmptiedWithin`.
+    /// Whether `rate` empties the node inside `hours`.
     pub fn resource_emptied_within(&self, resource: usize, rate: f64, hours: f64) -> bool {
         self.resource_drained(resource)
             || self.resource_remaining(resource) == 0.0
@@ -275,7 +267,7 @@ fn base_capacity(resource: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// A node's anchor on the royal map: upstream `_resourcePosition`.
+/// A node's anchor on the royal map.
 pub fn resource_position(resource: usize) -> Option<(f64, f64)> {
     data::resource(resource).map(|row| (row.x + 28.0, row.y + 26.0))
 }

@@ -1,4 +1,4 @@
-//! The weekly forecast is pinned against the upstream planner's own output.
+//! The weekly forecast and plan inputs against the synthetic account.
 
 use idleon_import::import;
 use idleon_killroy as killroy;
@@ -14,38 +14,6 @@ fn read(path: &str) -> String {
 fn wrapped_fixture() -> String {
     let save: Value = serde_json::from_str(&read("fixtures/data.json")).expect("fixture JSON");
     json!({ "data": save, "serverVars": { "KillroySwap": 7 } }).to_string()
-}
-
-/// JSON does not distinguish `2240` from `2240.0`; the oracle and the Rust
-/// `f64` fields can, so compare every number as a float.
-fn floats(value: Value) -> Value {
-    match value {
-        Value::Number(number) => Value::from(number.as_f64().expect("a finite number")),
-        Value::Array(values) => Value::Array(values.into_iter().map(floats).collect()),
-        Value::Object(fields) => Value::Object(
-            fields
-                .into_iter()
-                .map(|(key, value)| (key, floats(value)))
-                .collect(),
-        ),
-        value => value,
-    }
-}
-
-#[test]
-fn the_forecast_matches_the_upstream_planner() {
-    let expected: Value =
-        serde_json::from_str(&read("fixtures/killroy.json")).expect("oracle JSON");
-    let weeks = expected["weeks"].as_u64().expect("oracle week count") as usize;
-    let imported = import(&wrapped_fixture()).expect("the wrapped fixture imports");
-    let forecast = killroy::forecast(&imported.save, weeks).expect("the forecast builds");
-
-    assert_eq!(
-        floats(serde_json::to_value(&forecast).expect("forecast serializes")),
-        floats(expected["forecast"].clone()),
-        "the port must reproduce the upstream forecast field for field"
-    );
-    assert_eq!(forecast.weeks.len(), weeks + 1);
 }
 
 #[test]

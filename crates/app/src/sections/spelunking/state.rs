@@ -2,7 +2,7 @@
 //!
 //! The state holds what the save cannot: the chosen cave, mode, policy,
 //! full-clear and speed, the party slots, the belt and memorized elixirs, and
-//! the account inputs the upstream stat context would supply (power, extra
+//! the account inputs the account's stat context would supply (power, extra
 //! exits and each character's maximum stamina). Importing a save adopts its
 //! records and saved selections; everything else stays as the user left it.
 
@@ -472,7 +472,7 @@ impl State {
         self.account.max_stamina[character] = value;
     }
 
-    /// Anchor the depth window around the current cave's record, as upstream does.
+    /// Anchor the depth window around the current cave's record.
     pub(crate) fn reset_range(&mut self, inputs: &Inputs) {
         let record = records(inputs, self.manic)
             .get(self.cave)

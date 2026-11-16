@@ -1,32 +1,23 @@
 //! JO-05: the coordinator, the multi-start full-board layout search.
 //!
-//! Ports the coordinator from `js/optimizers/jelly-coordinator.js`
-//! (`jellySelectSharedElites`, `jellySearchAssignment`) and the bounded
-//! construction and local search of `createJellyLayoutSearch` from
-//! `js/stats/systems/w7/jelly-operator.js`:
+//! The coordinator schedules a bounded construction and local search:
 //!
-//! - a *start* builds a full board from composition seeds (the greedy
-//!   `greedyCompositionSeed` over anchor and cell-type orders) and its shared
-//!   elites, then keeps a diverse beam of placements, replacements, relocations
-//!   and re-fills (`placeWithReplacement`, `fillOpenSlots`,
-//!   `selectDiverseBy`) across the build, saved-board and refinement rounds;
+//! - a *start* builds a full board from composition seeds (a greedy pass over
+//!   anchor and cell-type orders) and its shared elites, then keeps a diverse
+//!   beam of placements, replacements, relocations and re-fills across the
+//!   build, saved-board and refinement rounds;
 //! - the coordinator rotates one focus per start (`explore`, `refine`,
 //!   `repair`, `measure`) and hands the previous starts' strongest, most
 //!   distinct layouts to the next one as shared elites;
 //! - the strongest finalists are compared with the saved board on the same
-//!   seeds (`simulateJellyTrials`, `simulatedObjectiveScore`,
-//!   `pairedOperationConfidence`) and the recommendation is never worse than
-//!   the board that was handed in.
+//!   seeds with paired trials, and the recommendation is never worse than the
+//!   board that was handed in.
 //!
-//! The upstream search is a multi-worker stochastic engine with policy
-//! screening, exact repair, certification and wall-clock scheduling. This port
-//! keeps the coordinator and the bounded search it schedules, and drops the
-//! stages that only exist to speed that engine up: the coordinator's payoff
-//! scheduling (it reads `performance.now()`, so it would make the result depend
-//! on the machine), policy screening (a finalist runs the save's Fever and
-//! revive policy), exact enumeration and certificates. Every search round is a
-//! total order on a seeded generator, so the same inputs always produce the
-//! same board.
+//! The search has no wall-clock payoff scheduling (it would make the result
+//! depend on the machine), no policy screening (a finalist runs the save's
+//! Fever and revive policy) and no exact enumeration or certificates. Every
+//! search round is a total order on a seeded generator, so the same inputs
+//! always produce the same board.
 
 use super::board::{self, Layout};
 use super::data;
@@ -37,7 +28,7 @@ use super::{Jelly, PROXIMITY_ANCHORS};
 use idleon_common::Progress;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-/// What one start concentrates on (`FOCUSES`), in the page's own order.
+/// What one start concentrates on, in rotation order.
 #[derive(
     Clone,
     Copy,
@@ -86,7 +77,7 @@ impl Focus {
     }
 }
 
-/// How many elites a start hands to the next (`jellySelectSharedElites` limit).
+/// How many elites a start hands to the next.
 pub const SHARED_ELITES: usize = 6;
 
 /// The knobs one optimizer run reads.
@@ -157,9 +148,9 @@ pub struct Start {
     pub focus: Focus,
     pub layout: Layout,
     pub score: f64,
-    /// What the start cost, in the coordinator's own units. The page reads the
-    /// elapsed milliseconds; this port counts the layouts the start scored, so
-    /// the scheduling stays a deterministic function of its inputs.
+    /// What the start cost, in the coordinator's own units: the layouts the
+    /// start scored, so the scheduling stays a deterministic function of its
+    /// inputs.
     pub elapsed_ms: f64,
     /// The strongest score when the start began, which the payoff reads.
     pub baseline_score: Option<f64>,
@@ -173,16 +164,16 @@ pub struct Elite {
     pub score: f64,
 }
 
-/// What the coordinator assigns one start (`jellySearchAssignment`).
+/// What the coordinator assigns one start.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Assignment {
     pub focus: Focus,
     pub iterations: usize,
     pub saved_refinement_rounds: usize,
-    /// The exact-repair budget the `repair` focus sets (`activeExactNodeBudget`);
-    /// this port reads its presence as the extra repair round's trigger.
+    /// The exact-repair budget the `repair` focus sets; its presence triggers
+    /// the extra repair round.
     pub active_exact_node_budget: Option<usize>,
-    /// The strongest score the earlier starts measured (`baselineScore`).
+    /// The strongest score the earlier starts measured.
     pub baseline_score: Option<f64>,
     /// The starts whose rows this assignment read, in ascending order.
     pub source_starts: Vec<usize>,
@@ -236,7 +227,7 @@ pub struct Optimization {
 
 const NOTE: &str = "Every start builds full boards from composition seeds and the coordinator's shared elites, then keeps a diverse beam of placements, replacements and relocations across the build, saved-board and refinement rounds. The strongest finalists are simulated on the saved board's own seeds, and the recommendation is never worse than the board that was handed in.";
 
-/// `jellyLayoutKey`: the anchor-to-type map as one comparable string.
+/// The anchor-to-type map as one comparable string.
 pub fn layout_key(layout: &Layout) -> String {
     layout
         .iter()
@@ -245,7 +236,7 @@ pub fn layout_key(layout: &Layout) -> String {
         .join("|")
 }
 
-/// `jellySelectSharedElites`: the strongest, sufficiently distinct leaders.
+/// The strongest, sufficiently distinct leaders.
 pub fn shared_elites(rows: &[Start], limit: usize) -> Vec<Elite> {
     let mut ranked: Vec<&Start> = rows.iter().filter(|row| row.score.is_finite()).collect();
     ranked.sort_by(|a, b| {
@@ -288,13 +279,13 @@ pub fn shared_elites(rows: &[Start], limit: usize) -> Vec<Elite> {
         .collect()
 }
 
-/// `jellySearchAssignment`: the focus and the elites one start receives.
+/// The focus and the elites one start receives.
 ///
-/// Every start keeps the focus the page's rotation assigns, and a later start
+/// Every start keeps the focus the rotation assigns, and a later start
 /// may switch focus by the payoff each earlier focus bought per second: an
 /// untried focus first, then the upper confidence bound over the tested ones.
-/// The page reads the elapsed milliseconds; this port reads the start's own
-/// score count, so the recommendation stays independent of the machine.
+/// The cost is the start's own score count, not elapsed time, so the
+/// recommendation stays independent of the machine.
 pub fn assignment(rows: &[Start], start: usize, options: &Options) -> Assignment {
     let mut focus = Focus::ALL[start % Focus::ALL.len()];
     if !start.is_multiple_of(4) && !rows.is_empty() {
@@ -367,7 +358,7 @@ pub fn assignment(rows: &[Start], start: usize, options: &Options) -> Assignment
     }
 }
 
-/// `jellyLayoutMoves`: every anchor the recommendation changed.
+/// Every anchor the recommendation changed.
 pub fn moves(before: &Layout, after: &Layout) -> Vec<Move> {
     let mut anchors: BTreeSet<usize> = before.keys().copied().collect();
     anchors.extend(after.keys().copied());
@@ -660,7 +651,7 @@ impl<'a> Search<'a> {
         board::footprint(anchor, cell_type)
     }
 
-    /// Add a cell without removing anything (`addWithoutReplacement`).
+    /// Add a cell without removing anything.
     fn add(
         &self,
         layout: &Layout,
@@ -683,7 +674,7 @@ impl<'a> Search<'a> {
         Some(next)
     }
 
-    /// Place a cell, removing whatever it overlaps (`placeWithReplacement`).
+    /// Place a cell, removing whatever it overlaps.
     fn replace(&self, layout: &Layout, anchor: usize, cell_type: usize) -> Option<Layout> {
         if cell_type >= self.jelly.units_owned() {
             return None;
@@ -707,7 +698,7 @@ impl<'a> Search<'a> {
         (next != *layout).then_some(next)
     }
 
-    /// Fill every open slot with the best one-slot cell (`fillOpenSlots`).
+    /// Fill every open slot with the best one-slot cell.
     fn fill(&mut self, layout: &Layout) -> Layout {
         let mut filled = layout.clone();
         let mut occupied = board::occupancy(&filled);
@@ -738,7 +729,7 @@ impl<'a> Search<'a> {
         filled
     }
 
-    /// `greedyCompositionSeed`: one full board from a type order and an anchor order.
+    /// One full board from a type order and an anchor order.
     fn greedy(&mut self, type_order: &[usize], anchors: &[usize]) -> Layout {
         let mut layout = Layout::new();
         let mut changed = true;
@@ -947,7 +938,7 @@ impl<'a> Search<'a> {
     }
 }
 
-/// `selectDiverseBy`: strongest one per composition, then the rest by score.
+/// Strongest one per composition, then the rest by score.
 fn select_diverse(mut candidates: Vec<Entry>, limit: usize) -> Vec<Entry> {
     candidates.sort_by(|a, b| {
         b.score
@@ -978,7 +969,7 @@ fn select_diverse(mut candidates: Vec<Entry>, limit: usize) -> Vec<Entry> {
     selected
 }
 
-/// The cell counts, joined as the page's `compositionKey` does.
+/// The cell counts, joined into one composition key.
 fn composition_key(layout: &Layout) -> String {
     let mut counts = [0_usize; 8];
     for cell_type in layout.values() {

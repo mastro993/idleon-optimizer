@@ -1,14 +1,12 @@
-//! The Sailing Calculator: the upstream fleet, ship, captain, chest, artifact and
+//! The Sailing Calculator: the fleet, ship, captain, chest, artifact and
 //! breakdown tabs.
 //!
-//! The upstream `sailing-calc.html` has fleet, levels, captains, odds, simulation,
-//! artifacts and formula tabs. SL-01 built the fleet assignment, SL-02 the ship
-//! breakpoints, captain quality and replacement matrix, SL-03 the chest
-//! outcomes, the artifact ranking and the four breakdowns, and SL-04 the fleet
-//! pile simulation.
+//! SL-01 built the fleet assignment, SL-02 the ship breakpoints, captain
+//! quality and replacement matrix, SL-03 the chest outcomes, the artifact
+//! ranking and the four breakdowns, and SL-04 the fleet pile simulation.
 //!
-//! The assignment controls and the header stay above the strip because every tab
-//! reads the same island, goal and fleet mode, as upstream's own layout does.
+//! The assignment controls and the header stay above the strip because every
+//! tab reads the same island, goal and fleet mode.
 
 mod actions;
 
@@ -209,7 +207,7 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// The upstream tab strip, driven by the state's own tab.
+/// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
     let mut tabs =
@@ -439,7 +437,7 @@ pub(super) fn text_kpi(
         .into_any_element()
 }
 
-/// A, B, … Z, AA, AB, … as upstream labels captains.
+/// A, B, … Z, AA, AB, … as captains are labelled.
 pub(super) fn captain_code(index: usize) -> String {
     let mut value = index + 1;
     let mut code = String::new();
@@ -483,12 +481,12 @@ pub(super) fn captain_details(state: &AppState, captain: usize) -> String {
     }
 }
 
-/// A percentage as the upstream `pct` prints it, three decimals.
+/// A percentage with three decimals.
 pub(super) fn percent(value: f64) -> String {
     format!("{:.3}%", 100.0 * value)
 }
 
-/// The upstream `chestOdds`: never, a probability at its own precision, or a
+/// Chest odds: never, a probability at its own precision, or a
 /// reciprocal when it is tiny.
 pub(super) fn chest_odds(probability: f64) -> String {
     if probability <= 0.0 {
@@ -509,7 +507,7 @@ pub(super) fn chest_odds(probability: f64) -> String {
     format!("{:.*}%", digits, 100.0 * probability)
 }
 
-/// The upstream `chance`: a percentage, or a reciprocal below a tenth of a percent.
+/// A chance: a percentage, or a reciprocal below a tenth of a percent.
 pub(super) fn chance(probability: f64) -> String {
     if probability <= 0.0 {
         return "—".into();
@@ -578,7 +576,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn captain_codes_match_the_upstream_sequence() {
+    fn captain_codes_follow_the_column_sequence() {
         assert_eq!(captain_code(0), "A");
         assert_eq!(captain_code(25), "Z");
         assert_eq!(captain_code(26), "AA");
@@ -594,7 +592,7 @@ mod tests {
     }
 
     #[test]
-    fn chances_read_as_the_upstream_prints_them() {
+    fn chances_read_at_their_own_precision() {
         assert_eq!(chance(0.0), "—");
         assert_eq!(chance(1.0), "100%");
         assert_eq!(chance(0.433), "43.300%");

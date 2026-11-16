@@ -1,8 +1,5 @@
-//! Cooking, breeding and summoning terms the research tree reads.
-//!
-//! Ports `cookingMealMulti` (`js/stats/systems/common/cooking.js`),
-//! `computeShinyBonusS` (`js/stats/systems/w4/breeding.js`) and
-//! `computeWinBonus` (`js/stats/systems/w6/summoning.js`).
+//! Cooking, breeding and summoning terms the research tree reads: the meal
+//! multiplier, the shiny pet bonus and the summoning win bonus.
 
 use super::Decoder;
 use idleon_save::fields;
@@ -14,7 +11,7 @@ pub(crate) struct Cooking {
 }
 
 impl Decoder<'_> {
-    /// `cookingMealMulti`. `None` when the save carries no breeding data, the
+    /// The cooking meal multiplier. `None` when the save carries no breeding data, the
     /// field the shiny and summoning terms need.
     pub(crate) fn cooking_meal_multi(&mut self) -> Option<Cooking> {
         if fields::field(self.save, "Breeding").is_none()
@@ -36,7 +33,7 @@ impl Decoder<'_> {
         Some(Cooking { value })
     }
 
-    /// `computeShinyBonusS`.
+    /// The shiny pet bonus of a category, summed over the breeding worlds.
     pub fn shiny_bonus(&self, category: u32) -> f64 {
         let mut total = 0.0;
         for world in 0..4 {
@@ -77,7 +74,7 @@ impl Decoder<'_> {
         total
     }
 
-    /// `shinyPetLevel`.
+    /// A shiny pet's level from its shiny EXP.
     pub(crate) fn shiny_pet_level(&self, exp: f64) -> f64 {
         if exp <= 0.0 {
             return 0.0;
@@ -94,21 +91,19 @@ impl Decoder<'_> {
         level
     }
 
-    /// `computeWinBonus`.
+    /// The summoning win bonus at `index`.
     pub fn win_bonus(&self, index: usize) -> f64 {
         self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize), true)
     }
 
-    /// `computeWinBonus` when the caller passes no account options: the endless
-    /// wins are left out, as `computeSummWinBonus(save, null)` reads it.
+    /// The summoning win bonus at `index` with the endless wins left out.
     pub fn win_bonus_without_options(&self, index: usize) -> f64 {
         self.win_bonus_from(index, self.summon_wins(0), true)
     }
 
-    /// `computeWinBonus(index, { charIdx, noArt32: true })`: artifact 32 is
-    /// left out of the winner sum. An options object without `accountOptions`
-    /// still reads the endless wins (only a `null` one drops them); the
-    /// build-speed sum behind artifact 8 reads it this way.
+    /// The summoning win bonus at `index` with artifact 32 left out of the
+    /// winner sum. The endless wins still count; the build-speed sum behind
+    /// artifact 8 reads it this way.
     pub fn win_bonus_without_artifact32(&self, index: usize) -> f64 {
         self.win_bonus_from(index, self.summon_wins(self.ola(319) as usize), false)
     }
@@ -168,7 +163,7 @@ impl Decoder<'_> {
             * (1.0 + winner_sum / 100.0)
     }
 
-    /// `computeSummWinBonus`: normal wins repeat their bonus index, endless
+    /// The summoning win bonuses: normal wins repeat their bonus index, endless
     /// wins cycle through the 40-entry table.
     fn summon_wins(&self, endless: usize) -> Vec<f64> {
         let mut bonus = vec![0.0; 32];

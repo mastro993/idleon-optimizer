@@ -1,12 +1,10 @@
 //! The comparison workspace (CS-04): characters, loadouts and maps side by side.
 //!
-//! Ported from the "Compare characters, loadouts & maps" card in
-//! `combat-sim-calc.html` and `combat-sim-setup-compare.js`: the character
-//! roster, each character's saved/edited/named loadouts, the map picker, and
-//! one row per selected combination with its delta against the first row.
-//! The plan and the deltas are [`idleon_combat::compare`]; the run goes through
-//! the shared task runner, and the export copies the same document the Killroy
-//! section copies.
+//! The "Compare characters, loadouts & maps" card: the character roster, each
+//! character's saved/edited/named loadouts, the map picker, and one row per
+//! selected combination with its delta against the first row. The plan and the
+//! deltas are [`idleon_combat::compare`]; the run goes through the shared task
+//! runner, and the export copies the same document the Killroy section copies.
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -76,7 +74,7 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     body = body.child(
         Caption::new(
             "Every row runs the same player and duration, so a difference between maps comes \
-             from the map. The auto-mode player AI is not ported yet: the stand-in run ignores \
+             from the map. The auto-mode player AI is not modelled yet: the stand-in run ignores \
              the loadout's stats, so two loadouts on one map share their kill outcome and differ \
              in their gear totals.",
         )

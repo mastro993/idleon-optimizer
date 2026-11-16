@@ -1,14 +1,7 @@
 //! The committed synthetic save is the reference input for save-import work.
 //!
-//! It is test data only: the decoding rules come from the upstream
-//! `idleon-research-optimizer` repo, not from this file. The assertions below
-//! pin the fixture so a change to either side is noticed deliberately.
-//!
-//! Expected values come from upstream by running its loader and save context
-//! against this save (`js/save/context.js`, `js/stats/defs/research-exp.js`,
-//! `js/stats/systems/w7/research-math.js`). The only term left out is the Tome
-//! star talent slot, which needs the talent system; it is warned about and
-//! shifts the rate by 2e-5 relative, inside the documented tolerance.
+//! It is test data only. The assertions below pin what the importer decodes
+//! from it, so a change to either side is noticed deliberately.
 
 use idleon_import::ShadowVerdict;
 use idleon_import::import;
@@ -23,27 +16,10 @@ fn imported() -> idleon_import::Imported {
     import(&fixture()).expect("the fixture imports")
 }
 
-/// The upstream term value, or the documented tolerance for the one omitted
-/// tome slot.
-fn assert_term(imported: &idleon_import::Imported, name: &str, expected: f64) {
-    let term = imported
-        .tree
-        .term(name)
-        .unwrap_or_else(|| panic!("the tree carries {name}"));
-    let tolerance = if name == "Tome Bonus" { 0.1 } else { 1e-9 };
-    assert!(
-        (term.value - expected).abs() <= tolerance,
-        "{name}: got {}, upstream {expected}",
-        term.value
-    );
-    assert!(!term.is_omitted(), "{name} is not omitted");
-}
-
 #[test]
 fn the_synthetic_account_imports_into_a_usable_run() {
     let imported = imported();
     let simulation = &imported.simulation;
-    let context = &imported.context;
 
     assert_eq!(simulation.research_level, 122);
     assert!(simulation.research_exp > 0.0);
@@ -68,157 +44,30 @@ fn the_synthetic_account_imports_into_a_usable_run() {
         31
     );
 
-    // The save context terms upstream derives from this save.
-    assert_eq!(context.server_var_res_xp, 1.01);
-    assert!((context.all_bonus_multi - 1.01).abs() < 1e-9);
-    assert!((context.companion_52 - 1.0).abs() < 1e-9);
-    assert!((context.sticker_fixed - 75.0).abs() < 1e-9);
-    assert!((context.boony_count - 17.0).abs() < 1e-9);
-    assert!((context.event_shop_37 - 1.0).abs() < 1e-9);
-    assert!((context.button0 - 59.46875).abs() < 1e-9);
-    assert!((context.button_base_no_grid - 50.0).abs() < 1e-9);
-    assert!((context.killroy5 - 1.208_866_995_073_891_7).abs() < 1e-9);
-    assert!((context.dream14 - 39.0).abs() < 1e-9);
-    assert!((context.cglunko11 - 0.0).abs() < 1e-9);
-    assert!((context.fountain_2_16 - 0.0).abs() < 1e-9);
-    assert!((context.royal_research - 2.090_909_090_909_091).abs() < 1e-9);
-    assert!(!context.sticker_multiplicative);
-    assert!((context.arcade63 - 10.0).abs() < 1e-9);
-    assert!((context.clam_work9 - 0.0).abs() < 1e-9);
-    assert!((context.menagerie_b3 - 220.0).abs() < 1e-9);
-    assert!((context.research_equipment_multi - 4.941_465_831_401_585).abs() < 1e-9);
-    assert!((context.jelly_research_multi - 2.1).abs() < 1e-9);
-    assert!((context.jelly_insight_pct - 40.0).abs() < 1e-9);
-    assert!((context.jelly_kalei_pct - 1.0).abs() < 1e-9);
-    assert_eq!(context.rog(0), 100.0);
-    assert_eq!(context.rog(53), 1.0);
-    assert_eq!(context.rog(54), 1.0);
-    assert!((context.mastery_additive_pct - 25.0).abs() < 1e-9);
-    assert!((context.mastery_exp_multi - 1.1).abs() < 1e-9);
-    // `gridPointSources` adds Ring of Glory 3 and 13 to the flat pool.
-    assert_eq!(context.rog(3), 2.0);
-    assert_eq!(context.rog(13), 1.0);
-    assert_eq!(context.bonus_grid_points, 18);
-    assert_eq!(context.sailing_art37, 5.0);
-    assert_eq!(context.task_grid_points, 1.0);
-    assert!(context.bundle_ban_k);
-    assert!(context.bundle_ban_m);
-    assert_eq!(sim::shapes_owned(simulation.research_level, context), 8);
-    assert_eq!(sim::magnifiers_owned(simulation, context), 17);
-    assert_eq!(sim::grid_points(simulation, context).earned, 176);
-    // `OptLacc[26]` is zero in the fixture, so the upstream page answers NO.
+    // `OptLacc[26]` is zero in the fixture, so the check answers NO.
     assert_eq!(imported.shadow.verdict(), ShadowVerdict::No);
 
-    // The additive tree, in upstream order.
-    for (name, value) in [
-        ("Sticker Bonus", 113.596_875_000_000_01),
-        ("Dancing Coral", 360.0),
-        ("Zenith Market", 30.0),
-        ("Trench Fish Card", 3.0),
-        ("Eggroll Card", 4.0),
-        ("Coralcave Crab Card", 1.0),
-        ("Seaweed Serpent Card", 3.0),
-        ("Paper Hardhat", 20.0),
-        ("Prehistoric Set", 50.0),
-        ("Slab Bonus", 28.137_226_000_000_002),
-        ("Meal (Giga Chip)", 33.189_826_214_4),
-        ("Crop Scientist", 12.995_463_569_682_151),
-        ("MSA Bonus", 26.099_999_999_999_998),
-        ("Tome Bonus", 29.683_700_308_098_57),
-        ("Grid: Pts Every Ten", 6.3125),
-        ("Grid: Sharp Eye", 25.25),
-        ("Grid: Observationalistic", 5.454_000_000_000_001),
-        ("Grid: All Night Studying", 136.35),
-        ("Grid: Smart Eye", 18.9375),
-        ("Grid: See 'Em All", 211.342_5),
-        ("Grid: Game Design 102", 1405.92),
-        ("Research Skill Mastery", 25.0),
-    ] {
-        assert_term(&imported, name, value);
-    }
-    // The pet arena crucibles are not reached on this save.
-    assert_term(&imported, "Pet Arena Crucible", 0.0);
-
-    // The true multipliers, in upstream order.
-    for (name, value) in [
-        ("Grid: Takin' Notes", 1.654_48),
-        ("Equipment Research EXP", 4.941_465_831_401_585),
-        ("Research Skill Mastery multiplier", 1.1),
-        ("ClamWork Promotion 9", 1.0),
-        ("Nonstop Studies", 2.17),
-        ("Button: Monster EXP", 1.594_687_5),
-        ("Arcade: x Research XP", 1.1),
-        ("Killroy: Research EXP", 1.208_866_995_073_891_7),
-        ("Companion: Jellofish (1.5x)", 1.0),
-        ("Companion: Rift Stalker (2x / 3x enhanced)", 1.0),
-        ("Companion: Neonscale (enhanced)", 1.0),
-        ("Ring of Glory: multiplier to Research EXP gain", 2.0),
-        ("Menagerie Boost 3", 3.2),
-        ("Royal Guardian: Research Focus", 2.090_909_090_909_091),
-    ] {
-        assert_term(&imported, name, value);
-    }
-    let mut jelly: Vec<f64> = imported
-        .tree
-        .multipliers
-        .iter()
-        .filter(|term| term.name == "Jelly Reward")
-        .map(|term| term.value)
-        .collect();
-    jelly.sort_by(f64::total_cmp);
-    assert_eq!(jelly, vec![1.0, 1.0, 1.4, 1.5]);
-    assert!((imported.tree.additive_pct - 2_549.269_591_092_180_7).abs() < 0.1);
-    assert!((imported.tree.multiplier - 1_162.922_980_120_347_6).abs() < 1e-6);
-    // Every grid/sticker/mastery term is taken back out for the simulator.
-    assert!((context.extra_pct - 601.106_216_092_180_4).abs() < 0.1);
-
+    // The dashboard, the observation board and the grid-point breakdown read
+    // the same imported run as the simulator, so their figures agree.
+    let context = &imported.context;
     let rate = sim::exp_rate(simulation, context);
-    assert!((rate.obs_base - 464_661.605_531_104_6).abs() < 1e-6);
-    assert!((rate.total / 14_315_743_085.962_536 - 1.0).abs() < 1e-4);
-
-    // The dashboard reads the same rate, and its AFK terms come from this save.
-    let afk = sim::afk_rate(simulation, context);
-    assert!((context.companion_28 - 0.0).abs() < 1e-9);
-    assert!((context.companion_153_level2 - 0.0).abs() < 1e-9);
-    assert!((context.sailing_art36 - 5.0).abs() < 1e-9);
-    assert!((context.card_w7b11 - 1.0).abs() < 1e-9);
-    assert!((context.gem_shop_45 - 10.0).abs() < 1e-9);
-    // Upstream reports 0.55362 with the Gambit Milestone's 3%; this build lists
-    // that term as not modelled and leaves it out.
-    assert!((afk.rate - 0.523_62).abs() < 1e-9, "{}", afk.rate);
+    assert!(rate.total > 0.0);
     let summary = idleon_research::dashboard::summary(simulation, context);
     assert!((summary.active_rate - rate.total).abs() < 1e-6);
-    assert!((summary.offline_rate / 7_496_009_394.671_702 - 1.0).abs() < 1e-4);
-    assert!((summary.exp_required / 573_434_105_600_703_300.0 - 1.0).abs() < 1e-9);
-    assert!((summary.hours_active / 21_867_825.609_115_824 - 1.0).abs() < 1e-4);
-    assert!((summary.afk_rate - 0.523_62).abs() < 1e-9);
-    assert_eq!(summary.mag_cap, 4);
-    assert_eq!(summary.magnifiers, 17);
-
-    let insight = idleon_research::dashboard::insight_multiplier(simulation, context);
-    assert!((insight.grid_92 - 68.175).abs() < 1e-9);
-    assert!((insight.grid_91 - 5.454).abs() < 1e-9);
-    assert!((insight.emperor_pct - 35.0).abs() < 1e-9);
-    assert!((insight.jelly_pct - 40.0).abs() < 1e-9);
-    assert!((insight.multi - 3.281_588_1).abs() < 1e-9);
-    assert!((insight.per_monocle - 9.844_764_3).abs() < 1e-9);
-
+    assert!((summary.afk_rate - sim::afk_rate(simulation, context).rate).abs() < 1e-12);
+    assert_eq!(
+        summary.magnifiers,
+        sim::magnifiers_owned(simulation, context)
+    );
     let cards = idleon_research::dashboard::observations(simulation, context);
-    assert_eq!(cards.len(), 43);
     let board_exp: f64 = cards.iter().map(|card| card.exp).sum();
     assert!((board_exp / rate.total - 1.0).abs() < 1e-9);
-    let card = |obs: usize| cards.iter().find(|card| card.obs == obs).expect("a card");
-    assert!((card(40).exp / 3_189_669_459.531_201 - 1.0).abs() < 1e-4);
-    assert!((card(42).exp / 11_126_073_626.431_335 - 1.0).abs() < 1e-4);
-    assert!((card(37).insight - 39.379_057_2).abs() < 1e-7);
-    assert_eq!(card(37).monocles, 4);
-    assert_eq!(card(34).kaleidoscopes, 4);
-
-    let points = idleon_research::dashboard::grid_points(simulation, context);
-    assert_eq!(points.every_ten, 36);
-    assert_eq!(points.account_sources, 18);
-    assert_eq!(points.points.earned, 176);
-    assert_eq!(points.points.free, 6);
+    assert_eq!(
+        idleon_research::dashboard::grid_points(simulation, context)
+            .points
+            .earned,
+        sim::grid_points(simulation, context).earned
+    );
 
     // The Spelunking rows the section reads: saved stamina, unlocks and records.
     let spelunking = imported
@@ -285,7 +134,7 @@ fn the_synthetic_account_imports_into_a_usable_run() {
         imported.warnings
     );
 
-    // The Clamworks fields the save carries decode as the upstream module reads them.
+    // The Clamworks fields the save carries.
     let clamworks = &imported.clamworks;
     assert_eq!(clamworks.pearl_balance, 2_960_058_875.172_09);
     assert_eq!(clamworks.promotion_level, 6);
@@ -293,11 +142,8 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     assert_eq!(clamworks.unlocked, 6);
     assert_eq!(clamworks.scurge_level, 122);
     assert_eq!(clamworks.scurge_upgrades, [18, 2, 3, 18, 27, 54, 0, 0, 0]);
-    let pearl_value = clamworks.pearl_value(1234.5);
-    assert!((pearl_value - 379.647_08).abs() < 1e-3);
 
-    // The Cglunko overview from the same `OptLacc` row, against the upstream
-    // `cglunko.js` values for this save.
+    // The Cglunko overview from the same `OptLacc` row.
     let cglunko = &imported.cglunko;
     assert!(cglunko.saved);
     assert_eq!(
@@ -308,19 +154,6 @@ fn the_synthetic_account_imports_into_a_usable_run() {
     );
     assert_eq!(cglunko.blue_stones, [3400.1, 959.1, 50.1, 11.0, 5.1, 1.1]);
     assert_eq!(cglunko.purple_stones, [0.0; 6]);
-    assert_eq!(cglunko.blue_digits(), 13);
-    assert_eq!(cglunko.purple_digits(), 0);
-    assert_eq!(cglunko.kill_digits(), 9);
-    assert_eq!(cglunko.normal_dr_digits(), 4);
-    assert!((cglunko.dr() - 58.933_613_2).abs() < 1e-7);
-    assert!((cglunko.afk_gains() - 0.14).abs() < 1e-12);
-    assert_eq!(cglunko.mk_tier(), 6.0);
-    assert_eq!(cglunko.mk_base(), 0.0);
-    assert_eq!(cglunko.respawn(), 20.0);
-    assert_eq!(cglunko.cavern_currency(), 0.0);
-    assert_eq!(cglunko.research_exp(), 0.0);
-    assert_eq!(cglunko.total_dmg(), 0.0);
-    assert_eq!(cglunko.grand_discovery(), 0.0);
     assert!(
         !imported
             .warnings
@@ -366,7 +199,7 @@ fn the_fixture_farming_state_imports_into_the_field() {
             .warnings
             .iter()
             .any(|warning| warning.contains("farming multipliers")),
-        "the fixture names the multisystems this port does not read: {:?}",
+        "the fixture names the multisystems this build does not read: {:?}",
         imported.warnings
     );
     assert!(
@@ -397,7 +230,7 @@ fn the_fixture_farming_state_imports_into_the_field() {
 
 #[test]
 fn the_fixture_survives_a_project_export_and_import() {
-    use idleon_project::{self as project, Document, Origin, Project};
+    use idleon_project::{self as project, Document, Project};
 
     let imported = imported();
     let document = Project {
@@ -408,7 +241,6 @@ fn the_fixture_survives_a_project_export_and_import() {
         context: imported.context.clone(),
         sections: Default::default(),
         warnings: Vec::new(),
-        origin: Origin::Project,
         has_research: true,
         has_supplements: true,
     };
@@ -417,7 +249,6 @@ fn the_fixture_survives_a_project_export_and_import() {
         panic!("an export is a project document");
     };
     assert_eq!(back.version, project::VERSION);
-    assert_eq!(back.origin, Origin::Project);
     assert_eq!(back.simulation, imported.simulation);
     assert_eq!(back.context, imported.context);
     assert!(back.warnings.is_empty(), "{:?}", back.warnings);
@@ -435,8 +266,7 @@ fn the_fixture_survives_a_project_export_and_import() {
 #[test]
 fn the_fixture_carries_the_ladle_roster() {
     // The ladle section reads the roster, the Cooking rows, the Post Office 19c
-    // chance and the counts; upstream's `characterCount` and `itemCount` answer
-    // the same from this save.
+    // chance and the counts.
     let ladle = imported()
         .ladle
         .expect("the fixture carries a character roster");

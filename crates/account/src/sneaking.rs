@@ -1,8 +1,6 @@
 //! The account-wide systems the sneaking breakdown trees read.
 //!
-//! Ported from `js/stats/systems/w6/sneaking-stealth.js` (`_computeFactors`),
-//! `sneaking-jade.js` (`computeJadeCoin`), `sneaking-exp.js`
-//! (`sneakingExpAccountInputs`) and the helpers they call. The values are
+//! The stealth factors, the jade coin and the sneaking EXP inputs are
 //! resolved once when the save loads; a system the save does not carry reads
 //! as its neutral value and the tree node names the field.
 
@@ -15,9 +13,8 @@ use serde_json::Value;
 
 /// The character index every account term is resolved against.
 ///
-/// Upstream picks the character with the strongest core stealth
-/// (`findBestActiveChar`); the account terms only need a stable login context,
-/// and the first character is the saved default.
+/// The account terms only need a stable login context, and the first
+/// character is the saved default.
 const LOGIN: usize = 0;
 
 impl Decoder<'_> {
@@ -148,9 +145,9 @@ impl Decoder<'_> {
         exp
     }
 
-    // ---- the helpers upstream calls ----
+    // ---- helpers ----
 
-    /// `bubbleValByKey` for one of the sneaking data's bubbles.
+    /// The value of one of the sneaking data's bubbles.
     fn sneaking_bubble_value(&self, bubble: &idleon_sneaking::data::BubbleParam) -> f64 {
         let param = super::data::BubbleParam {
             cauldron: bubble.cauldron,
@@ -162,7 +159,7 @@ impl Decoder<'_> {
         self.bubble_value(&param)
     }
 
-    /// `maxTalentBonus(idx)` without the All-Talent levels.
+    /// A talent's value at its best character, without the All-Talent levels.
     fn talent_value(&self, index: usize) -> f64 {
         let Some(curve) = self.talent_curve(index, 1) else {
             return 0.0;
@@ -173,7 +170,7 @@ impl Decoder<'_> {
         formula::eval(&curve.formula, curve.x1, curve.x2, level)
     }
 
-    /// `maxTalentBonusDetail(idx, mode: 2)`.
+    /// A talent's value at its best character, read through curve `mode`.
     fn talent_value_mode(&self, index: usize, mode: usize) -> f64 {
         let Some(curve) = self.talent_curve(index, mode) else {
             return 0.0;
@@ -213,7 +210,6 @@ impl Decoder<'_> {
         talent * exotic * per_level * level
     }
 
-    /// `sigilBonus(index)` from `js/stats/systems/w2/alchemy.js`.
     pub fn sigil(&self, index: usize) -> f64 {
         let level = fields::at(self.save, "CauldronP2W", &[4, 1 + 2 * index]).unwrap_or(0.0);
         if level < -0.1 {
@@ -244,7 +240,7 @@ impl Decoder<'_> {
         base * artifact * meritoc
     }
 
-    /// `votingBonusz(idx, votingMulti)`: the vote's bonus while it is the
+    /// The voting bonus at `index`, with the voting multiplier: the vote's bonus while it is the
     /// server-wide winner.
     pub fn voting(&self, index: usize) -> f64 {
         if self.active_vote() != Some(index) {
@@ -259,8 +255,8 @@ impl Decoder<'_> {
         base * self.voting_multi()
     }
 
-    /// `saveData.activeVoteIdx`: the winning vote from
-    /// `serverVars.voteCategories[0]`, which a save alone does not carry.
+    /// The winning vote, the first of the server's `voteCategories`, which a
+    /// save alone does not carry.
     fn active_vote(&self) -> Option<usize> {
         let vote = self
             .root
@@ -290,7 +286,7 @@ impl Decoder<'_> {
             * (1.0 + inner / 100.0)
     }
 
-    /// `computeCosmoBonus(tier, idx)`.
+    /// The cosmo upgrade bonus at `tier` and `index`.
     fn cosmo(&self, tier: usize, index: usize) -> f64 {
         let level = fields::at(self.save, "Holes", &[4 + tier, index]).unwrap_or(0.0);
         if level <= 0.0 {
@@ -299,7 +295,7 @@ impl Decoder<'_> {
         (idleon_opal::data::cosmo_base(tier, index) * level).floor()
     }
 
-    /// `computeLampBonus(t, 1)`.
+    /// The lamp bonus at `row` and `column`.
     pub fn lamp(&self, row: usize, column: usize) -> f64 {
         const GRID: [[f64; 3]; 5] = [
             [25.0, 10.0, 8.0],
@@ -329,7 +325,7 @@ impl Decoder<'_> {
         1.2_f64.powf(idleon_common::curve::log(value).floor())
     }
 
-    /// `computeEmperorBon(idx)`.
+    /// The Emperor bonus at `index`.
     fn emperor(&self, index: usize) -> f64 {
         let count = self.ola(369).max(0.0) as usize;
         let value = self
@@ -348,7 +344,7 @@ impl Decoder<'_> {
         (sum * multi).floor()
     }
 
-    /// `gemstoneBonus(idx)` for the account terms.
+    /// The sneaking gemstone bonus at `index`, for the account terms.
     fn gemstone(&self, index: usize) -> f64 {
         let Some(def) = data::item(&format!("NjGem{index}")) else {
             return 0.0;
@@ -367,7 +363,7 @@ impl Decoder<'_> {
         value * (1.0 + first / 100.0) * talent
     }
 
-    /// `computeMonumentROGbonus(row, index)`.
+    /// The monument slot bonus at `row` and `index`.
     fn sneaking_monument(&self, row: usize, index: usize) -> f64 {
         let slot = 10 * row + index;
         let level = fields::at(self.save, "Holes", &[15, slot]).unwrap_or(0.0);
@@ -399,7 +395,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeVialByKey(effect)`.
+    /// The vial bonus with `effect`.
     fn vial(&mut self, effect: &str) -> f64 {
         let Some(pipelines) = fields::field(self.save, "CauldronInfo") else {
             return 0.0;
@@ -437,7 +433,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// `computeMealBonus(effect)`.
+    /// The meal bonus with `effect`.
     pub fn meal(&mut self, effect: &str) -> f64 {
         let Some(meals) = fields::field(self.save, "Meals") else {
             return 0.0;
@@ -468,7 +464,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// `computeStampBonusOfTypeX(type)`.
+    /// The stamp bonus of type `kind`.
     pub fn stamp(&mut self, kind: &str) -> f64 {
         let Some(stamps) = data::data().account.stamp_types.get(kind) else {
             return 0.0;
@@ -500,7 +496,7 @@ impl Decoder<'_> {
             .sum()
     }
 
-    /// `computeSlabboBonus(4)`.
+    /// The Slabbo bonus at `index`.
     fn slabbo(&mut self, index: usize) -> f64 {
         let cards = fields::field(self.save, "Cards1")
             .and_then(|value| value.as_array().map(Vec::len))
@@ -550,7 +546,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeCropSC(idx)`.
+    /// The Crop Scientist bonus at `index`.
     pub fn crop_scientist(&mut self, index: usize) -> f64 {
         const GATES: [usize; 10] = [27, 24, 25, 26, 23, 28, 29, 38, 40, 44];
         let gate = GATES.get(index).copied().unwrap_or(usize::MAX);
@@ -577,7 +573,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeKillroyBonus(idx)`.
+    /// The Killroy bonus at `index`.
     fn killroy(&self, index: usize) -> f64 {
         let (value, base, scale) = match index {
             0 => (228, 300.0, 1.0),
@@ -598,7 +594,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computeMSABonus(idx)`.
+    /// The MSA bonus at `index`.
     fn msa(&self, index: usize) -> f64 {
         let Some(config) = data::data().account.msa.get(index) else {
             return 0.0;
@@ -616,7 +612,7 @@ impl Decoder<'_> {
         config.mult * ((stars - config.offset) / 10.0).floor().max(0.0)
     }
 
-    /// `computeRiftSkillBonus(skillIdx, threshold)`'s rank ladder.
+    /// The Rift skill mastery rank ladder of a skill.
     pub fn rift_skill_rank(&self, skill: usize) -> i32 {
         if self.row_at("Rift", 0) < 15.0 {
             return 0;
@@ -636,7 +632,7 @@ impl Decoder<'_> {
             .count() as i32
     }
 
-    /// `computeStarSignBonus(key)` for one of the three trees.
+    /// The star sign bonus for one of the three trees.
     fn star_sign(&self, bonuses: &std::collections::HashMap<String, f64>) -> f64 {
         let enabled = if self.row_at("Rift", 0) >= 10.0 {
             5.0 + self.shiny_bonus(3)
@@ -685,7 +681,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `computePositiveStarSignMultiplier`: the chip pass and Seraph Cosmos.
+    /// The positive star sign multiplier: the chip pass and Seraph Cosmos.
     fn positive_star_sign_multi(&self) -> f64 {
         let enabled = if self.row_at("Rift", 0) >= 10.0 {
             5.0 + self.shiny_bonus(3)
@@ -704,7 +700,7 @@ impl Decoder<'_> {
             .is_some_and(|row| (0..7).any(|slot| fields::number_at(&row, slot) == 15.0))
     }
 
-    /// `computeSeraphMulti`.
+    /// The Seraph Cosmos multiplier.
     fn seraph_multi(&self) -> f64 {
         let unlocked = self
             .star_sg()
@@ -738,7 +734,7 @@ impl Decoder<'_> {
         chip * (1.0 + self.meritoc(22) / 100.0) * seraph
     }
 
-    /// `pristineCharmBonus(idx)`.
+    /// The Pristine Charm bonus at `index`.
     pub fn pristine(&self, index: usize) -> f64 {
         idleon_opal::data::pristine(index)
     }

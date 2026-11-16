@@ -11,7 +11,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 use idleon_farming::{self as farming, Assignment};
 
-/// `plotAssignmentPlan`: every plot's target crop, with the plots that differ.
+/// The plot assignment: every plot's target crop, with the plots that differ.
 pub(super) fn assignment_card(assignment: &Assignment, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
     let objective = assignment.objective;

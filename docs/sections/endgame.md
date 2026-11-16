@@ -8,17 +8,11 @@
 - Status: `done`
 - Depends on: `foundation`
 
-Port the joke endgame page: always NO, with the upstream stats and leaderboard audit panels.
+Implement the joke endgame page: always NO, with the stats and leaderboard audit panels.
 
 ## Known gaps
 
 - `EG-G1` 21 leaderboard metrics have no value — blocked by `wire:stats-engine` (landed), `stats:descriptors` (partial)
-
-## Upstream sources
-
-- endgame.html
-- js/endgamers.js
-- js/endgame-stats.js
 
 ## UI
 
@@ -50,7 +44,6 @@ Acceptance:
 
 - Verdict is NO with and without a save.
 - Stats render or fail with a clear error.
-- Matches upstream copy.
 
 ## Verification
 

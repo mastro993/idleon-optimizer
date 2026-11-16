@@ -1,4 +1,4 @@
-//! The Coral God Rank section: upstream planner inputs, the current summary and
+//! The Coral God Rank section: the planner inputs, the current summary and
 //! the beam-search plan.
 //!
 //! CR-01 landed the controls and the summary, CR-02 the shared task runner, the

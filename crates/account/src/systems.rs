@@ -1,16 +1,14 @@
-//! The small upstream systems the research multiplier tree reads.
+//! The small systems the research multiplier tree reads.
 //!
-//! Each function ports one lookup from `js/stats/systems` or
-//! `js/stats/data`; the comment above it names the upstream source. The save
-//! accessors return neutral values when a save lacks the field, and the caller
-//! warns through [`Decoder::omission`] where the term matters.
+//! Each function reads one lookup. The save accessors return neutral values
+//! when a save lacks the field, and the caller warns through
+//! [`Decoder::omission`] where the term matters.
 
 use super::Decoder;
 use idleon_save::fields;
 use serde_json::Value;
 
-/// `BUTTON_RATES` from `js/stats/systems/w7/minehead.js`: the percentage each
-/// of the nine button slots pays per press.
+/// The percentage each of the nine button slots pays per press.
 const BUTTON_RATES: [f64; 9] = [2.0, 3.0, 2.0, 2.0, 4.0, 5.0, 4.0, 25.0, 5.0];
 
 impl Decoder<'_> {
@@ -23,8 +21,8 @@ impl Decoder<'_> {
             .unwrap_or(0.0)
     }
 
-    /// `TimeAway.GlobalTime`, the save's clock in Unix seconds. Upstream reads
-    /// it from the parsed `TimeAway` object (`js/save/data.js`).
+    /// `TimeAway.GlobalTime`, the save's clock in Unix seconds, read from the
+    /// parsed `TimeAway` object.
     pub(crate) fn save_global_time(&self) -> f64 {
         fields::field(self.save, "TimeAway")
             .and_then(|away| away.get("GlobalTime").and_then(idleon_save::json::number))
@@ -46,7 +44,7 @@ impl Decoder<'_> {
         self.data.god_base(index)
     }
 
-    /// `finalBubbleValByKey('Y2ACTIVE')` at `level`: the Big P bubble's own
+    /// The `Y2ACTIVE` bubble value at `level`: the Big P bubble's own
     /// curve. It is a large bubble, so no big-bubble or Prisma pass applies.
     pub fn y2_bubble(&self, level: f64) -> f64 {
         let bubble = &self.data.bubbles.y2;
@@ -85,7 +83,7 @@ impl Decoder<'_> {
         fields::numbers(self.save, key).unwrap_or_default()
     }
 
-    /// `value || 0` from a row.
+    /// One cell of a row, zero when it is missing or not a number.
     pub(crate) fn row_at(&self, key: &str, index: usize) -> f64 {
         fields::number_at(&self.row(key), index)
     }
@@ -115,7 +113,7 @@ impl Decoder<'_> {
         fields::len_of(self.save, key)
     }
 
-    /// The save constant scaling the research EXP curve. Upstream defaults to
+    /// The save constant scaling the research EXP curve. It defaults to
     /// 1.01 when the wrapper has no `serverVars`; the value is not guessed.
     pub(crate) fn server_var(&mut self) -> f64 {
         if let Some(value) = self
@@ -133,12 +131,11 @@ impl Decoder<'_> {
         {
             return value.max(1.01);
         }
-        // Upstream defaults the curve constant to 1.01 when the wrapper has no
+        // The curve constant defaults to 1.01 when the wrapper has no
         // `serverVars`; the value is a documented default, not a guess.
         1.01
     }
 
-    /// `eventShopOwned` / `buildEventShopArray` from `js/game-helpers.js`.
     pub(crate) fn event_shop_flags(&self) -> Vec<u8> {
         let text = self.ola_text(311);
         encoded_flags(&text, &self.data.encoding)
@@ -159,7 +156,6 @@ impl Decoder<'_> {
         self.emporium_flags().get(index).copied().unwrap_or(0) as f64
     }
 
-    /// `superBitType` / `buildSuperBitArray` from `js/game-helpers.js`.
     pub(crate) fn superbit_flags(&self) -> Vec<u8> {
         let text = fields::field(self.save, "Gaming")
             .and_then(|value| {
@@ -172,7 +168,6 @@ impl Decoder<'_> {
         encoded_flags(&text, &self.data.encoding)
     }
 
-    /// `emporiumBonus` / `buildEmporiumArray` from `js/game-helpers.js`.
     pub(crate) fn emporium_flags(&self) -> Vec<u8> {
         let text = fields::field(self.save, "Ninja")
             .and_then(|value| {
@@ -190,7 +185,6 @@ impl Decoder<'_> {
         self.minehead().get(index).copied().unwrap_or(0.0)
     }
 
-    /// `buildMhqArray` from `js/stats/systems/w7/minehead.js`.
     pub(crate) fn minehead(&self) -> Vec<f64> {
         let floor = self
             .research(7, 4)
@@ -208,8 +202,7 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `computeUniqueSushi` from `js/stats/systems/w7/sushi.js`. The Sushi
-    /// Station tab reads the same count for its Ring of Glory rows.
+    /// The unique sushi count. The Sushi Station tab reads the same count for its Ring of Glory rows.
     pub fn unique_sushi(&self) -> Option<u32> {
         let tiers = self.save.get("Sushi").and_then(|value| {
             let value = match value {
@@ -229,7 +222,7 @@ impl Decoder<'_> {
         Some(count)
     }
 
-    /// `sushiDoublers`: the upgrade indices `Spelunk[52]` doubles.
+    /// The sushi doublers: the upgrade indices `Spelunk[52]` doubles.
     pub fn sushi_doublers(&self) -> Vec<usize> {
         self.spelunk_row(52)
             .iter()
@@ -238,7 +231,6 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `buildRogArray` from `js/stats/systems/w7/sushi.js`.
     pub(crate) fn rog(&self) -> Vec<f64> {
         let unique = self.unique_sushi().unwrap_or(0);
         self.data
@@ -249,7 +241,7 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `rogBonusQTY`.
+    /// The sushi Royal Guardian bonus at `index`, once that many unique sushi exist.
     pub fn rog_qty(&self, index: usize) -> f64 {
         let unique = self.unique_sushi().unwrap_or(0);
         if unique > index as u32 {
@@ -259,8 +251,7 @@ impl Decoder<'_> {
         }
     }
 
-    /// `jellyRewardBonus` from `js/stats/data/w7/jelly-operator.js`: the
-    /// obstruction is `Research[7][9]`.
+    /// The Jelly Operator reward bonus: the obstruction is `Research[7][9]`.
     pub fn jelly(&self, index: usize) -> f64 {
         let obstruction = self.research(7, 9).unwrap_or(0.0);
         if obstruction > index as f64 {
@@ -275,13 +266,12 @@ impl Decoder<'_> {
         self.row_at("Atoms", index)
     }
 
-    /// `mineheadCurrencyTaskLevel` from `js/stats/data/w7/tasks.js`: the W7
-    /// task board's currency row, `TaskZZ2[6][4]`.
+    /// The W7 task board's currency row, `TaskZZ2[6][4]`.
     pub fn minehead_task_level(&self) -> f64 {
         self.nested("TaskZZ2", &[6, 4])
     }
 
-    /// `mineheadDoublers`: the upgrade indices `Spelunk[51]` doubles.
+    /// The Minehead doublers: the upgrade indices `Spelunk[51]` doubles.
     pub fn minehead_doublers(&self) -> Vec<usize> {
         self.spelunk_row(51)
             .iter()
@@ -290,7 +280,7 @@ impl Decoder<'_> {
             .collect()
     }
 
-    /// `computeDancingCoralBonus`: `Spelunky[24][index] × max(0, Tower[18+index] - 200)`.
+    /// The Dancing Coral bonus: `Spelunky[24][index] × max(0, Tower[18+index] - 200)`.
     pub fn dancing_coral(&self, index: usize) -> f64 {
         let base = self
             .data
@@ -302,7 +292,7 @@ impl Decoder<'_> {
         base * (level - 200.0).max(0.0)
     }
 
-    /// `outpostROGBonus`: the Royal Guardian focus bonus, `1` when another
+    /// The Royal Guardian focus bonus, `1` when another
     /// focus is selected.
     pub fn outpost_rog(&self, kind: usize) -> f64 {
         let selected = fields::at(self.save, "RoyalG", &[3, 2])
@@ -316,14 +306,13 @@ impl Decoder<'_> {
         1.0 + progress / (40.0 + progress) * rates[kind]
     }
 
-    /// `jellyRewardBonus(0/23/46/54)` folded into one factor.
+    /// Jelly Operator rewards 0, 23, 46 and 54 folded into one factor.
     pub(crate) fn jelly_research_multi(&self) -> f64 {
         [0, 23, 46, 54].into_iter().fold(1.0, |multi, index| {
             multi * (1.0 + self.jelly(index) / 100.0)
         })
     }
 
-    /// `menagerieUnlockOwned` from `js/stats/systems/w7/menagerie.js`.
     pub fn menagerie_unlock(&self, index: usize) -> f64 {
         let row = self.nested_row("Menagerie", &[2]);
         if row.is_empty() {
@@ -336,12 +325,12 @@ impl Decoder<'_> {
         }
     }
 
-    /// `menagerieBoostLevel`.
+    /// The level of menagerie boost `index`.
     fn menagerie_boost_level(&self, index: usize) -> f64 {
         fields::number_at(&self.nested_row("Menagerie", &[3]), index)
     }
 
-    /// `menagerieBoostQTY`.
+    /// The value of menagerie boost `index`: its base times its level.
     pub fn menagerie_boost_qty(&self, index: usize) -> f64 {
         if self.nested_row("Menagerie", &[3]).is_empty() {
             return 0.0;
@@ -350,10 +339,9 @@ impl Decoder<'_> {
             * self.menagerie_boost_level(index)
     }
 
-    /// `hasBundle` from `js/stats/systems/w7/menagerie.js`.
     pub fn bundle(&self, key: &str) -> bool {
-        // The save writes `BundlesReceived` as a JSON string, which upstream's
-        // `parseSaveKey` decodes before reading the keys.
+        // The save writes `BundlesReceived` as a JSON string, which is decoded
+        // before reading the keys.
         let Some(bundles) = idleon_save::json::parsed_field(self.save, "BundlesReceived") else {
             return false;
         };
@@ -370,7 +358,7 @@ impl Decoder<'_> {
             .is_some_and(|value| value == 1.0)
     }
 
-    /// `companionBonusForSave`.
+    /// The bonus companion `index` grants, zero when it is not owned.
     pub fn companion(&self, index: usize) -> f64 {
         let roster = self.companions();
         match roster.iter().find(|(id, _)| *id == index as u32) {
@@ -384,7 +372,7 @@ impl Decoder<'_> {
         self.companions().iter().any(|(id, _)| *id == index as u32)
     }
 
-    /// `companionLevel2`.
+    /// Whether companion `index` is owned and enhanced.
     pub fn companion_level2(&self, index: usize) -> bool {
         self.companions()
             .iter()
@@ -417,7 +405,6 @@ impl Decoder<'_> {
         (!roster.is_empty()).then_some(roster)
     }
 
-    /// `calcAllBonusMultiWith` from `js/stats/systems/w7/research-math.js`.
     pub(crate) fn all_bonus_multi(&self) -> f64 {
         let companion_55 = self.companion(55);
         let companion_0 = if self.companion(0) > 0.0
@@ -436,13 +423,12 @@ impl Decoder<'_> {
         1.0 + (companion_55 + companion_0 + clouds + self.rog_qty(53)) / 100.0
     }
 
-    /// `comp52TrueMulti` from `save/loader.js`.
     pub(crate) fn companion_52(&self) -> f64 {
         (1.0 + self.companion(52))
             * (1.0 + self.companion(153) + if self.companion_level2(153) { 1.0 } else { 0.0 })
     }
 
-    /// `cachedStickerFixed`.
+    /// The fixed sticker bonus: research sticker 1's level times its base, with superbit 62.
     pub(crate) fn sticker_fixed(&self) -> f64 {
         let level = self.research(9, 1).unwrap_or(0.0);
         let base = self.data.sticker_base.get(1).copied().unwrap_or(5.0);
@@ -450,16 +436,15 @@ impl Decoder<'_> {
         superbit_62 * level * base
     }
 
-    /// `cachedBoonyCount`.
+    /// How many boonies the save carries in `Research[11]`.
     pub(crate) fn boony_count(&self) -> f64 {
         fields::row(self.save, "Research", &[11])
             .map(|row| row.len() as f64)
             .unwrap_or(0.0)
     }
 
-    /// `Button_Bonuses(slot)` from `js/stats/systems/w7/minehead.js`: the hits
-    /// one of the nine button slots has banked, times its rate and the shared
-    /// companion 147 and grid 125 multiplier.
+    /// The hits one of the nine button slots has banked, times its rate and
+    /// the shared companion 147 and grid 125 multiplier.
     pub fn button_bonus(&self, slot: usize) -> f64 {
         let presses = self.ola(594);
         let Some(rate) = BUTTON_RATES.get(slot).copied() else {
@@ -482,7 +467,7 @@ impl Decoder<'_> {
     }
 
     /// `Button_Bonuses(0)` and the same value without grid 125, so the
-    /// simulator can apply grid changes live (`recomputeDerivedBonuses`).
+    /// simulator can apply grid changes live.
     pub(crate) fn button0(&self) -> (f64, f64) {
         let presses = self.ola(594);
         if presses <= 0.0 {
@@ -496,7 +481,6 @@ impl Decoder<'_> {
         )
     }
 
-    /// `KillroyBonuses(5)` from `js/stats/defs/helpers.js`.
     pub(crate) fn killroy5(&self) -> f64 {
         let ola = self.ola(469);
         1.0 + ola / (150.0 + ola) * 0.8
@@ -512,12 +496,12 @@ impl Decoder<'_> {
         self.ola(641) * 1.0
     }
 
-    /// `Fountain_BonTOT(2,16)`, the Research EXP fountain upgrade.
+    /// Fountain upgrade 16 of water 2, the Research EXP upgrade.
     pub(crate) fn fountain_2_16(&self) -> f64 {
         self.fountain(2, 16)
     }
 
-    /// `Fountain_BonTOT(water, upgrade)`: `marbleBon(master) × level × perLv`.
+    /// A fountain upgrade's bonus: marble bonus × level × per-level value.
     ///
     /// The two upgrades the sections read (Pen N Paper and Cook Maxxing) both
     /// carry a per-level of 1, so the product is the marble bonus times the
@@ -536,7 +520,7 @@ impl Decoder<'_> {
     }
 }
 
-/// `str.includes(N2L[t])` for every index in `N2L`.
+/// For every letter of the `N2L` encoding, whether `text` contains it.
 fn encoded_flags(text: &str, encoding: &str) -> Vec<u8> {
     (0..encoding.chars().count())
         .map(|index| {

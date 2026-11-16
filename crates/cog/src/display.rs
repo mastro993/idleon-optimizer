@@ -1,6 +1,4 @@
-//! Cog names and their display labels, ported from `classifyCog`,
-//! `parseSmallCog` and `cogDisplayName` in `js/cogs/cog-board.js`, and from
-//! `cogStatTier` in `js/cogs/cog-judge.js`.
+//! Cog names and their display labels.
 
 /// Which family a cog name belongs to, for labels and colours.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -15,7 +13,7 @@ pub enum CogKind {
     Unknown,
 }
 
-/// Classify a cog name the way `classifyCog` does upstream.
+/// Classify a cog name by its family.
 pub fn classify(name: &str) -> CogKind {
     if name.is_empty() || name == "Blank" {
         return CogKind::Empty;
@@ -63,7 +61,7 @@ pub fn classify(name: &str) -> CogKind {
     CogKind::Unknown
 }
 
-/// A small cog's type and level, as `parseSmallCog` reads them.
+/// A small cog's type and level, read from its name.
 ///
 /// `CogSm_` is type 0 (Flaggy, ×2), `CogSma` type 1 (build, ×4) and `CogSmb`
 /// type 2 (construction EXP, ×1).
@@ -78,7 +76,7 @@ pub(crate) fn small_cog(name: &str) -> Option<(usize, usize)> {
     Some((kind, level))
 }
 
-/// The stat-roll tier of a cog name, from `cogStatTier`: a standard cog's own
+/// The stat-roll tier of a cog name: a standard cog's own
 /// tier 0-3, or 4 for every crystal cog (the `CogCry` number is its upgrade
 /// level, not its stat tier). `None` for a cog that does not roll stats.
 pub(crate) fn stat_tier(name: &str) -> Option<usize> {
@@ -89,7 +87,7 @@ pub(crate) fn stat_tier(name: &str) -> Option<usize> {
     }
 }
 
-/// The display name from `cogDisplayName` upstream.
+/// A cog's display name.
 pub fn display_name(name: &str) -> String {
     const CRYSTALS: [&str; 6] = ["Topaz", "Ruby", "Amethyst", "Garnet", "Emerald", "Bluegem"];
     const TIERS: [&str; 4] = ["Nooby", "Decent", "Superb", "Ulti"];
@@ -139,7 +137,7 @@ pub fn display_name(name: &str) -> String {
     name.to_string()
 }
 
-/// The upstream `VARIANT_NAMES` table, with the raw suffix as the fallback.
+/// A cog variant's name, with the raw suffix as the fallback.
 fn variant_name(suffix: &str) -> String {
     match suffix {
         "A0" | "A00" => String::new(),

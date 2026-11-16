@@ -1,11 +1,10 @@
 //! FN-04: the Sim tab, the timeline of a simulated fountain run.
 //!
-//! Upstream runs `js/fountain-sim-worker.js` in a module worker. This section
-//! runs the same simulation through the shared
-//! [`idleon_ui::runner::TaskRunner`], so the progress card, cancel action,
-//! cancelled notice and stale marker are the ones every other section uses.
-//! The run works on a copy of the cavern: the exported save and every control
-//! on this tab are unchanged when a run is cancelled.
+//! The simulation runs through the shared [`idleon_ui::runner::TaskRunner`], so
+//! the progress card, cancel action, cancelled notice and stale marker are the
+//! ones every other section uses. The run works on a copy of the cavern: the
+//! exported save and every control on this tab are unchanged when a run is
+//! cancelled.
 
 use super::overview::num;
 use super::state::{SIM_MAX_HOURS, SIM_MIN_HOURS};

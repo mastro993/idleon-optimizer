@@ -1,10 +1,10 @@
-//! The Cglunko optimizer: the upstream priority table and the plan the saved
+//! The Cglunko optimizer: the priority table and the plan the saved
 //! stones buy.
 //!
-//! `cglunko::Cglunko::priority` ports `rankUpgrades` per page: the marginal
+//! `cglunko::Cglunko::priority` ranks the upgrades per page: the marginal
 //! drop-rate gain per unit cost at the saved levels. `plan` repeats that ranking
 //! at the levels and stone balances each purchase reaches, pays every step's
-//! `upgNextCost` from the upgrade's own stone, and refuses a purchase that would
+//! next-level cost from the upgrade's own stone, and refuses a purchase that would
 //! lose more DR through a stone's digit than the level adds. The plan runs
 //! through the shared [`idleon_ui::runner::TaskRunner`]: its progress and cancel chrome
 //! come from `idleon_ui::run_chrome`, and a result whose page changed is marked stale instead
@@ -245,7 +245,7 @@ fn purchases(steps: &[Step]) -> Vec<Bought> {
     rows
 }
 
-/// The upstream rank table for the selected page: DR upgrades first, then the
+/// The rank table for the selected page: DR upgrades first, then the
 /// page's other upgrades.
 fn priority_card(cglunko: &Cglunko, page: Page) -> AnyElement {
     let ranks = cglunko.priority(page);

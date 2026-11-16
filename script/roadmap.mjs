@@ -31,7 +31,7 @@ const milestonesByKey = new Map();
 const featuresById = new Map();
 const blocks = new Map();
 const blockersById = new Map();
-// Ordered as the parity backlog lists them: a landed blocker's gaps can be closed now.
+// Ordered as the blocker backlog lists them: a landed blocker's gaps can be closed now.
 const BLOCKER_STATUSES = ['landed', 'partial', 'absent'];
 
 function validate() {
@@ -191,10 +191,6 @@ function sectionDoc(milestone) {
           '',
         ]
       : []),
-    '## Upstream sources',
-    '',
-    list(milestone.upstream) || '- none',
-    '',
     '## UI',
     '',
     list(milestone.ui) || '- none',
@@ -241,10 +237,9 @@ function roadmapDoc() {
     '<!-- Generated from docs/roadmap.json. Edit the JSON, then run node script/roadmap.mjs --write. -->',
     '',
     `${roadmap.product} tracks ${milestones} section milestones and ${features} feature issues.`,
-    `Source repository: ${roadmap.source}.`,
     '',
     'The GitHub issue tracker is the working plan. Every feature issue carries its blocked-by and',
-    'blocks links, upstream sources, section contract, acceptance criteria and verification.',
+    'blocks links, section contract, acceptance criteria and verification.',
     '',
     '## Milestones',
     '',
@@ -266,7 +261,7 @@ function roadmapDoc() {
     const ordered = [...blockersById.values()].sort(
       (a, b) => BLOCKER_STATUSES.indexOf(a.status) - BLOCKER_STATUSES.indexOf(b.status),
     );
-    lines.push('', '## Parity backlog', '', '| Blocker | Status | Gaps it blocks |', '| --- | --- | --- |');
+    lines.push('', '## Blocker backlog', '', '| Blocker | Status | Gaps it blocks |', '| --- | --- | --- |');
     for (const blocker of ordered) {
       const gaps = (gapsBy.get(blocker.id) || []).join(', ') || '-';
       lines.push(`| \`${blocker.id}\` ${blocker.title} | ${blocker.status} | ${gaps} |`);
@@ -386,7 +381,6 @@ function issueBody(feature, milestone, numbers) {
     `- Milestone: ${milestone.id} ${milestone.title}`,
     `- Section key: \`${milestone.key}\``,
     `- Spec: docs/sections/${milestone.key}.md`,
-    `- Upstream sources: ${(milestone.upstream || []).join(', ') || 'n/a'}`,
     '',
     '## Dependencies',
     '',
@@ -423,7 +417,7 @@ function issueBody(feature, milestone, numbers) {
     '',
     '## Agent notes',
     '',
-    '- Port behavior from the upstream source listed above; do not infer rules from fixtures.',
+    '- Do not infer game rules from fixtures.',
     '- Keep the domain crates free of GPUI and add formula tests before wiring the UI.',
     '- Use the shared components from M0; do not reimplement cards, tables, formula trees or task running.',
     '- Close this issue only when the acceptance list and the section verification pass.',

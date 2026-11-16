@@ -1,4 +1,4 @@
-//! Static sailing tables, extracted from the upstream JS calculators.
+//! Static sailing tables.
 
 use serde::Deserialize;
 use std::sync::OnceLock;
@@ -61,12 +61,12 @@ pub fn sailing() -> &'static SailingData {
     })
 }
 
-/// Every island upstream declares.
+/// Every island the game declares.
 pub fn island_count() -> usize {
     sailing().islands.len()
 }
 
-/// Every artifact upstream declares.
+/// Every artifact the game declares.
 pub fn artifact_count() -> usize {
     sailing().artifacts.len()
 }
@@ -123,7 +123,7 @@ pub fn artifact_base(idx: usize) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// An artifact's bonus at `tier`, matching upstream `artifactTierBonus`.
+/// An artifact's tier bonus at `tier`.
 pub(crate) fn artifact_tier_bonus(idx: usize, tier: u32) -> f64 {
     if !(2..=7).contains(&tier) {
         return 0.0;
@@ -134,9 +134,9 @@ pub(crate) fn artifact_tier_bonus(idx: usize, tier: u32) -> f64 {
         .unwrap_or(0.0)
 }
 
-/// An artifact's bonus at `tier`, matching the generic path of upstream
-/// `computeArtifactBonus`: the base bonus at tier one, scaled by the tier when
-/// the artifact's description says its main bonus is doubled, tripled, …
+/// An artifact's bonus at `tier` on the generic path: the base bonus at tier
+/// one, scaled by the tier when the artifact's description says its main bonus
+/// is doubled, tripled, …
 ///
 /// The artifact-specific special cases (card counts, skill levels and similar)
 /// are not part of this helper; callers that read one of those artifacts model
@@ -181,7 +181,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_sailing_tables_match_the_upstream_shape() {
+    fn the_sailing_tables_have_the_game_shape() {
         assert_eq!(island_count(), 17);
         assert_eq!(artifact_count(), 41);
         assert_eq!(island_distance(0), 25.0);

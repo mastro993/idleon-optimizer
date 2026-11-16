@@ -1,9 +1,7 @@
 //! The weekly forecast: which encounters a save can enter in each upcoming week.
 //!
-//! Ports `killroyForecast` and `killroyWeek` from
-//! `js/stats/systems/common/killroy-planner.js`. Every number here is a save
-//! read or a game RNG draw; nothing predicts kills or skulls, which come from a
-//! trial (see [`super::trial()`]).
+//! Every number here is a save read or a game RNG draw; nothing predicts kills or
+//! skulls, which come from a trial (see [`super::trial()`]).
 
 use super::{
     KillroyError, MAX_FORECAST_WEEKS, WEEK_SECONDS, class_matches, data, form, game_random, number,

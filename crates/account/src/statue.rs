@@ -1,11 +1,9 @@
 //! The statue calculator's account inputs.
 //!
-//! Ports `statueLevelingInputs` from
-//! `js/stats/systems/common/statue-leveling.js`: the STARTUE EXP bubble
-//! (`AlchemyDescription[3][2]`), the Skinny 0 Cal vial's double chance, the
-//! Onyx/Zenith tier multiplier and whether the save carries Royal Guardian
-//! Flair. A field the save does not carry reads as zero and is named in a
-//! warning, as the upstream UI warns instead of guessing.
+//! The STARTUE EXP bubble (`AlchemyDescription[3][2]`), the Skinny 0 Cal
+//! vial's double chance, the Onyx/Zenith tier multiplier and whether the save
+//! carries Royal Guardian Flair. A field the save does not carry reads as zero
+//! and is named in a warning instead of being guessed.
 
 use super::Decoder;
 use idleon_save::fields;
@@ -34,7 +32,7 @@ impl Decoder<'_> {
         )
     }
 
-    /// `computeVialByKey('StatueDouble')`: the Skinny 0 Cal vial's chance to
+    /// The `StatueDouble` vial bonus: the Skinny 0 Cal vial's chance to
     /// double one deposit, with the lab, Rift, vault and meritocracy bonuses.
     fn statue_double_chance(&mut self) -> f64 {
         let (kind, x1, x2, index) = {
@@ -69,8 +67,8 @@ impl Decoder<'_> {
         chance.clamp(0.0, 1.0)
     }
 
-    /// `statueGData` counted at or above each tier: Onyx from tier 2, Zenith
-    /// from tier 3. `StuG` is the decoded name the upstream loader uses.
+    /// The statues at or above each tier, from the save's `StuG` row: Onyx
+    /// from tier 2, Zenith from tier 3.
     fn statue_tiers(&self) -> (u32, u32) {
         let tier = self.ola(TIER_OPTION);
         let rows = fields::field(self.save, "StuG")
@@ -91,7 +89,7 @@ impl Decoder<'_> {
     }
 
     /// `RoyalG[22]`: one Flair level per statue, and whether the save carries
-    /// the row at all (`hasRoyalGData`).
+    /// the row at all.
     fn statue_flair(&self) -> (Vec<u32>, bool) {
         let available = fields::field(self.save, "RoyalG").is_some();
         let levels = fields::row(self.save, "RoyalG", &[FLAIR_ROW])

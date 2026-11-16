@@ -1,9 +1,9 @@
 //! The Currency tab: the value table, the per-water multipliers, the desired
 //! currency simulator and the next unlock tracker.
 //!
-//! Ported from the `#tab-currency` half of `fountain-calc.html`. The page reads
-//! the save's desired currency; here the same table can simulate another choice
-//! through the select and the simulator's rows, and the save is never written.
+//! The table starts from the save's desired currency and can simulate another
+//! choice through the select and the simulator's rows; the save is never
+//! written.
 
 use super::overview::{num, pct};
 use crate::state::AppState;

@@ -1,11 +1,9 @@
 //! SN-03: the Optimizer workspace.
 //!
-//! Ported from the optimizer panel in `sneaking-calc.html` and
-//! `optimizeSneakingLoadout` in `js/stats/systems/w6/sneaking-loadout-search.js`.
-//! The pane picks the objective, runs the search for it off the UI thread through
-//! the shared task runner, and prints the saved placement against the
-//! recommendation: the score, the per-twin action and try rate, and the charm pair
-//! each twin should wear.
+//! The pane picks the objective, runs the search for it off the UI thread
+//! through the shared task runner, and prints the saved placement against the
+//! recommendation: the score, the per-twin action and try rate, and the charm
+//! pair each twin should wear.
 //!
 //! The run only reads the loadout, so cancelling leaves the editor exactly as it
 //! was; writing a recommendation into the loadout is the explicit Apply action.

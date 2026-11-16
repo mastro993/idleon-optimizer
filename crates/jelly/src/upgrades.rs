@@ -1,28 +1,23 @@
 //! The upgrade list: every `JellyUPG` row in the `Research[44]` purchase order,
 //! what the next one costs and what the save's level buys.
 //!
-//! Ports `jellyUpgradeAtOrder`, `jellyUpgradeResearchLevelRequirement`,
-//! `jellyUpgradeCost`, `jellyUpgradeCanBuy`, `jellyUpgradeStatus` and
-//! `jellyUpgradeDisplay` from `js/stats/systems/w7/jelly-operator.js`.
-//!
 //! The price is the order position's own curve, the upgrade's cost scale at the
 //! level already owned and Lower Cholesterol's cost divisor. Menagerie's Upgrade
 //! Doubler doubles a quantity, not a price, so a doubled upgrade is worth twice
 //! as much for the same curve.
 //!
-//! The game's description text carries placeholders the page fills: `{` is the
-//! upgrade's own quantity, `}` the Bloodcell factor it buys and `$` the effect
-//! that row computes. [`fmt_val`] is the page's `fmtVal`, which the filled text
-//! prints with.
+//! The game's description text carries placeholders: `{` is the upgrade's own
+//! quantity, `}` the Bloodcell factor it buys and `$` the effect that row
+//! computes. The filled text prints with [`fmt_val`].
 
 use super::board::slot_purchases_left;
 use super::data::data;
 use super::{Jelly, fmt_val};
 
-/// How many rows the page lists (`jellyUpgradeOrder().slice(0, 40)`).
+/// How many rows the list shows.
 pub const LISTED: usize = 40;
 
-/// `jellyUpgradeAtOrder`: the upgrade the purchase order buys at `order`.
+/// The upgrade the purchase order buys at `order`.
 ///
 /// The order names 100 slots while the game's `JellyUPG` table defines 40, so a
 /// slot past the table is `None`.
@@ -30,13 +25,13 @@ pub fn at_order(order: usize) -> Option<usize> {
     data().upgrade_order.get(order).copied()
 }
 
-/// `jellyUpgradeResearchLevelRequirement`: the Research level a slot appears at.
+/// The Research level a slot appears at.
 pub fn research_level_requirement(order: usize) -> f64 {
     let order = order as f64;
     15.0 + 2.0 * order + (order / 15.0).floor() - (order / 11.0).floor()
 }
 
-/// `jellyUpgradeStatus`: whether one purchase slot can be bought from this save.
+/// Whether one purchase slot can be bought from this save.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Status {
     /// The upgrade the slot buys; `None` past the shipped table.
@@ -54,7 +49,7 @@ pub struct Status {
     pub can_buy: bool,
 }
 
-/// One row of the upgrade list: `jellyUpgradeDisplay` joined with the slot's
+/// One row of the upgrade list: the displayed slot joined with the slot's
 /// price and status.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Row {
@@ -72,7 +67,8 @@ pub struct Row {
     pub effect: String,
     /// What one more level buys.
     pub per_level: String,
-    /// The page's own note about a formula this build corrects.
+    /// Where the game's runtime differs from the upgrade text, or why the
+    /// upgrade has no modelled gain.
     pub note: String,
     /// The slot's price; `f64::INFINITY` when the order names an unfilled slot.
     pub cost: f64,
@@ -80,7 +76,7 @@ pub struct Row {
 }
 
 impl Jelly {
-    /// `jellyUpgradeCost`: the price of the purchase slot at `order`.
+    /// The price of the purchase slot at `order`.
     pub fn upgrade_cost(&self, order: usize) -> f64 {
         if order == 0 {
             return 0.0;
@@ -103,7 +99,7 @@ impl Jelly {
             * upgrade.cost_scale.powf(self.upgrade_level(upgrade.id))
     }
 
-    /// `jellyUpgradeStatus`: whether the slot at `order` can be bought.
+    /// Whether the slot at `order` can be bought.
     pub fn upgrade_status(&self, order: usize) -> Status {
         let id = at_order(order);
         let upgrade = id.and_then(|id| data().upgrade(id));
@@ -129,7 +125,7 @@ impl Jelly {
         }
     }
 
-    /// `jellyUpgradeDisplay`: one slot as the list prints it.
+    /// One slot as the list prints it.
     pub fn upgrade_row(&self, order: usize) -> Option<Row> {
         let upgrade = at_order(order).and_then(|id| data().upgrade(id))?;
         let id = upgrade.id;
@@ -307,13 +303,13 @@ impl Jelly {
             .collect()
     }
 
-    /// `jellyDailyBloodcells`: what the daily reset pays from the best operation.
+    /// What the daily reset pays from the best operation.
     pub fn daily_bloodcells(&self) -> f64 {
         self.progress.best_bloodcells * self.upgrade_quantity(38) / 100.0
     }
 }
 
-/// The game description with its placeholders filled, as the page prints it:
+/// The game description with its placeholders filled, as the list prints it:
 /// `{` is the quantity, `}` the Bloodcell factor it buys, `$` the row's effect
 /// and `@` a line break.
 fn fill(description: &str, quantity: f64, dollar: &str) -> String {
@@ -326,7 +322,7 @@ fn fill(description: &str, quantity: f64, dollar: &str) -> String {
         .join(" ")
 }
 
-/// `displayNumber`: a whole number, two decimals, or the game's suffix at 1000.
+/// A whole number, two decimals, or the game's suffix at 1000.
 pub fn display_number(value: f64) -> String {
     if value.abs() >= 1000.0 {
         return fmt_val(value);

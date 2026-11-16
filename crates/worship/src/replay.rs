@@ -1,16 +1,16 @@
 //! Recorded frames from a Worship TD run.
 //!
-//! A port of the upstream `opts.replay` recorder: frames every `interval`
-//! seconds of game time, a tower layout per change, and bounded storage that
-//! halves the rate once it fills. Scrub and speed controls read these frames,
-//! so a replay cannot disagree with the run it came from.
+//! The recorder takes frames every `interval` seconds of game time, a tower
+//! layout per change, and bounded storage that halves the rate once it fills.
+//! Scrub and speed controls read these frames, so a replay cannot disagree with
+//! the run it came from.
 
 use super::{CloudView, EndReason, KrakenView, MobView, RunView, TowerView};
 
 /// How often a run records replay frames.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ReplayConfig {
-    /// Game seconds between frames; upstream defaults to 1.
+    /// Game seconds between frames; defaults to 1.
     pub interval_sec: f64,
     /// Skip frames recorded before this wave.
     pub from_wave: u32,

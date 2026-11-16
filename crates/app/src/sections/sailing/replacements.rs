@@ -21,7 +21,7 @@ use idleon_sailing::{
 };
 use idleon_ui::format;
 
-/// The tiers the matrix compares, upstream's ordinary chest tiers.
+/// The tiers the matrix compares, the ordinary chest tiers.
 const TIERS: usize = 5;
 
 /// The replacements tab: the controls, the reference KPIs and the matrix.

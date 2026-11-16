@@ -1,10 +1,10 @@
 //! Chest outcomes: the fleet's tier chances, what each tier pays and the
 //! near-full pile transitions.
 //!
-//! The upstream chest odds tab reads three things. `aggregateFleetTiers` weights
-//! every captain's tier odds by that boat's exact-tier chest rate, so the fleet
-//! row is an arrival-weighted average rather than a flat mean.
-//! `fleetChestPayoutBreakdown` turns one tier into its stored value, its
+//! The chest odds have three parts. [`aggregate_fleet_tiers`] weights every
+//! captain's tier odds by that boat's exact-tier chest rate, so the fleet row is
+//! an arrival-weighted average rather than a flat mean.
+//! [`fleet_chest_payout_breakdown`] turns one tier into its stored value, its
 //! guaranteed payouts and the expected amount of each treasure currency. The
 //! near-full pile block repeats one ordinary chest transition at a time:
 //! Unending Loot Search's promotion chance and the opened value it gains.
@@ -28,9 +28,9 @@ pub(crate) const BASE_CHEST_SLOTS: f64 = 5.0;
 /// The most chest slots a save can reach.
 pub(crate) const MAX_CHEST_SLOTS: usize = 34;
 
-/// The pile's chest slots, matching upstream `maxChestSlots`: five starting
-/// slots plus the gem purchase, Artifact 19 (capped at four), the task reward
-/// and achievements 287 and 290, capped at 34.
+/// The pile's chest slots: five starting slots plus the gem purchase,
+/// Artifact 19 (capped at four), the task reward and achievements 287 and 290,
+/// capped at 34.
 pub fn chest_capacity(
     gem_purchase: f64,
     artifact_19_tier: u32,
@@ -98,7 +98,7 @@ pub struct CurrencyPayout {
     pub expected_value_per_hour: f64,
 }
 
-/// The three treasure currencies' payouts, as upstream keys them.
+/// The three treasure currencies' payouts.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CurrencyPayouts {
     pub gold: CurrencyPayout,
@@ -139,8 +139,7 @@ pub struct NearFullTier {
     pub artifact_multiplier: f64,
 }
 
-/// Every captain's tier odds weighted by that boat's exact-tier chest rate,
-/// matching upstream `aggregateFleetTiers`.
+/// Every captain's tier odds weighted by that boat's exact-tier chest rate.
 pub fn aggregate_fleet_tiers(routes: &[RouteMetrics]) -> FleetChestOutcomes {
     let generated: f64 = routes
         .iter()
@@ -180,8 +179,7 @@ pub fn aggregate_fleet_tiers(routes: &[RouteMetrics]) -> FleetChestOutcomes {
     }
 }
 
-/// One tier's payout across the fleet, matching upstream
-/// `fleetChestPayoutBreakdown`.
+/// One tier's payout across the fleet.
 pub fn fleet_chest_payout_breakdown(
     routes: &[RouteMetrics],
     tier: usize,
@@ -257,7 +255,7 @@ pub fn fleet_chest_payout_breakdown(
 }
 
 /// The four ordinary promotions the near-full scan can roll, tier four to
-/// Miracle excluded as upstream does.
+/// Miracle excluded.
 pub fn near_full_pile(context: &RouteContext) -> Vec<NearFullTier> {
     (0..4)
         .map(|tier| {
@@ -426,7 +424,7 @@ mod tests {
     }
 
     #[test]
-    fn the_pile_capacity_follows_the_upstream_slots() {
+    fn the_pile_capacity_adds_every_slot_source() {
         assert_eq!(chest_capacity(0.0, 0, 0.0, false, false), 5);
         // Gem 4 + Artifact 19's doubled base (2 × 2 = 4) + task 2 + one achievement.
         assert_eq!(chest_capacity(4.0, 2, 2.0, true, false), 16);

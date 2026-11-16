@@ -1,5 +1,4 @@
-//! `optimizeBlueJellyfish`: the Blue Jellyfish donation search behind the NMLB
-//! planner.
+//! The Blue Jellyfish donation search behind the NMLB planner.
 //!
 //! Donating ladles raises the grant every kitchen cooks at each reset, forever;
 //! spending them buys meal levels now. The search plans the same horizon under an
@@ -7,11 +6,9 @@
 //! day window, refines the strongest split, and keeps the baseline when nothing
 //! beats it.
 //!
-//! Upstream ranks the search by the kitchen speed the horizon reaches
-//! (`_planObjective`'s default). Kitchen speed is one entered rate in this build
-//! and does not follow the meal levels, so the search ranks by the section's own
-//! objective instead: the meal levels gained, or the progress toward the meal
-//! targets. Every other rule is the upstream search's.
+//! Kitchen speed is one entered rate in this build and does not follow the meal
+//! levels, so the search ranks by the section's own objective: the meal levels
+//! gained, or the progress toward the meal targets.
 
 use super::plan::{Inputs, Plan, Policy, Schedule, plan};
 use super::{Objective, Reset};
@@ -27,8 +24,7 @@ const REFINEMENT_STEPS: [f64; 3] = [0.25, 0.125, 0.0625];
 pub struct Split {
     pub owned_fraction: f64,
     pub income_fraction: f64,
-    /// The first reset the daily share applies to; 0 means the whole horizon,
-    /// as upstream leaves `fromDay` undefined.
+    /// The first reset the daily share applies to; 0 means the whole horizon.
     pub from_day: u32,
     /// The last reset the daily share applies to.
     pub until_day: u32,
@@ -53,7 +49,7 @@ pub struct Donation {
     pub evaluated: usize,
 }
 
-/// `_planObjective`: the value a plan reaches under the section's objective.
+/// The value a plan reaches under the section's objective.
 pub fn score(plan: &Plan, inputs: &Inputs) -> f64 {
     match inputs.objective {
         Objective::Ranks => plan.gained.iter().sum(),
@@ -69,7 +65,7 @@ pub fn score(plan: &Plan, inputs: &Inputs) -> f64 {
     }
 }
 
-/// `optimizeBlueJellyfish`: compare donation splits against direct spending.
+/// Compare donation splits against direct spending.
 ///
 /// Returns `None` when the reporter stopped the run or the baseline plan cannot
 /// be built, so a cancelled run stores nothing.

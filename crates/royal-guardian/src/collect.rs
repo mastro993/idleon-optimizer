@@ -1,10 +1,6 @@
 //! The drain staffing: which built outpost drains which node, the banked hours
 //! the account has saved, and the projection through the daily reset.
 //!
-//! Ported from `royalCollectStreams`, `royalBanksTime`, `royalBankedHours`,
-//! `royalResetTiming`, `resourceAllocationMetrics`,
-//! `resourceAllocationToReset` and `currencyIncomeBreakdown`.
-//!
 //! A node fills from every stream linked to it, so one node's rate is the sum of
 //! its outposts. A Savage outpost drains at its collection rate times the Savage
 //! multiplier and pays no currency, which is why the drain rate and the currency
@@ -13,8 +9,7 @@
 use super::*;
 use std::collections::BTreeMap;
 
-/// One outpost's drain on one resource node: upstream `royalCollectStreams`
-/// entry.
+/// One outpost's drain on one resource node.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ResourceStream {
     pub map: usize,
@@ -68,7 +63,7 @@ pub struct NodeAllocation {
     pub projected_remaining_at_reset: Option<f64>,
 }
 
-/// The daily reset countdown: upstream `royalResetTiming`.
+/// The daily reset countdown.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ResetTiming {
     /// Whether the save carries `TimeAway.ShopRestock`.
@@ -80,7 +75,7 @@ pub struct ResetTiming {
 }
 
 /// Every node's allocation over one fixed window, with the reset projection
-/// upstream folds into the same result.
+/// folded into the same result.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Allocation {
     pub hours: f64,
@@ -109,8 +104,7 @@ pub struct Allocation {
     pub partial: bool,
 }
 
-/// The saved banked time and what it collects: upstream `bankedResourceProjection`
-/// in its current-state mode.
+/// The saved banked time and what it collects from the current state.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Banked {
     /// Whether Armory 30 makes the game bank time while the menu is closed.
@@ -134,7 +128,7 @@ pub struct CurrencyNode {
     pub allocation: NodeAllocation,
 }
 
-/// One currency's income: upstream `currencyIncomeBreakdown`.
+/// One currency's income.
 #[derive(Clone, Debug, PartialEq)]
 pub struct CurrencyIncome {
     pub slot: i64,
@@ -190,9 +184,8 @@ impl RoyalGuardian {
         }
     }
 
-    /// Every drain link the save holds, in map then slot order: upstream
-    /// `royalCollectStreams`, with the links whose target or outpost kind makes
-    /// them unusable reported separately.
+    /// Every drain link the save holds, in map then slot order, with the links
+    /// whose target or outpost kind makes them unusable reported separately.
     pub fn resource_streams(&self) -> (Vec<ResourceStream>, Vec<String>) {
         self.resource_streams_with(&self.collection_inputs())
     }
@@ -251,8 +244,7 @@ impl RoyalGuardian {
         (streams, invalid)
     }
 
-    /// Every node's fixed-window projection with the inputs supplied: upstream
-    /// `resourceAllocationMetrics`.
+    /// Every node's fixed-window projection with the inputs supplied.
     pub fn resource_allocation_with(&self, inputs: &CollectionInputs, hours: f64) -> Allocation {
         let hours = hours.max(0.0);
         let (streams, invalid) = self.resource_streams_with(inputs);
@@ -344,8 +336,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// The fixed-window allocation with the daily reset's projection folded in:
-    /// upstream `resourceAllocationToReset`.
+    /// The fixed-window allocation with the daily reset's projection folded in.
     pub fn allocation_to_reset(&self) -> Allocation {
         self.allocation_to_reset_with(&self.collection_inputs())
     }
@@ -437,8 +428,7 @@ impl RoyalGuardian {
         allocation
     }
 
-    /// What the saved banked time would collect right now: upstream
-    /// `bankedResourceProjection` in its current-state mode.
+    /// What the saved banked time would collect right now.
     pub fn banked(&self) -> Banked {
         self.banked_with(&self.collection_inputs())
     }
@@ -477,7 +467,7 @@ impl RoyalGuardian {
         }
     }
 
-    /// One currency's income: upstream `currencyIncomeBreakdown`.
+    /// One currency's income.
     pub fn currency_income(&self, slot: i64) -> CurrencyIncome {
         self.currency_income_with(slot, &self.collection_inputs())
     }
@@ -565,7 +555,7 @@ impl RoyalGuardian {
         income
     }
 
-    /// One currency slot's saved balance: upstream `royalG(S, 1, slot)`.
+    /// One currency slot's saved balance: `RoyalG[1][slot]`.
     pub fn currency_balance(&self, slot: i64) -> f64 {
         if slot < 0 {
             return 0.0;

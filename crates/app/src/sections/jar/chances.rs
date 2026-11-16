@@ -127,7 +127,7 @@ fn chance_by_tier(jar: &Jar) -> AnyElement {
         .into_any_element()
 }
 
-/// `expectedHoursToEvent`: how many breaks and how many hours the next event
+/// How many breaks and how many hours the next event
 /// takes at tier one, on one slot.
 fn expected_events(jar: &Jar) -> AnyElement {
     let mut table = Table::new(["Event", "Chance", "Average breaks", "Estimated time"]);

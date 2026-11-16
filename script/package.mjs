@@ -63,7 +63,7 @@ if (!existsSync(binary)) {
   fail(`${binary} is missing; build it first: cargo build --release -p idleon-optimizer --no-default-features${target ? ` --target ${target}` : ''}`);
 }
 
-const artwork = join(root, 'assets/upstream');
+const artwork = join(root, 'assets/game');
 const dist = join(root, 'target/dist');
 mkdirSync(dist, { recursive: true });
 
@@ -74,7 +74,7 @@ function countFiles(dir) {
 // The artwork under `beside`, where `assets.rs` looks first. The credit note
 // must ship with it.
 function copyArtwork(beside) {
-  const copy = join(beside, 'assets/upstream');
+  const copy = join(beside, 'assets/game');
   cpSync(artwork, copy, { recursive: true });
   const [source, copied] = [countFiles(artwork), countFiles(copy)];
   if (source !== copied) fail(`copied ${copied} of ${source} artwork files`);
@@ -178,8 +178,8 @@ Built on Ubuntu 22.04 (glibc 2.35); older distributions are not supported.
 It needs a Vulkan driver and a Wayland or X11 session, plus fontconfig,
 freetype and xkbcommon, which desktop distributions install by default.
 
-The game artwork under assets/upstream/ is credited in
-assets/upstream/README.md. First-run notes for every platform:
+The artwork under assets/game/ is from Legends of Idleon by LavaFlame2;
+see assets/game/README.md. First-run notes for every platform:
 https://github.com/mastro993/idleon-optimizer/blob/main/docs/release.md
 `;
 }

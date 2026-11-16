@@ -1,14 +1,13 @@
-//! The section registry: every page the suite can open, ported from the upstream
-//! `index.html` cards and `js/ui/site-nav.js` navigation.
+//! The section registry: every page the suite can open.
 //!
 //! One entry per section carries its id, title, group, icon, one-line description,
 //! spec link, status and the factory that renders it. The dashboard, the router,
 //! the keyboard shortcuts and the MCP harness all read this table, so adding a
 //! section means one entry here plus one module under `sections/`.
 //!
-//! The five pages upstream hides from its index (`stats-all`, `damage`, `drop-rate`,
-//! `coin-multi`, `pickle`) are registered without a dashboard card: the router and
-//! the harness can still open them by id.
+//! Five hidden pages (`stats-all`, `damage`, `drop-rate`, `coin-multi`, `pickle`)
+//! are registered without a dashboard card: the router and the harness can still
+//! open them by id.
 
 pub(crate) mod cglunko;
 pub(crate) mod clamworks;
@@ -45,7 +44,7 @@ pub(crate) mod worship_td;
 use crate::state::AppState;
 use gpui::{AnyElement, App, Context, Window};
 
-/// A section's own renderer: the module that owns its upstream tab strip and content.
+/// A section's own renderer: the module that owns its tab strip and content.
 pub(crate) type View = fn(&mut AppState, &mut Window, &mut Context<AppState>) -> AnyElement;
 
 /// A section's keyboard shortcuts, registered once at startup.
@@ -77,7 +76,7 @@ pub(crate) enum Group {
     W5,
     W6,
     W7,
-    /// The hidden upstream tool pages, which have no dashboard card.
+    /// The hidden tool pages, which have no dashboard card.
     Tools,
 }
 
@@ -122,7 +121,7 @@ impl Group {
         }
     }
 
-    /// The badge on each card, matching the upstream classes.
+    /// The badge on each card.
     pub(crate) fn badge(self) -> &'static str {
         match self {
             Group::General => "General",
@@ -184,7 +183,7 @@ impl Section {
     }
 }
 
-/// Every section, grouped like `js/ui/site-nav.js` and ordered by group.
+/// Every section, ordered by group.
 pub(crate) const SECTIONS: [Section; 30] = [
     Section {
         id: "combat-sim",

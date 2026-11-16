@@ -1,9 +1,6 @@
 //! The native collect pass: what one Royal menu collection commits, and the EXP
 //! projection the forecast steps between rank thresholds.
 //!
-//! Ported from `royalCollectExpModels`, `previewRoyalCollectExp`,
-//! `royalCollectExpRates`, `applyRoyalCollectStreams` and `royalCollectAll`.
-//!
 //! The game runs `_customEvent_CollectAll` about every 41 frames while the menu
 //! is open; closed, elapsed time banks in `RoyalG[3][0]` once Armory 30 is
 //! owned. One pass drains every node, feeds every rank bar from the units
@@ -16,8 +13,7 @@ use std::collections::BTreeMap;
 /// The worlds whose assignment rows the pass reads.
 const ASSIGNMENT_WORLDS: usize = 8;
 
-/// One outpost's EXP state, and the rates its units feed it with: upstream
-/// `royalCollectExpModels` model.
+/// One outpost's EXP state, and the rates its units feed it with.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ExpModel {
     pub map: usize,
@@ -43,7 +39,7 @@ pub struct ExpPreview {
     pub ranks: [f64; 5],
 }
 
-/// An outpost militia is still clearing: upstream `royalCollectExpModels` clear.
+/// An outpost militia is still clearing.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClearModel {
     pub map: usize,
@@ -52,7 +48,7 @@ pub struct ClearModel {
     pub requirement: f64,
 }
 
-/// Every outpost's EXP model: upstream `royalCollectExpModels`.
+/// Every outpost's EXP model.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ExpModels {
     pub models: Vec<ExpModel>,
@@ -92,7 +88,7 @@ pub struct Pass {
 }
 
 impl RoyalGuardian {
-    /// Every outpost's EXP model: upstream `royalCollectExpModels`.
+    /// Every outpost's EXP model.
     pub fn exp_models(&self) -> ExpModels {
         let a72 = self.armory_bonus(72) / 100.0;
         let feed = self.armory_bonus(17) >= 1.0;
@@ -169,8 +165,8 @@ impl RoyalGuardian {
         ExpModels { models, clears }
     }
 
-    /// Applies one drain pass to the node quantities and currency balances:
-    /// upstream `applyRoyalCollectStreams`. Returns the nodes it drained.
+    /// Applies one drain pass to the node quantities and currency balances.
+    /// Returns the nodes it drained.
     pub fn apply_streams(
         &self,
         quantities: &mut [f64],
@@ -213,9 +209,9 @@ impl RoyalGuardian {
         drained
     }
 
-    /// One native collect pass over `hours` of banked time: upstream
-    /// `royalCollectAll`. The rows this reads are the same ones it writes, so
-    /// callers clone the state before passing it in.
+    /// One native collect pass over `hours` of banked time. The rows this reads
+    /// are the same ones it writes, so callers clone the state before passing it
+    /// in.
     pub fn collect_all(&mut self, hours: f64) -> Pass {
         let hours = hours.max(0.0);
         let mut pass = Pass::default();
@@ -321,7 +317,7 @@ impl RoyalGuardian {
                     });
                 }
             }
-            // Upstream records the point delta for every map that ranked up,
+            // The pass records the point delta for every map that ranked up,
             // including the zero a non-Trading bar leaves.
             if ranked_up {
                 pass.points.insert(map, points - prior_points);
@@ -331,13 +327,12 @@ impl RoyalGuardian {
         pass
     }
 
-    /// Whether the outpost takes part in a collect pass: upstream `_collecting`.
+    /// Whether the outpost takes part in a collect pass.
     pub(super) fn collecting(&self, map: usize) -> bool {
         self.map_row(map).len() > 2 && self.outpost(map).built
     }
 
-    /// The highest rank bar the outpost has reached, lowest bar on a tie:
-    /// upstream `_highestBar`.
+    /// The highest rank bar the outpost has reached, lowest bar on a tie.
     pub(super) fn highest_rank_bar(&self, map: usize) -> usize {
         let mut best = 0;
         let mut rank = -1.0;
@@ -410,8 +405,7 @@ fn set_cell(cells: &mut Vec<Value>, cell: usize, value: f64) {
 }
 
 impl ExpModel {
-    /// EXP and ranks after one pass of `hours`: upstream
-    /// `previewRoyalCollectExp`.
+    /// EXP and ranks after one pass of `hours`.
     pub fn preview(&self, hours: f64) -> ExpPreview {
         let mut exp = self.exp;
         let mut ranks = self.ranks;
@@ -465,7 +459,7 @@ impl ExpModel {
         ExpPreview { exp, ranks }
     }
 
-    /// First-order continuous rates per bar: upstream `royalCollectExpRates`.
+    /// First-order continuous rates per bar.
     pub fn rates(&self) -> [f64; 5] {
         let mult = 1.0 + self.ranks[1] * self.a72;
         let mut rates = [0.0; 5];
@@ -489,7 +483,7 @@ impl ExpModel {
     }
 }
 
-/// The rank an EXP bar reaches at or above `exp`: upstream `_rankFrom`.
+/// The rank an EXP bar reaches at or above `exp`.
 fn rank_from(exp: f64, bar: usize, mut rank: f64) -> f64 {
     while rank < MAX_RANK && exp >= RoyalGuardian::exp_formula(rank, bar) {
         rank += 1.0;

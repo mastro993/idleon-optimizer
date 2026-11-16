@@ -1,9 +1,8 @@
 //! The manual simulator tab: an opal count per unlocked villager and the rate
 //! the split earns against the save.
 //!
-//! `opal-calc.html` keeps this in `renderSimulatorTab` and `recalcSim`: one
-//! number input per unlocked villager, a warning while the typed total leaves
-//! the save's, the lowest count and the Equal Spread it buys, and each
+//! One number input per unlocked villager, a warning while the typed total
+//! leaves the save's, the lowest count and the Equal Spread it buys, and each
 //! villager's rate against what it earns today. The section adds the reset the
 //! contract asks for. Every figure is [`idleon_opal::Simulation`]; this module
 //! only draws it.

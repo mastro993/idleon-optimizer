@@ -1,7 +1,6 @@
-//! Static Jar Cavern data, extracted from the upstream JS calculators.
+//! Static Jar Cavern data.
 //!
-//! `script/extract-jar-data.mjs` writes `data/jar.json` from the upstream
-//! checkout; the rows are the ones the jar formulas read, not a copy of the
+//! `data/jar.json` holds the rows the jar formulas read, not a copy of the
 //! game's whole data set.
 
 use serde::Deserialize;
@@ -17,9 +16,9 @@ pub struct Data {
     pub cosmo: Cosmo,
     /// `LegendTalents[index][2]`: the points each legend talent level grants.
     pub legend_per_point: HashMap<String, f64>,
-    /// `paletteParams(2)`, the palette that grants collectible chance.
+    /// Palette 2, the palette that grants collectible chance.
     pub palette2: Palette,
-    /// `UPG_DATA[2][upgrade][6]`, the Fountain bonus per level.
+    /// The Fountain bonus per level.
     pub fountain_per_level: Fountain,
     /// `HolesInfo[37]`: the per-level value of each monument bonus.
     pub monument_bonus_per_level: Vec<f64>,
@@ -29,19 +28,19 @@ pub struct Data {
     pub measurement_base: Vec<String>,
     /// `N2L[32]`, the SuperBit 32 key matched against `Gaming[12]`.
     pub super_bit32: String,
-    /// `COLLECTIBLE_DATA`: the forty collectibles, in save order.
+    /// The forty collectibles, in save order.
     pub collectibles: Vec<CollectibleData>,
-    /// `CATEGORY_LABELS`, keyed by collectible category.
+    /// The category labels, keyed by collectible category.
     pub category_labels: HashMap<String, String>,
-    /// `CATEGORY_COLORS`, keyed by collectible category.
+    /// The category colors, keyed by collectible category.
     pub category_colors: HashMap<String, String>,
-    /// `B_UPG_DATA`: the jar schematics.
+    /// The jar schematics.
     pub schematics: Vec<SchematicData>,
-    /// `B_UPG_GROUPS`: the schematic groups, in display order.
+    /// The schematic groups, in display order.
     pub schematic_groups: Vec<SchematicGroup>,
 }
 
-/// One `COLLECTIBLE_DATA` row: `[name, bonPerLv, effectCategory, effectDesc]`.
+/// One collectible row: its name, bonus per level, category and effect text.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CollectibleData {
@@ -52,7 +51,7 @@ pub struct CollectibleData {
     pub effect: String,
 }
 
-/// One `B_UPG_DATA` row: `[index, name, effectVal, effectDesc, currency, cost]`.
+/// One schematic row: index, name, effect value and text, currency and cost.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SchematicData {
@@ -65,7 +64,7 @@ pub struct SchematicData {
     pub cost: f64,
 }
 
-/// One `B_UPG_GROUPS` entry.
+/// One schematic group.
 #[derive(Debug, Deserialize)]
 pub struct SchematicGroup {
     pub name: String,
@@ -76,15 +75,15 @@ pub struct SchematicGroup {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Cosmo {
-    /// `cosmoUpgBase(0, 0)`, the monument chain.
+    /// Cosmo upgrade 0 of tier 0, the monument chain.
     pub monument: f64,
-    /// `cosmoUpgBase(0, 3)`, the extra rupie chance.
+    /// Cosmo upgrade 3 of tier 0, the extra rupie chance.
     pub extra_rupie: f64,
-    /// `cosmoUpgBase(1, 3)`, the measurement scale.
+    /// Cosmo upgrade 3 of tier 1, the measurement scale.
     pub measurement: f64,
 }
 
-/// `paletteParams(idx)`: `denom` is fixed at 25 for every palette.
+/// A palette's parameters; the denominator is fixed at 25 for every palette.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Palette {
@@ -96,14 +95,14 @@ pub struct Palette {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Fountain {
-    /// `UPG_DATA[2][13][6]`, the monument boost.
+    /// Fountain upgrade 13's bonus per level, the monument boost.
     pub monument: f64,
-    /// `UPG_DATA[2][15][6]`, the cavern-resource boost.
+    /// Fountain upgrade 15's bonus per level, the cavern-resource boost.
     pub total: f64,
 }
 
 impl Data {
-    /// `holesMeasBase(idx)`: the base text of a measurement.
+    /// The base text of a measurement.
     pub fn measurement_base(&self, index: usize) -> &str {
         self.measurement_base
             .get(index)
@@ -111,7 +110,7 @@ impl Data {
             .unwrap_or("0")
     }
 
-    /// `holesMeasType(idx)`: the input type a measurement scales from.
+    /// The input type a measurement scales from.
     pub fn measurement_type(&self, index: usize) -> u32 {
         self.measurement_type
             .get(index)
@@ -119,7 +118,7 @@ impl Data {
             .unwrap_or(0)
     }
 
-    /// `legendTalentPerPt(idx)`: points each level of a legend talent grants.
+    /// Points each level of a legend talent grants.
     pub fn legend_per_point(&self, index: usize) -> f64 {
         self.legend_per_point
             .get(&index.to_string())

@@ -1,4 +1,4 @@
-//! The opal maths, checked against the page's own formulas.
+//! The opal maths, checked against the game's formulas.
 
 use super::optimize::Target;
 use super::*;
@@ -531,7 +531,7 @@ fn the_manual_simulator_reads_the_optimizer_plan_the_same_way() {
 fn a_villager_that_earned_nothing_has_no_share_to_report() {
     let opal = sample();
     // The Conjuror holds no opals in the save, so a typed count has no share to
-    // compare against and the page's zero would read as "no change".
+    // compare against and a zero would read as "no change".
     let simulation = opal.simulation(&[100.0, 24.0, 10.0, 35.0, 50.0]);
     assert_eq!(simulation.saved_rate(&opal, 2), 0.0);
     assert!(simulation.rate(&opal, 2) > 0.0);

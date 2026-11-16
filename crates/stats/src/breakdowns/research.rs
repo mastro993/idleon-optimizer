@@ -1,5 +1,4 @@
-//! The research descriptors, from `js/stats/defs/research-exp.js` and
-//! `js/stats/defs/research-afk-gains.js`.
+//! The research descriptors, `research-exp` and `research-afk-gains`.
 //!
 //! Both formulas already live in the simulator ([`idleon_research::sim`]); the
 //! dashboard only splits them into the tree the All Stats page shows. `research-exp` is
@@ -36,10 +35,10 @@ fn exp(inputs: &Inputs<'_>) -> Resolution {
         "The terms add to {additive_total:+.2}% before the multiplier"
     ))
     .with_multiplier(1.0 + additive_total / 100.0)
-    .with_source("js/stats/defs/research-exp.js · additive pool");
+    .with_source("Research EXP · additive pool");
     let multipliers = FormulaNode::new("True Multipliers", terms.multiplier())
         .with_format(ValueFormat::Multiplier)
-        .with_source("js/stats/defs/research-exp.js · true multiplier chain")
+        .with_source("Research EXP · true multiplier chain")
         .with_children(terms.multipliers.iter().map(|(label, value)| {
             FormulaNode::leaf(label.clone(), *value, ValueFormat::Multiplier)
         }));
@@ -49,7 +48,7 @@ fn exp(inputs: &Inputs<'_>) -> Resolution {
             "(1 + {additive_total:.2}%) × {:.4}",
             terms.multiplier()
         ))
-        .with_source("js/stats/defs/research-exp.js")
+        .with_source("Research EXP")
         .with_note(
             "The observation base multiplies this value; the Rates pane shows the same terms.",
         )
@@ -64,7 +63,7 @@ fn exp(inputs: &Inputs<'_>) -> Resolution {
 fn afk_gains(inputs: &Inputs<'_>) -> Resolution {
     let mut tree = afk(inputs.simulation, inputs.sim_context);
     tree.label = "Research AFK Gains Rate".to_string();
-    tree.source = Some("js/stats/defs/research-afk-gains.js".to_string());
+    tree.source = Some("Research AFK gains".to_string());
     Resolution::Value {
         tree,
         partial: None,

@@ -1,11 +1,10 @@
-//! The Jar Calculator section: the upstream Overview, Production, Rupie Value,
+//! The Jar Calculator section: the Overview, Production, Rupie Value,
 //! Chances, Collectibles, Upgrades, Next Tier, Enchant Simulator and Enchant
 //! History tabs.
 //!
-//! The upstream `jar-calc.html` has nine tabs. JR-01 and JR-02 build the first
-//! four; JR-03 adds Collectibles, Upgrades and Next Tier, and JR-04 adds the
-//! enchant simulator and history, so the strip never offers a tab that has
-//! nothing behind it.
+//! The section has nine tabs. JR-01 and JR-02 build the first four; JR-03 adds
+//! Collectibles, Upgrades and Next Tier, and JR-04 adds the enchant simulator
+//! and history, so the strip never offers a tab that has nothing behind it.
 
 mod actions;
 
@@ -147,7 +146,7 @@ pub(crate) fn view(
         .into_any_element()
 }
 
-/// The upstream tab strip, driven by the state's own tab.
+/// The tab strip, driven by the state's own tab.
 fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
     let entity = cx.entity();
     let mut tabs = TabBar::new("jar-tabs").selected(SharedString::from(state.jar_tab.id()));

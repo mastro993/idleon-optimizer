@@ -1,18 +1,14 @@
 //! Fishing: AFK catches, the fish split and real-versus-panel EXP per pool.
 //!
-//! Ported from the upstream `js/stats/systems/w2/fishing.js`,
-//! `js/stats/data/w2/fishing.js` and `fishing-calc.html`. The pure formulas in
-//! [`math`] reproduce the upstream chain exactly; [`evaluate`] resolves one
-//! character, toolkit and location into the same outcome the upstream evaluator
-//! returns.
+//! The pure formulas in [`math`] follow the game's chain; [`evaluate`] resolves
+//! one character, toolkit and location into one outcome.
 //!
-//! The upstream evaluator derives its account inputs from every skill system
-//! (efficiency, EXP multiplier, AFK rate, Multi-Fish, food speed, depths). This
-//! port has not decoded those systems yet, so [`AccountInputs`] carries them as
-//! explicit values: a value the user reads from the game gives the exact
-//! upstream outcome, and leaving a value at its neutral default gives a lower
-//! bound. Only the character slice — level, rod, saved toolkit, saved spot and
-//! AFK target — comes from the save.
+//! The game derives the account inputs from every skill system (efficiency, EXP
+//! multiplier, AFK rate, Multi-Fish, food speed, depths). Those systems are not
+//! decoded yet, so [`AccountInputs`] carries them as explicit values: a value
+//! the user reads from the game gives the exact outcome, and leaving a value at
+//! its neutral default gives a lower bound. Only the character slice — level,
+//! rod, saved toolkit, saved spot and AFK target — comes from the save.
 //!
 //! FI-03 adds the Trench depth projection in [`trench`]: the saved cavern depth
 //! raises the Trench fish efficiency requirements, and the same save rows give
@@ -26,10 +22,7 @@ pub mod trench;
 
 pub use data::{FishingData, Location, Pool, Rod, ToolkitOption, ToolkitStats, data};
 pub(crate) use math::catch_shares;
-pub use math::{
-    Depths, MultiFish, MultiFishInputs, SpeedInputs, catches_per_hour, depths, multi_fish,
-    ore_value, speed,
-};
+pub use math::{Depths, SpeedInputs, catches_per_hour, depths, ore_value, speed};
 pub use rank::{Objective, rank, ties};
 pub use save::{Character, FishingSave};
 pub use trench::{
@@ -39,9 +32,9 @@ pub use trench::{
 
 use idleon_common::formula::{FormulaNode, ValueFormat};
 
-/// The account-side values the upstream evaluator derives from the skill
-/// systems. They describe the selected lure + line; changing the toolkit does
-/// not recompute them.
+/// The account-side values the game derives from the skill systems. They
+/// describe the selected lure + line; changing the toolkit does not recompute
+/// them.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct AccountInputs {
@@ -49,7 +42,7 @@ pub struct AccountInputs {
     pub efficiency: f64,
     /// `SkillStats("FishingExpMulti")`; 1 is neutral.
     pub exp_multi: f64,
-    /// `AFKgainrates("Fishing")`, a fraction; the upstream minimum is 0.01.
+    /// `AFKgainrates("Fishing")`, a fraction; the minimum is 0.01.
     pub afk_rate: f64,
     /// Multi-Fish percentage.
     pub multi_fish: f64,
@@ -135,7 +128,7 @@ pub struct PoolOutcome {
     pub panel_ore_value: f64,
 }
 
-/// The inputs one pool outcome reads, matching the upstream `fishingPoolOutcome`.
+/// The inputs one pool outcome reads.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PoolInputs {
     pub efficiency: f64,
@@ -145,12 +138,12 @@ pub struct PoolInputs {
     pub afk_rate: f64,
     pub multi_fish: f64,
     pub exp_multi: f64,
-    /// The upstream `effReqOverrides[poolKey]`: the Trench's requirements rise
-    /// with the saved cavern depth, replacing the pool's own three.
+    /// The Trench's requirements rise with the saved cavern depth, replacing
+    /// the pool's own three.
     pub eff_reqs: Option<[f64; 3]>,
 }
 
-/// One pool's AFK claim: the upstream `fishingPoolOutcome`.
+/// One pool's AFK claim.
 pub(crate) fn pool_outcome(pool: &'static Pool, inputs: &PoolInputs, hours: f64) -> PoolOutcome {
     let hours = if hours > 0.0 {
         (hours * 3600.0).round() / 3600.0
@@ -281,8 +274,8 @@ pub(crate) struct Resolved {
     pub outcome: PoolOutcome,
 }
 
-/// Resolve one selection at one spot: the upstream `outcomeFor` inside
-/// `trenchPlan`, shared with [`evaluate`] so the plan and the card agree.
+/// Resolve one selection at one spot, shared by the Trench plan and
+/// [`evaluate`] so the plan and the card agree.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn resolve(
     account: &AccountInputs,
@@ -323,11 +316,11 @@ pub(crate) fn resolve(
 /// The pool key whose efficiency requirements the saved cavern depth raises.
 pub const TRENCH_POOL: &str = "MotherlodeFISH";
 
-/// Resolve one character, lure/line and location into the upstream outcome.
+/// Resolve one character, lure/line and location into its outcome.
 ///
-/// `lure` and `line` index the upstream toolkit lists; an out-of-range index
-/// falls back to the first option, as the upstream does. A save with `Holes`
-/// raises the Trench's efficiency requirements from its saved depth.
+/// `lure` and `line` index the toolkit lists; an out-of-range index falls back
+/// to the first option. A save with `Holes` raises the Trench's efficiency
+/// requirements from its saved depth.
 pub fn evaluate(
     save: &FishingSave,
     account: &AccountInputs,
@@ -400,7 +393,6 @@ pub fn breakdown(evaluation: &Evaluation) -> FormulaNode {
         .with_format(ValueFormat::Count)
         .with_input("Catches/hr × AFK rate × hours")
         .with_multiplier(evaluation.account.afk_rate)
-        .with_source("fishing.js · fishingPoolOutcome")
         .with_children([
             FormulaNode::new("Catches/hr", evaluation.catches_per_hour)
                 .with_format(ValueFormat::Count)
@@ -426,7 +418,7 @@ pub fn breakdown(evaluation: &Evaluation) -> FormulaNode {
                 ValueFormat::Multiplier,
             )
             .with_input("Manual account value")
-            .with_note("The upstream resolves AFKgainrates(\"Fishing\"); this port enters it."),
+            .with_note("The game resolves AFKgainrates(\"Fishing\"); enter it here."),
         ]);
 
     let fish_per_catch = FormulaNode::new("Fish per catch", outcome.fish_per_catch)
@@ -471,8 +463,7 @@ pub fn breakdown(evaluation: &Evaluation) -> FormulaNode {
             node
         }),
     )
-    .with_input("Each tier requires efficiency ≥ its requirement")
-    .with_source("fishingCatchShares");
+    .with_input("Each tier requires efficiency ≥ its requirement");
 
     let fish = FormulaNode::group(
         "Fish",
@@ -546,7 +537,6 @@ pub fn breakdown(evaluation: &Evaluation) -> FormulaNode {
             "Fish per {}h AFK claim",
             ValueFormat::Raw.format(outcome.hours)
         ))
-        .with_source("fishing.js · fishingPoolOutcome")
         .with_children([catches, fish_per_catch, split, fish, exp, panel])
 }
 

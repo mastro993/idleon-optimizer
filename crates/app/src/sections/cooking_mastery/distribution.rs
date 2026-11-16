@@ -1,10 +1,9 @@
 //! The Optimal Distribution card: the daily reset budget across the upgrades.
 //!
-//! The page renders one table under a "Points to spend" input. The card keeps
-//! that input, adds the goal the section's inputs ask for, and offers the plan as
-//! text for the copy action. Planning itself is
-//! [`idleon_cooking_mastery::Mastery::distribution`]; this module only
-//! draws it.
+//! The card draws one table under a "Points to spend" input, adds the goal the
+//! section's inputs ask for, and offers the plan as text for the copy action.
+//! Planning itself is [`idleon_cooking_mastery::Mastery::distribution`]; this
+//! module only draws it.
 
 use super::whole;
 use crate::state::AppState;

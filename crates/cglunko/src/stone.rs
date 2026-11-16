@@ -1,13 +1,10 @@
 //! The stone focus: each stone's next digit, its drops per kill and the stone
 //! worth focusing.
 //!
-//! Ports `STONE_BASE_RATES`, `stoneEfficiency` and `bestStoneFocus` of
-//! `js/stats/systems/w5/cglunko.js`, and the Stones tab of `cglunko-calc.html`
-//! that prints them. A stone adds a digit once its count reaches the next power
-//! of ten, and each digit is worth the colour's Collector bonus; the focus slot
-//! multiplies one stone's drops by the colour's `One Big Blue`/`One Big Purp`
-//! bonus. So the stone to focus is the one whose next digit is fewest focused
-//! kills away.
+//! A stone adds a digit once its count reaches the next power of ten, and each
+//! digit is worth the colour's Collector bonus; the focus slot multiplies one
+//! stone's drops by the colour's `One Big Blue`/`One Big Purp` bonus. So the
+//! stone to focus is the one whose next digit is fewest focused kills away.
 
 use super::{Cglunko, Page, STONE_COUNT, data, digits};
 
@@ -38,7 +35,7 @@ impl Page {
     }
 }
 
-/// One stone's row in the upstream `stoneEfficiency` table.
+/// One stone's row in the stone efficiency table.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Stone {
     /// The stone across both pages: 0..6 blue, 6..12 purple.
@@ -67,7 +64,7 @@ pub struct Stone {
     pub focus_multi: f64,
 }
 
-/// One stone's row in the upstream `bestStoneFocus` table: what its next digit
+/// One stone's row in the focus table: what its next digit
 /// costs with and without the focus slot.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Focus {
@@ -89,8 +86,7 @@ pub struct Focus {
 
 impl Cglunko {
     /// The page's stone, 0-based, that the save focuses; the game stores the
-    /// slot as 1..=6 with 0 for none, which is the upstream
-    /// `Math.round(ola) - 1`.
+    /// slot as 1..=6 with 0 for none.
     pub fn focus(&self, page: Page) -> Option<usize> {
         let saved = match page {
             Page::Blue => self.blue_focus,
@@ -106,13 +102,12 @@ impl Cglunko {
         self.bonus(page.focus_upgrade()).max(1.0)
     }
 
-    /// The drop rate one digit of the page's stones adds, the upstream
-    /// `drPerDigit`.
+    /// The drop rate one digit of the page's stones adds.
     pub fn digit_bonus(&self, page: Page) -> f64 {
         self.bonus(page.digit_upgrade())
     }
 
-    /// The upstream `stoneEfficiency` table: every stone's next digit and the
+    /// The stone efficiency table: every stone's next digit and the
     /// kills it takes at the saved drop rate and focus.
     pub fn stone_rows(&self) -> Vec<Stone> {
         let dr = self.dr();
@@ -148,7 +143,7 @@ impl Cglunko {
         rows
     }
 
-    /// The upstream `bestStoneFocus` table: the stones still short of their next
+    /// The focus table: the stones still short of their next
     /// digit, fewest focused kills first.
     pub fn best_focus(&self) -> Vec<Focus> {
         let dr = self.dr();
@@ -174,7 +169,7 @@ impl Cglunko {
     }
 }
 
-/// The upstream `deficit > 0 && dropsPerKill > 0 ? deficit / dropsPerKill : 0`.
+/// The kills a deficit takes, or zero when either side is empty.
 fn kills(deficit: f64, drops_per_kill: f64) -> f64 {
     if deficit > 0.0 && drops_per_kill > 0.0 {
         deficit / drops_per_kill

@@ -1,9 +1,7 @@
 //! The Clamworks comparison: every unlocked `+1` beside the current claim.
 //!
-//! Ports `summarizeClamworksAfk` from
-//! `js/stats/systems/w7/clamworks-combat.js`: the upstream comparison table's
-//! first-claim columns, one row per purchase, with the payback the extra pearls
-//! of one claim imply.
+//! The comparison table's first-claim columns, one row per purchase, with the
+//! payback the extra pearls of one claim imply.
 
 use super::claim::quantity;
 use ely_gpui_component::data_display::{Badge, Tone};

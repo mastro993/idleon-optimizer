@@ -1,10 +1,8 @@
-//! Sushi Station formulas, ported from `js/stats/systems/w7/sushi.js`.
+//! Sushi Station formulas.
 //!
 //! `Station` holds the save's `Sushi` rows: what each slot cooks, the upgrade
 //! levels, the fireplace column types and the knowledge levels. `External`
-//! holds the account terms the currency and fuel formulas read. Every function
-//! names its upstream counterpart so the fixture from `script/sushi-oracle.mjs`
-//! can be compared term by term.
+//! holds the account terms the currency and fuel formulas read.
 
 use crate::data::{GameData, game};
 use idleon_common::curve;
@@ -24,7 +22,7 @@ pub struct External {
     pub atom14: f64,
     /// Sailing artifact 39.
     pub sailing39: f64,
-    /// Bundles Received `bon_v`, which upstream's Sushi tab reads.
+    /// Bundles Received `bon_v`.
     pub bundle_v: bool,
     /// Gaming super bit 67 (0 or 1).
     pub super_bit67: f64,
@@ -71,7 +69,7 @@ pub struct Station {
     pub found: Vec<f64>,
     /// Row 7: the knowledge level of each sushi tier.
     pub knowledge: Vec<f64>,
-    /// `cachedUniqueSushi`.
+    /// The unique tiers discovered.
     pub unique: u32,
     /// The Menagerie-doubled upgrade indices (`Spelunk[52]`).
     pub doublers: Vec<usize>,
@@ -83,17 +81,17 @@ impl Station {
         self.levels.get(upg).copied().unwrap_or(0.0)
     }
 
-    /// `upgradeQTY(upgIdx)` at the saved levels.
+    /// The upgrade's quantity at the saved levels.
     pub fn qty(&self, upg: usize) -> f64 {
         self.qty_at(upg, &self.levels)
     }
 
-    /// `upgradeQTY(upgIdx)` at a candidate level row.
+    /// The upgrade's quantity at a candidate level row.
     pub fn qty_at(&self, upg: usize, levels: &[f64]) -> f64 {
         upgrade_qty(game(), upg, levels, &self.doublers)
     }
 
-    /// `rogBonusQTY(idx)`, zero while the tier is locked.
+    /// The Ring of Glory bonus, zero while the tier is locked.
     pub fn rog(&self, index: usize) -> f64 {
         rog_bonus_qty(game(), index, self.unique)
     }
@@ -118,27 +116,25 @@ impl Station {
         self.misc.get(8).copied().unwrap_or(0.0)
     }
 
-    /// `knowledgeBonusTotals`: the eleven category totals.
+    /// The eleven category totals.
     pub fn knowledge_totals(&self) -> Vec<f64> {
         knowledge_bonus_totals(game(), &self.knowledge, &self.found)
     }
 
-    /// `knowledgeBonusSpecific(tier)`.
     pub fn knowledge_bonus(&self, tier: usize) -> f64 {
         knowledge_bonus_specific(game(), tier, &self.knowledge, &self.found)
     }
 
-    /// `fireplaceEffectBase` at the saved sparks.
+    /// The fireplace effect base at the saved sparks.
     pub fn fireplace_base(&self) -> f64 {
         fireplace_effect_base(&self.knowledge_totals(), self.sparks())
     }
 
-    /// `computeOrangeFireSum`: the red fireplaces' fuel bonus.
+    /// The red fireplaces' fuel bonus.
     pub fn orange_fire_sum(&self) -> f64 {
         orange_fire_sum(&self.tiers, &self.fires, self.fireplace_base())
     }
 
-    /// `fuelGenPerHr`.
     pub fn fuel_gen(&self, levels: &[f64], ext: &External) -> f64 {
         fuel_gen_per_hr(
             game(),
@@ -152,7 +148,6 @@ impl Station {
         )
     }
 
-    /// `fuelCapacity`.
     pub fn fuel_capacity(&self, levels: &[f64], ext: &External) -> f64 {
         fuel_capacity(
             game(),
@@ -164,7 +159,6 @@ impl Station {
         )
     }
 
-    /// `computeCurrencyMulti`.
     pub fn currency_multi(&self, levels: &[f64], ext: &External) -> f64 {
         let totals = self.knowledge_totals();
         let surcharge = self.qty_at(30, levels)
@@ -189,7 +183,6 @@ impl Station {
             * combo_multiplier(self.combo_score())
     }
 
-    /// `totalBucksPerHr`.
     pub fn bucks_per_hour(&self, levels: &[f64], ext: &External) -> f64 {
         let multi = self.currency_multi(levels, ext);
         (0..game().max_slots)
@@ -197,7 +190,6 @@ impl Station {
             .sum()
     }
 
-    /// `currencyPerSlot`.
     pub fn currency_per_slot(&self, slot: usize, multi: f64) -> f64 {
         currency_per_slot(
             game(),
@@ -211,7 +203,6 @@ impl Station {
         )
     }
 
-    /// `upgCost(slot)`.
     pub fn upgrade_cost(&self, slot: usize, levels: &[f64], ext: &External) -> f64 {
         upg_cost(
             game(),
@@ -224,28 +215,26 @@ impl Station {
         )
     }
 
-    /// `slotsOwned`: the Menagerie doublers do not apply.
+    /// The slots owned; the Menagerie doublers do not apply.
     pub fn slots_owned(&self) -> f64 {
         slots_owned(upgrade_qty(game(), 0, &self.levels, &[]))
     }
 
-    /// `countActiveSlots`.
     pub fn active_slots(&self) -> usize {
         count_active_slots(&self.tiers)
     }
 
-    /// `maxCookTier`: the Menagerie doublers do not apply.
+    /// The highest cook tier; the Menagerie doublers do not apply.
     pub fn max_cook_tier(&self) -> f64 {
         max_cook_tier(upgrade_qty(game(), 6, &self.levels, &[]))
     }
 
-    /// `bonusCookTierPct`: the Menagerie doublers do not apply.
+    /// The bonus cook tier chance; the Menagerie doublers do not apply.
     pub fn bonus_cook_tier_pct(&self) -> f64 {
         upgrade_qty(game(), 7, &self.levels, &[])
             + self.knowledge_totals().get(2).copied().unwrap_or(0.0)
     }
 
-    /// `freeShakerChance`.
     pub fn free_shaker_chance(&self, ext: &External) -> f64 {
         free_shaker_chance(
             self.qty(21),
@@ -254,28 +243,24 @@ impl Station {
         )
     }
 
-    /// `saffronHrs`.
     pub fn saffron_hrs(&self) -> f64 {
         saffron_hrs(self.qty(22))
     }
 
-    /// The category bonus one more knowledge level in `tier` would pay
-    /// (`knNext` in `_renderSushi`), which ignores the current level.
+    /// The category bonus one more knowledge level in `tier` would pay, which
+    /// ignores the current level.
     pub fn knowledge_bonus_next(&self, tier: usize) -> f64 {
         knowledge_bonus_next(game(), tier, &self.found)
     }
 
-    /// `perfectoOdds(tier)`.
     pub fn perfecto_odds(&self, tier: usize) -> f64 {
         perfecto_odds(tier, &self.knowledge_totals())
     }
 
-    /// `knowledgeXPBase`.
     pub fn knowledge_xp_base(&self) -> f64 {
         knowledge_xp_base(self.qty(37))
     }
 
-    /// `knowledgeXPMulti(slot)`.
     pub fn knowledge_xp_multi(&self, slot: usize) -> f64 {
         knowledge_xp_multi(
             slot,
@@ -286,18 +271,17 @@ impl Station {
         )
     }
 
-    /// `isPerfecto(tier)`: the discovery row's positive value.
+    /// Whether the discovery row holds a positive value.
     pub fn is_perfecto(&self, tier: usize) -> bool {
         self.found.get(tier).copied().unwrap_or(0.0) > 0.0
     }
 
-    /// `discovered(tier)`: a tier below `cachedUniqueSushi`.
+    /// Whether the tier is below the unique tier count.
     pub fn discovered(&self, tier: usize) -> bool {
         tier < self.unique as usize
     }
 }
 
-/// `rogBonusQTY(idx, uniqueSushi)`.
 pub fn rog_bonus_qty(data: &GameData, index: usize, unique_sushi: u32) -> f64 {
     if unique_sushi as usize > index {
         data.rog_qty_at(index)
@@ -306,14 +290,13 @@ pub fn rog_bonus_qty(data: &GameData, index: usize, unique_sushi: u32) -> f64 {
     }
 }
 
-/// `buildRogArray`.
 pub fn build_rog_array(data: &GameData, unique_sushi: u32) -> Vec<f64> {
     (0..data.rog_qty.len())
         .map(|index| rog_bonus_qty(data, index, unique_sushi))
         .collect()
 }
 
-/// `computeUniqueSushi`: the run of non-negative discovery tiers.
+/// The run of non-negative discovery tiers.
 pub fn compute_unique_sushi(found: &[f64]) -> u32 {
     let mut count = 0;
     for (index, tier) in found.iter().enumerate() {
@@ -339,16 +322,7 @@ pub fn currency_per_tier(data: &GameData, tier: usize) -> f64 {
     }
 }
 
-/// The fuel one cook of a tier costs.
-pub fn fuel_cost_per_tier(tier: usize) -> f64 {
-    if tier == 5 {
-        return 176.0;
-    }
-    let t = tier as f64;
-    10.0 * 1.83_f64.powf(t) - t.powi(2)
-}
-
-/// `upgLvREQ(t)`: the research level a slot unlocks at.
+/// The research level a slot unlocks at.
 pub fn upg_lv_req(t: usize) -> f64 {
     let t = t as f64;
     (1.0 + t.min(2.0)
@@ -359,7 +333,7 @@ pub fn upg_lv_req(t: usize) -> f64 {
     .floor()
 }
 
-/// `sushiDoublerMulti`: `2` when the Menagerie doubles this upgrade.
+/// `2` when the Menagerie doubles this upgrade.
 pub fn doubler_multi(doublers: &[usize], upg_idx: usize) -> f64 {
     if doublers.contains(&upg_idx) {
         2.0
@@ -368,7 +342,6 @@ pub fn doubler_multi(doublers: &[usize], upg_idx: usize) -> f64 {
     }
 }
 
-/// `upgradeQTY(upgIdx, upgLevels, doublers)`.
 pub fn upgrade_qty(data: &GameData, upg_idx: usize, levels: &[f64], doublers: &[usize]) -> f64 {
     let level = levels.get(upg_idx).copied().unwrap_or(0.0);
     let bonus = data
@@ -378,7 +351,6 @@ pub fn upgrade_qty(data: &GameData, upg_idx: usize, levels: &[f64], doublers: &[
     doubler_multi(doublers, upg_idx) * bonus * level
 }
 
-/// `upgCost(slot, upgLevels, knowledgeTotals, saveData)`.
 pub fn upg_cost(
     data: &GameData,
     slot: usize,
@@ -418,7 +390,6 @@ pub fn upg_cost(
         * upgrade.cost_base.powf(current)
 }
 
-/// `knowledgeBonusSpecific(tier)`.
 pub fn knowledge_bonus_specific(
     data: &GameData,
     tier: usize,
@@ -434,7 +405,7 @@ pub fn knowledge_bonus_specific(
     (base * level * discovery * (1.0 + tier as f64 / 30.0)).max(0.0)
 }
 
-/// `knNext` from `_renderSushi`: the bonus one more knowledge level pays.
+/// The bonus one more knowledge level pays.
 pub fn knowledge_bonus_next(data: &GameData, tier: usize, found: &[f64]) -> f64 {
     let Some(cat) = data.knowledge_cat(tier) else {
         return 0.0;
@@ -443,7 +414,6 @@ pub fn knowledge_bonus_next(data: &GameData, tier: usize, found: &[f64]) -> f64 
     data.knowledge_value(cat) * discovery * (1.0 + tier as f64 / 30.0)
 }
 
-/// `knowledgeBonusTotals`.
 pub fn knowledge_bonus_totals(data: &GameData, knowledge: &[f64], found: &[f64]) -> Vec<f64> {
     let mut totals = vec![0.0; data.knowledge_cat_desc.len()];
     for tier in 0..=data.max_tier() {
@@ -456,7 +426,6 @@ pub fn knowledge_bonus_totals(data: &GameData, knowledge: &[f64], found: &[f64])
     totals
 }
 
-/// `fuelGenPerHr`.
 #[allow(clippy::too_many_arguments)]
 pub fn fuel_gen_per_hr(
     data: &GameData,
@@ -489,7 +458,6 @@ pub fn fuel_gen_per_hr(
         * unique
 }
 
-/// `fuelCapacity`.
 pub fn fuel_capacity(
     data: &GameData,
     levels: &[f64],
@@ -515,7 +483,7 @@ pub fn fuel_capacity(
         * unique
 }
 
-/// `computeOrangeFireSum`: each active slot on a red fireplace column.
+/// Each active slot on a red fireplace column.
 pub fn orange_fire_sum(tiers: &[f64], fires: &[f64], fireplace_base: f64) -> f64 {
     let mut sum = 0.0;
     for slot in 0..game().max_slots {
@@ -528,7 +496,6 @@ pub fn orange_fire_sum(tiers: &[f64], fires: &[f64], fireplace_base: f64) -> f64
     sum
 }
 
-/// `fireplaceEffectBase(knowledgeTotals, sparks)`.
 pub fn fireplace_effect_base(knowledge_totals: &[f64], sparks: f64) -> f64 {
     let spark_multi = if sparks > 0.0 {
         0.2 * (sparks.ln() / std::f64::consts::LN_2) + curve::log(sparks)
@@ -538,12 +505,10 @@ pub fn fireplace_effect_base(knowledge_totals: &[f64], sparks: f64) -> f64 {
     (1.0 + knowledge_totals.get(9).copied().unwrap_or(0.0) / 100.0) * (1.0 + spark_multi / 100.0)
 }
 
-/// `slotEffectBase`.
 pub fn slot_effect_base(knowledge_totals: &[f64]) -> f64 {
     1.0 + knowledge_totals.get(8).copied().unwrap_or(0.0) / 100.0
 }
 
-/// `fireplaceEffectByType`.
 pub fn fireplace_effect_by_type(fire_type: usize, base: f64) -> f64 {
     match fire_type {
         0 => base,
@@ -554,7 +519,6 @@ pub fn fireplace_effect_by_type(fire_type: usize, base: f64) -> f64 {
     }
 }
 
-/// `currencyPerSlot`.
 #[allow(clippy::too_many_arguments)]
 pub fn currency_per_slot(
     data: &GameData,
@@ -581,7 +545,6 @@ pub fn currency_per_slot(
     slot_dn * currency_multi * currency_per_tier(data, tier as usize)
 }
 
-/// `computeComboMultiplier`.
 pub fn combo_multiplier(score: f64) -> f64 {
     let safe = if score.is_finite() {
         score.max(0.0)
@@ -592,12 +555,6 @@ pub fn combo_multiplier(score: f64) -> f64 {
     1.0 + safe.powf(0.3).min(10.0) + (excess / (20000.0 + excess)) * 90.0
 }
 
-/// `comboMeterUnlocked`.
-pub fn combo_meter_unlocked(qty39: f64) -> bool {
-    qty39 > 0.0
-}
-
-/// `computeOvertunedMulti`.
 pub fn compute_overtuned_multi(spa: f64) -> f64 {
     if spa <= 0.0 {
         return 0.0;
@@ -606,51 +563,38 @@ pub fn compute_overtuned_multi(spa: f64) -> f64 {
     5.0 * (x.ln() / std::f64::consts::LN_2) + 10.0 * curve::log(x)
 }
 
-/// `slotsOwned`.
 pub fn slots_owned(qty_slots: f64) -> f64 {
     (10.0 + qty_slots).min(game().max_slots as f64)
 }
 
-/// `countActiveSlots`.
 pub fn count_active_slots(tiers: &[f64]) -> usize {
     (0..game().max_slots)
         .filter(|slot| tiers.get(*slot).copied().unwrap_or(0.0) >= 0.0)
         .count()
 }
 
-/// `maxCookTier`.
 pub fn max_cook_tier(qty6: f64) -> f64 {
     qty6.round()
 }
 
-/// `freeShakerChance`.
 pub fn free_shaker_chance(qty21: f64, knowledge_shakers: f64, grid188: f64) -> f64 {
     ((qty21 + knowledge_shakers + grid188) / 100.0).min(0.6)
 }
 
-/// `saffronHrs`.
 pub fn saffron_hrs(qty22: f64) -> f64 {
     (1.0 + qty22).round()
 }
 
-/// `perfectoOdds`.
 pub fn perfecto_odds(tier: usize, knowledge_totals: &[f64]) -> f64 {
     let t = tier as f64;
     0.6 * 0.81_f64.powf(t) / (1.0 + t / 8.0)
         * (1.0 + knowledge_totals.get(10).copied().unwrap_or(0.0) / 100.0)
 }
 
-/// `knowledgeXPReq`.
-pub fn knowledge_xp_req(level: f64) -> f64 {
-    (3.0 + level + level.powf(1.5)) * 1.5_f64.powf((level - 2.0).max(0.0))
-}
-
-/// `knowledgeXPBase`.
 pub fn knowledge_xp_base(qty37: f64) -> f64 {
     1.0 + qty37 / 10.0
 }
 
-/// `knowledgeXPMulti`.
 pub fn knowledge_xp_multi(
     slot: usize,
     fires: &[f64],

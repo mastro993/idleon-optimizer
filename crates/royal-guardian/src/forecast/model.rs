@@ -3,7 +3,7 @@
 
 use super::*;
 
-/// One resource node inside the forecast's model: upstream `_model` node.
+/// One resource node inside the forecast's model.
 pub(crate) struct ModelNode {
     pub(crate) resource: usize,
     pub(crate) quantity: f64,
@@ -13,7 +13,7 @@ pub(crate) struct ModelNode {
     pub(crate) maps: Vec<usize>,
 }
 
-/// The state one boundary reads: upstream `_model`.
+/// The state one boundary reads.
 pub(crate) struct Model {
     pub(crate) nodes: Vec<ModelNode>,
     pub(crate) models: Vec<crate::collect_exp::ExpModel>,
@@ -62,8 +62,7 @@ pub(crate) fn fill_hours(node: &ModelNode) -> Option<f64> {
     Some(((node.capacity - node.quantity) / node.drain_rate).max(0.0))
 }
 
-/// What a collect of `banked` hours would credit each currency slot:
-/// upstream `_gains`.
+/// What a collect of `banked` hours would credit each currency slot.
 pub(crate) fn gains(royal: &RoyalGuardian, model: &Model, banked: f64) -> BTreeMap<i64, f64> {
     let mut quantities = vec![0.0; data::resource_count()];
     for node in &model.nodes {
@@ -91,7 +90,7 @@ pub(crate) fn balances(royal: &RoyalGuardian) -> Vec<f64> {
         .unwrap_or_default()
 }
 
-/// The order a saved rank-up still has to reach, if any: upstream `_rankGhosts`.
+/// The order a saved rank-up still has to reach, if any.
 pub(crate) fn rank_ghosts(
     model: &crate::collect_exp::ExpModel,
     start: f64,
@@ -145,8 +144,7 @@ pub(crate) fn rank_ghosts(
     ghosts
 }
 
-/// The Armory shelves a collect could make affordable: upstream
-/// `_armoryCandidates`.
+/// The Armory shelves a collect could make affordable.
 pub(crate) fn armory_candidates(royal: &RoyalGuardian, counter: f64) -> Vec<Affordable> {
     let unlocked = royal.armory_unlocked_count();
     let mut list = Vec::new();

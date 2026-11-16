@@ -4,8 +4,8 @@
 //! The run builds one optimized layout, then simulates the saved layout and the
 //! optimized one all the way to the target. A level target keeps whichever
 //! reaches the level first and an hour target whichever earns the most EXP in
-//! the window, as upstream's worker pool ranks its finished simulations; the
-//! immediate EXP/hour only prices the pieces the layout is built from.
+//! the window; the immediate EXP/hour only prices the pieces the layout is
+//! built from.
 
 pub mod grid;
 pub mod mags;

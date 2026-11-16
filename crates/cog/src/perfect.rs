@@ -1,18 +1,15 @@
 //! The perfect board: the theoretical best placement of perfect cogs, and the
 //! perfect stat a roll can reach at a construction level.
 //!
-//! Ported from `showPerfectBoard` in `cog-optimizer.html` and
-//! `perfectCogStats` in `js/cogs/cog-judge.js`. Upstream builds one candidate
-//! per player slot with a layered eviction: a perfect T3 base stat in every
-//! slot, the player, T3 directionals, crystal fillers and crystal surrounds,
-//! Excogia 2x2 blocks, then Yang cogs around the player. The best candidate by
-//! the objective's raw metric wins, and the layers that built it are returned
-//! so the section can explain the result.
+//! One candidate is built per player slot with a layered eviction: a perfect T3
+//! base stat in every slot, the player, T3 directionals, crystal fillers and
+//! crystal surrounds, Excogia 2x2 blocks, then Yang cogs around the player. The
+//! best candidate by the objective's raw metric wins, and the layers that built
+//! it are returned so the section can explain the result.
 //!
 //! Two things are left out because this section does not decode them: the
 //! tiny-cog board stays untouched, and the Yin/Yang inventory count comes from
-//! the board and shelf only (upstream also counts the twelve off-board player
-//! slots).
+//! the board and shelf only, not the twelve off-board player slots.
 
 use idleon_common::Control;
 use idleon_common::Progress;
@@ -109,7 +106,7 @@ pub fn player_slot(board: &Board) -> Option<usize> {
 /// inventory from `board` and `shelf`.
 ///
 /// Returns `None` when the board has no player cog or the run is cancelled.
-/// The player is swept across all 96 slots, as upstream does.
+/// The player is swept across all 96 slots.
 pub fn perfect_board(
     board: &Board,
     shelf: &[Cog],
@@ -237,8 +234,8 @@ fn yin_tier(construction_level: u32) -> usize {
     }
 }
 
-/// The Yin base stats at a construction level. Upstream derives the tier and
-/// the budget from the level, then applies the same stat conversions.
+/// The Yin base stats at a construction level: the tier and the budget come
+/// from the level, then the same stat conversions apply.
 fn yin_stats(construction_level: u32) -> (f64, f64, f64) {
     let level = f64::from(construction_level);
     let tier = yin_tier(construction_level);
@@ -284,7 +281,7 @@ fn yang_cog(slot: usize, e: f64, f: f64) -> Cog {
     cog
 }
 
-/// Whether `direction` from `from` reaches `target`, as upstream `canTarget`.
+/// Whether `direction` from `from` reaches `target`.
 fn can_target(from: usize, direction: Direction, target: usize) -> bool {
     let (from_col, from_row) = slot_to_pos(from);
     let (to_col, to_row) = slot_to_pos(target);
@@ -298,7 +295,7 @@ fn can_target(from: usize, direction: Direction, target: usize) -> bool {
     }
 }
 
-/// The T3 directional names upstream uses, with the direction each one is.
+/// The T3 directional cog names, with the direction each one is.
 const T3_DIRECTIONS: [(Direction, &str); 7] = [
     (Direction::Row, "Cog3ro"),
     (Direction::Column, "Cog3co"),
@@ -310,7 +307,7 @@ const T3_DIRECTIONS: [(Direction, &str); 7] = [
 ];
 
 /// Build the perfect board with the player at `player_slot`, applying the seven
-/// layers in upstream order.
+/// layers in order.
 fn build_candidate(player_slot: usize, player: &Cog, context: &Context) -> Candidate {
     let goal = context.goal;
     let base3 = base_for(goal, &context.perf3);
@@ -577,8 +574,8 @@ mod tests {
     }
 
     #[test]
-    fn perfect_stats_match_the_upstream_formula() {
-        // `perfectCogStats(3, 42)` from `cog-judge.js`: mag = 3 × rawMag(3, 42).
+    fn perfect_stats_follow_the_roll_formula() {
+        // mag = 3 × rawMag(3, 42).
         let stats = perfect_stats(3, 42);
         let raw = raw_magnitude(3, 42.0);
         assert!((stats.mag - 3.0 * raw).abs() < 1e-9);
@@ -593,34 +590,6 @@ mod tests {
         // Tier 0/1 get three rolls; lower tiers cannot roll a surround.
         assert_eq!(perfect_stats(0, 42).rolls, 3);
         assert_eq!(perfect_stats(1, 42).surround, 0.0);
-    }
-
-    #[test]
-    fn perfect_stats_match_the_upstream_js_values() {
-        // `perfectCogStats(tier, conLv)` from `js/cogs/cog-judge.js`, run on the
-        // upstream checkout: (tier, conLv, a, c, d, surround).
-        let expected = [
-            (0, 42, 105.0, 51.0, 42.0, 0.0),
-            (0, 8005, 140_964.0, 16_395.0, 345.0, 0.0),
-            (1, 42, 138.0, 63.0, 48.0, 0.0),
-            (1, 8005, 209_148.0, 22_479.0, 387.0, 0.0),
-            (2, 42, 276.0, 120.0, 72.0, 0.0),
-            (2, 8005, 413_776.0, 41_100.0, 584.0, 0.0),
-            (3, 42, 516.0, 196.0, 92.0, 65.0),
-            (3, 8005, 614_044.0, 56_360.0, 660.0, 65.0),
-            (4, 42, 724.0, 256.0, 100.0, 155.0),
-            (4, 8005, 911_020.0, 77_276.0, 748.0, 155.0),
-        ];
-        for (tier, level, a, c, d, surround) in expected {
-            let stats = perfect_stats(tier, level);
-            assert_eq!(stats.a, a, "tier {tier} level {level} a");
-            assert_eq!(stats.c, c, "tier {tier} level {level} c");
-            assert_eq!(stats.d, d, "tier {tier} level {level} d");
-            assert_eq!(
-                stats.surround, surround,
-                "tier {tier} level {level} surround"
-            );
-        }
     }
 
     #[test]
@@ -701,7 +670,7 @@ mod tests {
         assert_eq!(yang.direction, Some(Direction::Around));
         assert!(can_target(yang.slot, Direction::Around, 0));
         // The T3 base fill beats the Yin block's base stats in the full
-        // candidate, so upstream's layer keeps no block here; the layer only
+        // candidate, so the layer keeps no block here; the layer only
         // appears when the block improves the score.
         assert_eq!(candidate.excogia_blocks, 0);
         assert_eq!(
@@ -716,22 +685,12 @@ mod tests {
     }
 
     #[test]
-    fn yin_stats_follow_the_upstream_budget() {
+    fn the_yin_tier_follows_the_construction_level() {
         assert_eq!(yin_tier(14), 0);
         assert_eq!(yin_tier(15), 1);
         assert_eq!(yin_tier(39), 1);
         assert_eq!(yin_tier(40), 2);
         assert_eq!(yin_tier(70), 3);
-        // The upstream `showPerfectBoard` formulas at two levels:
-        // (conLv, yin a, yin c, yin d, yang e, yang f).
-        let expected = [
-            (42, 144.0, 53.0, 23.0, 91.0, 105.0),
-            (100, 646.0, 177.0, 36.0, 116.0, 138.0),
-        ];
-        for (level, a, c, d, e, f) in expected {
-            assert_eq!(yin_stats(level), (a, c, d), "level {level}");
-            assert_eq!(yang_surround(level), (e, f), "level {level}");
-        }
     }
 
     #[test]

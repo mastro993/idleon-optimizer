@@ -1,10 +1,6 @@
 //! The formula breakdowns: the four multipliers the board reads and the two the
 //! layout's own passives add, as trees the shared formula component draws.
 //!
-//! Ports `jellyCellDamageBreakdown`, `jellyCellSpeedBreakdown`,
-//! `jellyCellExpBreakdown`, `jellyBloodcellBreakdown` and `jellyLayoutBreakdown`
-//! from `js/stats/systems/w7/jelly-operator.js` into [`FormulaNode`]s.
-//!
 //! Every root is a product of its children, so a breakdown multiplies back to
 //! the number the section reports; the `Additive …` groups add their own
 //! children and turn the sum into the multiplier their formula reads.
@@ -80,7 +76,7 @@ pub struct Breakdown {
     pub reason: String,
 }
 
-/// The layout's own breakdown: the two passives and the per-cell rows the page's
+/// The layout's own breakdown: the two passives and the per-cell rows the
 /// table prints beside them.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct LayoutBreakdown {
@@ -103,7 +99,7 @@ impl LayoutBreakdown {
         self.metrics.speed_passive
     }
 
-    /// The page's `cellRows`: one row per shipped cell type.
+    /// One row per shipped cell type.
     pub fn cell_rows(&self) -> Vec<CellRow> {
         let names = &data().cells.names;
         (0..8)
@@ -140,7 +136,7 @@ impl LayoutBreakdown {
     }
 }
 
-/// One cell type's output on the board: the page's per-cell table row.
+/// One cell type's output on the board: the per-cell table row.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CellRow {
     pub cell_type: usize,
@@ -181,7 +177,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyCellDamageBreakdown`.
     pub fn damage_breakdown(&self, options: MetricOptions) -> Breakdown {
         let total_cell_level = options.total_cell_level.unwrap_or(self.total_cell_level());
         let fever = options.fever.unwrap_or(self.progress.fever);
@@ -281,7 +276,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyCellSpeedBreakdown`.
     pub fn speed_breakdown(&self, fever: Option<u32>) -> Breakdown {
         let rabies = self.fever_bonus(4, 1, 0.0, fever);
         let plague = self.fever_bonus(5, 0, 0.0, fever);
@@ -306,7 +300,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyCellExpBreakdown`.
     pub fn exp_breakdown(&self, fever: Option<u32>) -> Breakdown {
         let additive = additive_group(
             "Additive Cell EXP",
@@ -347,7 +340,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyBloodcellBreakdown`.
     pub fn bloodcell_breakdown(&self, options: MetricOptions) -> Breakdown {
         let total_cell_level = options.total_cell_level.unwrap_or(self.total_cell_level());
         let best_dps = options.best_dps.unwrap_or(self.progress.best_dps);
@@ -452,7 +444,6 @@ impl Jelly {
         }
     }
 
-    /// `jellyLayoutBreakdown`.
     pub fn layout_breakdown(&self, layout: &Layout, fever: Option<u32>) -> LayoutBreakdown {
         let metrics = self.layout_metrics(
             layout,
@@ -574,7 +565,7 @@ fn root(label: &str, value: f64, factors: Vec<FormulaNode>) -> FormulaNode {
         .with_children(factors)
 }
 
-/// The upgrade's own name, or the page's fallback when the table lacks it.
+/// The upgrade's own name, or a fallback when the table lacks it.
 fn upgrade_name(id: usize, fallback: &str) -> String {
     data()
         .upgrade(id)
