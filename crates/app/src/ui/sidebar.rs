@@ -67,8 +67,11 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
         if rail {
             list = list.child(div().self_stretch().mx_1().h(px(1.0)).bg(border));
         }
+        // Folded, NavGroup renders its items alone; the heading is drawn here
+        // because NavGroup's title always carries a fold chevron, and these
+        // headings do not fold.
         let mut nav =
-            NavGroup::new(format!("nav-group-{}", group.id()), group.label(), true).folded(rail);
+            NavGroup::new(format!("nav-group-{}", group.id()), group.label(), true).folded(true);
         for section in sections {
             let open = entity.clone();
             nav = nav.child(
@@ -85,7 +88,17 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 }),
             );
         }
-        list = list.child(nav);
+        list = list.child(if rail {
+            nav.into_any_element()
+        } else {
+            div()
+                .flex()
+                .flex_col()
+                .gap_0p5()
+                .child(heading(group, cx))
+                .child(nav)
+                .into_any_element()
+        });
     }
 
     // A fade at each edge says there is more to scroll; a scrollbar would sit
@@ -145,6 +158,28 @@ fn edge_fades(scroll: &ScrollHandle, ground: Hsla) -> impl IntoElement {
     .top_0()
     .left_0()
     .size_full()
+}
+
+/// A group's title in `NavGroup`'s type, without the fold chevron.
+fn heading(group: Group, cx: &App) -> impl IntoElement {
+    let theme = cx.theme();
+    div()
+        .id(SharedString::from(format!(
+            "nav-group-title-{}",
+            group.id()
+        )))
+        .role(Role::Heading)
+        .aria_label(group.label())
+        .flex()
+        .items_center()
+        .h(theme.control_height(ControlSize::Sm))
+        .px_2()
+        .border_1()
+        .border_color(gpui::transparent_black())
+        .text_size(theme.text_size(TextSize::Xs))
+        .font_weight(FontWeight::MEDIUM)
+        .text_color(theme.colors.fg_subtle)
+        .child(group.label())
 }
 
 /// The 20 px icon slot every item shares.

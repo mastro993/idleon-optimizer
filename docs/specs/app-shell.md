@@ -106,7 +106,7 @@ game sprites.
 | Back, forward, history list | Ely `BackForwardNavigation` |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
-| Group heading | Ely `NavGroup` (title dropped in the rail) |
+| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); dropped in the rail |
 | Rail separator between groups | 1 px `border` line, 4 px side inset |
 | Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded |
 | Running mark | Ely `ProgressRing` (14 px expanded, 12 px rail) |
