@@ -30478,6 +30478,146 @@
       "sha256": "8bdcab0409ef40f20009892173df1531a0498371dc6fd557152b8e61fd352eed"
     },
     {
+      "path": "sections/cglunko.png",
+      "bytes": 600,
+      "sha256": "8071e0723d25fb71f2dd7c61f91dfa608b14fe049aebe476271e186c4e35817e"
+    },
+    {
+      "path": "sections/clamworks.png",
+      "bytes": 4403,
+      "sha256": "8d5b585f6116c7407120a629a115e67f6d938e12c0a7c81f8ca984ec140f7230"
+    },
+    {
+      "path": "sections/cog.png",
+      "bytes": 631,
+      "sha256": "de808a1cc8c83931ecfca953f85df5c8f84011ef94a33c2319a80563f49564d7"
+    },
+    {
+      "path": "sections/coin-multi.png",
+      "bytes": 438,
+      "sha256": "948892427d6dcbd7ea331121dbb6a78b3300d414cb949ee2e124b40ee006170a"
+    },
+    {
+      "path": "sections/combat-sim.png",
+      "bytes": 600,
+      "sha256": "945b861e00a3abee989e9ba513e5e04bd1caf9361a75c798c95610296beee9a6"
+    },
+    {
+      "path": "sections/cooking-mastery.png",
+      "bytes": 814,
+      "sha256": "234191f007480ff71faa3854cc4811c178f8b7378960f95f312c93a540d53d93"
+    },
+    {
+      "path": "sections/coral-god-rank.png",
+      "bytes": 994,
+      "sha256": "be44ea224ac1f440185696f82ffeb49a5f1da366f05b3116a0fb524fe9b46120"
+    },
+    {
+      "path": "sections/damage.png",
+      "bytes": 926,
+      "sha256": "391b713b20563afdcf4ecdac0673a32e874631ee26ffd08598c13833e6594e13"
+    },
+    {
+      "path": "sections/drop-rate.png",
+      "bytes": 1696,
+      "sha256": "9f7b9584dcd06f4bee2f0ae4e284b68a3707fd44bd23ca802eca5e2ef4120aad"
+    },
+    {
+      "path": "sections/farming.png",
+      "bytes": 1186,
+      "sha256": "217d348b7b31f38da67b584c2603c098d3a3ede6807d2e3f0b54ae06e75c3ca3"
+    },
+    {
+      "path": "sections/fishing.png",
+      "bytes": 1023,
+      "sha256": "2e82f764696c036093747b1b3158c42f1e7c9aac35baf0182392a13695abe257"
+    },
+    {
+      "path": "sections/fountain.png",
+      "bytes": 1252,
+      "sha256": "f9f23de150d26cd69444b6afbb6f72f1260d3f2226b955f72efc6e6e25e37e29"
+    },
+    {
+      "path": "sections/jar.png",
+      "bytes": 973,
+      "sha256": "05d778c2b6353d763216fe1a926fbeb388a5b838e9d281fedf32dedf6d156a70"
+    },
+    {
+      "path": "sections/jelly-operator.png",
+      "bytes": 937,
+      "sha256": "9523fc355803c5fc7a26a72013d006bbea9f2a1466841abebfefebcc249bce48"
+    },
+    {
+      "path": "sections/killroy.png",
+      "bytes": 544,
+      "sha256": "a4ee60afbfb77111659591422265b4fdbf36ae54621e8eb70722ec123e89eaec"
+    },
+    {
+      "path": "sections/ladle.png",
+      "bytes": 1110,
+      "sha256": "35f8c3fe5344da3e71fcb9b0fd6bfc2d30132ceeee437980af90d7a2a3f264c1"
+    },
+    {
+      "path": "sections/monument.png",
+      "bytes": 1298,
+      "sha256": "8378e069bc8154c846f6c0015ed2d9ebb45fa5928ddf9735baa4aab2ec82e99c"
+    },
+    {
+      "path": "sections/opal.png",
+      "bytes": 463,
+      "sha256": "951e2372fc99ea0a62a14ed95fa19ddbaf969cdbf457a28cf02d2b5379f6f318"
+    },
+    {
+      "path": "sections/pickle.png",
+      "bytes": 1064,
+      "sha256": "fade9bbc5f59ddeb2d9ce9b41bb09e64c71bbdb6003ddcde3c5211de755bf7ab"
+    },
+    {
+      "path": "sections/prisma.png",
+      "bytes": 1684,
+      "sha256": "d9429dfd2126d8d9b69220c43bb2bcad53f90fae5bb2452a99a95c1bb90512cf"
+    },
+    {
+      "path": "sections/research.png",
+      "bytes": 1135,
+      "sha256": "fcc732a7f3b936c9a7910a146af37f473dbe6a461735bf0790cc9a44acf6f64c"
+    },
+    {
+      "path": "sections/royal-guardian.png",
+      "bytes": 1026,
+      "sha256": "81753415e4e565bea60a3616ceb02c9fbe1b59c6e801023264f07e03360b87d4"
+    },
+    {
+      "path": "sections/sailing.png",
+      "bytes": 1083,
+      "sha256": "e29268d3b2af6ae3cedcda61232dd2786ffb95f427190460b237435dccef689a"
+    },
+    {
+      "path": "sections/sneaking.png",
+      "bytes": 1057,
+      "sha256": "e650083a7ccad63d635ddba2aa84150c9588c51a3586a87220ea5f77dae9d08c"
+    },
+    {
+      "path": "sections/spelunking.png",
+      "bytes": 540,
+      "sha256": "9103972030bb8ae30f576fa65cff1f47886c6537c048318775aeaa865fe5d028"
+    },
+    {
+      "path": "sections/stats-all.png",
+      "bytes": 434,
+      "sha256": "36cc618bb73230ae506893697bed9fa67a67063c138ca187f0147c3458d11daf"
+    },
+    {
+      "path": "sections/statue.png",
+      "bytes": 442,
+      "sha256": "fa517a1d5fee3e92965fe7ee498331195b066430933ca49f700dab9df954d988"
+    },
+    {
+      "path": "sections/worship-td.png",
+      "bytes": 1276,
+      "sha256": "4a5374f05a2995b5346c05420f40552fc55c72e1fd15cffbc3b8ed3323b670ce"
+    },
+    {
       "path": "sneaking/ninja.png",
       "bytes": 19164,
       "sha256": "f1ded00dda3a70d5cb723aa1ca99e3c72ffe790d6dc2a9831f5de6701c26c3e2"
@@ -32583,8 +32723,8 @@
       "sha256": "57ba5df1a9c5e78c59d99074a766b64e68ef2e340de26cc399a162db24f10b67"
     }
   ],
-  "totalFiles": 6519,
-  "totalBytes": 24021748,
+  "totalFiles": 6544,
+  "totalBytes": 22833449,
   "references": {
     "static": 256,
     "verified": 7,

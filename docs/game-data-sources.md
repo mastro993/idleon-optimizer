@@ -28,6 +28,16 @@ Vetted 2026-11-16; re-check licenses and freshness before relying on a row.
    Evaluating the client's own function in a Node `vm` over the scratch `N.js` gives exact
    expected values for a test.
 
+## Taking game art
+
+The web client keeps its images in `lib/default.pak` beside `N.js`: a `lime-asset-pack` header,
+then one gzip stream per file. `N.js` carries the pack's manifest (search for `"assets":"aoy8:`), a
+Haxe-serialized list giving each file's `id` (`assets/data/<Name>.png` for the named sprites),
+`position` and `length` in the pack. Download both into the gitignored scratch folder, gunzip
+the entries you need and copy only those images under `assets/game/`, each with a manifest entry
+(`path`, `bytes`, `sha256`). The images are the game's art, credited in
+`assets/game/README.md`; the pack itself never gets committed.
+
 ## Staying current
 
 - Poll `N.js` with a HEAD request: its `ETag` and `Last-Modified` change on every patch. Re-read the
