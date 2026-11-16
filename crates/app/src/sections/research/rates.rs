@@ -23,7 +23,7 @@ pub(crate) fn rates_pane(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
-    let breakpoint = Breakpoint::of(window);
+    let breakpoint = Breakpoint::of(window, cx);
     let table_height = layout::table_height(f32::from(window.viewport_size().height));
     let rate = state.rate();
     let points = state.grid_points();

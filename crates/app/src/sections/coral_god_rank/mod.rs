@@ -121,7 +121,7 @@ pub(crate) fn view(
         .min_h_0()
         .child(layout::split_pane_reversed(
             "coral-body",
-            Breakpoint::of(window),
+            Breakpoint::of(window, cx),
             summary,
             controls,
             px(420.0),

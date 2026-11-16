@@ -143,7 +143,7 @@ try {
   );
   await call('click_element', { id: 'dashboard-resume' });
   await waitFor((current) => has(current, 'section-fishing'), 'resume reopens the section');
-  await call('click_element', { id: 'back-to-dashboard' });
+  await call('click_element', { id: 'nav-home' });
   await waitFor((current) => has(current, 'card-fishing'), 'back returns to the dashboard');
 
   // The research card opens the one implemented section. Filter first so the
@@ -443,7 +443,7 @@ try {
 
   // Killroy: the forecast reads raw save fields, names the encounter, and the
   // week range re-renders the table.
-  await call('click_element', { id: 'back-to-dashboard' });
+  await call('click_element', { id: 'nav-home' });
   await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens');
   await call('click_element', { id: 'dashboard-search' });
   await call('keyboard', { keystroke: 'secondary-a' });
@@ -492,7 +492,7 @@ try {
   await waitForNode('killroy-forecast', 'the baseline tab reopens');
 
   // Back to the research rates pane for the failed-import checks.
-  await call('click_element', { id: 'back-to-dashboard' });
+  await call('click_element', { id: 'nav-home' });
   await waitFor((current) => has(current, 'dashboard-search'), 'the dashboard reopens after killroy');
   await call('click_element', { id: 'dashboard-search' });
   await call('keyboard', { keystroke: 'secondary-a' });

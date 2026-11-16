@@ -178,7 +178,7 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let breakpoint = Breakpoint::of(window);
+    let breakpoint = Breakpoint::of(window, cx);
     let save = state.fishing_save.clone();
     state.fishing.clamp(&save);
     let config = state.fishing.clone();

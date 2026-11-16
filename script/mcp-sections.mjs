@@ -1,5 +1,6 @@
 // Per-section verification: opens every registry section, asserts its stable
-// root and shared header, drives one interaction and captures a screenshot.
+// root, shared header and active sidebar item, drives one interaction and
+// captures a screenshot. One extra lane checks the sidebar itself.
 //
 // Sections come from `idleon-optimizer --list-sections`, so this script never
 // hardcodes the registry. Dashboard cards open from the grid; the hidden tools
@@ -1912,8 +1913,8 @@ const INTERACTIONS = {
       (nodes) => labelOf(nodes, 'plot-detail') === 'Plot 2',
       'farming: clicking a plot moves the detail'
     );
-    await lane.call('click_element', { id: 'back-to-dashboard' });
-    await waitForNode(lane, 'dashboard', 'farming: back returns to the dashboard');
+    await openNav(lane, 'nav-home');
+    await waitForNode(lane, 'dashboard', 'farming: Home returns to the dashboard');
     await lane.call('click_element', { id: 'dashboard-resume' });
     await waitFor(
       lane,
@@ -2092,7 +2093,7 @@ const INTERACTIONS = {
     if (useBest) {
       const y = useBest.bounds?.y ?? 0;
       if (y > 600) {
-        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
         await waitForNode(lane, 'fishing-use-best', 'fishing: the ranking scrolls into view');
       }
       await lane.call('click_element', { id: 'fishing-use-best' });
@@ -2132,7 +2133,7 @@ const INTERACTIONS = {
       const node = (await lane.tree()).find((entry) => entry.id === id);
       const y = node?.bounds?.y ?? 0;
       if (y > 600) {
-        await lane.call('scroll', { x: 20, y: 500, delta_y: Math.ceil(y - 300) });
+        await lane.call('scroll', { x: 700, y: 500, delta_y: Math.ceil(y - 300) });
         await waitForNode(lane, id, `fishing: ${id} scrolls into view`);
       }
     };
@@ -4698,6 +4699,7 @@ const fail = (label, error) => {
 
 const has = (nodes, id) => nodes.some((node) => node.id === id);
 const labelOf = (nodes, id) => nodes.find((node) => node.id === id)?.label ?? null;
+const selected = (nodes, id) => nodes.find((node) => node.id === id)?.state?.selected === true;
 const valueOf = (nodes, id) => nodes.find((node) => node.id === id)?.value?.value ?? null;
 /// The figure behind a `"<label>: <value>"` reading, without its caption.
 const rateOf = (label) => (label ?? '').split(': ')[1] ?? '';
@@ -4778,6 +4780,33 @@ const searchFor = async (lane, text, cardId, label) => {
   }
 };
 
+/// Click a sidebar item, scrolling the sidebar first when the item sits
+/// outside it (the Tools group is below the fold at the default height).
+async function openNav(lane, id) {
+  let previous = null;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const nodes = await lane.tree();
+    const node = nodes.find((entry) => entry.id === id);
+    if (!node) throw new Error(`${id} is not in the sidebar`);
+    const frame = nodes.find((entry) => entry.id === 'app-sidebar')?.bounds;
+    if (!frame) throw new Error('the sidebar is not in the tree');
+    const { y, height } = node.bounds;
+    // An item that cannot move further is pressed where it is.
+    if ((y >= frame.y && y + height <= frame.y + frame.height) || y === previous) {
+      await lane.call('click_element', { id });
+      return;
+    }
+    previous = y;
+    await lane.call('scroll', {
+      x: frame.x + frame.width / 2,
+      y: frame.y + frame.height / 2,
+      delta_y: Math.ceil(y - (frame.y + frame.height / 2)),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`${id} did not scroll into the sidebar`);
+}
+
 /// Open a card from the dashboard, then verify the section it routes to.
 async function visitCard(lane, unit) {
   await waitForNode(lane, 'dashboard-search', 'the dashboard is ready');
@@ -4799,19 +4828,15 @@ async function visitSection(lane, unit) {
   await waitForNode(lane, root, `${unit.id}: section root`);
   const nodes = await lane.tree();
   const missing = [
-    'back-to-dashboard',
-    'section-title',
+    'sidebar-toggle',
     'header-import',
     'header-export',
     'header-save',
+    'nav-home',
   ]
     .filter((id) => !has(nodes, id));
   check(`${unit.id}: shared header`, missing.length === 0, `missing ${missing.join(', ')}`);
-  check(
-    `${unit.id}: header names the section`,
-    (labelOf(nodes, 'section-title') ?? '').includes(unit.title),
-    String(labelOf(nodes, 'section-title')),
-  );
+  check(`${unit.id}: its sidebar item is active`, selected(nodes, `nav-${unit.id}`));
 
   if (unit.status === 'Planned') {
     // The shared empty state is not in the semantic tree; its back action is
@@ -4829,8 +4854,8 @@ async function visitSection(lane, unit) {
   }
   await interaction(lane);
   await capture(lane, unit);
-  await lane.call('click_element', { id: 'back-to-dashboard' });
-  await waitForNode(lane, 'dashboard', `${unit.id}: header back opens the dashboard`);
+  await openNav(lane, 'nav-home');
+  await waitForNode(lane, 'dashboard', `${unit.id}: Home opens the dashboard`);
 }
 
 /// Save the capture and its sidecar, then optionally compare a baseline.
@@ -4984,7 +5009,7 @@ async function visitProjectRoundTrip() {
       'project: the change log closes with the dialog',
     );
 
-    await lane.call('click_element', { id: 'back-to-dashboard' });
+    await openNav(lane, 'nav-home');
     await waitForNode(lane, 'dashboard', 'project: back on the dashboard');
     await searchFor(lane, 'Research Grid', 'card-research', 'config: search lists the research card');
     await lane.call('click_element', { id: 'card-research' });
@@ -5046,6 +5071,63 @@ async function visitProjectRoundTrip() {
   }
 }
 
+/// The shell: Home first and active, one sidebar item per registry entry under
+/// its group (the hidden tools under Tools), an item opens its section in place
+/// and the header keeps the save actions on every place.
+async function visitShell(registry) {
+  let lane = null;
+  try {
+    lane = await McpLane.start({ appBin, keep });
+    await waitForNode(lane, 'dashboard', 'shell: the window opens on Home');
+    let nodes = await lane.tree();
+    check('shell: Home is active', selected(nodes, 'nav-home'));
+    const groups = [...new Set(registry.map((unit) => (unit.dashboard ? unit.group : 'tools')))];
+    const absent = [
+      'app-sidebar',
+      ...groups.map((group) => `nav-group-${group}`),
+      ...registry.map((unit) => `nav-${unit.id}`),
+    ].filter((id) => !has(nodes, id));
+    check('shell: every group and section has a sidebar entry', absent.length === 0, absent.join(', '));
+
+    for (const id of ['farming', 'damage']) {
+      await openNav(lane, `nav-${id}`);
+      await waitForNode(lane, `section-${id}`, `shell: the ${id} item opens its section`);
+      nodes = await lane.tree();
+      check(`shell: the ${id} item is active`, selected(nodes, `nav-${id}`));
+      check(`shell: Home is no longer active on ${id}`, !selected(nodes, 'nav-home'));
+      const actions = ['header-save', 'header-export', 'header-import'].filter((action) => !has(nodes, action));
+      check(`shell: the save actions stay on ${id}`, actions.length === 0, actions.join(', '));
+    }
+    await openNav(lane, 'nav-farming');
+    await waitForNode(lane, 'section-farming', 'shell: farming opens again');
+    await lane.call('click_element', { id: 'evolution' });
+    await waitForNode(lane, 'farming-chain', 'shell: farming changes tab before leaving');
+    await openNav(lane, 'nav-damage');
+    await waitForNode(lane, 'section-damage', 'shell: damage opens from farming');
+    await openNav(lane, 'nav-farming');
+    await waitForNode(lane, 'farming-chain', 'shell: farming reopens on the tab it was left on');
+
+    await lane.call('click_element', { id: 'sidebar-toggle' });
+    await waitFor(
+      lane,
+      (current) => labelOf(current, 'sidebar-toggle') === 'Expand sidebar',
+      'shell: the toggle folds the sidebar to the rail',
+    );
+    nodes = await lane.tree();
+    check('shell: the rail keeps every item', registry.every((unit) => has(nodes, `nav-${unit.id}`)));
+    await lane.call('click_element', { id: 'sidebar-toggle' });
+    await waitFor(
+      lane,
+      (current) => labelOf(current, 'sidebar-toggle') === 'Collapse sidebar',
+      'shell: the toggle expands the sidebar again',
+    );
+  } catch (error) {
+    fail('shell', error);
+  } finally {
+    lane?.close();
+  }
+}
+
 /// The session file: one lane imports a save and opens a section, a second lane
 /// starts from the same app-data directory and must land back there, and a
 /// third must back up a corrupt file and start on a clean dashboard.
@@ -5056,6 +5138,16 @@ async function visitSessionPersistence() {
   try {
     lane = await McpLane.start({ appBin, stateDir, keep: false });
     await waitForNode(lane, 'dashboard', 'session: a fresh app-data directory starts on the dashboard');
+    check(
+      'session: a fresh session opens the sidebar expanded',
+      labelOf(await lane.tree(), 'sidebar-toggle') === 'Collapse sidebar',
+    );
+    await lane.call('click_element', { id: 'sidebar-toggle' });
+    await waitFor(
+      lane,
+      (nodes) => labelOf(nodes, 'sidebar-toggle') === 'Expand sidebar',
+      'session: the sidebar folds to the rail',
+    );
     await importText(lane, researchSave(), 'save.json', 'session');
     await waitFor(
       lane,
@@ -5093,6 +5185,11 @@ async function visitSessionPersistence() {
     lane = await McpLane.start({ appBin, stateDir, keep: false });
     await waitForNode(lane, 'section-research', 'session: relaunch restores the last section');
     const restored = await lane.tree();
+    check(
+      'session: relaunch restores the folded sidebar',
+      labelOf(restored, 'sidebar-toggle') === 'Expand sidebar',
+      String(labelOf(restored, 'sidebar-toggle')),
+    );
     const save = labelOf(restored, 'header-save') ?? '';
     check(
       'session: relaunch restores the imported save',
@@ -5220,6 +5317,7 @@ try {
     for (const unit of hidden) await visitHidden(unit);
     // One window proves the whole round trip; a shard's other lanes are busy.
     if (!only && shardIndex === 0) {
+      await visitShell(registry);
       await visitProjectRoundTrip();
       await visitSessionPersistence();
     }

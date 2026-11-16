@@ -3,9 +3,9 @@
 //! Unlike the project export, which a user copies around, this file is the
 //! window's own memory. It holds one [`project::Project`] document — the active
 //! section, the decoded save, the research state and one config per section —
-//! plus the metadata of the imports that were applied, so the next launch lands
-//! on the same section with the same save and the import dialog can list what
-//! came before.
+//! plus the metadata of the imports that were applied and the sidebar's fold, so
+//! the next launch lands on the same section with the same save and chrome, and
+//! the import dialog can list what came before.
 //!
 //! The file lives in the platform app-data directory, or wherever
 //! `--state-dir`/`IDLEON_OPTIMIZER_STATE_DIR` points, and is written
@@ -84,6 +84,22 @@ impl RecentImport {
     }
 }
 
+/// How the sidebar sits: expanded with titles, or folded to the icon rail.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum SidebarFold {
+    #[default]
+    Expanded,
+    Rail,
+}
+
+/// The window chrome the session remembers beside the project.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub(crate) struct Shell {
+    pub(crate) sidebar: SidebarFold,
+}
+
 /// The project a saved session restores, decoded and prepared for applying.
 pub(crate) struct SessionRestore {
     pub(crate) project: pipeline::ProjectImport,
@@ -99,6 +115,8 @@ pub(crate) struct Session {
     pub(crate) restore: Option<SessionRestore>,
     /// Why the file was backed up or skipped, for the first status line.
     pub(crate) notice: Option<String>,
+    /// The window chrome: the sidebar's fold.
+    pub(crate) shell: Shell,
     /// A hash of the text last written, so an unchanged session is not
     /// written again; `None` until the first save.
     written: Option<u64>,
@@ -113,6 +131,7 @@ impl Session {
             recent: Vec::new(),
             restore: None,
             notice: None,
+            shell: Shell::default(),
             written: None,
         };
         let bytes = match fs::read(&session.path) {
@@ -129,9 +148,10 @@ impl Session {
             .map_err(|error| error.to_string())
             .and_then(|text| parse(&text));
         match parsed {
-            Ok((restore, recent)) => {
+            Ok((restore, recent, shell)) => {
                 session.restore = Some(restore);
                 session.recent = recent;
+                session.shell = shell;
             }
             Err(reason) => {
                 let backup = backup(&session.path);
@@ -187,6 +207,7 @@ impl Session {
             "version": VERSION,
             "project": project,
             "recentImports": self.recent,
+            "shell": self.shell,
         });
         let text = serde_json::to_string(&text).map_err(io::Error::other)?;
         let mut hasher = DefaultHasher::new();
@@ -202,7 +223,7 @@ impl Session {
 }
 
 /// The session document a text carries, or why it cannot be read back.
-fn parse(text: &str) -> Result<(SessionRestore, Vec<RecentImport>), String> {
+fn parse(text: &str) -> Result<(SessionRestore, Vec<RecentImport>, Shell), String> {
     let value: Value = serde_json::from_str(text).map_err(|error| error.to_string())?;
     let object = value
         .as_object()
@@ -224,7 +245,19 @@ fn parse(text: &str) -> Result<(SessionRestore, Vec<RecentImport>), String> {
     let project = object
         .get("project")
         .ok_or_else(|| "the session carries no project".to_string())?;
-    Ok((restore(project)?, recent(object.get("recentImports"))))
+    Ok((
+        restore(project)?,
+        recent(object.get("recentImports")),
+        shell(object.get("shell")),
+    ))
+}
+
+/// The remembered window chrome; like the recent list it is cosmetic, so a
+/// missing or unreadable value opens the default chrome.
+fn shell(value: Option<&Value>) -> Shell {
+    value
+        .and_then(|value| serde_json::from_value(value.clone()).ok())
+        .unwrap_or_default()
 }
 
 /// Decode the embedded project and every section config it carries; a config
@@ -567,6 +600,56 @@ mod tests {
         assert!(line.contains("it.json"), "{line}");
         assert!(line.contains("4 character(s)"), "{line}");
         assert!(line.contains(':'), "the time has a clock: {line}");
+    }
+
+    #[test]
+    fn the_sidebar_fold_is_saved_beside_the_project_and_restored() {
+        let dir = scratch("sidebar-fold");
+        let path = dir.join(FILE);
+        let mut session = Session::load(path.clone());
+        session.shell.sidebar = SidebarFold::Rail;
+        session.save(&project_value()).expect("the session saves");
+
+        let written: Value =
+            serde_json::from_str(&fs::read_to_string(&path).expect("the session file"))
+                .expect("the session is JSON");
+        assert_eq!(written["version"], json!(1));
+        assert_eq!(written["shell"], json!({ "sidebar": "rail" }));
+        assert!(
+            written["project"].get("shell").is_none(),
+            "the fold is window memory, never part of the project"
+        );
+
+        let restored = Session::load(path);
+        assert_eq!(restored.shell.sidebar, SidebarFold::Rail);
+        assert!(restored.restore.is_some());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn a_session_without_a_readable_shell_opens_the_sidebar_expanded() {
+        for (name, shell) in [
+            ("no-shell", None),
+            ("bad-shell", Some(json!({ "sidebar": "sideways" }))),
+        ] {
+            let dir = scratch(name);
+            let path = dir.join(FILE);
+            let mut text = json!({
+                "format": FORMAT,
+                "version": VERSION,
+                "project": project_value(),
+            });
+            if let Some(shell) = shell {
+                text["shell"] = shell;
+            }
+            fs::write(&path, text.to_string()).expect("the session file");
+
+            let session = Session::load(path);
+            assert_eq!(session.shell.sidebar, SidebarFold::Expanded, "{name}");
+            assert!(session.notice.is_none(), "{name}");
+            assert!(session.restore.is_some(), "{name}: the project restores");
+            let _ = fs::remove_dir_all(dir);
+        }
     }
 
     #[test]

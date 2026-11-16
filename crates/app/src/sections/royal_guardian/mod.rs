@@ -210,7 +210,11 @@ pub(crate) fn view(
         .items_center()
         .px_3()
         .pt_2()
-        .child(tabs);
+        .child(crate::ui::layout::scrolling_tabs(
+            "royal-tabs-scroll",
+            tabs,
+            cx,
+        ));
     if tab == Tab::Forecast {
         state.ensure_royal_forecast();
     }

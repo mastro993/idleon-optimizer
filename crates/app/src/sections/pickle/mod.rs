@@ -71,7 +71,7 @@ pub(crate) fn view(
     let max_ttk = state.pickle.max_ttk;
     layout::split_pane_reversed(
         "pickle-layout",
-        Breakpoint::of(window),
+        Breakpoint::of(window, cx),
         results(dps, max_ttk, height, cx),
         controls(dps, max_ttk, cx),
         px(360.0),

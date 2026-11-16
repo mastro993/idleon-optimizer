@@ -96,7 +96,16 @@ pkill -f target/debug/idleon-optimizer
 `mcp-drive.mjs` exits non-zero when a check fails, which makes it usable as a gate for a lane that
 touches the UI.
 
-The app also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
+The app also takes `--import <file>` (or `IDLEON_OPTIMIZER_IMPORT=<file>`, inherited by every window
+a harness spawns) to apply a save, project or section config at launch exactly as the Import dialog
+would; a file that cannot be read is named on the status line. Use it for the 665 KiB
+`fixtures/data.json`, which is over the bridge's 64 KiB `type_text` limit:
+
+```console
+IDLEON_OPTIMIZER_IMPORT=$PWD/fixtures/data.json node script/mcp-smoke.mjs --spawn --section farming
+```
+
+It also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
 it and asserts the section root and (while no save is loaded) the shared `no-save-state` banner:
 
 ```console
@@ -112,10 +121,12 @@ node script/mcp-smoke.mjs --spawn --section nope     # unknown id: missing-secti
 `script/mcp-sections.mjs` is the section gate. It reads the registry from
 `idleon-optimizer --list-sections` (so a new registry entry needs no harness edit), opens every
 dashboard card through the search field, opens each hidden tool through its own `--section` lane,
-asserts the section root and shared header ids, drives one interaction and writes
-`target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an interaction check
-fails loudly; add one to `INTERACTIONS` in the script. After the sections, one extra window proves
-the project round trip: Export opens over the window state and names its size and sections, then a
+asserts the section root, the shared header ids and its active sidebar item, drives one interaction
+and writes `target/mcp-sections/<id>.png` plus a sidecar JSON. A ready section without an
+interaction check fails loudly; add one to `INTERACTIONS` in the script. After the sections, one
+window checks the shell (Home first and active, a sidebar item per registry entry, an item opening
+its section in the state it was left in, the save actions on every place, the rail toggle), and one
+more proves the project round trip: Export opens over the window state and names its size and sections, then a
 project document and a research section config each preview, apply and leave a visible mark. It also
 asserts the change log (the status line and `import-changes` in the dialog) and five refused imports
 — malformed JSON, an unknown format marker, an unsupported version, an unreadable embedded save and

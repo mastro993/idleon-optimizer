@@ -340,7 +340,7 @@ pub(crate) fn view(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let breakpoint = layout::Breakpoint::of(window);
+    let breakpoint = layout::Breakpoint::of(window, cx);
     let totals = state.combat.loadout.totals();
     let summary = totals.line();
     let issues = state.combat.loadout.issues();

@@ -17,17 +17,6 @@ pub(crate) const DEFAULT_DIR: &str = "assets/game";
 /// Overrides the asset folder, for packaged builds and harnesses.
 pub(crate) const ENV_DIR: &str = "IDLEON_ASSETS_DIR";
 
-/// Whether the asset folder is usable.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum Status {
-    /// A manifest loaded; individual files may still be missing.
-    Ready,
-    /// No manifest in any candidate folder.
-    NotInstalled,
-    /// A manifest exists but cannot be read.
-    Invalid(String),
-}
-
 /// What an image reference resolves to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Artwork<'a> {
@@ -37,26 +26,11 @@ pub(crate) enum Artwork<'a> {
     Missing,
 }
 
-/// The manifest's entries and the totals it declares.
-#[derive(Clone, Debug)]
+/// The manifest's entries that are on disk; a missing or unreadable manifest
+/// has none, so every reference falls back to its placeholder.
+#[derive(Clone, Debug, Default)]
 pub(crate) struct Manifest {
     files: BTreeMap<String, PathBuf>,
-    total_files: usize,
-    total_bytes: u64,
-    missing_files: usize,
-    status: Status,
-}
-
-impl Default for Manifest {
-    fn default() -> Self {
-        Self {
-            files: BTreeMap::new(),
-            total_files: 0,
-            total_bytes: 0,
-            missing_files: 0,
-            status: Status::NotInstalled,
-        }
-    }
 }
 
 impl Manifest {
@@ -67,13 +41,7 @@ impl Manifest {
         let Ok(text) = std::fs::read_to_string(&path) else {
             return Self::default();
         };
-        match Self::parse(&dir, &text) {
-            Ok(manifest) => manifest,
-            Err(error) => Self {
-                status: Status::Invalid(error),
-                ..Self::default()
-            },
-        }
+        Self::parse(&dir, &text).unwrap_or_default()
     }
 
     /// Load the first candidate folder that has a manifest.
@@ -122,50 +90,16 @@ impl Manifest {
             .as_array()
             .ok_or_else(|| "manifest has no files array".to_string())?;
         let mut files = BTreeMap::new();
-        let mut missing_files = 0;
         for entry in entries {
-            let Some(path) = entry["path"].as_str() else {
-                missing_files += 1;
-                continue;
-            };
-            let Some(reference) = normalize(path) else {
-                missing_files += 1;
+            let Some(reference) = entry["path"].as_str().and_then(normalize) else {
                 continue;
             };
             let absolute = dir.join(&reference);
             if absolute.is_file() {
                 files.insert(reference, absolute);
-            } else {
-                missing_files += 1;
             }
         }
-        Ok(Self {
-            total_files: value["totalFiles"]
-                .as_u64()
-                .map_or(entries.len(), |total| total as usize),
-            total_bytes: value["totalBytes"].as_u64().unwrap_or(0),
-            missing_files,
-            files,
-            status: Status::Ready,
-        })
-    }
-
-    /// The short line the status bar shows.
-    pub(crate) fn status_label(&self) -> String {
-        match &self.status {
-            Status::Ready if self.missing_files == 0 => format!(
-                "Art: {} files · {:.1} MB",
-                self.files.len(),
-                self.total_bytes as f64 / 1024.0 / 1024.0
-            ),
-            Status::Ready => format!(
-                "Art: {}/{} files",
-                self.files.len(),
-                self.total_files.max(self.files.len())
-            ),
-            Status::NotInstalled => "Art: not installed".into(),
-            Status::Invalid(_) => "Art: manifest invalid".into(),
-        }
+        Ok(Self { files })
     }
 
     /// What `reference` resolves to. A file removed after the import is missing.
@@ -259,10 +193,9 @@ mod tests {
     }
 
     #[test]
-    fn a_missing_manifest_is_not_installed() {
+    fn a_missing_manifest_resolves_nothing() {
         let dir = scratch("missing-manifest");
         let manifest = Manifest::load(&dir);
-        assert_eq!(manifest.status_label(), "Art: not installed");
         assert_eq!(
             manifest.artwork("combat-sim/player/0.png"),
             Artwork::Missing
@@ -271,16 +204,20 @@ mod tests {
     }
 
     #[test]
-    fn a_broken_manifest_is_invalid_and_never_panics() {
-        let dir = scratch("broken-manifest");
-        fs::write(dir.join(MANIFEST_FILE), "{not json").expect("manifest file");
-        let manifest = Manifest::load(&dir);
-        assert_eq!(manifest.status_label(), "Art: manifest invalid");
-        assert_eq!(
-            manifest.artwork("combat-sim/player/0.png"),
-            Artwork::Missing
-        );
-        let _ = fs::remove_dir_all(dir);
+    fn a_broken_manifest_resolves_nothing_and_never_panics() {
+        for (name, text) in [("not-json", "{not json"), ("no-files", r#"{"version":1}"#)] {
+            let dir = scratch(name);
+            fs::create_dir_all(dir.join("combat-sim/player")).expect("art folder");
+            fs::write(dir.join("combat-sim/player/0.png"), b"png").expect("art file");
+            fs::write(dir.join(MANIFEST_FILE), text).expect("manifest file");
+            let manifest = Manifest::load(&dir);
+            assert_eq!(
+                manifest.artwork("combat-sim/player/0.png"),
+                Artwork::Missing,
+                "{name}"
+            );
+            let _ = fs::remove_dir_all(dir);
+        }
     }
 
     #[test]
@@ -296,7 +233,6 @@ mod tests {
             ],
         );
         let manifest = Manifest::load(&dir);
-        assert_eq!(manifest.status_label(), "Art: 1/2 files");
         assert_eq!(
             manifest.artwork("./assets/combat-sim/player/0.png"),
             Artwork::Ready(&dir.join("combat-sim/player/0.png"))
@@ -318,11 +254,6 @@ mod tests {
             .join("../..")
             .join(DEFAULT_DIR);
         let manifest = Manifest::load(dir);
-        assert_eq!(
-            manifest.status,
-            Status::Ready,
-            "the game assets are committed"
-        );
         let mut missing = Vec::new();
         for map in idleon_combat::encounter::maps() {
             for reference in map.art.bg.iter().chain(map.art.plat.iter()) {
@@ -347,14 +278,5 @@ mod tests {
             missing.is_empty(),
             "replay files not in the manifest: {missing:?}"
         );
-    }
-
-    #[test]
-    fn a_manifest_without_a_files_array_is_invalid() {
-        let dir = scratch("no-files");
-        fs::write(dir.join(MANIFEST_FILE), r#"{"version":1}"#).expect("manifest file");
-        let manifest = Manifest::load(&dir);
-        assert_eq!(manifest.status_label(), "Art: manifest invalid");
-        let _ = fs::remove_dir_all(dir);
     }
 }

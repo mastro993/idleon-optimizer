@@ -191,7 +191,7 @@ pub(crate) fn view(
         Tab::Overview => overview::overview(state, cx),
         Tab::Evolution => evolution::evolution(state, cx),
         Tab::Plots => {
-            let breakpoint = Breakpoint::of(window);
+            let breakpoint = Breakpoint::of(window, cx);
             let plots: Vec<PlotMetrics> = (0..farming::PLOTS)
                 .map(|index| state.farm.plot_metrics_with(index, &snapshot))
                 .collect();

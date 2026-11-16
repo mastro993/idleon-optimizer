@@ -5,10 +5,12 @@ pub(crate) mod assets;
 pub(crate) mod bridge;
 pub(crate) mod dashboard;
 pub(crate) mod export;
+pub(crate) mod header;
 pub(crate) mod import;
 pub(crate) mod layout;
 pub(crate) mod section;
 pub(crate) mod shell;
+pub(crate) mod sidebar;
 pub(crate) mod theme;
 
 use crate::state::AppState;

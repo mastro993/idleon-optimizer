@@ -24,7 +24,7 @@ pub(crate) fn map(
     let Some(trial) = worship::trial(state.worship.trial) else {
         return div().into_any_element();
     };
-    let scale = scale_for(window, trial);
+    let scale = scale_for(window, trial, cx);
     let width = trial.scene.w as f32 * scale;
     let height = trial.scene.h as f32 * scale;
     let view = state.worship.display_view();
@@ -169,9 +169,9 @@ pub(crate) fn map(
         .into_any_element()
 }
 
-fn scale_for(window: &Window, trial: &worship::Trial) -> f32 {
+fn scale_for(window: &Window, trial: &worship::Trial, cx: &gpui::App) -> f32 {
     let viewport = window.viewport_size();
-    let available_w = (f32::from(viewport.width) - 380.0).max(320.0);
+    let available_w = (crate::ui::layout::workspace_width(window, cx) - 380.0).max(320.0);
     let available_h = (f32::from(viewport.height) - 430.0).max(240.0);
     (available_w / trial.scene.w as f32)
         .min(available_h / trial.scene.h as f32)

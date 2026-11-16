@@ -46,7 +46,7 @@ pub(crate) fn view(
         return empty(cx);
     };
     let inputs = save.inputs(&state.spelunking.account);
-    let breakpoint = Breakpoint::of(window);
+    let breakpoint = Breakpoint::of(window, cx);
     let config_error = state.spelunking.config(&inputs).err();
     let mut page = div()
         .id("spelunking-page")

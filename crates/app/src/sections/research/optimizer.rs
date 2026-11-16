@@ -22,7 +22,7 @@ pub(crate) fn optimizer_pane(
 ) -> impl IntoElement {
     layout::split_pane_reversed(
         "optimizer",
-        Breakpoint::of(window),
+        Breakpoint::of(window, cx),
         div()
             .id("optimizer-result")
             .flex_1()

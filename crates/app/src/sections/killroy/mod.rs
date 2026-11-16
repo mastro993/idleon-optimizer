@@ -226,7 +226,7 @@ pub(crate) fn view(
                 .min_h_0()
                 .child(crate::ui::layout::split_pane(
                     "killroy-body",
-                    crate::ui::layout::Breakpoint::of(window),
+                    crate::ui::layout::Breakpoint::of(window, cx),
                     primary,
                     side,
                     gpui::px(360.0),

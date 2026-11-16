@@ -1,12 +1,13 @@
-//! Window chrome: the dashboard, the routed section and the status bar.
+//! Window chrome: the header, the sidebar and the routed place.
 //!
-//! The shell owns the window, the shared header and the routing shortcuts; a
-//! section owns its own tab strip and content behind the registry factory.
+//! The shell owns the window, the header, the sidebar and the routing
+//! shortcuts; a section owns its own tab strip and content behind the registry
+//! factory.
 
-use crate::sections;
+use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
-use crate::ui::{dashboard, export, import, layout, section};
-use ely_gpui_component::shell::{StatusBar, StatusBarItem};
+use crate::ui::layout::SidebarWidth;
+use crate::ui::{dashboard, export, header, import, section, sidebar};
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
@@ -40,12 +41,15 @@ pub(crate) fn shell(
         (colors.bg, colors.fg)
     };
     let route = state.route.clone();
-    let header = match &route {
-        Route::Dashboard => layout::dashboard_header(state, cx),
-        Route::Section(_) => layout::page_header(state, cx),
-        Route::Missing(id) => layout::missing_header(id, state, cx),
-    };
-    // Every section carries the same no-save state under its header; importing
+    // Published before the place renders, so its breakpoint measures the
+    // workspace the sidebar leaves.
+    let rail = state.session.shell.sidebar == SidebarFold::Rail;
+    let sidebar_width = cx.theme().sidebar_width(rail).to_pixels(window.rem_size());
+    // Only on a change: setting a global notifies its observers every time.
+    if cx.try_global::<SidebarWidth>().map(|width| width.0) != Some(sidebar_width) {
+        cx.set_global(SidebarWidth(sidebar_width));
+    }
+    // Every section carries the same no-save state above its content; importing
     // replaces it with the save status the header already reflects.
     let no_save = match &route {
         Route::Section(_) if !state.save_loaded => Some(section::no_save(cx)),
@@ -79,36 +83,6 @@ pub(crate) fn shell(
             .into_any_element(),
     };
 
-    let status = match &route {
-        Route::Dashboard => StatusBar::new()
-            .left(
-                StatusBarItem::new("status-view")
-                    .label(format!("{} calculators", sections::card_count())),
-            )
-            .left(
-                StatusBarItem::new("status-detail")
-                    .label("Search by title, description or world; Escape clears the search."),
-            ),
-        Route::Section(section) => StatusBar::new()
-            .left(StatusBarItem::new("status-view").label(format!(
-                "{} · {}",
-                section.title,
-                section.badge()
-            )))
-            .left(StatusBarItem::new("status-detail").label(format!(
-                "{} · {}",
-                section.status.label(),
-                section.spec
-            ))),
-        Route::Missing(id) => StatusBar::new()
-            .left(StatusBarItem::new("status-view").label("Unknown section"))
-            .left(
-                StatusBarItem::new("status-detail").label(format!("{id} is not in the registry")),
-            ),
-    };
-    let status =
-        status.right(StatusBarItem::new("status-assets").label(state.assets.status_label()));
-
     let mut root = div()
         .id("app-root")
         .flex()
@@ -122,19 +96,35 @@ pub(crate) fn shell(
             state.back_to_dashboard(window, cx);
             cx.stop_propagation();
         }))
-        .child(header)
-        .children(no_save)
-        .child(div().id("workspace").flex_1().min_h_0().child(body))
-        // The status line is a labelled node of its own: a status bar item has no
-        // aria label, and an agent or a screen reader reads the run's state here.
+        .child(header::header(state, cx))
         .child(
-            status.right(
-                div()
-                    .id("status-status")
-                    .role(Role::Label)
-                    .aria_label(state.status.clone())
-                    .child(StatusBarItem::new("status-text").label(state.status.clone())),
-            ),
+            div()
+                .flex()
+                .flex_1()
+                .min_h_0()
+                .child(sidebar::sidebar(state, cx))
+                .child(
+                    div()
+                        .id("workspace")
+                        .flex()
+                        .flex_col()
+                        .flex_1()
+                        .min_w_0()
+                        .min_h_0()
+                        .children(no_save)
+                        .child(div().flex_1().min_h_0().child(body)),
+                ),
+        )
+        // No status bar is drawn; the last run or import message stays a
+        // labelled node for a screen reader and the harnesses.
+        .child(
+            div()
+                .id("status-status")
+                .role(Role::Label)
+                .aria_label(state.status.clone())
+                .absolute()
+                .size_0()
+                .overflow_hidden(),
         );
     // The import dialog owns Escape while it is open, so the section's back
     // shortcut waits until it closes.

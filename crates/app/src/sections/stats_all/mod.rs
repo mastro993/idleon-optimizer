@@ -525,7 +525,11 @@ fn breakdowns(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .text_color(muted)
                         .child(summary),
                 )
-                .child(div().px_3().pb_2().child(tabs))
+                .child(div().px_3().pb_2().child(crate::ui::layout::scrolling_tabs(
+                    "stats-categories-scroll",
+                    tabs,
+                    cx,
+                )))
                 .child(
                     div()
                         .id("stats-category-panel")

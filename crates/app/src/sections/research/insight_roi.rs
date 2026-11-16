@@ -33,7 +33,7 @@ pub(crate) fn pane(
     if let Some(result) = run.result.as_ref() {
         update_tree(state, result, cx);
     }
-    let breakpoint = crate::ui::layout::Breakpoint::of(window);
+    let breakpoint = crate::ui::layout::Breakpoint::of(window, cx);
     div()
         .id("insight-roi")
         .flex()

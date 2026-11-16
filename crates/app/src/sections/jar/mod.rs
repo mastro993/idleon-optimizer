@@ -147,17 +147,18 @@ pub(crate) fn view(
 }
 
 /// The tab strip, driven by the state's own tab.
-fn tabs(state: &AppState, cx: &mut Context<AppState>) -> impl IntoElement {
+fn tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
     let mut tabs = TabBar::new("jar-tabs").selected(SharedString::from(state.jar_tab.id()));
     for tab in Tab::ALL {
         tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
     }
-    tabs.on_select(move |id, _window, cx| {
+    let tabs = tabs.on_select(move |id, _window, cx| {
         if let Some(tab) = Tab::from_id(id.as_ref()) {
             entity.update(cx, |state, cx| state.set_jar_tab(tab, cx));
         }
-    })
+    });
+    crate::ui::layout::scrolling_tabs("jar-tabs-scroll", tabs, cx)
 }
 
 /// A KPI figure with its value scaled to `K`/`M`/`B`, so a cavern-sized

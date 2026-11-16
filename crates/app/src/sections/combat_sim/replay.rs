@@ -71,7 +71,7 @@ pub(crate) fn pane(
     let entity = cx.entity();
     let map = sim::map(result.run.map);
     let art = map.map(|map| &map.art);
-    let scale = art.map_or(1.0, |art| scale_for(window, art));
+    let scale = art.map_or(1.0, |art| scale_for(window, art, cx));
     let colors = cx.theme().colors.clone();
 
     let play = entity.clone();
@@ -657,9 +657,9 @@ fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {
     }
 }
 
-fn scale_for(window: &Window, art: &Art) -> f32 {
+fn scale_for(window: &Window, art: &Art, cx: &gpui::App) -> f32 {
     let viewport = window.viewport_size();
-    let available_w = (f32::from(viewport.width) - 420.0).max(320.0);
+    let available_w = (crate::ui::layout::workspace_width(window, cx) - 420.0).max(320.0);
     let available_h = (f32::from(viewport.height) - 520.0).max(200.0);
     (available_w / art.width as f32)
         .min(available_h / art.height as f32)
