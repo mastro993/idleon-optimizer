@@ -79,7 +79,7 @@ jobs:
       - run: |
           cat dist/*.sha256 > dist/SHA256SUMS
           gh release create "v$VERSION" --target "$GITHUB_SHA" --prerelease \
-            --title "Idleon Optimizer v$VERSION (beta)" \
+            --title "Idleon Optimizer v$VERSION" \
             --generate-notes \
             dist/*.zip dist/*.tar.gz dist/SHA256SUMS
       # Keep the five newest betas; stable releases are never touched.
