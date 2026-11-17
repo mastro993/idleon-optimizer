@@ -100,7 +100,7 @@ jobs:
           cat dist/*.sha256 > dist/SHA256SUMS
           gh release create "v$VERSION" --verify-tag --latest \
             --title "Idleon Optimizer v$VERSION" \
-            --notes-file .github/release-notes.md --generate-notes \
+            --generate-notes \
             dist/*.zip dist/*.tar.gz dist/SHA256SUMS
         env:
           GH_TOKEN: ${{ github.token }}
