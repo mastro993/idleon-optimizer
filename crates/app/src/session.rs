@@ -123,17 +123,23 @@ pub(crate) struct Session {
 }
 
 impl Session {
-    /// Load the session at `path`; a missing file starts clean, and a corrupt
-    /// one is backed up beside itself before the clean start.
-    pub(crate) fn load(path: PathBuf) -> Self {
-        let mut session = Self {
+    /// A session that holds nothing yet, for the window's first frame: the
+    /// file is read off the main thread and adopts its contents when it lands.
+    pub(crate) fn blank(path: PathBuf) -> Self {
+        Self {
             path,
             recent: Vec::new(),
             restore: None,
             notice: None,
             shell: Shell::default(),
             written: None,
-        };
+        }
+    }
+
+    /// Load the session at `path`; a missing file starts clean, and a corrupt
+    /// one is backed up beside itself before the clean start.
+    pub(crate) fn load(path: PathBuf) -> Self {
+        let mut session = Self::blank(path);
         let bytes = match fs::read(&session.path) {
             Ok(bytes) => bytes,
             Err(error) if error.kind() == io::ErrorKind::NotFound => return session,

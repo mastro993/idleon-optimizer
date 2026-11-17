@@ -29,11 +29,16 @@ try {
   console.log(`tools: ${catalog.tools.length}`);
   console.log(`app: ${JSON.stringify(lane.app)}`);
 
-  // The endpoint answers before the first frame; wait for a rendered tree.
+  // The endpoint answers before the first frame; wait for a rendered tree. A
+  // window restoring a session renders the chrome behind the loader first, so
+  // `--section` waits for its own root instead of the first tree.
+  const wanted = section ? [`section-${section}`, 'section-unknown'] : [];
+  const ready = (nodes) =>
+    nodes.length > 0 && (wanted.length === 0 || nodes.some((node) => wanted.includes(node.id)));
   let nodes = [];
-  for (let attempt = 0; attempt < 50 && nodes.length === 0; attempt += 1) {
+  for (let attempt = 0; attempt < 50 && !ready(nodes); attempt += 1) {
     nodes = await lane.tree();
-    if (nodes.length === 0) await new Promise((resolve) => setTimeout(resolve, 200));
+    if (!ready(nodes)) await new Promise((resolve) => setTimeout(resolve, 200));
   }
   console.log(`nodes: ${nodes.length}`);
   for (const node of nodes.slice(0, 40)) {

@@ -242,8 +242,7 @@ impl AppState {
         };
         let character_count = imported.save.character_count();
         self.combat.load(&imported.save, combat_character);
-        self.stats_all
-            .load(&imported.save, &self.simulation, &self.context);
+        self.stats_all.load(&imported.save);
         self.drop_rate.load(&imported.save);
         let simulation = self.simulation.clone();
         self.damage.load(&imported.save, &simulation);

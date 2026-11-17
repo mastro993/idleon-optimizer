@@ -83,7 +83,8 @@ Home (the landing page):
 - Last opened section is remembered and offered as Resume.
 - Import accepts a raw save, a project JSON or a section config; it previews the detected format and
   warnings before applying. `--import <file>` (or `IDLEON_OPTIMIZER_IMPORT`) applies one at launch
-  the same way, after the session restores and before `--section` opens.
+  the same way, after the session restores and before `--section` opens; both land with the restore,
+  so a harness waits for the node it needs rather than the first frame.
 
 Section pages:
 
@@ -209,6 +210,10 @@ remaining account effects.
   `session.json` (override with `--state-dir` or `IDLEON_OPTIMIZER_STATE_DIR`): the project document
   plus the last applied imports, rewritten only when its content changed. A corrupt file is renamed to
   `session.corrupt-<timestamp>.json` and the app starts clean.
+  The window opens before that file is read: the restore decodes off the main thread behind a loader
+  (the header reads "Loading your save…"), and the window writes nothing back until it lands, so a
+  half-restored window can never overwrite the file it is restoring from. A first launch, with no
+  session file to read, opens straight onto the dashboard.
 - `SectionState`: serializable state owned by one section (targets, filters, custom presets, replay
   seeds, plans).
 
@@ -236,6 +241,8 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
    than allocated. A non-finite number (`NaN`, `inf`) reads as missing.
    `idleon_save::Save` decodes each encoded field once, on its first read, and the decoders below it
    read that map: a decoder reads a cell, never a whole field's JSON text, per value.
+   A section whose page resolves something expensive from the save (`stats-all`'s sheet, `damage`'s
+   summary) marks itself dirty instead of computing at import, and resolves on its next render.
 2. Parse and detect the format; never mutate state before validation passes.
 3. Migrate older versions; unknown fields become warnings, not failures.
 4. Build a preview: format, save name if present, characters, research level, detected sections and
