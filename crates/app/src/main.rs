@@ -18,7 +18,8 @@ mod ui;
 use anyhow::{Context as _, Result};
 use ely_gpui_component::theme::Theme;
 use gpui::{
-    App, AppContext as _, Bounds, TitlebarOptions, WindowBounds, WindowOptions, point, px, size,
+    App, AppContext as _, Bounds, QuitMode, TitlebarOptions, WindowBounds, WindowOptions, point,
+    px, size,
 };
 use state::AppState;
 use std::path::PathBuf;
@@ -71,6 +72,9 @@ fn main() -> Result<()> {
         .or_else(|| std::env::var_os(IMPORT_ENV).map(PathBuf::from));
     gpui_platform::application()
         .with_assets(ely_gpui_component::Assets)
+        // gpui keeps a windowless app alive on macOS; this app is its window, so
+        // closing it quits everywhere.
+        .with_quit_mode(QuitMode::LastWindowClosed)
         .run(move |cx: &mut App| {
             ely_gpui_component::init(cx).expect("Ely failed to start");
             ui::shell::bind_keys(cx);
