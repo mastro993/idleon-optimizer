@@ -1,7 +1,9 @@
 //! Landing dashboard: the searchable card grid of every section.
 
+use crate::assets::Manifest;
 use crate::sections::{self, Group, Section};
 use crate::state::{AppState, Route};
+use crate::ui::assets::section_icon;
 use crate::ui::layout::Breakpoint;
 use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
@@ -46,7 +48,7 @@ pub(crate) fn dashboard_pane(
             px(16.0),
         );
         for section in cards {
-            grid = grid.child(section_card(section, &entity, muted));
+            grid = grid.child(section_card(section, &state.assets, &entity, muted));
         }
         groups = groups.child(
             div()
@@ -176,9 +178,10 @@ pub(crate) fn dashboard_pane(
         )
 }
 
-/// One clickable card: icon, title, world badge and one-line description.
+/// One clickable card: game sprite, title, world badge and one-line description.
 fn section_card(
     section: &'static Section,
+    manifest: &Manifest,
     entity: &gpui::Entity<AppState>,
     muted: gpui::Hsla,
 ) -> impl IntoElement {
@@ -205,14 +208,7 @@ fn section_card(
                     .flex()
                     .items_start()
                     .gap_3()
-                    .child(
-                        div()
-                            .flex_none()
-                            .w(px(32.0))
-                            .text_size(px(24.0))
-                            .line_height(px(30.0))
-                            .child(section.icon),
-                    )
+                    .child(section_icon(section, manifest, px(32.0)))
                     .child(
                         div()
                             .flex()

@@ -1,12 +1,13 @@
 //! The sidebar: Home, then one group of sections per world, then the Tools.
 //!
 //! Ely's `NavItem` takes a vector icon only, so the items are the app's own
-//! [`SidebarItem`] with `NavItem`'s look (ADR 0003) and each section's
-//! activity mark.
+//! [`SidebarItem`] with `NavItem`'s look, each section's game sprite and its
+//! activity mark (ADR 0003).
 
 use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route, Shown};
+use crate::ui::assets::section_icon;
 use crate::ui::mark::ActivityMark;
 use ely_gpui_component::forms::Run;
 use ely_gpui_component::layout::{Sidebar, bring_into_view};
@@ -70,7 +71,7 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 SidebarItem::new(
                     format!("nav-{}", section.id),
                     section.title,
-                    emoji(section.icon),
+                    section_icon(section, &state.assets, ICON),
                 )
                 .active(state.current_section() == Some(section))
                 .activity(state.activity.shown(section.id))
@@ -189,26 +190,19 @@ fn rail_label(group: Group) -> &'static str {
     }
 }
 
-/// The 20 px icon slot every item shares.
-fn slot() -> gpui::Div {
+/// The icon slot every item shares.
+const ICON: Pixels = px(20.0);
+
+/// A vector icon in the slot.
+fn glyph(icon: IconName) -> AnyElement {
     div()
         .flex()
         .flex_none()
         .items_center()
         .justify_center()
-        .size(px(20.0))
-}
-
-/// A vector icon in the slot.
-fn glyph(icon: IconName) -> AnyElement {
-    slot()
+        .size(ICON)
         .child(Icon::new(icon).size(IconSize::Sm))
         .into_any_element()
-}
-
-/// A section's emoji in the slot.
-fn emoji(icon: &'static str) -> AnyElement {
-    slot().text_size(px(15.0)).child(icon).into_any_element()
 }
 
 /// How far a rail mark's disc sits past the icon's bottom-right corner.
