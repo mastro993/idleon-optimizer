@@ -56,6 +56,11 @@ pub(crate) struct State {
     pub(crate) selected: Option<String>,
     /// The formula explorer's filters and its own selection.
     pub(crate) explorer: explorer::State,
+    /// The save or the context moved under the sheet, which the next render
+    /// re-resolves. Resolving every descriptor is the expensive half of an
+    /// import, so it waits for the page instead of holding up the window that
+    /// imported the save.
+    dirty: bool,
 }
 
 impl Default for State {
@@ -71,14 +76,16 @@ impl Default for State {
             category: BreakdownCategory::Combat,
             selected: None,
             explorer: explorer::State::default(),
+            dirty: false,
         }
     }
 }
 
 impl State {
     /// Take a freshly imported save, opening on character one and its current
-    /// map. The other selectors keep the user's choice.
-    pub(crate) fn load(&mut self, save: &Save, simulation: &Simulation, sim_context: &SimContext) {
+    /// map. The other selectors keep the user's choice, and the sheet resolves
+    /// on the next render.
+    pub(crate) fn load(&mut self, save: &Save) {
         let snapshot = stats::Snapshot::from_save(save);
         self.context.character = 0;
         self.context.map = snapshot.current_map(0).unwrap_or(0);
@@ -87,7 +94,22 @@ impl State {
         self.sandbox = Some(stats::Sandbox::new(save, self.context.character));
         self.input_error.clear();
         self.clamp(&mut Vec::new());
-        self.rebuild(save, simulation, sim_context);
+        self.dirty = true;
+    }
+
+    /// Build the sheet a load or a restore left for the next render.
+    pub(crate) fn ensure_built(
+        &mut self,
+        save: Option<&Save>,
+        simulation: &Simulation,
+        sim_context: &SimContext,
+    ) {
+        if !std::mem::take(&mut self.dirty) {
+            return;
+        }
+        if let Some(save) = save {
+            self.rebuild(save, simulation, sim_context);
+        }
     }
 
     /// Re-resolve every breakdown; a selection the new sheet still carries is
@@ -182,6 +204,12 @@ pub(crate) fn view(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
+    // A cloned save is a reference-count bump; the sheet needs it beside the
+    // mutable borrow of the section's own state.
+    let save = state.save.clone();
+    state
+        .stats_all
+        .ensure_built(save.as_ref(), &state.simulation, &state.context);
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     let stats = &state.stats_all;
@@ -997,9 +1025,9 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
 pub(crate) fn restore(state: &mut AppState, context: StatsContext, warnings: &mut Vec<String>) {
     state.stats_all.context = context;
     state.stats_all.clamp(warnings);
-    // The restored character and map must re-resolve every breakdown, or the
-    // page would keep the values the previous context produced.
-    state.rebuild_stats_breakdowns();
+    // The restored character and map re-resolve every breakdown on the next
+    // render, so the page never shows the previous context's values.
+    state.stats_all.dirty = true;
 }
 
 #[cfg(test)]
@@ -1032,7 +1060,9 @@ mod tests {
     #[test]
     fn an_import_opens_on_character_one_and_its_current_map() {
         let mut state = State::default();
-        state.load(&save(), &simulation(), &context());
+        let save = save();
+        state.load(&save);
+        state.ensure_built(Some(&save), &simulation(), &context());
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
@@ -1045,7 +1075,9 @@ mod tests {
     #[test]
     fn a_restored_context_outside_the_save_is_clamped_and_named() {
         let mut state = State::default();
-        state.load(&save(), &simulation(), &context());
+        let save = save();
+        state.load(&save);
+        state.ensure_built(Some(&save), &simulation(), &context());
         let mut warnings = Vec::new();
         state.context = StatsContext {
             character: 12,
@@ -1067,7 +1099,9 @@ mod tests {
     #[test]
     fn every_category_is_a_tab_and_an_unmodelled_row_warns() {
         let mut state = State::default();
-        state.load(&save(), &simulation(), &context());
+        let save = save();
+        state.load(&save);
+        state.ensure_built(Some(&save), &simulation(), &context());
         let sheet = state.sheet.as_ref().expect("a save builds the sheet");
         assert_eq!(BreakdownCategory::ALL.len(), 9);
         for category in BreakdownCategory::ALL {
@@ -1118,7 +1152,9 @@ mod tests {
     fn a_pending_edit_moves_the_value_and_the_ledger_keeps_the_saved_one() {
         let save = capacity_save();
         let mut state = State::default();
-        state.load(&save, &simulation(), &context());
+        state.load(&save);
+        state.ensure_built(Some(&save), &simulation(), &context());
+        state.ensure_built(Some(&save), &simulation(), &context());
         let value = |state: &State| {
             state
                 .sheet
@@ -1168,7 +1204,9 @@ mod tests {
             "MaxCarryCap_0": "{\"Mining\":1000}",
         }));
         let mut state = State::default();
-        state.load(&save, &simulation(), &context());
+        state.load(&save);
+        state.ensure_built(Some(&save), &simulation(), &context());
+        state.ensure_built(Some(&save), &simulation(), &context());
         state.category = BreakdownCategory::Capacity;
         state.select_first();
         let row = state.selected_row().expect("the first capacity row");

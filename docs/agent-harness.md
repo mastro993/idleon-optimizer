@@ -105,6 +105,11 @@ would; a file that cannot be read is named on the status line. Use it for the 66
 IDLEON_OPTIMIZER_IMPORT=$PWD/fixtures/data.json node script/mcp-smoke.mjs --spawn --section farming
 ```
 
+Both land once the window's session restore has finished, which is after the window is on screen: the
+smoke scripts wait for the node they assert instead of the first frame. Until then the shell veils the
+dashboard with the loader (the `restoring` element), so a screenshot taken too early shows the
+spinner.
+
 It also takes `--section <id>` to open a registry entry at launch, and `mcp-smoke.mjs` forwards
 it and asserts the section root and (while no save is loaded) the shared `no-save-state` banner:
 

@@ -60,7 +60,7 @@ use crate::ui::export::Export;
 use crate::ui::import::Import;
 pub(crate) use activity::{Activity, Mark, Shown};
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
+use gpui::{AppContext as _, Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
 #[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
 pub(crate) use history::History;
@@ -103,6 +103,7 @@ use idleon_ui::runner::TaskRunner;
 use idleon_worship::Inputs as WorshipInputs;
 use idleon_worship::{self as worship, RunResult as WorshipRunResult};
 pub(crate) use runs::discard_run;
+use std::path::PathBuf;
 pub(crate) use subscriptions::redraw_on_edit;
 pub(crate) use subscriptions::{ProgressLine, RunStatus, report_run};
 
@@ -153,6 +154,8 @@ pub(crate) enum SaveStatus {
     Partial,
     /// The last import failed and there is still no save.
     Error,
+    /// The session file is still being read; the window opened ahead of it.
+    Restoring,
 }
 
 impl SaveStatus {
@@ -176,6 +179,7 @@ impl SaveStatus {
             Self::Loaded => "Save imported",
             Self::Partial => "Save imported with warnings",
             Self::Error => "Import failed",
+            Self::Restoring => "Loading your save…",
         }
     }
 }
@@ -402,6 +406,16 @@ pub(crate) struct AppState {
     pub(crate) import: Import,
     /// The window's own local memory: the last project and the recent imports.
     pub(crate) session: Session,
+    /// Whether the session file is still being read. The window opens first and
+    /// veils for the loader while the save decodes, and nothing is written back
+    /// to the session until it lands: a half-restored window must never
+    /// overwrite the file it is restoring from.
+    pub(crate) restoring: bool,
+    /// The `--import <file>` this launch named, applied once the restore lands
+    /// so it lands on top of the session as it did when both ran in order.
+    launch_import: Option<PathBuf>,
+    /// The `--section <id>` this launch named, applied the same way.
+    launch_section: Option<String>,
     /// The shared export dialog: the whole window state as one JSON document.
     pub(crate) export: Export,
     /// Whether the loaded save left fields out and reported warnings.
@@ -1171,7 +1185,16 @@ impl AppState {
         );
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
-        let session = Session::load(Session::path(state_dir));
+        // A session file means there is something to restore, so the window
+        // veils for the loader and reads it off the main thread; a first launch
+        // has nothing to wait for and reads the missing file where it stands.
+        let session_path = Session::path(state_dir.clone());
+        let restoring = session_path.is_file();
+        let session = if restoring {
+            Session::blank(session_path.clone())
+        } else {
+            Session::load(session_path.clone())
+        };
         let royal_optimizer = report_run::<
             idleon_royal_guardian::Outcome,
             idleon_royal_guardian::Request,
@@ -1312,6 +1335,9 @@ impl AppState {
             supplements_open: true,
             import,
             session,
+            restoring,
+            launch_import,
+            launch_section: section,
             export: Export::default(),
             save_partial: false,
             save_loaded: false,
@@ -1359,38 +1385,10 @@ impl AppState {
             _subscriptions: subscriptions,
             session_save_pending: false,
         };
-        if let Some(restore) = state.session.restore.take() {
-            let mut warnings = restore.project.document.warnings.clone();
-            let mut changes = Vec::new();
-            crate::project::apply(
-                &mut state,
-                restore.project,
-                restore.configs,
-                &mut warnings,
-                &mut changes,
-                cx,
-            );
-            state.save_partial |= !warnings.is_empty();
-            state.status = match warnings.first() {
-                None => "Restored the last session.".into(),
-                Some(first) if warnings.len() == 1 => {
-                    format!("Restored the last session with 1 warning: {first}")
-                }
-                Some(first) => format!(
-                    "Restored the last session with {} warnings: {first} (and {} more)",
-                    warnings.len(),
-                    warnings.len() - 1
-                ),
-            };
-        }
-        if let Some(notice) = state.session.notice.clone() {
-            state.status = notice;
-        }
-        if let Some(path) = launch_import {
-            state.import_file(&path, window, cx);
-        }
-        if let Some(id) = section {
-            state.open_place(Route::open(&id), window, cx);
+        if state.restoring {
+            state.restore_session(session_path, window, cx);
+        } else {
+            state.apply_launch(window, cx);
         }
         // The observer saves after the burst of edits a drag or a typing run
         // produces; the release hook catches the last one when the window goes.
@@ -1412,8 +1410,77 @@ impl AppState {
         self.route().section()
     }
 
+    /// Read the session file off the main thread and hand it to
+    /// [`Self::adopt_session`], so the window is on screen while the save it
+    /// restores decodes.
+    fn restore_session(&mut self, path: PathBuf, window: &mut Window, cx: &mut Context<Self>) {
+        cx.spawn_in(window, async move |this, cx| {
+            let session = cx
+                .background_spawn(async move { Session::load(path) })
+                .await;
+            this.update_in(cx, |state, window, cx| {
+                state.adopt_session(session, window, cx)
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    /// Take the session that finished reading: restore its project, apply this
+    /// launch's `--import` and `--section` on top, and save from here on.
+    fn adopt_session(&mut self, session: Session, window: &mut Window, cx: &mut Context<Self>) {
+        self.session = session;
+        self.restoring = false;
+        if let Some(restore) = self.session.restore.take() {
+            let mut warnings = restore.project.document.warnings.clone();
+            let mut changes = Vec::new();
+            crate::project::apply(
+                self,
+                restore.project,
+                restore.configs,
+                &mut warnings,
+                &mut changes,
+                cx,
+            );
+            self.save_partial |= !warnings.is_empty();
+            self.status = match warnings.first() {
+                None => "Restored the last session.".into(),
+                Some(first) if warnings.len() == 1 => {
+                    format!("Restored the last session with 1 warning: {first}")
+                }
+                Some(first) => format!(
+                    "Restored the last session with {} warnings: {first} (and {} more)",
+                    warnings.len(),
+                    warnings.len() - 1
+                ),
+            };
+        }
+        if let Some(notice) = self.session.notice.clone() {
+            self.status = notice;
+        }
+        self.apply_launch(window, cx);
+        cx.notify();
+    }
+
+    /// Apply the `--import` and `--section` this launch named, in that order:
+    /// an import replaces the save and the restore's section, and `--section`
+    /// then reopens the section the harness asked for.
+    fn apply_launch(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if let Some(path) = self.launch_import.take() {
+            self.import_file(&path, window, cx);
+        }
+        if let Some(id) = self.launch_section.take() {
+            self.open_place(Route::open(&id), window, cx);
+        }
+    }
+
     /// Save the session now, for a route change, an applied import or a close.
     pub(crate) fn flush_session(&mut self) {
+        // A window still restoring has no session of its own: writing here would
+        // replace the file it is reading with this window's defaults.
+        if self.restoring {
+            return;
+        }
         let project = session::project_value(self);
         if let Err(error) = self.session.save(&project) {
             eprintln!("idleon-optimizer: could not save the session: {error}");
@@ -1509,6 +1576,9 @@ impl AppState {
     /// The shared header's save status. While the dialog is open it owns the
     /// verdict: a half-typed paste must not relabel the loaded run.
     pub(crate) fn save_status(&self) -> SaveStatus {
+        if self.restoring {
+            return SaveStatus::Restoring;
+        }
         SaveStatus::of(
             self.save_loaded,
             self.import.ok || self.import.open,
@@ -1558,9 +1628,12 @@ pub(crate) fn headless(
 ) -> gpui::WindowHandle<AppState> {
     cx.update(ely_gpui_component::init_for_tests);
     let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
-    cx.add_window(|window, cx| {
+    let window = cx.add_window(|window, cx| {
         AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
-    })
+    });
+    // The window opens before the session file is read, off the main thread.
+    cx.run_until_parked();
+    window
 }
 
 #[cfg(test)]
@@ -1599,7 +1672,7 @@ mod tests {
     ) -> gpui::WindowHandle<AppState> {
         cx.update(ely_gpui_component::init_for_tests);
         let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
-        cx.add_window(|window, cx| {
+        let window = cx.add_window(|window, cx| {
             AppState::new(
                 window,
                 Some(endpoint),
@@ -1608,7 +1681,10 @@ mod tests {
                 Some(import),
                 cx,
             )
-        })
+        });
+        // The launch import lands with the session the window opened ahead of.
+        cx.run_until_parked();
+        window
     }
 
     #[test]
@@ -1744,6 +1820,166 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 
+    /// A project document a session file can hold, with no save.
+    fn session_project() -> serde_json::Value {
+        idleon_project::value(&idleon_project::Project {
+            version: idleon_project::VERSION,
+            section: None,
+            save: None,
+            simulation: Default::default(),
+            context: Default::default(),
+            sections: Default::default(),
+            warnings: Vec::new(),
+            has_research: false,
+            has_supplements: false,
+        })
+    }
+
+    #[test]
+    fn a_window_opens_before_its_session_is_read_and_writes_nothing_meanwhile() {
+        let dir = std::env::temp_dir().join(format!("idleon-restoring-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let state_dir = dir.join("state");
+        std::fs::create_dir_all(&state_dir).expect("the state directory");
+        let path = Session::path(Some(state_dir.clone()));
+        // A session the window will find: a folded sidebar is enough to tell
+        // whether it landed.
+        let mut session = Session::blank(path.clone());
+        session.shell.sidebar = SidebarFold::Rail;
+        session.save(&session_project()).expect("the session saves");
+        let written = std::fs::read(&path).expect("the session file");
+
+        let mut cx = gpui::TestAppContext::single();
+        cx.update(ely_gpui_component::init_for_tests);
+        let endpoint = dir.join("endpoint");
+        let window = cx.add_window(|window, cx| {
+            AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
+        });
+        window
+            .update(&mut cx, |state, _, _| {
+                assert!(state.restoring, "the window opens ahead of its session");
+                assert_eq!(
+                    state.save_status(),
+                    SaveStatus::Restoring,
+                    "the header announces the load instead of no save"
+                );
+                // Nothing writes the file the window is still reading from.
+                state.flush_session();
+            })
+            .expect("the window is open");
+        assert_eq!(
+            std::fs::read(&path).expect("the session file"),
+            written,
+            "a restoring window must not overwrite the session it restores"
+        );
+
+        cx.run_until_parked();
+        window
+            .update(&mut cx, |state, _, _| {
+                assert!(!state.restoring);
+                assert_eq!(
+                    state.session.shell.sidebar,
+                    SidebarFold::Rail,
+                    "the session landed"
+                );
+            })
+            .expect("the window is open");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_next_launch_restores_the_imported_save_after_the_loader() {
+        let dir = std::env::temp_dir().join(format!("idleon-restored-save-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let fixture =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/data.json");
+        let mut cx = gpui::TestAppContext::single();
+        let window = launched_with_import(&mut cx, &dir, fixture);
+        window
+            .update(&mut cx, |state, _, _| assert!(state.save_loaded))
+            .expect("the window is open");
+
+        // A second window on the same state directory opens ahead of the
+        // session and lands on the save the first one wrote.
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        let restored = cx.add_window(|window, cx| {
+            AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
+        });
+        restored
+            .update(&mut cx, |state, _, _| assert!(state.restoring))
+            .expect("the window is open");
+        cx.run_until_parked();
+        restored
+            .update(&mut cx, |state, _, _| {
+                assert!(!state.restoring);
+                assert!(state.save_loaded, "{}", state.status);
+                assert!(state.status.starts_with("Restored the last session"));
+            })
+            .expect("the window is open");
+
+        // A lane's `--section`: the restore lands first, then the launch
+        // section opens on top of it.
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        let sectioned = cx.add_window(|window, cx| {
+            AppState::new(
+                window,
+                Some(endpoint),
+                Some("farming".into()),
+                Some(state_dir),
+                None,
+                cx,
+            )
+        });
+        cx.run_until_parked();
+        sectioned
+            .update(&mut cx, |state, _, _| {
+                assert!(state.save_loaded, "{}", state.status);
+                assert_eq!(
+                    state.route().section().map(|section| section.id),
+                    Some("farming")
+                );
+            })
+            .expect("the window is open");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_stats_and_damage_pages_resolve_their_own_sheets_on_the_first_render() {
+        let dir = std::env::temp_dir().join(format!("idleon-lazy-sheets-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let fixture =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/data.json");
+        let mut cx = gpui::TestAppContext::single();
+        let window = launched_with_import(&mut cx, &dir, fixture);
+        // An import leaves the two expensive pages for their own first render.
+        window
+            .update(&mut cx, |state, _, _| {
+                assert!(state.stats_all.sheet.is_none());
+                assert!(state.damage.summary.is_none());
+            })
+            .expect("the window is open");
+        for (id, resolved) in [
+            (
+                "stats-all",
+                (|state: &AppState| state.stats_all.sheet.is_some()) as fn(&AppState) -> bool,
+            ),
+            ("damage", |state: &AppState| state.damage.summary.is_some()),
+        ] {
+            window
+                .update(&mut cx, |state, window, cx| {
+                    state.open_place(Route::open(id), window, cx);
+                })
+                .expect("the window is open");
+            cx.run_until_parked();
+            window
+                .update(&mut cx, |state, _, _| {
+                    assert!(resolved(state), "{id} resolved its sheet when it rendered");
+                })
+                .expect("the window is open");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     #[test]
     fn save_status_prefers_a_loaded_save_over_a_later_failure() {
         assert_eq!(SaveStatus::of(false, true, false), SaveStatus::Empty);
@@ -1751,6 +1987,7 @@ mod tests {
         assert_eq!(SaveStatus::of(true, true, false), SaveStatus::Loaded);
         assert_eq!(SaveStatus::of(true, false, false), SaveStatus::Loaded);
         assert_eq!(SaveStatus::of(true, true, true), SaveStatus::Partial);
+        assert_eq!(SaveStatus::Restoring.label(), "Loading your save…");
         assert_eq!(SaveStatus::Loaded.label(), "Save imported");
         assert_eq!(SaveStatus::Partial.label(), "Save imported with warnings");
     }

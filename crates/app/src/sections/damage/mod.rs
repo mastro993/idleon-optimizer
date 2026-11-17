@@ -45,6 +45,10 @@ pub(crate) struct State {
     pub(crate) summary: Option<Summary>,
     /// The damage layer the tabs show.
     pub(crate) layer: LayerId,
+    /// The save moved under `summary`, which the next render re-resolves.
+    /// Resolving is the expensive half of an import, so it waits for the page
+    /// instead of holding up the window that imported the save.
+    dirty: bool,
     save: Option<Save>,
     /// The imported research grid, which the stat pipeline reads.
     simulation: idleon_research::model::Simulation,
@@ -77,7 +81,14 @@ impl State {
         self.save = Some(save.clone());
         self.simulation = simulation.clone();
         self.clamp(&mut Vec::new());
-        self.refresh();
+        self.dirty = true;
+    }
+
+    /// Resolve the summary a load or a restore left for the next render.
+    pub(crate) fn ensure_summary(&mut self) {
+        if std::mem::take(&mut self.dirty) {
+            self.refresh();
+        }
     }
 
     /// The map selector's rows for the current character: every named map, not the accessible subset.
@@ -147,6 +158,7 @@ pub(crate) fn view(
     _window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
+    state.damage.ensure_summary();
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     // The tree's root is set before anything is borrowed: updating the child
@@ -602,7 +614,8 @@ fn field(label: &'static str, muted: gpui::Hsla) -> gpui::Div {
 pub(crate) fn restore(state: &mut AppState, context: DamageContext, warnings: &mut Vec<String>) {
     state.damage.context = context;
     state.damage.clamp(warnings);
-    state.damage.refresh();
+    // The restored character and map re-resolve on the next render.
+    state.damage.dirty = true;
 }
 
 #[cfg(test)]
@@ -628,6 +641,7 @@ mod tests {
     fn an_import_opens_on_character_one_and_its_current_map() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         assert_eq!(state.context.character, 0);
         assert_eq!(state.context.map, 0);
         assert!(state.snapshot.is_some());
@@ -650,6 +664,7 @@ mod tests {
     fn the_map_row_labels_carry_the_dungeon_and_current_markers() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         let rows = state.map_rows();
         let current: Vec<&MapRow> = rows.iter().filter(|row| row.current).collect();
         assert_eq!(current.len(), 1);
@@ -666,6 +681,7 @@ mod tests {
     fn a_character_switch_follows_its_current_map() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         state.select_character(1);
         assert_eq!(state.context.map, 50);
     }
@@ -674,6 +690,7 @@ mod tests {
     fn a_dungeon_map_reports_the_dungeon_reason() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         state.select_map(39);
         let summary = state.summary.expect("the dungeon state is computed");
         assert!(!summary.available);
@@ -684,6 +701,7 @@ mod tests {
     fn the_layer_tabs_open_on_the_first_layer_and_switch() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         assert_eq!(state.layer, LayerId::Base);
         state.select_layer(LayerId::Multiplier);
         assert_eq!(state.layer, LayerId::Multiplier);
@@ -694,6 +712,7 @@ mod tests {
     fn the_formula_tree_follows_the_selected_layer() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         let expected = |state: &State, layer| {
             state
                 .summary
@@ -719,6 +738,7 @@ mod tests {
         // read the summary's own values from the imported save.
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         assert!(state.mastery_tree().is_some());
         assert!(state.summary.as_ref().unwrap().layers().is_some());
 
@@ -762,6 +782,7 @@ mod tests {
     fn a_restored_context_outside_the_save_is_clamped_and_named() {
         let mut state = State::default();
         state.load(&save(), &Default::default());
+        state.ensure_summary();
         let mut warnings = Vec::new();
         state.context = DamageContext {
             character: 12,

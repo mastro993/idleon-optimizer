@@ -8,6 +8,7 @@ use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
 use crate::ui::{dashboard, export, header, import, section, sidebar};
+use ely_gpui_component::motion::LoadingOverlay;
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
@@ -140,6 +141,15 @@ pub(crate) fn shell(
     }
     if state.export.open {
         root = root.child(export::dialog(state, cx));
+    }
+    // The window opens before the session file is read; a veil holds the place
+    // the restore is about to fill instead of showing the empty dashboard.
+    if state.restoring {
+        return LoadingOverlay::new("restoring", true)
+            .label("Loading your save…")
+            .size_full()
+            .child(root)
+            .into_any_element();
     }
     root.into_any_element()
 }
