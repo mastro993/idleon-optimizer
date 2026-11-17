@@ -1,6 +1,7 @@
 //! Registry invariants: ids, grouping, cards, spec links and roadmap agreement.
 
 use super::*;
+use crate::assets::{Artwork, Manifest};
 use std::path::Path;
 
 #[test]
@@ -68,6 +69,27 @@ fn every_section_links_a_spec_that_exists() {
             section.spec
         );
     }
+}
+
+#[test]
+fn every_section_has_its_own_sprite_in_the_committed_manifest() {
+    let manifest = Manifest::load(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/game"));
+    let mut arts: Vec<&str> = SECTIONS.iter().map(|section| section.art).collect();
+    for section in &SECTIONS {
+        assert!(
+            matches!(manifest.artwork(section.art), Artwork::Ready(_)),
+            "{} names {}, which the manifest does not resolve",
+            section.id,
+            section.art
+        );
+    }
+    arts.sort_unstable();
+    arts.dedup();
+    assert_eq!(
+        arts.len(),
+        SECTIONS.len(),
+        "each section has its own sprite"
+    );
 }
 
 #[test]

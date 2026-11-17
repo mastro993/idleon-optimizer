@@ -27,7 +27,7 @@ research grid.
 - **All functionality per section.** Every tab, input, table, simulator, optimizer, replay and
   breakdown is specified as a feature issue under that section's milestone.
 - **Game artwork.** Icons and sprites come from the game's own art; a missing image falls back to a
-  labelled placeholder.
+  labelled placeholder, and a missing section icon to the section's emoji.
 - **Local only.** No accounts, cloud sync, telemetry or network calls. Saves and exports stay on
   disk.
 
@@ -49,8 +49,8 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 ## 3. Dashboard and navigation
 
 > **Redesign in progress:** [`specs/app-shell.md`](specs/app-shell.md). The header, the sidebar,
-> the workspace breakpoint (slice 1) and page history (slice 2) are built and described below;
-> per-section run activity (slice 3) and game-art icons (slice 4) are still planned. The grid stays as
+> the workspace breakpoint (slice 1), page history (slice 2) and game-art icons (slice 4) are built
+> and described below; per-section run activity (slice 3) is still planned. The grid stays as
 > Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)).
 
 Shell (`ui/shell.rs`):
@@ -62,7 +62,9 @@ Shell (`ui/shell.rs`):
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
   ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
-  clicking it does nothing. The sidebar scrolls with no scrollbar, which would cover the rail's
+  clicking it does nothing. Each section item shows the section's game sprite (the registry's `art`,
+  `assets/game/sections/<section>.png`) in a 20 px box, or its emoji in the same box when the file
+  is missing; Home shows Ely's `IconName::House`. The sidebar scrolls with no scrollbar, which would cover the rail's
   icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
   in a tooltip, group headings shortened to "Gen", "W2" … "W7", "Tools") and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.
@@ -74,8 +76,8 @@ Shell (`ui/shell.rs`):
 Home (the landing page):
 
 - Search field above the grid.
-- Card grid grouped General, W2, W3, W4, W5, W6, W7, Tools; each card has its title, emoji/icon,
-  world badge and description.
+- Card grid grouped General, W2, W3, W4, W5, W6, W7, Tools; each card has its title, game sprite
+  (32 px; its emoji in the same box when the file is missing), world badge and description.
 - Each card has `id="card-<section>"`, title, badge and description as accessible text.
 - Search matches title, description and group; Escape clears; Enter opens the first match.
 - Last opened section is remembered and offered as Resume.
@@ -92,7 +94,7 @@ Section pages:
   launches in the local session file with the imported save and the active section.
 
 Section registry (`crates/app/src/sections/mod.rs`): one entry per section with id, title, group,
-icon, description, spec link, status, dashboard card flag, view factory and key bindings. The
+emoji icon, game art, description, spec link, status, dashboard card flag, view factory and key bindings. The
 dashboard, router, shortcuts and harness read it, and a test keeps its ids in step with
 `docs/roadmap.json` and checks every spec file exists. Adding a section is one registry entry plus
 one module under `sections/` that owns its state, import step and config (see
@@ -296,7 +298,7 @@ crates/ui                           GPUI building blocks: TaskRunner, run chrome
                                     number formats
 crates/app                          GPUI + Ely binary
   sections/                         the registry and one module per section
-    mod.rs                          id, title, group, icon, spec, status, factory, keys, cards
+    mod.rs                          id, title, group, icon, art, spec, status, factory, keys, cards
     <section>/state.rs              the section's own state, import step and project config
     <section>/actions.rs            what the section's controls do to `AppState`
   ui/                               shell (window, router, shortcuts), dashboard, section states
