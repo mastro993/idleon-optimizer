@@ -48,15 +48,16 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 
 ## 3. Dashboard and navigation
 
-> **Redesign in progress:** [`specs/app-shell.md`](specs/app-shell.md). The header, the sidebar and
-> the workspace breakpoint (slice 1) are built and described below; page history (slice 2),
+> **Redesign in progress:** [`specs/app-shell.md`](specs/app-shell.md). The header, the sidebar,
+> the workspace breakpoint (slice 1) and page history (slice 2) are built and described below;
 > per-section run activity (slice 3) and game-art icons (slice 4) are still planned. The grid stays as
 > Home ([ADR 0001](adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md)).
 
 Shell (`ui/shell.rs`):
 
-- Header across the window (`ui/header.rs`): sidebar toggle, save status, Export and Import. The
-  open place is named by its active sidebar item, not the header.
+- Header across the window (`ui/header.rs`): sidebar toggle, back and forward arrows with the
+  history list (Ely `BackForwardNavigation`, ids under `history`), save status, Export and Import.
+  The open place is named by its active sidebar item, not the header.
 - Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
@@ -85,8 +86,8 @@ Home (the landing page):
 Section pages:
 
 - The active sidebar item marks the section; the sidebar opens any other section in one click.
-- The section owns its tab strip and content; the shell owns only window chrome, status
-  bar and global import.
+- The section owns its tab strip and content; the shell owns only window chrome (header and
+  sidebar) and global import.
 - Per-section state survives tab switches and dashboard visits for the session, and persists across
   launches in the local session file with the imported save and the active section.
 
@@ -99,11 +100,18 @@ one module under `sections/` that owns its state, import step and config (see
 each in `load_imported`, `configs`, `Config`, `decode` and `assign`, and the harness one interaction.
 The five hidden tools are registered without a dashboard card and open by id.
 
-Routing: `Route` is `Dashboard`, `Section(&Section)` or `Missing(id)`. Opening a section resolves
-the id against the registry, remembers it as the last section and focuses the page so the shortcuts
-work. The dashboard offers Resume for the last section and reopens it with its state intact. Escape
-and Cmd/Ctrl+Left return to the dashboard from any section; a section can bind a deeper key context,
-as the research grid does for Escape. An unknown id renders the missing-section empty state and a
+Routing: `Route` is `Dashboard`, `Section(&Section)` or `Missing(id)`, and the window shows the
+current place of its `History` (`state/history.rs`). Every navigation (a sidebar item, a Home card,
+Resume, an in-app link, `--section`, an imported project's section) goes through
+`AppState::open_place`, which adds one step, drops any forward steps and adds nothing when the place
+is already showing; tab switches inside a section are not steps. The history keeps the newest 50
+places and is not saved, so each launch starts with only the landing place. Back and forward
+(the header arrows, Cmd/Ctrl+[ and Cmd/Ctrl+], or Cmd/Ctrl+Left and Right) move through it without
+adding steps, from every place, Home included; the history list jumps to any place, newest first.
+The shortcuts are bound on the window root and wait while the Import or Export dialog is open.
+Escape does not leave a section; a section can still bind it deeper, as the research grid does.
+Opening a section remembers it as the last section and focuses the page so the shortcuts work. The
+dashboard offers Resume for the last section and reopens it with its state intact. An unknown id renders the missing-section empty state and a
 planned section renders the shared "On the roadmap" empty state — neither can panic.
 
 Section states are shared: every section page renders a `no-save-state` banner with the import
@@ -248,7 +256,7 @@ cannot start, the window opens without it.
   Rates pane is the first consumer. Node ids are scoped by the tree's own id, so a page can show
   several trees (the All Stats breakdown card and its formula card, for instance) without the
   accessibility tree collapsing their rows onto one another.
-- One shared header (sidebar toggle, save status, Export, Import), one
+- One shared header (sidebar toggle, history arrows, save status, Export, Import), one
   sidebar and one tab strip; a section owns its tab strip and the shell owns the header and sidebar.
 - Palette and spacing follow one dark theme: `#1a1a2e` ground, `#16213e` surfaces, `#0f3460`
   borders, `#00d4ff` accent; world badges use per-world colours.

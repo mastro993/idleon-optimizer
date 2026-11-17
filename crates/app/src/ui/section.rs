@@ -3,7 +3,7 @@
 //! The state renders an empty state with a way back. It cannot panic: the router
 //! resolves every id against the registry before the shell picks a renderer.
 
-use crate::state::AppState;
+use crate::state::{AppState, Route};
 use ely_gpui_component::buttons::Button;
 use ely_gpui_component::feedback::{Banner, EmptyState};
 use ely_gpui_component::layout::{Card, CardHeader};
@@ -50,7 +50,7 @@ pub(crate) fn missing(id: &str, _window: &mut Window, cx: &mut Context<AppState>
                                 .icon(IconName::ArrowLeft)
                                 .on_click(move |_event, window, cx| {
                                     back.update(cx, |state, cx| {
-                                        state.back_to_dashboard(window, cx);
+                                        state.open_place(Route::Dashboard, window, cx);
                                     });
                                 }),
                         ),

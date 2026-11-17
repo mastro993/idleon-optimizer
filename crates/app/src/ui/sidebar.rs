@@ -5,7 +5,7 @@
 
 use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
-use crate::state::AppState;
+use crate::state::{AppState, Route};
 use ely_gpui_component::forms::Run;
 use ely_gpui_component::layout::{Sidebar, bring_into_view};
 use ely_gpui_component::navigation::NavGroup;
@@ -47,11 +47,13 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
     let home = entity.clone();
     let mut list = div().flex().flex_col().gap_3().p_2().child(
         SidebarItem::new("nav-home", "Home", glyph(IconName::House))
-            .active(state.route.is_dashboard())
+            .active(state.route().is_dashboard())
             .folded(rail)
             .reveal(scroll)
             .on_click(move |window, cx| {
-                home.update(cx, |state, cx| state.back_to_dashboard(window, cx));
+                home.update(cx, |state, cx| {
+                    state.open_place(Route::Dashboard, window, cx)
+                });
             }),
     );
     for (group, sections) in groups() {
@@ -72,7 +74,9 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                 .folded(rail)
                 .reveal(scroll)
                 .on_click(move |window, cx| {
-                    open.update(cx, |state, cx| state.open_section(section.id, window, cx));
+                    open.update(cx, |state, cx| {
+                        state.open_place(Route::Section(section), window, cx);
+                    });
                 }),
             );
         }

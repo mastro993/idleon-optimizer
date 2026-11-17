@@ -5072,8 +5072,9 @@ async function visitProjectRoundTrip() {
 }
 
 /// The shell: Home first and active, one sidebar item per registry entry under
-/// its group (the hidden tools under Tools), an item opens its section in place
-/// and the header keeps the save actions on every place.
+/// its group (the hidden tools under Tools), an item opens its section in place,
+/// the header keeps the save actions on every place, and back and forward step
+/// through the places opened.
 async function visitShell(registry) {
   let lane = null;
   try {
@@ -5106,6 +5107,36 @@ async function visitShell(registry) {
     await waitForNode(lane, 'section-damage', 'shell: damage opens from farming');
     await openNav(lane, 'nav-farming');
     await waitForNode(lane, 'farming-chain', 'shell: farming reopens on the tab it was left on');
+
+    // History: places are steps and tabs are not; the arrows and both
+    // shortcut pairs step through it, Escape stays put, and a new open drops
+    // the forward steps.
+    const unavailable = (current, id) =>
+      current.find((node) => node.id === id)?.description === 'Unavailable';
+    check('shell: forward is unavailable at the newest place', unavailable(await lane.tree(), 'history-forward'));
+    await lane.call('click_element', { id: 'history-back' });
+    await waitForNode(lane, 'section-damage', 'shell: the back arrow returns to damage');
+    await lane.call('click_element', { id: 'history-forward' });
+    await waitForNode(lane, 'farming-chain', 'shell: the forward arrow returns to farming on its tab');
+    for (const [back, forward] of [['secondary-[', 'secondary-]'], ['secondary-left', 'secondary-right']]) {
+      await lane.call('keyboard', { keystroke: back });
+      await waitForNode(lane, 'section-damage', `shell: ${back} goes back`);
+      await lane.call('keyboard', { keystroke: forward });
+      await waitForNode(lane, 'section-farming', `shell: ${forward} goes forward`);
+    }
+    await lane.call('keyboard', { keystroke: 'escape' });
+    check('shell: Escape stays on the section', has(await lane.tree(), 'section-farming'));
+    await lane.call('click_element', { id: 'history-back' });
+    await waitForNode(lane, 'section-damage', 'shell: back before a new open');
+    await openNav(lane, 'nav-home');
+    await waitForNode(lane, 'dashboard', 'shell: Home opens after going back');
+    nodes = await lane.tree();
+    check('shell: a new open drops the forward steps', unavailable(nodes, 'history-forward'));
+    check('shell: back is available after a new open', !unavailable(nodes, 'history-back'));
+    check(
+      'shell: the history list names the current place',
+      nodes.find((node) => node.id === 'history-history-button')?.value?.value === 'Home',
+    );
 
     await lane.call('click_element', { id: 'sidebar-toggle' });
     await waitFor(
