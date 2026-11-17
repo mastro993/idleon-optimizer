@@ -1,12 +1,14 @@
 //! The sidebar: Home, then one group of sections per world, then the Tools.
 //!
 //! Ely's `NavItem` takes a vector icon only, so the items are the app's own
-//! [`SidebarItem`] with `NavItem`'s look and each section's game sprite (ADR 0003).
+//! [`SidebarItem`] with `NavItem`'s look, each section's game sprite and its
+//! activity mark (ADR 0003).
 
 use crate::sections::{self, Group, Section};
 use crate::session::SidebarFold;
-use crate::state::{AppState, Route};
+use crate::state::{AppState, Route, Shown};
 use crate::ui::assets::section_icon;
+use crate::ui::mark::ActivityMark;
 use ely_gpui_component::forms::Run;
 use ely_gpui_component::layout::{Sidebar, bring_into_view};
 use ely_gpui_component::navigation::NavGroup;
@@ -72,6 +74,7 @@ pub(crate) fn sidebar(state: &AppState, cx: &mut Context<AppState>) -> AnyElemen
                     section_icon(section, &state.assets, ICON),
                 )
                 .active(state.current_section() == Some(section))
+                .activity(state.activity.shown(section.id))
                 .folded(rail)
                 .reveal(scroll)
                 .on_click(move |window, cx| {
@@ -202,8 +205,12 @@ fn glyph(icon: IconName) -> AnyElement {
         .into_any_element()
 }
 
+/// How far a rail mark's disc sits past the icon's bottom-right corner.
+const RAIL_MARK_OFFSET: f32 = 5.0;
+
 /// One place in the sidebar: `NavItem`'s height, radius, hover, active fill
-/// and focus ring, with any element as its icon.
+/// and focus ring, with any element as its icon and an optional activity mark:
+/// at the row's end when expanded, on the icon's corner in the rail.
 #[derive(IntoElement)]
 pub(crate) struct SidebarItem {
     id: SharedString,
@@ -211,6 +218,7 @@ pub(crate) struct SidebarItem {
     icon: AnyElement,
     active: bool,
     folded: bool,
+    activity: Option<Shown>,
     reveal: Option<ScrollHandle>,
     on_click: Option<Run>,
 }
@@ -227,6 +235,7 @@ impl SidebarItem {
             icon,
             active: false,
             folded: false,
+            activity: None,
             reveal: None,
             on_click: None,
         }
@@ -235,6 +244,12 @@ impl SidebarItem {
     /// Marks the open place; clicking it again does nothing.
     pub(crate) fn active(mut self, active: bool) -> Self {
         self.active = active;
+        self
+    }
+
+    /// The section's runs: a ring while one is in flight, or a dot.
+    pub(crate) fn activity(mut self, activity: Option<Shown>) -> Self {
+        self.activity = activity;
         self
     }
 
@@ -287,8 +302,48 @@ impl RenderOnce for SidebarItem {
             colors.fg_muted
         };
         let label = self.label.clone();
+        let mark_id = SharedString::from(format!("{}-activity", self.id));
+        let (end_mark, corner_mark) = match (self.activity, self.folded) {
+            (None, _) => (None, None),
+            (Some(shown), false) => (Some(ActivityMark::new(mark_id, shown, false)), None),
+            (Some(shown), true) => (None, Some(ActivityMark::new(mark_id, shown, true))),
+        };
+        // The rail mark sits on a disc in the row's current background, so it
+        // reads over the icon.
+        let icon = match corner_mark {
+            None => self.icon,
+            Some(mark) => {
+                let row = self.id.clone();
+                let disc = div()
+                    .absolute()
+                    .right(px(-RAIL_MARK_OFFSET))
+                    .bottom(px(-RAIL_MARK_OFFSET))
+                    .p(px(1.5))
+                    .rounded_full()
+                    .map(|disc| {
+                        if self.active {
+                            disc.bg(colors.hover)
+                        } else {
+                            disc.bg(colors.bg)
+                                .group_hover(row, |style| style.bg(colors.hover))
+                        }
+                    })
+                    .child(mark);
+                div()
+                    .relative()
+                    .flex_none()
+                    .child(self.icon)
+                    .child(disc)
+                    .into_any_element()
+            }
+        };
+        let tooltip = match self.activity {
+            Some(shown) => SharedString::from(format!("{label} · {}", shown.label())),
+            None => label.clone(),
+        };
         let item = div()
-            .id(self.id)
+            .id(self.id.clone())
+            .group(self.id)
             .role(Role::Link)
             .aria_label(label.clone())
             .aria_selected(self.active)
@@ -317,7 +372,7 @@ impl RenderOnce for SidebarItem {
             .when_some(self.on_click.filter(|_| !self.active), |item, click| {
                 item.on_click(move |_, window, cx| click(window, cx))
             })
-            .child(self.icon)
+            .child(icon)
             .when_some(reveal, |item, reveal| {
                 item.child(reveal.absolute().top_0().left_0().size_full())
             });
@@ -326,9 +381,7 @@ impl RenderOnce for SidebarItem {
         // dropping it, which would reflow the row mid-animation.
         item.px_2()
             .overflow_hidden()
-            .when(self.folded, |item| {
-                item.tooltip(Tooltip::text(label.clone()))
-            })
+            .when(self.folded, |item| item.tooltip(Tooltip::text(tooltip)))
             .child(
                 div()
                     .flex_1()
@@ -339,6 +392,7 @@ impl RenderOnce for SidebarItem {
                     .when(self.folded, |label| label.invisible())
                     .child(label),
             )
+            .children(end_mark)
     }
 }
 

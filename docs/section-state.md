@@ -85,15 +85,16 @@ impl State {
   adds `warnings: &mut Vec<String>` to `apply_config`; opal never warns, so it does not take it.
 - **Run completion**: the section's `new` calls `report_run` itself and keeps the `Subscription` in
   its own `_subscriptions`. The completion closure still receives `&mut AppState` (it writes the
-  shared status line), but it lives in the section. `report_run`, `RunStatus` and `ProgressLine` are
-  `pub(crate)` for this.
+  shared status line), but it lives in the section. `RunStatus.section` names the section's registry
+  id, under which every runner event is recorded in `AppState::activity` for the sidebar's marks.
+  `report_run`, `RunStatus` and `ProgressLine` are `pub(crate)` for this.
 
 ```rust
         let mut subscriptions = Vec::new();
         let run = report_run::<Plan, PlanInput>(
             cx,
             &mut subscriptions,
-            RunStatus { progress: ProgressLine::Message("Optimizing the opal distribution…"), … },
+            RunStatus { section: "opal", progress: ProgressLine::Message("Optimizing the opal distribution…"), … },
             |_, plan| Some(format!("Opal plan ready: {} opals across the villagers.", …)),
         );
 ```

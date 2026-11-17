@@ -55,6 +55,7 @@ impl State {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "opal",
                 progress: ProgressLine::Message("Optimizing the opal distribution…"),
                 cancelled_kept: "Opal plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Opal plan cancelled; nothing was planned.",

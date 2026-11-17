@@ -1,5 +1,6 @@
 //! Application state: where the window is, the simulation being edited and the run in flight.
 
+mod activity;
 mod documents;
 mod history;
 mod runs;
@@ -57,8 +58,9 @@ use crate::session::{self, Session, SidebarFold};
 use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
+pub(crate) use activity::{Activity, Mark, Shown};
 use ely_gpui_component::forms::{InputEvent, TextInput};
-use gpui::{AppContext as _, Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
+use gpui::{Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
 #[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
 pub(crate) use history::History;
@@ -216,6 +218,8 @@ pub(crate) struct AppState {
     pub(crate) history: History,
     /// The last section opened; the dashboard offers to resume it.
     pub(crate) last_section: Option<&'static str>,
+    /// What each section's runs show on its sidebar item.
+    pub(crate) activity: Activity,
     /// The research section's own state, kept alive across dashboard visits.
     pub(crate) research: ResearchState,
     /// The Killroy section's forecast settings.
@@ -546,12 +550,13 @@ impl AppState {
             }),
         );
 
-        // Each long run owns a runner; the window mirrors its status line, so
-        // every section's run reports the same way in the status bar.
+        // Each long run owns a runner; the window mirrors it in the status line
+        // and in its section's sidebar activity.
         let optimizer = report_run::<OptimizeResult, RunInputs>(
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Percent("Optimizing…"),
                 cancelled_kept: "Run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Run cancelled; nothing was applied.",
@@ -568,6 +573,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Percent("Placing shapes…"),
                 cancelled_kept: "Shape placement cancelled; the previous layout is unchanged.",
                 cancelled_empty: "Shape placement cancelled; nothing was placed.",
@@ -586,6 +592,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Computing insight ROI…"),
                 cancelled_kept: "Insight analysis cancelled; the previous table is unchanged.",
                 cancelled_empty: "Insight analysis cancelled; nothing was stored.",
@@ -601,6 +608,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Stepping the tree…"),
                 cancelled_kept: "Tree step cancelled; the tree is unchanged.",
                 cancelled_empty: "Tree step cancelled; nothing changed.",
@@ -615,6 +623,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Ranking observation unlocks…"),
                 cancelled_kept: "Unlock ranking cancelled; the previous table is unchanged.",
                 cancelled_empty: "Unlock ranking cancelled; nothing was stored.",
@@ -632,6 +641,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "cog",
                 progress: ProgressLine::Percent("Optimizing the cog board…"),
                 cancelled_kept: "Cog run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Cog run cancelled; the board is unchanged.",
@@ -655,6 +665,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "cog",
                 progress: ProgressLine::Percent("Building the perfect cog board…"),
                 cancelled_kept: "Perfect board cancelled; the previous result is unchanged.",
                 cancelled_empty: "Perfect board cancelled; the board is unchanged.",
@@ -672,6 +683,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "cglunko",
                 progress: ProgressLine::Message("Planning Cglunko upgrades…"),
                 cancelled_kept: "Cglunko plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Cglunko plan cancelled; nothing was planned.",
@@ -688,6 +700,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "fountain",
                 progress: ProgressLine::Message("Planning fountain upgrades…"),
                 cancelled_kept: "Fountain plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Fountain plan cancelled; nothing was planned.",
@@ -706,6 +719,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "fountain",
                 progress: ProgressLine::Message("Planning fountain marble upgrades…"),
                 cancelled_kept: "Marble plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Marble plan cancelled; nothing was planned.",
@@ -724,6 +738,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "fountain",
                 progress: ProgressLine::Message("Simulating fountain play…"),
                 cancelled_kept: "Fountain simulation cancelled; the previous result is unchanged.",
                 cancelled_empty: "Fountain simulation cancelled; nothing was stored.",
@@ -741,6 +756,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "clamworks",
                 progress: ProgressLine::Message("Planning Clamworks upgrades…"),
                 cancelled_kept: "Clamworks plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Clamworks plan cancelled; nothing was applied.",
@@ -758,6 +774,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "worship-td",
                 progress: ProgressLine::Percent("Simulating the Worship TD plan…"),
                 cancelled_kept: "Plan run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Plan run cancelled; nothing was applied.",
@@ -774,6 +791,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "killroy",
                 progress: ProgressLine::Message("Running Killroy trials…"),
                 cancelled_kept: "Killroy run cancelled; the previous comparison is unchanged.",
                 cancelled_empty: "Killroy run cancelled; nothing was applied.",
@@ -790,6 +808,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "jelly-operator",
                 progress: ProgressLine::Message("Estimating the Jelly operation…"),
                 cancelled_kept: "Jelly estimate cancelled; the previous estimate is unchanged.",
                 cancelled_empty: "Jelly estimate cancelled; nothing was stored.",
@@ -805,6 +824,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "jelly-operator",
                 progress: ProgressLine::Message("Ranking the Jelly board sections…"),
                 cancelled_kept: "Jelly section plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Jelly section plan cancelled; nothing was stored.",
@@ -832,6 +852,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "jelly-operator",
                 progress: ProgressLine::Message("Optimizing the Jelly board…"),
                 cancelled_kept: "Jelly optimization cancelled; the previous board is unchanged.",
                 cancelled_empty: "Jelly optimization cancelled; nothing was stored.",
@@ -848,6 +869,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "jelly-operator",
                 progress: ProgressLine::Message("Simulating the Jelly operation…"),
                 cancelled_kept: "Jelly simulation cancelled; the previous run is unchanged.",
                 cancelled_empty: "Jelly simulation cancelled; nothing was stored.",
@@ -865,6 +887,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "coral-god-rank",
                 progress: ProgressLine::Message("Planning Coral Kid upgrades…"),
                 cancelled_kept: "Coral plan cancelled; the previous plan is unchanged.",
                 cancelled_empty: "Coral plan cancelled; nothing was planned.",
@@ -885,6 +908,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "worship-td",
                 progress: ProgressLine::Percent("Searching Worship TD strategies…"),
                 cancelled_kept: "Search cancelled; the previous recommendation is unchanged.",
                 cancelled_empty: "Search cancelled; nothing was recommended.",
@@ -903,6 +927,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "prisma",
                 progress: ProgressLine::Percent("Comparing Prisma bubbles…"),
                 cancelled_kept: "Prisma run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Prisma run cancelled; nothing was compared.",
@@ -924,6 +949,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "farming",
                 progress: ProgressLine::Percent("Allocating Land Rank…"),
                 cancelled_kept: "Land Rank allocation cancelled; the previous result is unchanged.",
                 cancelled_empty: "Land Rank allocation cancelled; nothing was assigned.",
@@ -940,6 +966,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "farming",
                 progress: ProgressLine::Percent("Comparing farming presets…"),
                 cancelled_kept: "Preset comparison cancelled; the previous table is unchanged.",
                 cancelled_empty: "Preset comparison cancelled; no table was stored.",
@@ -950,6 +977,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "combat-sim",
                 progress: ProgressLine::Message("Running the encounter…"),
                 cancelled_kept: "Encounter run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Encounter run cancelled; nothing was stored.",
@@ -966,6 +994,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "combat-sim",
                 progress: ProgressLine::Message("Comparing the selected setups…"),
                 cancelled_kept: "Comparison cancelled; the previous comparison is unchanged.",
                 cancelled_empty: "Comparison cancelled; nothing was stored.",
@@ -980,6 +1009,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Optimizing the strategy…"),
                 cancelled_kept: "Strategy search cancelled; the previous result is unchanged.",
                 cancelled_empty: "Strategy search cancelled; nothing was stored.",
@@ -996,6 +1026,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Ranking upgrades…"),
                 cancelled_kept: "Upgrade ranking cancelled; the previous table is unchanged.",
                 cancelled_empty: "Upgrade ranking cancelled; nothing was stored.",
@@ -1006,6 +1037,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "research",
                 progress: ProgressLine::Message("Finding the upgrade path…"),
                 cancelled_kept: "Upgrade path cancelled; the previous path is unchanged.",
                 cancelled_empty: "Upgrade path cancelled; nothing was stored.",
@@ -1019,6 +1051,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "sailing",
                 progress: ProgressLine::Message("Simulating the fleet pile…"),
                 cancelled_kept: "Fleet pile simulation cancelled; the previous result is unchanged.",
                 cancelled_empty: "Fleet pile simulation cancelled; nothing was stored.",
@@ -1034,6 +1067,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "spelunking",
                 progress: ProgressLine::Message("Running the expedition…"),
                 cancelled_kept: "Expedition run cancelled; the previous result is unchanged.",
                 cancelled_empty: "Expedition run cancelled; nothing was stored.",
@@ -1049,6 +1083,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "spelunking",
                 progress: ProgressLine::Message("Optimizing the expedition…"),
                 cancelled_kept: "Expedition optimization cancelled; the previous recommendation is unchanged.",
                 cancelled_empty: "Expedition optimization cancelled; no recommendation was stored.",
@@ -1070,6 +1105,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "ladle",
                 progress: ProgressLine::Message("Comparing donation schedules…"),
                 cancelled_kept: "Donation search cancelled; the previous recommendation is unchanged.",
                 cancelled_empty: "Donation search cancelled; nothing was stored.",
@@ -1092,6 +1128,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "jar",
                 progress: ProgressLine::Message("Simulating enchants…"),
                 cancelled_kept: "Enchant simulation cancelled; the previous spread is unchanged.",
                 cancelled_empty: "Enchant simulation cancelled; nothing was stored.",
@@ -1110,6 +1147,7 @@ impl AppState {
             cx,
             &mut subscriptions,
             RunStatus {
+                section: "sneaking",
                 progress: ProgressLine::Message("Optimizing the sneaking charm placement…"),
                 cancelled_kept: "Sneaking optimizer cancelled; the previous recommendation is unchanged.",
                 cancelled_empty: "Sneaking optimizer cancelled; nothing was stored, and the loadout is untouched.",
@@ -1134,6 +1172,46 @@ impl AppState {
         let focus = cx.focus_handle();
         window.focus(&focus, cx);
         let session = Session::load(Session::path(state_dir));
+        let royal_optimizer = report_run::<
+            idleon_royal_guardian::Outcome,
+            idleon_royal_guardian::Request,
+        >(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                section: "royal-guardian",
+                progress: ProgressLine::Message("Optimizing the Royal Guardian kingdom…"),
+                cancelled_kept: "Royal Guardian optimizer cancelled; the previous layout is unchanged.",
+                cancelled_empty: "Royal Guardian optimizer cancelled; nothing was stored.",
+            },
+            |_, _| Some("Royal Guardian optimizer ready.".into()),
+        );
+        let royal_unit_exp = report_run::<
+            idleon_royal_guardian::UnitExpPlan,
+            idleon_royal_guardian::UnitExpRequest,
+        >(
+            cx,
+            &mut subscriptions,
+            RunStatus {
+                section: "royal-guardian",
+                progress: ProgressLine::Message("Planning the Royal Guardian unit EXP…"),
+                cancelled_kept: "Unit EXP plan cancelled; the previous plan is unchanged.",
+                cancelled_empty: "Unit EXP plan cancelled; nothing was planned.",
+            },
+            |_, _| Some("Unit EXP plan ready.".into()),
+        );
+        let royal_shelf =
+            report_run::<idleon_royal_guardian::ShelfPlan, idleon_royal_guardian::ShelfRequest>(
+                cx,
+                &mut subscriptions,
+                RunStatus {
+                    section: "royal-guardian",
+                    progress: ProgressLine::Message("Planning the next Royal Guardian shelf…"),
+                    cancelled_kept: "Shelf plan cancelled; the previous plan is unchanged.",
+                    cancelled_empty: "Shelf plan cancelled; nothing was planned.",
+                },
+                |_, _| Some("Shelf plan ready.".into()),
+            );
         let mut state = Self {
             simulation: starter_simulation(),
             context: SimContext::default(),
@@ -1144,6 +1222,7 @@ impl AppState {
             assets: Manifest::load_default(),
             history: History::new(Route::Dashboard),
             last_section: None,
+            activity: Activity::default(),
             research,
             killroy: KillroyState::default(),
             killroy_forecast: None,
@@ -1158,9 +1237,9 @@ impl AppState {
             royal_forecast_inputs: RoyalForecastInputs::new(window, cx),
             royal_forecast: None,
             royal_forecast_key: None,
-            royal_optimizer: cx.new(|_| TaskRunner::new()),
-            royal_unit_exp: cx.new(|_| TaskRunner::new()),
-            royal_shelf: cx.new(|_| TaskRunner::new()),
+            royal_optimizer,
+            royal_unit_exp,
+            royal_shelf,
             sailing_trees,
             sailing_sim,
             farm: Farm::default(),
@@ -1398,6 +1477,7 @@ impl AppState {
             Route::Dashboard => "Dashboard. Pick a calculator.".into(),
             Route::Section(section) => {
                 self.last_section = Some(section.id);
+                self.activity.open(section.id);
                 format!("{} · {}", section.title, section.description)
             }
             Route::Missing(id) => format!("Unknown section: {id}."),
@@ -1596,6 +1676,71 @@ mod tests {
             .update(&mut cx, |state, _, cx| state.toggle_sidebar(cx))
             .expect("the window is open");
         assert_eq!(Session::load(path).shell.sidebar, SidebarFold::Expanded);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn two_sections_run_at_once_and_both_store_their_results() {
+        let dir = std::env::temp_dir().join(format!("idleon-two-runs-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let fixture =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/data.json");
+        let mut cx = gpui::TestAppContext::single();
+        let window = launched_with_import(&mut cx, &dir, fixture.clone());
+        let ring = Some(Shown::Running {
+            runs: 1,
+            fraction: 0.0,
+        });
+        window
+            .update(&mut cx, |state, window, cx| {
+                state.open_place(Route::open("farming"), window, cx);
+                state.run_farming(cx);
+                state.open_place(Route::open("sailing"), window, cx);
+                state.set_sailing_sim_trials(1, cx);
+                state.set_sailing_sim_hours(1.0, cx);
+                state.run_sailing_simulation(cx);
+            })
+            .expect("the window is open");
+        window
+            .update(&mut cx, |state, _, cx| {
+                assert!(state.farming_run.read(cx).running(), "{}", state.status);
+                assert!(state.sailing_sim.read(cx).running(), "{}", state.status);
+                assert_eq!(state.activity.shown("farming"), ring);
+                assert_eq!(state.activity.shown("sailing"), ring);
+            })
+            .expect("the window is open");
+
+        cx.run_until_parked();
+        window
+            .update(&mut cx, |state, window, cx| {
+                assert!(state.farming_run.read(cx).result().is_some());
+                assert!(state.sailing_sim.read(cx).result().is_some());
+                // Farming finished while Sailing was open; Sailing's own run
+                // finished in view.
+                assert_eq!(
+                    state.activity.shown("farming"),
+                    Some(Shown::Mark(Mark::Finished))
+                );
+                assert_eq!(state.activity.shown("sailing"), None);
+
+                state.open_place(Route::open("farming"), window, cx);
+                assert_eq!(state.activity.shown("farming"), None);
+
+                state.open_place(Route::open("sailing"), window, cx);
+                state.run_farming(cx);
+            })
+            .expect("the window is open");
+        cx.run_until_parked();
+        window
+            .update(&mut cx, |state, window, cx| {
+                assert_eq!(
+                    state.activity.shown("farming"),
+                    Some(Shown::Mark(Mark::Finished))
+                );
+                state.import_file(&fixture, window, cx);
+                assert_eq!(state.activity.shown("farming"), None, "{}", state.status);
+            })
+            .expect("the window is open");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
