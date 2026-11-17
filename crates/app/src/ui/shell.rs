@@ -1,6 +1,6 @@
 //! Window chrome: the header, the sidebar and the routed place.
 //!
-//! The shell owns the window, the header, the sidebar and the routing
+//! The shell owns the window, the header, the sidebar and the history
 //! shortcuts; a section owns its own tab strip and content behind the registry
 //! factory.
 
@@ -14,19 +14,21 @@ use gpui::{
     AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Role, Styled, Window, div, px,
 };
 
-gpui::actions!(idleon_shell, [BackToDashboard]);
+gpui::actions!(idleon_shell, [GoBack, GoForward]);
 
-/// Key context of a section page: it makes Back work from every section,
-/// including the ones that own Escape themselves (the research grid binds it
-/// deeper, so Escape there clears the selection before it leaves the page).
-pub(crate) const SECTION_CONTEXT: &str = "Section";
+/// Key context of the window root while no dialog is open: the history
+/// shortcuts work from every place, Home included, and wait while a dialog
+/// owns the keyboard.
+const SHELL_CONTEXT: &str = "Shell";
 
-/// Register the routing shortcuts.
+/// Register the history shortcuts.
 pub(crate) fn bind_keys(cx: &mut App) {
-    let context = Some(SECTION_CONTEXT);
+    let context = Some(SHELL_CONTEXT);
     cx.bind_keys([
-        KeyBinding::new("escape", BackToDashboard, context),
-        KeyBinding::new("secondary-left", BackToDashboard, context),
+        KeyBinding::new("secondary-[", GoBack, context),
+        KeyBinding::new("secondary-]", GoForward, context),
+        KeyBinding::new("secondary-left", GoBack, context),
+        KeyBinding::new("secondary-right", GoForward, context),
     ]);
 }
 
@@ -40,7 +42,7 @@ pub(crate) fn shell(
         let colors = &cx.theme().colors;
         (colors.bg, colors.fg)
     };
-    let route = state.route.clone();
+    let route = state.route().clone();
     // Published before the place renders, so its breakpoint measures the
     // workspace the sidebar leaves.
     let rail = state.session.shell.sidebar == SidebarFold::Rail;
@@ -92,8 +94,12 @@ pub(crate) fn shell(
         .text_color(fg)
         .text_size(px(13.0))
         .track_focus(&state.focus)
-        .on_action(cx.listener(|state, _: &BackToDashboard, window, cx| {
-            state.back_to_dashboard(window, cx);
+        .on_action(cx.listener(|state, _: &GoBack, window, cx| {
+            state.go_back(window, cx);
+            cx.stop_propagation();
+        }))
+        .on_action(cx.listener(|state, _: &GoForward, window, cx| {
+            state.go_forward(window, cx);
             cx.stop_propagation();
         }))
         .child(header::header(state, cx))
@@ -126,10 +132,8 @@ pub(crate) fn shell(
                 .size_0()
                 .overflow_hidden(),
         );
-    // The import dialog owns Escape while it is open, so the section's back
-    // shortcut waits until it closes.
-    if !route.is_dashboard() && !state.import.open && !state.export.open {
-        root = root.key_context(SECTION_CONTEXT);
+    if !state.import.open && !state.export.open {
+        root = root.key_context(SHELL_CONTEXT);
     }
     if state.import.open {
         root = root.child(import::dialog(state, cx));
@@ -138,4 +142,44 @@ pub(crate) fn shell(
         root = root.child(export::dialog(state, cx));
     }
     root.into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::headless;
+
+    #[test]
+    fn both_shortcut_pairs_step_through_places_and_escape_stays_on_the_section() {
+        let dir = std::env::temp_dir().join(format!("idleon-history-keys-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut cx = gpui::TestAppContext::single();
+        let window = headless(&mut cx, &dir);
+        cx.update(bind_keys);
+        let farming = Route::open("farming");
+        let open = farming.clone();
+        window
+            .update(&mut cx, |state, window, cx| {
+                state.open_place(open, window, cx)
+            })
+            .expect("the window is open");
+        let route = |cx: &mut gpui::TestAppContext| {
+            window
+                .update(cx, |state, _, _| state.route().clone())
+                .expect("the window is open")
+        };
+
+        cx.simulate_keystrokes(window.into(), "escape");
+        assert_eq!(route(&mut cx), farming, "Escape no longer leaves a section");
+        for (back, forward) in [
+            ("secondary-[", "secondary-]"),
+            ("secondary-left", "secondary-right"),
+        ] {
+            cx.simulate_keystrokes(window.into(), back);
+            assert_eq!(route(&mut cx), Route::Dashboard, "{back} goes back");
+            cx.simulate_keystrokes(window.into(), forward);
+            assert_eq!(route(&mut cx), farming, "{forward} goes forward from Home");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

@@ -2,6 +2,7 @@
 
 mod activity;
 mod documents;
+mod history;
 mod runs;
 mod subscriptions;
 
@@ -62,6 +63,7 @@ use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
 #[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
+pub(crate) use history::History;
 use idleon_cglunko::Cglunko;
 use idleon_cglunko::{Page as CglunkoPage, Plan as CglunkoPlan};
 use idleon_clamworks::Clamworks;
@@ -212,8 +214,8 @@ pub(crate) struct AppState {
     pub(crate) options: SimOptions,
     /// Game artwork resolved through `assets/game/manifest.json`.
     pub(crate) assets: Manifest,
-    /// Where the window is: the dashboard or one section.
-    pub(crate) route: Route,
+    /// The places opened in this window; its current one is where the window is.
+    pub(crate) history: History,
     /// The last section opened; the dashboard offers to resume it.
     pub(crate) last_section: Option<&'static str>,
     /// What each section's runs show on its sidebar item.
@@ -1218,7 +1220,7 @@ impl AppState {
             target: Target::Hours(24.0),
             options: SimOptions::default(),
             assets: Manifest::load_default(),
-            route: Route::Dashboard,
+            history: History::new(Route::Dashboard),
             last_section: None,
             activity: Activity::default(),
             research,
@@ -1388,7 +1390,7 @@ impl AppState {
             state.import_file(&path, window, cx);
         }
         if let Some(id) = section {
-            state.open_section(&id, window, cx);
+            state.open_place(Route::open(&id), window, cx);
         }
         // The observer saves after the burst of edits a drag or a typing run
         // produces; the release hook catches the last one when the window goes.
@@ -1400,9 +1402,14 @@ impl AppState {
         state
     }
 
+    /// Where the window is: the current place in the history.
+    pub(crate) fn route(&self) -> &Route {
+        self.history.current()
+    }
+
     /// The open section's registry entry, or `None` on the dashboard.
     pub(crate) fn current_section(&self) -> Option<&'static Section> {
-        self.route.section()
+        self.route().section()
     }
 
     /// Save the session now, for a route change, an applied import or a close.
@@ -1434,27 +1441,47 @@ impl AppState {
         .detach();
     }
 
-    /// Open a section, leaving the dashboard. An id the registry does not declare
-    /// lands on the missing-section state instead of panicking.
-    pub(crate) fn open_section(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
-        self.route = Route::open(id);
-        match self.route.section() {
-            Some(section) => {
-                self.last_section = Some(section.id);
-                self.activity.open(section.id);
-                self.status = format!("{} · {}", section.title, section.description);
-            }
-            None => self.status = format!("Unknown section: {id}."),
+    /// Open a place as a new history step: Home, a section, or an id the
+    /// registry does not declare, which lands on the missing-section state.
+    /// Opening the place already showing does nothing.
+    pub(crate) fn open_place(&mut self, place: Route, window: &mut Window, cx: &mut Context<Self>) {
+        if self.history.open(place) {
+            self.arrive(window, cx);
         }
-        self.flush_session();
-        window.focus(&self.focus, cx);
-        cx.notify();
     }
 
-    /// Return to the landing dashboard, keeping every section's state alive.
-    pub(crate) fn back_to_dashboard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.route = Route::Dashboard;
-        self.status = "Dashboard. Pick a calculator.".into();
+    /// Step back to the previous place.
+    pub(crate) fn go_back(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.history.go_back() {
+            self.arrive(window, cx);
+        }
+    }
+
+    /// Step forward to the next place.
+    pub(crate) fn go_forward(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.history.go_forward() {
+            self.arrive(window, cx);
+        }
+    }
+
+    /// Jump to a place the history list picked, without adding a step.
+    pub(crate) fn go_to(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+        if self.history.go_to(index) {
+            self.arrive(window, cx);
+        }
+    }
+
+    /// Show the current place, keeping every section's state alive.
+    fn arrive(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.status = match self.route().clone() {
+            Route::Dashboard => "Dashboard. Pick a calculator.".into(),
+            Route::Section(section) => {
+                self.last_section = Some(section.id);
+                self.activity.open(section.id);
+                format!("{} · {}", section.title, section.description)
+            }
+            Route::Missing(id) => format!("Unknown section: {id}."),
+        };
         self.flush_session();
         window.focus(&self.focus, cx);
         cx.notify();
@@ -1476,7 +1503,7 @@ impl AppState {
         let Some(id) = self.last_section else {
             return self.set_status("No section opened yet.", cx);
         };
-        self.open_section(id, window, cx);
+        self.open_place(Route::open(id), window, cx);
     }
 
     /// The shared header's save status. While the dialog is open it owns the
@@ -1666,9 +1693,9 @@ mod tests {
         });
         window
             .update(&mut cx, |state, window, cx| {
-                state.open_section("farming", window, cx);
+                state.open_place(Route::open("farming"), window, cx);
                 state.run_farming(cx);
-                state.open_section("sailing", window, cx);
+                state.open_place(Route::open("sailing"), window, cx);
                 state.set_sailing_sim_trials(1, cx);
                 state.set_sailing_sim_hours(1.0, cx);
                 state.run_sailing_simulation(cx);
@@ -1696,10 +1723,10 @@ mod tests {
                 );
                 assert_eq!(state.activity.shown("sailing"), None);
 
-                state.open_section("farming", window, cx);
+                state.open_place(Route::open("farming"), window, cx);
                 assert_eq!(state.activity.shown("farming"), None);
 
-                state.open_section("sailing", window, cx);
+                state.open_place(Route::open("sailing"), window, cx);
                 state.run_farming(cx);
             })
             .expect("the window is open");

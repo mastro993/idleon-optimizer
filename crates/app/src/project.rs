@@ -627,14 +627,10 @@ pub(crate) fn apply(
     // A section id the registry does not declare was already named in the
     // preview's warnings, so the route simply stays where it is.
     if let Some(section) = section.as_deref().and_then(sections::find) {
-        if state.route != Route::Section(section) {
-            changes.push(format!(
-                "section: {} → {}",
-                route_name(&state.route),
-                section.id
-            ));
+        let from = route_name(state.route()).to_string();
+        if state.history.open(Route::Section(section)) {
+            changes.push(format!("section: {from} → {}", section.id));
         }
-        state.route = Route::Section(section);
         state.last_section = Some(section.id);
     }
 }

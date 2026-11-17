@@ -1,9 +1,11 @@
-//! The header across the window: the sidebar toggle, the save status and the
-//! shared Export and Import actions.
+//! The header across the window: the sidebar toggle, the history arrows, the
+//! save status and the shared Export and Import actions.
 
 use crate::session::SidebarFold;
-use crate::state::{AppState, SaveStatus};
+use crate::state::{AppState, History, Route, SaveStatus};
 use ely_gpui_component::buttons::{Button, ButtonVariant, IconButton};
+use ely_gpui_component::forms::Choice;
+use ely_gpui_component::navigation::BackForwardNavigation;
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use gpui::prelude::*;
@@ -18,6 +20,7 @@ pub(crate) fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
     };
     let entity = cx.entity();
     let toggle = entity.clone();
+    let go = entity.clone();
     let rail = state.session.shell.sidebar == SidebarFold::Rail;
     div()
         .id("app-header")
@@ -43,9 +46,25 @@ pub(crate) fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
                     toggle.update(cx, |state, cx| state.toggle_sidebar(cx));
                 }),
         )
+        .child(history(&state.history).on_go(move |index, window, cx| {
+            go.update(cx, |state, cx| state.go_to(index, window, cx));
+        }))
         .child(div().flex_1())
         .child(save_actions(state.save_status(), muted, entity))
         .into_any_element()
+}
+
+/// Back, forward and the list of every place, named as the sidebar names them.
+fn history(history: &History) -> BackForwardNavigation {
+    let places = history.places().iter().enumerate().map(|(index, place)| {
+        let label = match place {
+            Route::Dashboard => "Home".to_string(),
+            Route::Section(section) => section.title.to_string(),
+            Route::Missing(id) => id.clone(),
+        };
+        Choice::new(index.to_string(), label)
+    });
+    BackForwardNavigation::new("history", places, history.position())
 }
 
 /// The save status and the Export and Import actions.
