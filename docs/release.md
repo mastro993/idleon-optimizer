@@ -41,14 +41,12 @@ Actions → **Release** → Run workflow, on `main`, with:
 3. only if all three built: commits the bump on top of the dispatched commit, tags it, and pushes
    both to `main` atomically — if `main` moved during the build the push is rejected and nothing is
    published, so dispatch again;
-4. publishes the GitHub release with the archives, `SHA256SUMS`, the first-run notes
-   ([`.github/release-notes.md`](../.github/release-notes.md)) and GitHub's generated changelog.
+4. publishes the GitHub release with the archives, `SHA256SUMS` and GitHub's generated changelog.
 
 If step 4 fails after the push, `main` holds the bump commit and its tag without a release.
 Dispatching again would release the *next* version and leave this one unreleased, so finish it by
 hand: download the run's `dist-*` artifacts, `cat *.sha256 > SHA256SUMS`, and run
-`gh release create vX.Y.Z --verify-tag --latest --notes-file .github/release-notes.md
---generate-notes <archives> SHA256SUMS`.
+`gh release create vX.Y.Z --verify-tag --latest --generate-notes <archives> SHA256SUMS`.
 
 ### Setup: the deploy key
 
@@ -104,8 +102,6 @@ credit note is missing.
   Linux job summary prints the binary's `ldd` output: what a user's machine must provide.
 
 ## First run
-
-The same notes ship in every release ([`.github/release-notes.md`](../.github/release-notes.md)).
 
 - **macOS**: the app is unsigned, so Gatekeeper blocks the first launch. Open it once, then System
   Settings → Privacy & Security → **Open Anyway** (macOS 15+); on older macOS, Control-click →
