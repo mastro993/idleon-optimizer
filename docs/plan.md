@@ -234,6 +234,8 @@ expected. `crates/import/src/pipeline.rs` is the one pipeline every accepted for
    parsing. While decoding, a save key suffix names at most 128 characters and a sparse row at most
    100,000 cells (`idleon_save::MAX_CHARACTERS`, `MAX_ROW_CELLS`); a larger index is ignored rather
    than allocated. A non-finite number (`NaN`, `inf`) reads as missing.
+   `idleon_save::Save` decodes each encoded field once, on its first read, and the decoders below it
+   read that map: a decoder reads a cell, never a whole field's JSON text, per value.
 2. Parse and detect the format; never mutate state before validation passes.
 3. Migrate older versions; unknown fields become warnings, not failures.
 4. Build a preview: format, save name if present, characters, research level, detected sections and

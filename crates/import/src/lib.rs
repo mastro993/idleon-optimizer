@@ -201,10 +201,11 @@ pub fn import(save_json: &str) -> Result<Imported, ImportError> {
         .as_object()
         .ok_or_else(|| ImportError::NoSaveFields("the top level is not an object".into()))?;
     // `it.json` nests the save under `data`; a plain save is the object itself.
-    let save = match root.get("data") {
-        Some(Value::Object(save)) => save,
-        _ => root,
-    };
+    // The decoders below read this map cell by cell, so they get the one the
+    // save already decoded instead of re-parsing each field's JSON text.
+    let save = document
+        .as_object()
+        .ok_or_else(|| ImportError::NoSaveFields("the save fields are not an object".into()))?;
 
     let mut warnings = Vec::new();
     let rows = research::research_rows(save, &mut warnings);

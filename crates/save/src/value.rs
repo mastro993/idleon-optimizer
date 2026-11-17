@@ -1,13 +1,12 @@
 //! The decoded save.
 //!
 //! The game writes some fields as JSON strings and others as one character per
-//! key (`{"0":"{","1":"["…}`). Both are decoded on every read, and the
-//! Killroy planner depends on that. This wrapper keeps the parsed object and
-//! offers the same lookups without the section modules re-implementing the
-//! codec.
+//! key (`{"0":"{","1":"["…}`). Both are decoded once per save, the first
+//! time a reader asks for the field map: the readers then look a field up and
+//! never re-parse it. See [`decoded`] for why that matters.
 
 use serde_json::{Map, Value};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 /// A save's own field map and the wrapper object beside it.
 pub type Parts<'a> = (&'a Map<String, Value>, &'a Map<String, Value>);
@@ -21,7 +20,14 @@ const WRAPPER_KEYS: [&str; 3] = ["companion", "serverVars", "charNames"];
 /// sandbox and a background run can each hold the save without copying it.
 #[derive(Clone, Debug)]
 pub struct Save {
+    /// The top-level value as the import read it, `it.json` wrapper included:
+    /// an export writes it back unchanged.
     root: Arc<Value>,
+    /// The save's own fields with every encoded field already decoded, so a
+    /// reader pays for the parse once per save instead of once per cell. Shared
+    /// by every clone, and built on the first read: most saves in a run are
+    /// built, handed on and never read.
+    fields: Arc<OnceLock<Value>>,
 }
 
 impl std::ops::Deref for Save {
@@ -30,10 +36,7 @@ impl std::ops::Deref for Save {
     /// The save's own object, without the `it.json` wrapper, for the readers
     /// that expect the decoded field map.
     fn deref(&self) -> &Value {
-        match self.root.as_object().and_then(|root| root.get("data")) {
-            Some(fields @ Value::Object(_)) => fields,
-            _ => &self.root,
-        }
+        self.fields.get_or_init(|| decoded(&self.root))
     }
 }
 
@@ -41,6 +44,7 @@ impl Save {
     /// Wrap the parsed text's top-level value.
     pub fn new(root: Value) -> Self {
         Self {
+            fields: Arc::new(OnceLock::new()),
             root: Arc::new(root),
         }
     }
@@ -53,20 +57,17 @@ impl Save {
     /// Read one key, decoding either encoding.
     pub fn get(&self, key: &str) -> Option<Value> {
         let root = self.root.as_object()?;
-        let source = if WRAPPER_KEYS.contains(&key) {
-            root
-        } else {
-            self.fields()?
-        };
-        source.get(key).map(decode)
+        if WRAPPER_KEYS.contains(&key) {
+            return root.get(key).map(decode);
+        }
+        self.fields().and_then(|fields| fields.get(key)).cloned()
     }
 
     /// The object holding the save's own keys: `data` in an `it.json`, else the root.
     fn fields(&self) -> Option<&Map<String, Value>> {
-        let root = self.root.as_object()?;
-        match root.get("data") {
-            Some(Value::Object(fields)) => Some(fields),
-            _ => Some(root),
+        match &**self {
+            Value::Object(fields) => Some(fields),
+            _ => None,
         }
     }
 
@@ -103,7 +104,7 @@ impl Save {
     /// and the rest from the save; this hands both over without cloning.
     pub fn parts(&self) -> Option<Parts<'_>> {
         let root = self.root.as_object()?;
-        Some((self.fields().unwrap_or(root), root))
+        Some((self.fields()?, root))
     }
 
     /// A character's name beside its index, when the save carries one.
@@ -119,7 +120,13 @@ impl Save {
 }
 
 /// One stored value decoded to its game value.
-fn decode(stored: &Value) -> Value {
+///
+/// A save field costs a JSON parse of its whole text, and the decoders read the
+/// same field once per cell (thousands of times for `Breeding` or `Lab`), so
+/// leaving the encoding in place made an import re-parse hundreds of megabytes.
+/// [`decoded`] runs this over every field once per save, and hands the readers
+/// that map.
+pub(crate) fn decode(stored: &Value) -> Value {
     match stored {
         Value::String(text) => serde_json::from_str::<Value>(text)
             .ok()
@@ -136,6 +143,31 @@ fn decode(stored: &Value) -> Value {
         }
         _ => stored.clone(),
     }
+}
+
+/// A save's own field map with every encoded field decoded once.
+///
+/// The map `Deref` and [`Save::parts`] hand out: the readers below it call
+/// [`crate::fields`] per cell, and each of those decodes the field it reads.
+fn decoded(root: &Value) -> Value {
+    let fields = match root.as_object().and_then(|root| root.get("data")) {
+        Some(Value::Object(fields)) => fields,
+        _ => match root.as_object() {
+            Some(fields) => fields,
+            None => return root.clone(),
+        },
+    };
+    Value::Object(
+        fields
+            .iter()
+            .map(|(key, stored)| (key.clone(), decode(stored)))
+            .collect(),
+    )
+}
+
+/// Whether a value is an object holding a JSON text one character per numeric key.
+pub(crate) fn is_char_object_value(value: &Value) -> bool {
+    value.as_object().is_some_and(is_char_object)
 }
 
 /// Whether an object holds a JSON text one character per numeric key.
@@ -215,6 +247,16 @@ mod tests {
     fn a_json_string_decodes_to_its_object() {
         let save = Save::new(json!({ "TimeAway": "{\"GlobalTime\":42}" }));
         assert_eq!(save.get("TimeAway"), Some(json!({ "GlobalTime": 42 })));
+    }
+
+    #[test]
+    fn readers_get_the_decoded_fields_while_an_export_keeps_the_text() {
+        let save = Save::new(json!({ "data": { "Lab": "[[1,2],[3,4]]" } }));
+        // The per-cell readers below `parts` read the field already decoded…
+        let (fields, _) = save.parts().expect("the save has fields");
+        assert_eq!(fields["Lab"], json!([[1, 2], [3, 4]]));
+        // …while a project export writes the save back as the game wrote it.
+        assert_eq!(save.root()["data"]["Lab"], json!("[[1,2],[3,4]]"));
     }
 
     #[test]

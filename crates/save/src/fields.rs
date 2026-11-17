@@ -6,6 +6,7 @@
 
 use crate::json;
 use serde_json::{Map, Value};
+use std::borrow::Cow;
 
 /// A decoded save field, accepting the JSON-string form.
 pub fn field(save: &Map<String, Value>, key: &str) -> Option<Value> {
@@ -14,8 +15,7 @@ pub fn field(save: &Map<String, Value>, key: &str) -> Option<Value> {
 
 /// A numeric row of a decoded field, as many save rows are arrays of numbers.
 pub fn numbers(save: &Map<String, Value>, key: &str) -> Option<Vec<Option<f64>>> {
-    let value = field(save, key)?;
-    values(&value)
+    values(json::parsed_value(save, key)?.as_ref())
 }
 
 pub fn values(value: &Value) -> Option<Vec<Option<f64>>> {
@@ -26,14 +26,14 @@ pub fn values(value: &Value) -> Option<Vec<Option<f64>>> {
 
 /// A nested number at `path`, e.g. `Holes[31][2][16]`.
 pub fn at(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<f64> {
-    let value = field(save, key)?;
-    json::index(&value, path).and_then(json::number)
+    let value: Cow<'_, Value> = json::parsed_value(save, key)?;
+    json::index(value.as_ref(), path).and_then(json::number)
 }
 
 /// A nested row as numbers.
 pub fn row(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<Vec<Option<f64>>> {
-    let value = field(save, key)?;
-    values(json::index(&value, path)?)
+    let value = json::parsed_value(save, key)?;
+    values(json::index(value.as_ref(), path)?)
 }
 
 /// A per-character field: `<key>_<char>`, decoded.
@@ -89,10 +89,10 @@ pub fn objects_row(value: &Value) -> Option<Vec<Option<f64>>> {
 /// A row of string entries, accepting the numeric-keyed object rows older
 /// exports write.
 pub fn string_row(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<Vec<String>> {
-    let value = field(save, key)?;
-    let row = json::index(&value, path)?;
-    let cells: Vec<Value> = match row {
-        Value::Array(cells) => cells.clone(),
+    let value = json::parsed_value(save, key)?;
+    let row = json::index(value.as_ref(), path)?;
+    let cells: Vec<&Value> = match row {
+        Value::Array(cells) => cells.iter().collect(),
         Value::Object(fields) => {
             let mut keys: Vec<(usize, &String)> = fields
                 .keys()
@@ -100,14 +100,14 @@ pub fn string_row(save: &Map<String, Value>, key: &str, path: &[usize]) -> Optio
                 .collect();
             keys.sort_by_key(|(index, _)| *index);
             keys.into_iter()
-                .filter_map(|(_, key)| fields.get(key).cloned())
+                .filter_map(|(_, key)| fields.get(key))
                 .collect()
         }
         _ => return None,
     };
     Some(
         cells
-            .iter()
+            .into_iter()
             .map(|cell| cell.as_str().map(str::to_owned).unwrap_or_default())
             .collect(),
     )
@@ -115,8 +115,8 @@ pub fn string_row(save: &Map<String, Value>, key: &str, path: &[usize]) -> Optio
 
 /// A row of string entries, as gallery hats and capes are stored.
 pub fn strings(save: &Map<String, Value>, key: &str, path: &[usize]) -> Option<Vec<String>> {
-    let value = field(save, key)?;
-    let row = json::index(&value, path)?.as_array()?;
+    let value = json::parsed_value(save, key)?;
+    let row = json::index(value.as_ref(), path)?.as_array()?;
     Some(
         row.iter()
             .map(|entry| entry.as_str().map(str::to_owned).unwrap_or_default())
@@ -139,7 +139,7 @@ pub fn number_at(values: &[Option<f64>], index: usize) -> f64 {
 
 /// A non-negative length: `arr ? arr.length : 0`.
 pub fn len_of(save: &Map<String, Value>, key: &str) -> usize {
-    field(save, key)
+    json::parsed_value(save, key)
         .and_then(|value| value.as_array().map(Vec::len))
         .unwrap_or(0)
 }
