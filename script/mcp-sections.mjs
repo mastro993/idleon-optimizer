@@ -1314,19 +1314,30 @@ const INTERACTIONS = {
     // finished first.
     for (let attempt = 1; ; attempt += 1) {
       await lane.call('click_element', { id: 'killroy-run' });
+      const started = Date.now();
       let cancel = null;
+      let running = false;
+      let finished = false;
       await waitFor(
         lane,
         (nodes) => {
           cancel = nodes.find((node) => node.id === 'killroy-run-cancel')?.bounds ?? null;
-          return has(nodes, 'killroy-run-progress') && cancel;
+          const status = labelOf(nodes, 'status-status') ?? '';
+          running ||= status.startsWith('Running');
+          // A retry starts from the last run's identical closing line, so it
+          // counts only once this run was seen running, or after 3 s.
+          finished =
+            status.startsWith('Killroy trials finished') && (running || Date.now() - started > 3000);
+          return (has(nodes, 'killroy-run-progress') && cancel) || finished;
         },
         'killroy: the run reports progress',
       );
-      await lane.call('click_coordinates', {
-        x: cancel.x + cancel.width / 2,
-        y: cancel.y + cancel.height / 2,
-      });
+      if (!finished) {
+        await lane.call('click_coordinates', {
+          x: cancel.x + cancel.width / 2,
+          y: cancel.y + cancel.height / 2,
+        });
+      }
       let outcome = null;
       await waitFor(
         lane,
