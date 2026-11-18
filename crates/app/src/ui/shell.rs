@@ -5,17 +5,18 @@
 //! cached view (`ui/views.rs`); a section owns its own tab strip and content
 //! behind the registry factory.
 
-use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
 use crate::ui::views::Views;
-use crate::ui::{export, header, import, key_binding, section};
-use ely_gpui_component::motion::{self, LoadingOverlay};
-use ely_gpui_component::theme::ActiveTheme as _;
+use crate::ui::{export, header, import, key_binding, section, sidebar};
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, IntoElement, ParentElement, StyleRefinement, Styled, Window, div, px,
+    AnyElement, App, Context, IntoElement, ParentElement, Role, StyleRefinement, Styled, Window,
+    div,
 };
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::spinner::Spinner;
+use idleon_ui::widgets::{Caption, TEXT_BODY};
 
 gpui::actions!(idleon_shell, [GoBack, GoForward]);
 
@@ -41,18 +42,12 @@ pub(crate) fn shell(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let (bg, fg) = {
-        let colors = &cx.theme().colors;
-        (colors.bg, colors.fg)
-    };
+    let (bg, fg) = (cx.theme().background, cx.theme().foreground);
     let route = state.route().clone();
     // Published before the place renders, so its breakpoint measures the
     // workspace the sidebar leaves.
     let fold = state.session.shell.sidebar;
-    let sidebar_width = cx
-        .theme()
-        .sidebar_width(fold == SidebarFold::Rail)
-        .to_pixels(window.rem_size());
+    let sidebar_width = sidebar::width(fold, window, cx);
     // Only on a change: setting a global notifies its observers every time.
     if cx.try_global::<SidebarWidth>().map(|width| width.0) != Some(sidebar_width) {
         cx.set_global(SidebarWidth(sidebar_width));
@@ -65,7 +60,7 @@ pub(crate) fn shell(
     };
 
     let entity = cx.entity();
-    let fold_time = motion::duration(motion::BASE, cx);
+    let fold_time = sidebar::fold_duration(cx);
     let views = Views::of(state, cx);
     let folding = views.sidebar_folding(fold, fold_time);
     let (header, sidebar, status) = (
@@ -83,13 +78,7 @@ pub(crate) fn shell(
             .page(section, &entity, cx)
             .cached(StyleRefinement::default().size_full())
             .into_any_element(),
-        Route::Missing(id) => div()
-            .id("section-unknown")
-            .size_full()
-            .p_3()
-            .min_h_0()
-            .child(section::missing(id, window, cx))
-            .into_any_element(),
+        Route::Missing(id) => section::page("section-unknown", section::missing(id, window, cx)),
     };
     let sidebar = if folding {
         sidebar.into_any_element()
@@ -106,12 +95,13 @@ pub(crate) fn shell(
 
     let mut root = div()
         .id("app-root")
+        .relative()
         .flex()
         .flex_col()
         .size_full()
         .bg(bg)
         .text_color(fg)
-        .text_size(px(13.0))
+        .text_size(TEXT_BODY)
         .track_focus(&state.focus)
         .on_action(cx.listener(|state, _: &GoBack, window, cx| {
             state.go_back(window, cx);
@@ -155,11 +145,23 @@ pub(crate) fn shell(
     // The window opens before the session file is read; a veil holds the place
     // the restore is about to fill instead of showing the empty dashboard.
     if state.restoring {
-        return LoadingOverlay::new("restoring", true)
-            .label("Loading your save…")
-            .size_full()
-            .child(root)
-            .into_any_element();
+        root = root.child(
+            div()
+                .id("restoring")
+                .role(Role::Label)
+                .aria_label("Loading your save…")
+                .absolute()
+                .inset_0()
+                .flex()
+                .flex_col()
+                .items_center()
+                .justify_center()
+                .gap_2()
+                .bg(bg.opacity(0.8))
+                .occlude()
+                .child(Spinner::new())
+                .child(Caption::new("Loading your save…")),
+        );
     }
     root.into_any_element()
 }

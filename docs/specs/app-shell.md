@@ -72,8 +72,8 @@ Flows:
   headings) and back. The choice is written to the session file and restored at launch; the
   default is expanded.
 - **Go back and forward.** The arrows beside the toggle, or Cmd/Ctrl+[ and Cmd/Ctrl+] (also
-  Cmd/Ctrl+Left and Right), move through the history; an arrow is disabled at its end. Ely's
-  history list button beside them lists every place, newest first. History starts empty at each
+  Cmd/Ctrl+Left and Right), move through the history; an arrow is disabled at its end. The
+  history list button beside them opens a menu of every place, newest first, the current one checked. History starts empty at each
   launch.
 - **Run in two sections.** Start the Farming allocation, open Sailing, start its simulation: both
   run, both items show a ring, and the status message (read by screen readers) keeps the latest one.
@@ -101,9 +101,10 @@ game sprites.
 
 | Element | Renders with |
 |---|---|
-| Header bar | the existing `header_bar` (`ui/layout.rs`), moved to `ui/header.rs`; keeps the 84 px traffic-light inset and 48 px height |
-| Sidebar toggle | Ely `IconButton` (`IconName::PanelLeft`, ghost, `ControlSize::Sm`) |
-| Back, forward, history list | Ely `BackForwardNavigation` |
+| Header bar | `ui/header.rs`; keeps the 84 px traffic-light inset and 48 px height. The kit's `TitleBar` is not used: the transparent macOS title bar already puts the traffic lights inside the header |
+| Page frame | `section::page` (`ui/section.rs`): the Console page gutter, 20 px left and right, 16 px top and bottom |
+| Sidebar toggle | kit `Button` (`IconName::PanelLeft`, ghost, small) |
+| Back, forward, history list | kit ghost small `Button`s (`ArrowLeft`, `ArrowRight`, `ListClock`); the list is a kit `DropdownMenu` of `PopupMenuItem`s, the current place checked |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
 | Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
 | Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge |
@@ -124,7 +125,7 @@ finished dot), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
 | Where | Text |
 |---|---|
 | Toggle tooltip and label | "Collapse sidebar" / "Expand sidebar" |
-| Arrows | "Back", "Forward"; history list "History" (Ely's own) |
+| Arrows | "Back", "Forward"; history list "History" |
 | Home item | "Home" |
 | Group headings | "General", "World 2" … "World 7", "Tools" (`Group::label`); in the rail "Gen", "W2" … "W7", "Tools" |
 | Running mark tooltip and aria label | "Running · 42%"; "2 runs · 42%" |
@@ -174,8 +175,8 @@ flowchart LR
   ([ADR 0002](../adr/0002-section-activity-is-pushed-from-runner-events.md))
 - **History** (`state/history.rs`): `History { places: Vec<Route>, current: usize }`, capped at 50
   places, not persisted. `open_section` and `back_to_dashboard` become one `open_place(route)`
-  that pushes; `go_back`/`go_forward` move `current` without pushing. Rendered with Ely's
-  `BackForwardNavigation`. `shell::bind_keys` swaps `BackToDashboard` (Escape, secondary-left) for
+  that pushes; `go_back`/`go_forward` move `current` without pushing. Rendered with kit
+  buttons and a dropdown menu in `ui/header.rs`. `shell::bind_keys` swaps `BackToDashboard` (Escape, secondary-left) for
   `GoBack`/`GoForward` (secondary-[, secondary-], secondary-left, secondary-right) bound in the
   window's root context, so they work on Home too.
 - **Fold persistence** (`session.rs`): the session file gains an additive `"shell": {"sidebar":
@@ -192,7 +193,8 @@ flowchart LR
   Home uses Ely's `IconName::House`. The dashboard cards switch to the same art.
 - **Ids for the harness**: `app-sidebar`, `sidebar-toggle`, `nav-home`, `nav-group-<group>`,
   `nav-<section>`, `nav-<section>-activity` (aria label "Running 42%", "Finished", "Failed"),
-  the history arrows under `history`. `card-<id>` stays.
+  `history-back`, `history-forward` (disabled at their end), `history-list` (the menu button) inside
+  `history-history-button`, whose value is the current place. `card-<id>` stays.
 
 ## Assumptions
 

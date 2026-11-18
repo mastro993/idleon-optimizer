@@ -17,6 +17,7 @@ icon_assets!(
         GitBranch,
         House,
         ImageOff,
+        ListClock,
         RotateCcw,
         Save,
         SearchX,

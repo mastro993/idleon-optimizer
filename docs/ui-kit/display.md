@@ -11,7 +11,7 @@ Paths: `kit::` is `gpui_kit::component::`, `assets::` is `gpui_kit::assets::`, `
 
 ## Mapping
 
-Uses are the counts across `crates/` when #340 was written.
+Uses are the counts across `crates/` when #340 was written (the tab strip row: when #344 was).
 
 | Ely item | Uses | Replacement | Notes |
 |---|---:|---|---|
@@ -39,6 +39,7 @@ Uses are the counts across `crates/` when #340 was written.
 | `data_display::Tag` | 1 | `kit::tag::Tag` | As `Badge`; a remove action is a kit ghost `Button` inside the tag. |
 | `data_display::DotBadge` | 1 | `kit::badge::Badge` or a dot `div` | Over an element: `Badge::new().dot().color(tone.color(cx)).child(el)`. Alone: `div().size_1p5().rounded_full().bg(tone.color(cx))`. |
 | `data_display::Timeline` / `TimelineItem` | 1 | `widgets::Timeline` / `TimelineItem` | Same builders: `.item(..)`, `.time(..)`, `.tone(..)`, `.child(..)`. |
+| `shell::TabBar` / `WindowTab` | 22 | `ui::layout::tab_bar` | A kit underline `TabBar`, each tab sized to its label and scrolling sideways on overflow. Takes `(id, label)` pairs, the selected index and an `on_select(index)`; each tab keeps its Ely id (the kit numbers its tabs, so the id sits on the label). Drop the `layout::scrolling_tabs` wrapper: the kit bar scrolls itself. Research's `app-tabs` uses it. |
 | `motion::LoadingOverlay` | 1 | `kit::spinner::Spinner` | A centered `Spinner::new()` in an absolute `div` over the content. |
 | `layout::SimpleGrid` | 1 | GPUI grid | `div().grid().grid_cols(n).gap(..)`, `n` from the window width. Home becomes one table in the Console design. |
 | `layout::bring_into_view` | 1 | `widgets::bring_into_view` | Same signature. `ScrollHandle::scroll_to_item(ix)` when the item is a direct child of the scroll container. |

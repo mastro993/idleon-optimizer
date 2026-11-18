@@ -21,6 +21,7 @@ use gpui::{
     div, fill, linear_color_stop, linear_gradient, point, px, size,
 };
 use std::rc::Rc;
+use std::time::Duration;
 
 /// The sidebar's groups in order, each with its sections. Tools lists every
 /// section without a dashboard card, whatever world it belongs to.
@@ -38,6 +39,18 @@ pub(crate) fn groups() -> Vec<(Group, Vec<&'static Section>)> {
             (group, sections)
         })
         .collect()
+}
+
+/// The sidebar's width at `fold`, which the shell lays its cached view out at.
+pub(crate) fn width(fold: SidebarFold, window: &Window, cx: &App) -> Pixels {
+    cx.theme()
+        .sidebar_width(fold == SidebarFold::Rail)
+        .to_pixels(window.rem_size())
+}
+
+/// How long the sidebar animates its width when it folds or unfolds.
+pub(crate) fn fold_duration(cx: &App) -> Duration {
+    ely_gpui_component::motion::duration(ely_gpui_component::motion::BASE, cx)
 }
 
 /// The sidebar column: Home, then every group, scrolling on its own.

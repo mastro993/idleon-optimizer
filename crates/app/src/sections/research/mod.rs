@@ -100,10 +100,6 @@ impl Tab {
             Tab::Sushi => "Sushi Station",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// A shape drag in flight: where the pointer grabbed it, and where it was.

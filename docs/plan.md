@@ -56,8 +56,11 @@ note (`assets/game/README.md`). How releases are built and cut: [`release.md`](r
 Shell (`ui/shell.rs`):
 
 - Header across the window (`ui/header.rs`): sidebar toggle, back and forward arrows with the
-  history list (Ely `BackForwardNavigation`, ids under `history`), save status, Export and Import.
-  The open place is named by its active sidebar item, not the header.
+  history list (kit ghost `Button`s and a `DropdownMenu`, ids under `history`), save status,
+  Export and Import. The open place is named by its active sidebar item, not the header.
+- Page frame (`ui/section.rs`, `page`): every section and the missing-id state render inside it,
+  and it owns the Console page gutter (20 px left and right, 16 px top and bottom), so a section
+  never pads its own page.
 - Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
   World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
   `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
