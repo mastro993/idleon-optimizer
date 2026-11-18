@@ -11,8 +11,8 @@ for every number. The app is a wall of numbers the player compares, so density a
 first.
 
 Tokens live in [`theme.json`](theme.json), a gpui-kit 0.10.0 theme set with the two modes.
-#339/#360 copy it to `crates/app/data/theme.json` and load it (see
-[Loading the theme](#loading-the-theme)); #360 applies the rest of this design.
+#360 copies it over `crates/app/data/theme.json`, which #339 loads (see
+[Loading the theme](#loading-the-theme)), and applies the rest of this design.
 
 | | Dark | Light |
 |---|---|---|
@@ -254,7 +254,8 @@ Left to the kit's fallbacks on purpose:
 
 ### Loading the theme
 
-#339 or #360 copies the file to `crates/app/data/theme.json`, embeds it with `include_str!`, adds
-it with `ThemeRegistry::global_mut(cx).load_themes_from_str(..)`, and applies the dark and light configs
-with `Theme::apply_config`. Mode switching (follow the system, or a setting) is #360's call. Embed
+Since #339, `ui::theme::install` embeds `crates/app/data/theme.json` with `include_str!`, adds it
+with `ThemeRegistry::global_mut(cx).load_themes_from_str(..)` and applies its dark config with
+`Theme::apply_config`; that file holds today's palette until #360 copies this one over it and
+applies the light config too. Mode switching (follow the system, or a setting) is #360's call. Embed
 JetBrains Mono with `add_fonts` before the theme is applied.

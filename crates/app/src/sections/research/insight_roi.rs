@@ -529,8 +529,14 @@ fn scenario_row(
             .into_any_element()
     };
     [
+        // The name cell is blank on an observation's later rows; each row
+        // still needs its own id, or the semantic tree drops them all.
         div()
-            .id(format!("insight-obs-{}", row.obs))
+            .id(if first {
+                format!("insight-obs-{}", row.obs)
+            } else {
+                format!("insight-obs-{}-{}", row.obs, scenario.level_gain)
+            })
             .when(first, |cell| cell.font_weight(gpui::FontWeight::SEMIBOLD))
             .child(if first {
                 row.name.clone()

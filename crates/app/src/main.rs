@@ -16,7 +16,6 @@ mod state;
 mod ui;
 
 use anyhow::{Context as _, Result};
-use ely_gpui_component::theme::Theme;
 use gpui::{
     App, AppContext as _, Bounds, QuitMode, TitlebarOptions, WindowBounds, WindowOptions, point,
     px, size,
@@ -71,22 +70,18 @@ fn main() -> Result<()> {
         .map(PathBuf::from)
         .or_else(|| std::env::var_os(IMPORT_ENV).map(PathBuf::from));
     gpui_platform::application()
-        .with_assets(ely_gpui_component::Assets)
+        .with_assets(assets::source())
         // gpui keeps a windowless app alive on macOS; this app is its window, so
         // closing it quits everywhere.
         .with_quit_mode(QuitMode::LastWindowClosed)
         .run(move |cx: &mut App| {
             ely_gpui_component::init(cx).expect("Ely failed to start");
+            gpui_kit::init(cx);
             ui::shell::bind_keys(cx);
             for section in sections::SECTIONS {
                 (section.keys)(cx);
             }
-            Theme::set_palette(
-                ely_gpui_component::theme::Mode::Dark,
-                Some(ui::theme::palette()),
-                cx,
-            );
-            Theme::set_mode_now(ely_gpui_component::theme::Mode::Dark, cx);
+            ui::theme::install(cx);
             if let Err(error) = open_window(cx, endpoint, initial, state_dir, import) {
                 eprintln!("idleon-optimizer: {error:#}");
                 log::error!("the window failed to open: {error:#}");
@@ -115,7 +110,9 @@ fn open_window(
         window_min_size: Some(size(px(ui::layout::MIN_WIDTH), px(ui::layout::MIN_HEIGHT))),
         ..Default::default()
     };
-    cx.open_window(options, move |window, cx| {
+    // The kit's Root wraps the app's view and hosts the kit's dialogs, sheets,
+    // notifications and popovers above it.
+    gpui_kit::open_window(options, cx, move |window, cx| {
         cx.new(move |cx| AppState::new(window, endpoint, initial, state_dir, import, cx))
     })
     .context("window failed to open")?;

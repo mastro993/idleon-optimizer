@@ -2780,9 +2780,7 @@ const INTERACTIONS = {
     await waitForNode(lane, 'insight-roi', 'research: the Insight ROI tab opens');
     await lane.call('click_element', { id: 'insight-run' });
     await waitForNode(lane, 'insight-table', 'research: the insight analysis stores a table', 120000);
-    // The table wraps its first cell, so the observation id keeps the full
-    // element path in front of it.
-    const insightRow = (node) => /\.insight-obs-\d+#\d+$/.test(node.id ?? '');
+    const insightRow = (node) => /^insight-obs-\d+$/.test(node.id ?? '');
     await waitFor(
       lane,
       (nodes) => nodes.some(insightRow),

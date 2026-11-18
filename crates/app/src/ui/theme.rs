@@ -1,13 +1,40 @@
 //! The app's dark palette and the world badges.
 //!
 //! Ely owns the component tokens; this layer only pins the app's own colors, so
-//! every section reads the same values.
+//! every section reads the same values. While Ely and GPUI Kit coexist (#335),
+//! the kit's theme in `data/theme.json` carries the same colors.
 
 use crate::sections::Group;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, Palette, Radius, TextSize};
+use ely_gpui_component::theme::{
+    ActiveTheme as _, ControlSize, Mode, Palette, Radius, TextSize, Theme,
+};
 use gpui::{
     App, FontWeight, Hsla, IntoElement, ParentElement, RenderOnce, Styled, Window, div, rgb, rgba,
 };
+use gpui_kit::component::{Theme as KitTheme, ThemeRegistry};
+
+/// The kit's theme set: [`palette`]'s colors under the kit's keys.
+const KIT_THEMES: &str = include_str!("../../data/theme.json");
+/// The theme in [`KIT_THEMES`] the window draws with.
+const KIT_THEME: &str = "Idleon Dark";
+
+/// Draw both component libraries in the app's dark palette.
+///
+/// Call it after `ely_gpui_component::init` and `gpui_kit::init`.
+pub(crate) fn install(cx: &mut App) {
+    Theme::set_palette(Mode::Dark, Some(palette()), cx);
+    Theme::set_mode_now(Mode::Dark, cx);
+    let registry = ThemeRegistry::global_mut(cx);
+    registry
+        .load_themes_from_str(KIT_THEMES)
+        .expect("the bundled kit theme parses");
+    let config = registry
+        .themes()
+        .get(KIT_THEME)
+        .cloned()
+        .expect("the bundled kit theme set names its theme");
+    KitTheme::update(cx, |theme| theme.apply_config(&config));
+}
 
 /// Ely's dark palette with the app's colors on top.
 ///
@@ -94,6 +121,139 @@ impl RenderOnce for WorldBadge {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gpui::{AppContext as _, Context, TestAppContext};
+    use gpui_kit::component::{
+        ThemeSet,
+        button::{Button, ButtonVariants as _},
+        label::Label,
+    };
+    use std::rc::Rc;
+
+    /// The kit theme as `install` applies it, outside any app.
+    fn kit_theme() -> KitTheme {
+        let set: ThemeSet = serde_json::from_str(KIT_THEMES).expect("theme set JSON");
+        let config = set
+            .themes
+            .into_iter()
+            .find(|theme| theme.name == KIT_THEME)
+            .expect("the set names the applied theme");
+        let mut theme = KitTheme::default();
+        theme.apply_config(&Rc::new(config));
+        theme
+    }
+
+    #[test]
+    fn the_kit_theme_draws_ely_s_palette() {
+        // List and table selection and text selection are left out: the kit
+        // caps their alpha, so they are tints of the accent instead.
+        let (theme, ely) = (kit_theme(), palette());
+        assert!(theme.mode.is_dark());
+        let kit = theme.colors;
+        let pairs = [
+            ("background", kit.background, ely.bg),
+            ("foreground", kit.foreground, ely.fg),
+            ("border", kit.border, ely.border),
+            ("input.border", kit.input, ely.border_strong),
+            ("ring", kit.ring, ely.focus),
+            ("overlay", kit.overlay, ely.backdrop),
+            ("accent.background", kit.accent, ely.hover),
+            ("muted.background", kit.muted, ely.sunken),
+            ("muted.foreground", kit.muted_foreground, ely.fg_muted),
+            ("popover.background", kit.popover, ely.overlay),
+            ("secondary.background", kit.secondary, ely.surface),
+            ("secondary.hover.background", kit.secondary_hover, ely.hover),
+            (
+                "secondary.active.background",
+                kit.secondary_active,
+                ely.active,
+            ),
+            ("primary.background", kit.primary, ely.accent),
+            (
+                "primary.hover.background",
+                kit.primary_hover,
+                ely.accent_hover,
+            ),
+            ("primary.foreground", kit.primary_foreground, ely.on_accent),
+            ("success.background", kit.success, ely.success),
+            ("warning.background", kit.warning, ely.warning),
+            ("danger.background", kit.danger, ely.danger),
+            ("info.background", kit.info, ely.info),
+            ("link", kit.link, ely.link),
+            ("list.background", kit.list, ely.surface),
+            ("list.hover.background", kit.list_hover, ely.hover),
+            (
+                "table.head.foreground",
+                kit.table_head_foreground,
+                ely.fg_subtle,
+            ),
+            ("sidebar.background", kit.sidebar, ely.sunken),
+            ("sidebar.foreground", kit.sidebar_foreground, ely.fg_muted),
+            ("chart.1", kit.chart_1, ely.chart[0]),
+            ("chart.5", kit.chart_5, ely.chart[4]),
+        ];
+        for (key, kit, ely) in pairs {
+            assert_eq!(kit.to_rgb(), ely.to_rgb(), "{key}");
+        }
+    }
+
+    /// A kit primary `Button` and an underlined `Label`: the underline takes
+    /// the label's text color, so the painted frame shows both colors. The
+    /// padding keeps the test pointer, at the window origin, off the button.
+    struct KitSample;
+
+    impl gpui::Render for KitSample {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div()
+                .p_8()
+                .child(Button::new("kit-button").primary().label("Run"))
+                .child(Label::new("Kit label").underline())
+        }
+    }
+
+    #[gpui::test]
+    fn kit_components_paint_the_app_colors(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            ely_gpui_component::init_for_tests(cx);
+            gpui_kit::init(cx);
+            install(cx);
+        });
+        // Through the kit's Root, as the app's window opens.
+        let (window, _) = cx
+            .update(|cx| {
+                gpui_kit::open_window(gpui::WindowOptions::default(), cx, |_, cx| {
+                    cx.new(|_| KitSample)
+                })
+            })
+            .expect("test window");
+        let cx = &mut gpui::VisualTestContext::from_window(window, cx);
+        cx.run_until_parked();
+        let ely = palette();
+        let (quads, underlines, rem) = cx.update(|window, _| {
+            (
+                window.painted_quads(),
+                window.painted_underlines(),
+                window.rem_size(),
+            )
+        });
+        // The Root sets the rem to the kit's `font.size` every frame; Ely sizes
+        // everything in rems of 16 px, so any other value rescales the app.
+        assert_eq!(rem, gpui::px(16.0));
+        assert!(
+            quads.iter().any(
+                |quad| quad.background.as_solid().map(|color| color.to_rgb())
+                    == Some(ely.accent.to_rgb())
+            ),
+            "no quad in the accent {:?}",
+            ely.accent
+        );
+        assert!(
+            underlines
+                .iter()
+                .any(|underline| underline.color.to_rgb() == ely.fg.to_rgb()),
+            "no label text in the foreground {:?}",
+            ely.fg
+        );
+    }
 
     #[test]
     fn palette_pins_the_ground_and_accent() {
