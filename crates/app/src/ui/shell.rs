@@ -7,13 +7,11 @@
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
-use crate::ui::{dashboard, export, header, import, section, sidebar};
+use crate::ui::{dashboard, export, header, import, key_binding, section, sidebar};
 use ely_gpui_component::motion::LoadingOverlay;
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, App, Context, IntoElement, KeyBinding, ParentElement, Role, Styled, Window, div, px,
-};
+use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
 
 gpui::actions!(idleon_shell, [GoBack, GoForward]);
 
@@ -24,13 +22,13 @@ const SHELL_CONTEXT: &str = "Shell";
 
 /// Register the history shortcuts.
 pub(crate) fn bind_keys(cx: &mut App) {
-    let context = Some(SHELL_CONTEXT);
-    cx.bind_keys([
-        KeyBinding::new("secondary-[", GoBack, context),
-        KeyBinding::new("secondary-]", GoForward, context),
-        KeyBinding::new("secondary-left", GoBack, context),
-        KeyBinding::new("secondary-right", GoForward, context),
-    ]);
+    let bindings = [
+        key_binding("secondary-[", GoBack, SHELL_CONTEXT, cx),
+        key_binding("secondary-]", GoForward, SHELL_CONTEXT, cx),
+        key_binding("secondary-left", GoBack, SHELL_CONTEXT, cx),
+        key_binding("secondary-right", GoForward, SHELL_CONTEXT, cx),
+    ];
+    cx.bind_keys(bindings);
 }
 
 /// Window chrome and the active view.

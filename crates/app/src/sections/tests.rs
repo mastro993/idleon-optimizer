@@ -39,6 +39,17 @@ fn keeps_every_page_once_and_grouped() {
     }
 }
 
+/// `main` registers these at launch; a shortcut gpui cannot parse panics there.
+#[test]
+fn every_launch_shortcut_parses() {
+    gpui::TestAppContext::single().update(|cx| {
+        crate::ui::shell::bind_keys(cx);
+        for section in &SECTIONS {
+            (section.keys)(cx);
+        }
+    });
+}
+
 #[test]
 fn the_dashboard_shows_the_cards_and_hides_the_tools() {
     assert_eq!(card_count(), 23);
