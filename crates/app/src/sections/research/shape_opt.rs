@@ -12,6 +12,7 @@
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, Point, Render, Role, SharedString, Styled,
@@ -400,12 +401,19 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
         Some(name) => name.to_string(),
         None => "Custom tiers (no preset active)".into(),
     };
+    let name_focus = state.research.preset_name.focus_handle(cx);
     rail.child(div().pt_2())
         .child(
-            Input::new(&state.research.preset_name)
+            div()
                 .id("shape-preset-name")
+                .role(gpui::Role::TextInput)
                 .aria_label("Shape preset name")
-                .small(),
+                .on_click(move |_event, window, cx| window.focus(&name_focus, cx))
+                .child(
+                    Input::new(&state.research.preset_name)
+                        .aria_label("Shape preset name")
+                        .small(),
+                ),
         )
         .child(
             Button::new("shape-save-preset")

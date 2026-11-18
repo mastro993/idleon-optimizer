@@ -1,17 +1,52 @@
 //! The segmented choice the Research panes share, on the kit `ToggleGroup`.
 
-use gpui::{App, ElementId, Window};
+use gpui::{App, ElementId, SharedString, Window};
 use gpui_kit::component::Sizable as _;
 use gpui_kit::component::button::{Toggle, ToggleGroup, ToggleVariants as _};
 
 /// A small segmented single choice under `id`, one segment per
 /// `(value, label)` with `current` checked.
 ///
-/// Each segment keeps Ely's `segment-<n>` id under the group's, so the
-/// harness still clicks `<id>.segment-<n>`. A click on the checked segment
-/// keeps it: the kit clears every flag then, and `on_change` is not called.
+/// Segment `n` is `<id>.segment-<n>`, the id the bridge gave Ely's segments
+/// once two controls shared a pane, which the harness clicks. A click on the
+/// checked segment keeps it: the kit clears every flag then, and `on_change`
+/// is not called.
 pub(crate) fn segmented<V: Copy + PartialEq + 'static>(
-    id: impl Into<ElementId>,
+    id: &'static str,
+    segments: &[(V, &'static str)],
+    current: V,
+    on_change: impl Fn(V, &mut Window, &mut App) + 'static,
+) -> ToggleGroup {
+    group(
+        id,
+        |ix| SharedString::from(format!("{id}.segment-{ix}")).into(),
+        segments,
+        current,
+        on_change,
+    )
+}
+
+/// [`segmented`] whose segments keep Ely's bare `segment-<n>` ids, for the
+/// one control alone on its pane (the Decision Tree's mode switch), which the
+/// harness clicks by those ids.
+pub(crate) fn segmented_bare<V: Copy + PartialEq + 'static>(
+    id: &'static str,
+    segments: &[(V, &'static str)],
+    current: V,
+    on_change: impl Fn(V, &mut Window, &mut App) + 'static,
+) -> ToggleGroup {
+    group(
+        id,
+        |ix| ("segment", ix).into(),
+        segments,
+        current,
+        on_change,
+    )
+}
+
+fn group<V: Copy + PartialEq + 'static>(
+    id: &'static str,
+    segment_id: impl Fn(usize) -> ElementId,
     segments: &[(V, &'static str)],
     current: V,
     on_change: impl Fn(V, &mut Window, &mut App) + 'static,
@@ -23,7 +58,7 @@ pub(crate) fn segmented<V: Copy + PartialEq + 'static>(
         .outline()
         .small()
         .children(segments.iter().enumerate().map(|(ix, (value, label))| {
-            Toggle::new(("segment", ix))
+            Toggle::new(segment_id(ix))
                 .label(*label)
                 .checked(*value == current)
         }))

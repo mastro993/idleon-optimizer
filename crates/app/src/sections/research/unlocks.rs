@@ -7,6 +7,7 @@
 //! and the failed-roll streak the probabilities read.
 
 use crate::state::AppState;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
@@ -422,6 +423,7 @@ fn table_card(
         )
         .child(TableBody::new().children(rows.iter().map(|row| row_cells(row, cx))));
     let summary = format!("{} of {} observations shown", rows.len(), result.rows.len());
+    let search_focus = state.research.unlock_search.focus_handle(cx);
     Card::new()
         .header(
             CardHeader::new("Observation Unlock Priority")
@@ -439,6 +441,7 @@ fn table_card(
                                 .role(gpui::Role::Search)
                                 .aria_label("Find an observation")
                                 .w(px(220.0))
+                                .on_click(move |_event, window, cx| window.focus(&search_focus, cx))
                                 .child(
                                     search_input(&state.research.unlock_search)
                                         .aria_label("Find an observation"),

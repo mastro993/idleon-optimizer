@@ -131,22 +131,30 @@ fn path_card(ranking: &Ranking, outcome: &Path, cx: &Context<AppState>) -> AnyEl
         .small()
         .child(columns::header(&PATH_COLUMNS))
         .child(
-            TableBody::new().children(outcome.purchases.iter().map(|purchase| {
-                TableRow::new()
-                    .child(
-                        cell(0).child(
-                            div()
-                                .id(format!("su-path-{}-row-{}", ranking.key, purchase.upg))
-                                .child(purchase.name.clone()),
-                        ),
-                    )
-                    .child(
-                        cell(1)
-                            .text_color(accent)
-                            .child(format!("{:.0} -> {:.0}", purchase.from, purchase.to)),
-                    )
-                    .child(cell(2).text_color(muted).child(fmt_num(purchase.cost)))
-            })),
+            TableBody::new().children(outcome.purchases.iter().enumerate().map(
+                |(step, purchase)| {
+                    // Row ids of their own keep the cells' semantic ids short: the
+                    // kit's `table-row-N` repeats across the pane's tables.
+                    TableRow::new()
+                        .id(SharedString::from(format!(
+                            "su-path-{}-line-{step}",
+                            ranking.key
+                        )))
+                        .child(
+                            cell(0).child(
+                                div()
+                                    .id(format!("su-path-{}-row-{}", ranking.key, purchase.upg))
+                                    .child(purchase.name.clone()),
+                            ),
+                        )
+                        .child(
+                            cell(1)
+                                .text_color(accent)
+                                .child(format!("{:.0} -> {:.0}", purchase.from, purchase.to)),
+                        )
+                        .child(cell(2).text_color(muted).child(fmt_num(purchase.cost)))
+                },
+            )),
         );
     let headline = if outcome.steps == 0 {
         "No affordable upgrades.".to_string()
@@ -194,25 +202,31 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             .small()
             .child(columns::header(&RANK_COLUMNS))
             .child(
-                TableBody::new().children(board.candidates.iter().map(|candidate| {
-                    TableRow::new()
-                        .child(
-                            cell(0).child(
-                                div()
-                                    .id(format!("su-best-{}-{}", ranking.key, candidate.slot))
-                                    .font_weight(gpui::FontWeight::SEMIBOLD)
-                                    .child(candidate.name.clone()),
-                            ),
-                        )
-                        .child(cell(1).text_color(accent).child(candidate.level.clone()))
-                        .child(cell(2).text_color(muted).child(candidate.cost.clone()))
-                        .child(cell(3).text_color(success).child(candidate.gain.clone()))
-                        .child(
-                            cell(4)
-                                .text_color(accent)
-                                .child(candidate.efficiency.clone()),
-                        )
-                })),
+                TableBody::new().children(board.candidates.iter().enumerate().map(
+                    |(rank, candidate)| {
+                        TableRow::new()
+                            .id(SharedString::from(format!(
+                                "su-best-{}-line-{rank}",
+                                ranking.key
+                            )))
+                            .child(
+                                cell(0).child(
+                                    div()
+                                        .id(format!("su-best-{}-{}", ranking.key, candidate.slot))
+                                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                                        .child(candidate.name.clone()),
+                                ),
+                            )
+                            .child(cell(1).text_color(accent).child(candidate.level.clone()))
+                            .child(cell(2).text_color(muted).child(candidate.cost.clone()))
+                            .child(cell(3).text_color(success).child(candidate.gain.clone()))
+                            .child(
+                                cell(4)
+                                    .text_color(accent)
+                                    .child(candidate.efficiency.clone()),
+                            )
+                    },
+                )),
             );
         let table = div().h(px(330.0)).child(
             div()

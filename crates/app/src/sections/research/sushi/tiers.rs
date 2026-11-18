@@ -133,7 +133,9 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .child(columns::header(&[("Category", None, false)]))
         .child(
             TableBody::new().children(tiers.knowledge.iter().enumerate().map(|(cat, line)| {
-                TableRow::new().child(
+                // A row id of its own keeps the cell's semantic id short: the
+                // kit's `table-row-N` repeats across this pane's two tables.
+                TableRow::new().id(("su-knowledge-line", cat)).child(
                     columns::cell(&[("Category", None, false)], 0)
                         .child(div().id(("su-knowledge", cat)).child(line.clone())),
                 )
@@ -144,6 +146,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         let name = format!("T{}", tier + 1);
         if row.hidden && !show_spoiler {
             return TableRow::new()
+                .id(("su-tier-line", tier))
                 .child(cell(0).text_color(muted).child(name))
                 .child(cell(1).child("--"))
                 .child(cell(2).child("--"))
@@ -151,6 +154,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .child(cell(4).child("???"));
         }
         TableRow::new()
+            .id(("su-tier-line", tier))
             .child(
                 cell(0).child(
                     div()

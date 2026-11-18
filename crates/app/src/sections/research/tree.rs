@@ -813,7 +813,7 @@ fn editor(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
 
     let mode = state.research.tree.mode;
     let mode_entity = cx.entity();
-    let modes = super::controls::segmented(
+    let modes = super::controls::segmented_bare(
         "dt-mode",
         &[(Mode::Upgrades, "Upgrades"), (Mode::Shapes, "Shapes")],
         mode,
