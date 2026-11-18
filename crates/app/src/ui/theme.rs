@@ -5,13 +5,13 @@
 //! the kit's theme in `data/theme.json` carries the same colors.
 
 use crate::sections::Group;
-use ely_gpui_component::theme::{
-    ActiveTheme as _, ControlSize, Mode, Palette, Radius, TextSize, Theme,
-};
+use ely_gpui_component::theme::{Mode, Palette, Theme};
 use gpui::{
-    App, FontWeight, Hsla, IntoElement, ParentElement, RenderOnce, Styled, Window, div, rgb, rgba,
+    App, FontWeight, Hsla, IntoElement, ParentElement, RenderOnce, Styled, Window, rgb, rgba,
 };
-use gpui_kit::component::{Theme as KitTheme, ThemeRegistry};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{Sizable as _, Theme as KitTheme, ThemeRegistry};
+use idleon_ui::widgets::TEXT_CAPTION;
 
 /// The kit's theme set: [`palette`]'s colors under the kit's keys.
 const KIT_THEMES: &str = include_str!("../../data/theme.json");
@@ -69,25 +69,30 @@ pub(crate) fn palette() -> Palette {
     palette
 }
 
-/// The fill and text of one world badge.
-pub(crate) fn world_badge_colors(group: Group) -> (Hsla, Hsla) {
-    let (fill, text) = match group {
-        Group::General => (0x78909c44, 0xb0bec5),
-        Group::W2 => (0x0288d144, 0x81d4fa),
-        Group::W3 => (0x2e7d3244, 0x66bb6a),
-        Group::W4 => (0x8e24aa44, 0xce93d8),
-        Group::W5 => (0x5c6bc044, 0x9fa8da),
-        Group::W6 => (0xef535044, 0xef9a9a),
-        Group::W7 => (0xff980044, 0xffcc80),
-        Group::Tools => (0x78909c44, 0xb0bec5),
+/// One world's color: a badge's text, and at [`WORLD_FILL`] and
+/// [`WORLD_OUTLINE`] alpha its fill and outline.
+///
+/// Not kit theme keys: each world keeps its hue in every theme
+/// (`docs/ui-kit/design.md`, § World badges).
+pub(crate) fn world_color(group: Group) -> Hsla {
+    let color = match group {
+        Group::General | Group::Tools => 0xb0bec5,
+        Group::W2 => 0x81d4fa,
+        Group::W3 => 0x66bb6a,
+        Group::W4 => 0xce93d8,
+        Group::W5 => 0x9fa8da,
+        Group::W6 => 0xef9a9a,
+        Group::W7 => 0xffcc80,
     };
-    (rgba(fill).into(), rgb(text).into())
+    rgb(color).into()
 }
 
-/// A world badge in its world's color, sized like Ely's `Badge`.
-///
-/// Ely's badge tones are semantic, while the world badges each keep a
-/// hue; this is the one specialization the dashboard and page header share.
+/// A world badge's fill alpha.
+const WORLD_FILL: f32 = 0.14;
+/// A world badge's outline alpha.
+const WORLD_OUTLINE: f32 = 0.3;
+
+/// A world badge: a small kit `Tag` in its world's color.
 #[derive(IntoElement)]
 pub(crate) struct WorldBadge {
     group: Group,
@@ -100,28 +105,25 @@ impl WorldBadge {
 }
 
 impl RenderOnce for WorldBadge {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let theme = cx.theme();
-        let (fill, text) = world_badge_colors(self.group);
-        div()
-            .flex()
-            .flex_none()
-            .items_center()
-            .px_1p5()
-            .h(theme.control_height(ControlSize::Sm) * 0.75)
-            .rounded(theme.radius(Radius::Sm))
-            .bg(fill)
-            .text_size(theme.text_size(TextSize::Xs))
-            .font_weight(FontWeight::MEDIUM)
-            .text_color(text)
-            .child(self.group.badge())
+    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
+        let color = world_color(self.group);
+        Tag::custom(
+            color.opacity(WORLD_FILL),
+            color,
+            color.opacity(WORLD_OUTLINE),
+        )
+        .small()
+        .flex_none()
+        .text_size(TEXT_CAPTION)
+        .font_weight(FontWeight::MEDIUM)
+        .child(self.group.badge())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gpui::{AppContext as _, Context, TestAppContext};
+    use gpui::{AppContext as _, Context, TestAppContext, div};
     use gpui_kit::component::{
         ThemeSet,
         button::{Button, ButtonVariants as _},
@@ -263,25 +265,5 @@ mod tests {
         assert_eq!(palette.border, rgb(0x0f3460).into());
         assert_eq!(palette.accent, rgb(0x00d4ff).into());
         assert_eq!(palette.fg, rgb(0xe0e0e0).into());
-    }
-
-    #[test]
-    fn every_world_badge_keeps_its_hue() {
-        let expected = [
-            (Group::General, 0x78909c44, 0xb0bec5),
-            (Group::W2, 0x0288d144, 0x81d4fa),
-            (Group::W3, 0x2e7d3244, 0x66bb6a),
-            (Group::W4, 0x8e24aa44, 0xce93d8),
-            (Group::W5, 0x5c6bc044, 0x9fa8da),
-            (Group::W6, 0xef535044, 0xef9a9a),
-            (Group::W7, 0xff980044, 0xffcc80),
-            (Group::Tools, 0x78909c44, 0xb0bec5),
-        ];
-        for (group, fill, text) in expected {
-            assert_eq!(
-                world_badge_colors(group),
-                (rgba(fill).into(), rgb(text).into())
-            );
-        }
     }
 }

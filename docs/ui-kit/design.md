@@ -80,9 +80,10 @@ reads the same color everywhere. `chart.grid` is the border color.
 
 ### World badges
 
-Not kit keys: the app keeps them next to its `Group` enum (today `world_badge_colors` in
-`crates/app/src/ui/theme.rs`). A badge is the world color as text, the same color at 14% as fill,
-and at 30% as a 1 px inset outline.
+Not kit keys: the app keeps one color per world next to its `Group` enum (`world_color` in
+`crates/app/src/ui/theme.rs`), and `WorldBadge` draws it as a small kit `Tag`. A badge is the world
+color as text, the same color at 14% as fill, and at 30% as a 1 px outline. The app still draws its
+current hues; #360 swaps in the values below.
 
 | Group | Dark | Light |
 |---|---|---|
