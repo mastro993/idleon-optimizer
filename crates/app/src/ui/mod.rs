@@ -13,6 +13,7 @@ pub(crate) mod section;
 pub(crate) mod shell;
 pub(crate) mod sidebar;
 pub(crate) mod theme;
+pub(crate) mod views;
 
 use crate::state::AppState;
 use ely_gpui_component::forms::TextInput;

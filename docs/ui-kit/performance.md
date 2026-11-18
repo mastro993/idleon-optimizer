@@ -20,7 +20,7 @@ node script/mcp-perf.mjs --release --json docs/ui-kit/baseline.json  # refresh t
 |---|---|
 | `--release` | launch `target/release/idleon-optimizer` (default `target/debug`; a debug build is several times slower and says nothing about the budget) |
 | `--app-bin PATH` | launch another binary |
-| `--only A,B` | run these scenarios: `idle`, `home-scroll`, `search`, `hover`, `sections` (the default section list), `switch`, `sidebar`, `resize`, or any section id. Startup always runs |
+| `--only A,B` | run these scenarios: `idle`, `home-scroll`, `search`, `hover`, `sections` (the default section list), `switch`, `sidebar`, `resize`, `run-away`, or any section id. Startup always runs |
 | `--json FILE` | write the raw results (the `baseline.json` format) |
 | `--compare FILE` | print each scenario's delta against a previous `--json` |
 | `--check` | exit non-zero when a scenario is over budget. #362 turns this on as the gate |
@@ -51,6 +51,7 @@ frames that missed a 60 Hz vsync.
 | `switch-10x` | research → royal-guardian → research, 10 times, through the sidebar |
 | `sidebar-fold`, `sidebar-unfold` | Toggle the rail on Home, 1 s settle (the animation) |
 | `window-resize` | 20 width steps 1180 → 1920 px and back at 900 px high. macOS clamps the window to its screen; `widest_px` in the JSON says how far it got |
+| `run-away-home`, `run-away-killroy` | Start Worship TD's strategy search (about 3.5 s), open Home or Killroy, and watch 1 s of its progress. Over budget when the place on screen (`Page` or `Pane<HomeReads>`) renders at all: only the sidebar mark and the status line may follow a run (#363) |
 
 The sections are `stats-all`, `research`, `spelunking`, `royal-guardian`, `jelly-operator`,
 `worship-td`, `combat-sim`, `farming` and `killroy`: the heaviest ones in the first measurement plus
@@ -124,8 +125,11 @@ Profiled with `sample` on the release build while the harness drove each scenari
 1. **Home: ~45 ms per frame, 97% of it Taffy layout.** `AppState` is the only view, so every notify
    re-renders and re-lays-out the whole window and no subtree is ever cached; render and paint are
    about 1% each, text measuring about 10%. It drags down scroll, typing, hover, the sidebar animation
-   (about 22 fps), resize and the loader. Fixed structurally by #363; Home's own layout, which costs
-   more than research's, follows in #346.
+   (about 22 fps), resize and the loader. The move to `gpui-pre` 0.3.12 (#366) brought Home to about
+   2 ms per frame. #363 then split the window into cached views
+   ([ADR 0004](../adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)), so a
+   notify redraws only the views that read what changed, and a run elsewhere leaves the place on
+   screen alone (`run-away`).
 2. **stats-all, first visit: a 736 ms frame.** `stats_all::view` calls `State::rebuild`, which runs
    `idleon_stats::breakdowns::Sheet::build` inside render; damage `evaluate` is about 75% of it. Warm
    frames are 12 ms with ~11 `TextInput`s re-rendered each. #359.

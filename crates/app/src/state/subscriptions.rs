@@ -65,6 +65,17 @@ impl ProgressLine {
     }
 }
 
+/// A run of `section` reported: it started, moved or ended, and the status line
+/// and the activity table may have changed. It is emitted instead of a notify
+/// so the run redraws only the views that show it: the sidebar's mark, the
+/// status line and the owning section's page (ADR 0004).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct RunReported {
+    pub(crate) section: &'static str,
+}
+
+impl EventEmitter<RunReported> for AppState {}
+
 /// The status line a run whose job panicked leaves.
 const FAILED: &str = "Run failed; nothing was stored.";
 
@@ -80,9 +91,10 @@ pub(crate) struct RunStatus {
 }
 
 /// A new runner mirrored in the status line and recorded in the window's
-/// activity under its section. `finished` turns a stored result into the
-/// closing line (and may update the state it belongs to); `None` keeps the
-/// current line.
+/// activity under its section, each event announced as [`RunReported`].
+/// `finished` turns a stored result into the closing line (and may update the
+/// state it belongs to, which is then saved with the session); `None` keeps
+/// the current line.
 pub(crate) fn report_run<R: 'static, I: 'static>(
     cx: &mut Context<AppState>,
     subscriptions: &mut Vec<Subscription>,
@@ -110,13 +122,14 @@ pub(crate) fn report_run<R: 'static, I: 'static>(
                 TaskEvent::Finished(ending) => {
                     let away = state.current_section().map(|open| open.id) != Some(section);
                     state.activity.finish(section, id, *ending, away);
+                    state.schedule_session_save(cx);
                     ending_line(state, &runner, &status, *ending, &finished, cx)
                 }
             };
             if let Some(line) = line {
                 state.status = line;
             }
-            cx.notify();
+            cx.emit(RunReported { section });
         }),
     );
     runner

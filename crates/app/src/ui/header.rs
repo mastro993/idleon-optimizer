@@ -9,7 +9,12 @@ use ely_gpui_component::navigation::BackForwardNavigation;
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui::{
+    AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Pixels, Role, Styled, div, px,
+};
+
+/// The header's height, which the shell lays its cached view out at.
+pub(crate) const HEIGHT: Pixels = px(48.0);
 
 /// The header for every place. Its left padding leaves room for the macOS
 /// traffic lights in the transparent title bar.
@@ -30,7 +35,7 @@ pub(crate) fn header(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
         .gap_3()
         .pl(px(84.0))
         .pr_4()
-        .h(px(48.0))
+        .h(HEIGHT)
         .border_b_1()
         .border_color(border)
         .child(

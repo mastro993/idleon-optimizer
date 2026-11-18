@@ -1308,10 +1308,54 @@ const INTERACTIONS = {
     for (let press = 0; press < 17; press += 1) {
       await lane.call('click_element', { id: 'killroy-trials-up' });
     }
-    await lane.call('click_element', { id: 'killroy-run' });
-    await waitForNode(lane, 'killroy-run-progress', 'killroy: the run reports progress');
-    await lane.call('click_element', { id: 'killroy-run-cancel' });
-    await waitForNode(lane, 'killroy-cancelled', 'killroy: cancel stops the run');
+    // Even twenty trials end within a few hundred milliseconds, about as long as
+    // a click takes to land, so the cancel can lose the race. Click it where the
+    // progress card put it as soon as it shows, and start again when the run
+    // finished first.
+    for (let attempt = 1; ; attempt += 1) {
+      await lane.call('click_element', { id: 'killroy-run' });
+      const started = Date.now();
+      let cancel = null;
+      let running = false;
+      let finished = false;
+      await waitFor(
+        lane,
+        (nodes) => {
+          cancel = nodes.find((node) => node.id === 'killroy-run-cancel')?.bounds ?? null;
+          const status = labelOf(nodes, 'status-status') ?? '';
+          running ||= status.startsWith('Running');
+          // A retry starts from the last run's identical closing line, so it
+          // counts only once this run was seen running, or after 3 s.
+          finished =
+            status.startsWith('Killroy trials finished') && (running || Date.now() - started > 3000);
+          return (has(nodes, 'killroy-run-progress') && cancel) || finished;
+        },
+        'killroy: the run reports progress',
+      );
+      if (!finished) {
+        await lane.call('click_coordinates', {
+          x: cancel.x + cancel.width / 2,
+          y: cancel.y + cancel.height / 2,
+        });
+      }
+      let outcome = null;
+      await waitFor(
+        lane,
+        (nodes) => {
+          const status = labelOf(nodes, 'status-status') ?? '';
+          outcome = has(nodes, 'killroy-cancelled')
+            ? 'cancelled'
+            : status.startsWith('Killroy trials finished')
+              ? 'finished'
+              : null;
+          return outcome;
+        },
+        `killroy: cancel attempt ${attempt} settles`,
+      );
+      if (outcome === 'cancelled') break;
+      if (attempt === 5) throw new Error('killroy: cancel stops the run (every run finished first)');
+    }
+    log('ok   killroy: cancel stops the run');
     await lane.call('click_element', { id: 'killroy-run' });
     await waitForNode(lane, 'killroy-comparison', 'killroy: the comparison runs', 120000);
     await waitFor(
@@ -5264,7 +5308,12 @@ async function visitSessionPersistence() {
 
     writeFileSync(sessionFile, '{not a session');
     lane = await McpLane.start({ appBin, stateDir, keep: false });
-    await waitForNode(lane, 'dashboard', 'session: a corrupt file starts clean on the dashboard');
+    // The dashboard is drawn under the loader while the session file is read.
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'dashboard') && !has(nodes, 'restoring'),
+      'session: a corrupt file starts clean on the dashboard',
+    );
     const nodes = await lane.tree();
     const status = labelOf(nodes, 'status-status') ?? '';
     check('session: the corrupt file is reported', status.includes('corrupt'), status);

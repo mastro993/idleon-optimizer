@@ -56,7 +56,9 @@ impl State {
 
 The section state is a plain field, not an `Entity`. Its methods take `cx: &mut Context<AppState>`,
 so an edit is `state.opal.set_tab(tab, cx)`: the borrow of `state.opal` and the `cx` are disjoint,
-and `cx.notify()` redraws the window exactly as the old `AppState` method did.
+and `cx.notify()` redraws the open section's page exactly as the old `AppState` method did (the
+header, sidebar and Home redraw only when what they read changed; see
+[ADR 0004](adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)).
 
 ## 2. The lifecycle hooks
 

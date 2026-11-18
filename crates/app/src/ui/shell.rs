@@ -1,17 +1,21 @@
 //! Window chrome: the header, the sidebar and the routed place.
 //!
-//! The shell owns the window, the header, the sidebar and the history
-//! shortcuts; a section owns its own tab strip and content behind the registry
-//! factory.
+//! The shell owns the window, the history shortcuts and the dialogs, and lays
+//! out the header, the sidebar, the place and the status line, each its own
+//! cached view (`ui/views.rs`); a section owns its own tab strip and content
+//! behind the registry factory.
 
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
-use crate::ui::{dashboard, export, header, import, key_binding, section, sidebar};
-use ely_gpui_component::motion::LoadingOverlay;
+use crate::ui::views::Views;
+use crate::ui::{export, header, import, key_binding, section};
+use ely_gpui_component::motion::{self, LoadingOverlay};
 use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
-use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, StyleRefinement, Styled, Window, div, px,
+};
 
 gpui::actions!(idleon_shell, [GoBack, GoForward]);
 
@@ -31,7 +35,7 @@ pub(crate) fn bind_keys(cx: &mut App) {
     cx.bind_keys(bindings);
 }
 
-/// Window chrome and the active view.
+/// Window chrome around the cached views (`ui/views.rs`, ADR 0004).
 pub(crate) fn shell(
     state: &mut AppState,
     window: &mut Window,
@@ -44,8 +48,11 @@ pub(crate) fn shell(
     let route = state.route().clone();
     // Published before the place renders, so its breakpoint measures the
     // workspace the sidebar leaves.
-    let rail = state.session.shell.sidebar == SidebarFold::Rail;
-    let sidebar_width = cx.theme().sidebar_width(rail).to_pixels(window.rem_size());
+    let fold = state.session.shell.sidebar;
+    let sidebar_width = cx
+        .theme()
+        .sidebar_width(fold == SidebarFold::Rail)
+        .to_pixels(window.rem_size());
     // Only on a change: setting a global notifies its observers every time.
     if cx.try_global::<SidebarWidth>().map(|width| width.0) != Some(sidebar_width) {
         cx.set_global(SidebarWidth(sidebar_width));
@@ -57,24 +64,25 @@ pub(crate) fn shell(
         _ => None,
     };
 
-    let body = match &route {
-        Route::Dashboard => div()
-            .id("pane-dashboard")
-            .size_full()
-            .p_6()
-            .min_h_0()
-            .child(dashboard::dashboard_pane(state, window, cx))
+    let entity = cx.entity();
+    let fold_time = motion::duration(motion::BASE, cx);
+    let views = Views::of(state, cx);
+    let folding = views.sidebar_folding(fold, fold_time);
+    let (header, sidebar, status) = (
+        views.header.clone(),
+        views.sidebar.clone(),
+        views.status.clone(),
+    );
+    let place = match &route {
+        Route::Dashboard => views
+            .home
+            .clone()
+            .cached(StyleRefinement::default().size_full())
             .into_any_element(),
-        Route::Section(section) => {
-            let view = (section.view)(state, window, cx);
-            div()
-                .id(format!("section-{}", section.id))
-                .size_full()
-                .p_3()
-                .min_h_0()
-                .child(view)
-                .into_any_element()
-        }
+        Route::Section(section) => views
+            .page(section, &entity, cx)
+            .cached(StyleRefinement::default().size_full())
+            .into_any_element(),
         Route::Missing(id) => div()
             .id("section-unknown")
             .size_full()
@@ -82,6 +90,18 @@ pub(crate) fn shell(
             .min_h_0()
             .child(section::missing(id, window, cx))
             .into_any_element(),
+    };
+    let sidebar = if folding {
+        sidebar.into_any_element()
+    } else {
+        sidebar
+            .cached(
+                StyleRefinement::default()
+                    .flex_none()
+                    .h_full()
+                    .w(sidebar_width),
+            )
+            .into_any_element()
     };
 
     let mut root = div()
@@ -101,36 +121,28 @@ pub(crate) fn shell(
             state.go_forward(window, cx);
             cx.stop_propagation();
         }))
-        .child(header::header(state, cx))
         .child(
-            div()
-                .flex()
-                .flex_1()
-                .min_h_0()
-                .child(sidebar::sidebar(state, cx))
-                .child(
-                    div()
-                        .id("workspace")
-                        .flex()
-                        .flex_col()
-                        .flex_1()
-                        .min_w_0()
-                        .min_h_0()
-                        .children(no_save)
-                        .child(div().flex_1().min_h_0().child(body)),
-                ),
+            header.cached(
+                StyleRefinement::default()
+                    .flex_none()
+                    .w_full()
+                    .h(header::HEIGHT),
+            ),
         )
-        // No status bar is drawn; the last run or import message stays a
-        // labelled node for a screen reader and the harnesses.
         .child(
-            div()
-                .id("status-status")
-                .role(Role::Label)
-                .aria_label(state.status.clone())
-                .absolute()
-                .size_0()
-                .overflow_hidden(),
-        );
+            div().flex().flex_1().min_h_0().child(sidebar).child(
+                div()
+                    .id("workspace")
+                    .flex()
+                    .flex_col()
+                    .flex_1()
+                    .min_w_0()
+                    .min_h_0()
+                    .children(no_save)
+                    .child(div().flex_1().min_h_0().child(place)),
+            ),
+        )
+        .child(status.cached(StyleRefinement::default().absolute().size_0()));
     if !state.import.open && !state.export.open {
         root = root.key_context(SHELL_CONTEXT);
     }

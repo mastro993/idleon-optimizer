@@ -12,7 +12,7 @@
 //   --app-bin PATH     launch this binary instead
 //   --only A,B         run just these scenarios (startup always runs): idle,
 //                      home-scroll, search, hover, sections, switch, sidebar,
-//                      resize, or any section id (even one not in SECTIONS)
+//                      resize, run-away, or any section id (even one not in SECTIONS)
 //   --json FILE        write the raw results
 //   --compare FILE     print each scenario's delta against a previous --json
 //   --check            exit non-zero when a scenario is over budget
@@ -67,6 +67,12 @@ const SCROLL_TARGET = {
 const HOVER_CARDS = ['combat-sim', 'statue', 'fishing', 'prisma', 'killroy', 'cog', 'worship-td'].map(
   (id) => `card-${id}`,
 );
+
+/// `run-away` starts Worship TD's strategy search (about 3.5 s with the
+/// fixture), then watches Home and `away` while it runs.
+const RUN_AWAY = { section: 'worship-td', tab: 'worship-optimizer-tab', run: 'worship-optimize-run', away: 'killroy' };
+/// The views a run elsewhere must not redraw: the place on screen.
+const PLACE_VIEWS = ['Page', 'Pane<HomeReads>'];
 
 /// The pair `switch` flips between.
 const SWITCH_PAIR = ['research', 'royal-guardian'];
@@ -166,7 +172,8 @@ const summarize = (report) => {
   const draws = frames.map((frame) => frame.draw_ms);
   const views = new Map();
   for (const view of report.views ?? []) {
-    const type = view.type_name.split('::').pop();
+    // `a::b::Pane<a::b::HomeReads>` → `Pane<HomeReads>`.
+    const type = view.type_name.replace(/\b[a-z_][a-z0-9_]*::/g, '');
     const entry = views.get(type) ?? { type, rendered: 0, reused: 0 };
     entry.rendered += view.rendered;
     entry.reused += view.reused;
@@ -191,7 +198,8 @@ const summarize = (report) => {
         paint_ms: round(frame.root_paint_ms),
         views: frame.views_rendered,
       })),
-    views: [...views.values()].sort((a, b) => b.rendered - a.rendered).slice(0, 5),
+    views: [...views.values()].sort((a, b) => b.rendered - a.rendered).slice(0, 8),
+    place_views: [...views.values()].filter((view) => PLACE_VIEWS.includes(view.type)),
   };
 };
 
@@ -203,6 +211,11 @@ const overBudget = (result) => {
   if (result.kind === 'interaction') {
     if (result.p95_ms > BUDGET.frame_p95_ms) reasons.push(`p95 ${result.p95_ms} ms`);
     if (result.max_ms > BUDGET.frame_max_ms) reasons.push(`max ${result.max_ms} ms`);
+  }
+  if (result.kind === 'isolation') {
+    for (const view of result.place_views.filter((entry) => entry.rendered)) {
+      reasons.push(`${view.type} rendered ${view.rendered}x`);
+    }
   }
   if (result.kind === 'startup' && result.first_frame_ms > BUDGET.first_frame_ms) {
     reasons.push(`first frame ${result.first_frame_ms} ms`);
@@ -544,9 +557,54 @@ const resize = async () => {
   setWindowSize(HOME_SIZE.width, HOME_SIZE.height);
 };
 
+/// While a long run goes on in one section, Home or another section stays
+/// still: only the sidebar's progress ring and the status line redraw (#363).
+const runAway = async () => {
+  const { section, tab, run, away: other } = RUN_AWAY;
+  const ring = `nav-${section}-activity`;
+  const running = (nodes) => /Running|runs/.test(find(nodes, ring)?.label ?? '');
+  for (const away of [null, other]) {
+    const result = await measure(`run-away-${away ?? 'home'}`, {
+      kind: 'isolation',
+      note: `${section} run in flight while ${away ?? 'Home'} is open; the place must not redraw`,
+      setup: async () => {
+        await waitFor((nodes) => !running(nodes), 'the previous run to end', 60000);
+        await goHome();
+        await revealNav(`nav-${section}`);
+        await openSection(section);
+        await call('click_element', { id: tab });
+        await waitForNode(run);
+        await call('click_element', { id: run });
+        await waitFor(running, `the ${section} run to start`);
+        if (away) {
+          await revealNav(`nav-${away}`);
+          await openSection(away);
+        } else {
+          await goHome();
+        }
+      },
+      act: () => sleep(1000),
+      settle: 0,
+    });
+    // A run that ended before the mark proves nothing.
+    if (!result.views.some((view) => view.type === 'Pane<SidebarReads>' && view.rendered)) {
+      throw new Error(`${result.name}: the run ended before the measurement`);
+    }
+  }
+};
+
 // --- run ---
 
-const GROUPS = { idle, search, hover, 'home-scroll': homeScroll, switch: switchSections, sidebar, resize };
+const GROUPS = {
+  idle,
+  search,
+  hover,
+  'home-scroll': homeScroll,
+  switch: switchSections,
+  sidebar,
+  resize,
+  'run-away': runAway,
+};
 const wanted = (name) => !only || only.includes(name);
 const sectionIds = only
   ? [
@@ -597,6 +655,7 @@ try {
   if (wanted('switch')) await run('switch', switchSections);
   if (wanted('sidebar')) await run('sidebar', sidebar);
   if (wanted('resize')) await run('resize', resize);
+  if (wanted('run-away')) await run('run-away', runAway);
 } catch (error) {
   console.log(`FAIL startup: ${error.message}`);
   errors.push({ scenario: 'startup', error: error.message });

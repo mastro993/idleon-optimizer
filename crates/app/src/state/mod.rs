@@ -58,6 +58,7 @@ use crate::session::{self, Session, SidebarFold};
 use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
+use crate::ui::views::Views;
 pub(crate) use activity::{Activity, Mark, Shown};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
 use gpui_kit::component::input::{InputEvent, InputState};
@@ -105,7 +106,7 @@ use idleon_worship::{self as worship, RunResult as WorshipRunResult};
 pub(crate) use runs::discard_run;
 use std::path::PathBuf;
 pub(crate) use subscriptions::redraw_on_edit;
-pub(crate) use subscriptions::{ProgressLine, RunStatus, report_run};
+pub(crate) use subscriptions::{ProgressLine, RunReported, RunStatus, report_run};
 
 /// What a strategy search stored: its recommendation, or why it could not run.
 pub(crate) type SearchOutcome = Result<worship::Search, String>;
@@ -499,6 +500,9 @@ pub(crate) struct AppState {
     pub(crate) focus: FocusHandle,
     /// The sidebar's scroll position, moved to reveal the active item.
     pub(crate) sidebar_scroll: ScrollHandle,
+    /// The header, sidebar, Home, status and section views the shell embeds,
+    /// made on the first frame.
+    pub(crate) views: Option<Views>,
     /// Held so the automation bridge stays installed while the window lives;
     /// `None` when it could not start.
     #[cfg(feature = "automation")]
@@ -1366,6 +1370,7 @@ impl AppState {
             fountain_breakdown,
             focus,
             sidebar_scroll: ScrollHandle::new(),
+            views: None,
             #[cfg(feature = "automation")]
             _bridge: bridge,
             shape_run,
