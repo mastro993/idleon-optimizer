@@ -1,18 +1,16 @@
 //! The layout tab: the cell palette, the board, the legend and its metrics.
 
 use super::grid;
+use super::parts::{figure, strips};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{Disableable as _, Sizable as _};
 use idleon_jelly::Jelly;
-use idleon_jelly::metrics::MetricOptions;
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP};
 
 pub(crate) fn layout_editor(
     state: &mut AppState,
@@ -20,30 +18,37 @@ pub(crate) fn layout_editor(
     cx: &mut Context<AppState>,
     jelly: &Jelly,
 ) -> AnyElement {
-    let layout = state.jelly_state.layout.clone();
-    let metrics = jelly.layout_metrics(
-        &layout,
-        MetricOptions {
-            fever: Some(jelly.progress.fever),
-            ..MetricOptions::default()
-        },
-    );
-    let saved = layout == jelly.layout;
+    let layout = &state.jelly_state.layout;
+    let saved = *layout == jelly.layout;
     let entity = cx.entity();
-    let reset = Button::new("jelly-reset", "Reset board")
-        .variant(ButtonVariant::Subtle)
-        .size(ControlSize::Sm)
+    let reset = Button::new("jelly-reset")
+        .label("Reset board")
+        .secondary()
+        .small()
         .icon(IconName::RotateCcw)
         .disabled(saved)
         .on_click(move |_event, _window, cx| {
-            let entity = entity.clone();
             entity.update(cx, |state, cx| state.jelly_reset_layout(cx));
         });
+    let unlocked = &state.jelly_state.save.unlocked;
+    let board = grid::board(
+        state,
+        grid::BoardView {
+            prefix: "jelly",
+            layout,
+            unlocked,
+            highlight: &[],
+            obstruction: jelly.progress.obstruction,
+            selected: Some(state.jelly_state.selected),
+            action: grid::BoardAction::Layout,
+        },
+        cx,
+    );
     div()
         .id("jelly-layout")
         .flex()
         .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(palette(state, cx, jelly))
         .child(
             Card::new()
@@ -52,33 +57,14 @@ pub(crate) fn layout_editor(
                         .description(format!(
                             "{} cells placed · {} slot(s) unlocked · the save's board, editable",
                             layout.len(),
-                            idleon_jelly::board::unlocked_count(jelly)
+                            unlocked.iter().filter(|open| **open).count()
                         ))
                         .action(reset),
                 )
-                .child(
-                    div()
-                        .p_3()
-                        .flex()
-                        .flex_col()
-                        .gap_3()
-                        .child(grid::legend(state))
-                        .child(grid::board(
-                            state,
-                            grid::BoardView {
-                                prefix: "jelly",
-                                layout: &layout,
-                                unlocked: &idleon_jelly::board::unlocked_slots(jelly),
-                                highlight: &[],
-                                obstruction: jelly.progress.obstruction,
-                                selected: Some(state.jelly_state.selected),
-                                action: grid::BoardAction::Layout,
-                            },
-                            cx,
-                        ))
-                        .child(message(state, cx))
-                        .child(stats(&metrics)),
-                ),
+                .child(grid::legend(state))
+                .child(board)
+                .child(message(state))
+                .child(stats(&state.jelly_state.board.metrics)),
         )
         .into_any_element()
 }
@@ -97,21 +83,21 @@ fn palette(state: &AppState, cx: &mut Context<AppState>, jelly: &Jelly) -> AnyEl
         .header(CardHeader::new("Cell palette").description(
             "Pick a cell, then click a slot to place it. Click a placed cell to remove it.",
         ))
-        .child(div().p_3().child(buttons))
+        .child(buttons)
         .into_any_element()
 }
 
 /// The last placement answer.
-fn message(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    if state.jelly_state.message.is_empty() {
+fn message(state: &AppState) -> AnyElement {
+    let message = &state.jelly_state.message;
+    if message.is_empty() {
         return div().into_any_element();
     }
-    let muted = cx.theme().colors.fg_muted;
     div()
         .id("jelly-message")
         .role(Role::Label)
-        .aria_label(state.jelly_state.message.clone())
-        .child(Caption::new(state.jelly_state.message.clone()).text_color(muted))
+        .aria_label(message.clone())
+        .child(Caption::new(message.clone()))
         .into_any_element()
 }
 
@@ -123,48 +109,37 @@ fn stats(metrics: &idleon_jelly::Metrics) -> AnyElement {
             .child(Caption::new(metrics.reason.clone()))
             .into_any_element();
     }
-    div()
-        .id("jelly-layout-stats")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(
-            KpiCard::new(Statistic::new(
+    strips(
+        "jelly-layout-stats",
+        vec![
+            figure(
                 "jelly-damage-passive",
                 "Damage passive",
                 metrics.damage_passive,
-            ))
+                0,
+            )
             .caption("Cell damage passives"),
-        )
-        .child(
-            KpiCard::new(Statistic::new(
+            figure(
                 "jelly-speed-passive",
                 "Speed passive",
                 metrics.speed_passive,
-            ))
+                0,
+            )
             .caption("Cell speed passives"),
-        )
-        .child(
-            KpiCard::new(Statistic::new(
+            figure(
                 "jelly-virus-multiplier",
                 "Virus multiplier",
                 metrics.virus_multiplier,
-            ))
+                0,
+            )
             .caption(format!(
                 "{} infected footprint slot(s)",
                 metrics.infected_slots
             )),
-        )
-        .child(
-            KpiCard::new(Statistic::new(
-                "jelly-steady-dps",
-                "Steady DPS",
-                metrics.dps,
-            ))
-            .caption(format!(
+            figure("jelly-steady-dps", "Steady DPS", metrics.dps, 0).caption(format!(
                 "{} attacks/s before projectile travel",
                 format::number(metrics.attacks_per_second)
             )),
-        )
-        .into_any_element()
+        ],
+    )
 }

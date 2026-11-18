@@ -20,32 +20,42 @@ mod actions;
 
 mod bonuses;
 mod breakdowns;
+mod controls;
+mod derived;
 mod estimate;
 mod grid;
 mod layout_editor;
 mod optimizer;
 mod outlook;
 mod overview;
+mod parts;
 mod planner;
 mod simulator;
 mod upgrades;
 
+pub(crate) use controls::{Controls, Runs};
 pub(crate) use optimizer::{Optimizer, RunInputs as OptimizerRunInputs};
 pub(crate) use planner::{Planner, RunInputs as PlannerRunInputs};
 pub(crate) use simulator::RunInputs as SimulatorRunInputs;
 pub(crate) use simulator::Simulator;
 
 use crate::state::AppState;
+use crate::ui::layout::tab_bar;
 use crate::ui::theme;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::ControlSize;
+use derived::{BoardFigures, Results, SandboxFigures, SaveFigures};
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::Icon;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
 use idleon_jelly::Jelly;
 use idleon_jelly::board::{self, Layout};
+use idleon_ui::widgets::{Card, CardHeader, PANEL_GAP};
 
 /// The section's tabs.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -120,6 +130,14 @@ pub(crate) struct State {
     pub(crate) optimizer_message: String,
     /// Which formula tree the Breakdowns tab shows.
     pub(crate) breakdown: idleon_jelly::BreakdownCategory,
+    /// The save's own figures, read on import.
+    pub(crate) save: SaveFigures,
+    /// The board on screen's figures, read when it or the tree changes.
+    pub(crate) board: BoardFigures,
+    /// The sandbox's unlocked slots, read when its stage or sections change.
+    pub(crate) sandbox: SandboxFigures,
+    /// The runs' stored results and what the tabs derive from them.
+    pub(crate) results: Results,
 }
 
 impl Default for State {
@@ -136,6 +154,10 @@ impl Default for State {
             optimizer: optimizer::Optimizer::default(),
             optimizer_message: String::new(),
             breakdown: idleon_jelly::BreakdownCategory::default(),
+            save: SaveFigures::default(),
+            board: BoardFigures::default(),
+            sandbox: SandboxFigures::default(),
+            results: Results::default(),
         }
     }
 }
@@ -150,6 +172,7 @@ impl State {
         self.planner.adopt(jelly);
         self.optimizer.adopt(jelly);
         self.optimizer_message = String::new();
+        self.save = SaveFigures::of(jelly);
     }
 
     /// Put the board back to the save's own layout.
@@ -204,6 +227,18 @@ impl State {
     }
 }
 
+/// Every tab, in strip order.
+const TABS: [Tab; 8] = [
+    Tab::Overview,
+    Tab::Layout,
+    Tab::Simulator,
+    Tab::Upgrades,
+    Tab::Bonuses,
+    Tab::Breakdowns,
+    Tab::Sections,
+    Tab::Optimizer,
+];
+
 /// The section view: the tab strip and the selected tab.
 pub(crate) fn view(
     state: &mut AppState,
@@ -213,42 +248,24 @@ pub(crate) fn view(
     let Some(jelly) = state.jelly.clone() else {
         return unavailable(state, cx);
     };
+    refresh(state, &jelly, cx);
     let entity = cx.entity();
     let active = state.jelly_state.tab;
-    let tabs = div().id("jelly-tabs").flex().flex_none().gap_2().children(
-        [
-            Tab::Overview,
-            Tab::Layout,
-            Tab::Simulator,
-            Tab::Upgrades,
-            Tab::Bonuses,
-            Tab::Breakdowns,
-            Tab::Sections,
-            Tab::Optimizer,
-        ]
-        .map(|tab| {
-            let entity = entity.clone();
-            Button::new(format!("jelly-tab-{}", tab.id()), tab.label())
-                .variant(if tab == active {
-                    ButtonVariant::Primary
-                } else {
-                    ButtonVariant::Subtle
-                })
-                .size(ControlSize::Sm)
-                .on_click(move |_event, _window, cx| {
-                    let entity = entity.clone();
-                    entity.update(cx, |state, cx| state.set_jelly_tab(tab, cx));
-                })
-                .into_any_element()
-        }),
+    let tabs = tab_bar(
+        "jelly-tabs",
+        TABS.map(|tab| (format!("jelly-tab-{}", tab.id()).into(), tab.label().into())),
+        TABS.iter().position(|tab| *tab == active).unwrap_or(0),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_jelly_tab(TABS[index], cx));
+        },
     );
     let body = match state.jelly_state.tab {
         Tab::Overview => overview::overview(state, window, cx, &jelly),
         Tab::Layout => layout_editor::layout_editor(state, window, cx, &jelly),
         Tab::Simulator => simulator::pane(state, window, cx, &jelly),
-        Tab::Upgrades => upgrades::pane(&jelly, cx),
-        Tab::Bonuses => bonuses::pane(&jelly, cx),
-        Tab::Breakdowns => breakdowns::pane(state, cx, &jelly),
+        Tab::Upgrades => upgrades::pane(state, &jelly),
+        Tab::Bonuses => bonuses::pane(state, &jelly),
+        Tab::Breakdowns => breakdowns::pane(state, cx),
         Tab::Sections => planner::pane(state, window, cx, &jelly),
         Tab::Optimizer => optimizer::pane(state, window, cx, &jelly),
     };
@@ -258,55 +275,80 @@ pub(crate) fn view(
         .flex_col()
         .size_full()
         .min_h_0()
-        .gap_3()
-        .child(tabs)
+        .gap(PANEL_GAP)
+        .child(div().flex_none().child(tabs))
         .child(
-            ScrollArea::new("jelly-scroll")
-                .vertical()
+            div()
                 .flex_1()
                 .min_h_0()
-                .child(body),
+                .child(div().w_full().child(body))
+                .overflow_y_scrollbar()
+                .id("jelly-scroll"),
         )
         .into_any_element()
+}
+
+/// Read the board and sandbox figures again when what they describe changed,
+/// and hand a new breakdown to the formula tree.
+fn refresh(state: &mut AppState, jelly: &Jelly, cx: &mut Context<AppState>) {
+    let section = &mut state.jelly_state;
+    if !section.board.describe(&section.layout, section.breakdown) {
+        section.board = BoardFigures::of(jelly, &section.layout, section.breakdown);
+        if let Some(breakdown) = &section.board.breakdown {
+            let root = breakdown.root.clone();
+            state
+                .jelly_breakdown
+                .update(cx, |tree, cx| tree.set_root(root, cx));
+        }
+    }
+    let section = &mut state.jelly_state;
+    if !section.sandbox.describe(&section.simulator) {
+        section.sandbox = SandboxFigures::of(jelly, &section.simulator);
+    }
 }
 
 /// No save carries a Jelly Operator board yet.
 fn unavailable(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let import = cx.entity();
-    let empty = EmptyState::new(
-        "jelly-unavailable",
-        IconName::Map,
-        "No Jelly Operator board",
-    )
-    .body(
-        "This save does not carry Research[14] and Research[17], so there is no board to read. Export a save after the Jelly Operator update and import it again.",
-    )
-    .action(
-        Button::new("jelly-import", "Import save")
-            .icon(IconName::ArrowLeft)
-            .on_click(move |_event, window, cx| {
-                import.update(cx, |state, cx| state.open_import(window, cx));
-            }),
-    );
+    let muted = cx.theme().muted_foreground;
+    let empty = Empty::new()
+        .header(
+            EmptyHeader::new()
+                .media(EmptyMedia::new().child(Icon::new(IconName::Map).text_color(muted)))
+                .title(EmptyTitle::new().child("No Jelly Operator board"))
+                .description(EmptyDescription::new().child(
+                    "This save does not carry Research[14] and Research[17], so there is no board to read. Export a save after the Jelly Operator update and import it again.",
+                )),
+        )
+        .content(
+            EmptyContent::new().child(
+                Button::new("jelly-import")
+                    .label("Import save")
+                    .icon(IconName::ArrowLeft)
+                    .on_click(move |_event, window, cx| {
+                        import.update(cx, |state, cx| state.open_import(window, cx));
+                    }),
+            ),
+        );
     div()
         .id("jelly-unavailable-body")
         .flex()
         .flex_col()
         .size_full()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(
-        Card::new()
-            .header(
-                CardHeader::new("Jelly Operator board")
-                    .description("Cell layouts, obstruction clears, Bloodcells and the operation estimate")
-                    .action(theme::WorldBadge::new(state.current_section().map_or(
-                        crate::sections::Group::W7,
-                        |section| section.group,
-                    ))),
-            )
-            .child(empty),
-    )
-    .into_any_element()
+            Card::new()
+                .header(
+                    CardHeader::new("Jelly Operator board")
+                        .description("Cell layouts, obstruction clears, Bloodcells and the operation estimate")
+                        .action(theme::WorldBadge::new(state.current_section().map_or(
+                            crate::sections::Group::W7,
+                            |section| section.group,
+                        ))),
+                )
+                .child(div().id("jelly-unavailable").child(empty)),
+        )
+        .into_any_element()
 }
 
 #[cfg(test)]
@@ -487,6 +529,56 @@ mod tests {
         assert_ne!(before, after, "an edit marks a stored board stale");
         assert_eq!(after.options().layout, Some(state.layout.clone()));
         assert_eq!(after.options().beam_width, 16);
+    }
+
+    #[test]
+    fn the_cached_figures_follow_the_save_and_the_board() {
+        use super::derived::{BoardFigures, SandboxFigures};
+        use idleon_jelly::BreakdownCategory;
+        let imported = idleon_import::import(&save()).expect("the save imports");
+        let jelly = imported.jelly.expect("the save carries a board");
+        let mut state = State::default();
+        state.adopt(&jelly);
+        assert_eq!(
+            state.save.bonuses,
+            jelly.bonuses(),
+            "import reads the rewards"
+        );
+        assert_eq!(state.save.upgrades, jelly.upgrade_rows());
+        assert_eq!(state.save.unlocked, board::unlocked_slots(&jelly));
+
+        // Fresh figures describe nothing until they are read for a board.
+        let category = BreakdownCategory::Damage;
+        assert!(!state.board.describe(&state.layout, category));
+        state.board = BoardFigures::of(&jelly, &state.layout, category);
+        assert!(state.board.describe(&state.layout, category));
+        let options = idleon_jelly::MetricOptions {
+            fever: Some(jelly.progress.fever),
+            ..idleon_jelly::MetricOptions::default()
+        };
+        assert_eq!(
+            state.board.metrics,
+            jelly.layout_metrics(&state.layout, options)
+        );
+
+        // A board edit or another tree makes them stale.
+        assert!(
+            !state
+                .board
+                .describe(&state.layout, BreakdownCategory::Speed)
+        );
+        state.select(0);
+        state.place(&jelly, 96);
+        assert!(!state.board.describe(&state.layout, category));
+
+        // The sandbox figures follow its sections.
+        state.sandbox = SandboxFigures::of(&jelly, &state.simulator);
+        assert!(state.sandbox.describe(&state.simulator));
+        let plots = &mut state.simulator.plots;
+        if !plots.remove(&39) {
+            plots.insert(39);
+        }
+        assert!(!state.sandbox.describe(&state.simulator));
     }
 
     #[test]

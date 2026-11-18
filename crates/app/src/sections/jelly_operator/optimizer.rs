@@ -6,27 +6,27 @@
 //! itself lives in `idleon_jelly::optimizer`; this module owns the controls,
 //! the results and the button that puts the recommendation on the layout.
 
+use super::controls::{OPTIMIZER_COUNTS, optimizer_count};
 use super::grid;
 use super::outlook::timeline_card;
-use crate::sections::jelly_operator::estimate::text_kpi;
+use super::parts::{
+    SELECT_WIDTH, boxed, figure, info, number_field, run_button, select, strips, text_kpi,
+    text_table,
+};
+use super::planner::signed_value;
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{KpiCard, Statistic};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
-use idleon_jelly::board::{self, Layout};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::{Disableable as _, Sizable as _};
+use idleon_jelly::Jelly;
+use idleon_jelly::board::Layout;
 use idleon_jelly::optimizer::{self, Optimization};
 use idleon_jelly::planner::Objective;
-use idleon_jelly::{Jelly, data};
 use idleon_ui::format;
 use idleon_ui::run_chrome;
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP};
 
 /// The optimizer controls, with the cheaper
 /// defaults this single-process search runs.
@@ -115,7 +115,7 @@ impl RunInputs {
 /// The Optimizer tab: the controls, the run and the recommendation.
 pub(crate) fn pane(
     state: &mut AppState,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
     jelly: &Jelly,
 ) -> AnyElement {
@@ -125,13 +125,13 @@ pub(crate) fn pane(
         .id("jelly-optimizer")
         .flex()
         .flex_col()
-        .gap_3()
+        .gap(PANEL_GAP)
         .child(
             Card::new()
                 .header(CardHeader::new("Coordinator optimizer").description(
                     "Independent starts trade focus and elite boards, then the strongest finalists are simulated on the current board's own seeds.",
                 ))
-                .child(div().p_3().child(controls(state, cx, jelly, running))),
+                .child(controls(state, window, cx, jelly, running)),
         );
     if running && let Some(progress) = task.progress.clone() {
         let entity = cx.entity();
@@ -153,9 +153,8 @@ pub(crate) fn pane(
     }
     let Some(result) = task.result else {
         if !running && !task.cancelled {
-            body = body.child(Banner::new(
+            body = body.child(info(
                 "jelly-optimizer-empty",
-                Severity::Info,
                 "Optimize the board to rank full layouts against the one it starts from and see the winner's critical target timeline.",
             ));
         }
@@ -164,211 +163,95 @@ pub(crate) fn pane(
     if task.stale {
         body = body.child(run_chrome::stale_banner("jelly-optimizer-stale"));
     }
-    body.child(result_view(state, cx, jelly, &result))
+    body.child(result_view(state, cx, &result))
         .into_any_element()
 }
 
 /// The objective, EXP target, search breadth and the advanced rounds.
 fn controls(
     state: &AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
     jelly: &Jelly,
     running: bool,
 ) -> AnyElement {
-    let entity = cx.entity();
-    let controls = &state.jelly_state.optimizer;
-
-    let objective_entity = entity.clone();
-    let objectives: Vec<Choice> = [
-        Objective::Clear,
-        Objective::Bloodcells,
-        Objective::Exp,
-        Objective::Dps,
-        Objective::Survival,
-    ]
-    .into_iter()
-    .filter(|objective| objective.visible(jelly))
-    .map(|objective| Choice::new(objective.id(), objective.label()))
-    .collect();
-    let objective = Select::new("jelly-optimizer-objective", objectives)
-        .label("Objective")
-        .selected(controls.objective.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(objective) = Objective::from_id(value) {
-                let entity = objective_entity.clone();
-                entity.update(cx, |state, cx| {
-                    state.edit_jelly_optimizer(cx, |optimizer| {
-                        optimizer.objective = objective;
-                    })
-                });
-            }
-        });
-
-    let exp_entity = entity.clone();
-    let mut exp_choices = vec![Choice::new("total", "Total EXP")];
-    exp_choices.extend(
-        (0..jelly.units_owned())
-            .map(|cell_type| Choice::new(cell_type.to_string(), data().cell_name(cell_type))),
+    let optimizer = &state.jelly_state.optimizer;
+    let controls = &state.jelly_controls;
+    controls.opt_objective.show(
+        crate::sections::jelly_operator::controls::objective_choices(jelly),
+        Some(&optimizer.objective),
+        window,
+        cx,
     );
-    let exp_target = Select::new("jelly-optimizer-exp-cell-type", exp_choices)
-        .label("EXP target")
-        .selected(
-            controls
-                .exp_cell_type
-                .map(|cell_type| cell_type.to_string())
-                .unwrap_or_else(|| "total".to_string()),
-        )
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            let cell_type = value.parse::<usize>().ok();
-            let entity = exp_entity.clone();
-            entity.update(cx, |state, cx| {
-                state.edit_jelly_optimizer(cx, |optimizer| {
-                    optimizer.exp_cell_type = cell_type;
-                })
-            });
-        });
-
     let mut row = div()
         .id("jelly-optimizer-controls")
         .flex()
         .flex_wrap()
-        .items_end()
-        .gap_3()
-        .child(objective);
-    if controls.objective == Objective::Exp {
-        row = row.child(exp_target);
-    }
-
-    let number = |id: &'static str,
-                  label: &'static str,
-                  value: f64,
-                  range: (f64, f64),
-                  edit: fn(&mut Optimizer, usize),
-                  entity: gpui::Entity<AppState>| {
-        NumberInput::new(id, value)
-            .label(label)
-            .range(range.0, range.1)
-            .step(1.0)
-            .size(ControlSize::Sm)
-            .on_change(move |value, _window, cx| {
-                let value = value.clamp(range.0, range.1).round() as usize;
-                let entity = entity.clone();
-                entity.update(cx, |state, cx| {
-                    state.edit_jelly_optimizer(cx, |optimizer| edit(optimizer, value))
-                });
-            })
-    };
-    row = row
-        .child(number(
-            "jelly-optimizer-starts",
-            "Starts",
-            controls.starts as f64,
-            (1.0, 32.0),
-            |optimizer, value| optimizer.starts = value,
-            entity.clone(),
-        ))
-        .child(number(
-            "jelly-optimizer-beam",
-            "Beam",
-            controls.beam_width as f64,
-            (4.0, 64.0),
-            |optimizer, value| optimizer.beam_width = value,
-            entity.clone(),
-        ))
-        .child(number(
-            "jelly-optimizer-iterations",
-            "Build rounds",
-            controls.iterations as f64,
-            (1.0, 120.0),
-            |optimizer, value| optimizer.iterations = value,
-            entity.clone(),
-        ))
-        .child(number(
-            "jelly-optimizer-saved-rounds",
-            "Saved-board rounds",
-            controls.saved_refinement_rounds as f64,
-            (0.0, 30.0),
-            |optimizer, value| optimizer.saved_refinement_rounds = value,
-            entity.clone(),
-        ))
-        .child(number(
-            "jelly-optimizer-refinement-rounds",
-            "Refinement rounds",
-            controls.refinement_rounds as f64,
-            (0.0, 30.0),
-            |optimizer, value| optimizer.refinement_rounds = value,
-            entity.clone(),
-        ))
-        .child(number(
-            "jelly-optimizer-finalists",
-            "Finalists",
-            controls.finalists as f64,
-            (1.0, 16.0),
-            |optimizer, value| optimizer.finalists = value,
-            entity.clone(),
-        ))
-        .child(
-            NumberInput::new("jelly-optimizer-trials", f64::from(controls.trials))
-                .label("Trials")
-                .range(4.0, 1024.0)
-                .step(4.0)
-                .size(ControlSize::Sm)
-                .on_change({
-                    let entity = entity.clone();
-                    move |value, _window, cx| {
-                        let trials = value.clamp(4.0, 1024.0).round() as u32;
-                        let entity = entity.clone();
-                        entity.update(cx, |state, cx| {
-                            state.edit_jelly_optimizer(cx, |optimizer| {
-                                optimizer.trials = trials;
-                            })
-                        });
-                    }
-                }),
-        )
-        .child(
-            NumberInput::new("jelly-optimizer-seed", f64::from(controls.seed))
-                .label("Seed")
-                .range(0.0, f64::from(u32::MAX))
-                .step(1.0)
-                .size(ControlSize::Sm)
-                .on_change({
-                    let entity = entity.clone();
-                    move |value, _window, cx| {
-                        let seed = if value.is_finite() {
-                            value.clamp(0.0, f64::from(u32::MAX)) as u32
-                        } else {
-                            1
-                        };
-                        let entity = entity.clone();
-                        entity.update(cx, |state, cx| {
-                            state.edit_jelly_optimizer(cx, |optimizer| optimizer.seed = seed)
-                        });
-                    }
-                }),
+        .items_center()
+        .gap(PANEL_GAP)
+        .child(boxed(
+            SELECT_WIDTH,
+            select(
+                &controls.opt_objective,
+                "jelly-optimizer-objective",
+                "Objective",
+            ),
+        ));
+    if optimizer.objective == Objective::Exp {
+        controls.opt_exp.show(
+            crate::sections::jelly_operator::controls::exp_choices(jelly),
+            Some(&optimizer.exp_cell_type),
+            window,
+            cx,
         );
-
-    let run_entity = entity;
-    let run = Button::new("jelly-optimizer-run", "Optimize board")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
-        .icon(IconName::Play)
-        .disabled(running)
-        .on_click(move |_event, _window, cx| {
-            let run_entity = run_entity.clone();
-            run_entity.update(cx, |state, cx| state.run_jelly_optimize(cx));
-        });
-    row.child(run).into_any_element()
+        row = row.child(boxed(
+            SELECT_WIDTH,
+            select(
+                &controls.opt_exp,
+                "jelly-optimizer-exp-cell-type",
+                "EXP target",
+            ),
+        ));
+    }
+    let mut counts = optimizer.clone();
+    for (index, (id, label, _, _)) in OPTIMIZER_COUNTS.into_iter().enumerate() {
+        let value = *optimizer_count(&mut counts, index) as f64;
+        row = row.child(number_field(
+            id,
+            label,
+            &controls.opt_counts[index],
+            value,
+            window,
+            cx,
+        ));
+    }
+    row.child(number_field(
+        "jelly-optimizer-trials",
+        "Trials",
+        &controls.opt_trials,
+        f64::from(optimizer.trials),
+        window,
+        cx,
+    ))
+    .child(number_field(
+        "jelly-optimizer-seed",
+        "Seed",
+        &controls.opt_seed,
+        f64::from(optimizer.seed),
+        window,
+        cx,
+    ))
+    .child(run_button(
+        "jelly-optimizer-run",
+        "Optimize board",
+        running,
+        |state, cx| state.run_jelly_optimize(cx),
+        cx,
+    ))
+    .into_any_element()
 }
 
-fn result_view(
-    state: &AppState,
-    cx: &mut Context<AppState>,
-    jelly: &Jelly,
-    result: &Optimization,
-) -> AnyElement {
+fn result_view(state: &AppState, cx: &mut Context<AppState>, result: &Optimization) -> AnyElement {
     let recommended = &result.recommended;
     let chance = recommended
         .chance_beats_baseline
@@ -380,37 +263,30 @@ fn result_view(
     } else {
         0.0
     };
-    let cards = div()
-        .id("jelly-optimizer-summary")
-        .flex()
-        .flex_wrap()
-        .gap_3()
-        .child(text_kpi(
-            "jelly-optimizer-score",
-            "Board score",
-            format!(
-                "{} → {}",
-                score_text(result.baseline_score),
-                score_text(recommended.proxy_score)
+    let cards = strips(
+        "jelly-optimizer-summary",
+        vec![
+            text_kpi(
+                "jelly-optimizer-score",
+                "Board score",
+                format!(
+                    "{} → {}",
+                    score_text(result.baseline_score),
+                    score_text(recommended.proxy_score)
+                ),
+                format!("{gain:+.2}% over the board the run started from"),
             ),
-            format!("{gain:+.2}% over the board the run started from"),
-            cx,
-        ))
-        .child(text_kpi(
-            "jelly-optimizer-measured",
-            "Measured gain",
-            signed(recommended.objective_value - result.baseline_objective_value),
-            format!("{chance} chance to beat the baseline"),
-            cx,
-        ))
-        .child(
-            KpiCard::new(
-                Statistic::new(
-                    "jelly-optimizer-moves",
-                    "Anchors changed",
-                    result.moves.len() as f64,
-                )
-                .decimals(0),
+            text_kpi(
+                "jelly-optimizer-measured",
+                "Measured gain",
+                signed_value(recommended.objective_value - result.baseline_objective_value),
+                format!("{chance} chance to beat the baseline"),
+            ),
+            figure(
+                "jelly-optimizer-moves",
+                "Anchors changed",
+                result.moves.len() as f64,
+                0,
             )
             .caption(format!(
                 "{} cell(s) placed, {} removed",
@@ -425,158 +301,148 @@ fn result_view(
                     .filter(|movement| movement.before.is_some())
                     .count()
             )),
-        )
-        .child(text_kpi(
-            "jelly-optimizer-finalists-card",
-            "Finalists",
-            format::count(result.finalists.len() as u64),
-            format!(
-                "{} start(s) · beam {} · {} trial(s) each",
-                result.starts.len(),
-                result.beam_width,
-                recommended.operation.estimate.trials
+            text_kpi(
+                "jelly-optimizer-finalists-card",
+                "Finalists",
+                format::count(result.finalists.len() as u64),
+                format!(
+                    "{} start(s) · beam {} · {} trial(s) each",
+                    result.starts.len(),
+                    result.beam_width,
+                    recommended.operation.estimate.trials
+                ),
             ),
-            cx,
-        ));
+        ],
+    );
 
-    let mut body = div()
-        .id("jelly-optimizer-result")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(cards)
-        .child(apply_row(state, cx, result));
-    if recommended.layout == result.baseline_layout {
-        body = body.child(Banner::new(
-            "jelly-optimizer-tie",
-            Severity::Info,
-            "No finalist measured better than the current board, so the recommendation keeps it.",
-        ));
-    }
-    let unlocked = board::unlocked_slots(jelly);
+    let unlocked = &state.jelly_state.save.unlocked;
     let highlight: Vec<usize> = result
         .moves
         .iter()
         .filter_map(|movement| movement.after.map(|_| movement.anchor))
         .collect();
-    body = body
+    let baseline = grid::panel(
+        state,
+        "Current board",
+        grid::BoardView {
+            prefix: "jelly-optimizer-baseline",
+            layout: &result.baseline_layout,
+            unlocked,
+            highlight: &[],
+            obstruction: result.obstruction,
+            selected: None,
+            action: grid::BoardAction::ReadOnly,
+        },
+        cx,
+    );
+    let optimized = grid::panel(
+        state,
+        "Optimized board",
+        grid::BoardView {
+            prefix: "jelly-optimizer-final",
+            layout: &recommended.layout,
+            unlocked,
+            highlight: &highlight,
+            obstruction: result.obstruction,
+            selected: None,
+            action: grid::BoardAction::ReadOnly,
+        },
+        cx,
+    );
+    div()
+        .id("jelly-optimizer-result")
+        .flex()
+        .flex_col()
+        .gap(PANEL_GAP)
+        .child(cards)
+        .child(apply_row(state, cx, result))
+        .when(recommended.layout == result.baseline_layout, |body| {
+            body.child(info(
+                "jelly-optimizer-tie",
+                "No finalist measured better than the current board, so the recommendation keeps it.",
+            ))
+        })
         .child(
             div()
                 .flex()
                 .flex_wrap()
-                .gap_3()
-                .child(board_panel(
-                    state,
-                    cx,
-                    "Current board",
-                    grid::BoardView {
-                        prefix: "jelly-optimizer-baseline",
-                        layout: &result.baseline_layout,
-                        unlocked: &unlocked,
-                        highlight: &[],
-                        obstruction: result.obstruction,
-                        selected: None,
-                        action: grid::BoardAction::ReadOnly,
-                    },
-                ))
-                .child(board_panel(
-                    state,
-                    cx,
-                    "Optimized board",
-                    grid::BoardView {
-                        prefix: "jelly-optimizer-final",
-                        layout: &recommended.layout,
-                        unlocked: &unlocked,
-                        highlight: &highlight,
-                        obstruction: result.obstruction,
-                        selected: None,
-                        action: grid::BoardAction::ReadOnly,
-                    },
-                )),
+                .gap(PANEL_GAP)
+                .child(baseline)
+                .child(optimized),
         )
         .child(finalists_table(result))
-        .child(timeline_card(&recommended.operation.estimate, cx));
-    body.into_any_element()
+        .child(timeline_card(&recommended.operation.estimate, cx))
+        .into_any_element()
 }
 
 fn apply_row(state: &AppState, cx: &mut Context<AppState>, result: &Optimization) -> AnyElement {
     let message = &state.jelly_state.optimizer_message;
     let entity = cx.entity();
-    let apply = Button::new("jelly-optimizer-apply", "Use this board")
-        .variant(ButtonVariant::Primary)
-        .size(ControlSize::Sm)
+    let apply = Button::new("jelly-optimizer-apply")
+        .label("Use this board")
+        .primary()
+        .small()
         .icon(IconName::Check)
         .disabled(result.recommended.layout == result.baseline_layout)
         .on_click(move |_event, _window, cx| {
-            let entity = entity.clone();
             entity.update(cx, |state, cx| state.apply_jelly_optimized_layout(cx));
         });
-    let mut row = div()
+    div()
         .id("jelly-optimizer-apply-row")
         .flex()
         .items_center()
-        .gap_3()
-        .child(apply);
-    if !message.is_empty() {
-        row = row.child(
-            div()
-                .id("jelly-optimizer-message")
-                .role(Role::Label)
-                .aria_label(message.clone())
-                .child(Caption::new(message.clone()))
-                .text_color(cx.theme().colors.fg_muted),
-        );
-    }
-    row.into_any_element()
-}
-
-fn board_panel(
-    state: &AppState,
-    cx: &mut Context<AppState>,
-    title: &'static str,
-    view: grid::BoardView<'_>,
-) -> AnyElement {
-    Card::new()
-        .header(CardHeader::new(title))
-        .child(div().p_3().child(grid::board(state, view, cx)))
+        .gap(PANEL_GAP)
+        .child(apply)
+        .when(!message.is_empty(), |row| {
+            row.child(
+                div()
+                    .id("jelly-optimizer-message")
+                    .role(Role::Label)
+                    .aria_label(message.clone())
+                    .child(Caption::new(message.clone())),
+            )
+        })
         .into_any_element()
 }
 
+/// The finalists the run kept: at most the 16 the control allows.
 fn finalists_table(result: &Optimization) -> AnyElement {
-    let mut table = Table::new([
-        "#",
-        "Source",
-        "Cells",
-        "Board score",
-        "Measured",
-        "Beats baseline",
-    ]);
-    for (index, row) in result.finalists.iter().enumerate() {
-        table = table.row([
-            (index + 1).to_string(),
-            match (row.start, row.focus) {
-                (Some(start), Some(focus)) => {
-                    format!("Start {} · {}", start + 1, focus.label())
-                }
-                _ => "Saved board".to_string(),
-            },
-            row.layout.len().to_string(),
-            score_text(row.proxy_score),
-            value_of(row),
-            if row.layout == result.baseline_layout {
-                "—".to_string()
-            } else {
-                row.chance_beats_baseline
-                    .map(format::chance)
-                    .unwrap_or_else(|| "—".to_string())
-            },
-        ]);
-    }
+    let table = text_table(
+        &[
+            ("#", true),
+            ("Source", false),
+            ("Cells", true),
+            ("Board score", true),
+            ("Measured", true),
+            ("Beats baseline", true),
+        ],
+        result.finalists.iter().enumerate().map(|(index, row)| {
+            vec![
+                (index + 1).to_string(),
+                match (row.start, row.focus) {
+                    (Some(start), Some(focus)) => {
+                        format!("Start {} · {}", start + 1, focus.label())
+                    }
+                    _ => "Saved board".to_string(),
+                },
+                row.layout.len().to_string(),
+                score_text(row.proxy_score),
+                value_of(row),
+                if row.layout == result.baseline_layout {
+                    "—".to_string()
+                } else {
+                    row.chance_beats_baseline
+                        .map(format::chance)
+                        .unwrap_or_else(|| "—".to_string())
+                },
+            ]
+        }),
+    );
     Card::new()
         .header(CardHeader::new("Ranked finalists").description(
             "Every finalist with its shared-seed comparison against the board the run started from.",
         ))
-        .child(div().id("jelly-optimizer-ranked").p_3().child(table))
+        .child(div().id("jelly-optimizer-ranked").child(table))
         .into_any_element()
 }
 
@@ -601,15 +467,4 @@ fn score_text(value: f64) -> String {
         return "—".to_string();
     }
     format::value(value)
-}
-
-fn signed(value: f64) -> String {
-    if !value.is_finite() {
-        return "—".to_string();
-    }
-    if value >= 0.0 {
-        format!("+{}", format::value(value))
-    } else {
-        format!("-{}", format::value(-value))
-    }
 }

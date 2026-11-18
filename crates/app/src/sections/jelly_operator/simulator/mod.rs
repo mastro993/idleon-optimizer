@@ -10,7 +10,7 @@ mod state;
 mod view;
 
 pub(crate) use state::{MAX_STAGE, RunInputs, Simulator};
-pub(crate) use view::pane;
+pub(crate) use view::{pane, revive_choices};
 
 #[cfg(test)]
 mod tests;
