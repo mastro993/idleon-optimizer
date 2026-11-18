@@ -2,26 +2,29 @@
 //! run is in flight, an accent or red dot once one finished or failed while
 //! another place was open.
 //!
-//! The dots are Ely's `DotBadge`. Ely's `ProgressRing` keeps its 48 px ring's
-//! 4 px stroke at any size and paints in `fg`, so a 12 px ring fills in; the
-//! ring here is drawn at D5's strokes in the accent until Ely's takes a stroke
-//! and a tone (ADR 0003).
+//! The kit's `ProgressCircle` sizes its stroke from its width (15%, at most
+//! 5 px) and draws its track as the arc color at 20%, so at the rail's 12 px
+//! its stroke is thinner than D5's. The ring here is drawn at D5's strokes,
+//! `primary` on `input` (ADR 0005). The dots are plain discs: the kit's dot
+//! `Badge` pins itself over another element at its own size and offset.
 
 use crate::state::{Mark, Shown};
-use ely_gpui_component::data_display::{DotBadge, Tone};
-use ely_gpui_component::primitives::Tooltip;
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Hsla, IntoElement, PathBuilder, Pixels, Point, RenderOnce, Role, SharedString,
     Window, canvas, div, point, px,
 };
+use gpui_kit::component::tooltip::Tooltip;
+use gpui_kit::component::{ActiveTheme as _, ThemeStyled as _};
+use idleon_ui::widgets::Tone;
 use std::f32::consts::{FRAC_PI_2, TAU};
 
 /// The ring's width and stroke at a row's end.
 const RING: (f32, f32) = (14.0, 2.0);
 /// The ring's width and stroke on a rail icon's corner.
 const RAIL_RING: (f32, f32) = (12.0, 2.5);
+/// A finished or failed dot's width.
+const DOT: f32 = 8.0;
 
 /// One section's mark, sized for a row's end or a rail icon's corner.
 #[derive(IntoElement)]
@@ -48,11 +51,8 @@ impl RenderOnce for ActivityMark {
                 let (side, stroke) = if self.rail { RAIL_RING } else { RING };
                 (Role::ProgressIndicator, ring(fraction, side, stroke, cx))
             }
-            Shown::Mark(Mark::Finished) => (Role::Status, DotBadge::new().into_any_element()),
-            Shown::Mark(Mark::Failed) => (
-                Role::Status,
-                DotBadge::new().tone(Tone::Danger).into_any_element(),
-            ),
+            Shown::Mark(Mark::Finished) => (Role::Status, dot(Tone::Accent, cx)),
+            Shown::Mark(Mark::Failed) => (Role::Status, dot(Tone::Danger, cx)),
         };
         let label = self.shown.label();
         // At the row's end the mark keeps the ring's width either way, so the
@@ -67,16 +67,27 @@ impl RenderOnce for ActivityMark {
             .items_center()
             .justify_center()
             .when(!self.rail, |slot| {
-                slot.size(px(RING.0)).tooltip(Tooltip::text(label))
+                slot.size(px(RING.0))
+                    .tooltip(move |window, cx| Tooltip::new(label.clone()).build(window, cx))
             })
             .child(mark)
     }
 }
 
+/// A finished or failed dot in `tone`.
+fn dot(tone: Tone, cx: &App) -> AnyElement {
+    div()
+        .flex_none()
+        .size(px(DOT))
+        .rounded_full_style(cx)
+        .bg(tone.color(cx))
+        .into_any_element()
+}
+
 /// A `side` px ring filled clockwise from the top to `fraction`.
 fn ring(fraction: f32, side: f32, stroke: f32, cx: &App) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (track, fill) = (colors.border_strong, colors.accent);
+    let theme = cx.theme();
+    let (track, fill) = (theme.input, theme.primary);
     canvas(
         |_, _, _| {},
         move |bounds, (), window, _| {

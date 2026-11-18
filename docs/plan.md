@@ -61,13 +61,13 @@ Shell (`ui/shell.rs`):
 - Page frame (`ui/section.rs`, `page`): every section and the missing-id state render inside it,
   and it owns the Console page gutter (20 px left and right, 16 px top and bottom), so a section
   never pads its own page.
-- Sidebar (`ui/sidebar.rs`, Ely `Sidebar`): Home first, then one `NavGroup` per world (General,
-  World 2-7) and Tools, which lists every section without a dashboard card. Items are the app's
-  `SidebarItem` ([ADR 0003](adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md)) with
+- Sidebar (`ui/sidebar.rs`, the app's column on the GPUI Kit theme): Home first, then one group per
+  world (General, World 2-7) and Tools, which lists every section without a dashboard card. Items
+  are the app's `SidebarItem` ([ADR 0005](adr/0005-sidebar-items-stay-in-the-app-on-the-kit-theme.md)) with
   ids `nav-home` and `nav-<section>`; the open place's item is active and scrolled into view, and
   clicking it does nothing. Each section item shows the section's game sprite (the registry's `art`,
   `assets/game/sections/<section>.png`) in a 20 px box, or its emoji in the same box when the file
-  is missing; Home shows Ely's `IconName::House`. The sidebar scrolls with no scrollbar, which would cover the rail's
+  is missing; Home shows the kit's `IconName::House`. The sidebar scrolls with no scrollbar, which would cover the rail's
   icons; a fade into the ground at each edge with more items beyond it shows there is more. The toggle folds the sidebar from 240 px to the 56 px rail (icons, title
   in a tooltip, group headings shortened to "Gen", "W2" … "W7", "Tools") and back; the fold is saved in the session file as
   `"shell": {"sidebar": "expanded" | "rail"}` and a session without it opens expanded.

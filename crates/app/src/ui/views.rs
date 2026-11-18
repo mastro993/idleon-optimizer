@@ -245,8 +245,12 @@ fn sidebar_reads(state: &AppState, _: &App) -> SidebarReads {
     }
 }
 
-fn draw_sidebar(state: &mut AppState, _: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    sidebar::sidebar(state, cx)
+fn draw_sidebar(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    sidebar::sidebar(state, window, cx)
 }
 
 fn home_reads(state: &AppState, cx: &App) -> HomeReads {

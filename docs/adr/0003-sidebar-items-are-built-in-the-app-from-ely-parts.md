@@ -1,5 +1,8 @@
 # Sidebar items are built in the app from Ely parts
 
+Superseded by [ADR 0005](0005-sidebar-items-stay-in-the-app-on-the-kit-theme.md): the items stay
+the app's own, drawn from the GPUI Kit theme instead of Ely.
+
 Ely's `NavItem` takes a vector `IconName` and a text count only, so it cannot show a game sprite or
 a progress ring. The app renders its own `SidebarItem` (`ui/sidebar.rs`) with `NavItem`'s look
 (Ely theme tokens for height, radius, active fill, hover and focus ring; tooltip when folded),

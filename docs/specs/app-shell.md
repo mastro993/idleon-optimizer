@@ -106,19 +106,21 @@ game sprites.
 | Sidebar toggle | kit `Button` (`IconName::PanelLeft`, ghost, small) |
 | Back, forward, history list | kit ghost small `Button`s (`ArrowLeft`, `ArrowRight`, `ListClock`); the list is a kit `DropdownMenu` of `PopupMenuItem`s, the current place checked |
 | Save status, Export, Import | the existing `save_actions` (`ui/layout.rs`) |
-| Sidebar column and fold animation | Ely `layout::Sidebar` (240 / 56 px from `theme.sidebar_width`) |
-| Group heading | Ely `NavGroup` for the items (folded, so it draws no title); the title is an app label in `NavGroup`'s type without its fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge |
-| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0003): `NavItem`'s height, radius, hover, active fill (no accent bar) and focus ring; a 20 px manifest image; tooltip when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move |
-| Running mark | a ring drawn in the app at D5's strokes (14 px expanded, 12 px rail); Ely's `ProgressRing` has a fixed 4 px stroke (ADR 0003) |
-| Finished / failed mark | Ely `DotBadge` (8 px), accent / danger |
-| Rail corner disc | a circle in the row's current background (`bg`, or `hover` when active or hovered) |
+| Sidebar column and fold animation | an app column in `ui/sidebar.rs` (240 / 56 px, `sidebar` ground, `sidebar_border` edge); its width eases over 200 ms with the kit's `transition`. The kit `Sidebar` folds to a fixed 48 px and scrolls a private list (ADR 0005) |
+| Group heading | an app label, 11 px medium in `muted_foreground`, with no fold chevron (headings do not fold, A4); in the rail, a short form at the same left edge. The items sit under it in `nav-group-<group>` |
+| Sidebar item | app `SidebarItem` (`ui/sidebar.rs`, ADR 0005): 28 px rows, the kit `radius`, `sidebar_accent` on hover and while active (no accent bar), the kit focus ring; a 20 px manifest image; a kit `Tooltip` when folded. One left-aligned layout in both states (the rail hides the label without removing it), so only the width animates and the icons never move. The kit's `SidebarMenuItem` takes an SVG icon only and re-lays out when collapsed |
+| Running mark | a ring drawn in the app at D5's strokes (14 px expanded, 12 px rail), `primary` on `input`; the kit's `ProgressCircle` derives its stroke from its width (ADR 0005) |
+| Finished / failed mark | an 8 px disc in `Tone::Accent` / `Tone::Danger` |
+| Rail corner disc | a circle in the row's current background (`sidebar`, or `sidebar_accent` when active or hovered) |
 
 ### Tokens
 
-All existing (`ui/theme.rs` and Ely's theme): `bg`, `surface`, `hover`, `border`,
-`border_strong` (ring track), `fg`, `fg_muted`, `fg_subtle` (group headings), `accent` (ring arc,
-finished dot), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
-`radius(Md)`, `control_height(Md)` (32 px rows), `sidebar_width`. No new tokens.
+All existing, from the kit theme (`crates/app/data/theme.json`): `background`, `border`,
+`foreground`, `muted_foreground` (group headings, save status), `sidebar` (the column's ground and
+the rail disc), `sidebar_border`, `sidebar_foreground` (items), `sidebar_accent` and
+`sidebar_accent_foreground` (hovered and active item), `input` (ring track), `primary` (ring arc,
+finished dot), `danger` (failed dot), `ring` (focus), `radius`. The sidebar's 240 / 56 px widths and
+28 px rows are constants in `ui/sidebar.rs`. No new tokens.
 
 ### Copy
 
@@ -138,7 +140,7 @@ finished dot), Ely `danger` (failed dot), `tooltip_bg`/`tooltip_fg`, Ely
 - Tab order: toggle, back, forward, history, Export, Import, then the sidebar items top to bottom,
   then the workspace. Enter or Space on a focused item opens it.
 - Clicking an item opens it (D1–D4); clicking the active item does nothing.
-- The toggle flips expanded and rail with Ely's width animation and saves the choice.
+- The toggle flips expanded and rail with the sidebar's width animation and saves the choice.
 - Cmd/Ctrl+[ and Cmd/Ctrl+] (also Cmd/Ctrl+Left and Right) go back and forward from any place.
 - The sidebar scrolls on its own; the active item is scrolled into view when a place opens.
 
@@ -162,10 +164,10 @@ flowchart LR
   ([ADR 0004](../adr/0004-the-window-renders-cached-views-that-follow-what-they-read.md)). `layout::page_header`, `dashboard_header`, `missing_header` and
   `back_button` merge into one `ui/header.rs`, which holds no place title.
   ([ADR 0001](../adr/0001-sidebar-is-the-primary-navigation-and-home-keeps-the-grid.md))
-- **Sidebar** (`ui/sidebar.rs`): Ely `Sidebar` with one `NavGroup` per `Group` in `Group::ALL`
+- **Sidebar** (`ui/sidebar.rs`): the app's column with one group per `Group` in `Group::ALL`
   order; the Tools group lists every entry with `dashboard: false` (so `stats-all` appears under
-  Tools, not General). Items are the app's `SidebarItem`.
-  ([ADR 0003](../adr/0003-sidebar-items-are-built-in-the-app-from-ely-parts.md))
+  Tools, not General). Items are the app's `SidebarItem`, drawn from the kit theme.
+  ([ADR 0005](../adr/0005-sidebar-items-stay-in-the-app-on-the-kit-theme.md))
 - **Activity** (`state/activity.rs`): `Activity` maps a section id to its runners' state (by
   runner `EntityId`: running fraction) and to an optional `Mark::{Finished, Failed}`. `RunStatus`
   gains `section: &'static str`; `report_run` records `Progress` (running), and `Finished` (clear
@@ -190,7 +192,7 @@ flowchart LR
   manifest reference to one game sprite chosen per section (taken under the rules in
   `docs/game-data-sources.md` and `plan.md` §2, with manifest entries). The emoji `icon` stays as
   the fallback when the sprite is missing, since a labelled placeholder does not fit a 20 px slot.
-  Home uses Ely's `IconName::House`. The dashboard cards switch to the same art.
+  Home uses the kit's `IconName::House`. The dashboard cards switch to the same art.
 - **Ids for the harness**: `app-sidebar`, `sidebar-toggle`, `nav-home`, `nav-group-<group>`,
   `nav-<section>`, `nav-<section>-activity` (aria label "Running 42%", "Finished", "Failed"),
   `history-back`, `history-forward` (disabled at their end), `history-list` (the menu button) inside
