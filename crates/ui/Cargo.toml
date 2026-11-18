@@ -1,6 +1,6 @@
 [package]
 name = "idleon-ui"
-description = "Shared GPUI building blocks: the background task runner, run chrome, formula trees and number formatting."
+description = "Shared GPUI building blocks: the background task runner, run chrome, formula trees, number formatting and the composites GPUI Kit lacks."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -9,4 +9,9 @@ license.workspace = true
 [dependencies]
 ely-gpui-component = { workspace = true }
 gpui = { workspace = true }
+gpui-kit = { workspace = true }
 idleon-common = { workspace = true }
+
+[dev-dependencies]
+gpui = { workspace = true, features = ["test-support"] }
+gpui-kit = { workspace = true, features = ["test-support"] }
