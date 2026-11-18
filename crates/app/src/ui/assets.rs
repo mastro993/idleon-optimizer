@@ -7,13 +7,13 @@
 
 use crate::assets::{Artwork, Manifest};
 use crate::sections::Section;
-use ely_gpui_component::primitives::{Icon, IconName};
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, ElementId, IntoElement, ObjectFit, ParentElement, Pixels, Role, Styled, div,
     img, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::{ActiveTheme as _, Icon};
 
 /// A section's game sprite in a `size` box. A missing sprite draws the
 /// section's emoji in the same box, so deleting a file never moves the layout.
@@ -68,7 +68,7 @@ pub(crate) fn asset_image_sized(
             .object_fit(ObjectFit::Contain)
             .into_any_element(),
         Artwork::Missing => {
-            let colors = &cx.theme().colors;
+            let theme = cx.theme();
             let name = reference.rsplit('/').next().unwrap_or(reference);
             div()
                 .id(id)
@@ -83,10 +83,10 @@ pub(crate) fn asset_image_sized(
                 .w(width)
                 .h(height)
                 .p_1()
-                .rounded(px(6.0))
+                .rounded(theme.radius_lg)
                 .border_1()
-                .border_color(colors.border)
-                .text_color(colors.fg_muted)
+                .border_color(theme.border)
+                .text_color(theme.muted_foreground)
                 .child(Icon::new(IconName::ImageOff))
                 .child(
                     div()
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn a_missing_sprite_falls_back_to_the_emoji_in_the_same_box() {
         let mut cx = gpui::TestAppContext::single();
-        cx.update(ely_gpui_component::init_for_tests);
+        cx.update(gpui_kit::init);
         let committed = Manifest::load(
             Path::new(env!("CARGO_MANIFEST_DIR"))
                 .join("../..")

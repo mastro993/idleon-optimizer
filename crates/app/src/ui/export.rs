@@ -9,12 +9,13 @@
 //! on its own too.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::overlays::Dialog;
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
-use gpui::{AnyElement, ClipboardItem, Context, IntoElement, ParentElement, Role, div, px};
+use gpui::{App, ClipboardItem, Context, Entity, ParentElement, Role, Styled, div};
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogEntrance, DialogFooter};
+use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_project as project;
+use idleon_ui::widgets::{TEXT_CAPTION, TEXT_MONO};
 
 /// How much of the project document the dialog shows; the rest is on the
 /// clipboard.
@@ -74,71 +75,86 @@ impl Export {
     }
 }
 
-/// The export dialog, rendered on top of the shell while it is open.
-pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
+/// The export dialog's content, built by the kit's dialog layer while it is
+/// open (`AppState::open_export`).
+pub(crate) fn dialog(entity: &Entity<AppState>, dialog: Dialog, cx: &App) -> Dialog {
+    let export = &entity.read(cx).export;
+    let theme = cx.theme();
     let close = entity.clone();
     let cancel = entity.clone();
     let copy = entity.clone();
-    let muted = cx.theme().colors.fg_muted;
-    let subtle = cx.theme().colors.fg_subtle;
-    let preview = state.export.preview.clone();
-    let bytes = state.export.bytes();
-    let sections = state.export.sections;
-    let save = if state.export.has_save {
+    let bytes = export.bytes();
+    let sections = export.sections;
+    let save = if export.has_save {
         "save included"
     } else {
         "no save"
     };
 
-    Dialog::new("export-dialog", "Export project", move |window, cx| {
-        close.update(cx, |state, cx| state.close_export(window, cx));
-    })
-    .detail(format!(
-        "Project v{} · {sections} section(s) · {save} — copy the JSON.",
-        project::VERSION
-    ))
-    .child(
-        div()
-            .id("export-summary")
-            .role(Role::Label)
-            .aria_label(format!("{bytes} bytes, {sections} section config"))
-            .text_size(px(12.0))
-            .text_color(muted)
-            .child(format!("{bytes} bytes")),
-    )
-    .child(
-        div()
-            .id("export-text")
-            .role(Role::Label)
-            .aria_label(preview.clone())
-            .w_full()
-            .overflow_hidden()
-            .whitespace_nowrap()
-            .p_2()
-            .rounded_md()
-            .bg(cx.theme().colors.sunken)
-            .text_size(px(11.0))
-            .text_color(subtle)
-            .child(preview),
-    )
-    .action(move |close| {
-        Button::new("export-close", "Close")
-            .variant(ButtonVariant::Subtle)
-            .on_click(move |_event, window, cx| {
-                cancel.update(cx, |state, cx| state.close_export(window, cx));
-                close(window, cx);
-            })
-    })
-    .action(move |close| {
-        Button::new("export-copy", "Copy JSON")
-            .primary()
-            .on_click(move |_event, window, cx| {
-                copy.update(cx, |state, cx| state.copy_export(cx));
-                close(window, cx);
-            })
-    })
-    .into_any_element()
+    dialog
+        .title("Export project")
+        // Ely's dialog opened and closed in one frame. Keep that: a closing kit
+        // dialog keeps its surface (and its ids) up through the exit and
+        // shields the clicks that land on it.
+        .entrance(DialogEntrance::None)
+        .on_close(move |_event, window, cx| {
+            close.update(cx, |state, cx| state.close_export(window, cx));
+        })
+        .child(
+            v_flex()
+                .id("export-dialog")
+                .gap_3()
+                .child(DialogDescription::new().child(format!(
+                    "Project v{} · {sections} section(s) · {save} — copy the JSON.",
+                    project::VERSION
+                )))
+                .child(
+                    div()
+                        .id("export-summary")
+                        .role(Role::Label)
+                        .aria_label(format!("{bytes} bytes, {sections} section config"))
+                        .text_size(TEXT_MONO)
+                        .text_color(theme.muted_foreground)
+                        .child(format!("{bytes} bytes")),
+                )
+                .child(
+                    div()
+                        .id("export-text")
+                        .role(Role::Label)
+                        .aria_label(export.preview.clone())
+                        .w_full()
+                        .overflow_hidden()
+                        .whitespace_nowrap()
+                        .p_2()
+                        .rounded(theme.radius)
+                        .bg(theme.muted)
+                        .text_size(TEXT_CAPTION)
+                        .text_color(theme.table_head_foreground)
+                        .child(export.preview.clone()),
+                ),
+        )
+        .footer(
+            DialogFooter::new()
+                .child(
+                    Button::new("export-close")
+                        .label("Close")
+                        .secondary()
+                        .on_click(move |_event, window, cx| {
+                            cancel.update(cx, |state, cx| state.close_export(window, cx));
+                        }),
+                )
+                .child(
+                    Button::new("export-copy")
+                        .label("Copy JSON")
+                        .primary()
+                        .on_click(move |_event, window, cx| {
+                            copy.update(cx, |state, cx| {
+                                state.copy_export(cx);
+                                state.close_export(window, cx);
+                            });
+                        }),
+                ),
+        )
 }
 
 /// Copy the whole document, so the box never has to lay out a save-sized

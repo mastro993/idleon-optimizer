@@ -1,14 +1,15 @@
 //! Window chrome: the header, the sidebar and the routed place.
 //!
-//! The shell owns the window, the history shortcuts and the dialogs, and lays
-//! out the header, the sidebar, the place and the status line, each its own
-//! cached view (`ui/views.rs`); a section owns its own tab strip and content
-//! behind the registry factory.
+//! The shell owns the window and the history shortcuts, and lays out the
+//! header, the sidebar, the place and the status line, each its own cached view
+//! (`ui/views.rs`); a section owns its own tab strip and content behind the
+//! registry factory. The import and export dialogs open on the kit's `Root`
+//! layer above it (`state/documents.rs`).
 
 use crate::state::{AppState, Route};
 use crate::ui::layout::SidebarWidth;
 use crate::ui::views::Views;
-use crate::ui::{export, header, import, key_binding, section, sidebar};
+use crate::ui::{header, key_binding, section, sidebar};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, IntoElement, ParentElement, Role, StyleRefinement, Styled, Window,
@@ -134,12 +135,6 @@ pub(crate) fn shell(
         .child(status.cached(StyleRefinement::default().absolute().size_0()));
     if !state.import.open && !state.export.open {
         root = root.key_context(SHELL_CONTEXT);
-    }
-    if state.import.open {
-        root = root.child(import::dialog(state, cx));
-    }
-    if state.export.open {
-        root = root.child(export::dialog(state, cx));
     }
     // The window opens before the session file is read; a veil holds the place
     // the restore is about to fill instead of showing the empty dashboard.

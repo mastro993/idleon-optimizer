@@ -29,7 +29,7 @@ how many app files used the Ely item when this page was written.
 | `Slider` | 3 | `slider::Slider` over `SliderState` | Stateful like `NumberInput`: `SliderEvent::Change` while dragging, `Release` once. |
 | `DropZone` | 1 | `widgets::DropZone` | The kit has file chips (`attachment`) but no drop target. Same id, `kinds`, `hint` and `on_drop`, one file at a time; Browse is `(id, "browse")`. |
 | `Run` | 1 | `Rc<dyn Fn(&mut Window, &mut App)>` | Ely's name for a click handler; spell the type out or alias it locally. |
-| `overlays::Dialog` | 2 | `dialog::Dialog` | Opened through the kit `Root` with `window.open_dialog(cx, \|dialog, window, cx\| …)` (`WindowExt`), not rendered inline. #347 moves the import and export dialogs. |
+| `overlays::Dialog` | 2 | `dialog::Dialog` | Opened through the kit `Root` with `window.open_dialog(cx, \|dialog, window, cx\| …)` (`WindowExt`), not rendered inline. The state method that opens it keeps an `open` flag; the dialog's `on_close` (Escape, backdrop, close button) and the state's own close both clear it, and only the state's close calls `window.close_dialog`. Ids go on a `v_flex().id(..)` body, the actions in a `DialogFooter`. See `open_import` in `state/documents.rs`. |
 
 ### Disabled and secondary buttons
 

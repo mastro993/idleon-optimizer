@@ -12,19 +12,20 @@
 //! project file and one section's config.
 
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::forms::DropZone;
-use ely_gpui_component::overlays::Dialog;
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
-    div, px,
+    AnyElement, App, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled,
+    Window, div,
 };
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogEntrance, DialogFooter};
 use gpui_kit::component::input::{Textarea, TextareaState};
+use gpui_kit::component::separator::Separator;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, v_flex};
 use idleon_import::Imported;
 use idleon_import::pipeline::Document;
+use idleon_ui::widgets::{DropZone, TEXT_BODY, TEXT_CAPTION};
 use std::path::Path;
 
 /// How many warnings the preview lists before it counts the rest.
@@ -166,113 +167,112 @@ fn fleet(import: &Imported) -> String {
     }
 }
 
-/// The import dialog, rendered on top of the shell while it is open.
-pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
+/// The import dialog's content, built by the kit's dialog layer on every frame
+/// it draws while open (`AppState::open_import`).
+pub(crate) fn dialog(entity: &Entity<AppState>, dialog: Dialog, cx: &App) -> Dialog {
+    let state = entity.read(cx);
+    let theme = cx.theme();
+    let (muted, danger) = (theme.muted_foreground, theme.danger);
     let close = entity.clone();
     let cancel = entity.clone();
     let apply = entity.clone();
+    let dropped = entity.clone();
     let pending = state.import.pending.is_some();
     let input_focus = state.import.input.focus_handle(cx);
 
-    let dropped = entity.clone();
-    let drop_zone = DropZone::new("import-drop")
-        .kinds(&["json", "txt"])
-        .hint("it.json, save.json, a project file or a section config")
-        .on_drop(move |paths, _window, cx| {
-            if let Some(path) = paths.first() {
-                dropped.update(cx, |state, cx| state.check_file(path, cx));
-            }
+    let body = v_flex()
+        .id("import-dialog")
+        .gap_3()
+        .child(
+            DropZone::new("import-drop")
+                .kinds(&["json", "txt"])
+                .hint("it.json, save.json, a project file or a section config")
+                .on_drop(move |path, _window, cx| {
+                    dropped.update(cx, |state, cx| state.check_file(&path, cx));
+                }),
+        )
+        .child(
+            div()
+                .id("import-paste-row")
+                .child(Separator::horizontal().label("or paste it")),
+        )
+        .child(
+            div()
+                .id("import-input")
+                .aria_label("Import JSON")
+                .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
+                .child(Textarea::new(&state.import.input).aria_label("Import JSON")),
+        )
+        .child(preview(state, cx))
+        // While a document is pending the preview says everything; the line below it
+        // is for the prompt and for a parse that failed. It stays above the change
+        // log so an error is never pushed below the fold.
+        .when(!pending, |body| {
+            body.child(
+                div()
+                    .id("import-status")
+                    .role(Role::Label)
+                    .aria_label(state.import.message.clone())
+                    .text_size(TEXT_BODY)
+                    .text_color(if state.import.ok { muted } else { danger })
+                    .child(state.import.message.clone()),
+            )
+        })
+        .when(!state.session.recent.is_empty(), |body| {
+            body.child(recent(state, cx))
+        })
+        .when(!pending && !state.import.changes.is_empty(), |body| {
+            body.child(change_log(state, cx))
         });
 
-    Dialog::new(
-        "import-dialog",
-        "Import save or project",
-        move |window, cx| {
+    dialog
+        .title("Import save or project")
+        // Ely's dialog opened and closed in one frame. Keep that: a closing kit
+        // dialog keeps its surface (and its ids) up through the exit and
+        // shields the clicks that land on it.
+        .entrance(DialogEntrance::None)
+        .on_close(move |_event, window, cx| {
             close.update(cx, |state, cx| state.close_import(window, cx));
-        },
-    )
-    .detail("Drop a file, browse for one, or paste the JSON.")
-    .child(drop_zone)
-    .child(
-        div()
-            .id("import-paste-row")
-            .flex()
-            .items_center()
-            .gap_2()
-            .child(div().flex_1().h(px(1.0)).bg(cx.theme().colors.border))
-            .child(
-                div()
-                    .text_size(px(11.0))
-                    .text_color(cx.theme().colors.fg_muted)
-                    .child("or paste it"),
-            )
-            .child(div().flex_1().h(px(1.0)).bg(cx.theme().colors.border)),
-    )
-    .child(
-        div()
-            .id("import-input")
-            .aria_label("Import JSON")
-            .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
-            .child(Textarea::new(&state.import.input).aria_label("Import JSON")),
-    )
-    .child(preview(state, cx))
-    // While a document is pending the preview says everything; the line below it
-    // is for the prompt and for a parse that failed. It stays above the change
-    // log so an error is never pushed below the fold.
-    .when(state.import.pending.is_none(), |dialog| {
-        dialog.child(
-            div()
-                .id("import-status")
-                .role(Role::Label)
-                .aria_label(state.import.message.clone())
-                .text_size(px(12.0))
-                .text_color(if state.import.ok {
-                    cx.theme().colors.fg_muted
-                } else {
-                    cx.theme().colors.danger
-                })
-                .child(state.import.message.clone()),
+        })
+        .child(DialogDescription::new().child("Drop a file, browse for one, or paste the JSON."))
+        .child(body)
+        .footer(
+            DialogFooter::new()
+                .child(
+                    Button::new("import-cancel")
+                        .label("Cancel")
+                        .secondary()
+                        .on_click(move |_event, window, cx| {
+                            cancel.update(cx, |state, cx| state.close_import(window, cx));
+                        }),
+                )
+                .child(
+                    Button::new("import-apply")
+                        .label("Apply")
+                        .primary()
+                        .disabled(!pending)
+                        .on_click(move |_event, window, cx| {
+                            apply.update(cx, |state, cx| state.apply_import(window, cx));
+                        }),
+                ),
         )
-    })
-    .when(!state.session.recent.is_empty(), |dialog| {
-        dialog.child(recent(state, cx))
-    })
-    .when(
-        state.import.pending.is_none() && !state.import.changes.is_empty(),
-        |dialog| dialog.child(change_log(state, cx)),
-    )
-    .action(move |close| {
-        Button::new("import-cancel", "Cancel")
-            .variant(ButtonVariant::Subtle)
-            .on_click(move |_event, window, cx| {
-                cancel.update(cx, |state, cx| state.close_import(window, cx));
-                close(window, cx);
-            })
-    })
-    .action(move |close| {
-        Button::new("import-apply", "Apply")
-            .primary()
-            .disabled(!pending)
-            .on_click(move |_event, window, cx| {
-                apply.update(cx, |state, cx| state.apply_import(window, cx));
-                close(window, cx);
-            })
-    })
-    .into_any_element()
 }
 
 /// The detected format, research level, section count and warnings, or the
 /// prompt to import something.
-fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (muted, subtle, danger) = (colors.fg_muted, colors.fg_subtle, colors.danger);
+fn preview(state: &AppState, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, subtle, danger) = (
+        theme.muted_foreground,
+        theme.table_head_foreground,
+        theme.danger,
+    );
     let Some(pending) = state.import.pending.as_ref() else {
         return div()
             .id("import-preview")
             .role(Role::Label)
             .aria_label("Nothing to preview yet")
-            .text_size(px(12.0))
+            .text_size(TEXT_BODY)
             .text_color(muted)
             .child(if state.import.source == "pasted text" {
                 "Nothing to preview yet.".to_string()
@@ -291,7 +291,7 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .id(("import-warning", index))
                 .role(Role::Label)
                 .aria_label(warning.clone())
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!("· {warning}")),
         );
@@ -357,7 +357,7 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .id("import-source")
                 .role(Role::Label)
                 .aria_label(format!("From {}", state.import.source))
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!("From {}", state.import.source)),
         )
@@ -368,7 +368,7 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .id("import-warnings-more")
                         .role(Role::Label)
                         .aria_label(format!("and {hidden} more warnings"))
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(format!("…and {hidden} more")),
                 )
@@ -379,9 +379,9 @@ fn preview(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
 /// The applied imports the dialog remembers, newest first, each naming its
 /// format, local time and source.
-fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (muted, subtle) = (colors.fg_muted, colors.fg_subtle);
+fn recent(state: &AppState, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, subtle) = (theme.muted_foreground, theme.table_head_foreground);
     let entries = &state.session.recent;
     let shown = entries.len().min(SHOWN_RECENT);
     let mut list = div().flex().flex_col().gap_1();
@@ -392,7 +392,7 @@ fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .id(("recent-import", index))
                 .role(Role::Label)
                 .aria_label(line.clone())
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!("· {line}")),
         );
@@ -407,7 +407,7 @@ fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_1()
         .child(
             div()
-                .text_size(px(10.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(subtle)
                 .child("Recent imports"),
         )
@@ -418,7 +418,7 @@ fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                     .id("import-recent-more")
                     .role(Role::Label)
                     .aria_label(format!("and {hidden} older imports"))
-                    .text_size(px(11.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(format!("…and {hidden} older")),
             )
@@ -428,9 +428,9 @@ fn recent(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
 
 /// What applying the last document changed, one line per field or section, so
 /// the log is readable after the status bar has moved on.
-fn change_log(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let colors = &cx.theme().colors;
-    let (muted, subtle) = (colors.fg_muted, colors.fg_subtle);
+fn change_log(state: &AppState, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let (muted, subtle) = (theme.muted_foreground, theme.table_head_foreground);
     let changes = &state.import.changes;
     let shown = changes.len().min(SHOWN_CHANGES);
     let mut list = div().flex().flex_col().gap_1();
@@ -440,7 +440,7 @@ fn change_log(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .id(("import-change", index))
                 .role(Role::Label)
                 .aria_label(change.clone())
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!("· {change}")),
         );
@@ -455,7 +455,7 @@ fn change_log(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
         .gap_1()
         .child(
             div()
-                .text_size(px(10.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(subtle)
                 .child(format!("Last import changed {} thing(s)", changes.len())),
         )
@@ -466,7 +466,7 @@ fn change_log(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
                     .id("import-changes-more")
                     .role(Role::Label)
                     .aria_label(format!("and {hidden} more changes"))
-                    .text_size(px(11.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(format!("…and {hidden} more")),
             )
@@ -485,13 +485,13 @@ fn stat(id: &'static str, label: &'static str, value: &str, tone: gpui::Hsla) ->
         .gap_0p5()
         .child(
             div()
-                .text_size(px(10.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(tone)
                 .child(SharedString::from(label)),
         )
         .child(
             div()
-                .text_size(px(13.0))
+                .text_size(TEXT_BODY)
                 .child(SharedString::from(value.to_string())),
         )
         .into_any_element()

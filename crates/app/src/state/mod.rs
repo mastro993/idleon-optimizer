@@ -1697,28 +1697,131 @@ mod tests {
         window
     }
 
+    /// A window under the kit's `Root`, as `main` opens it, so the import
+    /// dialog opens on the kit's dialog layer.
+    fn rooted(
+        cx: &mut gpui::TestAppContext,
+        dir: &std::path::Path,
+    ) -> (gpui::AnyWindowHandle, Entity<AppState>) {
+        cx.update(init_for_tests);
+        let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
+        let mut state = None;
+        let window = cx.add_window(|window, cx| {
+            let view =
+                cx.new(|cx| AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx));
+            state = Some(view.clone());
+            gpui_kit::base::Root::new(view, window, cx)
+        });
+        cx.run_until_parked();
+        (window.into(), state.expect("the window built its state"))
+    }
+
+    /// A project value without the wall-clock time the Jar's enchant history
+    /// stamps on each applied import, so two imports a second apart compare.
+    fn without_clock(mut project: serde_json::Value) -> serde_json::Value {
+        if let Some(history) = project
+            .pointer_mut("/sections/jar/enchant/history")
+            .and_then(serde_json::Value::as_array_mut)
+        {
+            for snapshot in history {
+                snapshot
+                    .as_object_mut()
+                    .map(|snapshot| snapshot.remove("at"));
+            }
+        }
+        project
+    }
+
     #[test]
     fn a_launch_import_applies_the_file_like_the_import_dialog() {
+        use gpui_kit::component::WindowExt as _;
+
         let dir = std::env::temp_dir().join(format!("idleon-launch-import-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let fixture =
             std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/data.json");
         let mut cx = gpui::TestAppContext::single();
-        let window = launched_with_import(&mut cx, &dir, fixture);
-        window
+        let launched = launched_with_import(&mut cx, &dir.join("launch"), fixture.clone());
+        let (launch_project, launch_recent) = launched
             .update(&mut cx, |state, _, _| {
                 assert!(state.save_loaded, "{}", state.status);
                 assert!(!state.import.open);
-                assert_eq!(
-                    state
-                        .session
-                        .recent
-                        .first()
-                        .map(|entry| entry.source.as_str()),
-                    Some("data.json")
-                );
+                let recent = state.session.recent.first().cloned();
+                (without_clock(session::project_value(state)), recent)
             })
             .expect("the window is open");
+
+        // The same file dropped on the dialog, then applied.
+        let (window, state) = rooted(&mut cx, &dir.join("dialog"));
+        let dialog_open = |cx: &mut gpui::TestAppContext| {
+            cx.update_window(window, |_, window, cx| window.has_active_dialog(cx))
+                .expect("the window is open")
+        };
+        cx.update_window(window, |_, window, cx| {
+            state.update(cx, |state, cx| state.open_import(window, cx))
+        })
+        .expect("the window is open");
+        cx.run_until_parked();
+        assert!(
+            dialog_open(&mut cx),
+            "the import dialog opens on the kit layer"
+        );
+        cx.update_window(window, |_, window, cx| {
+            state.update(cx, |state, cx| {
+                state.check_file(&fixture, cx);
+                assert!(state.import.pending.is_some(), "{}", state.import.message);
+                state.apply_import(window, cx);
+            })
+        })
+        .expect("the window is open");
+        cx.run_until_parked();
+        assert!(!dialog_open(&mut cx), "Apply closes the dialog");
+
+        state.read_with(&cx, |state, _| {
+            assert!(!state.import.open);
+            assert!(state.save_loaded, "{}", state.status);
+            assert_eq!(without_clock(session::project_value(state)), launch_project);
+            let recent = state.session.recent.first().cloned();
+            assert_eq!(
+                recent.map(|entry| (entry.format, entry.source)),
+                launch_recent.map(|entry| (entry.format, entry.source))
+            );
+        });
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn escape_closes_a_kit_dialog_and_the_state_follows() {
+        use gpui_kit::component::WindowExt as _;
+
+        let dir = std::env::temp_dir().join(format!("idleon-dialog-escape-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut cx = gpui::TestAppContext::single();
+        let (window, state) = rooted(&mut cx, &dir);
+        let dialog_open = |cx: &mut gpui::TestAppContext| {
+            cx.update_window(window, |_, window, cx| window.has_active_dialog(cx))
+                .expect("the window is open")
+        };
+        type Open = fn(&mut AppState, &mut Window, &mut Context<AppState>);
+        type IsOpen = fn(&AppState) -> bool;
+        let dialogs: [(Open, IsOpen); 2] = [
+            (AppState::open_import, |state| state.import.open),
+            (AppState::open_export, |state| state.export.open),
+        ];
+        for (open, is_open) in dialogs {
+            cx.update_window(window, |_, window, cx| {
+                state.update(cx, |state, cx| open(state, window, cx))
+            })
+            .expect("the window is open");
+            cx.run_until_parked();
+            assert!(dialog_open(&mut cx));
+            assert!(state.read_with(&cx, |state, _| is_open(state)));
+
+            cx.simulate_keystrokes(window, "escape");
+            cx.run_until_parked();
+            assert!(!dialog_open(&mut cx), "Escape closes the dialog");
+            assert!(!state.read_with(&cx, |state, _| is_open(state)));
+        }
         let _ = std::fs::remove_dir_all(&dir);
     }
 
