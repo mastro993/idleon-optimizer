@@ -59,8 +59,8 @@ use crate::ui;
 use crate::ui::export::Export;
 use crate::ui::import::Import;
 pub(crate) use activity::{Activity, Mark, Shown};
-use ely_gpui_component::forms::{InputEvent, TextInput};
 use gpui::{AppContext as _, Context, Entity, FocusHandle, ScrollHandle, Subscription, Window};
+use gpui_kit::component::input::{InputEvent, InputState};
 #[cfg(feature = "automation")]
 use gpui_mcp::BridgeHandle;
 pub(crate) use history::History;
@@ -249,7 +249,7 @@ pub(crate) struct AppState {
     /// The farming section's selection and crop target, kept alive too.
     pub(crate) farming: FarmingState,
     /// The farming preset bar's name field.
-    pub(crate) farming_name: Entity<TextInput>,
+    pub(crate) farming_name: Entity<InputState>,
     /// The fishing characters, rod and saved toolkit the last import carried.
     pub(crate) fishing_save: FishingSave,
     /// The fishing section's character, toolkit, pool and account values.
@@ -376,7 +376,7 @@ pub(crate) struct AppState {
     /// The shared formula tree on the All Stats breakdown card.
     pub(crate) stats_breakdown: Entity<FormulaTree>,
     /// The formula explorer's search field.
-    pub(crate) stats_explorer_search: Entity<TextInput>,
+    pub(crate) stats_explorer_search: Entity<InputState>,
     /// The shared formula tree on the All Stats formula card.
     pub(crate) stats_explorer_formula: Entity<FormulaTree>,
     /// The Drop Rate Calculator's context, save slice and live dungeon fields.
@@ -396,9 +396,9 @@ pub(crate) struct AppState {
     /// The tower trial levels and account values the live run reads.
     pub(crate) worship_inputs: WorshipInputs,
     /// The dashboard search field.
-    pub(crate) search: Entity<TextInput>,
+    pub(crate) search: Entity<InputState>,
     /// The Justice case search field.
-    pub(crate) monument_search: Entity<TextInput>,
+    pub(crate) monument_search: Entity<InputState>,
     pub(crate) status: String,
     /// Whether the save-derived supplements card is expanded.
     pub(crate) supplements_open: bool,
@@ -525,40 +525,31 @@ impl AppState {
         #[cfg(not(feature = "automation"))]
         let _ = endpoint_dir;
         let import = Import::new(window, cx);
-        let search = ui::text_input("Search calculators…", "Search calculators", window, cx);
-        let monument_search = ui::text_input(
-            "Visitor or words from the request…",
-            "Find a Justice case",
-            window,
-            cx,
-        );
+        let search = ui::input_state("Search calculators…", window, cx);
+        let monument_search = ui::input_state("Visitor or words from the request…", window, cx);
         let statue = StatueState::new(window, cx);
         let prisma = PrismaState::new(window, cx);
         let combat = CombatState::new(window, cx);
         let research = ResearchState::new(window, cx);
-        let farming_name = ui::text_input("Preset name", "Preset name", window, cx);
-        let stats_explorer_search =
-            ui::text_input("Name, saved input or source", "Search formulas", window, cx);
+        let farming_name = ui::input_state("Preset name", window, cx);
+        let stats_explorer_search = ui::input_state("Name, saved input or source", window, cx);
         // Filter and name fields redraw the page on every keystroke.
-        let mut subscriptions: Vec<Subscription> = [
-            &search,
-            &monument_search,
-            &statue.search,
-            &prisma.search,
-            &combat.name,
-            &combat.talent_search,
-            &combat.override_search,
-            &research.preset_name,
-            &stats_explorer_search,
-        ]
-        .into_iter()
-        .map(|input| redraw_on_edit(cx, input))
-        .collect();
+        let mut subscriptions: Vec<Subscription> = vec![
+            redraw_on_edit(cx, &search),
+            redraw_on_edit(cx, &monument_search),
+            redraw_on_edit(cx, &statue.search),
+            redraw_on_edit(cx, &prisma.search),
+            redraw_on_edit(cx, &combat.name),
+            redraw_on_edit(cx, &combat.talent_search),
+            redraw_on_edit(cx, &combat.override_search),
+            redraw_on_edit(cx, &research.preset_name),
+            redraw_on_edit(cx, &stats_explorer_search),
+        ];
         // Every edit of the paste box re-checks the text, so the preview and the
         // Apply button always describe what is on screen.
         subscriptions.push(
             cx.subscribe(&import.input, |state, _input, event: &InputEvent, cx| {
-                if *event == InputEvent::Changed {
+                if matches!(event, InputEvent::Change) {
                     state.check_paste(cx);
                 }
             }),
@@ -1587,8 +1578,9 @@ impl AppState {
     }
 
     /// Empty the dashboard search; Escape calls this.
-    pub(crate) fn clear_search(&mut self, cx: &mut Context<Self>) {
-        self.search.update(cx, |search, cx| search.set_text("", cx));
+    pub(crate) fn clear_search(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.search
+            .update(cx, |search, cx| search.set_value("", window, cx));
         cx.notify();
     }
 }
@@ -1616,17 +1608,24 @@ fn starter_simulation() -> Simulation {
     simulation
 }
 
+/// Both UI libraries, set up as a window state needs them under GPUI's test
+/// platform. Ely's `init_for_tests` stands in for `init`, which needs the
+/// bundled fonts the test platform has no asset source for.
+#[cfg(test)]
+pub(crate) fn init_for_tests(cx: &mut gpui::App) {
+    ely_gpui_component::init_for_tests(cx);
+    gpui_kit::init(cx);
+}
+
 /// A window state built under GPUI's test platform, its session and
-/// automation endpoint kept in a private directory. Ely's `init_for_tests`
-/// stands in for `init`, which needs the bundled fonts the test platform has no
-/// asset source for; without an endpoint directory the bridge would register
-/// in the user's real one.
+/// automation endpoint kept in a private directory; without an endpoint
+/// directory the bridge would register in the user's real one.
 #[cfg(test)]
 pub(crate) fn headless(
     cx: &mut gpui::TestAppContext,
     dir: &std::path::Path,
 ) -> gpui::WindowHandle<AppState> {
-    cx.update(ely_gpui_component::init_for_tests);
+    cx.update(init_for_tests);
     let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
     let window = cx.add_window(|window, cx| {
         AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)
@@ -1670,7 +1669,7 @@ mod tests {
         dir: &std::path::Path,
         import: std::path::PathBuf,
     ) -> gpui::WindowHandle<AppState> {
-        cx.update(ely_gpui_component::init_for_tests);
+        cx.update(init_for_tests);
         let (endpoint, state_dir) = (dir.join("endpoint"), dir.join("state"));
         let window = cx.add_window(|window, cx| {
             AppState::new(
@@ -1850,7 +1849,7 @@ mod tests {
         let written = std::fs::read(&path).expect("the session file");
 
         let mut cx = gpui::TestAppContext::single();
-        cx.update(ely_gpui_component::init_for_tests);
+        cx.update(init_for_tests);
         let endpoint = dir.join("endpoint");
         let window = cx.add_window(|window, cx| {
             AppState::new(window, Some(endpoint), None, Some(state_dir), None, cx)

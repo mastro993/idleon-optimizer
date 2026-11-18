@@ -9,14 +9,16 @@
 
 use crate::state::AppState;
 use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, SearchInput, Select};
+use ely_gpui_component::forms::{Choice, Select};
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::ActiveTheme as _;
 use ely_gpui_component::typography::Caption;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Role, Styled, div, px};
 use idleon_stats::{Breakdown, BreakdownCategory, ExplorerFilter, ExplorerStatus};
 use idleon_ui::formula::FormulaTree;
+use idleon_ui::widgets::search_input;
 
 /// The explorer's own selection: its filters and the formula card it shows.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -55,7 +57,7 @@ impl State {
 pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let tree = state.stats_explorer_formula.clone();
     let search = state.stats_explorer_search.clone();
-    let query = search.read(cx).text().trim().to_string();
+    let query = search.read(cx).value().trim().to_string();
     let stats = &mut state.stats_all;
     let Some(sheet) = stats.sheet.as_ref() else {
         return Card::new()
@@ -90,7 +92,7 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
     let entity = cx.entity();
     let muted = cx.theme().colors.fg_muted;
     let accent = cx.theme().colors.accent;
-    let search_focus = search.read(cx).focus().clone();
+    let search_focus = search.focus_handle(cx);
     let category = entity.clone();
     let status = entity.clone();
 
@@ -109,7 +111,7 @@ pub(crate) fn region(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEle
                     .aria_label("Search formulas")
                     .w(px(260.0))
                     .on_click(move |_event, window, cx| window.focus(&search_focus, cx))
-                    .child(SearchInput::new("stats-explorer-search-field", &search)),
+                    .child(search_input(&search).aria_label("Search formulas")),
             ),
         )
         .child(

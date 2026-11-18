@@ -4,6 +4,7 @@ use crate::session::RecentImport;
 use crate::state::{AppState, discard_run};
 use crate::ui::export::Export;
 use crate::ui::import::{self, Pending};
+use gpui::Focusable as _;
 use gpui::{Context, Window};
 use idleon_fishing::FishingSave;
 use idleon_import::{Imported, pipeline};
@@ -15,7 +16,7 @@ impl AppState {
     /// Open the shared import dialog, where every section's header import goes.
     pub(crate) fn open_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.import.open = true;
-        let focus = self.import.input.read(cx).focus().clone();
+        let focus = self.import.input.focus_handle(cx);
         window.focus(&focus, cx);
         self.set_status(
             "Importing a save: drop a file, browse, or paste the JSON.",
@@ -33,7 +34,7 @@ impl AppState {
     /// Re-check the paste box. Runs on every edit, so the preview always describes
     /// what is on screen.
     pub(crate) fn check_paste(&mut self, cx: &mut Context<Self>) {
-        let text = self.import.input.read(cx).text().to_string();
+        let text = self.import.input.read(cx).value().to_string();
         self.check_import(&text, "pasted text", cx);
     }
 

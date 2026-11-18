@@ -1,15 +1,21 @@
-//! The display composites GPUI Kit lacks, styled only from the kit theme.
+//! The display composites and form controls GPUI Kit lacks, styled only from
+//! the kit theme.
 //!
 //! Everything else a screen draws comes from `gpui_kit::component`;
-//! `docs/ui-kit/display.md` maps each Ely item to its kit or `idleon_ui`
-//! replacement. Sizes follow the Console design (`docs/ui-kit/design.md`) in
-//! pixels, so they hold when the kit theme changes the window's rem.
+//! `docs/ui-kit/display.md` and `docs/ui-kit/forms.md` map each Ely item to
+//! its kit or `idleon_ui` replacement. Sizes follow the Console design
+//! (`docs/ui-kit/design.md`) in pixels, so they hold when the kit theme
+//! changes the window's rem.
 
 mod callout;
 mod caption;
 mod card;
+mod choice;
+mod drop_zone;
 mod icons;
+mod number;
 mod scroll;
+mod search;
 mod stat;
 mod timeline;
 mod tokens;
@@ -20,8 +26,12 @@ mod tests;
 pub use callout::Callout;
 pub use caption::Caption;
 pub use card::{Card, CardHeader};
+pub use choice::{Choice, ChoiceSelect};
+pub use drop_zone::DropZone;
 pub use icons::Icons;
+pub use number::{number_state, number_value, show_number};
 pub use scroll::bring_into_view;
+pub use search::search_input;
 pub use stat::{KpiStrip, Statistic};
 pub use timeline::{Timeline, TimelineItem};
 pub use tokens::{
