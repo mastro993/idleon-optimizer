@@ -4814,7 +4814,6 @@ dependencies = [
 name = "idleon-ui"
 version = "0.2.0"
 dependencies = [
- "ely-gpui-component",
  "gpui-kit",
  "gpui-pre",
  "idleon-common",

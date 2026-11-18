@@ -1,6 +1,5 @@
 //! Formatting and palette helpers shared by the panes.
 
-use ely_gpui_component::typography::format::{DurationStyle, duration as ely_duration};
 use gpui::{Hsla, rgb};
 use idleon_common::curve::js_round;
 
@@ -11,7 +10,22 @@ pub fn projection(hours: f64) -> String {
     if !hours.is_finite() || hours <= 0.0 {
         return "—".into();
     }
-    ely_duration((hours * 3600.0).round() as u64, DurationStyle::Compact)
+    let seconds = (hours * 3600.0).round() as u64;
+    let (days, hours, minutes, secs) = (
+        seconds / 86_400,
+        seconds / 3_600,
+        seconds / 60 % 60,
+        seconds % 60,
+    );
+    if days > 0 {
+        format!("{days}d {}h", hours % 24)
+    } else if hours > 0 {
+        format!("{hours}h {minutes}m")
+    } else if minutes > 0 {
+        format!("{minutes}m {secs}s")
+    } else {
+        format!("{secs}s")
+    }
 }
 
 /// A `#rgb` or `#rrggbb` colour from the game data as a theme colour.
@@ -416,6 +430,8 @@ mod tests {
     fn a_projection_reads_as_days_hours_minutes_and_seconds() {
         assert_eq!(projection(0.000_85), "3s");
         assert_eq!(projection(6.285_905_338_846_417), "6h 17m");
+        assert_eq!(projection(0.07), "4m 12s");
+        assert_eq!(projection(49.5), "2d 1h");
         assert_eq!(projection(f64::INFINITY), "—");
         assert_eq!(projection(0.0), "—");
     }
