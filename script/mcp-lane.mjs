@@ -45,6 +45,34 @@ export const activate = (pid) => {
   }
 };
 
+/// Click a sidebar item, scrolling the sidebar first when the item sits
+/// outside it: the sidebar reveals the active item, so Home scrolls away while
+/// a section near the bottom is open, and the Tools group starts below the fold.
+export async function openNav(lane, id) {
+  let previous = null;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const nodes = await lane.tree();
+    const node = nodes.find((entry) => entry.id === id);
+    if (!node) throw new Error(`${id} is not in the sidebar`);
+    const frame = nodes.find((entry) => entry.id === 'app-sidebar')?.bounds;
+    if (!frame) throw new Error('the sidebar is not in the tree');
+    const { y, height } = node.bounds;
+    // An item that cannot move further is pressed where it is.
+    if ((y >= frame.y && y + height <= frame.y + frame.height) || y === previous) {
+      await lane.call('click_element', { id });
+      return;
+    }
+    previous = y;
+    await lane.call('scroll', {
+      x: frame.x + frame.width / 2,
+      y: frame.y + frame.height / 2,
+      delta_y: Math.ceil(y - (frame.y + frame.height / 2)),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`${id} did not scroll into the sidebar`);
+}
+
 export class McpLane {
   /// Launch a private app window (unless attached) and connect a bridge to it.
   static async start({
