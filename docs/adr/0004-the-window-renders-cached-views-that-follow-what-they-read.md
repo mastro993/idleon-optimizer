@@ -5,9 +5,10 @@
 rebuilt and laid out the whole window, and GPUI never reused anything (#337, #363).
 
 `AppState` stays the root view and the one model, and keeps its cheap chrome: the history
-shortcuts, the dialogs, the loader veil and the no-save banner. The rest is split into `Entity`
-views in `ui/views.rs`, embedded with `.cached(style)`, so a frame replays a view's last output
-unless that view was notified:
+shortcuts, the loader veil and the no-save banner. The import and export dialogs open on the kit
+`Root`'s dialog layer, which re-renders with every notify of `AppState`. The rest is split into
+`Entity` views in `ui/views.rs`, embedded with `.cached(style)`, so a frame replays a view's last
+output unless that view was notified:
 
 | View | Re-renders when |
 |---|---|

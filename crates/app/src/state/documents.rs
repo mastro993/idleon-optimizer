@@ -2,22 +2,38 @@
 
 use crate::session::RecentImport;
 use crate::state::{AppState, discard_run};
-use crate::ui::export::Export;
+use crate::ui::export::{self, Export};
 use crate::ui::import::{self, Pending};
 use gpui::Focusable as _;
 use gpui::{Context, Window};
+use gpui_kit::component::WindowExt as _;
 use idleon_fishing::FishingSave;
 use idleon_import::{Imported, pipeline};
 use idleon_monument as monument;
 use idleon_sailing::{AssignmentMode, Goal};
+use std::cell::Cell;
 use std::path::Path;
 
 impl AppState {
-    /// Open the shared import dialog, where every section's header import goes.
+    /// Open the shared import dialog, where every section's header import goes,
+    /// with the paste box focused.
     pub(crate) fn open_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.import.open = true;
         let focus = self.import.input.focus_handle(cx);
-        window.focus(&focus, cx);
+        if self.import.open {
+            window.focus(&focus, cx);
+        } else {
+            self.import.open = true;
+            let state = cx.entity();
+            // The kit focuses the dialog itself on open; the paste box takes
+            // focus on the first build only, so a rebuild never steals it back.
+            let first = Cell::new(true);
+            window.open_dialog(cx, move |dialog, window, cx| {
+                if first.replace(false) {
+                    window.focus(&focus, cx);
+                }
+                import::dialog(&state, dialog, cx)
+            });
+        }
         self.set_status(
             "Importing a save: drop a file, browse, or paste the JSON.",
             cx,
@@ -26,7 +42,9 @@ impl AppState {
 
     /// Close the dialog without applying; the loaded run stays as it was.
     pub(crate) fn close_import(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.import.open = false;
+        if std::mem::take(&mut self.import.open) {
+            close_dialog(window, cx);
+        }
         window.focus(&self.focus, cx);
         cx.notify();
     }
@@ -338,15 +356,21 @@ impl AppState {
 
     /// Open the export dialog over a freshly written project document.
     pub(crate) fn open_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let was_open = self.export.open;
         self.export = Export::open(self);
         self.status = format!("Exporting the project ({} bytes).", self.export.bytes());
-        window.focus(&self.focus, cx);
+        if !was_open {
+            let state = cx.entity();
+            window.open_dialog(cx, move |dialog, _, cx| export::dialog(&state, dialog, cx));
+        }
         cx.notify();
     }
 
     /// Close the export dialog without touching the project.
     pub(crate) fn close_export(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.export.open = false;
+        if std::mem::take(&mut self.export.open) {
+            close_dialog(window, cx);
+        }
         window.focus(&self.focus, cx);
         cx.notify();
     }
@@ -361,6 +385,15 @@ impl AppState {
             ),
             cx,
         );
+    }
+}
+
+/// Close the kit dialog a state method opened, unless the kit already did:
+/// Escape, a press on the backdrop and the close button close it before its
+/// `on_close` reaches the state.
+fn close_dialog(window: &mut Window, cx: &mut Context<AppState>) {
+    if window.has_active_dialog(cx) {
+        window.close_dialog(cx);
     }
 }
 
