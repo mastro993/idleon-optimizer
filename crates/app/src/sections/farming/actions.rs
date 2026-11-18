@@ -144,12 +144,12 @@ impl AppState {
     }
 
     /// Save the preset bar's name against the section's goal, baseline and crop.
-    pub(crate) fn save_farming_preset(&mut self, cx: &mut Context<Self>) {
-        let name = self.farming_name.read(cx).text().trim().to_string();
+    pub(crate) fn save_farming_preset(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let name = self.farming_name.read(cx).value().trim().to_string();
         match self.farming.save_preset(&name) {
             Ok(message) => {
                 self.farming_name
-                    .update(cx, |input, cx| input.set_text("", cx));
+                    .update(cx, |input, cx| input.set_value("", window, cx));
                 self.status = message;
             }
             Err(message) => self.status = message,

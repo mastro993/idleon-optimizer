@@ -8,14 +8,15 @@ use crate::ui::layout::Breakpoint;
 use crate::ui::theme::WorldBadge;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
 use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::forms::SearchInput;
 use ely_gpui_component::layout::{Card, ScrollArea, SimpleGrid};
 use ely_gpui_component::primitives::IconName;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, TextSize};
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
     Context, FontWeight, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
 };
+use idleon_ui::widgets::search_input;
 
 /// The searchable dashboard, grouped General, World 2-7.
 pub(crate) fn dashboard_pane(
@@ -24,9 +25,9 @@ pub(crate) fn dashboard_pane(
     cx: &mut Context<AppState>,
 ) -> impl IntoElement {
     let breakpoint = Breakpoint::of(window, cx);
-    let query = state.search.read(cx).text().trim().to_string();
+    let query = state.search.read(cx).value().trim().to_string();
     let entity = cx.entity();
-    let search_focus = state.search.read(cx).focus().clone();
+    let search_focus = state.search.focus_handle(cx);
     let clear = entity.clone();
     let resume = state.last_section.and_then(sections::find);
     let muted = cx.theme().colors.fg_muted;
@@ -73,9 +74,9 @@ pub(crate) fn dashboard_pane(
     div()
         .id("dashboard")
         .track_focus(&state.focus)
-        .on_key_down(cx.listener(|state, event: &gpui::KeyDownEvent, _window, cx| {
+        .on_key_down(cx.listener(|state, event: &gpui::KeyDownEvent, window, cx| {
             if event.keystroke.key == "escape" {
-                state.clear_search(cx);
+                state.clear_search(window, cx);
                 cx.stop_propagation();
             }
         }))
@@ -121,7 +122,7 @@ pub(crate) fn dashboard_pane(
                         .flex_none()
                         .w(px(360.0))
                         .on_click(move |_event, window, cx| window.focus(&search_focus, cx))
-                        .child(SearchInput::new("dashboard-search-field", &state.search)),
+                        .child(search_input(&state.search).aria_label("Search calculators")),
                 ),
         )
         .child(
@@ -167,8 +168,10 @@ pub(crate) fn dashboard_pane(
                                 ))
                                 .action(
                                     Button::new("dashboard-clear-search", "Clear search")
-                                        .on_click(move |_event, _window, cx| {
-                                            clear.update(cx, |state, cx| state.clear_search(cx));
+                                        .on_click(move |_event, window, cx| {
+                                            clear.update(cx, |state, cx| {
+                                                state.clear_search(window, cx)
+                                            });
                                         }),
                                 ),
                             )

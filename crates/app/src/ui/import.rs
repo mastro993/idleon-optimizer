@@ -13,14 +13,16 @@
 
 use crate::state::AppState;
 use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::forms::{DropZone, Input, TextInput};
+use ely_gpui_component::forms::DropZone;
 use ely_gpui_component::overlays::Dialog;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
+use ely_gpui_component::theme::ActiveTheme as _;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, Entity, IntoElement, ParentElement, Role, SharedString, Styled, Window,
     div, px,
 };
+use gpui_kit::component::input::{Textarea, TextareaState};
 use idleon_import::Imported;
 use idleon_import::pipeline::Document;
 use std::path::Path;
@@ -53,7 +55,7 @@ pub(crate) struct Pending {
 pub(crate) struct Import {
     pub(crate) open: bool,
     /// The pasted JSON.
-    pub(crate) input: Entity<TextInput>,
+    pub(crate) input: Entity<TextareaState>,
     /// Where the previewed text came from: the paste box, or a dropped file.
     pub(crate) source: String,
     /// The line under the preview: what the last parse said.
@@ -71,10 +73,9 @@ pub(crate) struct Import {
 impl Import {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
         let input = cx.new(|cx| {
-            TextInput::new(window, cx)
-                .multi_line(4, 10)
+            TextareaState::new(window, cx)
+                .auto_grow(4, 10)
                 .placeholder("Paste it.json, save.json, a project file or a section config…")
-                .label("Import JSON")
         });
         Self {
             open: false,
@@ -172,7 +173,7 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
     let cancel = entity.clone();
     let apply = entity.clone();
     let pending = state.import.pending.is_some();
-    let input_focus = state.import.input.read(cx).focus().clone();
+    let input_focus = state.import.input.focus_handle(cx);
 
     let dropped = entity.clone();
     let drop_zone = DropZone::new("import-drop")
@@ -213,7 +214,7 @@ pub(crate) fn dialog(state: &AppState, cx: &mut Context<AppState>) -> AnyElement
             .id("import-input")
             .aria_label("Import JSON")
             .on_click(move |_event, window, cx| window.focus(&input_focus, cx))
-            .child(Input::new(&state.import.input).size(ControlSize::Sm)),
+            .child(Textarea::new(&state.import.input).aria_label("Import JSON")),
     )
     .child(preview(state, cx))
     // While a document is pending the preview says everything; the line below it

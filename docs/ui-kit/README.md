@@ -48,5 +48,6 @@ Sections read colors, radii and fonts from `cx.theme()` (the kit's `ActiveTheme`
 |---|---|
 | [`design.md`](design.md) | The Console visual direction: tokens, type, density, patterns |
 | [`theme.json`](theme.json) | The Console theme set, dark and light |
+| [`forms.md`](forms.md) | Buttons and form controls: the Ely → kit mapping and the state-ownership pattern |
 | [`performance.md`](performance.md) | Frame-time harness, the Ely baseline and the budget |
 | [`display.md`](display.md) | Layout, typography, display and feedback: each Ely item's kit or `idleon_ui` replacement |

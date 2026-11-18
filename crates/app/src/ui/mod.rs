@@ -20,6 +20,7 @@ use gpui::{
     Action, App, AppContext as _, Context, Entity, IntoElement, KeyBinding,
     KeyBindingContextPredicate, Render, Window,
 };
+use gpui_kit::component::input::InputState;
 use idleon_ui::formula::FormulaTree;
 use std::rc::Rc;
 
@@ -71,4 +72,14 @@ pub(crate) fn text_input(
             .placeholder(placeholder)
             .label(label)
     })
+}
+
+/// A one-line kit text field showing `placeholder` while empty. The render
+/// line names it with `Input::aria_label`.
+pub(crate) fn input_state(
+    placeholder: &'static str,
+    window: &mut Window,
+    cx: &mut App,
+) -> Entity<InputState> {
+    cx.new(|cx| InputState::new(window, cx).placeholder(placeholder))
 }

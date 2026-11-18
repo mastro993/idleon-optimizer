@@ -4818,6 +4818,7 @@ dependencies = [
  "gpui-kit",
  "gpui-pre",
  "idleon-common",
+ "log",
 ]
 
 [[package]]

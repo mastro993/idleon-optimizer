@@ -9,12 +9,14 @@
 use crate::sections::presets;
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::Input;
 use ely_gpui_component::layout::{Card, CardHeader};
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::input::Input;
 use idleon_farming::{Mode, Objective, data};
 
 /// One named preset: the goal, the baseline and the crop target.
@@ -105,7 +107,7 @@ fn clamp_crop(crop: u32) -> u32 {
 /// The preset bar: the name field, Save, and one row per stored preset.
 pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().colors.fg_muted;
-    let name_focus = state.farming_name.read(cx).focus().clone();
+    let name_focus = state.farming_name.focus_handle(cx);
     let presets = state.farming.presets.clone();
     let entity = cx.entity();
     let save = entity.clone();
@@ -201,13 +203,13 @@ pub(super) fn presets_card(state: &mut AppState, cx: &mut Context<AppState>) -> 
                                 .aria_label("Preset name")
                                 .w(px(240.0))
                                 .on_click(move |_event, window, cx| window.focus(&name_focus, cx))
-                                .child(Input::new(&state.farming_name).size(ControlSize::Sm)),
+                                .child(Input::new(&state.farming_name).aria_label("Preset name").small()),
                         )
                         .child(
                             Button::new("farming-preset-save", "Save preset")
                                 .size(ControlSize::Sm)
-                                .on_click(move |_event, _window, cx| {
-                                    save.update(cx, |state, cx| state.save_farming_preset(cx));
+                                .on_click(move |_event, window, cx| {
+                                    save.update(cx, |state, cx| state.save_farming_preset(window, cx));
                                 }),
                         ),
                 )

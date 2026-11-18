@@ -11,17 +11,20 @@ use super::{
 };
 use crate::state::AppState;
 use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, SearchInput, Select};
+use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, Select};
 use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
 use ely_gpui_component::tables::Table;
 use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use ely_gpui_component::typography::Caption;
+use gpui::Focusable as _;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, div, px};
+use gpui_kit::component::Sizable as _;
 use idleon_monument::JusticeSnapshot;
 use idleon_monument::justice::{self, Response, State};
 pub(crate) use idleon_monument::justice::{Action, Effect};
 use idleon_ui::format;
+use idleon_ui::widgets::search_input;
 
 /// One of the worksheet's six stats, in worksheet order.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -352,8 +355,8 @@ fn effects_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
 /// The search, the observed case, the three responses and the heuristic.
 fn advisor_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let query = state.monument_search.read(cx).text().trim().to_lowercase();
-    let search_focus = state.monument_search.read(cx).focus().clone();
+    let query = state.monument_search.read(cx).value().trim().to_lowercase();
+    let search_focus = state.monument_search.focus_handle(cx);
     let worksheet = &state.monument.worksheet;
     let case_id = worksheet.case_id;
     let state_now = worksheet.state.clone();
@@ -429,11 +432,9 @@ fn advisor_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement 
                                     window.focus(&search_focus, cx);
                                 })
                                 .child(
-                                    SearchInput::new(
-                                        "monument-justice-search-field",
-                                        &state.monument_search,
-                                    )
-                                    .size(ControlSize::Sm),
+                                    search_input(&state.monument_search)
+                                        .aria_label("Find a Justice case")
+                                        .small(),
                                 ),
                         ),
                 )
