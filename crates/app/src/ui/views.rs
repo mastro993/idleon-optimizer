@@ -260,7 +260,7 @@ fn draw_home(state: &mut AppState, window: &mut Window, cx: &mut Context<AppStat
     div()
         .id("pane-dashboard")
         .size_full()
-        .p_6()
+        .p(dashboard::PADDING)
         .min_h_0()
         .child(dashboard::dashboard_pane(state, window, cx))
         .into_any_element()
