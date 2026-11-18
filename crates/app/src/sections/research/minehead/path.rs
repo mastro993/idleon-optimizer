@@ -2,19 +2,20 @@
 //! step.
 
 use super::{boss_name, run_inputs};
+use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::Checkbox;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_minehead::Path;
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone};
 
 impl AppState {
     /// Find the affordable, cost-effective upgrade order.
@@ -46,10 +47,11 @@ impl AppState {
 }
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(inputs) = state.research.minehead.inputs.clone() else {
+    let Some(inputs) = state.research.minehead.inputs.as_ref() else {
         return crate::ui::section::no_save(cx);
     };
-    let muted = cx.theme().colors.fg_muted;
+    let (floor, currency) = (inputs.floor, inputs.currency);
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let running = state.minehead_path.read(cx).running();
     let run_inputs = run_inputs(state, 50, 2000);
@@ -59,9 +61,11 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     let params_label = super::optimize::strategy_label(&state.research.minehead.params());
     let checked = state.research.minehead.use_inferred;
     let toggle_entity = entity.clone();
-    let use_inferred = Checkbox::new("mh-path-inferred", checked)
+    let use_inferred = Checkbox::new("mh-path-inferred")
         .label("Your Strategy")
-        .on_change(move |on, _window, cx| {
+        .checked(checked)
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             toggle_entity.update(cx, |state, cx| {
                 state.research.minehead.use_inferred = on;
                 cx.notify();
@@ -74,35 +78,37 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             CardHeader::new("Affordable upgrade path")
                 .description(format!(
                     "Spends the saved currency on {} one step at a time.",
-                    boss_name(inputs.floor)
+                    boss_name(floor)
                 ))
-                .action(Badge::new(params_label).tone(Tone::Info)),
+                .action(
+                    Tag::new()
+                        .with_variant(Tone::Info.into())
+                        .outline()
+                        .small()
+                        .child(params_label),
+                ),
         )
         .child(
             div()
                 .flex()
                 .items_center()
                 .gap_2()
-                .px_3()
-                .pb_3()
                 .child(
-                    Button::new(
-                        "mh-path-run",
-                        if running {
+                    Button::new("mh-path-run")
+                        .label(if running {
                             "Finding path…"
                         } else {
                             "Find Upgrade Path"
-                        },
-                    )
-                    .primary()
-                    .icon(IconName::Play)
-                    .disabled(running)
-                    .on_click(move |_event, _window, cx| {
-                        run.update(cx, |state, cx| state.run_minehead_path(cx));
-                    }),
+                        })
+                        .primary()
+                        .icon(IconName::Play)
+                        .disabled(running)
+                        .on_click(move |_event, _window, cx| {
+                            run.update(cx, |state, cx| state.run_minehead_path(cx));
+                        }),
                 )
                 .when(running, |row| {
-                    row.child(Button::new("mh-path-cancel", "Cancel").on_click(
+                    row.child(Button::new("mh-path-cancel").label("Cancel").on_click(
                         move |_event, _window, cx| {
                             cancel.update(cx, |state, cx| state.cancel_minehead_path(cx));
                         },
@@ -110,8 +116,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 })
                 .child(use_inferred)
                 .child(
-                    Caption::new(format!("{} saved", format::value(inputs.currency)))
-                        .text_color(muted),
+                    Caption::new(format!("{} saved", format::value(currency))).text_color(muted),
                 ),
         );
 
@@ -140,8 +145,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     if task.as_ref().is_some_and(|task| task.stale) {
         body = body.child(idleon_ui::run_chrome::stale_banner("mh-path-stale"));
     }
-    if let Some(result) = task.as_ref().and_then(|task| task.result.clone()) {
-        body = body.child(result_card(&result, muted, cx.theme().colors.success));
+    if let Some(result) = task.as_ref().and_then(|task| task.result.as_ref()) {
+        body = body.child(result_card(result, muted, cx.theme().success));
     }
 
     div()
@@ -155,40 +160,51 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .into_any_element()
 }
 
+/// The path table's columns.
+const COLUMNS: [Column; 6] = [
+    ("Step", Some(56.0), true),
+    ("Buy upgrade", None, false),
+    ("Cost", None, true),
+    ("Win%", None, true),
+    ("Avg Dmg", None, true),
+    ("Turns", None, true),
+];
+
 fn result_card(result: &Path, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElement {
-    let mut table = Table::new(["Step", "Buy upgrade", "Cost", "Win%", "Avg Dmg", "Turns"]);
-    for step in &result.steps {
+    let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
+    let body = TableBody::new().children(result.steps.iter().map(|step| {
         let name = idleon_minehead::game()
             .upgrade(step.upg_idx)
             .map(|upgrade| upgrade.name.replace('_', " "))
             .unwrap_or_default();
-        table = table.row([
-            div().child(format!("{}", step.step)).into_any_element(),
-            div()
-                .id(("mh-path-name", step.upg_idx))
-                .child(name)
-                .into_any_element(),
-            div().child(format::value(step.cost)).into_any_element(),
-            div()
-                .text_color(if step.result.win_rate > 0.8 {
-                    success
-                } else {
-                    muted
-                })
-                .child(format!("{:.1}%", step.result.win_rate * 100.0))
-                .into_any_element(),
-            div()
-                .child(format::value(step.result.avg_dmg))
-                .into_any_element(),
-            div()
-                .child(format!("{:.1}", step.result.avg_turns))
-                .into_any_element(),
-        ]);
-    }
-    let table = ScrollArea::new("mh-path-table")
-        .vertical()
-        .h(px(420.0))
-        .child(div().min_w_0().child(table));
+        TableRow::new()
+            .child(cell(0).child(format!("{}", step.step)))
+            .child(cell(1).child(div().id(("mh-path-name", step.upg_idx)).child(name)))
+            .child(cell(2).child(format::value(step.cost)))
+            .child(
+                cell(3)
+                    .text_color(if step.result.win_rate > 0.8 {
+                        success
+                    } else {
+                        muted
+                    })
+                    .child(format!("{:.1}%", step.result.win_rate * 100.0)),
+            )
+            .child(cell(4).child(format::value(step.result.avg_dmg)))
+            .child(cell(5).child(format!("{:.1}", step.result.avg_turns)))
+    }));
+    let table = div().h(px(420.0)).child(
+        div()
+            .overflow_y_scrollbar()
+            .id("mh-path-table")
+            .size_full()
+            .child(
+                Table::new()
+                    .small()
+                    .child(columns::header(&COLUMNS))
+                    .child(body),
+            ),
+    );
     Card::new()
         .header(
             CardHeader::new(format!(
@@ -203,12 +219,10 @@ fn result_card(result: &Path, muted: gpui::Hsla, success: gpui::Hsla) -> AnyElem
                 format::value(result.remaining_currency)
             )),
         )
-        .child(div().min_h_0().overflow_hidden().p_3().child(table))
+        .child(table)
         .child(
             div()
-                .px_3()
-                .pb_3()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(format!(
                     "After {} upgrades: {} avg dmg, {:.1}% win (was {} · {:.1}%).",

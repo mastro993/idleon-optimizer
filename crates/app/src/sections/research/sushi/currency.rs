@@ -2,14 +2,14 @@
 //! and the two fuel trees.
 
 use crate::state::AppState;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::ActiveTheme as _;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui_kit::component::ActiveTheme as _;
 use idleon_common::formula::{FormulaNode, ValueFormat};
 use idleon_sushi::data::game;
 use idleon_sushi::math;
-use idleon_sushi::{External, Station};
+use idleon_sushi::{Inputs, Station};
+use idleon_ui::widgets::{Card, CardHeader};
 
 /// A factor node: a true multiplier.
 fn factor(label: impl Into<String>, value: f64, note: impl Into<String>) -> FormulaNode {
@@ -284,44 +284,62 @@ fn capacity_tree(inputs: &idleon_sushi::Inputs) -> FormulaNode {
     ])
 }
 
-pub(super) fn pane(
-    state: &mut AppState,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let Some(inputs) = state.research.sushi.inputs.clone() else {
+/// The rates line over the trees, derived from the save.
+///
+/// Building it also hands the three trees their roots, so the trees are
+/// rebuilt once per save instead of once per frame.
+pub(super) struct Summary {
+    rates: SharedString,
+    /// How long the fuel takes to fill, when it fills at all.
+    fill: Option<SharedString>,
+}
+
+impl Summary {
+    fn new(inputs: &Inputs, state: &AppState, cx: &mut Context<AppState>) -> Self {
+        let station = &inputs.station;
+        let ext = &inputs.external;
+        let levels = &station.levels;
+        let fuel_gen = station.fuel_gen(levels, ext);
+        let capacity = station.fuel_capacity(levels, ext);
+        let total = station.bucks_per_hour(levels, ext);
+        state
+            .sushi_bucks
+            .update(cx, |tree, cx| tree.set_root(bucks_tree(inputs), cx));
+        state
+            .sushi_fuel
+            .update(cx, |tree, cx| tree.set_root(fuel_tree(inputs), cx));
+        state
+            .sushi_capacity
+            .update(cx, |tree, cx| tree.set_root(capacity_tree(inputs), cx));
+        Self {
+            rates: format!(
+                "{} bucks/hr · {} fuel/hr · {} capacity",
+                idleon_sushi::fmt_num(total),
+                idleon_sushi::fmt_num(fuel_gen),
+                idleon_sushi::fmt_num(capacity)
+            )
+            .into(),
+            fill: (fuel_gen > 0.0).then(|| format!("fills in {:.1}h", capacity / fuel_gen).into()),
+        }
+    }
+}
+
+pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
+    if state.research.sushi.cache.currency.is_none() {
+        let Some(inputs) = state.research.sushi.inputs.as_ref() else {
+            return crate::ui::section::no_save(cx);
+        };
+        let summary = Summary::new(inputs, state, cx);
+        state.research.sushi.cache.currency = Some(summary);
+    }
+    let Some(summary) = state.research.sushi.cache.currency.as_ref() else {
         return crate::ui::section::no_save(cx);
     };
-    let station = &inputs.station;
-    let ext: &External = &inputs.external;
-    let levels = &station.levels;
-    let fuel_gen = station.fuel_gen(levels, ext);
-    let capacity = station.fuel_capacity(levels, ext);
-    let total = station.bucks_per_hour(levels, ext);
-    let fill = if fuel_gen > 0.0 {
-        Some(capacity / fuel_gen)
-    } else {
-        None
-    };
-    let muted = cx.theme().colors.fg_muted;
-
-    let bucks = state.sushi_bucks.clone();
-    bucks.update(cx, |tree, cx| tree.set_root(bucks_tree(&inputs), cx));
-    let fuel = state.sushi_fuel.clone();
-    fuel.update(cx, |tree, cx| tree.set_root(fuel_tree(&inputs), cx));
-    let cap = state.sushi_capacity.clone();
-    cap.update(cx, |tree, cx| tree.set_root(capacity_tree(&inputs), cx));
-
-    let summary = format!(
-        "{} bucks/hr · {} fuel/hr · {} capacity",
-        idleon_sushi::fmt_num(total),
-        idleon_sushi::fmt_num(fuel_gen),
-        idleon_sushi::fmt_num(capacity)
-    );
+    let muted = cx.theme().muted_foreground;
     let column = |id: &'static str, title: &'static str, tree: AnyElement| {
         Card::new()
             .header(CardHeader::new(title))
-            .child(div().id(id).h(px(430.0)).p_3().child(tree))
+            .child(div().id(id).h(px(430.0)).child(tree))
     };
 
     div()
@@ -335,18 +353,9 @@ pub(super) fn pane(
                 .flex()
                 .items_center()
                 .gap_3()
-                .child(
-                    gpui::div()
-                        .id("su-currency-summary")
-                        .child(summary)
-                        .text_color(muted),
-                )
-                .child(match fill {
-                    Some(hours) => div()
-                        .text_color(muted)
-                        .child(format!("fills in {hours:.1}h")),
-                    None => div(),
-                }),
+                .text_color(muted)
+                .child(div().id("su-currency-summary").child(summary.rates.clone()))
+                .children(summary.fill.clone().map(|fill| div().child(fill))),
         )
         .child(
             div()
@@ -356,17 +365,17 @@ pub(super) fn pane(
                 .child(div().flex_1().min_w_0().child(column(
                     "sushi-bucks-tree",
                     "Bucks/hr",
-                    bucks.into_any_element(),
+                    state.sushi_bucks.clone().into_any_element(),
                 )))
                 .child(div().flex_1().min_w_0().child(column(
                     "sushi-fuel-tree",
                     "Fuel Generation",
-                    fuel.into_any_element(),
+                    state.sushi_fuel.clone().into_any_element(),
                 )))
                 .child(div().flex_1().min_w_0().child(column(
                     "sushi-capacity-tree",
                     "Fuel Capacity",
-                    cap.into_any_element(),
+                    state.sushi_capacity.clone().into_any_element(),
                 ))),
         )
         .into_any_element()

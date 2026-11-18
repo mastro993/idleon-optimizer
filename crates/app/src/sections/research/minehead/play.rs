@@ -5,16 +5,17 @@
 
 use crate::sections::research::minehead::State as MineheadState;
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, Hsla, IntoElement, ParentElement, Styled, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::progress::Progress;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_minehead::{Decision, Game, Inputs, Options, Recorded, Reveal, Rng, Spatial};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, TEXT_CAPTION, Tone};
 
 /// The game on screen and its log.
 pub(crate) struct Play {
@@ -198,16 +199,13 @@ impl AppState {
 }
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(inputs) = state.research.minehead.inputs.clone() else {
+    let minehead = &mut state.research.minehead;
+    let Some(inputs) = minehead.inputs.as_ref() else {
         return crate::ui::section::no_save(cx);
     };
-    let colors = cx.theme().colors.clone();
-    if state.research.minehead.play.is_none() {
-        state.research.minehead.play = Some(Play::new(&inputs));
-    }
-    let Some(play) = state.research.minehead.play.take() else {
-        return div().into_any_element();
-    };
+    let floor = inputs.floor;
+    let play = minehead.play.take().unwrap_or_else(|| Play::new(inputs));
+    let theme = cx.theme();
     let entity = cx.entity();
     let (cols, _rows) = play.game.dims();
     let finished = play.game.finished();
@@ -226,25 +224,25 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         let value = play.game.grid[position];
         let (label, background, text) = if !revealed {
             if golden {
-                ("★".to_string(), colors.warning, colors.warning)
+                ("★".to_string(), theme.warning, theme.warning)
             } else {
-                ("?".to_string(), colors.sunken, colors.fg_muted)
+                ("?".to_string(), theme.muted, theme.muted_foreground)
             }
         } else if value == 0 {
-            ("💣".to_string(), colors.danger, colors.danger)
+            ("💣".to_string(), theme.danger, theme.danger)
         } else if value == 30 {
-            ("🎰".to_string(), colors.warning, colors.warning)
+            ("🎰".to_string(), theme.warning, theme.warning)
         } else if value >= 40 {
-            (format!("${}", value - 39), colors.info, colors.info)
+            (format!("${}", value - 39), theme.info, theme.info)
         } else if value >= 20 {
             let multi = idleon_minehead::game()
                 .tile_multipliers
                 .get((value - 20) as usize)
                 .copied()
                 .unwrap_or(1.0);
-            (format!("×{multi}"), colors.accent, colors.accent)
+            (format!("×{multi}"), theme.primary, theme.primary)
         } else {
-            (value.to_string(), colors.success, colors.success)
+            (value.to_string(), theme.success, theme.success)
         };
         let click = !revealed && !finished;
         let entity = entity.clone();
@@ -259,9 +257,9 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .flex()
                 .items_center()
                 .justify_center()
-                .rounded_md()
+                .rounded(theme.radius)
                 .border_1()
-                .border_color(colors.border)
+                .border_color(theme.border)
                 .bg(background)
                 .text_color(text)
                 .text_size(px(15.0))
@@ -281,8 +279,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             .flex()
             .items_center()
             .gap_1()
-            .child(Caption::new(label).text_color(colors.fg_muted))
-            .child(div().text_color(color).text_size(px(13.0)).child(value))
+            .child(Caption::new(label).text_color(theme.muted_foreground))
+            .child(div().text_color(color).text_size(TEXT_BODY).child(value))
     };
     let run = entity.clone();
     let attack = entity.clone();
@@ -294,37 +292,37 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .child(hud(
             "Lives",
             format!("{lives:.0} / {:.0}", play.game.max_lives()),
-            colors.danger,
+            theme.danger,
         ))
         .when(play.game.max_blocks() > 0.0, |row| {
             row.child(hud(
                 "Blocks",
                 format!("{:.0}", play.game.blocks_left),
-                colors.info,
+                theme.info,
             ))
         })
         .when(play.game.max_goldens() > 0.0, |row| {
             row.child(hud(
                 "Goldens",
                 format!("{:.0}", play.game.goldens_remaining),
-                colors.warning,
+                theme.warning,
             ))
         })
         .when(play.game.max_instas() > 0.0, |row| {
             row.child(hud(
                 "Instas",
                 format!("{:.0}", play.game.insta_left),
-                colors.success,
+                theme.success,
             ))
         })
-        .child(hud("Turn", format!("{turn}"), colors.fg))
+        .child(hud("Turn", format!("{turn}"), theme.foreground))
         .child(hud(
             "Crowns",
             format!(
                 "{} / 3 ({} sets)",
                 play.game.crown_progress, play.game.crown_sets
             ),
-            colors.accent,
+            theme.primary,
         ));
     let mine_pct = if mines_left + safe_left > 0.0 {
         mines_left / (mines_left + safe_left) * 100.0
@@ -362,8 +360,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         log_list = log_list.child(
             div()
                 .id(("mh-log", index))
-                .text_size(px(11.0))
-                .text_color(colors.fg_muted)
+                .text_size(TEXT_CAPTION)
+                .text_color(theme.muted_foreground)
                 .child(line.clone()),
         );
     }
@@ -404,29 +402,31 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .header(
                     CardHeader::new(format!(
                         "Depth Charge — Floor {}: {}",
-                        inputs.floor,
-                        super::boss_name(inputs.floor)
+                        floor,
+                        super::boss_name(floor)
                     ))
                     .description(info)
-                    .action(Badge::new(damage_line).tone(
-                        if total >= boss_hp {
-                            ely_gpui_component::data_display::Tone::Success
-                        } else {
-                            ely_gpui_component::data_display::Tone::Neutral
-                        },
-                    )),
+                    .action(
+                        Tag::new()
+                            .with_variant(
+                                if total >= boss_hp {
+                                    Tone::Success
+                                } else {
+                                    Tone::Neutral
+                                }
+                                .into(),
+                            )
+                            .outline()
+                            .small()
+                            .child(damage_line),
+                    ),
                 )
                 .child(
                     div()
                         .flex()
                         .flex_col()
                         .gap_2()
-                        .px_3()
-                        .pb_3()
-                        .child(ely_gpui_component::motion::ProgressBar::new(
-                            "mh-damage-bar",
-                            bar_fraction,
-                        ))
+                        .child(Progress::new("mh-damage-bar").value(bar_fraction * 100.0))
                         .child(hud_row)
                         .child(
                             div()
@@ -434,7 +434,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                                 .items_center()
                                 .gap_2()
                                 .child(
-                                    Button::new("mh-play-attack", "Attack")
+                                    Button::new("mh-play-attack")
+                                        .label("Attack")
                                         .primary()
                                         .icon(IconName::Play)
                                         .disabled(attack_disabled)
@@ -445,7 +446,8 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                                         }),
                                 )
                                 .child(
-                                    Button::new("mh-play-insta", "Insta-Reveal")
+                                    Button::new("mh-play-insta")
+                                        .label("Insta-Reveal")
                                         .icon(IconName::Zap)
                                         .disabled(insta_disabled)
                                         .on_click(move |_event, _window, cx| {
@@ -454,7 +456,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                                             });
                                         }),
                                 )
-                                .child(Button::new("mh-play-new", "New Game").on_click(
+                                .child(Button::new("mh-play-new").label("New Game").on_click(
                                     move |_event, _window, cx| {
                                         run.update(cx, |state, cx| {
                                             state.minehead_new_game(cx);
@@ -477,7 +479,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                                 goldens_left
                             )),
                         )
-                        .child(div().p_3().child(grid)),
+                        .child(grid),
                 )
                 .child(
                     Card::new()
@@ -485,10 +487,13 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                             CardHeader::new("Log").description(format!("{turn} turn(s) played")),
                         )
                         .child(
-                            ScrollArea::new("mh-play-log")
-                                .vertical()
-                                .h(px(240.0))
-                                .child(div().p_3().child(log_list)),
+                            div().h(px(240.0)).child(
+                                div()
+                                    .overflow_y_scrollbar()
+                                    .id("mh-play-log")
+                                    .size_full()
+                                    .child(log_list),
+                            ),
                         ),
                 ),
         )
@@ -499,15 +504,19 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                         .description(strategy_line)
                         .when(!profile.is_empty(), |header| {
                             header.action(
-                                Badge::new(profile)
-                                    .tone(ely_gpui_component::data_display::Tone::Info),
+                                Tag::new()
+                                    .with_variant(Tone::Info.into())
+                                    .outline()
+                                    .small()
+                                    .child(profile),
                             )
                         }),
                 )
                 .child(
-                    div().flex().items_center().gap_2().px_3().pb_3().child(
-                        Button::new("mh-play-reset", "Reset play data")
-                            .size(ely_gpui_component::theme::ControlSize::Sm)
+                    div().flex().items_center().gap_2().child(
+                        Button::new("mh-play-reset")
+                            .label("Reset play data")
+                            .small()
                             .on_click(move |_event, _window, cx| {
                                 reset.update(cx, |state, cx| {
                                     state.research.minehead.reset_inference();

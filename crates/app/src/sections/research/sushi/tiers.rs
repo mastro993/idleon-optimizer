@@ -1,127 +1,206 @@
 //! The Sushi tab: the knowledge totals and the tier table with each tier's
 //! perfecto odds, knowledge bonus and Ring of Glory reward.
 
+use super::columns::{self, Column};
 use crate::state::AppState;
-use ely_gpui_component::forms::Checkbox;
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableRow};
+use idleon_sushi::Inputs;
 use idleon_sushi::data::game;
 use idleon_sushi::{fmt_num, knowledge_desc, rog_reward};
+use idleon_ui::widgets::{Caption, Card, CardHeader};
+
+/// One tier's row, formatted.
+struct TierRow {
+    /// Neither discovered nor next for a Ring of Glory: drawn as `???`
+    /// unless the spoilers show.
+    hidden: bool,
+    odds: SharedString,
+    knowledge_level: SharedString,
+    knowledge: SharedString,
+    rog: SharedString,
+    rog_unlocked: bool,
+}
+
+/// The knowledge totals and the tier rows, derived from the save.
+pub(super) struct Tiers {
+    knowledge: Vec<SharedString>,
+    rows: Vec<TierRow>,
+    unique: u32,
+}
+
+impl Tiers {
+    pub(super) fn new(inputs: &Inputs) -> Self {
+        let data = game();
+        let station = &inputs.station;
+        let knowledge = station
+            .knowledge_totals()
+            .iter()
+            .enumerate()
+            .map(|(cat, total)| knowledge_desc(cat, *total, 0.0).into())
+            .collect();
+        let rog_len = data.rog_qty.len();
+        let max_tier = data.max_tier().max(rog_len.saturating_sub(1));
+        let rows = (0..=max_tier)
+            .map(|tier| {
+                let discovered = station.discovered(tier);
+                let perfecto = station.is_perfecto(tier);
+                let rog_unlocked = station.unique as usize > tier;
+                let rog_next = station.unique as usize == tier;
+                let odds = if perfecto {
+                    "*".to_string()
+                } else if discovered {
+                    let chance = station.perfecto_odds(tier);
+                    if chance > 0.0 {
+                        format!("1 in {}", fmt_num((1.0 / chance).round()))
+                    } else {
+                        String::new()
+                    }
+                } else {
+                    String::new()
+                };
+                let knowledge = if discovered {
+                    match data.knowledge_cat(tier) {
+                        Some(cat) => knowledge_desc(
+                            cat,
+                            station.knowledge_bonus(tier),
+                            station.knowledge_bonus_next(tier),
+                        ),
+                        None => String::new(),
+                    }
+                } else {
+                    "--".to_string()
+                };
+                TierRow {
+                    hidden: !rog_unlocked && !rog_next && !discovered,
+                    odds: odds.into(),
+                    knowledge_level: if discovered {
+                        format!("{:.0}", station.knowledge.get(tier).copied().unwrap_or(0.0)).into()
+                    } else {
+                        "--".into()
+                    },
+                    knowledge: knowledge.into(),
+                    rog: if tier < rog_len {
+                        rog_reward(tier).into()
+                    } else {
+                        "--".into()
+                    },
+                    rog_unlocked,
+                }
+            })
+            .collect();
+        Self {
+            knowledge,
+            rows,
+            unique: station.unique,
+        }
+    }
+}
+
+/// The tier table's columns.
+const COLUMNS: [Column; 5] = [
+    ("Tier", Some(56.0), false),
+    ("Perfecto", Some(96.0), false),
+    ("KnLv", Some(56.0), true),
+    ("Kn Bonus", None, false),
+    ("RoG Reward", None, false),
+];
+
+/// A cell of the tier table's column `index`.
+fn cell(index: usize) -> TableCell {
+    columns::cell(&COLUMNS, index)
+}
 
 pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(inputs) = state.research.sushi.inputs.clone() else {
+    let sushi = &mut state.research.sushi;
+    let Some(inputs) = sushi.inputs.as_ref() else {
         return crate::ui::section::no_save(cx);
     };
-    let data = game();
-    let station = &inputs.station;
-    let totals = station.knowledge_totals();
-    let show_spoiler = state.research.sushi.show_spoiler_rog;
-    let muted = cx.theme().colors.fg_muted;
-    let warning = cx.theme().colors.warning;
-    let subtle = cx.theme().colors.fg_subtle;
+    let tiers = sushi.cache.tiers.get_or_insert_with(|| Tiers::new(inputs));
+    let show_spoiler = sushi.show_spoiler_rog;
+    let theme = cx.theme();
+    let muted = theme.muted_foreground;
+    let warning = theme.warning;
 
     // The knowledge categories, with their per-level gain.
-    let mut knowledge = Table::new(["Category"]);
-    for (cat, total) in totals.iter().enumerate() {
-        knowledge = knowledge.row([div()
-            .id(("su-knowledge", cat))
-            .child(knowledge_desc(cat, *total, 0.0))
-            .into_any_element()]);
-    }
+    let knowledge = Table::new()
+        .small()
+        .child(columns::header(&[("Category", None, false)]))
+        .child(
+            TableBody::new().children(tiers.knowledge.iter().enumerate().map(|(cat, line)| {
+                // A row id of its own keeps the cell's semantic id short: the
+                // kit's `table-row-N` repeats across this pane's two tables.
+                TableRow::new().id(("su-knowledge-line", cat)).child(
+                    columns::cell(&[("Category", None, false)], 0)
+                        .child(div().id(("su-knowledge", cat)).child(line.clone())),
+                )
+            })),
+        );
 
-    let mut tiers = Table::new(["Tier", "Perfecto", "KnLv", "Kn Bonus", "RoG Reward"]);
-    let rog_len = data.rog_qty.len();
-    let max_tier = data.max_tier().max(rog_len.saturating_sub(1));
-    for tier in 0..=max_tier {
-        let discovered = station.discovered(tier);
-        let perfecto = station.is_perfecto(tier);
-        let rog_unlocked = station.unique as usize > tier;
-        let rog_next = station.unique as usize == tier;
-        let hidden = !rog_unlocked && !rog_next && !discovered;
-        if hidden && !show_spoiler {
-            tiers = tiers.row([
-                div()
-                    .text_color(muted)
-                    .child(format!("T{}", tier + 1))
-                    .into_any_element(),
-                div().child("--").into_any_element(),
-                div().child("--").into_any_element(),
-                div().child("--").into_any_element(),
-                div().child("???").into_any_element(),
-            ]);
-            continue;
+    let rows = TableBody::new().children(tiers.rows.iter().enumerate().map(|(tier, row)| {
+        let name = format!("T{}", tier + 1);
+        if row.hidden && !show_spoiler {
+            return TableRow::new()
+                .id(("su-tier-line", tier))
+                .child(cell(0).text_color(muted).child(name))
+                .child(cell(1).child("--"))
+                .child(cell(2).child("--"))
+                .child(cell(3).child("--"))
+                .child(cell(4).child("???"));
         }
-        let odds = if perfecto {
-            "*".to_string()
-        } else if discovered {
-            let chance = station.perfecto_odds(tier);
-            if chance > 0.0 {
-                format!("1 in {}", fmt_num((1.0 / chance).round()))
-            } else {
-                String::new()
-            }
-        } else {
-            String::new()
-        };
-        let knowledge_cell = if discovered {
-            match data.knowledge_cat(tier) {
-                Some(cat) => knowledge_desc(
-                    cat,
-                    station.knowledge_bonus(tier),
-                    station.knowledge_bonus_next(tier),
+        TableRow::new()
+            .id(("su-tier-line", tier))
+            .child(
+                cell(0).child(
+                    div()
+                        .id(("su-tier-row", tier))
+                        .text_color(muted)
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .child(name),
                 ),
-                None => String::new(),
-            }
-        } else {
-            "--".to_string()
-        };
-        tiers = tiers.row([
-            div()
-                .id(("su-tier-row", tier))
-                .text_color(muted)
-                .font_weight(gpui::FontWeight::SEMIBOLD)
-                .child(format!("T{}", tier + 1))
-                .into_any_element(),
-            div().text_color(warning).child(odds).into_any_element(),
-            div()
-                .text_color(subtle)
-                .child(if discovered {
-                    format!("{:.0}", station.knowledge.get(tier).copied().unwrap_or(0.0))
-                } else {
-                    "--".into()
-                })
-                .into_any_element(),
-            div()
-                .text_color(muted)
-                .child(knowledge_cell)
-                .into_any_element(),
-            div()
-                .text_color(if rog_unlocked { warning } else { muted })
-                .child(if tier < rog_len {
-                    rog_reward(tier)
-                } else {
-                    "--".into()
-                })
-                .into_any_element(),
-        ]);
-    }
-    let tiers = ScrollArea::new("su-tiers-scroll")
-        .vertical()
-        .h(px(460.0))
-        .child(div().min_w(px(560.0)).child(tiers));
-    let knowledge = ScrollArea::new("su-knowledge-scroll")
-        .vertical()
-        .h(px(460.0))
-        .child(knowledge);
+            )
+            .child(cell(1).text_color(warning).child(row.odds.clone()))
+            .child(cell(2).text_color(muted).child(row.knowledge_level.clone()))
+            .child(cell(3).text_color(muted).child(row.knowledge.clone()))
+            .child(
+                cell(4)
+                    .text_color(if row.rog_unlocked { warning } else { muted })
+                    .child(row.rog.clone()),
+            )
+    }));
+    let table = div().h(px(460.0)).child(
+        div()
+            .overflow_y_scrollbar()
+            .id("su-tiers-scroll")
+            .size_full()
+            .child(
+                div().min_w(px(560.0)).child(
+                    Table::new()
+                        .small()
+                        .child(columns::header(&COLUMNS))
+                        .child(rows),
+                ),
+            ),
+    );
+    let knowledge = div().h(px(460.0)).child(
+        div()
+            .overflow_y_scrollbar()
+            .id("su-knowledge-scroll")
+            .size_full()
+            .child(knowledge),
+    );
 
     let entity = cx.entity();
-    let spoiler = Checkbox::new("su-rog-spoiler", show_spoiler)
+    let spoiler = Checkbox::new("su-rog-spoiler")
         .label("Show all (spoilers)")
-        .on_change(move |on, _window, cx| {
+        .checked(show_spoiler)
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             entity.update(cx, |state, cx| {
                 state.research.sushi.show_spoiler_rog = on;
                 cx.notify();
@@ -134,13 +213,18 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         .gap_3()
         .min_h_0()
         .child(
-            Card::new()
-                .header(CardHeader::new("Sushi Tiers").description(format!(
-                    "* = Perfecto (2x knowledge). {} unique sushi.",
-                    station.unique
-                )))
-                .child(div().flex().justify_end().px_3().child(spoiler))
-                .child(div().min_h_0().overflow_hidden().p_3().child(tiers)),
+            div().flex_1().min_w_0().child(
+                Card::new()
+                    .header(
+                        CardHeader::new("Sushi Tiers")
+                            .description(format!(
+                                "* = Perfecto (2x knowledge). {} unique sushi.",
+                                tiers.unique
+                            ))
+                            .action(spoiler),
+                    )
+                    .child(table),
+            ),
         )
         .child(
             div()
@@ -152,7 +236,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .child(
                     Card::new()
                         .header(CardHeader::new("Knowledge Totals"))
-                        .child(div().min_h_0().overflow_hidden().p_3().child(knowledge)),
+                        .child(knowledge),
                 )
                 .child(
                     Caption::new("A tier's bonus counts its discovery multiplier, up to 2x.")

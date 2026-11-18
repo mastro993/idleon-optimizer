@@ -407,7 +407,9 @@ Tree tab opens a run or the loaded save as a root node, steps it to the next res
 level-up, branches, re-simulates, deletes, compares branches by rate, level and time, edits each
 node's grid, shapes and magnifiers, and runs Auto Insight, which re-fits the monocles at every
 insight level-up ([`docs/decision-tree.md`](decision-tree.md)). Missing: complete save-derived
-multipliers.
+multipliers. The section draws with GPUI Kit: its number fields take typed values as well as their
+−/+ buttons, and its tables, figures and formula trees are built when the save, a run or a control
+changes, not on every frame.
 Details: [`docs/sections/research.md`](sections/research.md).
 
 The Fishing section implements FI-01, FI-02 and FI-03: the character/toolkit/location toolbar, an

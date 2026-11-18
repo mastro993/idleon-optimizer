@@ -1,6 +1,6 @@
 //! Research grid tints: a node's goal colour and a shape's own colour.
 
-use gpui::{Hsla, rgb};
+use gpui::{Hsla, hsla};
 use idleon_research::game;
 use idleon_ui::format::hex;
 
@@ -27,9 +27,9 @@ pub(crate) fn goal_color(goal: Option<&str>) -> Hsla {
 
 /// A shape's own colour, brightened for the dark canvas.
 pub(crate) fn shape_color(shape: usize) -> Hsla {
-    let fallback = rgb(0x88_88_88);
     let Some(def) = game().shapes.get(shape) else {
-        return fallback.into();
+        // A neutral grey for a shape the game data does not list.
+        return hsla(0.0, 0.0, 0.53, 1.0);
     };
     hex(&def.color)
 }

@@ -2,18 +2,20 @@
 
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::buttons::{Button, SegmentedControl, ToggleGroup, ToggleItem};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Checkbox, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{Context, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui::{Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{
+    Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
+};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::game;
 use idleon_research::model::{Effort, SimOptions, Target};
+use idleon_ui::widgets::{Caption, Card, CardHeader, Tone, show_number};
+
+use super::controls::segmented;
 
 pub(crate) fn optimizer_pane(
     state: &mut AppState,
@@ -35,81 +37,67 @@ pub(crate) fn optimizer_pane(
             .flex_col()
             .gap_3()
             .min_h_0()
-            .child(controls(state, cx)),
+            .child(controls(state, window, cx)),
         px(380.0),
     )
 }
 
-fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElement {
-    let colors = &cx.theme().colors;
+fn controls(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> impl IntoElement {
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
 
-    let kind = if matches!(state.target, Target::Hours(_)) {
-        "hours"
-    } else {
-        "level"
-    };
     let target_entity = entity.clone();
-    let kind_control = SegmentedControl::new("target-kind", kind)
-        .size(ControlSize::Sm)
-        .segment("level", "Research level", None)
-        .segment("hours", "Hours", None)
-        .on_change(move |value, _window, cx| {
-            let value = value.to_string();
-            target_entity.update(cx, |state, cx| state.set_target_kind(&value, cx));
-        });
+    let kind_control = segmented(
+        "target-kind",
+        &[("level", "Research level"), ("hours", "Hours")],
+        if matches!(state.target, Target::Hours(_)) {
+            "hours"
+        } else {
+            "level"
+        },
+        move |kind, _window, cx| {
+            target_entity.update(cx, |state, cx| state.set_target_kind(kind, cx));
+        },
+    );
 
-    let current_level = state.simulation.research_level;
     let problem = state.target_problem();
-    let (value, min, max, step) = match state.target {
-        Target::Level(level) => (
-            level as f64,
-            f64::from(current_level.saturating_add(1)),
-            (f64::from(current_level) + 500.0).max(500.0),
-            1.0,
-        ),
-        Target::Hours(hours) => (hours, 1.0, 10_000.0, 1.0),
+    let value = match state.target {
+        Target::Level(level) => f64::from(level),
+        Target::Hours(hours) => hours,
     };
-    let entity_for_target = entity.clone();
-    let value_control = Stepper::new("target-value", value)
-        .range(min, max)
-        .step(step)
-        .on_change(move |value, _window, cx| {
-            entity_for_target.update(cx, |state, cx| match state.target {
-                Target::Level(_) => state.set_target_level(value, cx),
-                Target::Hours(_) => state.set_target_hours(value, cx),
-            });
-        });
+    show_number(&state.research.target_value, value, 0, window, cx);
+    let value_control =
+        crate::ui::number_field("target-value", &state.research.target_value, "Target")
+            .w(px(160.0));
 
-    let effort = match state.effort {
-        Effort::Quick => "quick",
-        Effort::Balanced => "balanced",
-        Effort::Thorough => "thorough",
-    };
     let effort_entity = entity.clone();
-    let effort_control = SegmentedControl::new("effort", effort)
-        .size(ControlSize::Sm)
-        .segment("quick", "Quick", None)
-        .segment("balanced", "Balanced", None)
-        .segment("thorough", "Thorough", None)
-        .on_change(move |value, _window, cx| {
-            let effort = match value.as_ref() {
-                "quick" => Effort::Quick,
-                "thorough" => Effort::Thorough,
-                _ => Effort::Balanced,
-            };
+    let effort_control = segmented(
+        "effort",
+        &[
+            (Effort::Quick, "Quick"),
+            (Effort::Balanced, "Balanced"),
+            (Effort::Thorough, "Thorough"),
+        ],
+        state.effort,
+        move |effort, _window, cx| {
             effort_entity.update(cx, |state, cx| state.set_effort(effort, cx));
-        });
+        },
+    );
 
     let options = state.options;
     let option_entity = entity.clone();
     let option =
         |id: &'static str, label: &'static str, checked: bool, set: fn(&mut SimOptions, bool)| {
             let option_entity = option_entity.clone();
-            Checkbox::new(id, checked)
+            Checkbox::new(id)
                 .label(label)
-                .on_change(move |on, _window, cx| {
-                    let option_entity = option_entity.clone();
+                .checked(checked)
+                .on_click(move |on, _window, cx| {
+                    let on = *on;
                     option_entity.update(cx, |state, cx| {
                         let mut options = state.options;
                         set(&mut options, on);
@@ -137,32 +125,39 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
     );
     let registrant = state.context.event_shop(46) > 0.0;
 
-    let mut presets = ToggleGroup::new("preset").size(ControlSize::Sm);
-    for preset in &game().presets {
-        presets = presets.item(ToggleItem::new(preset.id.clone()).label(preset.name.clone()));
-    }
+    let active = &state.simulation.preset;
     let preset_entity = entity.clone();
-    let presets = presets
-        .selected([state.simulation.preset.clone()])
-        .on_change(move |selected, _window, cx| {
-            let Some(id) = selected.first() else { return };
+    // The group is one row; wrapping keeps every preset whole in the rail.
+    let presets = ToggleGroup::new("preset")
+        .single()
+        .outline()
+        .small()
+        .flex_wrap()
+        .children(game().presets.iter().map(|preset| {
+            Toggle::new(SharedString::from(preset.id.clone()))
+                .label(preset.name.clone())
+                .checked(&preset.id == active)
+        }))
+        .on_click(move |checked, _window, cx| {
+            let Some(index) = checked.iter().position(|checked| *checked) else {
+                return;
+            };
+            let id = &game().presets[index].id;
             preset_entity.update(cx, |state, cx| state.set_preset(id, cx));
         });
 
     let run_entity = entity.clone();
     let running = state.optimize_running(cx);
     let blocked = running || problem.is_some();
-    let run = Button::new(
-        "run-optimize",
-        if running { "Optimizing…" } else { "Optimize" },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .full_width()
-    .disabled(blocked)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.optimize(cx));
-    });
+    let run = Button::new("run-optimize")
+        .label(if running { "Optimizing…" } else { "Optimize" })
+        .primary()
+        .icon(IconName::Play)
+        .w_full()
+        .disabled(blocked)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.optimize(cx));
+        });
 
     Card::new()
         .header(CardHeader::new("Target").description(
@@ -173,7 +168,6 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
                 .flex()
                 .flex_col()
                 .gap_3()
-                .p_3()
                 .child(kind_control)
                 .child(
                     div()
@@ -215,8 +209,12 @@ fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> impl IntoElemen
                 )
                 .child(run)
                 .when_some(problem.clone(), |card, problem| {
-                    card.child(Banner::new("target-problem", Severity::Danger, problem))
+                    card.child(
+                        Alert::new("target-problem", problem)
+                            .with_variant(Tone::Danger.into())
+                            .banner(),
+                    )
                 })
-                .child(Caption::new(state.status.clone()).text_color(colors.fg_muted)),
+                .child(Caption::new(state.status.clone()).text_color(muted)),
         )
 }

@@ -2,6 +2,7 @@
 
 mod actions;
 pub(crate) mod colors;
+mod controls;
 
 pub(crate) mod dashboard;
 pub(crate) mod grid;
@@ -21,14 +22,16 @@ pub(crate) use dashboard::Trees;
 pub(crate) use shape_presets::CustomPreset;
 
 use crate::state::AppState;
+use crate::state::RunReported;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::forms::TextInput;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::input::{InputEvent, InputState};
 use idleon_research::edit::{History, Snapshot};
 use idleon_ui::format;
+use idleon_ui::widgets::{Caption, number_state, number_value};
+use std::rc::Rc;
 
 /// The research page's tabs; the dashboard opens first.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -147,7 +150,7 @@ pub(crate) struct State {
     /// custom name. An edit clears it, so a built-in is never rewritten.
     pub(crate) active_shape_preset: Option<String>,
     /// The name typed into the shape preset bar.
-    pub(crate) preset_name: Entity<TextInput>,
+    pub(crate) preset_name: Entity<InputState>,
     /// Cached bare-grid cell values, with the simulation and context they came
     /// from, so typing in the preset rail does not rescore 240 cells per frame.
     pub(crate) shape_values: Option<(
@@ -170,24 +173,46 @@ pub(crate) struct State {
     /// Which undiscovered observations the Unlocks table lists.
     pub(crate) unlock_filter: idleon_research::unlock::Filter,
     /// The Observation Unlocks name filter.
-    pub(crate) unlock_search: Entity<TextInput>,
-    _unlock_search_subscription: gpui::Subscription,
+    pub(crate) unlock_search: Entity<InputState>,
+    /// The Optimize pane's target field; the value lives in `AppState::target`.
+    target_value: Entity<InputState>,
+    /// The Rates pane's supplement fields, in [`rates::SUPPLEMENTS`] order;
+    /// the values live in `AppState::context`.
+    supplement_fields: Vec<Entity<InputState>>,
+    /// The Rates observation rows, built when the layout or context changes.
+    observation_rows:
+        RowCache<(idleon_research::Simulation, idleon_research::SimContext), rates::ObservationRow>,
+    /// Bumped whenever one of the section's runs reports, so the cached
+    /// table rows below know their result may have changed.
+    run_generation: u64,
+    /// The Insight ROI rows, built when the result, sort or filter changes.
+    insight_rows: RowCache<insight_roi::RowsKey, insight_roi::ScenarioRow>,
+    /// The Unlocks rows, built when the result, filter or search changes.
+    unlock_rows: RowCache<unlocks::RowsKey, unlocks::UnlockRow>,
+    _subscriptions: Vec<gpui::Subscription>,
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let preset_name =
-            crate::ui::text_input("Shape preset name", "Shape preset name", window, cx);
-        let unlock_search =
-            crate::ui::text_input("Observation name", "Find an observation", window, cx);
-        let search_subscription = cx.subscribe(
-            &unlock_search,
-            |_state, _input, event: &ely_gpui_component::forms::InputEvent, cx| {
-                if *event == ely_gpui_component::forms::InputEvent::Changed {
-                    cx.notify();
+        let preset_name = crate::ui::input_state("Shape preset name", window, cx);
+        let unlock_search = crate::ui::input_state("Observation name", window, cx);
+        let target_value = number_state(1.0, 100_000.0, 1.0, window, cx);
+        let mut subscriptions = vec![
+            crate::state::redraw_on_edit(cx, &unlock_search),
+            cx.subscribe(&target_value, |state, field, event, cx| {
+                if matches!(event, InputEvent::Change)
+                    && let Some(value) = number_value(field.read(cx))
+                {
+                    state.set_target_value(value, cx);
                 }
-            },
-        );
+            }),
+            cx.subscribe_self(|state, event: &RunReported, _cx| {
+                if event.section == "research" {
+                    state.research.run_generation += 1;
+                }
+            }),
+        ];
+        let supplement_fields = rates::supplement_fields(&mut subscriptions, window, cx);
         Self {
             tab: Tab::default(),
             selected_cell: None,
@@ -201,15 +226,66 @@ impl State {
             active_shape_preset: None,
             preset_name,
             shape_values: None,
-            minehead: minehead::State::new(),
+            minehead: minehead::State::new(window, cx),
             sushi: sushi::State::new(),
             tree: tree::State::new(),
             insight_sort: idleon_research::insight::Sort::default(),
             insight_hide_free: false,
             unlock_filter: idleon_research::unlock::Filter::default(),
             unlock_search,
-            _unlock_search_subscription: search_subscription,
+            target_value,
+            supplement_fields,
+            observation_rows: RowCache::default(),
+            run_generation: 0,
+            insight_rows: RowCache::default(),
+            unlock_rows: RowCache::default(),
+            _subscriptions: subscriptions,
         }
+    }
+}
+
+/// Table rows built from a run's result and the controls that shape them,
+/// kept until `key` changes so `render` only draws them.
+pub(crate) struct RowCache<K, R> {
+    key: Option<K>,
+    rows: Rc<Vec<R>>,
+}
+
+impl<K, R> Default for RowCache<K, R> {
+    fn default() -> Self {
+        Self {
+            key: None,
+            rows: Rc::default(),
+        }
+    }
+}
+
+impl<K, R> RowCache<K, R> {
+    /// The cached rows while `fresh` accepts the stored key; otherwise the
+    /// rows `build` makes, stored under `key()`.
+    pub(crate) fn get_by(
+        &mut self,
+        fresh: impl FnOnce(&K) -> bool,
+        key: impl FnOnce() -> K,
+        build: impl FnOnce() -> Vec<R>,
+    ) -> Rc<Vec<R>> {
+        if !self.key.as_ref().is_some_and(fresh) {
+            self.rows = Rc::new(build());
+            self.key = Some(key());
+        }
+        self.rows.clone()
+    }
+
+    /// The rows for `key`, built by `build` only when the key changed.
+    pub(crate) fn get(&mut self, key: K, build: impl FnOnce() -> Vec<R>) -> Rc<Vec<R>>
+    where
+        K: PartialEq,
+    {
+        if self.key.as_ref() != Some(&key) {
+            self.rows = Rc::new(build());
+            self.key = Some(key);
+        }
+        self.rows.clone()
     }
 }
 
@@ -252,10 +328,7 @@ pub(crate) fn view(
     let rate = state.rate();
     let points = state.grid_points();
     let tab = state.research.tab;
-    let colors = {
-        let palette = &cx.theme().colors;
-        (palette.accent, palette.fg_muted)
-    };
+    let colors = (cx.theme().primary, cx.theme().muted_foreground);
     let summary = format!(
         "{} /hr · {} / {} grid points",
         format::rate(rate.total),

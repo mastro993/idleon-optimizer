@@ -399,8 +399,14 @@ impl AppState {
     }
 
     /// Save the current tiers under the name in the preset field.
-    pub(crate) fn save_shape_preset(&mut self, cx: &mut Context<Self>) {
-        let name = self.research.preset_name.read(cx).text().trim().to_string();
+    pub(crate) fn save_shape_preset(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let name = self
+            .research
+            .preset_name
+            .read(cx)
+            .value()
+            .trim()
+            .to_string();
         match crate::sections::research::CustomPreset::store(
             &mut self.research.shape_presets,
             &name,
@@ -409,7 +415,7 @@ impl AppState {
             Ok(message) => {
                 self.research
                     .preset_name
-                    .update(cx, |input, cx| input.set_text("", cx));
+                    .update(cx, |input, cx| input.set_value("", window, cx));
                 self.research.active_shape_preset = Some(name);
                 self.status = message;
             }
@@ -461,15 +467,24 @@ impl AppState {
     }
 
     pub(crate) fn set_target_level(&mut self, level: f64, cx: &mut Context<Self>) {
-        let floor = f64::from(self.simulation.research_level.saturating_add(1));
-        self.target = Target::Level(level.max(floor).round() as u32);
+        let current = f64::from(self.simulation.research_level);
+        let (floor, ceiling) = (current + 1.0, (current + 500.0).max(500.0));
+        self.target = Target::Level(level.clamp(floor, ceiling).round() as u32);
         cx.notify();
     }
 
     pub(crate) fn set_target_hours(&mut self, hours: f64, cx: &mut Context<Self>) {
         if hours.is_finite() {
-            self.target = Target::Hours(hours.max(1.0));
+            self.target = Target::Hours(hours.clamp(1.0, 10_000.0));
             cx.notify();
+        }
+    }
+
+    /// The target field's number, as a level or as hours by the target's kind.
+    pub(crate) fn set_target_value(&mut self, value: f64, cx: &mut Context<Self>) {
+        match self.target {
+            Target::Level(_) => self.set_target_level(value, cx),
+            Target::Hours(_) => self.set_target_hours(value, cx),
         }
     }
 
