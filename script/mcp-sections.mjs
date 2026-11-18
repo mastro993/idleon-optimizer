@@ -5297,7 +5297,12 @@ async function visitSessionPersistence() {
 
     writeFileSync(sessionFile, '{not a session');
     lane = await McpLane.start({ appBin, stateDir, keep: false });
-    await waitForNode(lane, 'dashboard', 'session: a corrupt file starts clean on the dashboard');
+    // The dashboard is drawn under the loader while the session file is read.
+    await waitFor(
+      lane,
+      (nodes) => has(nodes, 'dashboard') && !has(nodes, 'restoring'),
+      'session: a corrupt file starts clean on the dashboard',
+    );
     const nodes = await lane.tree();
     const status = labelOf(nodes, 'status-status') ?? '';
     check('session: the corrupt file is reported', status.includes('corrupt'), status);
