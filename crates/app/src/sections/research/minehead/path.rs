@@ -94,17 +94,18 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .items_center()
                 .gap_2()
                 .child(
-                    Button::new("mh-path-run").label(if running {
+                    Button::new("mh-path-run")
+                        .label(if running {
                             "Finding path…"
                         } else {
                             "Find Upgrade Path"
                         })
-                    .primary()
-                    .icon(IconName::Play)
-                    .disabled(running)
-                    .on_click(move |_event, _window, cx| {
-                        run.update(cx, |state, cx| state.run_minehead_path(cx));
-                    }),
+                        .primary()
+                        .icon(IconName::Play)
+                        .disabled(running)
+                        .on_click(move |_event, _window, cx| {
+                            run.update(cx, |state, cx| state.run_minehead_path(cx));
+                        }),
                 )
                 .when(running, |row| {
                     row.child(Button::new("mh-path-cancel").label("Cancel").on_click(
@@ -115,8 +116,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 })
                 .child(use_inferred)
                 .child(
-                    Caption::new(format!("{} saved", format::value(currency)))
-                        .text_color(muted),
+                    Caption::new(format!("{} saved", format::value(currency))).text_color(muted),
                 ),
         );
 

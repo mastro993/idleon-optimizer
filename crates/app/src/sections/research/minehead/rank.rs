@@ -93,17 +93,18 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 .items_center()
                 .gap_2()
                 .child(
-                    Button::new("mh-rank-run").label(if running {
+                    Button::new("mh-rank-run")
+                        .label(if running {
                             "Ranking…"
                         } else {
                             "Rank Upgrades"
                         })
-                    .primary()
-                    .icon(IconName::Play)
-                    .disabled(running)
-                    .on_click(move |_event, _window, cx| {
-                        run.update(cx, |state, cx| state.run_minehead_rank(cx));
-                    }),
+                        .primary()
+                        .icon(IconName::Play)
+                        .disabled(running)
+                        .on_click(move |_event, _window, cx| {
+                            run.update(cx, |state, cx| state.run_minehead_rank(cx));
+                        }),
                 )
                 .when(running, |row| {
                     row.child(Button::new("mh-rank-cancel").label("Cancel").on_click(

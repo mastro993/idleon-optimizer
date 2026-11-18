@@ -168,7 +168,8 @@ fn path_card(ranking: &Ranking, outcome: &Path, cx: &Context<AppState>) -> AnyEl
         .p_2()
         .child(Caption::new(headline).text_color(muted))
         .child(
-            Caption::new(format!("Total gain +{}", fmt_num(outcome.gain))).text_color(theme.success),
+            Caption::new(format!("Total gain +{}", fmt_num(outcome.gain)))
+                .text_color(theme.success),
         )
         .children((outcome.steps > 0).then_some(table))
         .into_any_element()
@@ -206,7 +207,11 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                         .child(cell(1).text_color(accent).child(candidate.level.clone()))
                         .child(cell(2).text_color(muted).child(candidate.cost.clone()))
                         .child(cell(3).text_color(success).child(candidate.gain.clone()))
-                        .child(cell(4).text_color(accent).child(candidate.efficiency.clone()))
+                        .child(
+                            cell(4)
+                                .text_color(accent)
+                                .child(candidate.efficiency.clone()),
+                        )
                 })),
             );
         let table = div().h(px(330.0)).child(
@@ -227,12 +232,11 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                         .flex()
                         .items_start()
                         .gap_3()
-                        .child(
-                            div()
-                                .w(px(380.0))
-                                .flex_none()
-                                .child(path_card(ranking, &board.path, cx)),
-                        )
+                        .child(div().w(px(380.0)).flex_none().child(path_card(
+                            ranking,
+                            &board.path,
+                            cx,
+                        )))
                         .child(
                             div()
                                 .flex_1()
@@ -263,16 +267,13 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 ),
         )
         .child(
-            div()
-                .flex_1()
-                .min_h_0()
-                .child(
-                    div()
-                        .overflow_y_scrollbar()
-                        .id("su-best-scroll")
-                        .size_full()
-                        .child(body),
-                ),
+            div().flex_1().min_h_0().child(
+                div()
+                    .overflow_y_scrollbar()
+                    .id("su-best-scroll")
+                    .size_full()
+                    .child(body),
+            ),
         )
         .into_any_element()
 }

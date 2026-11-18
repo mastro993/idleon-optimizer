@@ -154,21 +154,16 @@ fn kpi_row(
             run_entity.update(cx, |state, cx| state.run_insight_roi(cx));
         });
     let result = run.result.as_ref();
-    let mut body = div()
-        .id("insight-summary")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap_2()
-                .child(effort_control)
-                .child(div().flex_1())
-                .child(button),
-        );
+    let mut body = div().id("insight-summary").flex().flex_col().gap_3().child(
+        div()
+            .flex()
+            .flex_wrap()
+            .items_center()
+            .gap_2()
+            .child(effort_control)
+            .child(div().flex_1())
+            .child(button),
+    );
     if let Some(result) = result {
         body = body.child(monocle_line(result, cx));
         if result.monocles == 0 {
@@ -260,8 +255,12 @@ fn kpi_row(
                     .caption("between 1 and 10 EXP/hr per hour"),
                 )
                 .child(
-                    Statistic::new("insight-low", "Low or none", format::count(counts.low as u64))
-                        .caption("under 1, or no gain at all"),
+                    Statistic::new(
+                        "insight-low",
+                        "Low or none",
+                        format::count(counts.low as u64),
+                    )
+                    .caption("under 1, or no gain at all"),
                 )
                 .child(
                     Statistic::new(
@@ -388,17 +387,17 @@ fn table_card(
     let Some(result) = run.result.as_ref() else {
         return Card::new()
             .header(CardHeader::new("Insight ROI"))
-            .child(
-                div().id("insight-table-empty").child(
-                    Caption::new("Run the analysis to rank the observations.").text_color(muted),
-                ),
-            )
+            .child(div().id("insight-table-empty").child(
+                Caption::new("Run the analysis to rank the observations.").text_color(muted),
+            ))
             .into_any_element();
     };
 
     let sort_entity = entity.clone();
-    let modes: Vec<(Sort, &'static str)> =
-        Sort::ALL.into_iter().map(|mode| (mode, mode.label())).collect();
+    let modes: Vec<(Sort, &'static str)> = Sort::ALL
+        .into_iter()
+        .map(|mode| (mode, mode.label()))
+        .collect();
     let sort = segmented(
         "insight-sort",
         &modes,
@@ -578,7 +577,12 @@ impl ScenarioRow {
             obs: row.obs,
             level_gain: scenario.level_gain,
             first,
-            name: if first { row.name.clone() } else { String::new() }.into(),
+            name: if first {
+                row.name.clone()
+            } else {
+                String::new()
+            }
+            .into(),
             cells: [
                 (
                     if first {
@@ -589,7 +593,10 @@ impl ScenarioRow {
                     .into(),
                     muted,
                 ),
-                (format!("+{}", scenario.level_gain).into(), Ink::Tone(Tone::Warning)),
+                (
+                    format!("+{}", scenario.level_gain).into(),
+                    Ink::Tone(Tone::Warning),
+                ),
                 (
                     format!("{:.1}", scenario.insight_rate).into(),
                     Ink::Tone(Tone::Accent),

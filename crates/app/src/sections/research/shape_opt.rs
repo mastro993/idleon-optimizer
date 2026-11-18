@@ -323,11 +323,15 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                 .label(preset.name.clone())
                 .small()
                 .w_full()
-                .when_else(is_active, |button| button.primary(), |button| button.ghost())
+                .when_else(
+                    is_active,
+                    |button| button.primary(),
+                    |button| button.ghost(),
+                )
                 .on_click(move |_event, _window, cx| {
-                let id = id.clone();
-                entity.update(cx, |state, cx| state.apply_shape_preset(&id, cx));
-            }),
+                    let id = id.clone();
+                    entity.update(cx, |state, cx| state.apply_shape_preset(&id, cx));
+                }),
         );
     }
     rail = rail.child(
@@ -360,13 +364,17 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                     Button::new(SharedString::from(format!("shape-custom-preset-{index}")))
                         .label(preset.name.clone())
                         .small()
-                        .when_else(is_active, |button| button.primary(), |button| button.ghost())
+                        .when_else(
+                            is_active,
+                            |button| button.primary(),
+                            |button| button.ghost(),
+                        )
                         .on_click(move |_event, _window, cx| {
-                        let name = name.clone();
-                        load.update(cx, |state, cx| {
-                            state.apply_custom_shape_preset(&name, cx);
-                        });
-                    }),
+                            let name = name.clone();
+                            load.update(cx, |state, cx| {
+                                state.apply_custom_shape_preset(&name, cx);
+                            });
+                        }),
                 )
                 .child(div().flex_1())
                 .child(
@@ -376,8 +384,8 @@ fn preset_rail(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
                         .small()
                         .ghost()
                         .on_click(move |_event, _window, cx| {
-                        delete.update(cx, |state, cx| state.delete_shape_preset(index, cx));
-                    }),
+                            delete.update(cx, |state, cx| state.delete_shape_preset(index, cx));
+                        }),
                 ),
         );
     }
@@ -670,65 +678,68 @@ fn breakdown_card(
     match &run.result {
         Some(result) if !result.placements.is_empty() => {
             let head = |label: &'static str| TableHead::new().child(label);
-            let rows = result.placements.iter().enumerate().map(|(order, placement)| {
-                let shape = game().shapes.get(placement.shape);
-                let name = shape
-                    .map(|shape| shape.name.clone())
-                    .unwrap_or_else(|| format!("Shape {}", placement.shape));
-                let bonus = shape.map(|shape| shape.bonus_pct).unwrap_or(0.0);
-                let nodes: Vec<String> = result
-                    .overlay
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, owner)| **owner == placement.shape as i32)
-                    .map(|(cell, _)| coord(cell))
-                    .collect();
-                TableRow::new()
-                    .child(
-                        TableCell::new().w(px(40.0)).child(
-                            div()
-                                .id(SharedString::from(format!("shape-breakdown-order-{order}")))
-                                .child(format!("{}", order + 1)),
-                        ),
-                    )
-                    .child(
-                        TableCell::new().child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap_1()
-                                .child(
-                                    div()
-                                        .flex_none()
-                                        .size(px(8.0))
-                                        .rounded_full()
-                                        .bg(super::colors::shape_color(placement.shape)),
-                                )
-                                .child(name),
-                        ),
-                    )
-                    .child(TableCell::new().text_right().child(format!("+{bonus:.0}%")))
-                    .child(TableCell::new().child(format!(
-                        "({}, {}){}",
-                        placement.x.round() as i64,
-                        placement.y.round() as i64,
-                        if placement.rot != 0.0 {
-                            format!(" rot {}°", placement.rot)
-                        } else {
-                            String::new()
-                        }
-                    )))
-                    .child(
-                        TableCell::new()
-                            .min_w_0()
-                            .text_size(TEXT_CAPTION)
-                            .child(if nodes.is_empty() {
+            let rows = result
+                .placements
+                .iter()
+                .enumerate()
+                .map(|(order, placement)| {
+                    let shape = game().shapes.get(placement.shape);
+                    let name = shape
+                        .map(|shape| shape.name.clone())
+                        .unwrap_or_else(|| format!("Shape {}", placement.shape));
+                    let bonus = shape.map(|shape| shape.bonus_pct).unwrap_or(0.0);
+                    let nodes: Vec<String> = result
+                        .overlay
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, owner)| **owner == placement.shape as i32)
+                        .map(|(cell, _)| coord(cell))
+                        .collect();
+                    TableRow::new()
+                        .child(
+                            TableCell::new().w(px(40.0)).child(
+                                div()
+                                    .id(SharedString::from(format!(
+                                        "shape-breakdown-order-{order}"
+                                    )))
+                                    .child(format!("{}", order + 1)),
+                            ),
+                        )
+                        .child(
+                            TableCell::new().child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap_1()
+                                    .child(
+                                        div()
+                                            .flex_none()
+                                            .size(px(8.0))
+                                            .rounded_full()
+                                            .bg(super::colors::shape_color(placement.shape)),
+                                    )
+                                    .child(name),
+                            ),
+                        )
+                        .child(TableCell::new().text_right().child(format!("+{bonus:.0}%")))
+                        .child(TableCell::new().child(format!(
+                            "({}, {}){}",
+                            placement.x.round() as i64,
+                            placement.y.round() as i64,
+                            if placement.rot != 0.0 {
+                                format!(" rot {}°", placement.rot)
+                            } else {
+                                String::new()
+                            }
+                        )))
+                        .child(TableCell::new().min_w_0().text_size(TEXT_CAPTION).child(
+                            if nodes.is_empty() {
                                 "—".to_string()
                             } else {
                                 nodes.join(", ")
-                            }),
-                    )
-            });
+                            },
+                        ))
+                });
             let table = Table::new()
                 .child(
                     TableHeader::new().child(
@@ -742,8 +753,10 @@ fn breakdown_card(
                 )
                 .child(TableBody::new().children(rows));
             body = body.child(table).child(
-                Caption::new("Drop shapes in this order: a node keeps the first shape that covers it.")
-                    .text_color(muted),
+                Caption::new(
+                    "Drop shapes in this order: a node keeps the first shape that covers it.",
+                )
+                .text_color(muted),
             );
         }
         Some(_) => {

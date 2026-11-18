@@ -319,8 +319,7 @@ impl Summary {
                 idleon_sushi::fmt_num(capacity)
             )
             .into(),
-            fill: (fuel_gen > 0.0)
-                .then(|| format!("fills in {:.1}h", capacity / fuel_gen).into()),
+            fill: (fuel_gen > 0.0).then(|| format!("fills in {:.1}h", capacity / fuel_gen).into()),
         }
     }
 }

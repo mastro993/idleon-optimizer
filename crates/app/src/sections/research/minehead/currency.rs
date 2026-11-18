@@ -146,14 +146,9 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                         .h(gpui::px(460.0))
                         .child(tree),
                 )
-                .child(
-                    div()
-                        .text_size(TEXT_CAPTION)
-                        .text_color(muted)
-                        .child(
-                            "Every factor comes from the loaded save; a missing field stays at ×1.",
-                        ),
-                ),
+                .child(div().text_size(TEXT_CAPTION).text_color(muted).child(
+                    "Every factor comes from the loaded save; a missing field stays at ×1.",
+                )),
         )
         .into_any_element()
 }

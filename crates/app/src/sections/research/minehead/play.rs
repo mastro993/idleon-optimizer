@@ -204,10 +204,7 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         return crate::ui::section::no_save(cx);
     };
     let floor = inputs.floor;
-    let play = minehead
-        .play
-        .take()
-        .unwrap_or_else(|| Play::new(inputs));
+    let play = minehead.play.take().unwrap_or_else(|| Play::new(inputs));
     let theme = cx.theme();
     let entity = cx.entity();
     let (cols, _rows) = play.game.dims();

@@ -22,8 +22,8 @@ pub(crate) use dashboard::Trees;
 pub(crate) use shape_presets::CustomPreset;
 
 use crate::state::AppState;
-use crate::ui::layout::{self, Breakpoint};
 use crate::state::RunReported;
+use crate::ui::layout::{self, Breakpoint};
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
 use gpui_kit::component::ActiveTheme as _;

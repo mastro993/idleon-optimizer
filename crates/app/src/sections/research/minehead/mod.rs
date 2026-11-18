@@ -21,10 +21,10 @@ use gpui::{
 use gpui_kit::component::Sizable as _;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{InputEvent, InputState};
-use idleon_ui::widgets::{number_state, number_value};
 use idleon_minehead::{Grid, Inputs, Params, Recorded, infer, inputs};
 use idleon_research::model::Simulation;
 use idleon_save::Save;
+use idleon_ui::widgets::{number_state, number_value};
 
 /// The inputs one strategy search reads.
 #[derive(Clone, Debug, PartialEq)]
@@ -241,31 +241,35 @@ impl State {
             })
             .collect();
         // Edits flow field -> value through the setters, which clamp.
-        let mut subscriptions = vec![cx.subscribe(
-            &server_cost,
-            |state, field, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::Change)
-                    && let Some(cost) = number_value(field.read(cx))
-                {
-                    state.research.minehead.set_server_var_cost(cost, cx);
-                }
-            },
-        )];
+        let mut subscriptions =
+            vec![
+                cx.subscribe(&server_cost, |state, field, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::Change)
+                        && let Some(cost) = number_value(field.read(cx))
+                    {
+                        state.research.minehead.set_server_var_cost(cost, cx);
+                    }
+                }),
+            ];
         for (index, [low, high]) in knob_fields.iter().enumerate() {
-            subscriptions.push(cx.subscribe(low, move |state, field, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::Change)
-                    && let Some(value) = number_value(field.read(cx))
-                {
-                    state.research.minehead.set_knob_low(index, value, cx);
-                }
-            }));
-            subscriptions.push(cx.subscribe(high, move |state, field, event: &InputEvent, cx| {
-                if matches!(event, InputEvent::Change)
-                    && let Some(value) = number_value(field.read(cx))
-                {
-                    state.research.minehead.set_knob_high(index, value, cx);
-                }
-            }));
+            subscriptions.push(
+                cx.subscribe(low, move |state, field, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::Change)
+                        && let Some(value) = number_value(field.read(cx))
+                    {
+                        state.research.minehead.set_knob_low(index, value, cx);
+                    }
+                }),
+            );
+            subscriptions.push(
+                cx.subscribe(high, move |state, field, event: &InputEvent, cx| {
+                    if matches!(event, InputEvent::Change)
+                        && let Some(value) = number_value(field.read(cx))
+                    {
+                        state.research.minehead.set_knob_high(index, value, cx);
+                    }
+                }),
+            );
         }
         Self {
             tab: Tab::default(),
@@ -445,9 +449,7 @@ pub(crate) fn pane(
     let mut strip = div().id("minehead-tabs").flex().items_center().gap_1();
     for candidate in Tab::ALL {
         let entity = cx.entity();
-        let mut button = Button::new(candidate.id())
-            .label(candidate.label())
-            .small();
+        let mut button = Button::new(candidate.id()).label(candidate.label()).small();
         if candidate == tab {
             button = button.primary();
         }

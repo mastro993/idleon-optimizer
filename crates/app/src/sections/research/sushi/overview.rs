@@ -304,17 +304,20 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     let theme = cx.theme();
     let muted = theme.muted_foreground;
 
-    let cards = div().flex().flex_col().gap_3().children(
-        overview.figures.chunks(FIGURES_PER_STRIP).map(|figures| {
-            KpiStrip::new().children(figures.iter().map(|figure| {
-                Statistic::new(figure.id, figure.label, figure.value.clone())
-                    .when_some(figure.suffix.clone(), |statistic, suffix| {
-                        statistic.suffix(suffix)
-                    })
-                    .caption(figure.caption.clone())
-            }))
-        }),
-    );
+    let cards =
+        div()
+            .flex()
+            .flex_col()
+            .gap_3()
+            .children(overview.figures.chunks(FIGURES_PER_STRIP).map(|figures| {
+                KpiStrip::new().children(figures.iter().map(|figure| {
+                    Statistic::new(figure.id, figure.label, figure.value.clone())
+                        .when_some(figure.suffix.clone(), |statistic, suffix| {
+                            statistic.suffix(suffix)
+                        })
+                        .caption(figure.caption.clone())
+                }))
+            }));
 
     let mut rows = div().flex().flex_col().gap_1();
     for row in overview.slots.chunks(15).enumerate().map(|(row, slots)| {
@@ -349,37 +352,35 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
     }) {
         rows = rows.child(row);
     }
-    let fires = div()
-        .flex()
-        .items_center()
-        .gap_1()
-        .children(overview.fires.iter().enumerate().map(|(column, fire)| {
-            div()
-                .id(("su-fire", column))
-                .flex_none()
-                .w(px(26.0))
-                .h(px(26.0))
-                .flex()
-                .items_center()
-                .justify_center()
-                .when_some(*fire, |cell, (colour, name)| {
-                    cell.aria_label(format!("Column {column}: {name} fireplace"))
-                        .child(div().w(px(10.0)).h(px(10.0)).rounded_full().bg(colour))
-                })
-        }));
-    let legend = div()
-        .flex()
-        .items_center()
-        .flex_wrap()
-        .gap_3()
-        .mb_2()
-        .child(Caption::new("Slot types").text_color(muted))
-        .children(
-            overview
-                .legend
-                .iter()
-                .enumerate()
-                .map(|(slot_type, (background, border))| {
+    let fires =
+        div()
+            .flex()
+            .items_center()
+            .gap_1()
+            .children(overview.fires.iter().enumerate().map(|(column, fire)| {
+                div()
+                    .id(("su-fire", column))
+                    .flex_none()
+                    .w(px(26.0))
+                    .h(px(26.0))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .when_some(*fire, |cell, (colour, name)| {
+                        cell.aria_label(format!("Column {column}: {name} fireplace"))
+                            .child(div().w(px(10.0)).h(px(10.0)).rounded_full().bg(colour))
+                    })
+            }));
+    let legend =
+        div()
+            .flex()
+            .items_center()
+            .flex_wrap()
+            .gap_3()
+            .mb_2()
+            .child(Caption::new("Slot types").text_color(muted))
+            .children(overview.legend.iter().enumerate().map(
+                |(slot_type, (background, border))| {
                     div()
                         .flex()
                         .items_center()
@@ -394,60 +395,62 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                                 .border_color(*border),
                         )
                         .child(Caption::new(slot_name(slot_type as i64)))
-                }),
-        );
+                },
+            ));
     let grid = Card::new()
         .header(
             CardHeader::new("Sushi Table")
                 .description(format!("Max cook tier {:.0}", overview.max_cook_tier)),
         )
         .child(
-            div()
-                .overflow_x_scrollbar()
-                .id("su-table-scroll")
-                .child(
-                    div()
-                        .min_w(px(460.0))
-                        .child(legend)
-                        .child(rows)
-                        .child(fires),
-                ),
+            div().overflow_x_scrollbar().id("su-table-scroll").child(
+                div()
+                    .min_w(px(460.0))
+                    .child(legend)
+                    .child(rows)
+                    .child(fires),
+            ),
         );
 
     // The tier map: discovered tiers in green, perfectos in gold.
-    let tier_cells = div().flex().flex_wrap().gap_1().children(
-        overview
-            .tiers
-            .iter()
-            .enumerate()
-            .map(|(tier, (discovered, perfecto))| {
-                let (background, colour) = if *perfecto {
-                    (theme.warning, theme.foreground)
-                } else if *discovered {
-                    (theme.success, theme.foreground)
-                } else {
-                    (theme.muted, theme.muted_foreground)
-                };
-                div()
-                    .id(("su-tier", tier))
-                    .flex_none()
-                    .w(px(28.0))
-                    .h(px(24.0))
-                    .rounded_sm()
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .bg(background)
-                    .child(
-                        Caption::new(if *perfecto {
-                            format!("{}*", tier + 1)
+    let tier_cells =
+        div()
+            .flex()
+            .flex_wrap()
+            .gap_1()
+            .children(
+                overview
+                    .tiers
+                    .iter()
+                    .enumerate()
+                    .map(|(tier, (discovered, perfecto))| {
+                        let (background, colour) = if *perfecto {
+                            (theme.warning, theme.foreground)
+                        } else if *discovered {
+                            (theme.success, theme.foreground)
                         } else {
-                            format!("{}", tier + 1)
-                        })
-                        .text_color(colour),
-                    )
-            }),
-    );
+                            (theme.muted, theme.muted_foreground)
+                        };
+                        div()
+                            .id(("su-tier", tier))
+                            .flex_none()
+                            .w(px(28.0))
+                            .h(px(24.0))
+                            .rounded_sm()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .bg(background)
+                            .child(
+                                Caption::new(if *perfecto {
+                                    format!("{}*", tier + 1)
+                                } else {
+                                    format!("{}", tier + 1)
+                                })
+                                .text_color(colour),
+                            )
+                    }),
+            );
     let tier_map = Card::new()
         .header(
             CardHeader::new("Tier Map").description("Green discovered, gold perfecto, grey locked"),

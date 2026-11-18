@@ -400,7 +400,13 @@ impl AppState {
 
     /// Save the current tiers under the name in the preset field.
     pub(crate) fn save_shape_preset(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        let name = self.research.preset_name.read(cx).value().trim().to_string();
+        let name = self
+            .research
+            .preset_name
+            .read(cx)
+            .value()
+            .trim()
+            .to_string();
         match crate::sections::research::CustomPreset::store(
             &mut self.research.shape_presets,
             &name,

@@ -47,128 +47,129 @@ pub(super) struct Upgrades {
 
 impl Upgrades {
     pub(super) fn new(inputs: &Inputs) -> Self {
-    let data = game();
-    let station = &inputs.station;
-    let ext = &inputs.external;
-    let levels = &station.levels;
-    let bucks = station.bucks();
-    let bucks_hr = station.bucks_per_hour(levels, ext);
-    let free_chance = station.free_shaker_chance(ext);
-    let expected_uses = if free_chance < 1.0 {
-        1.0 / (1.0 - free_chance)
-    } else {
-        100.0
-    };
-    let has_saffron = station.qty(19) > 0.0;
-    let daily_saffron = if has_saffron {
-        bucks_hr * station.saffron_hrs() * expected_uses
-    } else {
-        0.0
-    };
-    let daily_passive = bucks_hr * 24.0;
-    let daily_total = daily_passive + daily_saffron;
-    // The lowest requirement past the current level: the next slot to unlock.
-    let mut next_req = f64::INFINITY;
-    for slot in 0..data.slot_to_upg.len() {
-        let Some(upg) = data.slot_upg(slot) else {
-            continue;
-        };
-        let req = upg_lv_req(slot);
-        let level = station.level(upg);
-        let previous = if slot == 0 {
-            1.0
+        let data = game();
+        let station = &inputs.station;
+        let ext = &inputs.external;
+        let levels = &station.levels;
+        let bucks = station.bucks();
+        let bucks_hr = station.bucks_per_hour(levels, ext);
+        let free_chance = station.free_shaker_chance(ext);
+        let expected_uses = if free_chance < 1.0 {
+            1.0 / (1.0 - free_chance)
         } else {
-            data.slot_upg(slot - 1)
-                .map(|index| station.level(index))
-                .unwrap_or(0.0)
+            100.0
         };
-        if (req > inputs.research_level as f64 || previous == 0.0) && level == 0.0 && req < next_req
-        {
-            next_req = req;
+        let has_saffron = station.qty(19) > 0.0;
+        let daily_saffron = if has_saffron {
+            bucks_hr * station.saffron_hrs() * expected_uses
+        } else {
+            0.0
+        };
+        let daily_passive = bucks_hr * 24.0;
+        let daily_total = daily_passive + daily_saffron;
+        // The lowest requirement past the current level: the next slot to unlock.
+        let mut next_req = f64::INFINITY;
+        for slot in 0..data.slot_to_upg.len() {
+            let Some(upg) = data.slot_upg(slot) else {
+                continue;
+            };
+            let req = upg_lv_req(slot);
+            let level = station.level(upg);
+            let previous = if slot == 0 {
+                1.0
+            } else {
+                data.slot_upg(slot - 1)
+                    .map(|index| station.level(index))
+                    .unwrap_or(0.0)
+            };
+            if (req > inputs.research_level as f64 || previous == 0.0)
+                && level == 0.0
+                && req < next_req
+            {
+                next_req = req;
+            }
+        }
+        let mut rows = Vec::new();
+        for slot in 0..data.slot_to_upg.len() {
+            let Some(upg) = data.slot_upg(slot) else {
+                continue;
+            };
+            let Some(upgrade) = data.upgrade(upg) else {
+                continue;
+            };
+            let level = station.level(upg);
+            let req = upg_lv_req(slot);
+            let previous = if slot == 0 {
+                1.0
+            } else {
+                data.slot_upg(slot - 1)
+                    .map(|index| station.level(index))
+                    .unwrap_or(0.0)
+            };
+            let unlocked = (inputs.research_level as f64 >= req && previous >= 1.0) || level > 0.0;
+            let hidden = !unlocked && req > next_req;
+            let max_lv = upgrade.max_lv;
+            let maxed = level >= max_lv && max_lv < 9999.0;
+            let cost = if unlocked && !maxed {
+                Some(station.upgrade_cost(slot, levels, ext))
+            } else {
+                None
+            };
+            let deficit = cost.map(|cost| cost - bucks);
+            let affordable = deficit.is_some_and(|deficit| deficit <= 0.0);
+            let hours = match deficit {
+                Some(deficit) if deficit > 0.0 && bucks_hr > 0.0 => deficit / bucks_hr,
+                _ => 0.0,
+            };
+            let days = match deficit {
+                Some(deficit) if deficit > 0.0 && daily_total > 0.0 => deficit / daily_total,
+                _ => 0.0,
+            };
+            let level_text = if max_lv >= 9999.0 && !maxed {
+                format!("{level:.0}")
+            } else {
+                format!("{level:.0}/{max_lv:.0}")
+            };
+            let time = if maxed {
+                "MAX".to_string()
+            } else if affordable {
+                "Now".to_string()
+            } else if days > 0.0 {
+                if days < 1.0 {
+                    format!("{hours:.1}h")
+                } else {
+                    format!("{days:.1}d")
+                }
+            } else {
+                "--".to_string()
+            };
+            rows.push(Row {
+                slot,
+                req: format!("{req:.0}").into(),
+                name: upgrade.name.clone().into(),
+                level: level_text.into(),
+                bonus: idleon_sushi::fmt_num(station.qty(upg)).into(),
+                cost: cost.map_or("--".into(), idleon_sushi::fmt_num).into(),
+                time: time.into(),
+                desc: upgrade_desc(inputs, upg).into(),
+                unlocked,
+                hidden,
+                maxed,
+                affordable,
+            });
+        }
+        Self {
+            rows,
+            bucks,
+            bucks_hr,
+            daily_passive,
+            daily_saffron,
+            daily_total,
+            saffron_hrs: station.saffron_hrs(),
+            research_level: inputs.research_level,
         }
     }
-    let mut rows = Vec::new();
-    for slot in 0..data.slot_to_upg.len() {
-        let Some(upg) = data.slot_upg(slot) else {
-            continue;
-        };
-        let Some(upgrade) = data.upgrade(upg) else {
-            continue;
-        };
-        let level = station.level(upg);
-        let req = upg_lv_req(slot);
-        let previous = if slot == 0 {
-            1.0
-        } else {
-            data.slot_upg(slot - 1)
-                .map(|index| station.level(index))
-                .unwrap_or(0.0)
-        };
-        let unlocked = (inputs.research_level as f64 >= req && previous >= 1.0) || level > 0.0;
-        let hidden = !unlocked && req > next_req;
-        let max_lv = upgrade.max_lv;
-        let maxed = level >= max_lv && max_lv < 9999.0;
-        let cost = if unlocked && !maxed {
-            Some(station.upgrade_cost(slot, levels, ext))
-        } else {
-            None
-        };
-        let deficit = cost.map(|cost| cost - bucks);
-        let affordable = deficit.is_some_and(|deficit| deficit <= 0.0);
-        let hours = match deficit {
-            Some(deficit) if deficit > 0.0 && bucks_hr > 0.0 => deficit / bucks_hr,
-            _ => 0.0,
-        };
-        let days = match deficit {
-            Some(deficit) if deficit > 0.0 && daily_total > 0.0 => deficit / daily_total,
-            _ => 0.0,
-        };
-        let level_text = if max_lv >= 9999.0 && !maxed {
-            format!("{level:.0}")
-        } else {
-            format!("{level:.0}/{max_lv:.0}")
-        };
-        let time = if maxed {
-            "MAX".to_string()
-        } else if affordable {
-            "Now".to_string()
-        } else if days > 0.0 {
-            if days < 1.0 {
-                format!("{hours:.1}h")
-            } else {
-                format!("{days:.1}d")
-            }
-        } else {
-            "--".to_string()
-        };
-        rows.push(Row {
-            slot,
-            req: format!("{req:.0}").into(),
-            name: upgrade.name.clone().into(),
-            level: level_text.into(),
-            bonus: idleon_sushi::fmt_num(station.qty(upg)).into(),
-            cost: cost.map_or("--".into(), idleon_sushi::fmt_num).into(),
-            time: time.into(),
-            desc: upgrade_desc(inputs, upg).into(),
-            unlocked,
-            hidden,
-            maxed,
-            affordable,
-        });
-    }
-    Self {
-        rows,
-        bucks,
-        bucks_hr,
-        daily_passive,
-        daily_saffron,
-        daily_total,
-        saffron_hrs: station.saffron_hrs(),
-        research_level: inputs.research_level,
-    }
-    }
 }
-
 
 /// A figure scaled with its suffix, two decimals once scaled.
 fn figure(id: &'static str, label: &'static str, value: f64, caption: String) -> Statistic {
@@ -301,19 +302,20 @@ pub(super) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
                 ),
             )
     }));
-    let table = div()
-        .h(px(430.0))
-        .child(
-            div()
-                .overflow_y_scrollbar()
-                .id("su-upgrades-scroll")
-                .size_full()
-                .child(
-                    div()
-                        .min_w(px(720.0))
-                        .child(Table::new().small().child(columns::header(&COLUMNS)).child(body)),
+    let table = div().h(px(430.0)).child(
+        div()
+            .overflow_y_scrollbar()
+            .id("su-upgrades-scroll")
+            .size_full()
+            .child(
+                div().min_w(px(720.0)).child(
+                    Table::new()
+                        .small()
+                        .child(columns::header(&COLUMNS))
+                        .child(body),
                 ),
-        );
+            ),
+    );
 
     div()
         .id("sushi-upgrades")

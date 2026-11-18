@@ -127,9 +127,7 @@ pub(crate) fn pane(
     let mut strip = div().id("sushi-tabs").flex().items_center().gap_1();
     for candidate in Tab::ALL {
         let entity = cx.entity();
-        let mut button = Button::new(candidate.id())
-            .label(candidate.label())
-            .small();
+        let mut button = Button::new(candidate.id()).label(candidate.label()).small();
         if candidate == tab {
             button = button.primary();
         }

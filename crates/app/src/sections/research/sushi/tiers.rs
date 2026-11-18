@@ -80,8 +80,7 @@ impl Tiers {
                     hidden: !rog_unlocked && !rog_next && !discovered,
                     odds: odds.into(),
                     knowledge_level: if discovered {
-                        format!("{:.0}", station.knowledge.get(tier).copied().unwrap_or(0.0))
-                            .into()
+                        format!("{:.0}", station.knowledge.get(tier).copied().unwrap_or(0.0)).into()
                     } else {
                         "--".into()
                     },

@@ -5,7 +5,9 @@ use super::boss_name;
 use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
+use gpui::{
+    AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
 use gpui_kit::component::ActiveTheme as _;
 use gpui_kit::component::Sizable as _;
 use gpui_kit::component::checkbox::Checkbox;
@@ -98,12 +100,7 @@ impl Dashboard {
                 inputs.base_dmg(),
                 "per tile number",
             ),
-            figure(
-                "mh-hp",
-                "Boss HP",
-                inputs.boss_hp().round(),
-                "floor health",
-            ),
+            figure("mh-hp", "Boss HP", inputs.boss_hp().round(), "floor health"),
             figure("mh-mines", "Depth Charges", inputs.mines(), "per grid"),
             figure(
                 "mh-tries",
@@ -206,17 +203,17 @@ pub(super) fn pane(
     let muted = theme.muted_foreground;
     let entity = cx.entity();
 
-    let cards = div().flex().flex_col().gap_3().children(
-        dashboard
-            .figures
-            .chunks(FIGURES_PER_STRIP)
-            .map(|figures| {
+    let cards =
+        div()
+            .flex()
+            .flex_col()
+            .gap_3()
+            .children(dashboard.figures.chunks(FIGURES_PER_STRIP).map(|figures| {
                 KpiStrip::new().children(figures.iter().map(|figure| {
                     Statistic::new(figure.id, figure.label, figure.value.clone())
                         .caption(figure.caption.clone())
                 }))
-            }),
-    );
+            }));
 
     let server_var = Card::new()
         .header(CardHeader::new("Server var").description(
@@ -304,51 +301,52 @@ pub(super) fn pane(
         .child(table);
 
     // The floor rewards.
-    let rewards = div().flex().flex_wrap().gap_2().children(
-        dashboard
-            .rewards
-            .iter()
-            .enumerate()
-            .map(|(floor_index, reward)| {
-                let card = div()
-                    .id(("mh-reward", floor_index))
-                    .flex_none()
-                    .w(px(170.0))
-                    .p_2()
-                    .rounded(theme.radius)
-                    .bg(theme.muted);
-                if reward.hidden && !show_spoiler {
-                    return card
-                        .opacity(0.35)
-                        .child(Caption::new("???").text_color(muted));
-                }
-                card.flex()
-                    .flex_col()
-                    .gap_1()
-                    .when(!reward.cleared, |card| card.opacity(0.5))
-                    .child(
-                        div()
-                            .flex()
-                            .justify_between()
-                            .child(Caption::new(reward.boss.clone()).text_color(
-                                if reward.cleared {
-                                    theme.success
-                                } else {
-                                    muted
-                                },
-                            ))
+    let rewards =
+        div()
+            .flex()
+            .flex_wrap()
+            .gap_2()
+            .children(
+                dashboard
+                    .rewards
+                    .iter()
+                    .enumerate()
+                    .map(|(floor_index, reward)| {
+                        let card = div()
+                            .id(("mh-reward", floor_index))
+                            .flex_none()
+                            .w(px(170.0))
+                            .p_2()
+                            .rounded(theme.radius)
+                            .bg(theme.muted);
+                        if reward.hidden && !show_spoiler {
+                            return card
+                                .opacity(0.35)
+                                .child(Caption::new("???").text_color(muted));
+                        }
+                        card.flex()
+                            .flex_col()
+                            .gap_1()
+                            .when(!reward.cleared, |card| card.opacity(0.5))
                             .child(
-                                Caption::new(if reward.cleared { "Yes" } else { "--" })
-                                    .text_color(muted),
-                            ),
-                    )
-                    .child(
-                        Caption::new(reward.desc.clone())
-                            .text_color(muted)
-                            .text_size(px(10.0)),
-                    )
-            }),
-    );
+                                div()
+                                    .flex()
+                                    .justify_between()
+                                    .child(Caption::new(reward.boss.clone()).text_color(
+                                        if reward.cleared { theme.success } else { muted },
+                                    ))
+                                    .child(
+                                        Caption::new(if reward.cleared { "Yes" } else { "--" })
+                                            .text_color(muted),
+                                    ),
+                            )
+                            .child(
+                                Caption::new(reward.desc.clone())
+                                    .text_color(muted)
+                                    .text_size(px(10.0)),
+                            )
+                    }),
+            );
     let rewards = Card::new()
         .header(CardHeader::new("Boss rewards").description("Each cleared floor's bonus"))
         .child(rewards);

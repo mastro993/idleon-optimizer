@@ -143,17 +143,14 @@ pub(super) fn pane(
                 .description(format!(
                     "{combos} combos · 200 screening, 2,000 final trials"
                 ))
-                .action(
-                    Button::new("mh-opt-reset")
-                        .label("Reset")
-                        .small()
-                        .on_click(move |_event, _window, cx| {
-                            reset.update(cx, |state, cx| {
-                                state.research.minehead.ranges = super::default_ranges();
-                                cx.notify();
-                            });
-                        }),
-                ),
+                .action(Button::new("mh-opt-reset").label("Reset").small().on_click(
+                    move |_event, _window, cx| {
+                        reset.update(cx, |state, cx| {
+                            state.research.minehead.ranges = super::default_ranges();
+                            cx.notify();
+                        });
+                    },
+                )),
         )
         .child(
             div().h(px(430.0)).child(
@@ -268,25 +265,26 @@ fn results(result: &Optimized, cx: &mut Context<AppState>) -> AnyElement {
     let muted = cx.theme().muted_foreground;
     let best = &result.best;
     let cell = |index| columns::cell(&COLUMNS, index).min_w(px(56.0));
-    let body = TableBody::new().children(result.top.iter().enumerate().map(|(index, candidate)| {
-        let params = &candidate.params;
-        let result = &candidate.result;
-        TableRow::new()
-            .child(cell(0).child(format!("{}", index + 1)))
-            .child(
-                cell(1)
-                    .text_color(win_tone(result.win_rate).color(cx))
-                    .child(format!("{:.1}%", result.win_rate * 100.0)),
-            )
-            .child(cell(2).child(format::value(result.avg_dmg)))
-            .child(cell(3).child(format::value(result.avg_first_turn_dmg)))
-            .child(cell(4).child(format!("{:.1}", result.avg_turns)))
-            .child(cell(5).child(format::value(result.avg_dmg_per_commit)))
-            .child(cell(6).child(format!("{:.1}", params.ev_multiplier)))
-            .child(cell(7).child(format!("{:.0}", params.min_reveal)))
-            .child(cell(8).child(format!("{:.0}%", params.mine_cap_pct * 100.0)))
-            .child(cell(9).child(format!("{:.0}%", params.hp_threshold * 100.0)))
-    }));
+    let body =
+        TableBody::new().children(result.top.iter().enumerate().map(|(index, candidate)| {
+            let params = &candidate.params;
+            let result = &candidate.result;
+            TableRow::new()
+                .child(cell(0).child(format!("{}", index + 1)))
+                .child(
+                    cell(1)
+                        .text_color(win_tone(result.win_rate).color(cx))
+                        .child(format!("{:.1}%", result.win_rate * 100.0)),
+                )
+                .child(cell(2).child(format::value(result.avg_dmg)))
+                .child(cell(3).child(format::value(result.avg_first_turn_dmg)))
+                .child(cell(4).child(format!("{:.1}", result.avg_turns)))
+                .child(cell(5).child(format::value(result.avg_dmg_per_commit)))
+                .child(cell(6).child(format!("{:.1}", params.ev_multiplier)))
+                .child(cell(7).child(format!("{:.0}", params.min_reveal)))
+                .child(cell(8).child(format!("{:.0}%", params.mine_cap_pct * 100.0)))
+                .child(cell(9).child(format!("{:.0}%", params.hp_threshold * 100.0)))
+        }));
     let table = div().h(px(330.0)).child(
         div()
             .overflow_y_scrollbar()

@@ -54,12 +54,20 @@ pub(crate) fn rates_pane(
                 .caption("additive and grid bonuses"),
         )
         .child(
-            Statistic::new("kpi-obs", "Observation EXP", format!("{:.1}", rate.obs_base))
-                .caption("before multipliers"),
+            Statistic::new(
+                "kpi-obs",
+                "Observation EXP",
+                format!("{:.1}", rate.obs_base),
+            )
+            .caption("before multipliers"),
         )
         .child(
-            Statistic::new("kpi-points", "Free grid points", format::count(points.free as u64))
-                .caption(format!("{} spent of {}", points.spent, points.earned)),
+            Statistic::new(
+                "kpi-points",
+                "Free grid points",
+                format::count(points.free as u64),
+            )
+            .caption(format!("{} spent of {}", points.spent, points.earned)),
         )
         .child(
             Statistic::new(
@@ -238,12 +246,7 @@ pub(super) fn supplement_fields(
 }
 
 /// One supplement row: its name, its value, and the field that edits it.
-fn supplement_row(
-    state: &AppState,
-    index: usize,
-    window: &mut Window,
-    cx: &mut App,
-) -> AnyElement {
+fn supplement_row(state: &AppState, index: usize, window: &mut Window, cx: &mut App) -> AnyElement {
     let supplement = &SUPPLEMENTS[index];
     let value = (supplement.get)(&state.context);
     let precision = supplement.precision;
@@ -361,11 +364,7 @@ fn observation_rows(state: &mut AppState) -> Rc<Vec<ObservationRow>> {
                     ObservationRow {
                         obs,
                         name: game().observations[obs].name.replace('_', " ").into(),
-                        level: format!(
-                            "Lv {}",
-                            simulation.observations.insight_level[obs]
-                        )
-                        .into(),
+                        level: format!("Lv {}", simulation.observations.insight_level[obs]).into(),
                         mags: mags.to_string().into(),
                         insight_rate: format::rate(insight_rate).into(),
                     }
@@ -447,7 +446,11 @@ fn observations_card(
                     ),
                 )
                 .child(TableCell::new().text_right().child(row.mags.clone()))
-                .child(TableCell::new().text_right().child(row.insight_rate.clone()))
+                .child(
+                    TableCell::new()
+                        .text_right()
+                        .child(row.insight_rate.clone()),
+                )
                 .child(
                     TableCell::new().w(narrow).child(
                         Button::new(("obs-toggle", obs))

@@ -8,7 +8,9 @@
 
 use crate::state::AppState;
 use gpui::prelude::*;
-use gpui::{AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px};
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
+};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::alert::Alert;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -344,16 +346,17 @@ impl UnlockRow {
 }
 
 /// The rows the filter and the name search keep, in the result's order.
-fn table_rows(
-    state: &mut AppState,
-    result: &Outcome,
-    cx: &App,
-) -> Rc<Vec<UnlockRow>> {
+fn table_rows(state: &mut AppState, result: &Outcome, cx: &App) -> Rc<Vec<UnlockRow>> {
     let research = &mut state.research;
     let key = RowsKey {
         generation: research.run_generation,
         filter: research.unlock_filter,
-        query: research.unlock_search.read(cx).value().trim().to_lowercase(),
+        query: research
+            .unlock_search
+            .read(cx)
+            .value()
+            .trim()
+            .to_lowercase(),
     };
     let best = result.best_score();
     let (filter, query) = (key.filter, key.query.clone());
@@ -388,8 +391,10 @@ fn table_card(
     };
 
     let filter_entity = entity.clone();
-    let modes: Vec<(Filter, &'static str)> =
-        Filter::ALL.into_iter().map(|mode| (mode, mode.label())).collect();
+    let modes: Vec<(Filter, &'static str)> = Filter::ALL
+        .into_iter()
+        .map(|mode| (mode, mode.label()))
+        .collect();
     let filter = segmented(
         "unlock-filter",
         &modes,
@@ -488,7 +493,11 @@ fn row_cells(row: &UnlockRow, cx: &App) -> TableRow {
         .child(
             TableCell::new()
                 .text_right()
-                .text_color(if row.usable { theme.success } else { theme.danger })
+                .text_color(if row.usable {
+                    theme.success
+                } else {
+                    theme.danger
+                })
                 .child(row.level.clone()),
         )
         .child(

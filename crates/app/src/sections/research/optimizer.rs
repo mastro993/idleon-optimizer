@@ -154,9 +154,9 @@ fn controls(
         .icon(IconName::Play)
         .w_full()
         .disabled(blocked)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.optimize(cx));
-    });
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.optimize(cx));
+        });
 
     Card::new()
         .header(CardHeader::new("Target").description(

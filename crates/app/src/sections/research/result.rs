@@ -9,8 +9,8 @@
 use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, SharedString,
-    Styled, div, px, radians,
+    AnyElement, App, Context, Entity, Hsla, IntoElement, ParentElement, Role, SharedString, Styled,
+    div, px, radians,
 };
 use gpui_kit::assets::IconName;
 use gpui_kit::component::alert::Alert;
