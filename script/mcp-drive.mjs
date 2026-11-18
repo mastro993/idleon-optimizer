@@ -290,14 +290,16 @@ try {
   check('the optimizer never loses EXP', !gain.trim().startsWith('-'), gain);
   check('result reports the after rate', has(nodes, 'result-after'));
 
-  // Changing an input keeps the result visible and marks it stale.
-  await call('click_element', { id: 'target-value-more' });
+  // Changing an input keeps the result visible and marks it stale. The kit
+  // number field steps with Up and Down while focused.
+  await call('click_element', { id: 'target-value' });
+  await call('keyboard', { keystroke: 'up' });
   await waitFor(
     (current) => has(current, 'result-stale'),
     'changing the target marks the result stale',
   );
   check('a stale result keeps its numbers', has(await tree(), 'result-after'));
-  await call('click_element', { id: 'target-value-less' });
+  await call('keyboard', { keystroke: 'down' });
   await waitFor(
     (current) => !has(current, 'result-stale'),
     'restoring the input clears the stale mark',
@@ -406,7 +408,8 @@ try {
   check('every supplement is exposed', ['supp-svrxp', 'supp-abm', 'supp-extra-pct', 'supp-extra-multi', 'supp-points', 'supp-shapes', 'supp-mags'].every((id) => has(nodes, id)));
   const rateBefore = labelOf(nodes, 'kpi-row') ?? '';
   check('the rate readout is exposed', rateBefore.length > 0, rateBefore);
-  await call('click_element', { id: 'supp-abm-stepper-more' });
+  await call('click_element', { id: 'supp-abm-stepper' });
+  await call('keyboard', { keystroke: 'up' });
   await waitFor(
     (current) => (labelOf(current, 'kpi-row') ?? '') !== rateBefore,
     'raising the all-bonus multiplier moves the rate',

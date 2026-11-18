@@ -1,14 +1,11 @@
 //! The Minehead strategy search: the knob ranges, the background search and the
 //! top strategies.
 
-use super::super::controls::stepper;
 use super::{OptimizeInputs, Params};
 use crate::sections::research::sushi::columns::{self, Column};
 use crate::state::AppState;
 use gpui::prelude::*;
-use gpui::{
-    AnyElement, Context, Entity, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
-};
+use gpui::{AnyElement, Context, Entity, IntoElement, ParentElement, Styled, Window, div, px};
 use gpui_kit::assets::IconName;
 use gpui_kit::component::Sizable as _;
 use gpui_kit::component::button::{Button, ButtonVariants as _};
@@ -96,28 +93,11 @@ pub(super) fn pane(
     }
     let muted = cx.theme().muted_foreground;
 
-    // The knob ranges: one low and one high field per knob, each stepping
-    // through the setter that keeps low at most high.
-    let field = |id: String,
-                 label: String,
-                 state: &Entity<InputState>,
-                 value: (f64, f64, usize),
-                 set: fn(&mut super::State, usize, f64, &mut Context<AppState>),
-                 index: usize| {
-        let knob = entity.clone();
-        div()
-            .id(SharedString::from(id.clone()))
-            .w(px(120.0))
+    // The knob ranges: one low and one high field per knob.
+    let field = |id: String, label: String, state: &Entity<InputState>| {
+        crate::ui::number_field(gpui::SharedString::from(id), state, label)
+            .w(px(88.0))
             .flex_none()
-            .child(
-                stepper(&id, state, value, move |value, _window, cx| {
-                    knob.update(cx, |state, cx| {
-                        set(&mut state.research.minehead, index, value, cx)
-                    });
-                })
-                .accessibility_label(label)
-                .small(),
-            )
     };
     let knobs = div().flex().flex_col().gap_1().children(
         minehead
@@ -142,18 +122,12 @@ pub(super) fn pane(
                         format!("mh-lo-{}", range.key),
                         format!("{} from", range.label),
                         low,
-                        (range.lo, range.step, range.decimals()),
-                        super::State::set_knob_low,
-                        index,
                     ))
                     .child(Caption::new("to").text_color(muted))
                     .child(field(
                         format!("mh-hi-{}", range.key),
                         format!("{} to", range.label),
                         high,
-                        (range.hi, range.step, range.decimals()),
-                        super::State::set_knob_high,
-                        index,
                     ))
             }),
     );

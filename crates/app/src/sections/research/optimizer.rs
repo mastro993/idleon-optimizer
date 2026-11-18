@@ -10,13 +10,12 @@ use gpui_kit::component::button::{
     Button, ButtonVariants as _, Toggle, ToggleGroup, ToggleVariants as _,
 };
 use gpui_kit::component::checkbox::Checkbox;
-
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_research::game;
 use idleon_research::model::{Effort, SimOptions, Target};
 use idleon_ui::widgets::{Caption, Card, CardHeader, Tone, show_number};
 
-use super::controls::{segmented, stepper};
+use super::controls::segmented;
 
 pub(crate) fn optimizer_pane(
     state: &mut AppState,
@@ -71,20 +70,9 @@ fn controls(
         Target::Hours(hours) => hours,
     };
     show_number(&state.research.target_value, value, 0, window, cx);
-    // `NumberInput` has no `id`: the wrapper keeps the Ely control's.
-    let target_entity = entity.clone();
-    let value_control = div().id("target-value").w(px(160.0)).child(
-        stepper(
-            "target-value",
-            &state.research.target_value,
-            (value, 1.0, 0),
-            move |value, _window, cx| {
-                target_entity.update(cx, |state, cx| state.set_target_value(value, cx));
-            },
-        )
-        .accessibility_label("Target")
-        .small(),
-    );
+    let value_control =
+        crate::ui::number_field("target-value", &state.research.target_value, "Target")
+            .w(px(160.0));
 
     let effort_entity = entity.clone();
     let effort_control = segmented(
