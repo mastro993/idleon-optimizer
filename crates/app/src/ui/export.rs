@@ -12,7 +12,7 @@ use crate::state::AppState;
 use gpui::prelude::*;
 use gpui::{App, ClipboardItem, Context, Entity, ParentElement, Role, Styled, div};
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogFooter};
+use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogEntrance, DialogFooter};
 use gpui_kit::component::{ActiveTheme as _, v_flex};
 use idleon_project as project;
 use idleon_ui::widgets::{TEXT_CAPTION, TEXT_MONO};
@@ -93,6 +93,10 @@ pub(crate) fn dialog(entity: &Entity<AppState>, dialog: Dialog, cx: &App) -> Dia
 
     dialog
         .title("Export project")
+        // Ely's dialog opened and closed in one frame. Keep that: a closing kit
+        // dialog keeps its surface (and its ids) up through the exit and
+        // shields the clicks that land on it.
+        .entrance(DialogEntrance::None)
         .on_close(move |_event, window, cx| {
             close.update(cx, |state, cx| state.close_export(window, cx));
         })

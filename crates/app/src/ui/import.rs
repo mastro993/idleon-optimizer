@@ -19,7 +19,7 @@ use gpui::{
     Window, div,
 };
 use gpui_kit::component::button::{Button, ButtonVariants as _};
-use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogFooter};
+use gpui_kit::component::dialog::{Dialog, DialogDescription, DialogEntrance, DialogFooter};
 use gpui_kit::component::input::{Textarea, TextareaState};
 use gpui_kit::component::separator::Separator;
 use gpui_kit::component::{ActiveTheme as _, Disableable as _, v_flex};
@@ -227,6 +227,10 @@ pub(crate) fn dialog(entity: &Entity<AppState>, dialog: Dialog, cx: &App) -> Dia
 
     dialog
         .title("Import save or project")
+        // Ely's dialog opened and closed in one frame. Keep that: a closing kit
+        // dialog keeps its surface (and its ids) up through the exit and
+        // shields the clicks that land on it.
+        .entrance(DialogEntrance::None)
         .on_close(move |_event, window, cx| {
             close.update(cx, |state, cx| state.close_import(window, cx));
         })
