@@ -228,8 +228,15 @@ fn header_reads(state: &AppState, _: &App) -> HeaderReads {
     }
 }
 
+/// A cached view lays its root out on its own, so the header, which relies on
+/// a column to stretch it across the window, sits in one that fills the box.
 fn draw_header(state: &mut AppState, _: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    header::header(state, cx)
+    div()
+        .flex()
+        .flex_col()
+        .size_full()
+        .child(header::header(state, cx))
+        .into_any_element()
 }
 
 fn sidebar_reads(state: &AppState, _: &App) -> SidebarReads {
