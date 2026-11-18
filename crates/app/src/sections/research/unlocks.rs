@@ -481,6 +481,5 @@ mod tests {
     fn the_tab_is_named() {
         assert_eq!(Tab::Unlocks.label(), "Unlocks");
         assert_eq!(Tab::Unlocks.id(), "unlocks");
-        assert_eq!(Tab::from_id("unlocks"), Some(Tab::Unlocks));
     }
 }

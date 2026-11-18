@@ -2423,7 +2423,9 @@ const INTERACTIONS = {
     // waves. The section screenshot ends here, on the recorded replay.
     await lane.call('click_element', { id: 'encounter' });
     await waitForNode(lane, 'combat-encounter-run', 'combat-sim: the encounter tab reopens');
-    await scrollTo(lane, 'result-replay');
+    // The results sit in the encounter's own scroll area, which starts about
+    // 430 px down: a full step can carry the tabs above its top edge.
+    await scrollTo(lane, 'result-replay', { step: 200 });
     await lane.call('click_element', { id: 'result-replay' });
     await waitFor(
       lane,
@@ -5127,7 +5129,7 @@ async function visitShell(registry) {
     // shortcut pairs step through it, Escape stays put, and a new open drops
     // the forward steps.
     const unavailable = (current, id) =>
-      current.find((node) => node.id === id)?.description === 'Unavailable';
+      current.find((node) => node.id === id)?.state?.enabled === false;
     check('shell: forward is unavailable at the newest place', unavailable(await lane.tree(), 'history-forward'));
     await lane.call('click_element', { id: 'history-back' });
     await waitForNode(lane, 'section-damage', 'shell: the back arrow returns to damage');

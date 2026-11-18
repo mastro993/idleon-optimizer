@@ -14,7 +14,7 @@
 use crate::sections::{SECTIONS, Section};
 use crate::session::SidebarFold;
 use crate::state::{AppState, Route, RunReported, SaveStatus, Shown};
-use crate::ui::{dashboard, header, sidebar};
+use crate::ui::{dashboard, header, section, sidebar};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Empty, Entity, IntoElement, ParentElement, Role, Styled,
@@ -209,13 +209,7 @@ impl Render for Page {
         };
         let view = self.section.view;
         let content = state.update(cx, |state, cx| view(state, window, cx));
-        div()
-            .id(format!("section-{}", self.section.id))
-            .size_full()
-            .p_3()
-            .min_h_0()
-            .child(content)
-            .into_any_element()
+        section::page(format!("section-{}", self.section.id), content)
     }
 }
 

@@ -699,6 +699,5 @@ mod tests {
     fn the_tab_is_named() {
         assert_eq!(Tab::InsightRoi.label(), "Insight ROI");
         assert_eq!(Tab::InsightRoi.id(), "insight");
-        assert_eq!(Tab::from_id("insight"), Some(Tab::InsightRoi));
     }
 }

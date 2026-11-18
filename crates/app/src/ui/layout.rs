@@ -6,14 +6,16 @@
 
 use crate::sections::research::Tab;
 use crate::state::AppState;
-use ely_gpui_component::layout::ScrollArea;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, ElementId, Global, IntoElement, ParentElement, Pixels, Role,
     SharedString, Styled, Window, div, px,
 };
+use gpui_kit::component::ActiveTheme as _;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::tab::{Tab as KitTab, TabBar};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_KPI};
+use std::rc::Rc;
 
 /// The smallest window the layout is designed for.
 pub(crate) const MIN_WIDTH: f32 = 1080.0;
@@ -152,18 +154,13 @@ fn split_pane_inner(
             )
             .into_any_element(),
         Breakpoint::Compact => {
-            let stacked = div().flex().flex_col().gap_3();
+            let stacked = div().flex().flex_col().flex_1().min_h_0().gap_3();
             let stacked = if side_first {
                 stacked.child(side).child(primary)
             } else {
                 stacked.child(primary).child(side)
             };
-            ScrollArea::new(id)
-                .vertical()
-                .flex_1()
-                .min_h_0()
-                .child(stacked)
-                .into_any_element()
+            stacked.overflow_y_scrollbar().id(id).into_any_element()
         }
     }
 }
@@ -177,10 +174,7 @@ pub(crate) fn figure(
     caption: impl Into<SharedString>,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    use ely_gpui_component::layout::{Card, CardHeader};
-    use ely_gpui_component::typography::Caption;
-
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let value = value.into();
     div()
         .id(id)
@@ -198,7 +192,7 @@ pub(crate) fn figure(
                     .gap_1()
                     .child(
                         div()
-                            .text_size(px(20.0))
+                            .text_size(TEXT_KPI)
                             .font_weight(gpui::FontWeight::SEMIBOLD)
                             .child(value),
                     )
@@ -208,39 +202,82 @@ pub(crate) fn figure(
         .into_any_element()
 }
 
+/// The height of an Ely tab strip (Ely's medium control height), which the
+/// sections that still draw one pass to [`scrolling_tabs`].
+const ELY_TAB_HEIGHT: Pixels = px(28.0);
+
 /// A tab strip that scrolls sideways when its tabs need more room than the
 /// workspace leaves them, instead of running past the window's edge. It takes
 /// the full width in a column and shrinks beside siblings in a row; its height
 /// is a tab's, so a column that squeezes its children never collapses it.
+///
+/// For the sections that still draw an Ely `TabBar`; a kit [`tab_bar`]
+/// scrolls on its own.
 pub(crate) fn scrolling_tabs(
     id: impl Into<ElementId>,
     tabs: impl IntoElement,
-    cx: &App,
+    _cx: &App,
 ) -> AnyElement {
-    let height = cx.theme().control_height(ControlSize::Md);
     div()
         .flex()
         .w_full()
         .min_w_0()
-        .h(height)
-        .min_h(height)
-        .child(ScrollArea::new(id).flex_1().min_w_0().child(tabs))
+        .h(ELY_TAB_HEIGHT)
+        .min_h(ELY_TAB_HEIGHT)
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .child(tabs)
+                .overflow_x_scrollbar()
+                .id(id),
+        )
         .into_any_element()
 }
 
-/// The shared tab strip; the section that owns it passes its active tab in state.
+/// A kit underline tab strip, each tab sized to its label, that scrolls
+/// sideways when the tabs outgrow it. `tabs` are `(element id, label)` pairs;
+/// each tab keeps its own element id, which the harnesses click, and
+/// `on_select` gets the index of the tab chosen.
+pub(crate) fn tab_bar(
+    id: impl Into<ElementId>,
+    tabs: impl IntoIterator<Item = (SharedString, SharedString)>,
+    selected: usize,
+    on_select: impl Fn(usize, &mut Window, &mut App) + 'static,
+) -> TabBar {
+    let on_select = Rc::new(on_select);
+    let tabs = tabs.into_iter().enumerate().map(|(index, (id, label))| {
+        let select = on_select.clone();
+        // A kit tab's own id is its index, so the label carries the id; its
+        // click is what the harnesses press, and the bar handles the rest.
+        KitTab::new().aria_label(label.clone()).child(
+            div()
+                .id(id)
+                .on_click(move |_, window, cx| select(index, window, cx))
+                .child(label),
+        )
+    });
+    TabBar::new(id)
+        .underline()
+        .min_w_0()
+        .children(tabs)
+        .selected_index(selected)
+        .on_click(move |index, window, cx| on_select(*index, window, cx))
+}
+
+/// The Research tab strip; the active tab lives in the section's state.
 pub(crate) fn app_tabs(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
     let entity = cx.entity();
-    let mut tabs = TabBar::new("app-tabs").selected(SharedString::from(state.research.tab.id()));
-    for tab in Tab::ALL {
-        tabs = tabs.tab(WindowTab::new(tab.id(), tab.label()));
-    }
-    let tabs = tabs.on_select(move |id, _window, cx| {
-        if let Some(tab) = Tab::from_id(id.as_ref()) {
-            entity.update(cx, |state, cx| state.set_tab(tab, cx));
-        }
-    });
-    scrolling_tabs("app-tabs-scroll", tabs, cx)
+    let selected = Tab::ALL
+        .iter()
+        .position(|tab| *tab == state.research.tab)
+        .unwrap_or_default();
+    let tabs = Tab::ALL.map(|tab| (tab.id().into(), tab.label().into()));
+    tab_bar("app-tabs", tabs, selected, move |index, _window, cx| {
+        entity.update(cx, |state, cx| state.set_tab(Tab::ALL[index], cx));
+    })
+    .flex_1()
+    .into_any_element()
 }
 
 #[cfg(test)]
