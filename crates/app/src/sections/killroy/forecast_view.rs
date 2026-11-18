@@ -7,215 +7,89 @@
 use crate::sections::killroy::Mode;
 use crate::state::AppState;
 use crate::ui::layout;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::EmptyState;
-use ely_gpui_component::forms::{Checkbox, NumberInput};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::{Caption, DateTimeText};
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::empty::{
+    Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
+};
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Icon, Sizable as _, h_flex, v_flex};
 use idleon_killroy::{Forecast, ForecastWeek, Selection};
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_CAPTION, Tone, show_number};
 
-/// No save has been imported yet.
-pub(crate) fn empty_state(_window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
-    let entity = cx.entity();
-    Card::new()
-        .header(
-            CardHeader::new("Weekly forecast")
-                .description("Encounters, monster records and class eligibility"),
-        )
-        .child(
-            EmptyState::new(
-                "killroy-empty",
-                IconName::CalendarRange,
-                "Import a save to forecast Killroy",
-            )
-            .body(
-                "The forecast reads each character's class, encounter unlocks and monster records \
-                 from the save, plus the server's Killroy rotation from a wrapped it.json.",
-            )
-            .action(
-                Button::new("killroy-import", "Import a save")
-                    .icon(IconName::Upload)
-                    .on_click(move |_event, window, cx| {
-                        entity.update(cx, |state, cx| state.open_import(window, cx));
-                    }),
-            ),
-        )
-        .into_any_element()
+/// One forecast week as the table draws it, built when the forecast changes.
+pub(crate) struct WeekRow {
+    offset: usize,
+    label: SharedString,
+    /// The week and its local dates, read aloud.
+    aria: SharedString,
+    /// The local dates under the check, when the timestamps are valid.
+    dates: Option<SharedString>,
+    slots: Vec<Option<SlotRow>>,
 }
 
-/// A save that cannot answer the forecast, with the way to replace it.
-pub(crate) fn error_state(
-    error: String,
-    _window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let entity = cx.entity();
-    Card::new()
-        .header(
-            CardHeader::new("Weekly forecast")
-                .description("Encounters, monster records and class eligibility"),
-        )
-        .child(
-            EmptyState::new(
-                "killroy-error",
-                IconName::TriangleAlert,
-                "The forecast needs more from the save",
-            )
-            .body(error)
-            .action(
-                Button::new("killroy-import", "Import another save")
-                    .icon(IconName::Upload)
-                    .on_click(move |_event, window, cx| {
-                        entity.update(cx, |state, cx| state.open_import(window, cx));
-                    }),
-            ),
-        )
-        .into_any_element()
+/// One encounter slot of a week: its family, rooms, records and who can enter.
+struct SlotRow {
+    family: SharedString,
+    aria: SharedString,
+    /// Each room on offer and its record; empty when every room is locked.
+    maps: Vec<(SharedString, SharedString)>,
+    /// This week's encounter was already used: practice only.
+    practice: bool,
+    /// Why nobody can enter, when nobody can.
+    blocked: Option<SharedString>,
+    /// The characters who can enter, by name and index.
+    eligible: Vec<(SharedString, usize)>,
 }
 
-/// The forecast table and the `+1` upgrade list beside it.
-pub(crate) fn forecast_card(
-    state: &mut AppState,
-    forecast: &Forecast,
-    window: &mut Window,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let table_height = layout::table_height(f32::from(window.viewport_size().height));
-    let weeks = state.killroy.weeks;
-    let entity = cx.entity();
-    let rotation = forecast.weeks.first().map(|week| week.week).unwrap_or(0);
-    let comparing = state.killroy.mode == Mode::Upgrades;
-
-    let table = forecast.weeks.iter().fold(
-        Table::new(["Week", "Encounter 1", "Encounter 2", "Encounter 3"]),
-        |table, week| {
-            table.row([
-                week_cell(state, week, cx),
-                encounter_cell(state, week, 0, cx),
-                encounter_cell(state, week, 1, cx),
-                encounter_cell(state, week, 2, cx),
-            ])
-        },
-    );
-
-    Card::new()
-        .header(
-            CardHeader::new("Weekly forecast")
-                .description(format!(
-                    "Rotation week {rotation} · {weeks} upcoming weeks · {} character(s)",
-                    forecast
-                        .weeks
-                        .first()
-                        .map(|week| week.characters.len())
-                        .unwrap_or(0)
-                ))
-                .action(
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap_2()
-                        .child(Caption::new("Upcoming weeks"))
-                        .child(
-                            NumberInput::new("killroy-weeks", weeks as f64)
-                                .range(1.0, 52.0)
-                                .precision(0)
-                                .size(ControlSize::Sm)
-                                .label("Upcoming weeks")
-                                .on_change(move |value, _window, cx| {
-                                    entity.update(cx, |state, cx| {
-                                        state.set_killroy_weeks(value, cx);
-                                    });
-                                }),
-                        ),
-                ),
-        )
-        .child(
-            div().id("killroy-forecast").min_h_0().p_3().child(
-                ScrollArea::new("killroy-forecast-scroll")
-                    .vertical()
-                    .h(table_height.min(px(300.0)))
-                    .child(table),
-            ),
-        )
-        .child(
-            div()
-                .px_3()
-                .pb_3()
-                .text_size(px(11.0))
-                .text_color(cx.theme().colors.fg_muted)
-                .child(if comparing {
-                    "Check a character to compare its +1 upgrades. Used encounters are practice \
-                     only; map records are shared across classes."
-                } else {
-                    "Check a character to queue its week. Used encounters are practice only; map \
-                     records are shared across classes."
-                }),
-        )
-        .into_any_element()
+/// The table rows for `forecast`: dates, labels and records formatted once.
+pub(crate) fn week_rows(forecast: &Forecast) -> Vec<WeekRow> {
+    forecast
+        .weeks
+        .iter()
+        .map(|week| {
+            let label = week_label(week.week_offset);
+            let dates = match (
+                jiff::Timestamp::from_second(week.starts_at.floor() as i64),
+                jiff::Timestamp::from_second(week.ends_at.floor() as i64),
+            ) {
+                (Ok(start), Ok(end)) => {
+                    let zone = jiff::tz::TimeZone::system();
+                    Some(
+                        format!(
+                            "{} – {}",
+                            start.to_zoned(zone.clone()).strftime("%b %-d"),
+                            end.to_zoned(zone).strftime("%b %-d, %Y")
+                        )
+                        .into(),
+                    )
+                }
+                _ => None,
+            };
+            WeekRow {
+                offset: week.week_offset,
+                aria: format!(
+                    "{label}: {} to {}",
+                    stamp(week.starts_at),
+                    stamp(week.ends_at)
+                )
+                .into(),
+                label: label.into(),
+                dates,
+                slots: (0..3).map(|slot| slot_row(week, slot)).collect(),
+            }
+        })
+        .collect()
 }
 
-/// The week's label, its check and its local dates.
-fn week_cell(state: &AppState, week: &ForecastWeek, cx: &mut Context<AppState>) -> AnyElement {
-    let label = SharedString::from(week_label(week.week_offset));
-    let offset = week.week_offset;
-    let entity = cx.entity();
-    let checked = state.killroy.week_checked(offset);
-    let check = Checkbox::new(format!("killroy-week-check-{offset}"), checked)
-        .label(label.clone())
-        .on_change(move |on, _window, cx| {
-            entity.update(cx, |state, cx| {
-                state.toggle_killroy_week(offset, on, cx);
-            });
-        });
-    let mut cell = div()
-        .id(("killroy-week", offset))
-        .role(gpui::Role::Label)
-        .aria_label(format!(
-            "{}: {} to {}",
-            label,
-            stamp(week.starts_at),
-            stamp(week.ends_at)
-        ))
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(check);
-    if let (Ok(start), Ok(end)) = (
-        jiff::Timestamp::from_second(week.starts_at.floor() as i64),
-        jiff::Timestamp::from_second(week.ends_at.floor() as i64),
-    ) {
-        cell = cell.child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(DateTimeText::new(start).pattern("%b %-d"))
-                .child(Caption::new("–"))
-                .child(DateTimeText::new(end).pattern("%b %-d, %Y")),
-        );
-    }
-    cell.into_any_element()
-}
-
-/// One encounter slot: its family, maps and records, and who can enter.
-fn encounter_cell(
-    state: &AppState,
-    week: &ForecastWeek,
-    slot: usize,
-    cx: &mut Context<AppState>,
-) -> AnyElement {
-    let (muted, accent) = {
-        let colors = &cx.theme().colors;
-        (colors.fg_muted, colors.accent)
-    };
+fn slot_row(week: &ForecastWeek, slot: usize) -> Option<SlotRow> {
     let entries: Vec<&idleon_killroy::Encounter> = week
         .characters
         .iter()
@@ -228,13 +102,10 @@ fn encounter_cell(
         .copied()
         .filter(|encounter| encounter.available != Some(false))
         .collect();
-    let Some(first) = offered
+    let first = offered
         .first()
         .copied()
-        .or_else(|| entries.first().copied())
-    else {
-        return div().into_any_element();
-    };
+        .or_else(|| entries.first().copied())?;
     let mut maps: Vec<&idleon_killroy::Encounter> = Vec::new();
     for encounter in &offered {
         if encounter
@@ -244,22 +115,20 @@ fn encounter_cell(
             maps.push(encounter);
         }
     }
-    let eligible: Vec<(&str, usize)> = week
+    let eligible: Vec<(SharedString, usize)> = week
         .characters
         .iter()
-        .filter_map(|character| {
+        .filter(|character| {
             character
                 .encounters
                 .get(slot)
-                .filter(|encounter| encounter.eligible)
-                .map(|_| (character.name.as_str(), character.ci))
+                .is_some_and(|encounter| encounter.eligible)
         })
+        .map(|character| (character.name.clone().into(), character.ci))
         .collect();
-
-    let mut cell = div()
-        .id(("killroy-encounter", week.week_offset * 3 + slot))
-        .role(gpui::Role::Label)
-        .aria_label(format!(
+    Some(SlotRow {
+        family: first.family_name.clone().into(),
+        aria: format!(
             "Week {} encounter {}: {} · {}{}",
             week.week_offset,
             slot + 1,
@@ -277,62 +146,268 @@ fn encounter_cell(
             } else {
                 format!(" · {}", first.reason)
             }
-        ))
-        .flex()
-        .flex_col()
-        .items_start()
-        .gap_1()
-        .child(Badge::new(first.family_name.clone()).tone(Tone::Accent));
-
-    if maps.is_empty() {
-        cell = cell.child(Caption::new("Locked").text_color(muted));
-    }
-    for encounter in maps {
-        cell = cell.child(
-            div()
-                .flex()
-                .items_center()
-                .gap_1()
-                .child(div().child(encounter.map_name.clone()))
-                .child(Caption::new("· Record").text_color(muted))
-                .child(Caption::new(metric(encounter.best)).text_color(accent)),
-        );
-    }
-    if week.week_offset == 0 && first.used == Some(true) {
-        cell = cell.child(Caption::new("Already used — practice only").text_color(muted));
-    }
-    if eligible.is_empty() {
-        cell = cell.child(
-            Caption::new(if first.reason.is_empty() {
+        )
+        .into(),
+        maps: maps
+            .iter()
+            .map(|encounter| {
+                (
+                    encounter.map_name.clone().into(),
+                    metric(encounter.best).into(),
+                )
+            })
+            .collect(),
+        practice: week.week_offset == 0 && first.used == Some(true),
+        blocked: eligible.is_empty().then(|| {
+            if first.reason.is_empty() {
                 "No eligible saved character".into()
             } else {
-                first.reason.clone()
-            })
-            .text_color(muted),
+                first.reason.clone().into()
+            }
+        }),
+        eligible,
+    })
+}
+
+/// The import action both empty states offer.
+fn import_button(label: &'static str, cx: &mut Context<AppState>) -> Button {
+    let entity = cx.entity();
+    Button::new("killroy-import")
+        .label(label)
+        .icon(IconName::Upload)
+        .on_click(move |_event, window, cx| {
+            entity.update(cx, |state, cx| state.open_import(window, cx));
+        })
+}
+
+/// The forecast card around an empty state: an icon, a title, a line and the
+/// import action.
+fn empty_card(
+    id: &'static str,
+    icon: IconName,
+    title: &'static str,
+    body: impl Into<SharedString>,
+    action: Button,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    Card::new()
+        .header(
+            CardHeader::new("Weekly forecast")
+                .description("Encounters, monster records and class eligibility"),
+        )
+        .child(
+            div().id(id).child(
+                Empty::new()
+                    .header(
+                        EmptyHeader::new()
+                            .media(EmptyMedia::new().child(Icon::new(icon).text_color(muted)))
+                            .title(EmptyTitle::new().child(title))
+                            .description(EmptyDescription::new().child(body.into())),
+                    )
+                    .content(EmptyContent::new().child(action)),
+            ),
+        )
+        .into_any_element()
+}
+
+/// No save has been imported yet.
+pub(crate) fn empty_state(_window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let action = import_button("Import a save", cx);
+    empty_card(
+        "killroy-empty",
+        IconName::CalendarRange,
+        "Import a save to forecast Killroy",
+        "The forecast reads each character's class, encounter unlocks and monster records \
+         from the save, plus the server's Killroy rotation from a wrapped it.json.",
+        action,
+        cx,
+    )
+}
+
+/// A save that cannot answer the forecast, with the way to replace it.
+pub(crate) fn error_state(
+    error: String,
+    _window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let action = import_button("Import another save", cx);
+    empty_card(
+        "killroy-error",
+        IconName::TriangleAlert,
+        "The forecast needs more from the save",
+        error,
+        action,
+        cx,
+    )
+}
+
+/// The forecast table and the `+1` upgrade list beside it.
+pub(crate) fn forecast_card(
+    state: &AppState,
+    forecast: &Forecast,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let table_height = layout::table_height(f32::from(window.viewport_size().height));
+    let weeks = state.killroy.weeks;
+    let rotation = forecast.weeks.first().map(|week| week.week).unwrap_or(0);
+    let comparing = state.killroy.mode == Mode::Upgrades;
+    let field = &state.killroy_controls.weeks;
+    show_number(field, weeks as f64, 0, window, cx);
+
+    let table = Table::new()
+        .child(
+            TableHeader::new().child(
+                TableRow::new()
+                    .id("killroy-forecast-head")
+                    .child(TableHead::new().child("Week"))
+                    .child(TableHead::new().child("Encounter 1"))
+                    .child(TableHead::new().child("Encounter 2"))
+                    .child(TableHead::new().child("Encounter 3")),
+            ),
+        )
+        .child(
+            TableBody::new().children(state.killroy_controls.weeks_rows.iter().map(|week| {
+                TableRow::new()
+                    .id(("killroy-forecast-row", week.offset))
+                    .child(TableCell::new().child(week_cell(state, week, cx)))
+                    .children(week.slots.iter().enumerate().map(|(slot, row)| {
+                        TableCell::new().child(encounter_cell(state, week, slot, row, cx))
+                    }))
+            })),
         );
-    } else {
-        cell = cell.child(
-            div()
-                .id(("killroy-selectors", week.week_offset * 3 + slot))
-                .flex()
-                .flex_wrap()
-                .items_center()
-                .gap_2()
-                .children(
-                    eligible
-                        .iter()
-                        .map(|(name, ci)| selector(state, *ci, name, week.week_offset, slot, cx)),
+
+    Card::new()
+        .header(
+            CardHeader::new("Weekly forecast")
+                .description(format!(
+                    "Rotation week {rotation} · {weeks} upcoming weeks · {} character(s)",
+                    forecast
+                        .weeks
+                        .first()
+                        .map(|week| week.characters.len())
+                        .unwrap_or(0)
+                ))
+                .action(
+                    h_flex()
+                        .gap_2()
+                        .child(Caption::new("Upcoming weeks"))
+                        .child(crate::ui::number_field(
+                            "killroy-weeks",
+                            field,
+                            "Upcoming weeks",
+                        )),
                 ),
-        );
-    }
-    cell.into_any_element()
+        )
+        .child(
+            div().id("killroy-forecast").min_h_0().child(
+                div()
+                    .h(table_height.min(px(300.0)))
+                    .child(table)
+                    .overflow_y_scrollbar()
+                    .id("killroy-forecast-scroll"),
+            ),
+        )
+        .child(
+            div()
+                .text_size(TEXT_CAPTION)
+                .text_color(cx.theme().muted_foreground)
+                .child(if comparing {
+                    "Check a character to compare its +1 upgrades. Used encounters are practice \
+                     only; map records are shared across classes."
+                } else {
+                    "Check a character to queue its week. Used encounters are practice only; map \
+                     records are shared across classes."
+                }),
+        )
+        .into_any_element()
+}
+
+/// The week's label, its check and its local dates.
+fn week_cell(state: &AppState, week: &WeekRow, cx: &mut Context<AppState>) -> AnyElement {
+    let offset = week.offset;
+    let entity = cx.entity();
+    let check = Checkbox::new(format!("killroy-week-check-{offset}"))
+        .label(week.label.clone())
+        .checked(state.killroy.week_checked(offset))
+        .on_click(move |on, _window, cx| {
+            let on = *on;
+            entity.update(cx, |state, cx| state.toggle_killroy_week(offset, on, cx));
+        });
+    v_flex()
+        .id(("killroy-week", offset))
+        .role(gpui::Role::Label)
+        .aria_label(week.aria.clone())
+        .gap_1()
+        .child(check)
+        .children(week.dates.clone().map(Caption::new))
+        .into_any_element()
+}
+
+/// One encounter slot: its family, maps and records, and who can enter.
+fn encounter_cell(
+    state: &AppState,
+    week: &WeekRow,
+    slot: usize,
+    row: &Option<SlotRow>,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let Some(row) = row else {
+        return div().into_any_element();
+    };
+    let (muted, accent) = (cx.theme().muted_foreground, cx.theme().primary);
+    let index = week.offset * 3 + slot;
+    v_flex()
+        .id(("killroy-encounter", index))
+        .role(gpui::Role::Label)
+        .aria_label(row.aria.clone())
+        .items_start()
+        .gap_1()
+        .child(
+            Tag::new()
+                .with_variant(Tone::Accent.into())
+                .outline()
+                .small()
+                .child(row.family.clone()),
+        )
+        .when(row.maps.is_empty(), |cell| {
+            cell.child(Caption::new("Locked").text_color(muted))
+        })
+        .children(row.maps.iter().map(|(map, record)| {
+            h_flex()
+                .gap_1()
+                .child(div().child(map.clone()))
+                .child(Caption::new("· Record").text_color(muted))
+                .child(Caption::new(record.clone()).text_color(accent))
+        }))
+        .when(row.practice, |cell| {
+            cell.child(Caption::new("Already used — practice only").text_color(muted))
+        })
+        .when_some(row.blocked.clone(), |cell, reason| {
+            cell.child(Caption::new(reason).text_color(muted))
+        })
+        .when(!row.eligible.is_empty(), |cell| {
+            cell.child(
+                h_flex()
+                    .id(("killroy-selectors", index))
+                    .flex_wrap()
+                    .gap_2()
+                    .children(
+                        row.eligible
+                            .iter()
+                            .map(|(name, ci)| selector(state, *ci, name, week.offset, slot, cx)),
+                    ),
+            )
+        })
+        .into_any_element()
 }
 
 /// One character's check for one encounter slot.
 fn selector(
     state: &AppState,
     ci: usize,
-    name: &str,
+    name: &SharedString,
     week_offset: usize,
     slot: usize,
     cx: &mut Context<AppState>,
@@ -342,11 +417,12 @@ fn selector(
         ci,
         slot,
     };
-    let checked = state.killroy.selected(week_offset, ci, slot);
     let entity = cx.entity();
-    Checkbox::new(format!("killroy-select-{week_offset}-{ci}-{slot}"), checked)
-        .label(SharedString::from(name.to_string()))
-        .on_change(move |on, _window, cx| {
+    Checkbox::new(format!("killroy-select-{week_offset}-{ci}-{slot}"))
+        .label(name.clone())
+        .checked(state.killroy.selected(week_offset, ci, slot))
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             entity.update(cx, |state, cx| {
                 state.toggle_killroy_selection(selection, on, cx);
             });
@@ -361,43 +437,51 @@ pub(crate) fn rotation_card(
     table_height: gpui::Pixels,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let families = div()
+    let muted = cx.theme().muted_foreground;
+    let families = h_flex()
         .id("killroy-families")
-        .flex()
         .flex_wrap()
         .gap_1()
         .children(forecast.family_counts.iter().map(|family| {
-            Badge::new(format!("{}: {}", family.name, family.count)).tone(Tone::Neutral)
+            Tag::new()
+                .with_variant(Tone::Neutral.into())
+                .outline()
+                .small()
+                .child(format!("{}: {}", family.name, family.count))
         }));
-    let maps = forecast
-        .map_counts
-        .iter()
-        .fold(Table::new(["Map", "Weeks"]), |table, map| {
-            table.row([
-                div().child(map.name.clone()),
-                div().child(map.count.to_string()),
-            ])
-        });
-    Card::new()
-        .header(CardHeader::new("Upcoming rotation").description("Weeks after this one only"))
+    let maps = Table::new()
         .child(
-            div().flex().flex_col().gap_2().p_3().child(families).child(
-                ScrollArea::new("killroy-maps-scroll")
-                    .vertical()
-                    .h(table_height.min(px(320.0)))
-                    .child(maps),
+            TableHeader::new().child(
+                TableRow::new()
+                    .id("killroy-maps-head")
+                    .child(TableHead::new().child("Map"))
+                    .child(TableHead::new().text_right().child("Weeks")),
             ),
         )
         .child(
-            div()
+            TableBody::new().children(forecast.map_counts.iter().enumerate().map(|(ix, map)| {
+                TableRow::new()
+                    .id(("killroy-map-row", ix))
+                    .child(TableCell::new().child(map.name.clone()))
+                    .child(TableCell::new().text_right().child(map.count.to_string()))
+            })),
+        );
+    Card::new()
+        .header(CardHeader::new("Upcoming rotation").description("Weeks after this one only"))
+        .child(
+            v_flex().gap_2().child(families).child(
+                div()
+                    .h(table_height.min(px(320.0)))
+                    .child(maps)
+                    .overflow_y_scrollbar()
+                    .id("killroy-maps-scroll"),
+            ),
+        )
+        .child(
+            v_flex()
                 .id("killroy-notes")
-                .flex()
-                .flex_col()
                 .gap_1()
-                .px_3()
-                .pb_3()
-                .text_size(px(11.0))
+                .text_size(TEXT_CAPTION)
                 .text_color(muted)
                 .child(
                     "Rotation, characters, unlocks, upgrades and records stay at the imported \
@@ -421,7 +505,7 @@ pub(crate) fn week_label(offset: usize) -> String {
 }
 
 /// A local date for an aria label.
-pub(crate) fn stamp(seconds: f64) -> String {
+fn stamp(seconds: f64) -> String {
     jiff::Timestamp::from_second(seconds.floor() as i64)
         .ok()
         .and_then(|at| {

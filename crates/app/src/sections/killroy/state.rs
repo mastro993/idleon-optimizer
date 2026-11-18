@@ -2,11 +2,11 @@
 
 use super::Mode;
 use crate::state::AppState;
-use gpui::{App, ClipboardItem, Context};
+use gpui::{ClipboardItem, Context};
 use idleon_common::Control;
 use idleon_common::Progress;
 use idleon_killroy::{self as killroy, Comparisons, Plan, PlanInput, RowSummary, Selection};
-use idleon_ui::runner::TaskState;
+use std::sync::Arc;
 
 /// What a finished run stores: the plan it ran and one summary row per
 /// configuration. The plan rides along so the results export writes the inputs
@@ -14,7 +14,9 @@ use idleon_ui::runner::TaskState;
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct KillroyOutcome {
     pub(crate) plan: Plan,
-    pub(crate) rows: Vec<RowSummary>,
+    /// Shared, so the section tells a new result from the one it drew by
+    /// identity instead of comparing rows every frame.
+    pub(crate) rows: Arc<[RowSummary]>,
 }
 
 impl AppState {
@@ -64,25 +66,6 @@ impl AppState {
         killroy::plan(save, &input).map_err(|error| error.to_string())
     }
 
-    /// The run in flight, its progress and its result.
-    ///
-    /// The stored result is stale once the plan a run would execute now differs;
-    /// a plan that cannot build at all (no checked week, no upgrade) is stale too.
-    pub(crate) fn killroy_task(&self, cx: &App) -> TaskState<KillroyOutcome> {
-        let runner = self.killroy_run.read(cx);
-        let stale = match self.killroy_plan() {
-            Ok(plan) => runner.is_stale(&plan),
-            Err(_) => runner.result().is_some(),
-        };
-        TaskState {
-            running: runner.running(),
-            cancelled: runner.cancelled(),
-            progress: runner.progress().cloned(),
-            result: runner.result().cloned(),
-            stale,
-        }
-    }
-
     /// Run the trials off the UI thread through the shared runner.
     pub(crate) fn run_killroy(&mut self, cx: &mut Context<Self>) {
         let plan = match self.killroy_plan() {
@@ -105,7 +88,10 @@ impl AppState {
                     };
                     report(progress) == Control::Stop
                 })?;
-                Some(KillroyOutcome { plan, rows })
+                Some(KillroyOutcome {
+                    plan,
+                    rows: rows.into(),
+                })
             },
             cx,
         );

@@ -62,7 +62,11 @@ control's own state. The rule:
 5. **The element id stays the Ely id.** Put it on the control when the kit builder has `.id(..)`
    (`Select`, `Input`, `Button`, `Checkbox`, `Toggle`); otherwise wrap the control in
    `div().id(ely_id)`, as `NumberInput` needs. `script/mcp-*.mjs` and `sections/tests.rs` click and
-   read those ids.
+   read those ids. In the app, `ui::number_field(id, &state, label)` is that wrapper for a small
+   `NumberInput`: a press on it focuses the field, so the bridge can click it. Ely's stepper ids
+   (`<id>-up`, `<id>-down`, `<id>-more`, `<id>-less`) have no kit equivalent, because the kit's step
+   buttons all share the local ids `increment` and `decrement`, which the bridge drops as duplicates.
+   A harness clicks the field and presses `up` or `down` instead.
 
 ### Worked example
 

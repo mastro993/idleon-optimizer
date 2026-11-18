@@ -8,18 +8,20 @@
 use super::State;
 use crate::state::AppState;
 use crate::ui::layout::{self, Breakpoint};
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, Role,
     SharedString, StatefulInteractiveElement, Styled, Window, div,
 };
+use gpui_kit::component::button::Button;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_combat::{self as combat, data, loadout::Slot};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, Choice, PANEL_GAP, PANEL_PADDING, TEXT_CAPTION, TEXT_MONO, Tone,
+};
 
 /// The equipment pane: every slot on the left, the selected slot on the right.
 pub(crate) fn pane(
@@ -28,26 +30,21 @@ pub(crate) fn pane(
     window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let (list, detail) = {
-        let loadout = &state.combat.loadout;
-        let selected = state
-            .combat
-            .selected
-            .min(loadout.slots.len().saturating_sub(1));
-        (
-            slot_list(&state.combat, window, cx),
-            slot_detail(&state.combat, selected, cx),
-        )
-    };
+    let selected = state
+        .combat
+        .selected
+        .min(state.combat.loadout.slots.len().saturating_sub(1));
+    let list = slot_list(&state.combat, window, cx);
+    let detail = slot_detail(&mut state.combat, selected, window, cx);
     layout::split_pane("combat-gear", breakpoint, list, detail, gpui::px(330.0))
 }
 
 /// The slot list: armor first, then the tool row.
 fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let loadout = &state.loadout;
-    let mut groups = div().flex().flex_col().gap_2();
+    let mut groups = div().flex().flex_col().gap(PANEL_GAP);
     for (label, row) in [("Armor", 0usize), ("Tools", 1)] {
         let mut rows = div()
             .id(SharedString::from(format!("combat-slots-{row}")))
@@ -61,7 +58,7 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
         {
             let issues = loadout.slot_issues(slot.row, slot.slot);
             let selected = state.selected == index;
-            let accent = cx.theme().colors.accent;
+            let active = cx.theme().list_active;
             let selection = entity.clone();
             let slot_name = slot.name();
             let item_name = slot.item_name();
@@ -78,8 +75,8 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                     .gap_2()
                     .h(gpui::px(26.0))
                     .px_1()
-                    .rounded(gpui::px(4.0))
-                    .when(selected, |row| row.bg(accent.opacity(0.12)))
+                    .rounded(cx.theme().radius)
+                    .when(selected, |row| row.bg(active))
                     .cursor_pointer()
                     .on_click(move |_event, _window, cx| {
                         selection.update(cx, |state, cx| state.set_combat_slot(index, cx));
@@ -88,7 +85,7 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                         div()
                             .w(gpui::px(110.0))
                             .flex_none()
-                            .text_size(gpui::px(11.0))
+                            .text_size(TEXT_CAPTION)
                             .text_color(muted)
                             .child(slot_name.clone()),
                     )
@@ -96,7 +93,7 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                         div()
                             .flex_1()
                             .min_w_0()
-                            .text_size(gpui::px(12.0))
+                            .text_size(TEXT_MONO)
                             .font_weight(if data::is_empty(&slot.item) {
                                 FontWeight::NORMAL
                             } else {
@@ -105,13 +102,11 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                             .text_color(if data::is_empty(&slot.item) {
                                 muted
                             } else {
-                                cx.theme().colors.fg
+                                cx.theme().foreground
                             })
                             .child(item_name),
                     )
-                    .when(!issues.is_empty(), |row| {
-                        row.child(Badge::new("check".to_string()).tone(Tone::Danger))
-                    }),
+                    .when(!issues.is_empty(), |row| row.child(check_tag())),
             );
         }
         groups = groups.child(
@@ -137,7 +132,7 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                             loadout.totals().equipped,
                             loadout.slots.len()
                         ))
-                        .text_size(gpui::px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(format!(
                             "{} / {}",
@@ -147,41 +142,57 @@ fn slot_list(state: &State, window: &Window, cx: &mut Context<AppState>) -> AnyE
                 ),
         )
         .child(
-            ScrollArea::new("combat-slot-scroll")
-                .vertical()
+            div()
                 .h(layout::table_height(f32::from(
                     window.viewport_size().height,
                 )))
-                .p_2()
-                .child(groups),
+                .p(PANEL_GAP)
+                .child(groups)
+                .overflow_y_scrollbar()
+                .id("combat-slot-scroll"),
         )
         .into_any_element()
 }
 
 /// The selected slot's item picker, stats and unique bonuses.
-fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+fn slot_detail(
+    state: &mut State,
+    selected: usize,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let Some(slot) = state.loadout.slot_at(selected) else {
         return Card::new()
             .header(CardHeader::new("Slot"))
-            .child(div().p_3().child(Caption::new("No equipment slots.")))
+            .child(
+                div()
+                    .p(PANEL_PADDING)
+                    .child(Caption::new("No equipment slots.")),
+            )
             .into_any_element();
     };
     let issues = state.loadout.slot_issues(slot.row, slot.slot);
-    let entity = cx.entity();
-    let choices = item_choices(slot);
     let current = slot.item.clone();
     let row = slot.row;
     let slot_index = slot.slot;
-    let picker = Select::new("combat-item-select", choices)
-        .label("Item")
+    // The catalog is walked once per slot and item, not on every frame.
+    let key = (row, slot_index, current.clone());
+    let controls = &mut state.controls;
+    if controls.items.as_ref().map(|(shown, _)| shown) != Some(&key) {
+        controls.items = Some((key, item_choices(slot)));
+    }
+    let choices = controls
+        .items
+        .as_ref()
+        .map(|(_, choices)| choices.clone())
+        .unwrap_or_default();
+    controls.item.show(choices, Some(&current), window, cx);
+    let picker = Select::new(controls.item.state())
+        .id("combat-item-select")
+        .accessibility_label("Item")
         .placeholder("(empty)")
-        .selected(current.clone())
-        .on_change(move |value, _window, cx| {
-            entity.update(cx, |state, cx| {
-                state.set_combat_item(row, slot_index, value.as_ref(), cx);
-            });
-        });
+        .small();
 
     let mut rows = div().flex().flex_col().gap_1();
     for stat in data::GEAR_STATS {
@@ -212,7 +223,7 @@ fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> An
                     .flex()
                     .items_center()
                     .gap_2()
-                    .text_size(gpui::px(11.0))
+                    .text_size(TEXT_CAPTION)
                     .child(Caption::new(label).text_color(muted))
                     .child(format!("{} {}", format_stat(&stat), value)),
             );
@@ -234,9 +245,7 @@ fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> An
                                 .collect::<Vec<_>>()
                                 .join(" · "),
                         )
-                        .when(!issues.is_empty(), |row| {
-                            row.child(Badge::new("check".to_string()).tone(Tone::Danger))
-                        }),
+                        .when(!issues.is_empty(), |row| row.child(check_tag())),
                 ),
         )
         .child(
@@ -247,16 +256,17 @@ fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> An
                 .gap_3()
                 .flex_1()
                 .min_h_0()
-                .p_3()
+                .p(PANEL_PADDING)
                 .child(
                     div()
                         .flex()
-                        .items_end()
-                        .gap_2()
+                        .items_center()
+                        .gap(PANEL_GAP)
                         .child(div().flex_1().min_w_0().child(picker))
                         .child(
-                            Button::new("combat-unequip", "Unequip")
-                                .size(ControlSize::Sm)
+                            Button::new("combat-unequip")
+                                .label("Unequip")
+                                .small()
                                 .disabled(data::is_empty(&slot.item))
                                 .on_click({
                                     let entity = cx.entity();
@@ -271,8 +281,8 @@ fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> An
                 .when(!issues.is_empty(), |panel| {
                     panel.children(issues.iter().map(|issue| {
                         div()
-                            .text_size(gpui::px(11.0))
-                            .text_color(cx.theme().colors.danger)
+                            .text_size(TEXT_CAPTION)
+                            .text_color(cx.theme().danger)
                             .child(issue.detail.clone())
                     }))
                 })
@@ -287,7 +297,7 @@ fn slot_detail(state: &State, selected: usize, cx: &mut Context<AppState>) -> An
                                 .flex()
                                 .items_center()
                                 .gap_2()
-                                .text_size(gpui::px(11.0))
+                                .text_size(TEXT_CAPTION)
                                 .text_color(muted)
                                 .child(div().w(gpui::px(120.0)).child("Stat"))
                                 .child(div().w(gpui::px(48.0)).child("Base"))
@@ -317,7 +327,7 @@ fn stat_row(stat: &str, base: f64, added: f64, total: f64, muted: gpui::Hsla) ->
         .items_center()
         .gap_2()
         .h(gpui::px(22.0))
-        .text_size(gpui::px(12.0))
+        .text_size(TEXT_MONO)
         .child(
             div()
                 .w(gpui::px(120.0))
@@ -350,15 +360,24 @@ fn stat_row(stat: &str, base: f64, added: f64, total: f64, muted: gpui::Hsla) ->
 
 /// The picker's options: `(empty)`, every item the slot accepts, and the
 /// current key when the catalog does not know it.
-fn item_choices(slot: &Slot) -> Vec<Choice> {
-    let mut choices = vec![Choice::new("Blank", "(empty)")];
+fn item_choices(slot: &Slot) -> Vec<Choice<String>> {
+    let mut choices = vec![Choice::new("Blank".to_string(), "(empty)")];
     for (key, def) in combat::options(slot.row, slot.slot) {
-        choices.push(Choice::new(key, data::clean_name(&def.name)));
+        choices.push(Choice::new(key.to_string(), data::clean_name(&def.name)));
     }
     if slot.def().is_none() && !data::is_empty(&slot.item) {
         choices.insert(1, Choice::new(slot.item.clone(), slot.item.clone()));
     }
     choices
+}
+
+/// The mark on a slot the simulator cannot read as saved.
+fn check_tag() -> Tag {
+    Tag::new()
+        .with_variant(Tone::Danger.into())
+        .outline()
+        .small()
+        .child("check")
 }
 
 /// A unique-bonus stat code as a label, keeping its leading percent.

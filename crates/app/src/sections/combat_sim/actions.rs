@@ -2,10 +2,10 @@
 
 use crate::sections::combat_sim::{ResultsTab, RunResult, Tab as CombatTab};
 use crate::state::AppState;
-use gpui::{App, ClipboardItem, Context};
+use gpui::{App, ClipboardItem, Context, Window};
 use idleon_combat::Loadout;
-use idleon_combat::compare::{self, Comparison, Plan};
-use idleon_combat::drops::{self, Inputs, Snapshot};
+use idleon_combat::compare::{self, Plan};
+use idleon_combat::drops::{Inputs, Snapshot};
 use idleon_combat::encounter::{self, Options, Player};
 use idleon_combat::overrides::Entries;
 use idleon_ui::runner::TaskState;
@@ -144,13 +144,13 @@ impl AppState {
 
     /// Save the working loadout under the typed name, replacing one with the
     /// same name for the same character.
-    pub(crate) fn save_combat_preset(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn save_combat_preset(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let name = self.combat.preset_name(cx);
         match self.combat.presets.store(&self.combat.loadout, &name) {
             Ok(message) => {
                 self.combat
                     .name
-                    .update(cx, |input, cx| input.set_text("", cx));
+                    .update(cx, |input, cx| input.set_value("", window, cx));
                 self.status = message;
             }
             Err(message) => self.status = message,
@@ -218,13 +218,18 @@ impl AppState {
         cx.notify();
     }
 
-    /// The saved card and obol state a run's drops start from.
+    /// The saved card and obol state a run's drops start from, read from the
+    /// save when it loaded.
     ///
     /// The character's Drop Rate and Card Drop Chance come from the mechanics
     /// overrides: `off` is neutral, `set` and `scale` apply, and the saved
     /// values `scale` would need are not wired yet.
     fn combat_drop_state(&self) -> (Snapshot, Inputs) {
-        let snapshot = self.save.as_ref().map(drops::snapshot).unwrap_or_default();
+        let snapshot = if self.save.is_some() {
+            self.combat.drops.clone()
+        } else {
+            Snapshot::default()
+        };
         let overrides = self.combat.overrides.build(&Entries::new());
         (snapshot, Inputs::from_overrides(&overrides))
     }
@@ -406,11 +411,16 @@ impl AppState {
         };
         let keys = self.combat.compare_loadout_keys(character);
         let mut setups = Vec::new();
+        // The save's loadouts were read when it loaded; a preset starts from a copy.
+        let saved = || {
+            self.combat
+                .saved
+                .get(character)
+                .cloned()
+                .unwrap_or_else(|| Loadout::from_save(save, character))
+        };
         if keys.iter().any(|key| key == "saved") {
-            setups.push((
-                "Imported save".to_string(),
-                Loadout::from_save(save, character),
-            ));
+            setups.push(("Imported save".to_string(), saved()));
         }
         if character == self.combat.character && keys.iter().any(|key| key == "edited") {
             setups.push((
@@ -429,7 +439,7 @@ impl AppState {
             if !keys.contains(&key) {
                 continue;
             }
-            let mut loadout = Loadout::from_save(save, character);
+            let mut loadout = saved();
             if preset.apply_to(&mut loadout).is_ok() {
                 setups.push((preset.name.clone(), loadout));
             }
@@ -494,13 +504,6 @@ impl AppState {
             "Cancelling the comparison…",
             cx,
         );
-    }
-
-    /// The stored comparison and whether its plan changed since the run.
-    pub(crate) fn combat_comparison(&self, cx: &App) -> TaskState<Comparison> {
-        self.combat_compare
-            .read(cx)
-            .state(&self.combat_comparison_plan())
     }
 
     /// Copy the last comparison as the section's JSON export.

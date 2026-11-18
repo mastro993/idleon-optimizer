@@ -6,14 +6,15 @@
 
 use crate::sections::presets;
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::forms::Input;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui_kit::component::button::Button;
+use gpui_kit::component::input::Input;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _};
 use idleon_combat::{Loadout, Preset};
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, PANEL_GAP, PANEL_PADDING, TEXT_BODY, TEXT_CAPTION,
+};
 
 /// The named loadouts: what the project JSON keeps and the bar edits.
 #[derive(Clone, Debug, Default)]
@@ -71,8 +72,8 @@ impl Presets {
 
 /// The preset bar: the name field, Save, and one row per stored loadout.
 pub(crate) fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let name_focus = state.combat.name.read(cx).focus().clone();
+    let muted = cx.theme().muted_foreground;
+    let name = state.combat.name.clone();
     let presets = state.combat.presets.items.clone();
     let character = state.combat.character;
     let entity = cx.entity();
@@ -121,35 +122,31 @@ pub(crate) fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElemen
                     div()
                         .flex_1()
                         .min_w_0()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_BODY)
                         .child(preset.name.clone()),
                 )
                 .child(
                     div()
                         .flex_none()
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(detail),
                 )
                 .child(
-                    Button::new(
-                        SharedString::from(format!("combat-preset-load-{index}")),
-                        "Load",
-                    )
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        load.update(cx, |state, cx| state.load_combat_preset(index, cx));
-                    }),
+                    Button::new(SharedString::from(format!("combat-preset-load-{index}")))
+                        .label("Load")
+                        .small()
+                        .on_click(move |_event, _window, cx| {
+                            load.update(cx, |state, cx| state.load_combat_preset(index, cx));
+                        }),
                 )
                 .child(
-                    Button::new(
-                        SharedString::from(format!("combat-preset-delete-{index}")),
-                        "Delete",
-                    )
-                    .size(ControlSize::Sm)
-                    .on_click(move |_event, _window, cx| {
-                        delete.update(cx, |state, cx| state.delete_combat_preset(index, cx));
-                    }),
+                    Button::new(SharedString::from(format!("combat-preset-delete-{index}")))
+                        .label("Delete")
+                        .small()
+                        .on_click(move |_event, _window, cx| {
+                            delete.update(cx, |state, cx| state.delete_combat_preset(index, cx));
+                        }),
                 ),
         );
     }
@@ -163,27 +160,34 @@ pub(crate) fn bar(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElemen
             div()
                 .flex()
                 .flex_col()
-                .gap_2()
-                .p_3()
+                .gap(PANEL_GAP)
+                .p(PANEL_PADDING)
                 .child(
                     div()
                         .flex()
-                        .items_end()
-                        .gap_2()
+                        .items_center()
+                        .gap(PANEL_GAP)
                         .child(
                             div()
                                 .id("combat-preset-name")
-                                .role(Role::TextInput)
-                                .aria_label("Loadout name")
                                 .w(px(240.0))
-                                .on_click(move |_event, window, cx| window.focus(&name_focus, cx))
-                                .child(Input::new(&state.combat.name).size(ControlSize::Sm)),
+                                .on_click(move |_event, window, cx| {
+                                    name.update(cx, |field, cx| field.focus(window, cx));
+                                })
+                                .child(
+                                    Input::new(&state.combat.name)
+                                        .aria_label("Loadout name")
+                                        .small(),
+                                ),
                         )
                         .child(
-                            Button::new("combat-preset-save", "Save preset")
-                                .size(ControlSize::Sm)
-                                .on_click(move |_event, _window, cx| {
-                                    save.update(cx, |state, cx| state.save_combat_preset(cx));
+                            Button::new("combat-preset-save")
+                                .label("Save preset")
+                                .small()
+                                .on_click(move |_event, window, cx| {
+                                    save.update(cx, |state, cx| {
+                                        state.save_combat_preset(window, cx);
+                                    });
                                 }),
                         ),
                 )

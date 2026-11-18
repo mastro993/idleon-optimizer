@@ -49,6 +49,12 @@ Table::new()
 Number columns are right-aligned (`text_right()` on the head and its cells). An element id the
 harness selects stays on the same element: wrap the cell's content in a `div().id(..)`, as above.
 
+Give each `TableRow` a short id of its own (`TableRow::new().id(("forecast-row", ix))`). The kit's
+default row id spells out the type path of the table, its body and the row, and from inside a
+scroll area with a long id it outgrows the bridge's 256-byte limit. The bridge then drops the row
+and everything in it from the semantic tree, so the harness cannot find ids inside that row, even
+though the row is drawn.
+
 ### Large tables: `DataTable` and `RowsDelegate`
 
 A `DataTable` draws a `TableState<D>` entity whose delegate `D: TableDelegate` answers

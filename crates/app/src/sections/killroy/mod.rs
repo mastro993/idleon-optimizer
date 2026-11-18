@@ -9,18 +9,21 @@
 //! [`idleon_ui::runner::TaskRunner`] runs the trials off the UI thread.
 
 mod comparison;
+mod controls;
 mod forecast_view;
 mod state;
+mod table;
 
+pub(crate) use controls::Controls;
 pub(crate) use state::KillroyOutcome;
 
 use crate::state::AppState;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::component::{ActiveTheme as _, h_flex, v_flex};
 use idleon_killroy::{self as killroy, Selection};
+use idleon_ui::widgets::{Caption, PANEL_GAP};
 
 /// The section's two halves, as the tab strip splits them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -48,10 +51,6 @@ impl Mode {
             Mode::Baseline => "Baseline",
             Mode::Upgrades => "Upgrade comparisons",
         }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|mode| mode.id() == id)
     }
 }
 
@@ -155,78 +154,70 @@ pub(crate) fn view(
 ) -> AnyElement {
     let mode = state.killroy.mode;
     let entity = cx.entity();
-    let tabs = TabBar::new("killroy-tabs")
-        .selected(SharedString::from(mode.id()))
-        .tab(WindowTab::new(Mode::Baseline.id(), Mode::Baseline.label()))
-        .tab(WindowTab::new(Mode::Upgrades.id(), Mode::Upgrades.label()))
-        .on_select(move |id, _window, cx| {
-            if let Some(mode) = Mode::from_id(id.as_ref()) {
-                entity.update(cx, |state, cx| state.set_killroy_mode(mode, cx));
-            }
-        });
+    let tabs = layout::tab_bar(
+        "killroy-tabs",
+        Mode::ALL.map(|mode| (mode.id().into(), mode.label().into())),
+        Mode::ALL
+            .iter()
+            .position(|tab| *tab == mode)
+            .unwrap_or_default(),
+        move |index, _window, cx| {
+            entity.update(cx, |state, cx| state.set_killroy_mode(Mode::ALL[index], cx));
+        },
+    );
 
-    let header = div()
+    let header = h_flex()
         .id("killroy-header")
-        .flex()
         .flex_none()
-        .items_center()
         .gap_3()
-        .child(tabs)
-        .child(div().flex_1())
+        .child(tabs.flex_1())
         .child(
             Caption::new(if mode == Mode::Baseline {
                 "Imported save only. Check characters to queue their week."
             } else {
                 "Imported save only. Choose characters and +1 upgrades to compare."
             })
-            .text_color(cx.theme().colors.fg_muted),
+            .flex_none()
+            .text_color(cx.theme().muted_foreground),
         );
 
-    state.ensure_killroy_forecast();
-    // Taken out for the render so the views below can borrow `state`; put back
-    // at the end of this function. A clone of the save is a reference-count bump.
-    let cached = state.killroy_forecast.take();
-    let save = state.save.clone();
-    let body = match (cached.as_ref(), save.as_ref()) {
+    state.sync_killroy(cx);
+    let body = match (state.killroy_forecast.as_ref(), state.save.is_some()) {
         (Some(Err(error)), _) => forecast_view::error_state(error.to_string(), window, cx),
-        (Some(Ok(forecast)), Some(save)) => {
+        (Some(Ok(forecast)), true) => {
             let primary = match mode {
                 Mode::Baseline => forecast_view::forecast_card(state, forecast, window, cx),
-                Mode::Upgrades => comparison::upgrade_card(state, save, cx),
+                Mode::Upgrades => comparison::upgrade_card(state, cx),
             };
-            let primary = div()
+            let primary = v_flex()
                 .id("killroy-primary")
-                .flex()
-                .flex_col()
                 .flex_1()
                 .min_h_0()
-                .gap_3()
+                .gap(PANEL_GAP)
                 .child(primary)
                 .child(comparison::results_card(state, window, cx))
-                .child(comparison::buffs_card(state, save, cx));
-            let mut side = div()
+                .child(comparison::buffs_card(state, cx));
+            let side = v_flex()
                 .id("killroy-rail")
-                .flex()
-                .flex_col()
                 .flex_1()
                 .min_h_0()
-                .gap_3()
-                .child(comparison::run_card(state, cx));
-            if mode == Mode::Baseline {
-                side = side.child(forecast_view::rotation_card(
-                    forecast,
-                    crate::ui::layout::table_height(f32::from(window.viewport_size().height)),
-                    cx,
-                ));
-            }
+                .gap(PANEL_GAP)
+                .child(comparison::run_card(state, window, cx))
+                .when(mode == Mode::Baseline, |side| {
+                    side.child(forecast_view::rotation_card(
+                        forecast,
+                        layout::table_height(f32::from(window.viewport_size().height)),
+                        cx,
+                    ))
+                });
             div()
                 .id("killroy-pane")
                 .flex()
                 .size_full()
                 .min_h_0()
-                .child(crate::ui::layout::split_pane(
+                .child(layout::split_pane(
                     "killroy-body",
-                    crate::ui::layout::Breakpoint::of(window, cx),
+                    layout::Breakpoint::of(window, cx),
                     primary,
                     side,
                     gpui::px(360.0),
@@ -235,12 +226,9 @@ pub(crate) fn view(
         }
         _ => forecast_view::empty_state(window, cx),
     };
-    state.killroy_forecast = cached;
 
-    div()
+    v_flex()
         .id("killroy-section")
-        .flex()
-        .flex_col()
         .size_full()
         .min_h_0()
         .gap_3()
@@ -252,14 +240,6 @@ pub(crate) fn view(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn the_mode_ids_match_the_tabs() {
-        for mode in Mode::ALL {
-            assert_eq!(Mode::from_id(mode.id()), Some(mode));
-        }
-        assert_eq!(Mode::from_id("saved"), None);
-    }
 
     #[test]
     fn normalization_keeps_every_setting_in_range() {
