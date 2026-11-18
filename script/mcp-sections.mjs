@@ -1302,42 +1302,61 @@ const INTERACTIONS = {
       'killroy: keeping saved buffs keeps the timed row',
     );
     await lane.call('click_element', { id: 'killroy-unlimited' });
+    // Queue the encounters of the first weeks, so the cancel below has a run
+    // that outlasts a bridge call (each waits for the window to settle).
+    for (let pass = 0; pass < 6; pass += 1) {
+      for (const node of await lane.tree()) {
+        if (node.id?.startsWith('killroy-select-') && node.state?.checked === false) {
+          await lane.call('click_element', { id: node.id });
+        }
+      }
+      const forecast = (await lane.tree()).find((node) => node.id === 'killroy-forecast-scroll');
+      if (!forecast) break;
+      await lane.call('scroll', {
+        x: forecast.bounds.x + forecast.bounds.width / 2,
+        y: forecast.bounds.y + forecast.bounds.height / 2,
+        delta_y: 240,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
     await lane.call('click_element', { id: 'upgrades' });
     await waitForNode(lane, 'killroy-upgrades', 'killroy: the upgrade list opens');
     // Cancel: twenty trials over every configuration leave the run in flight.
+    // The kit number field's step buttons carry no unique id; it steps with Up
+    // while focused.
+    await lane.call('click_element', { id: 'killroy-trials' });
     for (let press = 0; press < 17; press += 1) {
-      await lane.call('click_element', { id: 'killroy-trials-up' });
+      await lane.call('keyboard', { keystroke: 'up' });
     }
-    // Even twenty trials end within a few hundred milliseconds, about as long as
-    // a click takes to land, so the cancel can lose the race. Click it where the
-    // progress card put it as soon as it shows, and start again when the run
-    // finished first.
+    // A run still takes well under a second, so press Run and Cancel with raw
+    // pointer clicks. The first run shows where its Cancel sits; a retry
+    // clicks there right away.
+    const center = (node) => ({
+      x: node.bounds.x + node.bounds.width / 2,
+      y: node.bounds.y + node.bounds.height / 2,
+    });
+    const runAt = center((await lane.tree()).find((node) => node.id === 'killroy-run'));
+    let cancelAt = null;
     for (let attempt = 1; ; attempt += 1) {
-      await lane.call('click_element', { id: 'killroy-run' });
-      const started = Date.now();
-      let cancel = null;
-      let running = false;
-      let finished = false;
-      await waitFor(
-        lane,
-        (nodes) => {
-          cancel = nodes.find((node) => node.id === 'killroy-run-cancel')?.bounds ?? null;
-          const status = labelOf(nodes, 'status-status') ?? '';
-          running ||= status.startsWith('Running');
-          // A retry starts from the last run's identical closing line, so it
-          // counts only once this run was seen running, or after 3 s.
-          finished =
-            status.startsWith('Killroy trials finished') && (running || Date.now() - started > 3000);
-          return (has(nodes, 'killroy-run-progress') && cancel) || finished;
-        },
-        'killroy: the run reports progress',
-      );
-      if (!finished) {
-        await lane.call('click_coordinates', {
-          x: cancel.x + cancel.width / 2,
-          y: cancel.y + cancel.height / 2,
-        });
+      await lane.call('pointer_click', runAt);
+      if (cancelAt) {
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      } else {
+        let cancel = null;
+        await waitFor(
+          lane,
+          (tree) => {
+            cancel = tree.find((node) => node.id === 'killroy-run-cancel') ?? null;
+            return (
+              cancel ||
+              (labelOf(tree, 'status-status') ?? '').startsWith('Killroy trials finished')
+            );
+          },
+          'killroy: the run reports progress',
+        );
+        if (cancel) cancelAt = center(cancel);
       }
+      if (cancelAt) await lane.call('pointer_click', cancelAt);
       let outcome = null;
       await waitFor(
         lane,
@@ -2403,7 +2422,9 @@ const INTERACTIONS = {
     // A talent edit moves the summary on the next frame.
     await lane.call('click_element', { id: 'talents' });
     await waitForNode(lane, 'combat-talent-0', 'combat-sim: the talent table opens');
-    await lane.call('click_element', { id: 'combat-talent-0-more' });
+    // The kit number field steps with Up; its own buttons carry no unique id.
+    await lane.call('click_element', { id: 'combat-talent-0-level' });
+    await lane.call('keyboard', { keystroke: 'up' });
     await waitFor(
       lane,
       (nodes) => (labelOf(nodes, 'combat-summary') ?? '').includes('8 talent points'),

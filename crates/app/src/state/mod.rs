@@ -30,7 +30,9 @@ use crate::sections::jelly_operator::{
     OptimizerRunInputs as JellyOptimizerRunInputs, PlannerRunInputs as JellyPlanRunInputs,
     RunInputs as JellyRunInputs, SimulatorRunInputs as JellySimRunInputs, State as JellyState,
 };
-use crate::sections::killroy::{KillroyOutcome, State as KillroyState};
+use crate::sections::killroy::{
+    Controls as KillroyControls, KillroyOutcome, State as KillroyState,
+};
 use crate::sections::ladle::State as LadleSectionState;
 use crate::sections::ladle::planner::{LadleDonation, LadlePlanRequest};
 use crate::sections::monument::State as MonumentState;
@@ -234,6 +236,8 @@ pub(crate) struct AppState {
     pub(crate) killroy_forecast: Option<Result<KillroyForecast, KillroyError>>,
     /// The `(save_revision, weeks)` `killroy_forecast` was computed from.
     pub(crate) killroy_forecast_key: Option<(u64, usize)>,
+    /// The Killroy section's kit fields, tables and the rows derived for them.
+    pub(crate) killroy_controls: KillroyControls,
     /// The decoded save behind the simulation, for sections that read raw fields.
     pub(crate) save: Option<Save>,
     /// The sailing fleet imported from the save, and the route context.
@@ -534,6 +538,7 @@ impl AppState {
         let statue = StatueState::new(window, cx);
         let prisma = PrismaState::new(window, cx);
         let combat = CombatState::new(window, cx);
+        let killroy_controls = KillroyControls::new(window, cx);
         let research = ResearchState::new(window, cx);
         let farming_name = ui::input_state("Preset name", window, cx);
         let stats_explorer_search = ui::input_state("Name, saved input or source", window, cx);
@@ -1245,6 +1250,7 @@ impl AppState {
             killroy: KillroyState::default(),
             killroy_forecast: None,
             killroy_forecast_key: None,
+            killroy_controls,
             save: None,
             fleet: Fleet::default(),
             sailing: RouteContext::default(),

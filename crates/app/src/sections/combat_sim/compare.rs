@@ -5,41 +5,258 @@
 //! selected combination with its delta against the first row. The plan and the
 //! deltas are [`idleon_combat::compare`]; the run goes through the shared task
 //! runner, and the export copies the same document the Killroy section copies.
+//!
+//! The result rows are formatted once per finished comparison and drawn by a
+//! virtualized `DataTable`.
 
+use super::controls::duration_label;
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Checkbox, Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, Hsla, IntoElement, ParentElement, Role, SharedString, Styled, div, px,
+    AnyElement, App, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div,
+    px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::{Column, DataTable, TableDelegate, TableState};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_combat::compare::{Cell, Comparison, Metric, Plan};
 use idleon_combat::encounter;
 use idleon_ui::format;
-use idleon_ui::runner::TaskState;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, PANEL_GAP, PANEL_PADDING, TEXT_CAPTION, TEXT_MONO, Tone,
+};
+
+/// A result row's height: the value and its delta under it.
+const ROW_HEIGHT: f32 = 48.0;
+/// The result table stops growing here and scrolls.
+const MAX_TABLE_HEIGHT: f32 = 420.0;
+
+/// One metric cell: its value, and its delta against the baseline.
+#[derive(Clone, Debug, PartialEq)]
+struct MetricCell {
+    value: SharedString,
+    delta: SharedString,
+    tone: Tone,
+}
+
+/// One compared setup, formatted for the table.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CompareRow {
+    setup: SharedString,
+    label: SharedString,
+    map: SharedString,
+    metrics: Vec<MetricCell>,
+}
+
+/// The formatted rows of the stored comparison and the plan they came from.
+#[derive(Default)]
+pub(crate) struct Rows {
+    plan: Option<Plan>,
+    rows: Vec<CompareRow>,
+}
+
+impl Rows {
+    /// The comparison's rows, built once per finished comparison.
+    fn build(comparison: &Comparison) -> Vec<CompareRow> {
+        comparison
+            .rows
+            .iter()
+            .enumerate()
+            .map(|(index, row)| CompareRow {
+                setup: format!("{} · {}", row.spec.character_name, row.spec.loadout).into(),
+                label: format!(
+                    "{} · {} on map {}",
+                    row.spec.character_name, row.spec.loadout, row.spec.map
+                )
+                .into(),
+                map: format!("{} · {}", row.spec.map, row.map_name).into(),
+                metrics: Metric::ALL
+                    .iter()
+                    .map(|metric| metric_cell(comparison, index, *metric))
+                    .collect(),
+            })
+            .collect()
+    }
+}
+
+impl TableDelegate for Rows {
+    fn columns_count(&self, _: &App) -> usize {
+        2 + Metric::ALL.len()
+    }
+
+    fn rows_count(&self, _: &App) -> usize {
+        self.rows.len()
+    }
+
+    fn column(&self, col_ix: usize, _: &App) -> Column {
+        match col_ix {
+            0 => Column::new("setup", "Setup").width(px(240.0)),
+            1 => Column::new("map", "Map").width(px(180.0)),
+            _ => {
+                let metric = Metric::ALL[col_ix - 2];
+                Column::new(metric.short_key(), metric.label()).width(px(150.0))
+            }
+        }
+    }
+
+    fn render_td(
+        &mut self,
+        row_ix: usize,
+        col_ix: usize,
+        _: &mut Window,
+        cx: &mut gpui::Context<TableState<Self>>,
+    ) -> impl IntoElement {
+        let Some(row) = self.rows.get(row_ix) else {
+            return div().into_any_element();
+        };
+        match col_ix {
+            0 => div()
+                .id(SharedString::from(format!("combat-compare-row-{row_ix}")))
+                .role(Role::Label)
+                .aria_label(row.label.clone())
+                .flex()
+                .items_center()
+                .gap_2()
+                .child(div().text_size(TEXT_MONO).child(row.setup.clone()))
+                .when(row_ix == 0, |setup| {
+                    setup.child(
+                        div().id("combat-compare-baseline").child(
+                            Tag::new()
+                                .with_variant(Tone::Neutral.into())
+                                .outline()
+                                .small()
+                                .child("Baseline"),
+                        ),
+                    )
+                })
+                .into_any_element(),
+            1 => div()
+                .id(SharedString::from(format!(
+                    "combat-compare-map-name-{row_ix}"
+                )))
+                .text_size(TEXT_MONO)
+                .child(row.map.clone())
+                .into_any_element(),
+            _ => {
+                let metric = Metric::ALL[col_ix - 2];
+                let cell = &row.metrics[col_ix - 2];
+                div()
+                    .id(SharedString::from(format!(
+                        "combat-compare-{}-{row_ix}",
+                        metric.short_key()
+                    )))
+                    .role(Role::Label)
+                    .aria_label(format!(
+                        "{}: {}; {}",
+                        metric.label(),
+                        cell.value,
+                        cell.delta
+                    ))
+                    .flex()
+                    .flex_col()
+                    .child(
+                        div()
+                            .font_family(cx.theme().mono_font_family.clone())
+                            .text_size(TEXT_MONO)
+                            .child(cell.value.clone()),
+                    )
+                    .child(
+                        div()
+                            .text_size(TEXT_CAPTION)
+                            .text_color(cell.tone.color(cx))
+                            .child(cell.delta.clone()),
+                    )
+                    .into_any_element()
+            }
+        }
+    }
+
+    fn cell_label(&self, row_ix: usize, col_ix: usize, _: &App) -> Option<SharedString> {
+        let row = self.rows.get(row_ix)?;
+        Some(match col_ix {
+            0 => row.setup.clone(),
+            1 => row.map.clone(),
+            _ => {
+                let cell = &row.metrics[col_ix - 2];
+                format!("{}; {}", cell.value, cell.delta).into()
+            }
+        })
+    }
+}
+
+/// What the result card says about the stored comparison.
+struct Summary {
+    rows: usize,
+    player: idleon_combat::encounter::Player,
+    duration_ms: u64,
+    baseline: (String, String, usize),
+}
 
 /// The comparison pane: the setup picker, the run and its result table.
-pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let task = state.combat_comparison(cx);
+pub(crate) fn pane(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let plan = state.combat_comparison_plan();
+    let table = state.combat.controls.comparison.clone();
+    // Read the stored comparison in place: the table's rows are rebuilt only
+    // when another comparison finished, and nothing is cloned per frame.
+    let (running, cancelled, progress, stale, summary, rows) = {
+        let runner = state.combat_compare.read(cx);
+        let result = runner.result();
+        let shown = table.read(cx).delegate().plan.as_ref();
+        let rows = result
+            .filter(|comparison| shown != Some(&comparison.plan))
+            .map(|comparison| (comparison.plan.clone(), Rows::build(comparison)));
+        let summary = result.map(|comparison| Summary {
+            rows: comparison.rows.len(),
+            player: comparison.plan.player,
+            duration_ms: comparison.plan.duration_ms,
+            baseline: comparison.rows.first().map_or_else(
+                || (String::new(), String::new(), 0),
+                |row| {
+                    (
+                        row.spec.character_name.clone(),
+                        row.spec.loadout.clone(),
+                        row.spec.map,
+                    )
+                },
+            ),
+        });
+        (
+            runner.running(),
+            runner.cancelled(),
+            runner.progress().cloned(),
+            runner.is_stale(&plan),
+            summary,
+            rows,
+        )
+    };
+    if let Some((shown, rows)) = rows {
+        table.update(cx, |table, cx| {
+            let delegate = table.delegate_mut();
+            delegate.plan = Some(shown);
+            delegate.rows = rows;
+            cx.notify();
+        });
+    }
+
     let mut body = div()
         .id("combat-compare-panel")
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
-        .child(selection_card(state, &plan, &task, cx));
-    if task.running
-        && let Some(progress) = task.progress.clone()
-    {
+        .p(PANEL_PADDING)
+        .child(selection_card(state, &plan, running, window, cx));
+    if running && let Some(progress) = progress {
         let cancel = cx.entity();
         body = body.child(idleon_ui::run_chrome::progress_card(
             "combat-compare-run-progress",
@@ -51,22 +268,22 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
             },
         ));
     }
-    if task.cancelled {
+    if cancelled {
         body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "combat-compare-cancelled",
-            task.result.is_some(),
+            summary.is_some(),
         ));
     }
-    match task.result.clone() {
-        Some(result) => body = body.child(results_card(&result, task.stale, cx)),
-        None if !task.running && !task.cancelled => {
+    match summary {
+        Some(summary) => body = body.child(results_card(&summary, &table, stale, cx)),
+        None if !running && !cancelled => {
             body = body.child(
-                Banner::new(
+                Alert::new(
                     "combat-compare-empty",
-                    Severity::Info,
                     "No comparison has run yet. Pick at least two character, loadout and map setups, then Compare.",
                 )
-                .into_any_element(),
+                .with_variant(Tone::Info.into())
+                .banner(),
             );
         }
         None => {}
@@ -80,11 +297,12 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
         )
         .text_color(muted),
     );
-    ScrollArea::new("combat-compare-scroll")
-        .vertical()
+    div()
         .flex_1()
         .min_h_0()
         .child(body)
+        .overflow_y_scrollbar()
+        .id("combat-compare-scroll")
         .into_any_element()
 }
 
@@ -92,10 +310,11 @@ pub(crate) fn pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyEleme
 fn selection_card(
     state: &mut AppState,
     plan: &Plan,
-    task: &TaskState<Comparison>,
+    running: bool,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let characters: Vec<(usize, String)> = match &state.save {
         Some(save) => (0..save.character_count())
             .map(|index| (index, save.character_name(index)))
@@ -110,20 +329,20 @@ fn selection_card(
         .unwrap_or(plan.rows.len());
     let rows = plan.rows.len();
     let invalid = plan.validate().err();
-    let running = task.running;
 
     let mut roster = div().flex().flex_wrap().items_center().gap_3();
     for (index, name) in &characters {
         let selected = state.combat.compare_characters.contains(index);
         let entity = cx.entity();
-        let (character, label) = (*index, name.clone());
+        let character = *index;
         roster = roster.child(
-            Checkbox::new(
-                SharedString::from(format!("combat-compare-char-{character}")),
-                selected,
-            )
-            .label(SharedString::from(label))
-            .on_change(move |on, _window, cx| {
+            Checkbox::new(SharedString::from(format!(
+                "combat-compare-char-{character}"
+            )))
+            .label(SharedString::from(name.clone()))
+            .checked(selected)
+            .on_click(move |on, _window, cx| {
+                let on = *on;
                 entity.update(cx, |state, cx| {
                     state.set_combat_compare_character(character, on, cx);
                 });
@@ -139,7 +358,7 @@ fn selection_card(
         .id("combat-compare-loadouts")
         .flex()
         .flex_col()
-        .gap_2();
+        .gap(PANEL_GAP);
     for (index, name) in &characters {
         if !state.combat.compare_characters.contains(index) {
             continue;
@@ -189,34 +408,24 @@ fn selection_card(
                 .child(
                     div()
                         .flex_none()
-                        .text_size(px(12.0))
+                        .text_size(TEXT_MONO)
                         .child(SharedString::from(name.clone())),
                 )
                 .child(choices),
         );
     }
 
-    let map_choices: Vec<Choice> = encounter::maps()
-        .iter()
-        .map(|map| {
-            Choice::new(
-                map.index.to_string(),
-                format!("{} · {}", map.index, encounter::map_name(map)),
-            )
-        })
-        .collect();
-    let add_entity = cx.entity();
-    let add_map = Select::new("combat-compare-map-add", map_choices)
-        .label("Add a map")
+    // The picker adds a map and goes back to its placeholder.
+    let controls = &state.combat.controls;
+    controls
+        .compare_map
+        .show(controls.compare_maps.clone(), None, window, cx);
+    let add_map = Select::new(controls.compare_map.state())
+        .id("combat-compare-map-add")
+        .accessibility_label("Add a map")
         .placeholder("Add a map…")
-        .selected(SharedString::from(""))
-        .on_change(move |value, _window, cx| {
-            if let Ok(index) = value.parse::<usize>() {
-                add_entity.update(cx, |state, cx| {
-                    state.add_combat_compare_map(index, cx);
-                });
-            }
-        });
+        .small()
+        .w(px(320.0));
     let maps = state.combat.compare_maps.clone();
     let mut map_rows = div().id("combat-compare-maps").flex().flex_col().gap_1();
     if maps.is_empty() {
@@ -237,13 +446,13 @@ fn selection_card(
                 .items_center()
                 .gap_2()
                 .h(px(26.0))
-                .child(div().text_size(px(12.0)).child(SharedString::from(name)))
+                .child(div().text_size(TEXT_MONO).child(SharedString::from(name)))
                 .child(
-                    Button::new(
-                        SharedString::from(format!("combat-compare-map-remove-{map}")),
-                        "Remove",
-                    )
-                    .size(ControlSize::Sm)
+                    Button::new(SharedString::from(format!(
+                        "combat-compare-map-remove-{map}"
+                    )))
+                    .label("Remove")
+                    .small()
                     .on_click(move |_event, _window, cx| {
                         entity.update(cx, |state, cx| state.remove_combat_compare_map(map, cx));
                     }),
@@ -258,7 +467,7 @@ fn selection_card(
         .flex()
         .flex_wrap()
         .items_center()
-        .gap_2()
+        .gap(PANEL_GAP)
         .child(
             div()
                 .id("combat-compare-count")
@@ -266,7 +475,7 @@ fn selection_card(
                 .aria_label(format!(
                     "{setups} setups across {map_count} maps, {rows} runs"
                 ))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .text_color(muted)
                 .child(format!(
                     "{setups} setup(s) × {map_count} map(s) = {rows} run(s)"
@@ -274,9 +483,10 @@ fn selection_card(
         )
         .child(div().flex_1())
         .child(
-            Button::new("combat-compare-run", "Compare")
-                .variant(ButtonVariant::Primary)
-                .size(ControlSize::Sm)
+            Button::new("combat-compare-run")
+                .label("Compare")
+                .primary()
+                .small()
                 .icon(IconName::Play)
                 .disabled(running || invalid.is_some())
                 .on_click(move |_event, _window, cx| {
@@ -284,8 +494,9 @@ fn selection_card(
                 }),
         )
         .child(
-            Button::new("combat-compare-cancel", "Cancel")
-                .size(ControlSize::Sm)
+            Button::new("combat-compare-cancel")
+                .label("Cancel")
+                .small()
                 .icon(IconName::X)
                 .disabled(!running)
                 .on_click(move |_event, _window, cx| {
@@ -300,14 +511,20 @@ fn selection_card(
                     "Pick characters, the loadouts to run and the maps. Each selected \
                      combination is a row, and the first row is the baseline.",
                 )
-                .action(Badge::new(format!("{rows} row(s)")).tone(Tone::Accent)),
+                .action(
+                    Tag::new()
+                        .with_variant(Tone::Accent.into())
+                        .outline()
+                        .small()
+                        .child(format!("{rows} row(s)")),
+                ),
         )
         .child(
             div()
                 .flex()
                 .flex_col()
                 .gap_3()
-                .p_3()
+                .p(PANEL_PADDING)
                 .when(!characters.is_empty(), |card| {
                     card.child(
                         div()
@@ -346,12 +563,13 @@ fn loadout_check(
 ) -> Checkbox {
     let entity = cx.entity();
     let key = key.to_string();
-    Checkbox::new(
-        SharedString::from(format!("combat-compare-loadout-{character}-{key}")),
-        selected,
-    )
+    Checkbox::new(SharedString::from(format!(
+        "combat-compare-loadout-{character}-{key}"
+    )))
     .label(SharedString::from(label))
-    .on_change(move |on, _window, cx| {
+    .checked(selected)
+    .on_click(move |on, _window, cx| {
+        let on = *on;
         entity.update(cx, |state, cx| {
             state.set_combat_compare_loadout(character, &key, on, cx);
         });
@@ -361,24 +579,28 @@ fn loadout_check(
 /// Copy the stored comparison as JSON.
 fn export_button(cx: &mut Context<AppState>) -> Button {
     let entity = cx.entity();
-    Button::new("combat-compare-export", "Copy comparison JSON")
+    Button::new("combat-compare-export")
+        .label("Copy comparison JSON")
         .icon(IconName::Copy)
-        .size(ControlSize::Sm)
+        .small()
         .on_click(move |_event, _window, cx| {
             entity.update(cx, |state, cx| state.copy_combat_comparison(cx));
         })
 }
 
 /// The stored comparison: one row per setup and a value plus delta per metric.
-fn results_card(comparison: &Comparison, stale: bool, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let success = cx.theme().colors.success;
-    let danger = cx.theme().colors.danger;
+fn results_card(
+    summary: &Summary,
+    table: &gpui::Entity<TableState<Rows>>,
+    stale: bool,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let mut header = CardHeader::new("Comparison results").description(format!(
         "{} rows · {} · {}",
-        comparison.rows.len(),
-        player_label(comparison.plan.player),
-        duration_label(comparison.plan.duration_ms)
+        summary.rows,
+        player_label(summary.player),
+        duration_label(summary.duration_ms / 1000)
     ));
     if stale {
         header = header.action(idleon_ui::run_chrome::stale_badge("combat-compare"));
@@ -389,64 +611,22 @@ fn results_card(comparison: &Comparison, stale: bool, cx: &mut Context<AppState>
     if stale {
         card = card
             .child(idleon_ui::run_chrome::stale_banner("combat-compare"))
-            .child(div().px_3().pt_3().child(export_button(cx)));
-    }
-    let mut table = Table::new(
-        ["Setup", "Map"]
-            .into_iter()
-            .chain(Metric::ALL.iter().map(|metric| metric.label()))
-            .collect::<Vec<_>>(),
-    );
-    for (index, row) in comparison.rows.iter().enumerate() {
-        let mut setup = div()
-            .id(SharedString::from(format!("combat-compare-row-{index}")))
-            .role(Role::Label)
-            .aria_label(format!(
-                "{} · {} on map {}",
-                row.spec.character_name, row.spec.loadout, row.spec.map
-            ))
-            .flex()
-            .flex_wrap()
-            .items_center()
-            .gap_2()
-            .child(div().text_size(px(12.0)).child(SharedString::from(format!(
-                "{} · {}",
-                row.spec.character_name, row.spec.loadout
-            ))));
-        if index == 0 {
-            setup = setup.child(
+            .child(
                 div()
-                    .id("combat-compare-baseline")
-                    .child(Badge::new("Baseline").tone(Tone::Neutral)),
+                    .px(PANEL_PADDING)
+                    .pt(PANEL_PADDING)
+                    .child(export_button(cx)),
             );
-        }
-        let mut cells: Vec<AnyElement> = vec![setup.into_any_element()];
-        cells.push(
-            div()
-                .id(SharedString::from(format!(
-                    "combat-compare-map-name-{index}"
-                )))
-                .text_size(px(12.0))
-                .child(SharedString::from(format!(
-                    "{} · {}",
-                    row.spec.map, row.map_name
-                )))
-                .into_any_element(),
-        );
-        for metric in Metric::ALL {
-            cells.push(metric_cell(
-                comparison, index, metric, muted, success, danger,
-            ));
-        }
-        table = table.row(cells);
     }
+    // The table fits its rows up to a cap, then scrolls them.
+    let height = (summary.rows as f32 * ROW_HEIGHT + 40.0).min(MAX_TABLE_HEIGHT);
+    let (character, loadout, map) = &summary.baseline;
     card.child(
-        div().id("combat-compare-results").p_3().child(
-            ScrollArea::new("combat-compare-table-scroll")
-                .vertical()
-                .max_h(px(420.0))
-                .child(table),
-        ),
+        div()
+            .id("combat-compare-results")
+            .p(PANEL_PADDING)
+            .h(px(height + 24.0))
+            .child(DataTable::new(table).with_size(px(ROW_HEIGHT))),
     )
     .child(
         div()
@@ -454,17 +634,14 @@ fn results_card(comparison: &Comparison, stale: bool, cx: &mut Context<AppState>
             .flex()
             .flex_col()
             .gap_1()
-            .px_3()
-            .pb_3()
-            .text_size(px(11.0))
+            .px(PANEL_PADDING)
+            .pb(PANEL_PADDING)
+            .text_size(TEXT_CAPTION)
             .text_color(muted)
             .child(format!(
-                "{} rows compared. Deltas are against the first row ({} · {} · map {}); the kill \
-                 interval is the one metric where a smaller value is better.",
-                format::count(comparison.rows.len() as u64),
-                comparison.rows[0].spec.character_name,
-                comparison.rows[0].spec.loadout,
-                comparison.rows[0].spec.map
+                "{} rows compared. Deltas are against the first row ({character} · {loadout} · \
+                 map {map}); the kill interval is the one metric where a smaller value is better.",
+                format::count(summary.rows as u64),
             ))
             .child(
                 "The Export button copies this comparison as JSON: every setup, its outcome, its \
@@ -474,53 +651,33 @@ fn results_card(comparison: &Comparison, stale: bool, cx: &mut Context<AppState>
     .into_any_element()
 }
 
-/// One metric: its value, and its delta against the baseline below it.
-fn metric_cell(
-    comparison: &Comparison,
-    index: usize,
-    metric: Metric,
-    muted: Hsla,
-    success: Hsla,
-    danger: Hsla,
-) -> AnyElement {
+/// One metric: its value, and its delta against the baseline.
+fn metric_cell(comparison: &Comparison, index: usize, metric: Metric) -> MetricCell {
     let cell = comparison.cell(index, metric);
     let value = cell
         .mean
         .map_or_else(|| "—".to_string(), |value| format_metric(metric, value));
-    let (delta, color) = if index == 0 {
-        ("Baseline".to_string(), muted)
+    let (delta, tone) = if index == 0 {
+        ("Baseline".to_string(), Tone::Neutral)
     } else {
         match cell.delta {
-            Some(0.0) => ("No change".to_string(), muted),
+            Some(0.0) => ("No change".to_string(), Tone::Neutral),
             Some(delta) => (
                 delta_label(cell, metric, delta),
                 if (delta > 0.0) == metric.higher_is_better() {
-                    success
+                    Tone::Success
                 } else {
-                    danger
+                    Tone::Danger
                 },
             ),
-            None => ("—".to_string(), muted),
+            None => ("—".to_string(), Tone::Neutral),
         }
     };
-    div()
-        .id(SharedString::from(format!(
-            "combat-compare-{}-{index}",
-            metric.short_key()
-        )))
-        .role(Role::Label)
-        .aria_label(format!("{}: {value}; {delta}", metric.label()))
-        .flex()
-        .flex_col()
-        .gap_1()
-        .child(div().text_size(px(12.0)).child(SharedString::from(value)))
-        .child(
-            div()
-                .text_size(px(11.0))
-                .text_color(color)
-                .child(SharedString::from(delta)),
-        )
-        .into_any_element()
+    MetricCell {
+        value: value.into(),
+        delta: delta.into(),
+        tone,
+    }
 }
 
 fn delta_label(cell: Cell, metric: Metric, delta: f64) -> String {
@@ -548,19 +705,5 @@ fn player_label(player: idleon_combat::encounter::Player) -> &'static str {
     match player {
         idleon_combat::encounter::Player::StandIn { .. } => "fixed kill interval",
         idleon_combat::encounter::Player::Idle => "idle player",
-    }
-}
-
-fn duration_label(duration_ms: u64) -> String {
-    let seconds = duration_ms / 1000;
-    match seconds {
-        60 => "1 minute".into(),
-        300 => "5 minutes".into(),
-        600 => "10 minutes".into(),
-        1800 => "30 minutes".into(),
-        3600 => "1 hour".into(),
-        21_600 => "6 hours".into(),
-        43_200 => "12 hours".into(),
-        _ => format!("{seconds}s"),
     }
 }

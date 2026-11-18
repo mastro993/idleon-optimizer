@@ -10,35 +10,38 @@
 //! being dropped.
 
 use super::ResultsTab;
+use super::controls::{duration_choices, player_choices};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::charts::{LineChart, Series};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader, ScrollArea};
-use ely_gpui_component::primitives::{IconName, Severity};
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui::layout;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, px,
+    AnyElement, Context, FontWeight, Hsla, IntoElement, ParentElement, Role, SharedString, Styled,
+    Window, div, px,
 };
+use gpui::{App, RenderOnce};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::chart::LineChart;
+use gpui_kit::component::scroll::ScrollableElement as _;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_combat::encounter::{self, Outcome};
 use idleon_ui::format;
-
-/// The duration presets, in seconds.
-const DURATIONS: [u64; 8] = [60, 300, 600, 1800, 3600, 21_600, 43_200, 86_400];
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, KpiStrip, PANEL_GAP, PANEL_PADDING, TEXT_CAPTION, TEXT_KPI,
+    TEXT_MONO, Tone, show_number,
+};
 
 /// The encounter pane: options, the run in flight and its result.
 pub(crate) fn pane(
     state: &mut AppState,
-    window: &Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let task = state.combat_encounter(cx);
     let results = state.combat.results;
     let mut body = div()
@@ -46,8 +49,8 @@ pub(crate) fn pane(
         .flex()
         .flex_col()
         .gap_3()
-        .p_3()
-        .child(options_card(state, &task, cx))
+        .p(PANEL_PADDING)
+        .child(options_card(state, &task, window, cx))
         .child(
             Caption::new(
                 "The run replays the game's 10 ms tick over the map's spawn roster: monsters \
@@ -77,30 +80,29 @@ pub(crate) fn pane(
             task.result.is_some(),
         ));
     }
-    match task.result.clone() {
+    match task.result.as_ref() {
         Some(result) => {
-            body = body.child(results_card(
-                &result, task.stale, results, state, window, cx,
-            ));
+            body = body.child(results_card(result, task.stale, results, state, window, cx));
         }
         None if !task.running && !task.cancelled => {
             body = body.child(
-                Banner::new(
+                Alert::new(
                     "combat-encounter-empty",
-                    Severity::Info,
                     "No encounter has run yet. Pick a map, a player and a duration, then Run.",
                 )
-                .into_any_element(),
+                .with_variant(Tone::Info.into())
+                .banner(),
             );
         }
         None => {}
     }
     body = body.child(unsupported_card(cx));
-    ScrollArea::new("combat-encounter-scroll")
-        .vertical()
+    div()
         .flex_1()
         .min_h_0()
         .child(body)
+        .overflow_y_scrollbar()
+        .id("combat-encounter-scroll")
         .into_any_element()
 }
 
@@ -108,9 +110,10 @@ pub(crate) fn pane(
 fn options_card(
     state: &AppState,
     task: &idleon_ui::runner::TaskState<super::RunResult>,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
     let options = state.combat_encounter_options();
     let running = task.running;
@@ -118,90 +121,57 @@ fn options_card(
     let valid = invalid.is_none();
     let run = entity.clone();
     let cancel = entity;
-    let selected_map = options.map.to_string();
     let stand_in = matches!(options.player, encounter::Player::StandIn { .. });
     let kill_every = match options.player {
         encounter::Player::StandIn { kill_every_ms } => kill_every_ms as f64,
         encounter::Player::Idle => 1500.0,
     };
 
-    let mut map_choices = Vec::with_capacity(encounter::maps().len());
-    for map in encounter::maps() {
-        map_choices.push(Choice::new(map.index.to_string(), encounter::map_name(map)));
-    }
-    let map_entity = cx.entity();
-    let map_select = Select::new("combat-encounter-map", map_choices)
-        .label("Map")
-        .selected(SharedString::from(selected_map))
-        .on_change(move |value, _window, cx| {
-            if let Ok(index) = value.parse::<usize>() {
-                map_entity.update(cx, |state, cx| state.set_combat_encounter_map(index, cx));
-            }
-        });
-
-    let player_entity = cx.entity();
-    let player_select = Select::new(
-        "combat-encounter-player",
-        vec![
-            Choice::new("standIn", "Fixed kill interval (stand-in)"),
-            Choice::new("idle", "Idle (no attacks)"),
-        ],
-    )
-    .label("Player")
-    .selected(SharedString::from(if stand_in {
-        "standIn"
-    } else {
-        "idle"
-    }))
-    .on_change(move |value, _window, cx| {
-        let idle = value.as_ref() == "idle";
-        player_entity.update(cx, |state, cx| state.set_combat_encounter_idle(idle, cx));
-    });
-
-    let kill_entity = cx.entity();
-    let kill_input = NumberInput::new("combat-encounter-kill", kill_every)
-        .range(10.0, 60_000.0)
-        .step(10.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("Kill every (ms)")
-        .on_commit(move |value, _window, cx| {
-            kill_entity.update(cx, |state, cx| {
-                state.set_combat_encounter_kill_every(value, cx);
-            });
-        });
-
-    let seed_entity = cx.entity();
-    let seed_input = NumberInput::new("combat-encounter-seed", options.seed as f64)
-        .range(1.0, 4_294_967_295.0)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .label("Seed")
-        .on_commit(move |value, _window, cx| {
-            seed_entity.update(cx, |state, cx| {
-                state.set_combat_encounter_seed(value, cx);
-            });
-        });
-
-    let duration_entity = cx.entity();
-    let duration = options.duration_ms / 1000;
-    let duration_select = Select::new(
-        "combat-encounter-duration",
-        DURATIONS
-            .iter()
-            .map(|seconds| Choice::new(seconds.to_string(), duration_label(*seconds)))
-            .collect::<Vec<Choice>>(),
-    )
-    .label("Duration")
-    .selected(SharedString::from(duration.to_string()))
-    .on_change(move |value, _window, cx| {
-        if let Ok(seconds) = value.parse::<u64>() {
-            duration_entity.update(cx, |state, cx| {
-                state.set_combat_encounter_duration(seconds, cx);
-            });
-        }
-    });
+    // The section's values flow into the controls; edits come back through
+    // the subscriptions in `Controls::new`.
+    let controls = &state.combat.controls;
+    controls
+        .map
+        .show(controls.maps.clone(), Some(&options.map), window, cx);
+    controls
+        .player
+        .show(player_choices(), Some(&!stand_in), window, cx);
+    controls.duration.show(
+        duration_choices(),
+        Some(&(options.duration_ms / 1000)),
+        window,
+        cx,
+    );
+    show_number(&controls.kill_every, kill_every, 0, window, cx);
+    show_number(&controls.seed, options.seed as f64, 0, window, cx);
+    let map_select = Select::new(controls.map.state())
+        .id("combat-encounter-map")
+        .accessibility_label("Map")
+        .small()
+        .w(px(220.0));
+    let player_select = Select::new(controls.player.state())
+        .id("combat-encounter-player")
+        .accessibility_label("Player")
+        .small()
+        .w(px(240.0));
+    let duration_select = Select::new(controls.duration.state())
+        .id("combat-encounter-duration")
+        .accessibility_label("Duration")
+        .small()
+        .w(px(140.0));
+    let kill_input = labelled(
+        "Kill every (ms)",
+        crate::ui::number_field(
+            "combat-encounter-kill",
+            &controls.kill_every,
+            "Kill every (ms)",
+        )
+        .w(px(140.0)),
+    );
+    let seed_input = labelled(
+        "Seed",
+        crate::ui::number_field("combat-encounter-seed", &controls.seed, "Seed").w(px(140.0)),
+    );
 
     Card::new()
         .header(
@@ -210,31 +180,38 @@ fn options_card(
                     "Normal combat on one map. Every results tab below reads this run; the \
                      auto-mode player AI is not modelled yet, so a run cannot measure character DPS.",
                 )
-                .action(Badge::new("Normal combat").tone(Tone::Accent)),
+                .action(
+                    Tag::new()
+                        .with_variant(Tone::Accent.into())
+                        .outline()
+                        .small()
+                        .child("Normal combat"),
+                ),
         )
         .child(
             div()
                 .flex()
                 .flex_col()
-                .gap_2()
-                .p_3()
+                .gap(PANEL_GAP)
+                .p(PANEL_PADDING)
                 .child(
                     div()
                         .id("combat-encounter-controls")
                         .flex()
                         .flex_wrap()
                         .items_end()
-                        .gap_2()
-                        .child(map_select)
-                        .child(player_select)
+                        .gap(PANEL_GAP)
+                        .child(labelled("Map", map_select))
+                        .child(labelled("Player", player_select))
                         .when(stand_in, |row| row.child(kill_input))
-                        .child(duration_select)
+                        .child(labelled("Duration", duration_select))
                         .child(seed_input)
                         .child(div().flex_1())
                         .child(
-                            Button::new("combat-encounter-run", "Run")
-                                .variant(ButtonVariant::Primary)
-                                .size(ControlSize::Sm)
+                            Button::new("combat-encounter-run")
+                                .label("Run")
+                                .primary()
+                                .small()
                                 .icon(IconName::Play)
                                 .disabled(running || !valid)
                                 .on_click(move |_event, _window, cx| {
@@ -244,8 +221,9 @@ fn options_card(
                                 }),
                         )
                         .child(
-                            Button::new("combat-encounter-cancel", "Cancel")
-                                .size(ControlSize::Sm)
+                            Button::new("combat-encounter-cancel")
+                                .label("Cancel")
+                                .small()
                                 .icon(IconName::X)
                                 .disabled(!running)
                                 .on_click(move |_event, _window, cx| {
@@ -273,6 +251,17 @@ fn options_card(
         .into_any_element()
 }
 
+/// A control with its caption above it.
+fn labelled(label: &'static str, control: impl IntoElement) -> AnyElement {
+    div()
+        .flex()
+        .flex_col()
+        .gap_1()
+        .child(Caption::new(label))
+        .child(control)
+        .into_any_element()
+}
+
 /// The stored run: its totals, the kills by monster and how far it got.
 ///
 /// One [`RunResult`] feeds every results tab: the summary, Killroy practice,
@@ -295,11 +284,11 @@ fn results_card(
     result: &RunResult,
     stale: bool,
     current: ResultsTab,
-    state: &AppState,
-    window: &Window,
+    state: &mut AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let run = &result.run;
     let Some(map) = encounter::map(run.map) else {
         return div().into_any_element();
@@ -319,20 +308,26 @@ fn results_card(
         header = header.action(idleon_ui::run_chrome::stale_badge("combat-encounter"));
     }
     let select = cx.entity();
-    let tabs = ResultsTab::ALL
-        .into_iter()
-        .fold(TabBar::new("combat-result-tabs"), |bar, tab| {
-            bar.tab(WindowTab::new(tab.id(), tab.label()))
-        })
-        .selected(SharedString::from(current.id()))
-        .on_select(move |id, _window, cx| {
-            if let Some(tab) = ResultsTab::from_id(id.as_ref()) {
-                select.update(cx, |state, cx| state.set_combat_results_tab(tab, cx));
-            }
-        });
-    let mut card = Card::new()
-        .header(header)
-        .child(div().id("combat-result-tabs-row").p_3().child(tabs));
+    let selected = ResultsTab::ALL
+        .iter()
+        .position(|tab| *tab == current)
+        .unwrap_or_default();
+    let tabs = layout::tab_bar(
+        "combat-result-tabs",
+        ResultsTab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        selected,
+        move |index, _window, cx| {
+            select.update(cx, |state, cx| {
+                state.set_combat_results_tab(ResultsTab::ALL[index], cx);
+            });
+        },
+    );
+    let mut card = Card::new().header(header).child(
+        div()
+            .id("combat-result-tabs-row")
+            .p(PANEL_PADDING)
+            .child(tabs),
+    );
     if stale {
         card = card.child(idleon_ui::run_chrome::stale_banner("combat-encounter"));
     }
@@ -342,7 +337,7 @@ fn results_card(
         ResultsTab::Obols => obols_panel(run, muted),
         ResultsTab::Kills => kills_panel(run, muted),
         ResultsTab::Cards => cards_panel(run, muted),
-        ResultsTab::Timeline => timeline_panel(run, muted),
+        ResultsTab::Timeline => timeline_panel(run, muted, cx),
         ResultsTab::Den => den_panel(result, muted),
         ResultsTab::Progress => progress_panel(result, muted),
         ResultsTab::Smelting => smelting_panel(run, muted),
@@ -352,13 +347,9 @@ fn results_card(
 }
 
 /// The run's totals and how far it got.
-fn summary_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
-    let kpis = div()
-        .id("combat-encounter-kpis")
-        .flex()
+fn summary_panel(run: &Outcome, muted: Hsla) -> AnyElement {
+    let kpis = KpiStrip::new()
         .flex_wrap()
-        .items_stretch()
-        .gap_2()
         .child(kpi(
             "combat-encounter-kills",
             "Kills",
@@ -396,13 +387,13 @@ fn summary_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
         ));
     div()
         .id("combat-summary-panel")
-        .p_3()
-        .child(kpis)
+        .p(PANEL_PADDING)
+        .child(div().id("combat-encounter-kpis").child(kpis))
         .into_any_element()
 }
 
 /// The Killroy practice: the same run's kill rate through the room's timer.
-fn killroy_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+fn killroy_panel(result: &RunResult, muted: Hsla) -> AnyElement {
     let run = &result.run;
     let Some(record) = result.killroy else {
         return empty_panel(
@@ -412,12 +403,8 @@ fn killroy_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         );
     };
     let seconds = (run.simulated_ms as f64 / 1000.0).max(1.0);
-    let kpis = div()
-        .id("combat-killroy-kpis")
-        .flex()
+    let kpis = KpiStrip::new()
         .flex_wrap()
-        .items_stretch()
-        .gap_2()
         .child(kpi(
             "combat-killroy-kills",
             "Kills",
@@ -469,11 +456,11 @@ fn killroy_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         ));
     div()
         .id("combat-killroy-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
-        .child(kpis)
+        .gap(PANEL_GAP)
+        .child(div().id("combat-killroy-kpis").child(kpis))
         .child(
             Caption::new(format!(
                 "Killroy practice projects this run's {:.2} kills/s onto the room's native timer, \
@@ -488,15 +475,11 @@ fn killroy_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The obol fragments the run's obol drops rolled up.
-fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+fn obols_panel(run: &Outcome, muted: Hsla) -> AnyElement {
     let obols = &run.drops;
     let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
-    let kpis = div()
-        .id("combat-obols-kpis")
-        .flex()
+    let kpis = KpiStrip::new()
         .flex_wrap()
-        .items_stretch()
-        .gap_2()
         .child(kpi(
             "combat-obols-fragments",
             "Fragments earned",
@@ -530,11 +513,11 @@ fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     };
     let mut panel = div()
         .id("combat-obols-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
-        .child(kpis)
+        .gap(PANEL_GAP)
+        .child(div().id("combat-obols-kpis").child(kpis))
         .child(Caption::new(note).text_color(muted));
     if !obols.fragments_known {
         panel = panel.child(
@@ -556,7 +539,7 @@ fn obols_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The Den attempt: the hound waves replayed at this run's kill rate.
-fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+fn den_panel(result: &RunResult, muted: Hsla) -> AnyElement {
     let Some(den) = result.den.as_ref() else {
         return empty_panel(
             "combat-den-empty",
@@ -567,12 +550,8 @@ fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
     };
     let snapshot = den.snapshot;
     let totals = den.totals;
-    let kpis = div()
-        .id("combat-den-kpis")
-        .flex()
+    let kpis = KpiStrip::new()
         .flex_wrap()
-        .items_stretch()
-        .gap_2()
         .child(kpi(
             "combat-den-score",
             "Den score",
@@ -625,11 +604,11 @@ fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         ));
     div()
         .id("combat-den-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
-        .child(kpis)
+        .gap(PANEL_GAP)
+        .child(div().id("combat-den-kpis").child(kpis))
         .child(
             Caption::new(format!(
                 "Amplifier multiplier ×{} · the projection replays the cavern's hound waves at this \
@@ -643,14 +622,10 @@ fn den_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The combat-driven account progress the run banked.
-fn progress_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+fn progress_panel(result: &RunResult, muted: Hsla) -> AnyElement {
     let progress = &result.run.progress;
-    let kpis = div()
-        .id("combat-progress-kpis")
-        .flex()
+    let kpis = KpiStrip::new()
         .flex_wrap()
-        .items_stretch()
-        .gap_2()
         .child(kpi(
             "combat-progress-forge-time",
             "Forge time from kills",
@@ -688,11 +663,11 @@ fn progress_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         ));
     let mut panel = div()
         .id("combat-progress-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
-        .child(kpis);
+        .gap(PANEL_GAP)
+        .child(div().id("combat-progress-kpis").child(kpis));
     if let Some(scurge) = progress.scurge {
         panel = panel.child(
             Caption::new(format!(
@@ -724,7 +699,7 @@ fn progress_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         );
     }
     if !progress.pets.is_empty() {
-        let mut table = Table::new(["Pet", "Shiny days gained", "Level", "World"]);
+        let mut table = RunTable::new(["Pet", "Shiny days gained", "Level", "World"]);
         for pet in &progress.pets {
             table = table.row([
                 div()
@@ -760,23 +735,23 @@ fn progress_panel(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The bars the saved furnace produced during the run.
-fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+fn smelting_panel(run: &Outcome, muted: Hsla) -> AnyElement {
     let progress = &run.progress;
     let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
     if !progress.forge_available {
         return div()
             .id("combat-smelting-panel")
-            .p_3()
+            .p(PANEL_PADDING)
             .flex()
             .flex_col()
-            .gap_2()
+            .gap(PANEL_GAP)
             .child(
-                Banner::new(
+                Alert::new(
                     "combat-smelting-unavailable",
-                    Severity::Warning,
                     "Forge contents are unavailable; only earned smelting time is reported.",
                 )
-                .into_any_element(),
+                .with_variant(Tone::Warning.into())
+                .banner(),
             )
             .child(
                 Caption::new(format!(
@@ -790,7 +765,7 @@ fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     }
     let mut rows: Vec<(&String, &f64)> = progress.bars.iter().collect();
     rows.sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
-    let mut table = Table::new(["Bar", "Produced", "Per hour"]);
+    let mut table = RunTable::new(["Bar", "Produced", "Per hour"]);
     for (bar, qty) in &rows {
         let name = idleon_combat::progress::item_name(bar);
         table = table.row([
@@ -798,7 +773,7 @@ fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
                 .id(SharedString::from(format!("combat-smelting-{bar}")))
                 .role(Role::Label)
                 .aria_label(format!("{name}: {qty} produced"))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .child(SharedString::from(name))
                 .into_any_element(),
             div().child(format::value(**qty)).into_any_element(),
@@ -807,10 +782,10 @@ fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     }
     let mut panel = div()
         .id("combat-smelting-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
+        .gap(PANEL_GAP)
         .child(
             Caption::new(
                 "Ordinary online smelting plus the forge time the kills granted. Ore, oil, storage \
@@ -832,7 +807,7 @@ fn smelting_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The kills by monster, most kills first and ties by monster id.
-fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+fn kills_panel(run: &Outcome, muted: Hsla) -> AnyElement {
     if run.kills_by_type.is_empty() {
         return empty_panel(
             "combat-kills-empty",
@@ -843,7 +818,7 @@ fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
     let mut rows: Vec<(&String, &u64)> = run.kills_by_type.iter().collect();
     rows.sort_by(|left, right| right.1.cmp(left.1).then_with(|| left.0.cmp(right.0)));
-    let mut table = Table::new(["Monster", "Kills", "Kills / hr", "Share"]);
+    let mut table = RunTable::new(["Monster", "Kills", "Kills / hr", "Share"]);
     let total = run.kills.max(1);
     for (kind, kills) in rows {
         let name = idleon_combat::drops::monster_name(kind);
@@ -852,7 +827,7 @@ fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
                 .id(SharedString::from(format!("combat-kill-type-{kind}")))
                 .role(Role::Label)
                 .aria_label(format!("{name}: {kills} kills"))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .child(SharedString::from(name))
                 .into_any_element(),
             div().child(format::count(*kills)).into_any_element(),
@@ -866,13 +841,13 @@ fn kills_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     }
     div()
         .id("combat-kills-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .child(table)
         .into_any_element()
 }
 
 /// The cards the run's kills dropped.
-fn cards_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+fn cards_panel(run: &Outcome, muted: Hsla) -> AnyElement {
     let cards = &run.drops.cards;
     if cards.is_empty() {
         return empty_panel(
@@ -885,7 +860,7 @@ fn cards_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     let hours = (run.simulated_ms as f64 / 3_600_000.0).max(1.0 / 3_600.0);
     let mut rows: Vec<(&String, &f64)> = cards.iter().collect();
     rows.sort_by(|left, right| right.1.total_cmp(left.1).then_with(|| left.0.cmp(right.0)));
-    let mut table = Table::new(["Card", "Found", "Per hour"]);
+    let mut table = RunTable::new(["Card", "Found", "Per hour"]);
     for (kind, found) in rows {
         let name = format!("{} card", idleon_combat::drops::monster_name(kind));
         table = table.row([
@@ -893,7 +868,7 @@ fn cards_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
                 .id(SharedString::from(format!("combat-card-{kind}")))
                 .role(Role::Label)
                 .aria_label(format!("{name}: {found} found"))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .child(SharedString::from(name))
                 .into_any_element(),
             div().child(format::value(*found)).into_any_element(),
@@ -902,13 +877,13 @@ fn cards_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
     }
     div()
         .id("combat-cards-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .child(table)
         .into_any_element()
 }
 
 /// The kills over time, one point per ten simulated seconds plus the end.
-fn timeline_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
+fn timeline_panel(run: &Outcome, muted: Hsla, cx: &Context<AppState>) -> AnyElement {
     if run.kills == 0 || run.timeline.len() < 2 {
         return empty_panel(
             "combat-timeline-empty",
@@ -917,26 +892,21 @@ fn timeline_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
             muted,
         );
     }
-    let labels: Vec<String> = run
-        .timeline
-        .iter()
-        .map(|sample| format::duration(sample.t_ms as f64 / 1000.0))
-        .collect();
-    let kills: Vec<f64> = run
-        .timeline
-        .iter()
-        .map(|sample| sample.kills as f64)
-        .collect();
-    let chart = LineChart::new("combat-kills-timeline", labels)
-        .series(Series::new("Kills", kills))
-        .format(|value| format::count(value.max(0.0) as u64))
-        .h(px(240.0));
+    let chart = div().h(px(240.0)).child(
+        LineChart::new(run.timeline.clone())
+            .id("combat-kills-timeline")
+            .name("Kills")
+            .x(|sample: &encounter::Sample| format::duration(sample.t_ms as f64 / 1000.0))
+            .y(|sample: &encounter::Sample| sample.kills as f64)
+            .y_tick_format(|value| format::count(value.max(0.0) as u64))
+            .stroke(cx.theme().chart_1),
+    );
     div()
         .id("combat-timeline-panel")
-        .p_3()
+        .p(PANEL_PADDING)
         .flex()
         .flex_col()
-        .gap_2()
+        .gap(PANEL_GAP)
         .child(chart)
         .child(Caption::new(format!(
             "Cumulative kills at every ten simulated seconds, ending on the run's own {} kills at \
@@ -949,11 +919,11 @@ fn timeline_panel(run: &Outcome, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// A results tab with nothing to show yet, and why.
-pub(crate) fn empty_panel(id: &'static str, message: &str, muted: gpui::Hsla) -> AnyElement {
+pub(crate) fn empty_panel(id: &'static str, message: &str, muted: Hsla) -> AnyElement {
     div()
         .id(id)
-        .p_3()
-        .text_size(px(12.0))
+        .p(PANEL_PADDING)
+        .text_size(TEXT_MONO)
         .text_color(muted)
         .child(SharedString::from(message.to_string()))
         .into_any_element()
@@ -961,7 +931,7 @@ pub(crate) fn empty_panel(id: &'static str, message: &str, muted: gpui::Hsla) ->
 
 /// The mechanics this build does not model, named rather than dropped.
 fn unsupported_card(cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     Card::new()
         .header(
             CardHeader::new("Not simulated")
@@ -970,8 +940,11 @@ fn unsupported_card(cx: &mut Context<AppState>) -> AnyElement {
                      combat are left out on purpose and listed here, not silently ignored.",
                 )
                 .action(
-                    Badge::new(format!("{} items", encounter::unsupported().len()))
-                        .tone(Tone::Warning),
+                    Tag::new()
+                        .with_variant(Tone::Warning.into())
+                        .outline()
+                        .small()
+                        .child(format!("{} items", encounter::unsupported().len())),
                 ),
         )
         .child(
@@ -982,10 +955,10 @@ fn unsupported_card(cx: &mut Context<AppState>) -> AnyElement {
                 .flex()
                 .flex_col()
                 .gap_1()
-                .p_3()
+                .p(PANEL_PADDING)
                 .children(encounter::unsupported().iter().map(|item| {
                     div()
-                        .text_size(px(11.0))
+                        .text_size(TEXT_CAPTION)
                         .text_color(muted)
                         .child(SharedString::from(format!("• {item}")))
                 })),
@@ -993,50 +966,89 @@ fn unsupported_card(cx: &mut Context<AppState>) -> AnyElement {
         .into_any_element()
 }
 
+/// One headline figure in a strip. Its label reads "<label> <value>", which
+/// the harness parses.
 fn kpi(
     id: &'static str,
     label: &'static str,
     value: &str,
     caption: &str,
-    muted: gpui::Hsla,
+    muted: Hsla,
 ) -> AnyElement {
-    Card::new()
+    div()
+        .id(id)
+        .role(Role::Label)
+        .aria_label(format!("{label} {value}"))
+        .flex()
+        .flex_col()
+        .gap_1()
+        .min_w(px(140.0))
+        .child(Caption::new(label).text_color(muted))
         .child(
             div()
-                .id(id)
-                .role(Role::Label)
-                .aria_label(format!("{label} {value}"))
-                .flex()
-                .flex_col()
-                .gap_1()
-                .p_3()
-                .child(Caption::new(label).text_color(muted))
-                .child(
-                    div()
-                        .text_size(px(20.0))
-                        .child(SharedString::from(value.to_string())),
-                )
-                .child(Caption::new(caption.to_string()).text_color(muted)),
+                .text_size(TEXT_KPI)
+                .font_weight(FontWeight::MEDIUM)
+                .child(SharedString::from(value.to_string())),
         )
+        .child(Caption::new(caption.to_string()).text_color(muted))
         .into_any_element()
+}
+
+/// A run's small table: the map roster, the furnace's bars or the pets bound
+/// its rows, so the kit `Table` draws them all. Every column after the first
+/// is a number, right-aligned.
+#[derive(IntoElement)]
+struct RunTable {
+    headers: Vec<&'static str>,
+    rows: Vec<Vec<AnyElement>>,
+}
+
+impl RunTable {
+    fn new<const N: usize>(headers: [&'static str; N]) -> Self {
+        Self {
+            headers: headers.to_vec(),
+            rows: Vec::new(),
+        }
+    }
+
+    fn row<const N: usize>(mut self, cells: [AnyElement; N]) -> Self {
+        self.rows.push(cells.into());
+        self
+    }
+}
+
+impl RenderOnce for RunTable {
+    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
+        // Short row ids: the kit's own ids carry type paths that outgrow the
+        // bridge's 256-byte limit, and a row over it drops out of the tree.
+        let head =
+            TableRow::new()
+                .id("combat-run-head")
+                .children(self.headers.iter().enumerate().map(|(ix, name)| {
+                    TableHead::new()
+                        .when(ix > 0, |head| head.text_right())
+                        .child(*name)
+                }));
+        Table::new()
+            .small()
+            .child(TableHeader::new().child(head))
+            .child(
+                TableBody::new().children(self.rows.into_iter().enumerate().map(|(row, cells)| {
+                    TableRow::new().id(("combat-run-row", row)).children(
+                        cells.into_iter().enumerate().map(|(ix, cell)| {
+                            TableCell::new()
+                                .when(ix > 0, |cell| cell.text_right().text_size(TEXT_MONO))
+                                .child(cell)
+                        }),
+                    )
+                })),
+            )
+    }
 }
 
 fn player_label(player: &str) -> &str {
     match player {
         "idle" => "Idle player",
         _ => "Fixed kill interval",
-    }
-}
-
-fn duration_label(seconds: u64) -> String {
-    match seconds {
-        60 => "1 minute".into(),
-        300 => "5 minutes".into(),
-        600 => "10 minutes".into(),
-        1800 => "30 minutes".into(),
-        3600 => "1 hour".into(),
-        21_600 => "6 hours".into(),
-        43_200 => "12 hours".into(),
-        _ => "24 hours".into(),
     }
 }

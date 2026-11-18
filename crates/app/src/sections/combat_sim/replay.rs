@@ -11,22 +11,24 @@
 use super::RunResult;
 use crate::assets::{Artwork, Manifest};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::Slider;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize, Palette};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, Window, div, img,
-    px,
+    AnyElement, Context, Entity, Hsla, IntoElement, ParentElement, Role, SharedString, Styled,
+    Window, div, img, px,
 };
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::slider::{Slider, SliderEvent, SliderState};
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::theme::ThemeColor;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_combat::encounter as sim;
 use idleon_combat::encounter::Art;
 use idleon_combat::replay::Recording;
 use idleon_ui::format;
+use idleon_ui::widgets::{
+    Caption, Card, CardHeader, PANEL_GAP, PANEL_PADDING, TEXT_CAPTION, TEXT_MONO, Tone,
+};
 use serde_json::Value as Json;
 
 /// The playback speeds.
@@ -34,12 +36,12 @@ const SPEEDS: [f64; 7] = [0.5, 1.0, 2.0, 5.0, 20.0, 60.0, 300.0];
 
 /// The replay pane: the scene, its controls and what the run cannot draw.
 pub(crate) fn pane(
-    state: &AppState,
+    state: &mut AppState,
     result: &RunResult,
-    window: &Window,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let Some(replay) = result.run.replay.as_ref() else {
         return Card::new()
             .header(
@@ -72,10 +74,10 @@ pub(crate) fn pane(
     let map = sim::map(result.run.map);
     let art = map.map(|map| &map.art);
     let scale = art.map_or(1.0, |art| scale_for(window, art, cx));
-    let colors = cx.theme().colors.clone();
+    let colors = cx.theme().colors;
+    let scrubber = scrubber(state, last, index, window, cx);
 
     let play = entity.clone();
-    let scrub = entity.clone();
     let mut card = Card::new().header(
         CardHeader::new("Replay")
             .description(format!(
@@ -92,13 +94,14 @@ pub(crate) fn pane(
             .flex()
             .flex_wrap()
             .items_center()
-            .gap_2()
-            .px_3()
-            .pt_3()
+            .gap(PANEL_GAP)
+            .px(PANEL_PADDING)
+            .pt(PANEL_PADDING)
             .child(
-                Button::new("combat-replay-play", if playing { "Pause" } else { "Play" })
-                    .variant(ButtonVariant::Primary)
-                    .size(ControlSize::Sm)
+                Button::new("combat-replay-play")
+                    .label(if playing { "Pause" } else { "Play" })
+                    .primary()
+                    .small()
                     .icon(if playing {
                         IconName::Pause
                     } else {
@@ -119,22 +122,18 @@ pub(crate) fn pane(
                     .child(Caption::new("Speed").text_color(muted))
                     .children(SPEEDS.into_iter().map(|value| {
                         let picked = entity.clone();
-                        Button::new(
-                            format!("combat-replay-speed-{}", (value * 10.0) as u32),
-                            format!("{value}×"),
-                        )
-                        .variant(if (speed - value).abs() < f64::EPSILON {
-                            ButtonVariant::Primary
-                        } else {
-                            ButtonVariant::Subtle
-                        })
-                        .size(ControlSize::Sm)
-                        .on_click(move |_event, _window, cx| {
-                            picked.update(cx, |state, cx| {
-                                state.combat_replay_set_speed(value, cx);
-                            });
-                        })
-                        .into_any_element()
+                        let picked_now = (speed - value).abs() < f64::EPSILON;
+                        Button::new(format!("combat-replay-speed-{}", (value * 10.0) as u32))
+                            .label(format!("{value}×"))
+                            .when(picked_now, |button| button.primary())
+                            .when(!picked_now, |button| button.secondary())
+                            .small()
+                            .on_click(move |_event, _window, cx| {
+                                picked.update(cx, |state, cx| {
+                                    state.combat_replay_set_speed(value, cx);
+                                });
+                            })
+                            .into_any_element()
                     })),
             )
             .child(div().flex_1())
@@ -146,7 +145,7 @@ pub(crate) fn pane(
                         "Replay frame {index} of {last} at {}",
                         format::duration(time / 1000.0)
                     ))
-                    .text_size(px(12.0))
+                    .text_size(TEXT_MONO)
                     .text_color(muted)
                     .child(format!(
                         "frame {index}/{last} · {}/{} · {}",
@@ -157,20 +156,16 @@ pub(crate) fn pane(
             ),
     );
     card = card.child(
-        div().px_3().pt_2().child(
-            Slider::new("combat-replay-scrub", index as f64)
-                .range(0.0, last as f64)
-                .step(1.0)
-                .label("Replay position")
-                .on_change(move |value, _window, cx| {
-                    scrub.update(cx, |state, cx| state.combat_replay_seek(value, cx));
-                }),
-        ),
+        div()
+            .id("combat-replay-scrub")
+            .px(PANEL_PADDING)
+            .pt_2()
+            .child(Slider::new(&scrubber).accessibility_label("Replay position")),
     );
     card = card.child(wave_controls(result, time, &entity, muted));
     if let (Some(art), Some(map)) = (art, map) {
         card = card.child(
-            div().p_3().child(
+            div().p(PANEL_PADDING).child(
                 div()
                     .id("combat-replay-scene-frame")
                     .flex()
@@ -182,8 +177,8 @@ pub(crate) fn pane(
     }
     card = card.child(
         div()
-            .px_3()
-            .pb_3()
+            .px(PANEL_PADDING)
+            .pb(PANEL_PADDING)
             .flex()
             .flex_col()
             .gap_1()
@@ -218,7 +213,7 @@ pub(crate) fn pane(
 }
 
 /// The source line: whose replay this is.
-fn source_badge(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
+fn source_badge(result: &RunResult, muted: Hsla) -> AnyElement {
     if let Some(source) = &result.source {
         return div()
             .flex()
@@ -229,9 +224,10 @@ fn source_badge(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
                     .id("combat-replay-source")
                     .role(Role::Label)
                     .aria_label(format!("Killroy replay {}", source.label))
-                    .child(
-                        Badge::new(format!("Killroy replay · {}", source.label)).tone(Tone::Info),
-                    ),
+                    .child(tag(
+                        format!("Killroy replay · {}", source.label),
+                        Tone::Info,
+                    )),
             )
             .child(
                 Caption::new(format!(
@@ -248,7 +244,7 @@ fn source_badge(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
         .id("combat-replay-source")
         .role(Role::Label)
         .aria_label("Encounter run")
-        .child(Badge::new("Encounter run").tone(Tone::Accent))
+        .child(tag("Encounter run".into(), Tone::Accent))
         .into_any_element()
 }
 
@@ -259,13 +255,13 @@ fn source_badge(result: &RunResult, muted: gpui::Hsla) -> AnyElement {
 fn wave_controls(
     result: &RunResult,
     time: f64,
-    entity: &gpui::Entity<AppState>,
-    muted: gpui::Hsla,
+    entity: &Entity<AppState>,
+    muted: Hsla,
 ) -> AnyElement {
     let Some(den) = result.den.as_ref() else {
         return div()
             .id("combat-replay-waves")
-            .px_3()
+            .px(PANEL_PADDING)
             .pt_2()
             .child(
                 Caption::new(
@@ -298,12 +294,13 @@ fn wave_controls(
         .id("combat-replay-waves")
         .flex()
         .items_center()
-        .gap_2()
-        .px_3()
+        .gap(PANEL_GAP)
+        .px(PANEL_PADDING)
         .pt_2()
         .child(
-            Button::new("combat-replay-wave-prev", "Wave")
-                .size(ControlSize::Sm)
+            Button::new("combat-replay-wave-prev")
+                .label("Wave")
+                .small()
                 .icon(IconName::SkipBack)
                 .disabled(previous.is_none())
                 .on_click(move |_event, _window, cx| {
@@ -312,8 +309,9 @@ fn wave_controls(
                 }),
         )
         .child(
-            Button::new("combat-replay-wave-next", "Wave")
-                .size(ControlSize::Sm)
+            Button::new("combat-replay-wave-next")
+                .label("Wave")
+                .small()
                 .icon(IconName::SkipForward)
                 .disabled(next.is_none())
                 .on_click(move |_event, _window, cx| {
@@ -332,7 +330,7 @@ fn wave_controls(
                     "Den wave {current} of {}",
                     den.snapshot.wave as u32
                 ))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .text_color(muted)
                 .child(format!(
                     "Den wave {current} of {} · {} waves recorded",
@@ -346,7 +344,7 @@ fn wave_controls(
 /// The captured Killroy replay: capture one from a finished practice, or open
 /// the stored one, which re-runs its map, duration and seed.
 fn capture_row(result: &RunResult, state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     let capture = cx.entity();
     let open = cx.entity();
     let forget = cx.entity();
@@ -357,14 +355,14 @@ fn capture_row(result: &RunResult, state: &AppState, cx: &mut Context<AppState>)
         .flex()
         .flex_wrap()
         .items_center()
-        .gap_2()
+        .gap(PANEL_GAP)
         .border_t_1()
-        .border_color(cx.theme().colors.border)
-        .px_3()
-        .py_3()
+        .border_color(cx.theme().border)
+        .p(PANEL_PADDING)
         .child(
-            Button::new("combat-replay-capture", "Capture Killroy replay")
-                .size(ControlSize::Sm)
+            Button::new("combat-replay-capture")
+                .label("Capture Killroy replay")
+                .small()
                 .icon(IconName::Save)
                 .disabled(!can_capture || captured.is_some())
                 .on_click(move |_event, _window, cx| {
@@ -382,7 +380,7 @@ fn capture_row(result: &RunResult, state: &AppState, cx: &mut Context<AppState>)
                             "Captured Killroy replay {} on map {}",
                             replay.label, replay.map_idx
                         ))
-                        .text_size(px(12.0))
+                        .text_size(TEXT_MONO)
                         .child(format!(
                             "Captured: {} · map {} · {} s · seed {}",
                             replay.label,
@@ -392,17 +390,19 @@ fn capture_row(result: &RunResult, state: &AppState, cx: &mut Context<AppState>)
                         )),
                 )
                 .child(
-                    Button::new("combat-replay-open", "Open and run")
-                        .variant(ButtonVariant::Primary)
-                        .size(ControlSize::Sm)
+                    Button::new("combat-replay-open")
+                        .label("Open and run")
+                        .primary()
+                        .small()
                         .icon(IconName::Play)
                         .on_click(move |_event, _window, cx| {
                             open.update(cx, |state, cx| state.open_combat_killroy_replay(cx));
                         }),
                 )
                 .child(
-                    Button::new("combat-replay-forget", "Forget")
-                        .size(ControlSize::Sm)
+                    Button::new("combat-replay-forget")
+                        .label("Forget")
+                        .small()
                         .on_click(move |_event, _window, cx| {
                             forget.update(cx, |state, cx| {
                                 state.forget_combat_killroy_replay(cx);
@@ -432,7 +432,7 @@ fn scene(
     replay: &Recording,
     index: usize,
     scale: f32,
-    colors: &Palette,
+    colors: &ThemeColor,
 ) -> AnyElement {
     let manifest = state.assets.clone();
     let width = art.width as f32 * scale;
@@ -455,7 +455,7 @@ fn scene(
         .h(px(height))
         .rounded(px(8.0))
         .overflow_hidden()
-        .bg(colors.bg)
+        .bg(colors.background)
         .border_1()
         .border_color(colors.border);
     if let Some(path) = art
@@ -502,7 +502,7 @@ fn scene(
                     .top(px(node.y as f32 * scale))
                     .w(px((node.length - node.x).max(0.0) as f32 * scale))
                     .h(px(2.0))
-                    .bg(colors.fg_muted.opacity(0.4)),
+                    .bg(colors.muted_foreground.opacity(0.4)),
             );
         }
     }
@@ -530,8 +530,8 @@ fn scene(
                         .bottom_0()
                         .px(px(2.0))
                         .text_size(px(9.0))
-                        .text_color(colors.fg)
-                        .bg(colors.bg.opacity(0.6))
+                        .text_color(colors.foreground)
+                        .bg(colors.background.opacity(0.6))
                         .child("stand-in"),
                 ),
         );
@@ -624,7 +624,7 @@ fn scene(
                     .top(px(-(4.0)))
                     .w(px(w))
                     .h(px(3.0))
-                    .bg(colors.bg.opacity(0.7))
+                    .bg(colors.background.opacity(0.7))
                     .child(
                         div()
                             .w(px(w * (hp / hp_tot).clamp(0.0, 1.0) as f32))
@@ -642,12 +642,51 @@ fn scene(
                 .left_0()
                 .top_0()
                 .p_2()
-                .text_size(px(11.0))
-                .text_color(colors.fg_muted)
+                .text_size(TEXT_CAPTION)
+                .text_color(colors.muted_foreground)
                 .child("The roster is empty."),
         );
     }
     board.into_any_element()
+}
+
+/// The badge naming whose replay this is.
+fn tag(label: String, tone: Tone) -> Tag {
+    Tag::new()
+        .with_variant(tone.into())
+        .outline()
+        .small()
+        .child(label)
+}
+
+/// The scrubber over the stored run's frames, rebuilt only for a run with
+/// another frame count. A drag seeks the playhead; render keeps the thumb on
+/// it while the replay plays.
+fn scrubber(
+    state: &mut AppState,
+    last: usize,
+    index: usize,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> Entity<SliderState> {
+    let controls = &mut state.combat.controls;
+    if controls.scrubber.as_ref().map(|(built, ..)| *built) != Some(last) {
+        let slider = cx.new(|_| SliderState::new().min(0.0).max(last as f32).step(1.0));
+        let seeks = cx.subscribe(&slider, |state, _, event: &SliderEvent, cx| {
+            let (SliderEvent::Change(value) | SliderEvent::Release(value)) = event;
+            state.combat_replay_seek(f64::from(value.end()), cx);
+        });
+        controls.scrubber = Some((last, slider, seeks));
+    }
+    let slider = controls
+        .scrubber
+        .as_ref()
+        .map(|(_, slider, _)| slider.clone())
+        .expect("the scrubber was just built");
+    if slider.read(cx).value().end() as usize != index {
+        slider.update(cx, |slider, cx| slider.set_value(index as f32, window, cx));
+    }
+    slider
 }
 
 fn artwork(manifest: &Manifest, reference: &str) -> Option<std::path::PathBuf> {

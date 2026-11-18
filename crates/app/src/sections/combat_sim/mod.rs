@@ -15,6 +15,7 @@
 //! timeline.
 
 mod actions;
+mod controls;
 
 pub(crate) mod compare;
 pub(crate) mod encounter;
@@ -28,21 +29,22 @@ pub(crate) use encounter::RunResult;
 
 use crate::state::AppState;
 use crate::ui::layout;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::Badge;
-use ely_gpui_component::feedback::Banner;
-use ely_gpui_component::forms::{Choice, Select, TextInput};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::shell::{TabBar, WindowTab};
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use controls::Controls;
 use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Context, Entity, InteractiveElement, IntoElement, ParentElement, Role,
-    SharedString, StatefulInteractiveElement, Styled, Window, div, px,
+    StatefulInteractiveElement, Styled, Window, div,
 };
+use gpui_kit::component::alert::Alert;
+use gpui_kit::component::button::Button;
+use gpui_kit::component::input::InputState;
+use gpui_kit::component::select::Select;
+use gpui_kit::component::tag::Tag;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, Sizable as _};
 use idleon_combat::Loadout;
+use idleon_combat::drops::Snapshot;
 use idleon_save::Save;
+use idleon_ui::widgets::{Caption, Choice, PANEL_GAP, TEXT_CAPTION, TEXT_MONO, Tone};
 use std::collections::BTreeMap;
 
 /// The result tabs: one stored run read six ways.
@@ -104,10 +106,6 @@ impl ResultsTab {
             ResultsTab::Replay => "Replay",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The editor's tabs, matching the setup editor's character tabs.
@@ -150,10 +148,6 @@ impl Tab {
             Tab::Compare => "Compare",
         }
     }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|tab| tab.id() == id)
-    }
 }
 
 /// The section's own state: the working loadout and the named presets.
@@ -168,13 +162,13 @@ pub(crate) struct State {
     /// The named loadouts the project JSON keeps.
     pub(crate) presets: presets::Presets,
     /// The name typed into the preset bar.
-    pub(crate) name: Entity<TextInput>,
+    pub(crate) name: Entity<InputState>,
     /// The talent table's filter.
-    pub(crate) talent_search: Entity<TextInput>,
+    pub(crate) talent_search: Entity<InputState>,
     /// The mechanic overrides the working loadout carries.
     pub(crate) overrides: idleon_combat::State,
     /// The mechanics pane's search field.
-    pub(crate) override_search: Entity<TextInput>,
+    pub(crate) override_search: Entity<InputState>,
     /// The mechanics pane's group filter; empty means every group.
     pub(crate) override_group: String,
     /// Whether the mechanics pane lists only the overridden rows.
@@ -219,14 +213,19 @@ pub(crate) struct State {
     pub(crate) killroy_replay: Option<idleon_combat::replay::KillroyReplay>,
     /// The captured replay the next run answers, stamped onto its result.
     pub(crate) pending_source: Option<idleon_combat::replay::KillroyReplay>,
+    /// The save's card and obol state a run's drops start from, read once per
+    /// save instead of on every frame that asks for the run's options.
+    pub(crate) drops: Snapshot,
+    /// Every character's loadout as the save has it, for the comparison.
+    pub(crate) saved: Vec<Loadout>,
+    pub(crate) controls: Controls,
 }
 
 impl State {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<AppState>) -> Self {
-        let name = crate::ui::text_input("Loadout name", "Loadout name", window, cx);
-        let talent_search = crate::ui::text_input("Find a talent", "Find a talent", window, cx);
-        let override_search =
-            crate::ui::text_input("crystal, drop rate, orb…", "Find a mechanic", window, cx);
+        let name = crate::ui::input_state("Loadout name", window, cx);
+        let talent_search = crate::ui::input_state("Find a talent", window, cx);
+        let override_search = crate::ui::input_state("crystal, drop rate, orb…", window, cx);
         Self {
             loadout: Loadout::empty(),
             character: 0,
@@ -265,6 +264,9 @@ impl State {
             replay_at: None,
             killroy_replay: None,
             pending_source: None,
+            drops: Snapshot::default(),
+            saved: Vec::new(),
+            controls: Controls::new(window, cx),
         }
     }
 
@@ -275,6 +277,10 @@ impl State {
     pub(crate) fn load(&mut self, save: &Save, character: usize) {
         self.character = character;
         self.loadout = Loadout::from_save(save, character);
+        self.drops = idleon_combat::drops::snapshot(save);
+        self.saved = (0..save.character_count())
+            .map(|index| Loadout::from_save(save, index))
+            .collect();
         let (progress, warnings) = idleon_stats::combat::progress(save, character);
         self.progress = progress;
         self.progress_warnings = warnings;
@@ -320,17 +326,17 @@ impl State {
 
     /// The preset name typed into the bar, trimmed.
     pub(crate) fn preset_name(&self, cx: &App) -> String {
-        self.name.read(cx).text().trim().to_string()
+        self.name.read(cx).value().trim().to_string()
     }
 
     /// The talent table's query.
     pub(crate) fn talent_query(&self, cx: &App) -> String {
-        self.talent_search.read(cx).text().to_string()
+        self.talent_search.read(cx).value().to_string()
     }
 
     /// The mechanics pane's query.
     pub(crate) fn override_query(&self, cx: &App) -> String {
-        self.override_search.read(cx).text().to_string()
+        self.override_search.read(cx).value().to_string()
     }
 }
 
@@ -346,41 +352,40 @@ pub(crate) fn view(
     let issues = state.combat.loadout.issues();
     let changed = state.combat.loadout.changed();
     let missing = state.combat.loadout.missing.clone();
-    let muted = cx.theme().colors.fg_muted;
-    let accent = cx.theme().colors.accent;
+    let muted = cx.theme().muted_foreground;
+    let accent = cx.theme().primary;
     let tab = state.combat.tab;
     let entity = cx.entity();
     let select_tab = entity.clone();
     let reset = entity.clone();
-    let reset_enabled = changed > 0;
 
-    let tabs = TabBar::new("combat-tabs")
-        .selected(SharedString::from(tab.id()))
-        .tab(WindowTab::new(Tab::Gear.id(), Tab::Gear.label()))
-        .tab(WindowTab::new(Tab::Talents.id(), Tab::Talents.label()))
-        .tab(WindowTab::new(Tab::Mechanics.id(), Tab::Mechanics.label()))
-        .tab(WindowTab::new(Tab::Encounter.id(), Tab::Encounter.label()))
-        .tab(WindowTab::new(Tab::Compare.id(), Tab::Compare.label()))
-        .on_select(move |id, _window, cx| {
-            if let Some(tab) = Tab::from_id(id.as_ref()) {
-                select_tab.update(cx, |state, cx| state.set_combat_tab(tab, cx));
-            }
-        });
+    let selected = Tab::ALL
+        .iter()
+        .position(|each| *each == tab)
+        .unwrap_or_default();
+    let tabs = layout::tab_bar(
+        "combat-tabs",
+        Tab::ALL.map(|tab| (tab.id().into(), tab.label().into())),
+        selected,
+        move |index, _window, cx| {
+            select_tab.update(cx, |state, cx| state.set_combat_tab(Tab::ALL[index], cx));
+        },
+    );
     let header = div()
         .id("combat-header")
         .flex()
         .flex_wrap()
         .items_center()
         .gap_3()
-        .child(tabs)
-        .child(character_select(state, cx))
+        .child(div().flex_none().child(tabs))
+        .child(character_select(state, window, cx))
         .child(div().flex_1())
         .child(
             div()
                 .id("combat-summary")
                 .role(Role::Label)
                 .aria_label(summary.clone())
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .text_color(accent)
                 .child(summary),
         )
@@ -389,20 +394,24 @@ pub(crate) fn view(
                 .id("combat-changed")
                 .role(Role::Label)
                 .aria_label(format!("{changed} changes vs the save"))
-                .text_size(px(12.0))
+                .text_size(TEXT_MONO)
                 .text_color(muted)
                 .child(format!("{changed} change(s)")),
         )
         .when(!issues.is_empty(), |header| {
             header.child(
-                Badge::new(format!("{} issue(s)", issues.len()))
-                    .tone(ely_gpui_component::data_display::Tone::Danger),
+                Tag::new()
+                    .with_variant(Tone::Danger.into())
+                    .outline()
+                    .small()
+                    .child(format!("{} issue(s)", issues.len())),
             )
         })
         .child(
-            Button::new("combat-reset", "Reset")
-                .size(ControlSize::Sm)
-                .disabled(!reset_enabled)
+            Button::new("combat-reset")
+                .label("Reset")
+                .small()
+                .disabled(changed == 0)
                 .on_click(move |_event, _window, cx| {
                     reset.update(cx, |state, cx| state.reset_combat_loadout(cx));
                 }),
@@ -423,15 +432,15 @@ pub(crate) fn view(
         })
         .when(!missing.is_empty(), |page| {
             page.child(
-                Banner::new(
+                Alert::new(
                     "combat-missing",
-                    Severity::Warning,
                     format!(
                         "This character carries no {}; those slots stay empty.",
                         missing.join(", ")
                     ),
                 )
-                .into_any_element(),
+                .with_variant(Tone::Warning.into())
+                .banner(),
             )
         })
         .when(!issues.is_empty(), |page| {
@@ -444,18 +453,22 @@ pub(crate) fn view(
                     .flex()
                     .flex_col()
                     .gap_1()
-                    .child(Banner::new(
-                        "combat-issues-banner",
-                        Severity::Warning,
-                        format!(
-                            "{} item(s) need a look before the simulator reads them.",
-                            issues.len()
-                        ),
-                    ))
+                    .child(
+                        Alert::new(
+                            "combat-issues-banner",
+                            format!(
+                                "{} item(s) need a look before the simulator reads them.",
+                                issues.len()
+                            ),
+                        )
+                        .with_variant(Tone::Warning.into())
+                        .banner(),
+                    )
                     .children(
-                        details.into_iter().take(6).map(|detail| {
-                            div().text_size(px(11.0)).text_color(muted).child(detail)
-                        }),
+                        details
+                            .into_iter()
+                            .take(6)
+                            .map(|detail| Caption::new(detail).text_color(muted)),
                     ),
             )
         })
@@ -466,42 +479,37 @@ pub(crate) fn view(
             Tab::Talents => talents::pane(state, window, cx),
             Tab::Mechanics => overrides::pane(state, window, cx),
             Tab::Encounter => encounter::pane(state, window, cx),
-            Tab::Compare => compare::pane(state, cx),
+            Tab::Compare => compare::pane(state, window, cx),
         })
         .into_any_element()
 }
 
-/// The character picker: one option per save character.
-fn character_select(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+/// The character picker: one option per save character, its label beside it
+/// so it lines up with the tabs.
+fn character_select(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
     let characters = character_choices(state);
     let has_characters = !characters.is_empty();
-    let entity = cx.entity();
+    let select = &state.combat.controls.character;
+    select.show(characters, Some(&state.combat.character), window, cx);
     div()
         .id("combat-character-row")
         .flex()
-        .items_end()
-        .gap_2()
+        .items_center()
+        .gap(PANEL_GAP)
+        .child(Caption::new("Character").text_color(muted))
         .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .child(Caption::new("Character").text_color(muted))
-                .child(
-                    Select::new("combat-character", characters)
-                        .label("Character")
-                        .placeholder("No characters")
-                        .selected(state.combat.character.to_string())
-                        .disabled(!has_characters)
-                        .on_change(move |value, _window, cx| {
-                            if let Ok(index) = value.parse::<usize>() {
-                                entity.update(cx, |state, cx| {
-                                    state.set_combat_character(index, cx);
-                                });
-                            }
-                        }),
-                ),
+            Select::new(select.state())
+                .id("combat-character")
+                .accessibility_label("Character")
+                .placeholder("No characters")
+                .disabled(!has_characters)
+                .small()
+                .w(gpui::px(180.0)),
         )
         .when(has_characters, |row| {
             row.child(
@@ -509,7 +517,7 @@ fn character_select(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElem
                     .id("combat-class")
                     .role(Role::Label)
                     .aria_label(state.combat.loadout.character.class.clone())
-                    .text_size(px(12.0))
+                    .text_size(TEXT_CAPTION)
                     .text_color(muted)
                     .child(format!(
                         "{} · level {}",
@@ -521,10 +529,10 @@ fn character_select(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElem
 }
 
 /// One `Choice` per character the save carries.
-fn character_choices(state: &AppState) -> Vec<Choice> {
+fn character_choices(state: &AppState) -> Vec<Choice<usize>> {
     match &state.save {
         Some(save) => (0..save.character_count())
-            .map(|index| Choice::new(index.to_string(), save.character_name(index)))
+            .map(|index| Choice::new(index, save.character_name(index)))
             .collect(),
         None => Vec::new(),
     }

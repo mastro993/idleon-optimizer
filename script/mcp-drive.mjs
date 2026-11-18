@@ -472,8 +472,11 @@ try {
     String(labelOf(nodes, 'killroy-encounter-0')),
   );
   check('the rotation statistics are exposed', has(nodes, 'killroy-families') && has(nodes, 'killroy-notes'));
+  // The kit number field's step buttons carry no unique id; it steps with Down
+  // while focused.
+  await call('click_element', { id: 'killroy-weeks' });
   for (let press = 12; press > 2; press -= 1) {
-    await call('click_element', { id: 'killroy-weeks-down' });
+    await call('keyboard', { keystroke: 'down' });
     await new Promise((resolve) => setTimeout(resolve, 120));
   }
   await waitFor(

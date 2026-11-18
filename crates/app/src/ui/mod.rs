@@ -18,10 +18,12 @@ pub(crate) mod views;
 use crate::state::AppState;
 use ely_gpui_component::forms::TextInput;
 use gpui::{
-    Action, App, AppContext as _, Context, Entity, IntoElement, KeyBinding,
-    KeyBindingContextPredicate, Render, Window,
+    Action, App, AppContext as _, Context, Div, ElementId, Entity, InteractiveElement as _,
+    IntoElement, KeyBinding, KeyBindingContextPredicate, ParentElement as _, Render, SharedString,
+    Stateful, StatefulInteractiveElement as _, Styled as _, Window, div, px,
 };
-use gpui_kit::component::input::InputState;
+use gpui_kit::component::Sizable as _;
+use gpui_kit::component::input::{InputState, NumberInput};
 use idleon_ui::formula::FormulaTree;
 use std::rc::Rc;
 
@@ -83,4 +85,22 @@ pub(crate) fn input_state(
     cx: &mut App,
 ) -> Entity<InputState> {
     cx.new(|cx| InputState::new(window, cx).placeholder(placeholder))
+}
+
+/// A small kit number field under the element id the harnesses press.
+/// `NumberInput` takes no id, so the wrapper carries it, and a press on the
+/// wrapper focuses the field, where Up and Down step it.
+pub(crate) fn number_field(
+    id: impl Into<ElementId>,
+    field: &Entity<InputState>,
+    label: impl Into<SharedString>,
+) -> Stateful<Div> {
+    let focus = field.clone();
+    div()
+        .id(id)
+        .w(px(110.0))
+        .on_click(move |_event, window, cx| {
+            focus.update(cx, |field, cx| field.focus(window, cx));
+        })
+        .child(NumberInput::new(field).accessibility_label(label).small())
 }
