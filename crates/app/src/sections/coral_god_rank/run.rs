@@ -4,10 +4,9 @@
 //! like every other optimizer and reports each beam step.
 
 use crate::state::AppState;
-use gpui::{App, Context};
+use gpui::Context;
 use idleon_common::Control;
-use idleon_coral::{Inputs, Plan, plan_with};
-use idleon_ui::runner::TaskState;
+use idleon_coral::{Inputs, plan_with};
 
 impl AppState {
     /// The inputs a run started now would use, or why it cannot run.
@@ -19,11 +18,6 @@ impl AppState {
         } else {
             Err(validation.errors.join(" "))
         }
-    }
-
-    /// The run in flight, its progress and its result against the live inputs.
-    pub(crate) fn coral_task(&self, cx: &App) -> TaskState<Plan> {
-        self.coral_run.read(cx).state(&self.coral.inputs)
     }
 
     /// Run the beam search off the UI thread; a stored plan is left as it was.

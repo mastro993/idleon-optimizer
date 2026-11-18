@@ -6,82 +6,86 @@
 //! runs through the shared [`idleon_ui::runner::TaskRunner`], so its progress
 //! and cancel chrome match every other long job.
 
+use super::controls::cached;
 use super::overview::{num, odds, time};
-use super::planner::{afford, desired_select, eta, flag, goal_select};
-use super::state::STEP_CHOICES;
+use super::planner::{
+    affordable, desired_select, eta, flag, goal_detail_label, goal_select, steps_select,
+};
+use super::table::{number, table, tag, text};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Choice, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::table::TableRow;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, h_flex, v_flex};
 use idleon_fountain as fountain;
 use idleon_fountain::{Fountain, Goal, MarblePlan, MarbleRow};
+use idleon_ui::widgets::{Caption, Card, CardHeader, PANEL_GAP, Tone};
 
 /// The Marble pane: the marble planner and the marble optimizer.
-pub(super) fn marble_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(fountain) = state.fountain.clone() else {
+pub(super) fn marble_pane(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let Some(fountain) = state.fountain.as_ref() else {
         return div().into_any_element();
     };
-    let rows = fountain.marble_planner(state.fountain_state.marble_planner_request());
-    div()
+    let request = state.fountain_state.marble_planner_request();
+    let rows = cached(
+        &mut state.fountain_controls.marble,
+        (state.save_revision, request),
+        || fountain.marble_planner(request),
+    );
+    v_flex()
         .id("fountain-marble")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .child(planner_card(&fountain, &rows, state, cx))
-        .child(optimizer_card(state, cx))
+        .gap(PANEL_GAP)
+        .child(planner_card(state, fountain, &rows, window, cx))
+        .child(optimizer_card(state, window, cx))
         .into_any_element()
 }
 
 /// The Marble Planner: its controls and the ranked next marble levels.
 fn planner_card(
+    state: &AppState,
     fountain: &Fountain,
     rows: &[MarbleRow],
-    state: &mut AppState,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let goal = state.fountain_state.marble_goal;
-    let desired = state.fountain_state.marble_desired;
-    let affordable = state.fountain_state.marble_affordable;
-    let entity = cx.entity();
-    let mut controls = div()
-        .flex()
-        .flex_wrap()
-        .items_center()
-        .gap_3()
-        .child(goal_select(
-            "fountain-marble-goal",
-            goal,
-            entity.clone(),
-            |state, goal| state.marble_goal = goal,
-        ));
+    let muted = cx.theme().muted_foreground;
+    let selections = &state.fountain_state;
+    let controls = &state.fountain_controls;
+    let goal = selections.marble_goal;
+    let mut row = h_flex().flex_wrap().gap_3().child(goal_select(
+        "fountain-marble-goal",
+        &controls.marble_goal,
+        goal,
+        window,
+        cx,
+    ));
     if goal == Goal::Optimal {
-        controls = controls.child(desired_select(
+        row = row.child(desired_select(
             "fountain-marble-desired",
-            desired,
+            &controls.marble_desired,
+            selections.marble_desired,
             fountain.desired_currency(),
-            entity.clone(),
-            |state, desired| state.marble_desired = desired,
+            window,
+            cx,
         ));
     }
-    controls = controls.child(flag(
+    row = row.child(flag(
         "fountain-marble-affordable",
         "Affordable only",
-        affordable,
-        entity,
+        selections.marble_affordable,
+        false,
+        cx.entity(),
         |state, on| state.marble_affordable = on,
     ));
     let body = if rows.is_empty() {
         div()
             .id("fountain-marble-planner-empty")
-            .p_3()
             .child(Caption::new(
                 "No marble upgrades affect this goal, or none are affordable.",
             ))
@@ -99,13 +103,10 @@ fn planner_card(
                 .action(Caption::new(format!("{} candidates", rows.len())).text_color(muted)),
         )
         .child(
-            div()
+            v_flex()
                 .id("fountain-marble-planner-card")
-                .flex()
-                .flex_col()
                 .gap_3()
-                .p_3()
-                .child(controls)
+                .child(row)
                 .child(body)
                 .child(Caption::new(
                     "A marble level multiplies that upgrade's bonus by 1.5 + 0.5 × its marble \
@@ -123,60 +124,42 @@ fn planner_table(rows: &[MarbleRow], goal: Goal) -> AnyElement {
         rows[0].name,
         fountain::water_names()[rows[0].water]
     );
-    let mut table = Table::new([
-        "#",
-        "Water",
-        "Upgrade",
-        "Marble Lv",
-        "Cost",
-        "Time to Afford",
-        "Gain",
-        "% Gain",
-        marble_detail_label(goal),
-        "Efficiency",
-        "Affordable",
-    ]);
-    for (rank, row) in rows.iter().take(30).enumerate() {
-        table = table.row([
-            div().child((rank + 1).to_string()).into_any_element(),
-            div()
-                .child(fountain::water_names()[row.water].clone())
-                .into_any_element(),
-            div().child(row.name).into_any_element(),
-            div()
-                .child(format!(
+    let table = table(
+        &[
+            ("#", true),
+            ("Water", false),
+            ("Upgrade", false),
+            ("Marble Lv", true),
+            ("Cost", true),
+            ("Time to Afford", true),
+            ("Gain", true),
+            ("% Gain", true),
+            (goal_detail_label(goal), false),
+            ("Efficiency", true),
+            ("Affordable", false),
+        ],
+        rows.iter().take(30).enumerate().map(|(rank, row)| {
+            TableRow::new()
+                .id(("fountain-marble-planner-row", rank))
+                .child(number((rank + 1).to_string()))
+                .child(text(fountain::water_names()[row.water].clone()))
+                .child(text(row.name))
+                .child(number(format!(
                     "{} → {}",
                     num(row.marble_level),
                     num(row.marble_level + 1.0)
-                ))
-                .into_any_element(),
-            div()
-                .child(format!("{} marble", num(row.cost)))
-                .into_any_element(),
-            afford(row.seconds_to_afford),
-            div()
-                .child(format!("+{}", num(row.delta)))
-                .into_any_element(),
-            div()
-                .child(format!("+{:.3}%", row.pct_gain))
-                .into_any_element(),
-            div().child(marble_detail(row, goal)).into_any_element(),
-            div()
-                .child(format!("{:.3e}", row.efficiency))
-                .into_any_element(),
-            div()
-                .child(if row.affordable {
-                    Badge::new("Yes").tone(Tone::Success).into_any_element()
-                } else {
-                    Badge::new("No").tone(Tone::Warning).into_any_element()
-                })
-                .into_any_element(),
-        ]);
-    }
-    div()
+                )))
+                .child(number(format!("{} marble", num(row.cost))))
+                .child(number(eta(row.seconds_to_afford)))
+                .child(number(format!("+{}", num(row.delta))))
+                .child(number(format!("+{:.3}%", row.pct_gain)))
+                .child(text(marble_detail(row, goal)))
+                .child(number(format!("{:.3e}", row.efficiency)))
+                .child(text(affordable(row.affordable)))
+        }),
+    );
+    v_flex()
         .id("fountain-marble-planner-table")
-        .flex()
-        .flex_col()
         .gap_2()
         .child(table)
         .child(
@@ -191,18 +174,6 @@ fn planner_table(rows: &[MarbleRow], goal: Goal) -> AnyElement {
              cavern, so a goal the marble level does not move leaves no row.",
         ))
         .into_any_element()
-}
-
-/// The goal's extra column header.
-fn marble_detail_label(goal: Goal) -> &'static str {
-    match goal {
-        Goal::Fill => "Coin / Marble / Duck Δ",
-        Goal::Royal => "Royal Δ",
-        Goal::Duck => "Duck Δ",
-        Goal::Lucky => "Lucky Δ",
-        Goal::Optimal => "Speed / Value Δ",
-        _ => "Goal Δ",
-    }
 }
 
 /// The goal's own reading for one marble candidate.
@@ -238,82 +209,73 @@ fn marble_detail(row: &MarbleRow, goal: Goal) -> String {
 }
 
 /// The Marble Optimizer: its controls, the run chrome and the stored plan.
-fn optimizer_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let task = state.fountain_marble_plan_task(cx);
-    let goal = state.fountain_state.marble_optimizer_goal;
-    let steps = state.fountain_state.marble_optimizer_steps;
-    let affordable = state.fountain_state.marble_optimizer_affordable;
-    let running = task.running;
-    let muted = cx.theme().colors.fg_muted;
+fn optimizer_card(state: &AppState, window: &mut Window, cx: &mut Context<AppState>) -> AnyElement {
+    let runner = state.fountain_marble_plan.read(cx);
+    let running = runner.running();
+    let cancelled = runner.cancelled();
+    let progress = runner.progress().cloned();
+    let stale = runner.is_stale(&state.fountain_marble_inputs());
+    // The stored plan drawn is the one the runner still holds.
+    let plan = runner
+        .result()
+        .and(state.fountain_controls.marble_plan.clone());
+    let selections = &state.fountain_state;
+    let controls = &state.fountain_controls;
+    let muted = cx.theme().muted_foreground;
     let entity = cx.entity();
-    let run_entity = cx.entity();
-    let cancel_entity = cx.entity();
-    let run = Button::new(
-        "run-fountain-marble-plan",
-        if running {
+    let run_entity = entity.clone();
+    let cancel_entity = entity.clone();
+    let run = Button::new("run-fountain-marble-plan")
+        .label(if running {
             "Optimizing…"
         } else {
             "Optimize marble"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(running || !state.save_loaded)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_fountain_marble_plan(cx));
-    });
-    let cancel = Button::new("cancel-fountain-marble-plan", "Cancel")
+        })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(running || !state.save_loaded)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_fountain_marble_plan(cx));
+        });
+    let cancel = Button::new("cancel-fountain-marble-plan")
+        .label("Cancel")
         .icon(IconName::X)
         .disabled(!running)
         .on_click(move |_event, _window, cx| {
             cancel_entity.update(cx, |state, cx| state.cancel_fountain_marble_plan(cx));
         });
-    let steps_picker = Select::new(
-        "fountain-marble-optimizer-steps",
-        STEP_CHOICES.map(|count| Choice::new(count.to_string(), count.to_string())),
-    )
-    .label("Max steps")
-    .selected(steps.to_string())
-    .size(ControlSize::Sm)
-    .on_change({
-        let entity = entity.clone();
-        move |value, _window, cx| {
-            if let Ok(count) = value.parse::<usize>() {
-                entity.update(cx, |state, cx| {
-                    state.edit_fountain_state(cx, |state| state.marble_optimizer_steps = count);
-                });
-            }
-        }
-    });
-    let controls = div()
+    let row = h_flex()
         .id("fountain-marble-optimizer-controls")
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
         .child(goal_select(
             "fountain-marble-optimizer-goal",
-            goal,
-            entity.clone(),
-            |state, goal| state.marble_optimizer_goal = goal,
+            &controls.marble_optimizer_goal,
+            selections.marble_optimizer_goal,
+            window,
+            cx,
         ))
-        .child(steps_picker)
+        .child(steps_select(
+            "fountain-marble-optimizer-steps",
+            &controls.marble_optimizer_steps,
+            selections.marble_optimizer_steps,
+            window,
+            cx,
+        ))
         .child(flag(
             "fountain-marble-optimizer-affordable",
             "Affordable only",
-            affordable,
-            entity,
+            selections.marble_optimizer_affordable,
+            false,
+            entity.clone(),
             |state, on| state.marble_optimizer_affordable = on,
         ))
         .child(run)
         .child(cancel);
-    let mut body = div()
+    let mut body = v_flex()
         .id("fountain-marble-optimizer")
-        .flex()
-        .flex_col()
         .gap_3()
-        .p_3()
-        .child(controls)
+        .child(row)
         .child(
             Caption::new(
                 "Each purchase is the best gain per marble at the levels the plan has reached, \
@@ -323,26 +285,25 @@ fn optimizer_card(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElemen
             )
             .text_color(muted),
         );
-    if running && let Some(progress) = task.progress.clone() {
-        let cancel = cx.entity();
+    if running && let Some(progress) = progress {
         body = body.child(idleon_ui::run_chrome::progress_card(
             "fountain-marble-plan",
             "Planning the marble levels",
             "Runs off the UI thread; cancelling keeps the plan this run replaced.",
             progress,
             move |_window, cx| {
-                cancel.update(cx, |state, cx| state.cancel_fountain_marble_plan(cx));
+                entity.update(cx, |state, cx| state.cancel_fountain_marble_plan(cx));
             },
         ));
     }
-    if task.cancelled {
+    if cancelled {
         body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "fountain-marble-plan-cancelled",
-            task.result.is_some(),
+            plan.is_some(),
         ));
     }
-    if let Some(plan) = task.result.clone() {
-        body = body.child(plan_result(&plan, task.stale));
+    if let Some(plan) = plan {
+        body = body.child(plan_result(&plan, stale));
     }
     Card::new()
         .header(
@@ -371,64 +332,53 @@ fn plan_result(plan: &MarblePlan, stale: bool) -> AnyElement {
     }
     if plan.steps.is_empty() {
         return card
-            .child(
-                div()
-                    .id("fountain-marble-plan-empty")
-                    .p_3()
-                    .child(Caption::new(
-                        "No affordable marble upgrades affect this goal.",
-                    )),
-            )
+            .child(div().id("fountain-marble-plan-empty").child(Caption::new(
+                "No affordable marble upgrades affect this goal.",
+            )))
             .into_any_element();
     }
-    let summary = div()
+    let summary = h_flex()
         .id("fountain-marble-plan-result")
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
-        .child(Badge::new(format!("{} marble levels", plan.steps.len())).tone(Tone::Info))
+        .child(tag(
+            format!("{} marble levels", plan.steps.len()),
+            Tone::Info,
+        ))
         .child(Caption::new(format!(
             "Value {} → {} ({:+.1}%)",
             num(plan.start_value),
             num(plan.end_value),
             plan.gain_pct
         )));
-    let mut groups = Table::new([
-        "Water",
-        "Upgrade",
-        "Levels",
-        "From",
-        "To",
-        "Total Cost",
-        "Cumulative ETA",
-    ]);
-    for group in &plan.groups {
-        groups = groups.row([
-            div()
-                .child(fountain::water_names()[group.water].clone())
-                .into_any_element(),
-            div().child(group.name).into_any_element(),
-            div().child(group.count.to_string()).into_any_element(),
-            div().child(num(group.start_level)).into_any_element(),
-            div().child(num(group.end_level)).into_any_element(),
-            div()
-                .child(format!("{} marble", num(group.total_cost)))
-                .into_any_element(),
-            eta(group.cumulative_seconds),
-        ]);
-    }
-    let mut body = div()
-        .flex()
-        .flex_col()
+    let groups = table(
+        &[
+            ("Water", false),
+            ("Upgrade", false),
+            ("Levels", true),
+            ("From", true),
+            ("To", true),
+            ("Total Cost", true),
+            ("Cumulative ETA", true),
+        ],
+        plan.groups.iter().enumerate().map(|(index, group)| {
+            TableRow::new()
+                .id(("fountain-marble-plan-group", index))
+                .child(text(fountain::water_names()[group.water].clone()))
+                .child(text(group.name))
+                .child(number(group.count.to_string()))
+                .child(number(num(group.start_level)))
+                .child(number(num(group.end_level)))
+                .child(number(format!("{} marble", num(group.total_cost))))
+                .child(number(eta(group.cumulative_seconds)))
+        }),
+    );
+    let mut body = v_flex()
         .gap_3()
-        .p_3()
         .child(summary)
         .child(
-            div()
+            v_flex()
                 .id("fountain-marble-plan-groups")
-                .flex()
-                .flex_col()
                 .gap_2()
                 .child(Caption::new("Purchases, grouped by upgrade"))
                 .child(groups),

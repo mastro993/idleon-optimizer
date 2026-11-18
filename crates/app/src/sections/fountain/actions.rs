@@ -3,9 +3,8 @@
 use crate::sections;
 use crate::sections::fountain::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, State};
 use crate::state::AppState;
-use gpui::{App, Context};
-use idleon_fountain::{Fountain, MarblePlan, MarbleRequest, OptimizerPlan, SimRequest, SimResult};
-use idleon_ui::runner::TaskState;
+use gpui::Context;
+use idleon_fountain::{Fountain, MarbleRequest, SimRequest};
 
 /// What a marble plan was produced from; a change marks it stale.
 #[derive(Clone, Debug, PartialEq)]
@@ -69,13 +68,6 @@ impl AppState {
         cx.notify();
     }
 
-    /// The plan run's progress, result and staleness for the current controls.
-    pub(crate) fn fountain_plan_task(&self, cx: &App) -> TaskState<OptimizerPlan> {
-        self.fountain_plan
-            .read(cx)
-            .state(&self.fountain_state.plan_request())
-    }
-
     /// Optimize the fountain upgrades off the UI thread through the shared runner.
     pub(crate) fn run_fountain_plan(&mut self, cx: &mut Context<Self>) {
         let Some(fountain) = self.fountain.clone() else {
@@ -99,13 +91,6 @@ impl AppState {
             "Cancelling the fountain plan…",
             cx,
         );
-    }
-
-    /// The marble plan's progress, result and staleness for the current controls.
-    pub(crate) fn fountain_marble_plan_task(&self, cx: &App) -> TaskState<MarblePlan> {
-        self.fountain_marble_plan
-            .read(cx)
-            .state(&self.fountain_marble_inputs())
     }
 
     /// The inputs a marble plan started now would read.
@@ -149,13 +134,6 @@ impl AppState {
             SIM_DEFAULT_HOURS
         };
         cx.notify();
-    }
-
-    /// The simulated run's progress, result and staleness for the current controls.
-    pub(crate) fn fountain_sim_task(&self, cx: &App) -> TaskState<SimResult> {
-        self.fountain_sim
-            .read(cx)
-            .state(&self.fountain_sim_inputs())
     }
 
     /// The inputs a simulation started now would read.

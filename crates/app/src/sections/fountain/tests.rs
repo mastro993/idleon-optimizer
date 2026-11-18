@@ -1,9 +1,10 @@
-//! The section's selection rules: the tab ids and what a new cavern keeps.
+//! The section's selection rules: what a new cavern keeps and what each run asks.
 //!
 //! The numbers themselves are pinned in `crates/fountain/tests/fountain.rs`;
 //! these cover what the section decides on top of them.
 
-use super::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, STEP_CHOICES, State, Tab};
+use super::state::STEP_CHOICES;
+use super::{SIM_DEFAULT_HOURS, SIM_MAX_HOURS, SIM_MIN_HOURS, State, Tab};
 use idleon_fountain::{Fountain, Goal};
 use idleon_import::import;
 use serde_json::{Value, json};
@@ -18,17 +19,6 @@ fn fountain() -> Fountain {
         .expect("the save imports")
         .fountain
         .expect("the save carries Holes")
-}
-
-#[test]
-fn the_tab_ids_match_the_strip() {
-    for tab in Tab::ALL {
-        assert_eq!(Tab::from_id(tab.id()), Some(tab));
-    }
-    assert_eq!(Tab::from_id("planner"), Some(Tab::Planner));
-    assert_eq!(Tab::from_id("marble"), Some(Tab::Marble));
-    assert_eq!(Tab::from_id("sim"), Some(Tab::Sim));
-    assert_eq!(Tab::default(), Tab::Overview);
 }
 
 #[test]

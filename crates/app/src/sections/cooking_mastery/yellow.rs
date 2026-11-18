@@ -7,68 +7,68 @@
 //! Planning itself is [`idleon_cooking_mastery::Yellow::allocation`]; this
 //! module only draws it.
 
-use super::whole;
+use super::controls::Derived;
+use super::{number_cell, table, text_cell, whole};
 use crate::state::AppState;
-use ely_gpui_component::feedback::Callout;
-use ely_gpui_component::forms::{Choice, Select, Stepper};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::Severity;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
+use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, SharedString, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div, px};
+use gpui_kit::component::select::Select;
+use gpui_kit::component::table::TableRow;
+use gpui_kit::component::{ActiveTheme as _, Sizable as _, h_flex, v_flex};
 use idleon_cooking_mastery::{Allocation, MealRow, Yellow};
+use idleon_ui::widgets::{
+    Callout, Caption, Card, CardHeader, PANEL_GAP, TEXT_KPI, Tone, show_number,
+};
 
 /// The pane: the controls, the plan's headline, its table and the context.
-pub(crate) fn pane(state: &AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let Some(yellow) = state.yellow.clone() else {
+pub(crate) fn pane(
+    state: &AppState,
+    derived: &Derived,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let Some(yellow) = &state.yellow else {
         return super::prompt(cx);
     };
-    let muted = cx.theme().colors.fg_muted;
+    let muted = cx.theme().muted_foreground;
     // No plan means no goal has two leveled meals, the page's own notice.
-    let Some(plan) = state.mastery_plan.yellow_plan(&yellow) else {
-        return no_goals(&yellow, muted);
+    let Some(plan) = &derived.yellow else {
+        return no_goals(yellow, muted);
     };
     let card = Card::new()
         .header(CardHeader::new("Yellow Point Allocator").description(
             "Every yellow point spent across the meals of one goal, where one more point \
                  buys the most.",
         ))
-        .child(controls(&yellow, &plan, cx))
-        .child(div().p_3().child(headline(&plan, &yellow, muted)))
-        .child(sources(&plan, muted))
-        .child(div().px_3().child(table(&plan)))
-        .child(notes(&plan, &yellow, muted));
-    div()
+        .child(controls(state, yellow, derived, plan, window, cx))
+        .child(headline(plan, yellow, muted))
+        .child(sources(plan, muted))
+        .child(rows(plan))
+        .child(notes(plan, yellow, muted));
+    v_flex()
         .id("cooking-mastery-yellow-pane")
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
+        .gap(PANEL_GAP)
         .child(card)
         .into_any_element()
 }
 
 /// The page's notice when no goal has two leveled meals to compare.
 fn no_goals(yellow: &Yellow, muted: gpui::Hsla) -> AnyElement {
-    div()
+    v_flex()
         .id("cooking-mastery-yellow")
         .role(Role::Label)
         .aria_label(format!(
             "No goals have at least two leveled meals to compare · {} yellow points available",
             whole(yellow.budget)
         ))
-        .flex()
-        .flex_col()
-        .gap_3()
-        .p_3()
+        .gap(PANEL_GAP)
         .child(
-            Callout::new(Severity::Info)
-                .title("No goals have at least two leveled meals to compare")
-                .child(
-                    Caption::new("Level up meals in these categories first.").into_any_element(),
-                ),
+            Callout::new(
+                Tone::Info,
+                "No goals have at least two leveled meals to compare",
+            )
+            .child(Caption::new("Level up meals in these categories first.")),
         )
         .child(
             Caption::new(format!(
@@ -82,93 +82,77 @@ fn no_goals(yellow: &Yellow, muted: gpui::Hsla) -> AnyElement {
 }
 
 /// The budget, goal and character controls; every change re-plans.
-fn controls(yellow: &Yellow, plan: &Allocation, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-
-    let budget_entity = cx.entity();
-    let budget = Stepper::new("cooking-mastery-yellow-budget", plan.spent)
-        .range(0.0, plan.available)
-        .on_change(move |value, _window, cx| {
-            let entity = budget_entity.clone();
-            entity.update(cx, |state, cx| {
-                state.mastery_plan.set_yellow_budget(value);
-                cx.notify();
-            });
-        });
-
-    let goal_entity = cx.entity();
-    let goal = Select::new(
-        "cooking-mastery-yellow-goal",
-        yellow
-            .goals()
-            .into_iter()
-            .map(|goal| Choice::new(goal.id, goal.name)),
-    )
-    .label("Goal")
-    .selected(plan.goal.id)
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        let entity = goal_entity.clone();
-        let value = value.to_string();
-        entity.update(cx, |state, cx| {
-            state.mastery_plan.set_yellow_goal(&value);
-            cx.notify();
-        });
-    });
-
-    let character: Option<AnyElement> = (!yellow.characters.is_empty()).then(|| {
-        let character_entity = cx.entity();
-        div()
-            .flex()
-            .flex_col()
+fn controls(
+    state: &AppState,
+    yellow: &Yellow,
+    derived: &Derived,
+    plan: &Allocation,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let muted = cx.theme().muted_foreground;
+    let controls = &state.mastery_controls;
+    show_number(&controls.yellow_budget, plan.spent, 0, window, cx);
+    controls.yellow_goal.show(
+        derived.yellow_goals.clone(),
+        Some(&plan.goal.id),
+        window,
+        cx,
+    );
+    let labeled = |label: &'static str, control: AnyElement| {
+        v_flex()
             .gap_1()
-            .child(Caption::new("Character Context").text_color(muted))
-            .child(
-                Select::new(
-                    "cooking-mastery-yellow-character",
-                    yellow
-                        .characters
-                        .iter()
-                        .enumerate()
-                        .map(|(index, character)| {
-                            Choice::new(index.to_string(), character.name.clone())
-                        }),
-                )
-                .selected(plan.character.to_string())
-                .size(ControlSize::Sm)
-                .on_change(move |value, _window, cx| {
-                    let entity = character_entity.clone();
-                    let index = value.to_string().parse::<usize>().unwrap_or(0);
-                    entity.update(cx, |state, cx| {
-                        state.mastery_plan.set_character(index);
-                        cx.notify();
-                    });
-                })
-                .into_any_element(),
-            )
-            .into_any_element()
-    });
-
-    let mut row = div()
+            .child(Caption::new(label).text_color(muted))
+            .child(control)
+    };
+    let mut row = h_flex()
         .id("cooking-mastery-yellow-controls")
-        .flex()
         .flex_wrap()
         .items_end()
         .gap_3()
-        .px_3()
-        .child(
-            div()
-                .flex()
-                .flex_col()
-                .gap_1()
-                .child(Caption::new("Points to Spend").text_color(muted))
-                .child(div().flex().items_center().gap_2().child(budget).child(
+        .child(labeled(
+            "Points to Spend",
+            h_flex()
+                .gap_2()
+                .child(ui::number_field(
+                    "cooking-mastery-yellow-budget",
+                    &controls.yellow_budget,
+                    "Points to Spend",
+                ))
+                .child(
                     Caption::new(format!("of {} total", whole(plan.available))).text_color(muted),
-                )),
-        )
-        .child(goal);
-    if let Some(character) = character {
-        row = row.child(character);
+                )
+                .into_any_element(),
+        ))
+        .child(
+            labeled(
+                "Goal",
+                Select::new(controls.yellow_goal.state())
+                    .id("cooking-mastery-yellow-goal")
+                    .accessibility_label("Goal")
+                    .small()
+                    .into_any_element(),
+            )
+            .w(px(220.0)),
+        );
+    if !yellow.characters.is_empty() {
+        controls.character.show(
+            derived.characters.clone(),
+            Some(&plan.character),
+            window,
+            cx,
+        );
+        row = row.child(
+            labeled(
+                "Character Context",
+                Select::new(controls.character.state())
+                    .id("cooking-mastery-yellow-character")
+                    .accessibility_label("Character Context")
+                    .small()
+                    .into_any_element(),
+            )
+            .w(px(200.0)),
+        );
     }
     row.into_any_element()
 }
@@ -194,36 +178,30 @@ fn headline(plan: &Allocation, yellow: &Yellow, muted: gpui::Hsla) -> AnyElement
         reading,
         plan.rows.len(),
     );
-    div()
+    h_flex()
         .id("cooking-mastery-yellow")
         .role(Role::Label)
         .aria_label(label)
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
         .child(
-            div()
-                .flex()
-                .flex_col()
+            v_flex()
                 .gap_1()
                 .child(Caption::new("Optimal Meal Bonus").text_color(muted))
                 .child(
                     div()
                         .id("cooking-mastery-yellow-value")
-                        .text_size(px(20.0))
-                        .child(SharedString::from(unit.format(plan.value))),
+                        .text_size(TEXT_KPI)
+                        .child(unit.format(plan.value)),
                 ),
         )
         .child(
-            div()
-                .flex()
-                .flex_col()
+            v_flex()
                 .gap_1()
                 .child(
                     div()
                         .id("cooking-mastery-yellow-improvement")
-                        .child(SharedString::from(reading)),
+                        .child(reading),
                 )
                 .child(
                     Caption::new(format!(
@@ -253,53 +231,54 @@ fn sources(plan: &Allocation, muted: gpui::Hsla) -> AnyElement {
     }
     div()
         .id("cooking-mastery-yellow-sources")
-        .px_3()
-        .pb_2()
         .child(Caption::new(line).text_color(muted))
         .into_any_element()
 }
 
 /// The page's allocation table, most points first.
-fn table(plan: &Allocation) -> AnyElement {
+fn rows(plan: &Allocation) -> AnyElement {
     let multi_category = plan.goal.categories.len() > 1;
-    let mut headers = vec!["Meal"];
+    let mut columns = vec![("Meal", false)];
     if multi_category {
-        headers.push("Category");
+        columns.push(("Category", false));
     }
-    headers.extend([
-        "Effect",
-        "Meal Lv",
-        "Per Lv",
-        "Base",
-        "Points Now",
-        "Points Optimal",
-        "Mastery",
+    columns.extend([
+        ("Effect", false),
+        ("Meal Lv", true),
+        ("Per Lv", true),
+        ("Base", true),
+        ("Points Now", true),
+        ("Points Optimal", true),
+        ("Mastery", true),
     ]);
-    let mut table = Table::new(headers);
-    for row in &plan.rows {
-        let mut cells = vec![row_name(row)];
+    let rows = plan.rows.iter().map(|row| {
+        let mut cells = vec![text_cell(row_name(row))];
         if multi_category {
-            cells.push(cell(plan.goal.category_label(&row.category).to_string()));
+            cells.push(text_cell(
+                plan.goal.category_label(&row.category).to_string(),
+            ));
         }
         cells.extend([
-            cell(row.effect.clone()),
-            cell(whole(row.level)),
-            cell(format!("{}", row.bonus)),
-            cell(format!("{:.2}", row.base_weight)),
-            cell(whole(row.current)),
-            cell(whole(row.allocated)),
-            cell(format!("{:.3}x", row.mastery)),
+            text_cell(row.effect.clone()),
+            number_cell(whole(row.level)),
+            number_cell(format!("{}", row.bonus)),
+            number_cell(format!("{:.2}", row.base_weight)),
+            number_cell(whole(row.current)),
+            number_cell(whole(row.allocated)),
+            number_cell(format!("{:.3}x", row.mastery)),
         ]);
-        table = table.row(cells);
-    }
+        TableRow::new()
+            .id(("cooking-mastery-yellow-table-row", row.index))
+            .children(cells)
+    });
     div()
         .id("cooking-mastery-yellow-rows")
-        .child(table)
+        .child(table(&columns, rows))
         .into_any_element()
 }
 
 /// The meal's name, with the points it takes in the accessible label.
-fn row_name(row: &MealRow) -> AnyElement {
+fn row_name(row: &MealRow) -> impl IntoElement {
     div()
         .id(("cooking-mastery-yellow-row", row.index))
         .role(Role::Label)
@@ -310,26 +289,13 @@ fn row_name(row: &MealRow) -> AnyElement {
             whole(row.allocated),
             row.effect,
         ))
-        .child(SharedString::from(row.name.clone()))
-        .into_any_element()
-}
-
-/// A plain table cell.
-fn cell(text: String) -> AnyElement {
-    div().child(SharedString::from(text)).into_any_element()
+        .child(row.name.clone())
 }
 
 /// What the plan was computed with: the context the stat goals scale by, the
 /// points left over and a budget the plan had to reject.
 fn notes(plan: &Allocation, yellow: &Yellow, muted: gpui::Hsla) -> AnyElement {
-    let mut body = div()
-        .id("cooking-mastery-yellow-notes")
-        .flex()
-        .flex_col()
-        .gap_1()
-        .px_3()
-        .pt_2()
-        .pb_3();
+    let mut body = v_flex().id("cooking-mastery-yellow-notes").gap_1();
     if plan.rejected() {
         let detail = if plan.requested.is_finite() {
             format!(
@@ -345,11 +311,8 @@ fn notes(plan: &Allocation, yellow: &Yellow, muted: gpui::Hsla) -> AnyElement {
                 whole(plan.available),
             )
         };
-        body = body.child(
-            Callout::new(Severity::Warning)
-                .title("Budget rejected")
-                .child(Caption::new(detail).into_any_element()),
-        );
+        body =
+            body.child(Callout::new(Tone::Warning, "Budget rejected").child(Caption::new(detail)));
     }
     let kitchens = yellow.kitchens();
     if kitchens.count > 0 {

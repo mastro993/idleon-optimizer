@@ -15,15 +15,18 @@ use crate::sections::cog::{
 use crate::sections::coin_multi;
 use crate::sections::combat_sim::RunResult as CombatEncounterOutcome;
 use crate::sections::combat_sim::State as CombatState;
-use crate::sections::cooking_mastery::State as MasteryPlanState;
-use crate::sections::coral_god_rank::State as CoralState;
+use crate::sections::cooking_mastery::{Controls as MasteryControls, State as MasteryPlanState};
+use crate::sections::coral_god_rank::{Controls as CoralControls, State as CoralState};
 use crate::sections::damage::State as DamageState;
 use crate::sections::drop_rate::State as DropRateState;
 use crate::sections::farming::{
     CompareInputs as FarmingCompareInputs, RunInputs as FarmingRunInputs, State as FarmingState,
 };
 use crate::sections::fishing::State as FishingState;
-use crate::sections::fountain::{MarblePlanInputs, SimInputs, State as FountainState};
+use crate::sections::fountain::{
+    Controls as FountainControls, MarblePlanInputs, Runs as FountainRuns, SimInputs,
+    State as FountainState,
+};
 use crate::sections::jar::State as JarState;
 use crate::sections::jar::Tab as JarTab;
 use crate::sections::jelly_operator::{
@@ -327,10 +330,14 @@ pub(crate) struct AppState {
     /// The section's tab, distribution goal, budgets and character, kept across
     /// visits.
     pub(crate) mastery_plan: MasteryPlanState,
+    /// The section's kit controls and the figures planned from the save.
+    pub(crate) mastery_controls: MasteryControls,
     /// The Fountain Cavern the loaded save carries, if it has one.
     pub(crate) fountain: Option<Fountain>,
     /// The Fountain section's tab, water, desired currency and curve pick.
     pub(crate) fountain_state: FountainState,
+    /// The section's kit controls, run tables and per-tab caches.
+    pub(crate) fountain_controls: FountainControls,
     /// The shared runner for the fountain upgrade optimizer.
     pub(crate) fountain_plan: Entity<TaskRunner<OptimizerPlan, PlanRequest>>,
     /// The shared runner for the fountain marble optimizer.
@@ -403,6 +410,8 @@ pub(crate) struct AppState {
     pub(crate) damage_formula: Entity<FormulaTree>,
     /// The coral god rank planner's inputs, kept alive across dashboard visits.
     pub(crate) coral: CoralState,
+    /// The planner's kit fields, the stored plan and its action rows.
+    pub(crate) coral_controls: CoralControls,
     /// The Worship TD simulator's config and live run.
     pub(crate) worship: WorshipState,
     /// The tower trial levels and account values the live run reads.
@@ -546,6 +555,7 @@ impl AppState {
         let prisma = PrismaState::new(window, cx);
         let combat = CombatState::new(window, cx);
         let killroy_controls = KillroyControls::new(window, cx);
+        let mastery_controls = MasteryControls::new(window, cx);
         let research = ResearchState::new(window, cx);
         let farming_name = ui::input_state("Preset name", window, cx);
         let stats_explorer_search = ui::input_state("Name, saved input or source", window, cx);
@@ -773,6 +783,15 @@ impl AppState {
                 ))
             },
         );
+        let fountain_controls = FountainControls::new(
+            FountainRuns {
+                plan: &fountain_plan,
+                marble: &fountain_marble_plan,
+                sim: &fountain_sim,
+            },
+            window,
+            cx,
+        );
         let clamworks_run = report_run::<ClamworksPlan, ClamworksPlanInput>(
             cx,
             &mut subscriptions,
@@ -935,6 +954,7 @@ impl AppState {
                 ))
             },
         );
+        let coral_controls = CoralControls::new(&coral_run, window, cx);
         let worship_optimize = report_run::<SearchOutcome, OptimizeRunInputs>(
             cx,
             &mut subscriptions,
@@ -1324,8 +1344,10 @@ impl AppState {
             mastery: None,
             yellow: None,
             mastery_plan: MasteryPlanState::default(),
+            mastery_controls,
             fountain: None,
             fountain_state: FountainState::default(),
+            fountain_controls,
             fountain_plan,
             fountain_marble_plan,
             fountain_sim,
@@ -1351,6 +1373,7 @@ impl AppState {
             damage_mastery: crate::ui::formula_tree("damage-mastery", window, cx),
             damage_formula: crate::ui::formula_tree("damage-formula", window, cx),
             coral: CoralState::default(),
+            coral_controls,
             worship: WorshipState::default(),
             worship_inputs: WorshipInputs::default(),
             search,

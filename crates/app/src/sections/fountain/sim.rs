@@ -7,36 +7,37 @@
 //! cancelled.
 
 use super::overview::num;
-use super::state::{SIM_MAX_HOURS, SIM_MIN_HOURS};
+use super::table::{data_height, tag};
 use crate::state::AppState;
-use ely_gpui_component::buttons::Button;
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::Stepper;
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::ActiveTheme as _;
-use ely_gpui_component::typography::Caption;
+use crate::ui;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, SharedString, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::table::DataTable;
+use gpui_kit::component::{ActiveTheme as _, Disableable as _, h_flex, v_flex};
 use idleon_fountain as fountain;
 use idleon_fountain::{SimEvent, SimEventKind, SimResult};
-
-/// How many timeline rows the tab renders; the count and the summary pin the
-/// rest, and a pathological run can buy thousands of levels.
-const TIMELINE_ROWS: usize = 200;
+use idleon_ui::widgets::{Caption, Card, CardHeader, RowColumn, RowsDelegate, Tone, show_number};
 
 /// The Sim tab: the run controls, the run in flight and the stored timeline.
-pub(super) fn sim_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let task = state.fountain_sim_task(cx);
-    let muted = cx.theme().colors.fg_muted;
-    let mut body = div()
+pub(super) fn sim_pane(
+    state: &mut AppState,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let runner = state.fountain_sim.read(cx);
+    let running = runner.running();
+    let cancelled = runner.cancelled();
+    let progress = runner.progress().cloned();
+    let stale = runner.is_stale(&state.fountain_sim_inputs());
+    // The stored result drawn is the one the runner still holds.
+    let result = runner.result().and(state.fountain_controls.sim.clone());
+    let muted = cx.theme().muted_foreground;
+    let mut body = v_flex()
         .id("fountain-sim")
-        .flex()
-        .flex_col()
         .gap_3()
-        .p_3()
-        .child(controls(state, cx))
+        .child(controls(state, running, window, cx))
         .child(
             Caption::new(
                 "Simulates active fountain play forward in time. It picks regular and marble \
@@ -46,9 +47,7 @@ pub(super) fn sim_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
             )
             .text_color(muted),
         );
-    if task.running
-        && let Some(progress) = task.progress.clone()
-    {
+    if running && let Some(progress) = progress {
         let cancel = cx.entity();
         body = body.child(idleon_ui::run_chrome::progress_card(
             "fountain-sim",
@@ -60,62 +59,61 @@ pub(super) fn sim_pane(state: &mut AppState, cx: &mut Context<AppState>) -> AnyE
             },
         ));
     }
-    if task.cancelled {
+    if cancelled {
         body = body.child(idleon_ui::run_chrome::cancelled_banner(
             "fountain-sim-cancelled",
-            task.result.is_some(),
+            result.is_some(),
         ));
     }
-    if let Some(result) = task.result.clone() {
-        body = body.child(result_card(&result, task.stale));
+    if let Some(result) = result {
+        body = body.child(result_card(state, &result, stale));
     }
     body.into_any_element()
 }
 
 /// The time limit and the two actions.
-fn controls(state: &mut AppState, cx: &mut Context<AppState>) -> AnyElement {
-    let running = state.fountain_sim_task(cx).running;
-    let hours = state.fountain_state.sim_hours;
-    let entity = cx.entity();
+fn controls(
+    state: &AppState,
+    running: bool,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
+    let field = &state.fountain_controls.sim_hours;
+    show_number(field, state.fountain_state.sim_hours, 0, window, cx);
     let run_entity = cx.entity();
     let cancel_entity = cx.entity();
-    let run = Button::new(
-        "run-fountain-sim",
-        if running { "Simulating…" } else { "Run Sim" },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(running || !state.save_loaded)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_fountain_sim(cx));
-    });
-    let cancel = Button::new("cancel-fountain-sim", "Cancel")
+    let run = Button::new("run-fountain-sim")
+        .label(if running { "Simulating…" } else { "Run Sim" })
+        .primary()
+        .icon(IconName::Play)
+        .disabled(running || !state.save_loaded)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_fountain_sim(cx));
+        });
+    let cancel = Button::new("cancel-fountain-sim")
+        .label("Cancel")
         .icon(IconName::X)
         .disabled(!running)
         .on_click(move |_event, _window, cx| {
             cancel_entity.update(cx, |state, cx| state.cancel_fountain_sim(cx));
         });
-    let stepper = Stepper::new("fountain-sim-hours", hours)
-        .range(SIM_MIN_HOURS, SIM_MAX_HOURS)
-        .step(1.0)
-        .precision(0)
-        .on_change(move |value, _window, cx| {
-            entity.update(cx, |state, cx| state.set_fountain_sim_hours(value, cx));
-        });
-    div()
+    h_flex()
         .id("fountain-sim-controls")
-        .flex()
         .flex_wrap()
-        .items_center()
         .gap_3()
-        .child(stepper)
+        .child(Caption::new("Time limit (hours)"))
+        .child(ui::number_field(
+            "fountain-sim-hours",
+            field,
+            "Time limit (hours)",
+        ))
         .child(run)
         .child(cancel)
         .into_any_element()
 }
 
 /// The stored run: its summary, final balances and timeline.
-fn result_card(result: &SimResult, stale: bool) -> AnyElement {
+fn result_card(state: &AppState, result: &SimResult, stale: bool) -> AnyElement {
     let mut header = CardHeader::new("Simulation")
         .description(format!("{}h limit", num(result.clock_seconds / 3600.0)));
     if stale {
@@ -127,13 +125,15 @@ fn result_card(result: &SimResult, stale: bool) -> AnyElement {
     }
     let marble_pct = percent(result.start_marble_rate, result.end_marble_rate);
     let currency_pct = percent(result.start_base_currency, result.end_base_currency);
-    let summary = div()
+    let summary = h_flex()
         .id("fountain-sim-result")
-        .flex()
         .flex_wrap()
         .gap_3()
-        .child(Badge::new(format!("{} steps", result.steps)).tone(Tone::Info))
-        .child(Badge::new(format!("{} events", result.events.len())).tone(Tone::Neutral))
+        .child(tag(format!("{} steps", result.steps), Tone::Info))
+        .child(tag(
+            format!("{} events", result.events.len()),
+            Tone::Neutral,
+        ))
         .child(Caption::new(format!(
             "Marble {} → {}/hr ({:+.1}%) · Base currency {} → {}/hr ({:+.1}%)",
             num(result.start_marble_rate),
@@ -153,61 +153,74 @@ fn result_card(result: &SimResult, stale: bool) -> AnyElement {
         })
         .chain(std::iter::once(format!("Marble: {}", num(result.marbles))))
         .collect();
-    let rows = timeline(result);
-    let mut table = Table::new([
-        "Time",
-        "Event",
-        "Details",
-        "Marble /hr",
-        "Base Currency /hr",
-    ]);
-    for row in rows.iter().take(TIMELINE_ROWS) {
-        table = table.row([
-            div().child(clock(row.time)).into_any_element(),
-            div().child(row.label).into_any_element(),
-            div()
-                .child(match &row.claim {
-                    Some(claim) => format!("{} ⬆ {claim}", row.detail),
-                    None => row.detail.clone(),
-                })
-                .into_any_element(),
-            div().child(num(row.marble_rate)).into_any_element(),
-            div().child(num(row.base_rate)).into_any_element(),
-        ]);
-    }
-    let mut body = div()
-        .flex()
-        .flex_col()
+    let mut body = v_flex()
         .gap_3()
-        .p_3()
         .child(summary)
         .child(Caption::new(format!("Final: {}", balances.join(" • "))));
-    if rows.is_empty() {
+    let rows = state.fountain_controls.timeline_len;
+    if rows == 0 {
         body = body.child(div().id("fountain-sim-empty").child(Caption::new(
             "No events — nothing to buy or no beneficial upgrades found.",
         )));
     } else {
-        let mut caption = "The timeline, in simulated order. The marble-fill rows are hidden: \
-             the marble those fills created is in the marble purchases and the final balance."
-            .to_string();
-        if rows.len() > TIMELINE_ROWS {
-            caption.push_str(&format!(
-                " Showing the first {TIMELINE_ROWS} of {} events.",
-                rows.len()
-            ));
-        }
         body = body
             .child(
                 div()
                     .id("fountain-sim-timeline")
-                    .flex()
-                    .flex_col()
-                    .gap_2()
-                    .child(table),
+                    .h(data_height(rows))
+                    .child(DataTable::new(&state.fountain_controls.timeline)),
             )
-            .child(Caption::new(caption));
+            .child(Caption::new(
+                "The timeline, in simulated order. The marble-fill rows are hidden: the marble \
+                 those fills created is in the marble purchases and the final balance.",
+            ));
     }
     card.child(body).into_any_element()
+}
+
+/// One timeline row, formatted once per stored run.
+pub(crate) struct TimelineRow {
+    time: SharedString,
+    event: SharedString,
+    details: SharedString,
+    marble_rate: SharedString,
+    base_rate: SharedString,
+}
+
+/// The timeline's columns.
+pub(crate) fn timeline_table() -> RowsDelegate<TimelineRow> {
+    RowsDelegate::new(vec![
+        RowColumn::text("time", "Time", |row: &TimelineRow| row.time.clone()),
+        RowColumn::text("event", "Event", |row: &TimelineRow| row.event.clone()),
+        RowColumn::text("details", "Details", |row: &TimelineRow| {
+            row.details.clone()
+        })
+        .column(|column| column.width(gpui::px(360.0))),
+        RowColumn::number("marble", "Marble /hr", |row: &TimelineRow| {
+            row.marble_rate.clone()
+        }),
+        RowColumn::number("base", "Base Currency /hr", |row: &TimelineRow| {
+            row.base_rate.clone()
+        }),
+    ])
+}
+
+/// The run's timeline as table rows.
+pub(crate) fn timeline_rows(result: &SimResult) -> Vec<TimelineRow> {
+    timeline(result)
+        .into_iter()
+        .map(|row| TimelineRow {
+            time: clock(row.time).into(),
+            event: row.label.into(),
+            details: match &row.claim {
+                Some(claim) => format!("{} ⬆ {claim}", row.detail),
+                None => row.detail,
+            }
+            .into(),
+            marble_rate: num(row.marble_rate).into(),
+            base_rate: num(row.base_rate).into(),
+        })
+        .collect()
 }
 
 /// One rendered timeline row.
