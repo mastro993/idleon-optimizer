@@ -13,6 +13,7 @@ use idleon_spelunking::{
     RunResult as SpelunkRunResult, StaminaMode, ToolChoice, normalize, simulate,
 };
 use idleon_ui::runner::TaskState;
+use std::rc::Rc;
 
 impl AppState {
     /// The Spelunking inputs for the loaded save and the account inputs on screen.
@@ -251,8 +252,18 @@ impl AppState {
     }
 
     /// The stored expedition run and whether its inputs changed since the run.
-    pub(crate) fn spelunk_simulation(&self, cx: &App) -> TaskState<SpelunkRunResult> {
-        self.spelunk_sim.read(cx).state(&self.spelunk_sim_inputs())
+    /// The result is the copy kept when the run stored it, not a fresh clone.
+    pub(crate) fn spelunk_simulation(&self, cx: &App) -> TaskState<Rc<SpelunkRunResult>> {
+        let runner = self.spelunk_sim.read(cx);
+        TaskState {
+            running: runner.running(),
+            cancelled: runner.cancelled(),
+            progress: runner.progress().cloned(),
+            result: runner
+                .result()
+                .and_then(|_| self.spelunking_controls.run.clone()),
+            stale: runner.is_stale(&self.spelunk_sim_inputs()),
+        }
     }
 
     /// The inputs a run started now would read.
@@ -268,9 +279,9 @@ impl AppState {
 
 impl AppState {
     /// The optimizer inputs for the loaded save and the controls on screen.
-    pub(crate) fn spelunk_optimizer_inputs(&self) -> Option<SpelunkOptimizerInputs> {
+    pub(crate) fn spelunk_optimizer_inputs(&self) -> SpelunkOptimizerInputs {
         let spelunking = &self.spelunking;
-        Some(SpelunkOptimizerInputs {
+        SpelunkOptimizerInputs {
             requested: spelunking.run_requested(),
             account: spelunking.account.clone(),
             mode: spelunking.optimizer_mode,
@@ -284,7 +295,7 @@ impl AppState {
             amber_min_rope: spelunking.optimizer_min_rope,
             amber_max_trials: spelunking.optimizer_max_trials,
             revision: self.save_revision,
-        })
+        }
     }
 
     /// Switch between the configuration search and the Amber phase search.
@@ -382,9 +393,7 @@ impl AppState {
         let Some(inputs) = self.spelunk_inputs() else {
             return;
         };
-        let Some(requested) = self.spelunk_optimizer_inputs() else {
-            return;
-        };
+        let requested = self.spelunk_optimizer_inputs();
         if let Err(error) = normalize(&inputs, &requested.requested) {
             self.set_status(format!("This expedition cannot run: {error}"), cx);
             return;
@@ -470,15 +479,21 @@ impl AppState {
     }
 
     /// The stored optimizer result and whether its inputs changed since the run.
+    /// The result is the copy kept when the run stored it, not a fresh clone.
     pub(crate) fn spelunk_optimizer(
         &self,
-        cx: &gpui::App,
-    ) -> TaskState<idleon_spelunking::SearchResult> {
-        self.spelunk_opt.read(cx).state(
-            &self
-                .spelunk_optimizer_inputs()
-                .expect("the runner only starts with a save"),
-        )
+        cx: &App,
+    ) -> TaskState<Rc<idleon_spelunking::SearchResult>> {
+        let runner = self.spelunk_opt.read(cx);
+        TaskState {
+            running: runner.running(),
+            cancelled: runner.cancelled(),
+            progress: runner.progress().cloned(),
+            result: runner
+                .result()
+                .and_then(|_| self.spelunking_controls.search.clone()),
+            stale: runner.is_stale(&self.spelunk_optimizer_inputs()),
+        }
     }
 
     /// Apply the stored recommendation to the section's controls.
@@ -496,10 +511,9 @@ impl AppState {
         };
         self.spelunking
             .apply_config(&winner.summary.config, &inputs);
-        if let Some(inputs) = self.spelunk_optimizer_inputs() {
-            self.spelunk_opt
-                .update(cx, |runner, _| runner.commit_inputs(inputs));
-        }
+        let inputs = self.spelunk_optimizer_inputs();
+        self.spelunk_opt
+            .update(cx, |runner, _| runner.commit_inputs(inputs));
         self.set_status("Applied the optimizer recommendation.", cx);
     }
 

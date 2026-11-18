@@ -961,11 +961,13 @@ const INTERACTIONS = {
     }
     // SP-04 screens every allowed configuration off the UI thread and leaves a
     // copyable recommendation. Party, belt, memory and entry default fixed, so
-    // the fixture's scope stays small.
-    await bringIntoView(lane, 'spelunk-optimizer');
+    // the fixture's scope stays small. The run's event log scrolls on its own,
+    // so the page scrolls from its margin.
+    const page = await wheelPoint(lane, 'spelunking-pane');
+    await bringIntoView(lane, 'spelunk-optimizer', page);
     await waitForNode(lane, 'spelunk-optimizer-mode', 'spelunking: the optimizer controls render');
     await waitForNode(lane, 'spelunk-optimizer-party', 'spelunking: the search sections render');
-    await bringIntoView(lane, 'spelunk-optimizer-start');
+    await bringIntoView(lane, 'spelunk-optimizer-start', page);
     await lane.call('click_element', { id: 'spelunk-optimizer-start' });
     await waitForNode(
       lane,
@@ -987,7 +989,7 @@ const INTERACTIONS = {
     if (!plan.includes('Pebble Cove')) {
       throw new Error(`spelunking: the optimizer plan reads ${plan}`);
     }
-    await bringIntoView(lane, 'spelunk-optimizer-copy');
+    await bringIntoView(lane, 'spelunk-optimizer-copy', page);
     await lane.call('click_element', { id: 'spelunk-optimizer-copy' });
     await waitFor(
       lane,

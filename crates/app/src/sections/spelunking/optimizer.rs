@@ -6,23 +6,23 @@
 //! expedition run. The result keeps the ranked rows, the winner against the
 //! baseline, the party-size advice and a copyable plan.
 
+use super::controls::{Derived, optimizer_mode_choices};
+use super::{OptimizerMode, boxed, field, number, select, tag};
 use crate::state::AppState;
-use ely_gpui_component::buttons::{Button, ButtonVariant};
-use ely_gpui_component::data_display::{Badge, Tone};
-use ely_gpui_component::forms::{Checkbox, Choice, NumberInput, Select};
-use ely_gpui_component::layout::{Card, CardHeader};
-use ely_gpui_component::primitives::IconName;
-use ely_gpui_component::tables::Table;
-use ely_gpui_component::theme::{ActiveTheme as _, ControlSize};
-use ely_gpui_component::typography::Caption;
 use gpui::prelude::*;
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Role, Styled, Window, div};
+use gpui_kit::assets::IconName;
+use gpui_kit::component::button::{Button, ButtonVariants as _};
+use gpui_kit::component::checkbox::Checkbox;
+use gpui_kit::component::table::{Table, TableBody, TableCell, TableHead, TableHeader, TableRow};
+use gpui_kit::component::{Disableable as _, Sizable as _};
 use idleon_spelunking::{
-    Account, Enabled, Inputs, Objective, Requested, ScopeRequest, SearchResult, search_space,
+    Account, Enabled, Inputs, Objective, Requested, ScopeRequest, SearchResult,
 };
 use idleon_ui::format;
-
-use super::OptimizerMode;
+use idleon_ui::runner::TaskState;
+use idleon_ui::widgets::{Caption, Card, CardHeader, TEXT_BODY, Tone};
+use std::rc::Rc;
 
 /// What an optimizer run was produced from; a change marks the result stale.
 #[derive(Clone, Debug, PartialEq)]
@@ -44,49 +44,34 @@ pub(crate) struct OptimizerInputs {
 }
 
 /// The optimizer card: the mode, the search scope, the run and its result.
-pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
+pub(crate) fn card(
+    state: &AppState,
+    derived: &Derived,
+    window: &mut Window,
+    cx: &mut Context<AppState>,
+) -> AnyElement {
     let task = state.spelunk_optimizer(cx);
     let mut body = div()
         .id("spelunk-optimizer")
         .flex()
         .flex_col()
         .gap_3()
-        .child(controls(state, &task, cx));
-    let space = state
-        .spelunking
-        .config(inputs)
-        .ok()
-        .and_then(|_| {
-            search_space(
-                inputs,
-                &state.spelunking.run_requested(),
-                &state.spelunking.optimizer_requested(),
-            )
-            .ok()
-        })
-        .map(|(count, _)| count);
+        .child(controls(state, derived, &task, window, cx));
     if state.spelunking.optimizer_mode == OptimizerMode::Configuration {
-        body = body.child(
-            Caption::new(match space {
-                Some(count) => format!(
-                    "{count} allowed configuration(s) in this scope. The search screens every one, \
-                     then compares the strongest five on fresh seeds; party, cave, mode and \
-                     stamina stay fixed unless the dimension is included above."
-                ),
-                None => "The controls above cannot form a valid expedition yet.".into(),
-            })
-            .text_color(muted),
-        );
+        body = body.child(Caption::new(match derived.space {
+            Some(count) => format!(
+                "{count} allowed configuration(s) in this scope. The search screens every one, \
+                 then compares the strongest five on fresh seeds; party, cave, mode and stamina \
+                 stay fixed unless the dimension is included above."
+            ),
+            None => "The controls above cannot form a valid expedition yet.".into(),
+        }));
     } else {
-        body = body.child(
-            Caption::new(
-                "Screens a diverse grid of dump depths, finishers, reserves, harvest floors and rope \
-                 reserves, refines the leaders twice, then compares the finalists on fresh seeds. \
-                 The belt must carry an orange elixir.",
-            )
-            .text_color(muted),
-        );
+        body = body.child(Caption::new(
+            "Screens a diverse grid of dump depths, finishers, reserves, harvest floors and rope \
+             reserves, refines the leaders twice, then compares the finalists on fresh seeds. The \
+             belt must carry an orange elixir.",
+        ));
     }
     if task.running
         && let Some(progress) = task.progress.clone()
@@ -108,13 +93,13 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
             task.result.is_some(),
         ));
     }
-    if let Some(result) = task.result.as_ref() {
-        body = body.child(result_card(result, task.stale, inputs, cx));
+    if let Some(result) = &task.result {
+        body = body.child(result_card(result, task.stale, &derived.inputs, cx));
     }
     Card::new()
         .header(CardHeader::new("Depth optimizer").description(
             "Maximises the selected objective for the cave, party and belt on screen. The \
-                 recommendation is reproducible from the seed shown in the run result.",
+             recommendation is reproducible from the seed shown in the run result.",
         ))
         .child(body)
         .into_any_element()
@@ -123,115 +108,51 @@ pub(crate) fn card(state: &AppState, inputs: &Inputs, cx: &mut Context<AppState>
 /// The mode, objective, trial counts and search dimensions.
 fn controls(
     state: &AppState,
-    task: &idleon_ui::runner::TaskState<SearchResult>,
+    derived: &Derived,
+    task: &TaskState<Rc<SearchResult>>,
+    window: &mut Window,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
-    let entity = cx.entity();
     let spelunking = &state.spelunking;
+    let controls = &state.spelunking_controls;
     let amber_mode = spelunking.optimizer_mode == OptimizerMode::Amber;
-
-    let mode_entity = entity.clone();
-    let mode = Select::new(
+    let mode = select(
+        &controls.optimizer_mode,
         "spelunk-optimizer-mode",
-        [
-            Choice::new("configuration", "Configurations"),
-            Choice::new("amber", "Amber farming phases"),
-        ],
-    )
-    .label("Optimization mode")
-    .selected(spelunking.optimizer_mode.id())
-    .size(ControlSize::Sm)
-    .on_change(move |value, _window, cx| {
-        if let Some(mode) = OptimizerMode::from_id(value.as_ref()) {
-            mode_entity.update(cx, |state, cx| state.set_spelunk_optimizer_mode(mode, cx));
-        }
-    });
-
-    let objective_entity = entity.clone();
-    let objectives: Vec<Choice> = Objective::ALL
-        .into_iter()
-        .filter(|objective| !amber_mode || objective.amber())
-        .map(|objective| Choice::new(objective.id(), objective.label()))
-        .collect();
-    let objective = Select::new("spelunk-optimizer-objective", objectives)
-        .label("Objective")
-        .selected(spelunking.optimizer_objective.id())
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            if let Some(objective) = Objective::from_id(value.as_ref()) {
-                objective_entity.update(cx, |state, cx| {
-                    state.set_spelunk_optimizer_objective(objective, cx);
-                });
-            }
-        });
-
-    let screening_entity = entity.clone();
-    let screening = NumberInput::new(
-        "spelunk-optimizer-screening",
-        spelunking.optimizer_screening as f64,
-    )
-    .range(1.0, 8.0)
-    .step(1.0)
-    .precision(0)
-    .size(ControlSize::Sm)
-    .label("Screening trials")
-    .on_change(move |value, _window, cx| {
-        screening_entity.update(cx, |state, cx| {
-            state.set_spelunk_optimizer_screening(value.max(1.0) as usize, cx);
-        });
-    });
-
-    let trials_entity = entity.clone();
-    let trials = NumberInput::new(
-        "spelunk-optimizer-trials",
-        spelunking.optimizer_trials as f64,
-    )
-    .range(2.0, 64.0)
-    .step(1.0)
-    .precision(0)
-    .size(ControlSize::Sm)
-    .label("Final trials")
-    .on_change(move |value, _window, cx| {
-        trials_entity.update(cx, |state, cx| {
-            state.set_spelunk_optimizer_trials(value.max(2.0) as usize, cx);
-        });
-    });
-
-    let seed_entity = entity.clone();
-    let seed = NumberInput::new(
-        "spelunk-optimizer-seed",
-        f64::from(spelunking.optimizer_seed),
-    )
-    .range(0.0, f64::from(u32::MAX))
-    .step(1.0)
-    .precision(0)
-    .size(ControlSize::Sm)
-    .label("Seed")
-    .on_change(move |value, _window, cx| {
-        seed_entity.update(cx, |state, cx| {
-            state.set_spelunk_optimizer_seed(value.max(0.0) as u32, cx);
-        });
-    });
-
-    let run_entity = entity.clone();
-    let cancel_entity = entity.clone();
-    let run = Button::new(
-        "spelunk-optimizer-start",
-        if task.running {
+        "Optimization mode",
+        &optimizer_mode_choices(),
+        &spelunking.optimizer_mode,
+        window,
+        cx,
+    );
+    let objective = select(
+        &controls.objective,
+        "spelunk-optimizer-objective",
+        "Objective",
+        &derived.objectives,
+        &spelunking.optimizer_objective,
+        window,
+        cx,
+    );
+    let run_entity = cx.entity();
+    let cancel_entity = cx.entity();
+    let run = Button::new("spelunk-optimizer-start")
+        .label(if task.running {
             "Optimizing…"
         } else {
             "Find strategy"
-        },
-    )
-    .primary()
-    .icon(IconName::Play)
-    .disabled(task.running)
-    .on_click(move |_event, _window, cx| {
-        run_entity.update(cx, |state, cx| state.run_spelunk_optimizer(cx));
-    });
-    let cancel = Button::new("spelunk-optimizer-stop", "Cancel")
-        .variant(ButtonVariant::Subtle)
+        })
+        .primary()
+        .small()
+        .icon(IconName::Play)
+        .disabled(task.running)
+        .on_click(move |_event, _window, cx| {
+            run_entity.update(cx, |state, cx| state.run_spelunk_optimizer(cx));
+        });
+    let cancel = Button::new("spelunk-optimizer-stop")
+        .label("Cancel")
+        .secondary()
+        .small()
         .icon(IconName::X)
         .disabled(!task.running)
         .on_click(move |_event, _window, cx| {
@@ -245,63 +166,91 @@ fn controls(
         .items_end()
         .gap_4()
         .p_3()
-        .child(super::field("Mode", mode.into_any_element()))
-        .child(super::field("Objective", objective.into_any_element()))
-        .child(super::field(
+        .child(field("Mode", boxed(mode)))
+        .child(field("Objective", boxed(objective)))
+        .child(field(
             "Screening trials",
-            screening.into_any_element(),
+            number(
+                "spelunk-optimizer-screening",
+                &controls.screening,
+                "Screening trials",
+                spelunking.optimizer_screening as f64,
+                0,
+                window,
+                cx,
+            ),
         ))
-        .child(super::field("Final trials", trials.into_any_element()))
-        .child(super::field("Seed", seed))
+        .child(field(
+            "Final trials",
+            number(
+                "spelunk-optimizer-trials",
+                &controls.trials,
+                "Final trials",
+                spelunking.optimizer_trials as f64,
+                0,
+                window,
+                cx,
+            ),
+        ))
+        .child(field(
+            "Seed",
+            number(
+                "spelunk-optimizer-seed",
+                &controls.optimizer_seed,
+                "Seed",
+                f64::from(spelunking.optimizer_seed),
+                0,
+                window,
+                cx,
+            ),
+        ))
         .child(div().flex().items_center().gap_2().child(run).child(cancel));
     if amber_mode {
-        row = row
-            .child(super::field(
+        let amber_fields = [
+            (
                 "Dump depth from",
-                number(
-                    "spelunk-optimizer-from",
-                    spelunking.optimizer_from,
-                    1.0,
-                    10_000.0,
-                    entity.clone(),
-                    |state, value, cx| state.set_spelunk_optimizer_from(value, cx),
-                ),
-            ))
-            .child(super::field(
+                "spelunk-optimizer-from",
+                &controls.optimizer_from,
+                spelunking.optimizer_from,
+            ),
+            (
                 "Dump depth to",
-                number(
-                    "spelunk-optimizer-to",
-                    spelunking.optimizer_to,
-                    1.0,
-                    10_000.0,
-                    entity.clone(),
-                    |state, value, cx| state.set_spelunk_optimizer_to(value, cx),
-                ),
-            ))
-            .child(super::field(
+                "spelunk-optimizer-to",
+                &controls.optimizer_to,
+                spelunking.optimizer_to,
+            ),
+            (
                 "Minimum rope exit %",
-                number(
-                    "spelunk-optimizer-min-rope",
-                    spelunking.optimizer_min_rope,
-                    0.0,
-                    100.0,
-                    entity.clone(),
-                    |state, value, cx| state.set_spelunk_optimizer_min_rope(value, cx),
-                ),
-            ))
-            .child(super::field(
+                "spelunk-optimizer-min-rope",
+                &controls.min_rope,
+                spelunking.optimizer_min_rope,
+            ),
+            (
                 "Adaptive trial cap",
-                number(
-                    "spelunk-optimizer-max-trials",
-                    spelunking.optimizer_max_trials,
-                    2.0,
-                    256.0,
-                    entity.clone(),
-                    |state, value, cx| state.set_spelunk_optimizer_max_trials(value, cx),
-                ),
+                "spelunk-optimizer-max-trials",
+                &controls.max_trials,
+                spelunking.optimizer_max_trials,
+            ),
+        ];
+        for (label, id, control, value) in amber_fields {
+            row = row.child(field(
+                label,
+                number(id, control, label, value as f64, 0, window, cx),
             ));
+        }
     }
-    let mut scope = div()
+    let scope = spelunking.optimizer_scope;
+    let toggles = [
+        ("party", "Party", scope.party),
+        ("modes", "Play", scope.modes),
+        ("clears", "Descend", scope.clears),
+        ("speeds", "Auto speeds", scope.speeds),
+        ("elixirs", "Belt", scope.elixirs),
+        ("memorized", "Memory", scope.memorized),
+        ("tools", "Tools", scope.tools),
+        ("entry", "Entry", scope.entry),
+    ];
+    let scope = div()
         .id("spelunk-optimizer-scope")
         .flex()
         .flex_wrap()
@@ -309,59 +258,18 @@ fn controls(
         .gap_4()
         .px_3()
         .pb_3()
-        .child(Caption::new("Search sections").text_color(muted))
-        .child(toggle(
-            "party",
-            "Party",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "modes",
-            "Play",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "clears",
-            "Descend",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "speeds",
-            "Auto speeds",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "elixirs",
-            "Belt",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "memorized",
-            "Memory",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle(
-            "tools",
-            "Tools",
-            spelunking.optimizer_scope,
-            entity.clone(),
-        ))
-        .child(toggle("entry", "Entry", spelunking.optimizer_scope, entity));
-    if !amber_mode {
-        scope = scope.child(
-            Caption::new(
+        .child(Caption::new("Search sections"))
+        .children(
+            toggles
+                .into_iter()
+                .map(|(key, label, checked)| toggle(key, label, checked, cx)),
+        )
+        .when(!amber_mode, |scope| {
+            scope.child(Caption::new(
                 "Unchecked sections stay at the captured controls. The party search keeps at \
                  least one eligible character; belt and memory stay fixed unless included.",
-            )
-            .text_color(muted),
-        );
-    }
+            ))
+        });
     div()
         .flex()
         .flex_col()
@@ -370,47 +278,20 @@ fn controls(
         .into_any_element()
 }
 
-fn number(
-    id: &'static str,
-    value: usize,
-    min: f64,
-    max: f64,
-    entity: gpui::Entity<AppState>,
-    set: fn(&mut AppState, usize, &mut Context<AppState>),
-) -> AnyElement {
-    NumberInput::new(id, value as f64)
-        .range(min, max)
-        .step(1.0)
-        .precision(0)
-        .size(ControlSize::Sm)
-        .on_change(move |value, _window, cx| {
-            entity.update(cx, |state, cx| set(state, value.max(min) as usize, cx));
-        })
-        .into_any_element()
-}
-
 fn toggle(
     key: &'static str,
     label: &'static str,
-    scope: Enabled,
-    entity: gpui::Entity<AppState>,
+    checked: bool,
+    cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let checked = match key {
-        "party" => scope.party,
-        "modes" => scope.modes,
-        "clears" => scope.clears,
-        "speeds" => scope.speeds,
-        "elixirs" => scope.elixirs,
-        "memorized" => scope.memorized,
-        "tools" => scope.tools,
-        "entry" => scope.entry,
-        _ => true,
-    };
-    Checkbox::new(format!("spelunk-optimizer-{key}"), checked)
+    let entity = cx.entity();
+    Checkbox::new(format!("spelunk-optimizer-{key}"))
         .label(label)
-        .on_change(move |on, _window, cx| {
+        .checked(checked)
+        .on_click(move |on, _window, cx| {
+            let on = *on;
             entity.update(cx, |state, cx| {
-                let mut scope = state.spelunking.optimizer_scope;
+                let mut scope: Enabled = state.spelunking.optimizer_scope;
                 match key {
                     "party" => scope.party = on,
                     "modes" => scope.modes = on,
@@ -435,7 +316,6 @@ fn result_card(
     inputs: &Inputs,
     cx: &mut Context<AppState>,
 ) -> AnyElement {
-    let muted = cx.theme().colors.fg_muted;
     let mut header = CardHeader::new(format!("Optimizer result · {}", result.objective.label()))
         .description(format!(
             "{} · {} configurations · {} trials per finalist · seed {}",
@@ -451,10 +331,8 @@ fn result_card(
     if stale {
         header = header.action(idleon_ui::run_chrome::stale_badge("spelunk-optimizer"));
     }
-    let entity = cx.entity();
-    let use_entity = entity.clone();
-    let copy_entity = entity;
-    let winner = result.winner.clone();
+    let use_entity = cx.entity();
+    let copy_entity = cx.entity();
     let mut body = div()
         .id("spelunk-optimizer-result")
         .flex()
@@ -464,7 +342,7 @@ fn result_card(
     if stale {
         body = body.child(idleon_ui::run_chrome::stale_banner("spelunk-optimizer"));
     }
-    if let Some(winner) = &winner {
+    if let Some(winner) = &result.winner {
         let delta = result.delta.unwrap_or(0.0);
         let interval = result
             .interval
@@ -475,11 +353,12 @@ fn result_card(
         } else {
             format::value(delta)
         };
+        let plan = idleon_spelunking::plan_text(inputs, &winner.summary.config);
         body = body
             .child(
                 div()
                     .id("spelunk-optimizer-winner")
-                    .role(gpui::Role::Label)
+                    .role(Role::Label)
                     .aria_label(format!(
                         "Best measured {}: {} against baseline {}. Change {change}{interval}.",
                         result.objective.label(),
@@ -490,38 +369,42 @@ fn result_card(
                     .flex_wrap()
                     .items_center()
                     .gap_2()
-                    .child(
-                        Badge::new(format!(
+                    .child(tag(
+                        format!(
                             "{} {}",
                             result.objective.label(),
                             format::value(winner.summary.score)
-                        ))
-                        .tone(Tone::Accent),
-                    )
-                    .child(Badge::new(format!(
-                        "Baseline {}",
-                        format::value(result.baseline.summary.score)
-                    )))
-                    .child(
-                        Badge::new(format!("Change {delta:+}")).tone(if delta >= 0.0 {
+                        ),
+                        Tone::Accent,
+                    ))
+                    .child(tag(
+                        format!("Baseline {}", format::value(result.baseline.summary.score)),
+                        Tone::Neutral,
+                    ))
+                    .child(tag(
+                        format!("Change {delta:+}"),
+                        if delta >= 0.0 {
                             Tone::Success
                         } else {
                             Tone::Warning
-                        }),
-                    )
-                    .child(Badge::new(format!(
-                        "Depth {} · {} Amber",
-                        format::value(winner.summary.depth),
-                        format::value(winner.summary.amber)
-                    ))),
+                        },
+                    ))
+                    .child(tag(
+                        format!(
+                            "Depth {} · {} Amber",
+                            format::value(winner.summary.depth),
+                            format::value(winner.summary.amber)
+                        ),
+                        Tone::Neutral,
+                    )),
             )
             .child(
                 div()
                     .id("spelunk-optimizer-plan")
-                    .role(gpui::Role::Label)
-                    .aria_label(idleon_spelunking::plan_text(inputs, &winner.summary.config))
-                    .text_size(px(13.0))
-                    .child(idleon_spelunking::plan_text(inputs, &winner.summary.config)),
+                    .role(Role::Label)
+                    .aria_label(plan.clone())
+                    .text_size(TEXT_BODY)
+                    .child(plan),
             )
             .child(
                 div()
@@ -529,7 +412,9 @@ fn result_card(
                     .items_center()
                     .gap_2()
                     .child(
-                        Button::new("spelunk-optimizer-use", "Use recommendation")
+                        Button::new("spelunk-optimizer-use")
+                            .label("Use recommendation")
+                            .small()
                             .icon(IconName::Check)
                             .on_click(move |_event, _window, cx| {
                                 use_entity.update(cx, |state, cx| {
@@ -538,9 +423,11 @@ fn result_card(
                             }),
                     )
                     .child(
-                        Button::new("spelunk-optimizer-copy", "Copy plan")
+                        Button::new("spelunk-optimizer-copy")
+                            .label("Copy plan")
+                            .secondary()
+                            .small()
                             .icon(IconName::Copy)
-                            .variant(ButtonVariant::Subtle)
                             .on_click(move |_event, _window, cx| {
                                 copy_entity.update(cx, |state, cx| {
                                     state.copy_spelunk_optimizer_plan(cx);
@@ -551,91 +438,101 @@ fn result_card(
         if let Some(party) = &winner.party_analysis
             && let Some(size) = party.recommended_size
         {
-            body = body.child(
-                Caption::new(format!(
-                    "Smallest measured party retaining 99% of the best observed {} gain: {size} \
-                     character(s). This allowance is descriptive, not proven equivalence.",
-                    result.objective.label()
-                ))
-                .text_color(muted),
-            );
+            body = body.child(Caption::new(format!(
+                "Smallest measured party retaining 99% of the best observed {} gain: {size} \
+                 character(s). This allowance is descriptive, not proven equivalence.",
+                result.objective.label()
+            )));
         }
     } else {
-        body = body.child(
-            Caption::new(
-                "No fresh finalist met the selected rope-exit requirement, so there is no \
-                 recommendation.",
-            )
-            .text_color(muted),
-        );
+        body = body.child(Caption::new(
+            "No fresh finalist met the selected rope-exit requirement, so there is no \
+             recommendation.",
+        ));
     }
     if let Some(info) = &result.amber_search {
-        body = body.child(
-            Caption::new(format!(
-                "Amber phase search: {} strategies from D{} to D{} (effective D{}), screening {} \
-                 trial(s), {} racing trials, {} finalists, {} trials each, {} adaptive extension(s). \
-                 {} distinct behaviours observed. Unresolved leads: {}; rope rate uncertain: {}.",
-                result.screened,
-                info.from,
-                info.to,
-                info.effective_from,
-                info.screening,
-                info.racing_trials,
-                info.finalist_strategies,
-                info.trials,
-                info.adaptive_rounds,
-                info.observed_behaviors,
-                info.unresolved,
-                info.risk_uncertain,
-            ))
-            .text_color(muted),
-        );
+        body = body.child(Caption::new(format!(
+            "Amber phase search: {} strategies from D{} to D{} (effective D{}), screening {} \
+             trial(s), {} racing trials, {} finalists, {} trials each, {} adaptive extension(s). \
+             {} distinct behaviours observed. Unresolved leads: {}; rope rate uncertain: {}.",
+            result.screened,
+            info.from,
+            info.to,
+            info.effective_from,
+            info.screening,
+            info.racing_trials,
+            info.finalist_strategies,
+            info.trials,
+            info.adaptive_rounds,
+            info.observed_behaviors,
+            info.unresolved,
+            info.risk_uncertain,
+        )));
     }
-    body = body.child(Caption::new(result.claim.clone()).text_color(muted));
-    let mut table = Table::new([
-        "Configuration",
-        result.objective.label(),
-        "Mean depth",
-        "Amber",
-        "Settled",
-        "Rope / toll / blocked",
-    ]);
-    for (index, row) in result.rows.iter().enumerate() {
-        table = table.row([
-            div()
-                .id(format!("spelunk-optimizer-row-{index}"))
-                .flex()
-                .flex_col()
-                .child(if row.reference_only {
-                    div().child(format!("{} (reference only)", row.label))
-                } else {
-                    div().child(row.label.clone())
-                })
-                .child(Caption::new(short_config(&row.summary.config)).text_color(muted))
-                .into_any_element(),
-            div()
-                .child(format::value(row.summary.score))
-                .into_any_element(),
-            div()
-                .child(format::value(row.summary.depth))
-                .into_any_element(),
-            div()
-                .child(format::value(row.summary.amber))
-                .into_any_element(),
-            div()
-                .child(format!("{}/{}", row.summary.settled, row.summary.total))
-                .into_any_element(),
-            div()
-                .child(format!(
-                    "{} / {} / {}",
-                    row.summary.rope, row.summary.toll, row.summary.blocked
-                ))
-                .into_any_element(),
-        ]);
-    }
+    body = body.child(Caption::new(result.claim.clone()));
+    // The compared rows: the finalists and the baseline, a handful.
+    let rows = result.rows.iter().enumerate().map(|(index, row)| {
+        TableRow::new()
+            .id(("spelunk-optimizer-compared", index))
+            .child(
+                TableCell::new().child(
+                    div()
+                        .id(format!("spelunk-optimizer-row-{index}"))
+                        .flex()
+                        .flex_col()
+                        .child(if row.reference_only {
+                            format!("{} (reference only)", row.label)
+                        } else {
+                            row.label.clone()
+                        })
+                        .child(Caption::new(short_config(&row.summary.config))),
+                ),
+            )
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(format::value(row.summary.score)),
+            )
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(format::value(row.summary.depth)),
+            )
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(format::value(row.summary.amber)),
+            )
+            .child(
+                TableCell::new()
+                    .text_right()
+                    .child(format!("{}/{}", row.summary.settled, row.summary.total)),
+            )
+            .child(TableCell::new().text_right().child(format!(
+                "{} / {} / {}",
+                row.summary.rope, row.summary.toll, row.summary.blocked
+            )))
+    });
+    let heads = [
+        ("Configuration", false),
+        (result.objective.label(), true),
+        ("Mean depth", true),
+        ("Amber", true),
+        ("Settled", true),
+        ("Rope / toll / blocked", true),
+    ];
+    let table = Table::new()
+        .child(
+            TableHeader::new().child(TableRow::new().children(heads.map(|(head, numeric)| {
+                TableHead::new()
+                    .when(numeric, |head| head.text_right())
+                    .child(head)
+            }))),
+        )
+        .child(TableBody::new().children(rows));
     Card::new()
         .header(header)
-        .child(body.child(table))
+        .child(body.child(div().id("spelunk-optimizer-table").child(table)))
         .into_any_element()
 }
 

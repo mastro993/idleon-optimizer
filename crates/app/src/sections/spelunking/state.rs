@@ -21,23 +21,6 @@ pub(crate) enum OptimizerMode {
     Amber,
 }
 
-impl OptimizerMode {
-    pub(crate) fn id(self) -> &'static str {
-        match self {
-            OptimizerMode::Configuration => "configuration",
-            OptimizerMode::Amber => "amber",
-        }
-    }
-
-    pub(crate) fn from_id(id: &str) -> Option<Self> {
-        match id {
-            "configuration" => Some(OptimizerMode::Configuration),
-            "amber" => Some(OptimizerMode::Amber),
-            _ => None,
-        }
-    }
-}
-
 /// The section's visible state, saved with the project.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]

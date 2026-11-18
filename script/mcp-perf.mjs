@@ -62,6 +62,8 @@ const SCROLL_TARGET = {
   killroy: 'section-killroy',
   'combat-sim': 'combat-slot-scroll',
   'royal-guardian': 'royal-pane',
+  spelunking: 'spelunking-pane',
+  sneaking: 'sneaking-pane',
 };
 
 /// Cards the pointer crosses on Home.
